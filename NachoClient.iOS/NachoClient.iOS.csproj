@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7B5D1554-2619-4B46-BE91-585C896047AC}</ProjectGuid>
+    <ProjectTypeGuids>{6BC8ED88-2882-458C-8E55-DFD12B67127B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NachoClient.iOS</RootNamespace>
+    <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
+    <AssemblyName>NachoClientiOS</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <MtouchLink>None</MtouchLink>
+    <ConsolePause>false</ConsolePause>
+    <MtouchDebug>true</MtouchDebug>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <MtouchLink>None</MtouchLink>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <MtouchDebug>true</MtouchDebug>
+    <ConsolePause>false</ConsolePause>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhone\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodesignKey>iPhone Distribution</CodesignKey>
+    <BuildIpa>true</BuildIpa>
+    <ConsolePause>false</ConsolePause>
+    <CodesignProvision>Automatic:AdHoc</CodesignProvision>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\iPhone\AppStore</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodesignKey>iPhone Distribution</CodesignKey>
+    <ConsolePause>false</ConsolePause>
+    <CodesignProvision>Automatic:AppStore</CodesignProvision>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="monotouch" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="UIDeviceHelper">
+      <HintPath>..\..\UIDeviceHelper\UIDeviceHelper\bin\Release\UIDeviceHelper.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+    <Folder Include="NachoCore\" />
+    <Folder Include="sqlite-net\" />
+    <Folder Include="NachoCore\Extensions\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Info.plist" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Main.cs" />
+    <Compile Include="AppDelegate.cs" />
+    <Compile Include="RootViewController.cs" />
+    <Compile Include="RootViewController.designer.cs">
+      <DependentUpon>RootViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DetailViewController.cs" />
+    <Compile Include="DetailViewController.designer.cs">
+      <DependentUpon>DetailViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsCommand.cs">
+      <Link>NachoCore\ActiveSync\AsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsOptions.cs">
+      <Link>NachoCore\ActiveSync\AsOptions.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsDataSource.cs">
+      <Link>NachoCore\ActiveSync\IAsDataSource.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcAccount.cs">
+      <Link>NachoCore\Model\NcAccount.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcCred.cs">
+      <Link>NachoCore\Model\NcCred.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcDevice.cs">
+      <Link>NachoCore\Model\NcDevice.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcProtocolState.cs">
+      <Link>NachoCore\Model\NcProtocolState.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcServer.cs">
+      <Link>NachoCore\Model\NcServer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\sqlite-net\SQLite.cs">
+      <Link>sqlite-net\SQLite.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\sqlite-net\SQLiteAsync.cs">
+      <Link>sqlite-net\SQLiteAsync.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsProvisionCommand.cs">
+      <Link>NachoCore\ActiveSync\AsProvisionCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ASWBXML.cs">
+      <Link>NachoCore\Extensions\ASWBXML.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ASWBXMLByteQueue.cs">
+      <Link>NachoCore\Extensions\ASWBXMLByteQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ASWBXMLCodePage.cs">
+      <Link>NachoCore\Extensions\ASWBXMLCodePage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\StateMachine.cs">
+      <Link>NachoCore\Extensions\StateMachine.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\XmlDocument+Wbxml.cs">
+      <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <InterfaceDefinition Include="MainStoryboard_iPhone.storyboard" />
+    <InterfaceDefinition Include="MainStoryboard_iPad.storyboard" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>

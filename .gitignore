@@ -1,0 +1,9 @@
+*.pidb
+*.userprefs
+*.swp
+*.DS_Store
+*.nib
+*/bin/*
+*/obj/*
+*/*/bin/*
+*/*/obj/*
