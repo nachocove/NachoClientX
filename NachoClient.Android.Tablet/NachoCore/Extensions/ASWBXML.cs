@@ -39,7 +39,8 @@ namespace NachoCore.Wbxml
 		const byte characterSetByte = 0x6A;     // UTF-8
 		const byte stringTableLengthByte = 0x00;
 
-		private XDocument xmlDoc = new XDocument();
+		public XDocument XmlDoc { set; get; }
+
 		private ASWBXMLCodePage[] codePages;
 		private int currentCodePage = 0;
 		private int defaultCodePage = -1;
@@ -785,20 +786,15 @@ namespace NachoCore.Wbxml
 			codePages[24].AddToken(0x18, "RemoveRightsManagementDistribution");
 			#endregion
 			#endregion
-		}   
-
-		public void LoadDoc(XDocument doc)
-		{
-			xmlDoc = doc;
 		}
 		public string GetXml()
 		{
-			return xmlDoc.ToString (SaveOptions.DisableFormatting);
+			return XmlDoc.ToString (SaveOptions.DisableFormatting);
 		}
 
 		public void LoadBytes(byte[] byteWBXML)
 		{
-			xmlDoc = new XDocument();
+			XmlDoc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"));
 
 			ASWBXMLByteQueue bytes = new ASWBXMLByteQueue(byteWBXML);
 
@@ -822,10 +818,7 @@ namespace NachoCore.Wbxml
 
 			// Now we should be at the body of the data.
 			// Add the declaration
-			var xmlDec = new XDeclaration("1.0", "utf-8", null);
-			xmlDoc.Add(xmlDec);
-
-			XElement currentNode = xmlDoc.Root;
+			XElement currentNode = null;
 
 			while (bytes.Count > 0)
 			{
@@ -852,7 +845,7 @@ namespace NachoCore.Wbxml
 					}
 					else
 					{
-						throw new InvalidDataException("END global token encountered out of sequence");
+						//throw new InvalidDataException("END global token encountered out of sequence");
 					}
 					break;
 				case GlobalTokens.OPAQUE:
@@ -907,8 +900,11 @@ namespace NachoCore.Wbxml
 					XElement newNode = new XElement (ns + strTag);
 					//XmlNode newNode = xmlDoc.CreateElement(codePages[currentCodePage].Xmlns, strTag, codePages[currentCodePage].Namespace);
 					//newNode.Prefix = codePages[currentCodePage].Xmlns;
-					currentNode.Add(newNode);
-
+					if (null == currentNode) {
+						XmlDoc.Add (newNode);
+					} else {
+						currentNode.Add (newNode);
+					}
 					if (hasContent)
 					{
 						currentNode = newNode;
@@ -926,7 +922,7 @@ namespace NachoCore.Wbxml
 			byteList.Add(publicIdentifierByte);
 			byteList.Add(characterSetByte);
 			byteList.Add(stringTableLengthByte);
-			byteList.AddRange(EncodeNode(xmlDoc.Root));
+			byteList.AddRange(EncodeNode(XmlDoc.Root));
 
 			return byteList.ToArray();
 		}
@@ -952,14 +948,14 @@ namespace NachoCore.Wbxml
 
 				byte token = codePages[currentCodePage].GetToken(element.Name.LocalName);
 
-				if (element.HasElements)
+				if (element.HasElements || ! element.IsEmpty)
 				{
 					token |= 0x40;
 				}
 
 				byteList.Add(token);
 
-				if (element.HasElements)
+				if (element.HasElements || ! element.IsEmpty)
 				{
 					foreach (XNode child in element.Nodes())
 					{
@@ -1034,7 +1030,7 @@ namespace NachoCore.Wbxml
 
 			for (int i = 0; i < codePages.Length; i++)
 			{
-				if (codePages[i].Xmlns.ToUpper() == xmlns.ToUpper())
+				if (codePages[i].Xmlns.ToUpper() == xmlns.ToUpper().TrimEnd(':'))
 				{
 					currentCodePage = i;
 					return true;

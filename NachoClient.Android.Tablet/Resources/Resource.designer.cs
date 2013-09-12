@@ -63,8 +63,8 @@ namespace NachoClient.Android.Tablet
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f060000
-			public const int myButton = 2131099648;
+			// aapt resource value: 0x7f070000
+			public const int myButton = 2131165184;
 			
 			static Id()
 			{
@@ -92,14 +92,60 @@ namespace NachoClient.Android.Tablet
 			}
 		}
 		
+		public partial class Raw
+		{
+			
+			// aapt resource value: 0x7f040000
+			public const int AirSyncBase = 2130968576;
+			
+			// aapt resource value: 0x7f040001
+			public const int Calendar = 2130968577;
+			
+			// aapt resource value: 0x7f040002
+			public const int Contacts = 2130968578;
+			
+			// aapt resource value: 0x7f040003
+			public const int Contacts2 = 2130968579;
+			
+			// aapt resource value: 0x7f040004
+			public const int DocumentLibrary = 2130968580;
+			
+			// aapt resource value: 0x7f040005
+			public const int Email = 2130968581;
+			
+			// aapt resource value: 0x7f040006
+			public const int Email2 = 2130968582;
+			
+			// aapt resource value: 0x7f040007
+			public const int ItemOperations = 2130968583;
+			
+			// aapt resource value: 0x7f040008
+			public const int Provision = 2130968584;
+			
+			// aapt resource value: 0x7f040009
+			public const int RightsManagement = 2130968585;
+			
+			// aapt resource value: 0x7f04000a
+			public const int Tasks = 2130968586;
+			
+			static Raw()
+			{
+				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
+			}
+			
+			private Raw()
+			{
+			}
+		}
+		
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f040001
-			public const int app_name = 2130968577;
+			// aapt resource value: 0x7f050001
+			public const int app_name = 2131034113;
 			
-			// aapt resource value: 0x7f040000
-			public const int hello = 2130968576;
+			// aapt resource value: 0x7f050000
+			public const int hello = 2131034112;
 			
 			static String()
 			{
@@ -114,8 +160,8 @@ namespace NachoClient.Android.Tablet
 		public partial class Style
 		{
 			
-			// aapt resource value: 0x7f050000
-			public const int Mono_Android_Theme_Splash = 2131034112;
+			// aapt resource value: 0x7f060000
+			public const int Mono_Android_Theme_Splash = 2131099648;
 			
 			static Style()
 			{

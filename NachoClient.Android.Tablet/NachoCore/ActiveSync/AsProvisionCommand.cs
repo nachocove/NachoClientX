@@ -12,13 +12,16 @@ namespace NachoCore.ActiveSync
 	public class AsProvisionCommand : AsCommand
 	{
 		public enum Lst : uint {GetWait=(St.Last+1), AckWait};
+		private enum StatusProvision : uint {Success=1, ProtocolError=2, ServerError=3};
+		private enum StatusPolicy : uint {Success=1, NoPolicy=2, UnknownPolicyType=3, ServerCorrupt=4, WrongPolicyKey=5};
+		private enum StatusRemoteWipe : uint {Success=1, Failure=2};
 
-		private StateMachine m_Sm;
-		private StateMachine m_ParentSm;
+		private StateMachine m_sm;
 
-		public AsProvisionCommand (IAsDataSource dataSource) :
-		base("Provision", dataSource) {
-			m_Sm = new StateMachine () { TransTable = 
+		public AsProvisionCommand (IAsDataSource dataSource) : base("Provision", dataSource) {
+			m_sm = new StateMachine () { Name = "as:provision",
+				LocalStateType = typeof(Lst),
+				TransTable = 
 				new[] {
 					new Node {State = (uint)St.Start, On = new [] {
 							new Trans {Event=(uint)Ev.Launch, Act=DoGet, State=(uint)Lst.GetWait}}},
@@ -26,43 +29,47 @@ namespace NachoCore.ActiveSync
 							new Trans {Event=(uint)Ev.Success, Act=DoAck, State=(uint)Lst.AckWait},
 							new Trans {Event=(uint)Ev.Failure, Act=DoFail, State=(uint)St.Stop}}},
 					new Node {State = (uint)Lst.AckWait, On = new [] {
-							new Trans {Event=(uint)Ev.Success, Act=DoFinish, State=(uint)St.Stop},
+							new Trans {Event=(uint)Ev.Success, Act=DoSucceed, State=(uint)St.Stop},
 							new Trans {Event=(uint)Ev.Failure, Act=DoFail, State=(uint)St.Stop}}}
 				}
 			};
 		}
 		public override void Execute(StateMachine sm) {
-			m_ParentSm = sm;
-			m_Sm.Start ();
+			m_parentSm = sm;
+			m_sm.Start ();
 		}
-		public override XDocument ToXDocument () {
+		protected override XDocument ToXDocument () {
 			XNamespace ns = "Provision";
 			var policy = new XElement (ns + "Policy", 
-			                           new XElement (ns + "PolicyType", "MS-EAS-Provisioning-WBXML"));
-			if ("0" != m_dataSource.ProtocolState.AsPolicyKey) {
-				// MUST appear before Status element.
-				policy.Add (new XElement (ns + "PolicyKey", m_dataSource.ProtocolState.AsPolicyKey));
-			}
-			if (DoAck == m_Sm.Action) {
+		                            new XElement (ns + "PolicyType", "MS-EAS-Provisioning-WBXML"),
+		                            new XElement (ns + "PolicyKey", m_dataSource.ProtocolState.AsPolicyKey));
+			if (DoAck == m_sm.Action) {
 				// FIXME - need to reflect actual status here.
-				policy.Add (new XElement (ns + "Status", "1"));
+				policy.Add (new XElement (ns+"Status", "1"));
 			}
 			var doc = AsCommand.ToEmptyXDocument();
-			doc.Add (new XElement (ns + "Provision", policy));
+			doc.Add (new XElement (ns+"Provision", new XElement (ns+"Policies", policy)));
 			return doc;
 		}
-
-		public void DoGet () {
-			base.Execute (m_Sm);
+		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
+			XNamespace ns = "Provision";
+			switch ((StatusProvision)Convert.ToUInt32 (doc.Root.Element (ns+"Status").Value)) {
+			case StatusProvision.Success:
+				m_dataSource.ProtocolState.AsPolicyKey = doc.Root.Element (ns+"Policies").
+					Element (ns+"Policy").Element (ns+"PolicyKey").Value;
+				return (uint)Ev.Success;
+			case StatusProvision.ProtocolError:
+				break;
+			case StatusProvision.ServerError:
+				break;
+			}
+			return (uint)Ev.Failure;
 		}
-		public void DoAck () {
-			base.Execute (m_Sm);
+		private void DoGet () {
+			base.Execute (m_sm);
 		}
-		public void DoFinish () {
-			m_ParentSm.ProcEvent ((uint)Ev.Success);
-		}
-		public void DoFail () {
-			m_ParentSm.ProcEvent ((uint)Ev.Failure);
+		private void DoAck () {
+			base.Execute (m_sm);
 		}
 	}
 }

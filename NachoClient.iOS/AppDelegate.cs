@@ -11,7 +11,7 @@ namespace NachoClient.iOS
 	// User Interface of the application, as well as listening (and optionally responding) to 
 	// application events from iOS.
 	[Register ("AppDelegate")]
-	public partial class AppDelegate : UIApplicationDelegate, IAsDataSource, IAsOwner
+	public partial class AppDelegate : UIApplicationDelegate, IAsOwner, IAsDataSource
 	{
 		// class-level declarations
 		public override UIWindow Window {
@@ -46,11 +46,10 @@ namespace NachoClient.iOS
 
 			//Account = new NcAccount ();
 			//Account.Username = "jeffe@nachocove.com";
-			db.Insert (new NcAccount () { Username = "jeffe@nachocove.com" });
+			db.Insert (new NcAccount () { Username = "jeffe@nachocove.com", EmailAddr = "jeffe@nachocove.com" });
 			var query = db.Table<NcAccount>().Where(v => v.Username.StartsWith("j"));
 			foreach (var acc in query) {
 				Account = acc;
-				Console.WriteLine (acc.Username);
 			}
 			Cred = new NcCred ();
 			Cred.Username = "jeffe@nachocove.com";
@@ -61,11 +60,20 @@ namespace NachoClient.iOS
 			Server.Scheme = "https";
 			ProtocolState = new NcProtocolState ();
 			ProtocolState.AsProtocolVersion = "12.0";
+			ProtocolState.AsPolicyKey = "0";
 
 			//var cmd = new AsOptions(this, this);
-			var cmd = new AsProvisionCommand (this, this);
+			var cmd = new AsControl (this, this);
 			cmd.Execute();
 			return true;
+		}
+		public void CredRequest (AsControl sender) {
+			sender.CredResponse ();
+		}
+		public void ServConfRequest (AsControl sender) {
+			sender.ServConfResponse ();
+		}
+		public void HardFailureIndication (AsControl sender) {
 		}
 		//
 		// This method is invoked when the application is about to move from active to inactive state.

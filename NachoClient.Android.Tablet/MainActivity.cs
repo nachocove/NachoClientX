@@ -16,6 +16,7 @@ namespace NachoClient.Android.Tablet
 	public class MainActivity : Activity, IAsDataSource
 	{
 		int count = 1;
+		AsControl backEnd = null;
 
 		public NcServer Server { get; set; }
 		public NcProtocolState ProtocolState { get; set; }
@@ -47,7 +48,7 @@ namespace NachoClient.Android.Tablet
 			//foreach (var acc in query) {
 			//	Account = acc;
 			//}
-			Account = new NcAccount () { Username = "jeffe@nachocove.com" };
+			Account = new NcAccount () { Username = "jeffe@nachocove.com", EmailAddr = "jeffe@nachocove.com" };
 			Cred = new NcCred ();
 			Cred.Username = "jeffe@nachocove.com";
 			Cred.Password = "D0ggie789";
@@ -57,16 +58,8 @@ namespace NachoClient.Android.Tablet
 			Server.Scheme = "https";
 			ProtocolState = new NcProtocolState ();
 			ProtocolState.AsProtocolVersion = "12.0";
-
-			var sm = new StateMachine () {
-				TransTable = new[] {
-					new Node {State = (uint)St.Start, On = new [] {
-							new Trans {Event=(uint)Ev.Launch, Act=DoNop, State=(uint)St.Start},
-							new Trans {Event=(uint)Ev.Success, Act=DoNop, State=(uint)St.Start},
-							new Trans {Event=(uint)Ev.Failure, Act=DoNop, State=(uint)St.Start}}}}
-			};
-			var cmd = new AsProvisionCommand (null);
-			cmd.Execute(sm);
+			backEnd = new AsControl (this,this);
+			backEnd.Execute(); // FIXME - need callback api.
 		}
 
 		public void DoNop (){

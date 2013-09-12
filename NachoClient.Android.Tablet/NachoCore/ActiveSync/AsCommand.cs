@@ -34,6 +34,7 @@ namespace NachoCore.ActiveSync {
 		}
 		// Properties & IVars.
 		string m_commandName;
+		protected StateMachine m_parentSm;
 		protected IAsDataSource m_dataSource;
 		CancellationTokenSource m_cts;
 
@@ -61,6 +62,9 @@ namespace NachoCore.ActiveSync {
 			return hex.ToString();
 		}
 		public virtual async void Execute(StateMachine sm) {
+			if (null == m_parentSm) {
+				m_parentSm = sm;
+			}
 			// FIXME: need to understand URL escaping.
 			var requestLine = string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
 			                                 m_commandName, 
@@ -81,7 +85,7 @@ namespace NachoCore.ActiveSync {
 				                                    m_dataSource.Cred.Password),
 				AllowAutoRedirect = false
 			};
-			var client = new HttpClient(handler);
+			var client = HttpClientFactory(handler);
 			var request = new HttpRequestMessage 
 				(HttpMethod.Post, new Uri(AsCommand.BaseUri (m_dataSource.Server), requestLine));
 			var doc = ToXDocument ();
@@ -94,18 +98,21 @@ namespace NachoCore.ActiveSync {
 			}
 			var mime = ToMime ();
 			if (null != mime) {
-				// FIXME. How to attach MIME body?
-				request.Content.Headers.Add ("Content-Type", "message/rfc822");
+				request.Content = new StringContent (mime, UTF8Encoding.UTF8, "message/rfc822");
 			}
 			request.Headers.Add ("User-Agent", NcDevice.UserAgent ());
 			request.Headers.Add ("X-MS-PolicyKey", m_dataSource.ProtocolState.AsPolicyKey);
 			request.Headers.Add ("MS-ASProtocolVersion", m_dataSource.ProtocolState.AsProtocolVersion);
+			Console.WriteLine (request.ToString ());
 			try {
 				var response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead,
 				                                       m_cts.Token);
-				Console.WriteLine(response.ToString());
 				if (HttpStatusCode.OK == response.StatusCode) {
-					sm.ProcEvent((uint)Ev.Success);
+					// FIXME - detect and handle non-WBXML return.
+					// FIXME - process event outside try block.
+					byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
+					var responseDoc = wbxmlMessage.LoadWbxml();
+					sm.ProcEvent(ProcessResponse(response, responseDoc));
 				} else {
 					sm.ProcEvent((uint)Ev.Failure);
 				}
@@ -121,16 +128,28 @@ namespace NachoCore.ActiveSync {
 		public virtual Dictionary<string,string> Params () {
 			return null;
 		}
-		// Subclass should implement neither or one of the To... methods.
-		public virtual XDocument ToXDocument () {
+		// Subclass should implement neither or only one of the ToXxx... methods.
+		protected virtual XDocument ToXDocument () {
+			return null;
+		} 
+		protected virtual string ToMime () {
 			return null;
 		}
-		public virtual string ToMime () {
-			return null;
+		protected virtual uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
+			return (uint)Ev.Success;
+		}
+		protected void DoSucceed () {
+			m_parentSm.ProcEvent ((uint)Ev.Success);
+		}
+		protected void DoFail () {
+			m_parentSm.ProcEvent ((uint)Ev.Failure);
 		}
 		// Internal Methods.
-		internal static XDocument ToEmptyXDocument() {
+		internal static XDocument ToEmptyXDocument () {
 			return new XDocument (new XDeclaration ("1.0", "utf8", null));
+		}
+		internal static HttpClient HttpClientFactory (HttpClientHandler handler) {
+			return new HttpClient (handler) { Timeout = new TimeSpan (0,0,3) };
 		}
 	}
 }

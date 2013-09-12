@@ -6,8 +6,10 @@ namespace NachoCore.Model
 	{
 		public string AsProtocolVersion { get; set;}
 		public string AsPolicyKey { get; set;}
+		public string AsSyncKey { get; set;}
 		public NcProtocolState() {
 			AsPolicyKey = "0";
+			AsSyncKey = "0";
 		}
 	}
 }

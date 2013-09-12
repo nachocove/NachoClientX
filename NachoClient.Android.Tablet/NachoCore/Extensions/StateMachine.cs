@@ -26,6 +26,9 @@ namespace NachoCore.Utils
 		public uint Event { set; get; }
 	}
 	public class StateMachine {
+		public string Name { set; get; }
+		public Type LocalEventType { set; get; }
+		public Type LocalStateType { set; get; }
 		public Node[] TransTable { set; get; }
 		public uint State { set; get; }
 		public Cb Action { set; get; }
@@ -55,11 +58,31 @@ namespace NachoCore.Utils
 				var fireEvent = (uint)EventQ.Dequeue ();
 				var hotNode = TransTable.Where (x => State == x.State).First ();
 				var hotTrans = hotNode.On.Where (x => fireEvent == x.Event).First ();
-				hotTrans.Act ();
-				Console.WriteLine ("SM: S={0} & E={1} => S={2}", State, fireEvent, hotTrans.State);
+				Console.WriteLine ("SM({0}): S={1} & E={2} => S={3}", Name, StateName (State), 
+				                   EventName (fireEvent), StateName (hotTrans.State));
+				Action = hotTrans.Act;
+				Action ();
 				State = hotTrans.State;
 			}
 			IsFiring = false;
+		}
+		private string StateName (uint state) {
+			if ((uint)St.Last < (uint)state) {
+				if (null != LocalStateType) {
+					return Enum.GetName (LocalStateType, state);
+				}
+				return state.ToString ();
+			}
+			return Enum.GetName (typeof(St), state);
+		}
+		private string EventName (uint evt) {
+			if ((uint)Ev.Last < (uint)evt) {
+				if (null != LocalEventType) {
+					return Enum.GetName (LocalEventType, evt);
+				}
+				return evt.ToString ();
+			}
+			return Enum.GetName (typeof(Ev), evt);
 		}
 	}
 }

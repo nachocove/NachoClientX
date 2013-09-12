@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync {
 		}
 		public async void Execute(StateMachine sm)
 		{
-			var client = new HttpClient();
+			var client = AsCommand.HttpClientFactory (new HttpClientHandler());
 			try {
 				var response = await client.SendAsync 
 					(new HttpRequestMessage (HttpMethod.Options,

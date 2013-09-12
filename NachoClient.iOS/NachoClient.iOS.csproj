@@ -91,9 +91,43 @@
     <Folder Include="NachoCore\" />
     <Folder Include="sqlite-net\" />
     <Folder Include="NachoCore\Extensions\" />
+    <Folder Include="Resources\xsd\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\AirSyncBase.xsd">
+      <Link>Resources\xsd\AirSyncBase.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Calendar.xsd">
+      <Link>Resources\xsd\Calendar.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Contacts.xsd">
+      <Link>Resources\xsd\Contacts.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Contacts2.xsd">
+      <Link>Resources\xsd\Contacts2.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\DocumentLibrary.xsd">
+      <Link>Resources\xsd\DocumentLibrary.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Email.xsd">
+      <Link>Resources\xsd\Email.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Email2.xsd">
+      <Link>Resources\xsd\Email2.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\ItemOperations.xsd">
+      <Link>Resources\xsd\ItemOperations.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Provision.xsd">
+      <Link>Resources\xsd\Provision.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\RightsManagement.xsd">
+      <Link>Resources\xsd\RightsManagement.xsd</Link>
+    </None>
+    <None Include="..\NachoClient.Android.Tablet\Resources\raw\Tasks.xsd">
+      <Link>Resources\xsd\Tasks.xsd</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -108,6 +142,7 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsCommand.cs">
       <Link>NachoCore\ActiveSync\AsCommand.cs</Link>
+      <DependentUpon>AsSettingsCommand.cs</DependentUpon>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsOptions.cs">
       <Link>NachoCore\ActiveSync\AsOptions.cs</Link>
@@ -153,6 +188,33 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsAutodiscover.cs">
+      <Link>NachoCore\ActiveSync\AsAutodiscover.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsControl.cs">
+      <Link>NachoCore\ActiveSync\AsControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\Helpers.cs">
+      <Link>NachoCore\Extensions\Helpers.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsOwner.cs">
+      <Link>NachoCore\ActiveSync\IAsOwner.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsFolderSyncCommand.cs">
+      <Link>NachoCore\ActiveSync\AsFolderSyncCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsPingCommand.cs">
+      <Link>NachoCore\ActiveSync\AsPingCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSendMailCommand.cs">
+      <Link>NachoCore\ActiveSync\AsSendMailCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSettingsCommand.cs">
+      <Link>NachoCore\ActiveSync\AsSettingsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSyncCommand.cs">
+      <Link>NachoCore\ActiveSync\AsSyncCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

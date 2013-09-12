@@ -9,14 +9,14 @@ namespace NachoCore.Wbxml
 		public static byte[] ToWbxml (this XDocument doc)
 		{
 			ASWBXML encoder = new ASWBXML();
-			encoder.LoadDoc(doc);
+			encoder.XmlDoc = doc;
 			return encoder.GetBytes();
 		}
-		public static XDocument LoadWbxml(this XDocument doc, byte[] wbxml)
+		public static XDocument LoadWbxml(this byte[] wbxml)
 		{
 			ASWBXML decoder = new ASWBXML();
 			decoder.LoadBytes(wbxml);
-			return XDocument.Parse (decoder.GetXml ());
+			return decoder.XmlDoc;
 		}
 	}
 }
