@@ -1,6 +1,7 @@
 using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using SQLite;
@@ -11,17 +12,12 @@ namespace NachoClient.iOS
 	// User Interface of the application, as well as listening (and optionally responding) to 
 	// application events from iOS.
 	[Register ("AppDelegate")]
-	public partial class AppDelegate : UIApplicationDelegate, IAsOwner, IAsDataSource
+	public partial class AppDelegate : UIApplicationDelegate
 	{
 		// class-level declarations
-		public override UIWindow Window {
-			get;
-			set;
-		}
-		public NcServer Server { get; set; }
-		public NcProtocolState ProtocolState { get; set; }
-		public NcAccount Account { get; set;}
-		public NcCred Cred { get; set; }
+		public override UIWindow Window { get; set; }
+		public BackEnd Be { get; set; }
+
 		public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
 		{
 			// Override point for customization after application launch.
@@ -41,40 +37,23 @@ namespace NachoClient.iOS
 				splitViewController.WeakDelegate = detailViewController;
 			}
 
-			var db = new SQLiteConnection("foofoo");
-			db.CreateTable<NcAccount>();
-
-			//Account = new NcAccount ();
-			//Account.Username = "jeffe@nachocove.com";
-			db.Insert (new NcAccount () { Username = "jeffe@nachocove.com", EmailAddr = "jeffe@nachocove.com" });
-			var query = db.Table<NcAccount>().Where(v => v.Username.StartsWith("j"));
-			foreach (var acc in query) {
-				Account = acc;
-			}
-			Cred = new NcCred ();
-			Cred.Username = "jeffe@nachocove.com";
-			Cred.Password = "D0ggie789";
-			Server = new NcServer ();
-			Server.Fqdn = "nco9.com";
-			Server.Port = 443;
-			Server.Scheme = "https";
-			ProtocolState = new NcProtocolState ();
-			ProtocolState.AsProtocolVersion = "12.0";
-			ProtocolState.AsPolicyKey = "0";
-
-			//var cmd = new AsOptions(this, this);
-			var cmd = new AsControl (this, this);
-			cmd.Execute();
+			Be = new BackEnd ();
+			var account = new NcAccount () { EmailAddr = "jeffe@nachocove.com" };
+			Be.Db.InsertOrReplace (account);
+			var cred = new NcCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
+			Be.Db.InsertOrReplace (cred);
+			account.CredId = cred.Id;
+			var server = new NcServer () { Fqdn = "nco9.com", Port = 443, Scheme = "https"};
+			Be.Db.InsertOrReplace (server);
+			account.ServerId = server.Id;
+			var protocolState = new NcProtocolState () { AsProtocolVersion = "12.0", AsPolicyKey = "0" };
+			Be.Db.InsertOrReplace (protocolState);
+			account.ProtocolStateId = protocolState.Id;
+			Be.Db.Update (account);
+			Be.StartAccount (account);
 			return true;
 		}
-		public void CredRequest (AsControl sender) {
-			sender.CredResponse ();
-		}
-		public void ServConfRequest (AsControl sender) {
-			sender.ServConfResponse ();
-		}
-		public void HardFailureIndication (AsControl sender) {
-		}
+
 		//
 		// This method is invoked when the application is about to move from active to inactive state.
 		//

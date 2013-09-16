@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Xml.Linq;
+using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
@@ -9,14 +10,23 @@ namespace NachoCore.ActiveSync
 	{
 		public const string SyncKeyInitial = "0";
 
-		private enum StatusSync : uint {Success=1, SyncKeyInvalid=3, ProtocolError=4, ServerError=5, ClientError=6,
-			ServerWins=7, NotFound=8, NoSpace=9, FolderChange=12, ResendFull=13, LimitReWait=14, TooMany=15,
-			Retry=16};
-
-		public AsSyncCommand (IAsDataSource dataSource) : base("Sync", dataSource) {}
+		public AsSyncCommand (IAsDataSource dataSource) : base(Xml.AirSync.Ns, dataSource) {}
 
 		protected override XDocument ToXDocument () {
+			XNamespace ns = Xml.AirSync.Ns;
+			var collections = new XElement (ns+Xml.AirSync.Collections);
+			var folders = m_dataSource.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id);
+			foreach (var folder in folders) {
+				var collection = new XElement (ns + Xml.AirSync.Collection,
+				                              new XElement (ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
+				                              new XElement (ns + Xml.AirSync.CollectionId, folder.ServerId));
+				if (SyncKeyInitial != folder.AsSyncKey) {
+					collection.Add (new XElement (ns + Xml.AirSync.GetChanges));
+				}
+			}
+			var sync = new XElement (ns+Xml.AirSync.Sync, collections);
 			var doc = AsCommand.ToEmptyXDocument();
+			doc.Add (sync);
 			return doc;
 		}
 		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc)

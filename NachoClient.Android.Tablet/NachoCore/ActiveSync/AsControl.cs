@@ -1,24 +1,35 @@
 using System;
 using System.Collections.Generic;
+using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
 
-	public class AsControl
+	public class AsControl : IAsDataSource
 	{
 		public enum Lst : uint {DiscWait=(St.Last+1), CredWait, ServConfWait, 
 			OptWait, ProvWait, SettingsWait, FSyncWait, SyncWait, Idle};
 		public enum Lev : uint {GetCred=(Ev.Last+1), SetCred, SetServConf, ReDisc, ReProv, ReSync};
 
 		private IAsOwner m_owner;
-		private IAsDataSource m_dataSource;
 		private StateMachine m_sm;
 
-		public AsControl (IAsOwner owner, IAsDataSource dataSource)
+		public SQLiteConnectionWithEvents Db { set; get; }
+		public NcAccount Account { set; get; }
+		public NcCred Cred { set; get; }
+		public NcProtocolState ProtocolState { set; get; }
+		public NcServer Server { set; get; }
+
+		public AsControl (IAsOwner owner, NcAccount account)
 		{
 			m_owner = owner;
-			m_dataSource = dataSource;
+			Db = m_owner.Db;
+			Account = account;
+			Cred = m_owner.Db.Table<NcCred> ().Where (rec => rec.Id == Account.CredId).First ();
+			ProtocolState = m_owner.Db.Table<NcProtocolState> ().Where (rec => rec.Id == Account.ProtocolStateId).First ();
+			Server = m_owner.Db.Table<NcServer> ().Where (rec => rec.Id == Account.ServerId).First ();
+
 			m_sm = new StateMachine () { Name = "as:control",
 				LocalEventType = typeof(Lev),
 				LocalStateType = typeof(Lst),
@@ -85,40 +96,40 @@ namespace NachoCore.ActiveSync
 			m_owner.HardFailureIndication (this);
 		}
 		private void DoDisc () {
-			var cmd = new AsAutodiscover (m_dataSource);
+			var cmd = new AsAutodiscover (this);
 			cmd.Execute (m_sm);
 		}
 		private void DoOpt () {
-			var cmd = new AsOptions (m_dataSource);
+			var cmd = new AsOptions (this);
 			cmd.Execute (m_sm);
 		}
 		private void DoProv () {
-			var cmd = new AsProvisionCommand (m_dataSource);
+			var cmd = new AsProvisionCommand (this);
 			cmd.Execute (m_sm);
 		}
 		private void DoSettings () {
-			var cmd = new AsSettingsCommand (m_dataSource);
+			var cmd = new AsSettingsCommand (this);
 			cmd.Execute (m_sm);
 		}
 		private void DoFSync () {
-			var cmd = new AsFolderSyncCommand (m_dataSource);
+			var cmd = new AsFolderSyncCommand (this);
 			cmd.Execute (m_sm);
 		}
 		private void DoSync () {
+			var cmd = new AsSyncCommand (this);
+			cmd.Execute (m_sm);
+		}
+		private void DoSend () {
 			var headers = new Dictionary<string, string> {
 				{"to", "chrisp@nachocove.com"},
 				{"from", "jeffe@nachocove.com"},
 				{"subject", "wow"},
 				{"date", "Mon, 29 Jul 2013 13:42:22 -0700"}
 			};
-			var cmd = new AsSendMailCommand (m_dataSource,
+			var cmd = new AsSendMailCommand (this,
 			                                 headers,
-			                                "Here is message #1");
+			                                 "Here is message #1");
 			cmd.Execute (m_sm);
-			//var cmd = new AsSyncCommand (m_dataSource);
-			//cmd.Execute (m_sm);
-		}
-		private void DoSend () {
 		}
 		private void DoPing () {
 		}

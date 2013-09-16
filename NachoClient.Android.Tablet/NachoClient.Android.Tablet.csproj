@@ -77,6 +77,12 @@
     <Compile Include="NachoCore\ActiveSync\AsPingCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSendMailCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSyncCommand.cs" />
+    <Compile Include="NachoCore\Model\NcMessage.cs" />
+    <Compile Include="NachoCore\Model\NcMessageEmail.cs" />
+    <Compile Include="NachoCore\Model\NcFolder.cs" />
+    <Compile Include="NachoCore\BackEnd.cs" />
+    <Compile Include="NachoCore\Extensions\SQLiteConnectionWithEvent.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsConstants.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -87,22 +93,23 @@
     <AndroidResource Include="Resources\layout\Main.axml" />
     <AndroidResource Include="Resources\values\Strings.xml" />
     <AndroidResource Include="Resources\drawable\Icon.png" />
-    <AndroidResource Include="Resources\raw\AirSyncBase.xsd" />
-    <AndroidResource Include="Resources\raw\Calendar.xsd" />
-    <AndroidResource Include="Resources\raw\Contacts.xsd" />
-    <AndroidResource Include="Resources\raw\Contacts2.xsd" />
-    <AndroidResource Include="Resources\raw\DocumentLibrary.xsd" />
-    <AndroidResource Include="Resources\raw\Email.xsd" />
-    <AndroidResource Include="Resources\raw\Email2.xsd" />
-    <AndroidResource Include="Resources\raw\ItemOperations.xsd" />
-    <AndroidResource Include="Resources\raw\Provision.xsd" />
-    <AndroidResource Include="Resources\raw\RightsManagement.xsd" />
-    <AndroidResource Include="Resources\raw\Tasks.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\AirSyncBase.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Calendar.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Contacts.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Contacts2.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\DocumentLibrary.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Email.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Email2.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\ItemOperations.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Provision.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\RightsManagement.xsd" />
+    <AndroidResource Include="Resources\raw\xsd\Tasks.xsd" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
     <Folder Include="sqlite-net\" />
     <Folder Include="NachoCore\" />
     <Folder Include="Resources\raw\" />
+    <Folder Include="Resources\raw\xsd\" />
   </ItemGroup>
 </Project>

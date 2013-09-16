@@ -19,6 +19,7 @@ using NachoCore.Utils;
 namespace NachoCore.ActiveSync {
 	abstract public class AsCommand {
 		// Constants.
+		public const string KContentTypeWbxml = "application/vnd.ms-sync.wbxml";
 		public enum Status {
 			KStatusInvalidContent = 101,
 			KStatusDeviceNotProvisioned = 142,
@@ -53,14 +54,6 @@ namespace NachoCore.ActiveSync {
 		}
 
 		// Public Methods.
-		// FIXME - this does not belong here.
-		public string ByteArrayToString(byte[] ba)
-		{
-			StringBuilder hex = new StringBuilder(ba.Length * 2);
-			foreach (byte b in ba)
-				hex.AppendFormat("{0:x2}", b);
-			return hex.ToString();
-		}
 		public virtual async void Execute(StateMachine sm) {
 			if (null == m_parentSm) {
 				m_parentSm = sm;
@@ -68,7 +61,7 @@ namespace NachoCore.ActiveSync {
 			// FIXME: need to understand URL escaping.
 			var requestLine = string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
 			                                 m_commandName, 
-			                                 m_dataSource.Account.Username,
+			                                 m_dataSource.Cred.Username,
 			                                 NcDevice.Identity (),
 			                                 NcDevice.Type ());
 			var rlParams = Params();
@@ -94,7 +87,7 @@ namespace NachoCore.ActiveSync {
 				var content = new ByteArrayContent (wbxml);
 				request.Content = content;
 				request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString());
-				request.Content.Headers.Add ("Content-Type", "application/vnd.ms-sync.wbxml");
+				request.Content.Headers.Add ("Content-Type", KContentTypeWbxml);
 			}
 			var mime = ToMime ();
 			if (null != mime) {
@@ -103,22 +96,31 @@ namespace NachoCore.ActiveSync {
 			request.Headers.Add ("User-Agent", NcDevice.UserAgent ());
 			request.Headers.Add ("X-MS-PolicyKey", m_dataSource.ProtocolState.AsPolicyKey);
 			request.Headers.Add ("MS-ASProtocolVersion", m_dataSource.ProtocolState.AsProtocolVersion);
-			Console.WriteLine (request.ToString ());
+			CancellationToken token = m_cts.Token;
+			HttpResponseMessage response = null;
+
 			try {
-				var response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead,
-				                                       m_cts.Token);
-				if (HttpStatusCode.OK == response.StatusCode) {
-					// FIXME - detect and handle non-WBXML return.
-					// FIXME - process event outside try block.
+				response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
+			}
+			catch (OperationCanceledException ex) {
+				Console.WriteLine ("as:command: OperationCanceledException");
+				if (! token.IsCancellationRequested) {
+					// This is really a timeout (MS bug).
+					sm.ProcEvent ((uint)Ev.Failure);
+				}
+				return;
+			}
+			if (HttpStatusCode.OK == response.StatusCode) {
+				if (KContentTypeWbxml ==
+				    response.Content.Headers.ContentType.MediaType.ToLower()) {
 					byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
 					var responseDoc = wbxmlMessage.LoadWbxml();
 					sm.ProcEvent(ProcessResponse(response, responseDoc));
 				} else {
-					sm.ProcEvent((uint)Ev.Failure);
+					sm.ProcEvent(ProcessResponse(response));
 				}
-			}
-			catch (OperationCanceledException ex) {
-				Console.WriteLine(ex.ToString());
+			} else {
+				sm.ProcEvent((uint)Ev.Failure);
 			}
 		}
 		public void Cancel() {
@@ -134,6 +136,9 @@ namespace NachoCore.ActiveSync {
 		} 
 		protected virtual string ToMime () {
 			return null;
+		}
+		protected virtual uint ProcessResponse (HttpResponseMessage response) {
+			return (uint)Ev.Success;
 		}
 		protected virtual uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
 			return (uint)Ev.Success;
