@@ -33,12 +33,12 @@ namespace NachoCore.ActiveSync
 						switch (change.Name.LocalName) {
 						case Xml.FolderHierarchy.Add:
 							var folder = new NcFolder () {
-								AccountId = m_dataSource.Account.Id;
+								AccountId = m_dataSource.Account.Id,
 								ServerId = change.Element (ns+Xml.FolderHierarchy.ServerId).Value,
 								ParentId = change.Element (ns+Xml.FolderHierarchy.ParentId).Value,
 								DisplayName = change.Element (ns+Xml.FolderHierarchy.DisplayName).Value,
 								Type = change.Element (ns+Xml.FolderHierarchy.Type).Value,
-								AsSyncKey = "0",
+								AsSyncKey = Xml.AirSync.SyncKey_Initial,
 								AsSyncRequired = true
 							};
 							m_dataSource.Db.Insert (folder);

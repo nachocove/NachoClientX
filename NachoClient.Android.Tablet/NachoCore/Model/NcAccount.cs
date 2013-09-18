@@ -3,10 +3,8 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-	public class NcAccount
+	public class NcAccount : NcEventable
 	{
-		[PrimaryKey, AutoIncrement]
-		public int Id { get; set; }
 		public string EmailAddr { get; set; }
 		// Relationships.
 		public int CredId { get; set; }

@@ -69,6 +69,6 @@ Global
 		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = NachoClient.Android.Tablet\NachoClient.Android.Tablet.csproj
+		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
 	EndGlobalSection
 EndGlobal

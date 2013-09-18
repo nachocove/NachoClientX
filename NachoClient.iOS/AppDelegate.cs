@@ -12,7 +12,7 @@ namespace NachoClient.iOS
 	// User Interface of the application, as well as listening (and optionally responding) to 
 	// application events from iOS.
 	[Register ("AppDelegate")]
-	public partial class AppDelegate : UIApplicationDelegate
+	public partial class AppDelegate : UIApplicationDelegate, IBackEndDelegate
 	{
 		// class-level declarations
 		public override UIWindow Window { get; set; }
@@ -37,7 +37,7 @@ namespace NachoClient.iOS
 				splitViewController.WeakDelegate = detailViewController;
 			}
 
-			Be = new BackEnd ();
+			Be = new BackEnd (this);
 			var account = new NcAccount () { EmailAddr = "jeffe@nachocove.com" };
 			Be.Db.InsertOrReplace (account);
 			var cred = new NcCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
@@ -50,10 +50,17 @@ namespace NachoClient.iOS
 			Be.Db.InsertOrReplace (protocolState);
 			account.ProtocolStateId = protocolState.Id;
 			Be.Db.Update (account);
-			Be.StartAccount (account);
+			Be.Start (account);
 			return true;
 		}
-
+		public void CredRequest(NcAccount account) {
+		}
+		public void ServConfRequest (NcAccount account) {
+		}
+		public void HardFailureIndication (NcAccount account) {
+		}
+		public void SoftFailureIndication (NcAccount account) {
+		}
 		//
 		// This method is invoked when the application is about to move from active to inactive state.
 		//

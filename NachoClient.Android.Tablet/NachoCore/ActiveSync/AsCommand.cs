@@ -154,7 +154,7 @@ namespace NachoCore.ActiveSync {
 			return new XDocument (new XDeclaration ("1.0", "utf8", null));
 		}
 		internal static HttpClient HttpClientFactory (HttpClientHandler handler) {
-			return new HttpClient (handler) { Timeout = new TimeSpan (0,0,3) };
+			return new HttpClient (handler) { Timeout = new TimeSpan (0,0,9) };
 		}
 	}
 }

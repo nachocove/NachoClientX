@@ -10,7 +10,7 @@ namespace NachoCore.ActiveSync
 	{
 		public enum Lst : uint {DiscWait=(St.Last+1), CredWait, ServConfWait, 
 			OptWait, ProvWait, SettingsWait, FSyncWait, SyncWait, Idle};
-		public enum Lev : uint {GetCred=(Ev.Last+1), SetCred, SetServConf, ReDisc, ReProv, ReSync};
+		public enum Lev : uint {GetCred=(Ev.Last+1), SetCred, SetServConf, ReDisc, ReProv, ReSync, SendMail};
 
 		private IAsOwner m_owner;
 		private StateMachine m_sm;
@@ -76,6 +76,7 @@ namespace NachoCore.ActiveSync
 							new Trans {Event = (uint)Lev.ReSync, Act = DoSync, State = (uint)Lst.SyncWait}}}
 				}
 			};
+			m_sm.State = ProtocolState.State;
 		}
 		public void Execute () {
 			m_sm.ProcEvent ((uint)Ev.Launch);

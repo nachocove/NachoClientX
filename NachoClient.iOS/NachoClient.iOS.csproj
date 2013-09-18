@@ -93,7 +93,6 @@
     <Folder Include="NachoCore\Extensions\" />
     <Folder Include="NachoCore\NachoCore\" />
     <Folder Include="Resources\xsd\" />
-    <Folder Include="NachoCore\ActiveSync\ActiveSync\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -235,6 +234,18 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsConstants.cs">
       <Link>NachoCore\ActiveSync\AsConstants.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\IBackEndDelegate.cs">
+      <Link>NachoCore\IBackEndDelegate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ISQLiteEventable.cs">
+      <Link>NachoCore\Extensions\ISQLiteEventable.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcEventable.cs">
+      <Link>NachoCore\Model\NcEventable.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcObject.cs">
+      <Link>NachoCore\Model\NcObject.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

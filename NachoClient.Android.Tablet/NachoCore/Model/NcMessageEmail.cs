@@ -5,10 +5,9 @@ namespace NachoCore.Model
 {
 	public class NcMessageEmail : NcMessage
 	{
-		[PrimaryKey, AutoIncrement]
-		public int Id { get; set; }
 		public string Body { set; get;}
 		public string Encoding { set; get; }
+		[Indexed]
 		public string From { set; get; }
 		[Indexed]
 		public string To { set; get; }

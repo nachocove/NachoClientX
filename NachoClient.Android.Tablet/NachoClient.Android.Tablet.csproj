@@ -83,6 +83,10 @@
     <Compile Include="NachoCore\BackEnd.cs" />
     <Compile Include="NachoCore\Extensions\SQLiteConnectionWithEvent.cs" />
     <Compile Include="NachoCore\ActiveSync\AsConstants.cs" />
+    <Compile Include="NachoCore\IBackEndDelegate.cs" />
+    <Compile Include="NachoCore\Model\NcEventable.cs" />
+    <Compile Include="NachoCore\Extensions\ISQLiteEventable.cs" />
+    <Compile Include="NachoCore\Model\NcObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
