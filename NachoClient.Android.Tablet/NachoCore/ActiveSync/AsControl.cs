@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -6,33 +7,32 @@ using NachoCore.Utils;
 namespace NachoCore.ActiveSync
 {
 
-	public class AsControl : IAsDataSource
+	public class AsProtoControl : ProtoControl, IAsDataSource
 	{
 		public enum Lst : uint {DiscWait=(St.Last+1), CredWait, ServConfWait, 
-			OptWait, ProvWait, SettingsWait, FSyncWait, SyncWait, Idle};
+			OptWait, ProvWait, SettingsWait, FSyncWait, SyncWait, Idle, SendMailWait};
 		public enum Lev : uint {GetCred=(Ev.Last+1), SetCred, SetServConf, ReDisc, ReProv, ReSync, SendMail};
 
-		private IAsOwner m_owner;
-		private StateMachine m_sm;
+		private IProtoControlOwner m_owner;
 
 		public SQLiteConnectionWithEvents Db { set; get; }
-		public NcAccount Account { set; get; }
 		public NcCred Cred { set; get; }
 		public NcProtocolState ProtocolState { set; get; }
 		public NcServer Server { set; get; }
 
-		public AsControl (IAsOwner owner, NcAccount account)
+		public AsProtoControl (IProtoControlOwner owner, NcAccount account)
 		{
 			m_owner = owner;
 			Db = m_owner.Db;
 			Account = account;
-			Cred = m_owner.Db.Table<NcCred> ().Where (rec => rec.Id == Account.CredId).First ();
+			Cred = m_owner.Db.Table<NcCred> ().Single (rec => rec.Id == Account.CredId);
 			ProtocolState = m_owner.Db.Table<NcProtocolState> ().Where (rec => rec.Id == Account.ProtocolStateId).First ();
 			Server = m_owner.Db.Table<NcServer> ().Where (rec => rec.Id == Account.ServerId).First ();
 
-			m_sm = new StateMachine () { Name = "as:control",
+			Sm = new StateMachine () { Name = "as:control",
 				LocalEventType = typeof(Lev),
 				LocalStateType = typeof(Lst),
+				StateChangeIndication = UpdateSavedState,
 				TransTable = new[] {
 					new Node {State = (uint)St.Start, On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoDisc, State=(uint)Lst.DiscWait}}},
@@ -66,27 +66,50 @@ namespace NachoCore.ActiveSync
 							new Trans {Event = (uint)Lev.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
 							new Trans {Event = (uint)Lev.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait}}},
 					new Node {State = (uint)Lst.SyncWait, On = new [] {
-							new Trans {Event = (uint)Ev.Success, Act = DoNop, State = (uint)Lst.Idle},
+							new Trans {Event = (uint)Ev.Success, Act = DoUpdateQ, State = (uint)Lst.Idle},
 							new Trans {Event = (uint)Ev.Launch, Act = DoSync, State = (uint)Lst.SyncWait},
 							new Trans {Event = (uint)Lev.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
 							new Trans {Event = (uint)Lev.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
 							new Trans {Event = (uint)Lev.ReSync, Act = DoSync, State = (uint)Lst.SyncWait}}},
 					new Node {State = (uint)Lst.Idle, On = new [] {
-							new Trans {Event = (uint)Ev.Launch, Act = DoNop, State = (uint)Lst.Idle},
-							new Trans {Event = (uint)Lev.ReSync, Act = DoSync, State = (uint)Lst.SyncWait}}}
+							new Trans {Event = (uint)Ev.Launch, Act = DoUpdateQ, State = (uint)Lst.Idle},
+							new Trans {Event = (uint)Lev.ReSync, Act = DoSync, State = (uint)Lst.SyncWait},
+							new Trans {Event = (uint)Lev.SendMail, Act = DoSend, State = (uint)Lst.SendMailWait}}},
+					new Node {State = (uint)Lst.SendMailWait, On = new [] {
+							new Trans {Event = (uint)Ev.Launch, Act = DoSend, State = (uint)Lst.SendMailWait},
+							new Trans {Event = (uint)Ev.Success, Act = DoUpdateQ, State = (uint)Lst.Idle}}},
 				}
 			};
-			m_sm.State = ProtocolState.State;
+			Sm.State = ProtocolState.State;
+
+			NcEventable.DidWriteToDb += DidWriteToDbHandler;
+			NcEventable.WillDeleteFromDb += WillDeleteFromDbHandler;
 		}
+		// Methods callable by the owner.
 		public void Execute () {
-			m_sm.ProcEvent ((uint)Ev.Launch);
+			Sm.ProcEvent ((uint)Ev.Launch);
 		}
 		public void CredResponse () {
-			m_sm.ProcEvent ((uint)Lev.SetCred);
+			Sm.ProcEvent ((uint)Lev.SetCred);
 		}
 		public void ServConfResponse () {
-			m_sm.ProcEvent ((uint)Lev.SetServConf);
+			Sm.ProcEvent ((uint)Lev.SetServConf);
 		}
+		public bool SendEMail(Dictionary<string,string> message) {
+			// FIXME - parameter checking.
+			// FIXME - be able to handle this event in ALL states.
+			Sm.ProcEvent ((uint)Lev.SendMail, message);
+			return true;
+		}
+		// State-machine's state persistance callback.
+		// FIXME - we need to also save the optional arg.
+		// FIXME - do we need to persist the whole event queue (think SendMail).
+		// or does that need to go into the update Q?
+		private void UpdateSavedState () {
+			ProtocolState.State = Sm.State;
+			Db.Update (BackEnd.Actors.Proto, ProtocolState);
+		}
+		// State-machine actions.
 		private void DoUiServConf () {
 			m_owner.ServConfRequest (this);
 		}
@@ -97,44 +120,67 @@ namespace NachoCore.ActiveSync
 			m_owner.HardFailureIndication (this);
 		}
 		private void DoDisc () {
-			var cmd = new AsAutodiscover (this);
-			cmd.Execute (m_sm);
+			// FIXME - complete autodiscovery.
+			//var cmd = new AsAutodiscover (this);
+			//cmd.Execute (Sm);
+			Sm.ProcEvent ((uint)Ev.Success);
 		}
 		private void DoOpt () {
 			var cmd = new AsOptions (this);
-			cmd.Execute (m_sm);
+			cmd.Execute (Sm);
 		}
 		private void DoProv () {
 			var cmd = new AsProvisionCommand (this);
-			cmd.Execute (m_sm);
+			cmd.Execute (Sm);
 		}
 		private void DoSettings () {
 			var cmd = new AsSettingsCommand (this);
-			cmd.Execute (m_sm);
+			cmd.Execute (Sm);
 		}
 		private void DoFSync () {
 			var cmd = new AsFolderSyncCommand (this);
-			cmd.Execute (m_sm);
+			cmd.Execute (Sm);
 		}
 		private void DoSync () {
 			var cmd = new AsSyncCommand (this);
-			cmd.Execute (m_sm);
+			cmd.Execute (Sm);
 		}
 		private void DoSend () {
-			var headers = new Dictionary<string, string> {
-				{"to", "chrisp@nachocove.com"},
-				{"from", "jeffe@nachocove.com"},
-				{"subject", "wow"},
-				{"date", "Mon, 29 Jul 2013 13:42:22 -0700"}
-			};
-			var cmd = new AsSendMailCommand (this,
-			                                 headers,
-			                                 "Here is message #1");
-			cmd.Execute (m_sm);
+			var message = (Dictionary<string,string>)Sm.Arg;
+			var cmd = new AsSendMailCommand (this, message);
+			cmd.Execute (Sm);
 		}
 		private void DoPing () {
 		}
-		private void DoNop () {}
+		private void DoUpdateQ () {
+		}
+
+		private void DidWriteToDbHandler (BackEnd.Actors actor,
+		                                  int accountId, Type klass, int id, EventArgs e) {
+			if (BackEnd.Actors.Proto == actor ||
+			    accountId != Account.Id) {
+				return;
+			}
+			Db.Insert (BackEnd.Actors.Proto, new NcPendingUpdate () {
+				Operation = NcPendingUpdate.Operations.CreateUpdate,
+				AccountId = accountId,
+				TargetId = id,
+				Klass = klass
+			});
+		}
+		private void WillDeleteFromDbHandler (BackEnd.Actors actor,
+		                                      int accountId, Type klass, int Id, EventArgs e) {
+			if (BackEnd.Actors.Proto == actor ||
+			    accountId != Account.Id) {
+				return;
+			}
+			Db.Insert (BackEnd.Actors.Proto, new NcPendingUpdate () {
+				Operation = NcPendingUpdate.Operations.Delete,
+				AccountId = accountId,
+				TargetId = Id,
+				Klass = klass
+			});
+		}
 	}
 }
 

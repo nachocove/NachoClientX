@@ -71,7 +71,6 @@
     <Compile Include="NachoCore\ActiveSync\AsControl.cs" />
     <Compile Include="NachoCore\ActiveSync\AsAutodiscover.cs" />
     <Compile Include="NachoCore\Extensions\Helpers.cs" />
-    <Compile Include="NachoCore\ActiveSync\IAsOwner.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSettingsCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\AsFolderSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\AsPingCommand.cs" />
@@ -87,6 +86,9 @@
     <Compile Include="NachoCore\Model\NcEventable.cs" />
     <Compile Include="NachoCore\Extensions\ISQLiteEventable.cs" />
     <Compile Include="NachoCore\Model\NcObject.cs" />
+    <Compile Include="NachoCore\Model\NcPendingUpdate.cs" />
+    <Compile Include="NachoCore\ProtoControl.cs" />
+    <Compile Include="NachoCore\IProtoControlOwner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

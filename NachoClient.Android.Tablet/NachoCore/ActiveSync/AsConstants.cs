@@ -47,6 +47,21 @@ namespace NachoCore.ActiveSync {
 			public enum StatusCode : uint {Success=1, Retry=6, ReSync=9, BadFormat=10, Unknown=11, ServerFail=12};
 			// FIXME: with Unknown, we need to retry & watch for a loop.
 		}
+		public class ComposeMail {
+			public const string Ns = "ComposeMail";
+			// Alpha order.
+			public const string SendMail = "SendMail";
+			public const string ClientId = "ClientId";
+			public const string AccountId = "AccountId";
+			public const string SaveInSentItems = "SaveInSentItems";
+			public const string Mime = "Mime";
+		}
+		public class Email {
+			public const string Ns = "Email";
+		}
+		public class Email2 {
+			public const string Ns = "Email2";
+		}
 	}
 }
 

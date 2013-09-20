@@ -58,15 +58,15 @@ namespace NachoCore.ActiveSync
 								Encoding = body.Element(baseNs + Xml.AirSyncBase.Type).Value,
 								Body = body.Element (baseNs + Xml.AirSyncBase.Data).Value
 							};
-							m_dataSource.Db.Insert (emailMessage);
+							m_dataSource.Db.Insert (BackEnd.Actors.Proto, emailMessage);
 							break;
 						}
 					}
 				}
-				m_dataSource.Db.Update (folder);
+				m_dataSource.Db.Update (BackEnd.Actors.Proto, folder);
 			}
 			var folders = m_dataSource.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
-			return (folders.Any ()) ? (uint)AsControl.Lev.ReSync : (uint)Ev.Success;
+			return (folders.Any ()) ? (uint)AsProtoControl.Lev.ReSync : (uint)Ev.Success;
 		}
 	}
 }

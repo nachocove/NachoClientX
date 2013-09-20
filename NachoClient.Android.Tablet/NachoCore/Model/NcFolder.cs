@@ -6,8 +6,6 @@ namespace NachoCore.Model
 	public class NcFolder : NcEventable
 	{
 		[Indexed]
-		public int AccountId { get; set; }
-		[Indexed]
 		public string ServerId { get; set; }
 		[Indexed]
 		public string ParentId { get; set; }

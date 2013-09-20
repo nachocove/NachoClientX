@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
@@ -39,23 +40,30 @@ namespace NachoClient.iOS
 
 			Be = new BackEnd (this);
 			var account = new NcAccount () { EmailAddr = "jeffe@nachocove.com" };
-			Be.Db.InsertOrReplace (account);
+			Be.Db.InsertOrReplace (BackEnd.Actors.Ui, account);
 			var cred = new NcCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
-			Be.Db.InsertOrReplace (cred);
+			Be.Db.InsertOrReplace (BackEnd.Actors.Ui, cred);
 			account.CredId = cred.Id;
 			var server = new NcServer () { Fqdn = "nco9.com", Port = 443, Scheme = "https"};
-			Be.Db.InsertOrReplace (server);
+			Be.Db.InsertOrReplace (BackEnd.Actors.Ui, server);
 			account.ServerId = server.Id;
-			var protocolState = new NcProtocolState () { AsProtocolVersion = "12.0", AsPolicyKey = "0" };
-			Be.Db.InsertOrReplace (protocolState);
+			var protocolStateBlocks = Be.Db.Table<NcProtocolState> ();
+			NcProtocolState protocolState = null;
+			if (0 != protocolStateBlocks.Count()) {
+				protocolState = protocolStateBlocks.First ();
+			} else  {
+				protocolState = new NcProtocolState () { AsProtocolVersion = "12.0", AsPolicyKey = "0" };
+			}
+			Be.Db.InsertOrReplace (BackEnd.Actors.Ui, protocolState);
 			account.ProtocolStateId = protocolState.Id;
-			Be.Db.Update (account);
+			Be.Db.Update (BackEnd.Actors.Ui, account);
 			Be.Start (account);
 			return true;
 		}
 		public void CredRequest(NcAccount account) {
 		}
 		public void ServConfRequest (NcAccount account) {
+			Be.Db.Update (BackEnd.Actors.Ui, account);
 		}
 		public void HardFailureIndication (NcAccount account) {
 		}

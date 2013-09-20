@@ -32,6 +32,8 @@ namespace NachoCore.Utils
 		public Node[] TransTable { set; get; }
 		public uint State { set; get; }
 		public Cb Action { set; get; }
+		public object Arg { set; get; }
+		public Cb StateChangeIndication { set; get; }
 		private Queue EventQ { set; get; }
 		private bool IsFiring { set; get; }
 		public StateMachine() {
@@ -45,17 +47,22 @@ namespace NachoCore.Utils
 			State = StartState;
 			ProcEvent ((uint)Ev.Launch);
 		}
-		public void ProcEvent(uint Event) {
+		public void ProcEvent (uint Event) {
+			ProcEvent (Event, null);
+		}
+		public void ProcEvent(uint Event, object arg) {
 			if ((uint)St.Stop == State) {
 				return;
 			}
-			EventQ.Enqueue (Event);
+			EventQ.Enqueue (Tuple.Create(Event, arg));
 			if (IsFiring) {
 				return;
 			}
 			IsFiring = true;
 			while (0 != EventQ.Count) {
-				var fireEvent = (uint)EventQ.Dequeue ();
+				var tuple = (Tuple<uint,object>)EventQ.Dequeue ();
+				var fireEvent = tuple.Item1;
+				Arg = tuple.Item2;
 				var hotNode = TransTable.Where (x => State == x.State).First ();
 				var hotTrans = hotNode.On.Where (x => fireEvent == x.Event).First ();
 				Console.WriteLine ("SM({0}): S={1} & E={2} => S={3}", Name, StateName (State), 
@@ -63,6 +70,9 @@ namespace NachoCore.Utils
 				Action = hotTrans.Act;
 				Action ();
 				State = hotTrans.State;
+				if (null != StateChangeIndication) {
+					StateChangeIndication ();
+				}
 			}
 			IsFiring = false;
 		}

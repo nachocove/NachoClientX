@@ -1,3 +1,4 @@
+using SQLite;
 using System;
 using NachoCore.Utils;
 
@@ -7,14 +8,20 @@ namespace NachoCore.Model
 	{
 		public static event SQLiteEventHandler DidWriteToDb;
 		public static event SQLiteEventHandler WillDeleteFromDb;
-		public void Fire_DidWriteToDb (Type klass, int id, EventArgs e) {
+
+		[Indexed]
+		public int AccountId { get; set; } // Don't-Care for NcAccount records.
+
+		public void Fire_DidWriteToDb (BackEnd.Actors actor,
+		                               int accountId, Type klass, int id, EventArgs e) {
 			if (null != DidWriteToDb) {
-				DidWriteToDb (klass, id, e);
+				DidWriteToDb (actor, accountId, klass, id, e);
 			}
 		}
-		public void Fire_WillDeleteFromDb (Type klass, int id, EventArgs e) {
+		public void Fire_WillDeleteFromDb (BackEnd.Actors actor,
+		                                   int accountId, Type klass, int id, EventArgs e) {
 			if (null != WillDeleteFromDb) {
-				WillDeleteFromDb (klass, id, e);
+				WillDeleteFromDb (actor, accountId, klass, id, e);
 			}
 		}
 	}

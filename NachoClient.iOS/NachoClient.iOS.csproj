@@ -194,13 +194,10 @@
       <Link>NachoCore\ActiveSync\AsAutodiscover.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsControl.cs">
-      <Link>NachoCore\ActiveSync\AsControl.cs</Link>
+      <Link>NachoCore\ActiveSync\AsProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\Helpers.cs">
       <Link>NachoCore\Extensions\Helpers.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsOwner.cs">
-      <Link>NachoCore\ActiveSync\IAsOwner.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsFolderSyncCommand.cs">
       <Link>NachoCore\ActiveSync\AsFolderSyncCommand.cs</Link>
@@ -246,6 +243,15 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcObject.cs">
       <Link>NachoCore\Model\NcObject.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcPendingUpdate.cs">
+      <Link>NachoCore\Model\NcPendingUpdate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ProtoControl.cs">
+      <Link>NachoCore\ProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\IProtoControlOwner.cs">
+      <Link>NachoCore\IProtoControlOwner.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
