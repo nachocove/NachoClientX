@@ -50,14 +50,59 @@ namespace NachoCore.ActiveSync
 					foreach (var command in commands) {
 						switch (command.Name.LocalName) {
 						case Xml.AirSync.Add:
-							var body = command.Element (ns + Xml.AirSync.ApplicationData).Element (baseNs + Xml.AirSyncBase.Body);
-							var emailMessage = new NcMessageEmail () {
+							var emailMessage = new NcEmailMessage () {
 								AccountId = m_dataSource.Account.Id,
 								FolderId = folder.Id,
-								ServerId = command.Element(ns + Xml.AirSync.ServerId).Value,
-								Encoding = body.Element(baseNs + Xml.AirSyncBase.Type).Value,
-								Body = body.Element (baseNs + Xml.AirSyncBase.Data).Value
+								ServerId = command.Element(ns + Xml.AirSync.ServerId).Value
 							};
+							var appData = command.Element (ns + Xml.AirSync.ApplicationData);
+							foreach (var child in appData.Elements()) {
+								switch (child.Name.LocalName) {
+								case Xml.AirSyncBase.Body:
+									emailMessage.Encoding = child.Element (baseNs + Xml.AirSyncBase.Type).Value;
+									emailMessage.Body = child.Element (baseNs + Xml.AirSyncBase.Data).Value;
+									break;
+								case Xml.Email.To:
+									emailMessage.To = child.Value;
+									break;
+								case Xml.Email.From:
+									emailMessage.From = child.Value;
+									break;
+								case Xml.Email.ReplyTo:
+									emailMessage.ReplyTo = child.Value;
+									break;
+								case Xml.Email.Subject:
+									emailMessage.Subject = child.Value;
+									break;
+								case Xml.Email.DateReceived:
+									try {
+										emailMessage.DateReceived = DateTime.Parse (child.Value);
+									} catch {
+										// FIXME - just log it.
+									}
+									break;
+								case Xml.Email.DisplayTo:
+									emailMessage.DisplayTo = child.Value;
+									break;
+								case Xml.Email.Importance:
+									try {
+										emailMessage.Importance = UInt32.Parse (child.Value);
+									} catch {
+										// FIXME - just log it.
+									}
+									break;
+								case Xml.Email.Read:
+									if ("1" == child.Value) {
+										emailMessage.Read = true;
+									} else {
+										emailMessage.Read = false;
+									}
+									break;
+								case Xml.Email.MessageClass:
+									emailMessage.MessageClass = child.Value;
+									break;
+								}
+							}
 							m_dataSource.Db.Insert (BackEnd.Actors.Proto, emailMessage);
 							break;
 						}

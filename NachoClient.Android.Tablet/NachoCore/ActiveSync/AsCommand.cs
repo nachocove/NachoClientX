@@ -102,7 +102,7 @@ namespace NachoCore.ActiveSync {
 			try {
 				response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
 			}
-			catch (OperationCanceledException ex) {
+			catch (OperationCanceledException) {
 				Console.WriteLine ("as:command: OperationCanceledException");
 				if (! token.IsCancellationRequested) {
 					// This is really a timeout (MS bug).

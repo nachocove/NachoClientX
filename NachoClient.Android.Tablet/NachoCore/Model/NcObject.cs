@@ -3,7 +3,7 @@ using System;
 
 namespace NachoCore.Model
 {
-	public class NcObject
+	public abstract class NcObject
 	{
 		[PrimaryKey, AutoIncrement]
 		public int Id { get; set; }

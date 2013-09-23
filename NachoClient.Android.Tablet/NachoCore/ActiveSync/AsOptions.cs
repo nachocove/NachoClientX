@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync {
 				ProcessOptionsHeaders (response.Headers);
 				sm.ProcEvent ((uint)Ev.Success);
 			}
-			catch (OperationCanceledException ex) {}
+			catch (OperationCanceledException) {}
 			catch {
 				sm.ProcEvent ((uint)Ev.Failure);
 			}

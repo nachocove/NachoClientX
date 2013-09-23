@@ -58,6 +58,16 @@ namespace NachoCore.ActiveSync {
 		}
 		public class Email {
 			public const string Ns = "Email";
+			// Alpha order.
+			public const string DateReceived = "DateReceived";
+			public const string DisplayTo = "DisplayTo";
+			public const string From = "From";
+			public const string Importance = "Importance";
+			public const string MessageClass = "MessageClass";
+			public const string Read = "Read";
+			public const string ReplyTo = "ReplyTo";
+			public const string Subject = "Subject";
+			public const string To = "To";
 		}
 		public class Email2 {
 			public const string Ns = "Email2";

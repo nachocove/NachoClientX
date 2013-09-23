@@ -153,7 +153,7 @@ namespace NachoCore.ActiveSync
 				                                       token);
 				Console.WriteLine("as:autodiscover: SendAsync response");
 			}
-			catch (OperationCanceledException ex) {
+			catch (OperationCanceledException) {
 				/* Not an error, do nothing. */
 				Console.WriteLine ("as:autodiscover: OperationCanceledException");
 				if (! token.IsCancellationRequested) {

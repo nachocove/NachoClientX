@@ -9,7 +9,7 @@ namespace NachoCore.Model
 		public Operations Operation { set; get;}
 		public int AccountId { set; get;}
 		public int TargetId { set; get;}
-		public Type Klass { set; get;}
+		public string TypeName { set; get;}
 	}
 }
 

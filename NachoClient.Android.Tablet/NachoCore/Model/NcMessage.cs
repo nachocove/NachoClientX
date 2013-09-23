@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-	public class NcMessage : NcEventable
+	public abstract class NcMessage : NcEventable
 	{
 		[Indexed]
 		public string ServerId { get; set; }

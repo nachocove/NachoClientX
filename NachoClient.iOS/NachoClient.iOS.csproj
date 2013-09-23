@@ -224,7 +224,7 @@
       <Link>NachoCore\Model\NcMessage.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcMessageEmail.cs">
-      <Link>NachoCore\Model\NcMessageEmail.cs</Link>
+      <Link>NachoCore\Model\NcEmailMessage.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
       <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
@@ -252,6 +252,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\IProtoControlOwner.cs">
       <Link>NachoCore\IProtoControlOwner.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\NachoDemo.cs">
+      <Link>NachoCore\NachoDemo.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

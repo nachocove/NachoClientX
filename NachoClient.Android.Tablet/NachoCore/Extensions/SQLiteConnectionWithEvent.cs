@@ -22,8 +22,7 @@ namespace NachoCore.Utils
 			if (null != type.GetInterface ("ISQLiteEventable")) {
 				var target = (ISQLiteEventable)obj;
 				var method = type.GetMethod (MethodName);
-				var generic = method.MakeGenericMethod (type);
-				generic.Invoke (target, new object[] {actor, target.AccountId, type, target.Id, EventArgs.Empty});
+				method.Invoke (target, new object[] {actor, target.AccountId, type, target.Id, EventArgs.Empty});
 			}
 		}
 		private void DidWriteToDbEvent (BackEnd.Actors actor, object obj) {

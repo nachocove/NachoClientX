@@ -4,7 +4,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-	public class NcEventable : NcObject, ISQLiteEventable
+	public abstract class NcEventable : NcObject, ISQLiteEventable
 	{
 		public static event SQLiteEventHandler DidWriteToDb;
 		public static event SQLiteEventHandler WillDeleteFromDb;

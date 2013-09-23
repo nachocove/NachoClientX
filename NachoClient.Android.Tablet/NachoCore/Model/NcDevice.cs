@@ -33,7 +33,7 @@ namespace NachoCore.Model
 		public static string OsLanguage() {
 			// FIXME - we will need to update (a) to handle locale, (b) to take into account our bundle (possibly).
 			return "en-us";
-			return NSUserDefaults.StandardUserDefaults.StringForKey ("AppleLanguages");
+			//return NSUserDefaults.StandardUserDefaults.StringForKey ("AppleLanguages");
 		}
 		public static string FriendlyName() {
 			return UIDevice.CurrentDevice.Name;

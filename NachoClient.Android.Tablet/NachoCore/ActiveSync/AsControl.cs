@@ -165,7 +165,7 @@ namespace NachoCore.ActiveSync
 				Operation = NcPendingUpdate.Operations.CreateUpdate,
 				AccountId = accountId,
 				TargetId = id,
-				Klass = klass
+				TypeName = klass.AssemblyQualifiedName
 			});
 		}
 		private void WillDeleteFromDbHandler (BackEnd.Actors actor,
@@ -178,7 +178,7 @@ namespace NachoCore.ActiveSync
 				Operation = NcPendingUpdate.Operations.Delete,
 				AccountId = accountId,
 				TargetId = Id,
-				Klass = klass
+				TypeName = klass.AssemblyQualifiedName
 			});
 		}
 	}

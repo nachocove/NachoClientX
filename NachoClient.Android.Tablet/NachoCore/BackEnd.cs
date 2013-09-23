@@ -36,7 +36,7 @@ namespace NachoCore
 			Db.CreateTable<NcAccount> ();
 			Db.CreateTable<NcCred> ();
 			Db.CreateTable<NcFolder> ();
-			Db.CreateTable<NcMessageEmail> ();
+			Db.CreateTable<NcEmailMessage> ();
 			Db.CreateTable<NcProtocolState> ();
 			Db.CreateTable<NcServer> ();
 			Db.CreateTable<NcPendingUpdate> ();

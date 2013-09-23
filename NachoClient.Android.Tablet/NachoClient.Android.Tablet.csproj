@@ -77,7 +77,6 @@
     <Compile Include="NachoCore\ActiveSync\AsSendMailCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSyncCommand.cs" />
     <Compile Include="NachoCore\Model\NcMessage.cs" />
-    <Compile Include="NachoCore\Model\NcMessageEmail.cs" />
     <Compile Include="NachoCore\Model\NcFolder.cs" />
     <Compile Include="NachoCore\BackEnd.cs" />
     <Compile Include="NachoCore\Extensions\SQLiteConnectionWithEvent.cs" />
@@ -89,6 +88,8 @@
     <Compile Include="NachoCore\Model\NcPendingUpdate.cs" />
     <Compile Include="NachoCore\ProtoControl.cs" />
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
+    <Compile Include="NachoCore\NachoDemo.cs" />
+    <Compile Include="NachoCore\Model\NcEmailMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
