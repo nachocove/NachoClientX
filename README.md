@@ -18,11 +18,10 @@
 
 ## TODO
 
-1. Get UI DB update (e.g. delete a message) to propagate to server.
+1. Get hard vs soft error handling right.
 2. Get long-poll (Ping) working in X client.
-3. Get preemptive authentication working with HttpClient.
 4. Correctly process Sync response Status.
-5. Get hard vs soft error handling right.
+5. Get preemptive authentication working with HttpClient.
 6. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
 7. Support EAS and on-device contacts.
 8. Finish implementing Autodiscovery.
