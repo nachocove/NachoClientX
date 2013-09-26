@@ -11,6 +11,8 @@ namespace NachoCore.ActiveSync {
 			public const string CollectionId = "CollectionId";
 			public const string Collections = "Collections";
 			public const string Commands = "Commands";
+			public const string Delete = "Delete";
+			public const string DeleteAsMoves = "DeleteAsMoves";
 			public const string GetChanges = "GetChanges";
 			public const string ServerId = "ServerId";
 			public const string Status = "Status";
@@ -28,6 +30,8 @@ namespace NachoCore.ActiveSync {
 			public const string Body = "Body";
 			public const string Data = "Data";
 			public const string Type = "Type";
+
+			public enum TypeCode : uint {PlainText=1, Html=2, Rtf = 3, /* Data element will be base64-encoded. */ Mime = 4};
 		}
 		public class FolderHierarchy {
 			public const string Ns = "FolderHierarchy";

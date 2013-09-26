@@ -11,7 +11,11 @@ namespace NachoCore.Utils
 	public delegate void Cb ();
 	// This is the list of must-support events (not-ActiveSync specific).
 	// Each user starts creating event codes at Last+1.
-	public enum Ev : uint {Launch, Success, Failure, Rejection, Last = Failure};
+	// Types of failure:
+	// Hard - there is something about the interaction that just won't work.
+	// Temp - the cause of the failure is expected to clear with time (i.e. network failure).
+	// Precise events are used to indicate value-based failures (e.g. credential, server config, etc).
+	public enum Ev : uint {Launch, Success, HardFail, TempFail, Retry, Last = Retry};
 	// { state => { event => [handlers, ...]}}.
 	// All possible events must be covered.
 	// 1st handler in list is the event hander (required).

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
@@ -9,19 +10,30 @@ namespace NachoCore.ActiveSync
 {
 	public class AsSyncCommand : AsCommand
 	{
-
 		public AsSyncCommand (IAsDataSource dataSource) : base(Xml.AirSync.Sync, dataSource) {}
 
 		protected override XDocument ToXDocument () {
 			XNamespace ns = Xml.AirSync.Ns;
 			var collections = new XElement (ns+Xml.AirSync.Collections);
-			var folders = m_dataSource.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
+			// FIXME - only syncing down Mail:DEFAULT.
+			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
 			foreach (var folder in folders) {
 				var collection = new XElement (ns + Xml.AirSync.Collection,
 				                              new XElement (ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
 				                              new XElement (ns + Xml.AirSync.CollectionId, folder.ServerId));
 				if (Xml.AirSync.SyncKey_Initial != folder.AsSyncKey) {
 					collection.Add (new XElement (ns + Xml.AirSync.GetChanges));
+					if (m_dataSource.Staged.EmailMessageDeletes.ContainsKey(folder.Id)) {
+						var deles = m_dataSource.Staged.EmailMessageDeletes [folder.Id];
+						//collection.Add (new XElement (ns + Xml.AirSync.DeleteAsMoves));
+						var commands = new XElement (ns + Xml.AirSync.Commands);
+						foreach (var change in deles) {
+							commands.Add (new XElement (ns + Xml.AirSync.Delete,
+							                            new XElement (ns + Xml.AirSync.ServerId, change.Update.ServerId)));
+							change.IsDispatched = true;
+						}
+						collection.Add (commands);
+					}
 				}
 				collections.Add (collection);
 			}
@@ -34,16 +46,25 @@ namespace NachoCore.ActiveSync
 		{
 			XNamespace ns = Xml.AirSync.Ns;
 			XNamespace baseNs = Xml.AirSyncBase.Ns;
-			// FIXME - handle status.
 			var collections = doc.Root.Element (ns + Xml.AirSync.Collections).Elements ();
 			foreach (var collection in collections) {
 				var serverId = collection.Element (ns + Xml.AirSync.CollectionId).Value;
-				var folder = m_dataSource.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
+				var folder = m_dataSource.Owner.Db.Table<NcFolder> ().Single (rec => rec.ServerId == serverId);
 				var oldSyncKey = folder.AsSyncKey;
-				// FIXME - make SyncKey update contingent on transaction success.
-				// FIXME - make this thing a DB transaction.
 				folder.AsSyncKey = collection.Element (ns + Xml.AirSync.SyncKey).Value;
 				folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey);
+				switch (uint.Parse(collection.Element (ns + Xml.AirSync.Status).Value)) {
+				case (uint)Xml.AirSync.StatusCode.Success:
+					if (m_dataSource.Staged.EmailMessageDeletes.ContainsKey (folder.Id)) {
+						foreach (StagedChange change in m_dataSource.Staged.EmailMessageDeletes [folder.Id].
+						         Where(elem => true == elem.IsDispatched).ToList ()) {
+							m_dataSource.Staged.EmailMessageDeletes [folder.Id].Remove (change);
+							m_dataSource.Owner.Db.Delete (BackEnd.Actors.Proto, change.Update);
+						}
+					}
+					break;
+					// FIXME - other status code values.
+				}
 				var commandsNode = collection.Element (ns + Xml.AirSync.Commands);
 				if (null != commandsNode) {
 					var commands = commandsNode.Elements ();
@@ -103,14 +124,14 @@ namespace NachoCore.ActiveSync
 									break;
 								}
 							}
-							m_dataSource.Db.Insert (BackEnd.Actors.Proto, emailMessage);
+							m_dataSource.Owner.Db.Insert (BackEnd.Actors.Proto, emailMessage);
 							break;
 						}
 					}
 				}
-				m_dataSource.Db.Update (BackEnd.Actors.Proto, folder);
+				m_dataSource.Owner.Db.Update (BackEnd.Actors.Proto, folder);
 			}
-			var folders = m_dataSource.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
+			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
 			return (folders.Any ()) ? (uint)AsProtoControl.Lev.ReSync : (uint)Ev.Success;
 		}
 	}

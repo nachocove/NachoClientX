@@ -141,10 +141,6 @@
     <Compile Include="DetailViewController.designer.cs">
       <DependentUpon>DetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsCommand.cs">
-      <Link>NachoCore\ActiveSync\AsCommand.cs</Link>
-      <DependentUpon>AsSettingsCommand.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsOptions.cs">
       <Link>NachoCore\ActiveSync\AsOptions.cs</Link>
     </Compile>
@@ -223,9 +219,6 @@
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcMessage.cs">
       <Link>NachoCore\Model\NcMessage.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcMessageEmail.cs">
-      <Link>NachoCore\Model\NcEmailMessage.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
       <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
     </Compile>
@@ -255,6 +248,12 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\NachoDemo.cs">
       <Link>NachoCore\NachoDemo.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcEmailMessage.cs">
+      <Link>NachoCore\Model\NcEmailMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsCommand.cs">
+      <Link>AsCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

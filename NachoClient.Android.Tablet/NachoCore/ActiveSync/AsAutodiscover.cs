@@ -40,32 +40,32 @@ namespace NachoCore.ActiveSync
 							new Trans {Event = (uint)Ev.Launch, Act = DoS1Post, State = (uint)Lst.S1PostWait}}},
 					new Node {State = (uint)Lst.S1PostWait, On = new [] {
 							new Trans {Event = (uint)Ev.Success, Act = DoSucceed, State = (uint)St.Stop},
-							new Trans {Event = (uint)Ev.Failure, Act = DoS2Post, State = (uint)Lst.S2PostWait},
+							new Trans {Event = (uint)Ev.HardFail, Act = DoS2Post, State = (uint)Lst.S2PostWait},
 							new Trans {Event = (uint)Lev.GetCred, Act = DoGetCred, State = (uint)Lst.CredWait},
 							new Trans {Event = (uint)Lev.ReDir, Act = DoS5Post, State = (uint)Lst.S5PostWait},
 							new Trans {Event = (uint)Lev.ReStart, Act = DoS1Post, State = (uint)Lst.S1PostWait}}},
 					new Node {State = (uint)Lst.S2PostWait, On = new [] {
 							new Trans {Event = (uint)Ev.Success, Act = DoSucceed, State = (uint)St.Stop},
-							new Trans {Event = (uint)Ev.Failure, Act = DoS3Get, State = (uint)Lst.S3GetWait},
+							new Trans {Event = (uint)Ev.HardFail, Act = DoS3Get, State = (uint)Lst.S3GetWait},
 							new Trans {Event = (uint)Lev.ReDir, Act = DoS5Post, State = (uint)Lst.S5PostWait},
 							new Trans {Event = (uint)Lev.ReStart, Act = DoS1Post, State = (uint)Lst.S1PostWait}}},
 					new Node {State = (uint)Lst.S3GetWait, On = new [] {
-							new Trans {Event = (uint)Ev.Failure, Act = DoS4Dns, State = (uint)Lst.S4DnsWait},
+							new Trans {Event = (uint)Ev.HardFail, Act = DoS4Dns, State = (uint)Lst.S4DnsWait},
 							new Trans {Event = (uint)Lev.ReDir, Act = DoS5Post, State = (uint)Lst.S5PostWait}}},
 					new Node {State = (uint)Lst.S4DnsWait, On = new [] {
-							new Trans {Event = (uint)Ev.Failure, Act = DoSubCheck, State = (uint)Lst.SubCheck},
+							new Trans {Event = (uint)Ev.HardFail, Act = DoSubCheck, State = (uint)Lst.SubCheck},
 							new Trans {Event = (uint)Lev.ReDir, Act = DoS5Post, State = (uint)Lst.S5PostWait}}},
 					new Node {State = (uint)Lst.S5PostWait, On = new [] {
 							new Trans {Event = (uint)Ev.Success, Act = DoSucceed, State = (uint)St.Stop},
-							new Trans {Event = (uint)Ev.Failure, Act = DoSubCheck, State = (uint)Lst.SubCheck},
+							new Trans {Event = (uint)Ev.HardFail, Act = DoSubCheck, State = (uint)Lst.SubCheck},
 							new Trans {Event = (uint)Lev.ReDir, Act = DoS5Post, State = (uint)Lst.S5PostWait},
 							new Trans {Event = (uint)Lev.ReStart, Act = DoS1Post, State = (uint)Lst.S1PostWait}}},
 					new Node {State = (uint)Lst.SubCheck, On = new [] {
-							new Trans {Event = (uint)Ev.Failure, Act = DoFail, State = (uint)St.Stop},
+							new Trans {Event = (uint)Ev.HardFail, Act = DoFail, State = (uint)St.Stop},
 							new Trans {Event = (uint)Lev.ReStart, Act = DoS1Post, State = (uint)Lst.S1PostWait}}},
 					new Node {State = (uint)Lst.CredWait, On = new [] {
 							new Trans {Event = (uint)Ev.Success, Act = DoS1Post, State = (uint)Lst.S1PostWait},
-							new Trans {Event = (uint)Ev.Failure, Act = DoFail, State = (uint)St.Stop}}}
+							new Trans {Event = (uint)Ev.HardFail, Act = DoFail, State = (uint)St.Stop}}}
 				}
 			};
 		}
@@ -93,13 +93,13 @@ namespace NachoCore.ActiveSync
 		}
 		private void DoS4Dns () {
 			// FIXME - we should be looking up the SRV record here.
-			m_sm.ProcEvent ((uint)Ev.Failure);
+			m_sm.ProcEvent ((uint)Ev.HardFail);
 		}
 		private void DoS5Post () {
 			if (0 < m_redirectDowncounter && m_redirectUri.IsHttps ()) {
 				ExecuteHttp (ComputeRedirUri (), m_redirectMethod);
 			} else {
-				m_sm.ProcEvent ((uint)Ev.Failure);
+				m_sm.ProcEvent ((uint)Ev.HardFail);
 			}
 		}
 		private void DoSubCheck () {
@@ -110,14 +110,14 @@ namespace NachoCore.ActiveSync
 				m_searchDomain = baseDomain;
 				m_sm.ProcEvent ((uint)Lev.ReStart);
 			} else {
-				m_sm.ProcEvent ((uint)Ev.Failure);
+				m_sm.ProcEvent ((uint)Ev.HardFail);
 			}
 		}
 		private void DoSucceed () {
 			m_parentSm.ProcEvent ((uint)Ev.Success);
 		}
 		private void DoFail () {
-			m_parentSm.ProcEvent ((uint)Ev.Failure);
+			m_parentSm.ProcEvent ((uint)Ev.HardFail);
 		}
 		private XDocument ToXDocument () {
 			var doc = AsCommand.ToEmptyXDocument ();
@@ -158,7 +158,7 @@ namespace NachoCore.ActiveSync
 				Console.WriteLine ("as:autodiscover: OperationCanceledException");
 				if (! token.IsCancellationRequested) {
 					// This is really a timeout (MS bug).
-					m_sm.ProcEvent ((uint)Ev.Failure);
+					m_sm.ProcEvent ((uint)Ev.HardFail);
 				}
 				return;
 			}
@@ -166,7 +166,7 @@ namespace NachoCore.ActiveSync
 				Console.WriteLine ("as:autodiscover: WebException");
 				switch (ex.Status) {
 				case WebExceptionStatus.NameResolutionFailure:
-					m_sm.ProcEvent ((uint)Ev.Failure);
+					m_sm.ProcEvent ((uint)Ev.HardFail);
 					return;
 				default:
 					throw ex;
@@ -184,7 +184,7 @@ namespace NachoCore.ActiveSync
 				break;
 				default:
 				// NOTE: we should add more sophistication here.
-				m_sm.ProcEvent ((uint)Ev.Failure);
+				m_sm.ProcEvent ((uint)Ev.HardFail);
 				break;
 			} 
 		}

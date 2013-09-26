@@ -22,18 +22,21 @@ namespace NachoCore.ActiveSync {
 					(new HttpRequestMessage (HttpMethod.Options,
 					                         AsCommand.BaseUri(m_dataSource.Server)),
 					 m_cts.Token);
-				ProcessOptionsHeaders (response.Headers);
+				ProcessOptionsHeaders (response.Headers, m_dataSource);
 				sm.ProcEvent ((uint)Ev.Success);
 			}
 			catch (OperationCanceledException) {}
 			catch {
-				sm.ProcEvent ((uint)Ev.Failure);
+				sm.ProcEvent ((uint)Ev.HardFail);
 			}
 		}
 		public void Cancel() {
 			m_cts.Cancel ();
 		}
-		private void ProcessOptionsHeaders(HttpResponseHeaders headers) {
+		internal static void SetOldestProtoVers (IAsDataSource dataSource) {
+			dataSource.ProtocolState.AsProtocolVersion = "12.0";
+		}
+		internal static void ProcessOptionsHeaders(HttpResponseHeaders headers, IAsDataSource dataSource) {
 			IEnumerable<string> values;
 			headers.TryGetValues ("MS-ASProtocolVersions", out values);
 			foreach (var value in values) {
@@ -41,9 +44,8 @@ namespace NachoCore.ActiveSync {
 				Array.Sort (float_versions);
 				Array.Reverse (float_versions);
 				string[] versions = Array.ConvertAll(float_versions, x => x.ToString ("0.0"));
-				m_dataSource.ProtocolState.AsProtocolVersion = versions[0];
-				//FIXME: Figure out how to use supported_commands: response.headers["MS-ASProtocolCommands"].split pattern=",").sort
-
+				dataSource.ProtocolState.AsProtocolVersion = versions[0];
+				// NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.
 			}
 		}
 	}

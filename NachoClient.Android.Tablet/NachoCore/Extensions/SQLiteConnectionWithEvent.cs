@@ -22,7 +22,7 @@ namespace NachoCore.Utils
 			if (null != type.GetInterface ("ISQLiteEventable")) {
 				var target = (ISQLiteEventable)obj;
 				var method = type.GetMethod (MethodName);
-				method.Invoke (target, new object[] {actor, target.AccountId, type, target.Id, EventArgs.Empty});
+				method.Invoke (target, new object[] {actor, target, EventArgs.Empty});
 			}
 		}
 		private void DidWriteToDbEvent (BackEnd.Actors actor, object obj) {
@@ -39,15 +39,6 @@ namespace NachoCore.Utils
 		private void WillDeleteFromDb (BackEnd.Actors actor, IEnumerable objects) {
 			foreach (var obj in objects) {
 				WillDeleteFromDb (actor, obj);
-			}
-		}
-		private void WillDeleteFromDb<T> (BackEnd.Actors actor, object primarykey) where T : new() {
-			if (primarykey is System.Int32) {
-				T dummy = new T ();
-				if (null != dummy.GetType().GetInterface("ISQLiteEventable")) {
-					((ISQLiteEventable)dummy).Id = (int)primarykey;
-					WillDeleteFromDb (actor, dummy);
-				}
 			}
 		}
 		public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None) {
@@ -124,10 +115,6 @@ namespace NachoCore.Utils
 			WillDeleteFromDb (actor, objectToDelete);
 			var retval = m_db.Delete (objectToDelete);
 			return retval;
-		}
-		public int Delete<T> (BackEnd.Actors actor, object primaryKey) where T : new() {
-			WillDeleteFromDb<T> (actor, primaryKey);
-			return m_db.Delete<T> (primaryKey);
 		}
 		public int Update (BackEnd.Actors actor, object obj) {
 			var retval = m_db.Update (obj);

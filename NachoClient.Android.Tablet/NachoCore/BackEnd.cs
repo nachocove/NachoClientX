@@ -18,6 +18,9 @@ using NachoCore.Utils;
  * There is only one BE object in the app. The BE is responsible for the
  * setup of the DB, and the UI gets access to the DB though the BE's
  * Db property.
+ * 
+ * The UI Must have started all accounts before modding the DB records associated
+ * with those accounts - otherwise mod events will get dropped and not end up on the server.
  * */
 namespace NachoCore
 {
@@ -64,17 +67,24 @@ namespace NachoCore
 			return asService.SendEMail (message); // FIXME - cast sucks.
 		}
 		// For IProtoControlOwner.
-		public void CredRequest (ProtoControl sender) {
-			m_dele.CredRequest (sender.Account);
+		public void CredReq (ProtoControl sender) {
+			m_dele.CredReq (sender.Account);
 		}
-		public void ServConfRequest (ProtoControl sender) {
-			m_dele.ServConfRequest (sender.Account);
+		public void ServConfReq (ProtoControl sender) {
+			m_dele.ServConfReq (sender.Account);
 		}
-		public void HardFailureIndication (ProtoControl sender) {
-			m_dele.HardFailureIndication (sender.Account);
+		public void HardFailInd (ProtoControl sender) {
+			m_dele.HardFailInd (sender.Account);
 		}
-		public void SoftFailureIndication (ProtoControl sender) {
-			m_dele.HardFailureIndication (sender.Account);
+		public void SoftFailInd (ProtoControl sender) {
+			m_dele.HardFailInd (sender.Account);
 		}
+		public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) {
+			return m_dele.RetryPermissionReq (sender.Account, delaySeconds);
+		}
+		public void ServerOOSpaceInd (ProtoControl sender) {
+			m_dele.ServerOOSpaceInd (sender.Account);
+		}
+
 	}
 }

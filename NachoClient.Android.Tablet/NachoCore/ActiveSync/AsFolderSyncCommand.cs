@@ -41,27 +41,27 @@ namespace NachoCore.ActiveSync
 								AsSyncKey = Xml.AirSync.SyncKey_Initial,
 								AsSyncRequired = true
 							};
-							m_dataSource.Db.Insert (BackEnd.Actors.Proto, folder);
+							m_dataSource.Owner.Db.Insert (BackEnd.Actors.Proto, folder);
 							break;
 						case Xml.FolderHierarchy.Update:
 							var serverId = change.Element (ns+Xml.FolderHierarchy.ServerId).Value;
-							folder = m_dataSource.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
+							folder = m_dataSource.Owner.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
 							folder.ParentId = change.Element (ns+Xml.FolderHierarchy.ParentId).Value;
 							folder.DisplayName = change.Element (ns+Xml.FolderHierarchy.DisplayName).Value;
 							folder.Type = change.Element (ns+Xml.FolderHierarchy.Type).Value;
-							m_dataSource.Db.Update (BackEnd.Actors.Proto, folder);
+							m_dataSource.Owner.Db.Update (BackEnd.Actors.Proto, folder);
 							break;
 						case Xml.FolderHierarchy.Delete:
 							serverId = change.Element (ns+Xml.FolderHierarchy.ServerId).Value;
-							folder = m_dataSource.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
-							m_dataSource.Db.Delete (BackEnd.Actors.Proto, folder);
+							folder = m_dataSource.Owner.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
+							m_dataSource.Owner.Db.Delete (BackEnd.Actors.Proto, folder);
 							break;
 						}
 					}
 				}
 				return (uint)Ev.Success;
 			default:
-				return (uint)Ev.Failure;
+				return (uint)Ev.HardFail;
 			}
 		}
 	}

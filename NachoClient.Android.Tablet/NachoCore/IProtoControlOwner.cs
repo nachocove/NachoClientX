@@ -7,9 +7,11 @@ namespace NachoCore
 	{
 		SQLiteConnectionWithEvents Db { set; get; }
 
-		void CredRequest (ProtoControl sender);
-		void ServConfRequest (ProtoControl sender);
-		void HardFailureIndication (ProtoControl sender);
-		void SoftFailureIndication (ProtoControl sender);
+		void CredReq (ProtoControl sender);
+		void ServConfReq (ProtoControl sender);
+		void HardFailInd (ProtoControl sender);
+		void SoftFailInd (ProtoControl sender);
+		bool RetryPermissionReq (ProtoControl sender, uint delaySeconds);
+		void ServerOOSpaceInd (ProtoControl sender);
 	}
 }

@@ -6,6 +6,8 @@ namespace NachoCore.Model
 {
 	public class NcEmailMessage : NcMessage
 	{
+		public const string ClassName = "NcEmailMessage";
+
 		public string Body { set; get; }
 		public string Encoding { set; get; }
 		[Indexed]

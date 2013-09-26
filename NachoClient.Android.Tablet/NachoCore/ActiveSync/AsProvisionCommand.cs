@@ -27,10 +27,10 @@ namespace NachoCore.ActiveSync
 							new Trans {Event=(uint)Ev.Launch, Act=DoGet, State=(uint)Lst.GetWait}}},
 					new Node {State = (uint)Lst.GetWait, On = new [] {
 							new Trans {Event=(uint)Ev.Success, Act=DoAck, State=(uint)Lst.AckWait},
-							new Trans {Event=(uint)Ev.Failure, Act=DoFail, State=(uint)St.Stop}}},
+							new Trans {Event=(uint)Ev.HardFail, Act=DoFail, State=(uint)St.Stop}}},
 					new Node {State = (uint)Lst.AckWait, On = new [] {
 							new Trans {Event=(uint)Ev.Success, Act=DoSucceed, State=(uint)St.Stop},
-							new Trans {Event=(uint)Ev.Failure, Act=DoFail, State=(uint)St.Stop}}}
+							new Trans {Event=(uint)Ev.HardFail, Act=DoFail, State=(uint)St.Stop}}}
 				}
 			};
 		}
@@ -63,7 +63,7 @@ namespace NachoCore.ActiveSync
 			case StatusProvision.ServerError:
 				break;
 			}
-			return (uint)Ev.Failure;
+			return (uint)Ev.HardFail;
 		}
 		private void DoGet () {
 			base.Execute (m_sm);

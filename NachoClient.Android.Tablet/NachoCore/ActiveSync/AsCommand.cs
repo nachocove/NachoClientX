@@ -19,20 +19,8 @@ using NachoCore.Utils;
 namespace NachoCore.ActiveSync {
 	abstract public class AsCommand {
 		// Constants.
-		public const string KContentTypeWbxml = "application/vnd.ms-sync.wbxml";
-		public enum Status {
-			KStatusInvalidContent = 101,
-			KStatusDeviceNotProvisioned = 142,
-			KStatusPolicyRefresh = 143,
-		};
-		public class AirSyncBase {
-			public enum Type {
-				KTypePlainText = 1,
-				KTypeHtml = 2,
-				KTypeRtf = 3, // Data element will be base64-encoded.
-				KTypeMime = 4,
-			}
-		}
+		public const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
+
 		// Properties & IVars.
 		string m_commandName;
 		protected StateMachine m_parentSm;
@@ -41,8 +29,8 @@ namespace NachoCore.ActiveSync {
 
 		// Class Methods.
 		static internal Uri BaseUri(NcServer server) {
-			var retval = string.Format ("{0}://{1}:{2}/Microsoft-Server-ActiveSync",
-			                            server.Scheme, server.Fqdn, server.Port);
+			var retval = string.Format ("{0}://{1}:{2}{3}",
+			                            server.Scheme, server.Fqdn, server.Port, server.Path);
 			return new Uri(retval);
 		}
 
@@ -76,7 +64,8 @@ namespace NachoCore.ActiveSync {
 			var handler = new HttpClientHandler () {
 				Credentials = new NetworkCredential(m_dataSource.Cred.Username,
 				                                    m_dataSource.Cred.Password),
-				AllowAutoRedirect = false
+				AllowAutoRedirect = false,
+				PreAuthenticate = true
 			};
 			var client = HttpClientFactory(handler);
 			var request = new HttpRequestMessage 
@@ -87,7 +76,7 @@ namespace NachoCore.ActiveSync {
 				var content = new ByteArrayContent (wbxml);
 				request.Content = content;
 				request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString());
-				request.Content.Headers.Add ("Content-Type", KContentTypeWbxml);
+				request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
 			}
 			var mime = ToMime ();
 			if (null != mime) {
@@ -105,13 +94,18 @@ namespace NachoCore.ActiveSync {
 			catch (OperationCanceledException) {
 				Console.WriteLine ("as:command: OperationCanceledException");
 				if (! token.IsCancellationRequested) {
-					// This is really a timeout (MS bug).
-					sm.ProcEvent ((uint)Ev.Failure);
+					// This is really a timeout.
+					sm.ProcEvent ((uint)Ev.TempFail);
 				}
+				CancelCleanup ();
 				return;
 			}
-			if (HttpStatusCode.OK == response.StatusCode) {
-				if (KContentTypeWbxml ==
+			if (HttpStatusCode.OK != response.StatusCode) {
+				CancelCleanup ();
+			}
+			switch (response.StatusCode) {
+			case HttpStatusCode.OK:
+				if (ContentTypeWbxml ==
 				    response.Content.Headers.ContentType.MediaType.ToLower()) {
 					byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
 					var responseDoc = wbxmlMessage.LoadWbxml();
@@ -119,8 +113,64 @@ namespace NachoCore.ActiveSync {
 				} else {
 					sm.ProcEvent(ProcessResponse(response));
 				}
-			} else {
-				sm.ProcEvent((uint)Ev.Failure);
+				break;
+			case HttpStatusCode.BadRequest:
+			case HttpStatusCode.NotFound:
+				sm.ProcEvent((uint)Ev.HardFail);
+				break;
+			case HttpStatusCode.Unauthorized:
+			case HttpStatusCode.Forbidden:
+			case HttpStatusCode.InternalServerError:
+			case HttpStatusCode.Found:
+				if (response.Headers.Contains ("X-MS-RP")) {
+					// Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers.
+					AsOptions.ProcessOptionsHeaders (response.Headers, m_dataSource);
+					sm.ProcEvent ((uint)AsProtoControl.Lev.ReSync);
+				} else {
+					sm.ProcEvent ((uint)AsProtoControl.Lev.ReDisc);
+				}
+				break;
+			case (HttpStatusCode)449:
+				sm.ProcEvent ((uint)AsProtoControl.Lev.ReProv);
+				break;
+			case (HttpStatusCode)451:
+				if (response.Headers.Contains ("X-MS-Location")) {
+					Uri redirUri;
+					try {
+						redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
+					} catch {
+						sm.ProcEvent ((uint)AsProtoControl.Lev.ReDisc);
+						break;
+					}
+					var server = m_dataSource.Server;
+					server.Fqdn = redirUri.Host;
+					server.Path = redirUri.AbsolutePath;
+					server.Port = redirUri.Port;
+					server.Scheme = redirUri.Scheme;
+					m_dataSource.Owner.Db.Update (BackEnd.Actors.Proto, m_dataSource.Server);
+					sm.ProcEvent ((uint)Ev.Retry);
+				}
+				break;
+			case HttpStatusCode.ServiceUnavailable:
+				if (response.Headers.Contains ("Retry-After")) {
+					uint seconds = 0;
+					try {
+						seconds = uint.Parse(response.Headers.GetValues ("Retry-After").First ());
+					} catch {}
+					if (m_dataSource.Owner.RetryPermissionReq (m_dataSource.Control, seconds)) {
+						sm.ProcEvent ((uint)Ev.Retry, seconds);
+						break;
+					}
+				}
+				sm.ProcEvent ((uint)Ev.TempFail);
+				break;
+			case (HttpStatusCode)507:
+				m_dataSource.Owner.ServerOOSpaceInd (m_dataSource.Control);
+				sm.ProcEvent ((uint)Ev.TempFail);
+				break;
+			default:
+				sm.ProcEvent ((uint)Ev.HardFail);
+				break;
 			}
 		}
 		public void Cancel() {
@@ -143,11 +193,13 @@ namespace NachoCore.ActiveSync {
 		protected virtual uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
 			return (uint)Ev.Success;
 		}
+		protected virtual void CancelCleanup ( ) {
+		}
 		protected void DoSucceed () {
 			m_parentSm.ProcEvent ((uint)Ev.Success);
 		}
 		protected void DoFail () {
-			m_parentSm.ProcEvent ((uint)Ev.Failure);
+			m_parentSm.ProcEvent ((uint)Ev.HardFail);
 		}
 		// Internal Methods.
 		internal static XDocument ToEmptyXDocument () {

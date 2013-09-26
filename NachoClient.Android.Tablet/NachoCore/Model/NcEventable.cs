@@ -10,18 +10,16 @@ namespace NachoCore.Model
 		public static event SQLiteEventHandler WillDeleteFromDb;
 
 		[Indexed]
-		public int AccountId { get; set; } // Don't-Care for NcAccount records.
+		public int AccountId { get; set; }
 
-		public void Fire_DidWriteToDb (BackEnd.Actors actor,
-		                               int accountId, Type klass, int id, EventArgs e) {
+		public void Fire_DidWriteToDb (BackEnd.Actors actor, NcEventable target, EventArgs e) {
 			if (null != DidWriteToDb) {
-				DidWriteToDb (actor, accountId, klass, id, e);
+				DidWriteToDb (actor, target, e);
 			}
 		}
-		public void Fire_WillDeleteFromDb (BackEnd.Actors actor,
-		                                   int accountId, Type klass, int id, EventArgs e) {
+		public void Fire_WillDeleteFromDb (BackEnd.Actors actor, NcEventable target, EventArgs e) {
 			if (null != WillDeleteFromDb) {
-				WillDeleteFromDb (actor, accountId, klass, id, e);
+				WillDeleteFromDb (actor, target, e);
 			}
 		}
 	}
