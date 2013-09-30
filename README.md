@@ -18,8 +18,6 @@
 
 ## TODO
 
-1. Get hard vs soft error handling right.
-2. Get long-poll (Ping) working in X client.
 4. Correctly process Sync response Status.
 6. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
 7. Support EAS and on-device contacts.
