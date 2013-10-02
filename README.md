@@ -18,9 +18,9 @@
 
 ## TODO
 
-4. Correctly process Sync response Status.
-6. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
-7. Support EAS and on-device contacts.
-8. Finish implementing Autodiscovery.
-9. Support attachments.
-10. Add support for XML Schema validation of messages.
+1. Support Common Status Codes (ASCMD 2.2.4).
+2. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
+2. Support EAS and on-device contacts.
+3. Finish implementing Autodiscovery.
+4. Support attachments.
+5. Add support for XML Schema validation of messages.
