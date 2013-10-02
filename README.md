@@ -18,13 +18,9 @@
 
 ## TODO
 
-1. Get UI DB update (e.g. delete a message) to propagate to server.
-2. Get long-poll (Ping) working in X client.
-3. Get preemptive authentication working with HttpClient.
-4. Correctly process Sync response Status.
-5. Get hard vs soft error handling right.
-6. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
-7. Support EAS and on-device contacts.
-8. Finish implementing Autodiscovery.
-9. Support attachments.
-10. Add support for XML Schema validation of messages.
+1. Support Common Status Codes (ASCMD 2.2.4).
+2. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
+2. Support EAS and on-device contacts.
+3. Finish implementing Autodiscovery.
+4. Support attachments.
+5. Add support for XML Schema validation of messages.
