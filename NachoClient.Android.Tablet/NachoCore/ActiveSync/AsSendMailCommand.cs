@@ -1,28 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
 using NachoCore.ActiveSync;
+using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
 	public class AsSendMailCommand : AsCommand
 	{
-		private const string CrLf = "\r\n";
-		private string m_body;
-		private Dictionary<string,string> m_headers;
+		private NcPendingUpdate m_update;
 
-		public AsSendMailCommand (IAsDataSource dataSource, 
-		                          Dictionary<string,string> message) : base(Xml.ComposeMail.SendMail, dataSource) {
-			m_body = message ["body"];
-			message.Remove ("body");
-			m_headers = message;
-			DateTime date = DateTime.UtcNow;
-			m_headers ["date"] = date.ToString ("ddd, dd MMM yyyy HH:mm:ss K",
-			                                    DateTimeFormatInfo.InvariantInfo);
+		public AsSendMailCommand (IAsDataSource dataSource) : base(Xml.ComposeMail.SendMail, dataSource) {
+			m_update = NextToSend ();
 		}
 
 		protected override XDocument ToXDocument () {
@@ -40,8 +32,35 @@ namespace NachoCore.ActiveSync
 		}
 
 		protected override string ToMime () {
-			string mimeHeaders = string.Join (CrLf, m_headers.Select (kv => kv.Key.ToLower ().ToCapitalized () + ": " + kv.Value));
-			return mimeHeaders + CrLf + CrLf + m_body;
+			var emailMessage = m_dataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
+			return emailMessage.ToMime ();
+		}
+
+		protected override uint ProcessResponse (HttpResponseMessage response) {
+			var emailMessage = m_dataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
+			m_dataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, emailMessage);
+			m_dataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, m_update);
+			var possibleNext = NextToSend ();
+			if (null != possibleNext) {
+				return (uint)AsProtoControl.Lev.SendMail;
+			}
+			return (uint)Ev.Success;
+		}
+
+		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
+			// Only needed for the case where there is a failure.
+			return (uint)Ev.Success;
+		}
+
+		private NcPendingUpdate NextToSend () {
+			var query = m_dataSource.Owner.Db.Table<NcPendingUpdate> ()
+				.Where (rec => rec.AccountId == m_dataSource.Account.Id &&
+				NcPendingUpdate.DataTypes.EmailMessage == rec.DataType &&
+				NcPendingUpdate.Operations.Send == rec.Operation);
+			if (0 == query.Count ()) {
+				return null;
+			}
+			return query.First ();
 		}
 	}
 }

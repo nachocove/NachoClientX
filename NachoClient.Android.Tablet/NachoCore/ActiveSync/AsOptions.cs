@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -7,7 +8,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync {
-	public class AsOptions {
+	public class AsOptions : IAsCommand {
 		private IAsDataSource m_dataSource;
 		private CancellationTokenSource m_cts;
 		public AsOptions(IAsDataSource dataSource) {
@@ -23,11 +24,16 @@ namespace NachoCore.ActiveSync {
 					                         AsCommand.BaseUri(m_dataSource.Server)),
 					 m_cts.Token);
 				ProcessOptionsHeaders (response.Headers, m_dataSource);
-				sm.ProcEvent ((uint)Ev.Success);
+				sm.PostEvent ((uint)Ev.Success);
 			}
-			catch (OperationCanceledException) {}
+			catch (OperationCanceledException) {
+				Console.WriteLine ("as:options: OperationCanceledException");
+			}
+			catch (WebException) {
+				sm.PostEvent ((uint)Ev.TempFail);
+			}
 			catch {
-				sm.ProcEvent ((uint)Ev.HardFail);
+				sm.PostEvent ((uint)Ev.HardFail);
 			}
 		}
 		public void Cancel() {

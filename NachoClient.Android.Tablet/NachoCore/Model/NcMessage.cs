@@ -9,6 +9,8 @@ namespace NachoCore.Model
 		public string ServerId { get; set; }
 		[Indexed]
 		public int FolderId { get; set; }
+		[Indexed]
+		public bool IsAwatingSend { get; set; }
 	}
 }
 

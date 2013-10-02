@@ -799,10 +799,10 @@ namespace NachoCore.Wbxml
 			ASWBXMLByteQueue bytes = new ASWBXMLByteQueue(byteWBXML);
 
 			// Version is ignored
-			byte version = bytes.Dequeue();
+			bytes.Dequeue();
 
 			// Public Identifier is ignored
-			int publicIdentifier = bytes.DequeueMultibyteInt();
+			bytes.DequeueMultibyteInt();
 
 			// Character set
 			// Currently only UTF-8 is supported, throw if something else
@@ -1093,8 +1093,6 @@ namespace NachoCore.Wbxml
 		private byte[] EncodeMultiByteInteger(int value)
 		{
 			List<byte> byteList = new List<byte>();
-
-			int shiftedValue = value;
 
 			while (value > 0)
 			{

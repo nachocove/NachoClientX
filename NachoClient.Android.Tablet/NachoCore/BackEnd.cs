@@ -26,7 +26,9 @@ namespace NachoCore
 {
 	public class BackEnd : IProtoControlOwner
 	{
-		public enum Actors {Ui, Proto};
+		public enum DbActors {Ui, Proto};
+		public enum DbEvents {DidWrite, WillDelete};
+
 		public SQLiteConnectionWithEvents Db { set; get; }
 
 		private List<ProtoControl> services;
@@ -60,11 +62,6 @@ namespace NachoCore
 			var service = new AsProtoControl (this, account);
 			services.Add (service);
 			service.Execute ();
-		}
-		public bool SendEMail(NcAccount account, Dictionary<string,string> message) {
-			var service = services.Single (svc => svc.Account.Id == account.Id);
-			AsProtoControl asService = (AsProtoControl)service;
-			return asService.SendEMail (message); // FIXME - cast sucks.
 		}
 		// For IProtoControlOwner.
 		public void CredReq (ProtoControl sender) {

@@ -1,11 +1,86 @@
 using System;
+using System.Linq;
+using System.Net.Http;
+using System.Xml.Linq;
+using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
-	public class AsPingCommand
+	public class AsPingCommand : AsCommand
 	{
-		public AsPingCommand ()
-		{
+		private bool m_hitMaxFolders = false;
+
+		public AsPingCommand (IAsDataSource dataSource) : base(Xml.Ping.Ns, dataSource) {
+			// Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
+			Timeout = new TimeSpan (0, 0, (int)m_dataSource.ProtocolState.HeartbeatInterval + 10);
+		}
+
+		protected override XDocument ToXDocument () {
+			uint foldersLeft = m_dataSource.ProtocolState.MaxFolders;
+			XNamespace ns = Xml.Ping.Ns;
+			var xFolders = new XElement (ns + Xml.Ping.Folders);
+			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && "Mail:DEFAULT" == x.ServerId);
+			foreach (var folder in folders) {
+				xFolders.Add (new XElement (ns + Xml.Ping.Folder,
+				                           new XElement (ns + Xml.Ping.Id, folder.ServerId),
+				                           new XElement (ns + Xml.Ping.Class, "Email")));
+				if (0 == (-- foldersLeft)) {
+					m_hitMaxFolders = true;
+					break;
+				}
+			}
+			var ping = new XElement (ns + Xml.Ping.Ns,
+			                         new XElement (ns + Xml.Ping.HeartbeatInterval,
+			              						   m_dataSource.ProtocolState.HeartbeatInterval.ToString ()), xFolders);
+			var doc = AsCommand.ToEmptyXDocument ();
+			doc.Add (ping);
+			return doc;
+		}
+		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
+			XNamespace ns = Xml.Ping.Ns;
+			// NOTE: Important to remember that in this context, Ev.Success means to do another long-poll.
+			switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (doc.Root.Element (ns + Xml.Ping.Status).Value)) {
+
+			case Xml.Ping.StatusCode.NoChanges:
+				if (m_hitMaxFolders) {
+					return (uint)AsProtoControl.Lev.ReSync;
+				}
+				return (uint)Ev.Success;
+			
+			case Xml.Ping.StatusCode.Changes:
+				var folders = doc.Root.Element (ns + Xml.Ping.Folders).Elements (ns + Xml.Ping.Folder);
+				foreach (var xmlFolder in folders) {// FIXME - accountid.
+					var folder = m_dataSource.Owner.Db.Table<NcFolder> ().Single (rec => xmlFolder.Value == rec.ServerId);
+					folder.AsSyncRequired = true;
+					m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+				}
+				return (uint)AsProtoControl.Lev.ReSync;
+			
+			case Xml.Ping.StatusCode.MissingParams:
+			case Xml.Ping.StatusCode.SyntaxError:
+				return (uint)Ev.HardFail;
+
+			case Xml.Ping.StatusCode.BadHeartbeat:
+				m_dataSource.ProtocolState.HeartbeatInterval = 
+					uint.Parse (doc.Root.Element (ns + Xml.Ping.HeartbeatInterval).Value);
+				return (uint)Ev.Success;
+
+			case Xml.Ping.StatusCode.TooManyFolders:
+				m_dataSource.ProtocolState.MaxFolders =
+					uint.Parse (doc.Root.Element (ns + Xml.Ping.MaxFolders).Value);
+				return (uint)Ev.Success;
+
+			case Xml.Ping.StatusCode.NeedFolderSync:
+				return (uint)AsProtoControl.Lev.ReFSync;
+			
+			case Xml.Ping.StatusCode.ServerError:
+				return (uint)Ev.TempFail;
+
+			default:
+				// FIXME - how do we want to handle unknown status codes?
+				return (uint)Ev.HardFail;
+			}
 		}
 	}
 }

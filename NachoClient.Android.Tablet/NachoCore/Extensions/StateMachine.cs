@@ -15,7 +15,7 @@ namespace NachoCore.Utils
 	// Hard - there is something about the interaction that just won't work.
 	// Temp - the cause of the failure is expected to clear with time (i.e. network failure).
 	// Precise events are used to indicate value-based failures (e.g. credential, server config, etc).
-	public enum Ev : uint {Launch, Success, HardFail, TempFail, Retry, Last = Retry};
+	public enum Ev : uint {Launch, Success, HardFail, TempFail, Last = TempFail};
 	// { state => { event => [handlers, ...]}}.
 	// All possible events must be covered.
 	// 1st handler in list is the event hander (required).
@@ -23,6 +23,8 @@ namespace NachoCore.Utils
 	public class Node {
 		public uint State { set; get; }
 		public Trans[] On { set; get; }
+		public uint[] Drop { set; get; }
+		public uint[] Invalid { set; get; }
 	}
 	public class Trans {
 		public uint State { set; get; }
@@ -49,12 +51,20 @@ namespace NachoCore.Utils
 		}
 		public void Start(uint StartState) {
 			State = StartState;
-			ProcEvent ((uint)Ev.Launch);
+			PostEvent ((uint)Ev.Launch);
 		}
-		public void ProcEvent (uint Event) {
-			ProcEvent (Event, null);
+
+		public void PostAtMostOneEvent (uint Event) {
+			if (! EventQ.Contains (Event)) {
+				PostEvent (Event);
+			}
 		}
-		public void ProcEvent(uint Event, object arg) {
+
+		public void PostEvent (uint Event) {
+			PostEvent (Event, null);
+		}
+		// NOTE: the object arg is NOT persisted to the DB. Use with caution!
+		public void PostEvent(uint Event, object arg) {
 			if ((uint)St.Stop == State) {
 				return;
 			}
@@ -68,6 +78,14 @@ namespace NachoCore.Utils
 				var fireEvent = tuple.Item1;
 				Arg = tuple.Item2;
 				var hotNode = TransTable.Where (x => State == x.State).First ();
+				if (null != hotNode.Drop && hotNode.Drop.Contains (fireEvent)) {
+					Console.WriteLine ("SM({0}): S={1} & E={2} => DROPPED EVENT", Name, StateName (State), EventName (fireEvent));
+					continue;
+				}
+				if (null != hotNode.Invalid && hotNode.Invalid.Contains (fireEvent)) {
+					Console.WriteLine ("SM({0}): S={1} & E={2} => INVALID EVENT", Name, StateName (State), EventName (fireEvent));
+					throw new Exception ();
+				}
 				var hotTrans = hotNode.On.Where (x => fireEvent == x.Event).First ();
 				Console.WriteLine ("SM({0}): S={1} & E={2} => S={3}", Name, StateName (State), 
 				                   EventName (fireEvent), StateName (hotTrans.State));

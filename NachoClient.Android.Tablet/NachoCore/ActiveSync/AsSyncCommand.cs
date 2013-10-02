@@ -16,21 +16,26 @@ namespace NachoCore.ActiveSync
 			XNamespace ns = Xml.AirSync.Ns;
 			var collections = new XElement (ns+Xml.AirSync.Collections);
 			// FIXME - only syncing down Mail:DEFAULT.
-			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
+			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id &&
+			                                                              true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
 			foreach (var folder in folders) {
 				var collection = new XElement (ns + Xml.AirSync.Collection,
 				                              new XElement (ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
 				                              new XElement (ns + Xml.AirSync.CollectionId, folder.ServerId));
 				if (Xml.AirSync.SyncKey_Initial != folder.AsSyncKey) {
 					collection.Add (new XElement (ns + Xml.AirSync.GetChanges));
-					if (m_dataSource.Staged.EmailMessageDeletes.ContainsKey(folder.Id)) {
-						var deles = m_dataSource.Staged.EmailMessageDeletes [folder.Id];
-						//collection.Add (new XElement (ns + Xml.AirSync.DeleteAsMoves));
+						var deles = m_dataSource.Owner.Db.Table<NcPendingUpdate> ()
+						.Where (x => x.AccountId == m_dataSource.Account.Id &&
+							x.FolderId == folder.Id &&
+							x.Operation == NcPendingUpdate.Operations.Delete &&
+							x.DataType == NcPendingUpdate.DataTypes.EmailMessage);
+					if (0 != deles.Count ()) {
 						var commands = new XElement (ns + Xml.AirSync.Commands);
 						foreach (var change in deles) {
 							commands.Add (new XElement (ns + Xml.AirSync.Delete,
-							                            new XElement (ns + Xml.AirSync.ServerId, change.Update.ServerId)));
+							                            new XElement (ns + Xml.AirSync.ServerId, change.ServerId)));
 							change.IsDispatched = true;
+							m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, change);
 						}
 						collection.Add (commands);
 					}
@@ -46,20 +51,27 @@ namespace NachoCore.ActiveSync
 		{
 			XNamespace ns = Xml.AirSync.Ns;
 			XNamespace baseNs = Xml.AirSyncBase.Ns;
-			var collections = doc.Root.Element (ns + Xml.AirSync.Collections).Elements ();
+			var collections = doc.Root.Element (ns + Xml.AirSync.Collections).Elements (ns + Xml.AirSync.Collection);
 			foreach (var collection in collections) {
 				var serverId = collection.Element (ns + Xml.AirSync.CollectionId).Value;
-				var folder = m_dataSource.Owner.Db.Table<NcFolder> ().Single (rec => rec.ServerId == serverId);
+				var folder = m_dataSource.Owner.Db.Table<NcFolder> ().Single (rec => rec.AccountId == m_dataSource.Account.Id &&
+				                                                              rec.ServerId == serverId);
 				var oldSyncKey = folder.AsSyncKey;
 				folder.AsSyncKey = collection.Element (ns + Xml.AirSync.SyncKey).Value;
 				folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey);
+				Console.WriteLine ("Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", 
+				                   folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
 				switch (uint.Parse(collection.Element (ns + Xml.AirSync.Status).Value)) {
 				case (uint)Xml.AirSync.StatusCode.Success:
-					if (m_dataSource.Staged.EmailMessageDeletes.ContainsKey (folder.Id)) {
-						foreach (StagedChange change in m_dataSource.Staged.EmailMessageDeletes [folder.Id].
-						         Where(elem => true == elem.IsDispatched).ToList ()) {
-							m_dataSource.Staged.EmailMessageDeletes [folder.Id].Remove (change);
-							m_dataSource.Owner.Db.Delete (BackEnd.Actors.Proto, change.Update);
+					var deles = m_dataSource.Owner.Db.Table<NcPendingUpdate> ()
+						.Where (x => x.AccountId == m_dataSource.Account.Id &&
+						x.FolderId == folder.Id &&
+						x.Operation == NcPendingUpdate.Operations.Delete &&
+						x.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
+						x.IsDispatched == true);
+					if (0 != deles.Count ()) {
+						foreach (var change in deles) {
+							m_dataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, change);
 						}
 					}
 					break;
@@ -124,12 +136,12 @@ namespace NachoCore.ActiveSync
 									break;
 								}
 							}
-							m_dataSource.Owner.Db.Insert (BackEnd.Actors.Proto, emailMessage);
+							m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, emailMessage);
 							break;
 						}
 					}
 				}
-				m_dataSource.Owner.Db.Update (BackEnd.Actors.Proto, folder);
+				m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
 			}
 			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && true == x.AsSyncRequired && "Mail:DEFAULT" == x.ServerId);
 			return (folders.Any ()) ? (uint)AsProtoControl.Lev.ReSync : (uint)Ev.Success;

@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
-	public class AsAutodiscover
+	public class AsAutodiscover : IAsCommand
 	{
 		public enum Lst : uint {S1PostWait=(St.Last+1), S2PostWait, S3GetWait, S4DnsWait, S5PostWait, SubCheck, CredWait};
 		public enum Lev : uint {ReStart=(Ev.Last+1), ReDir, GetCred};
@@ -93,13 +93,13 @@ namespace NachoCore.ActiveSync
 		}
 		private void DoS4Dns () {
 			// FIXME - we should be looking up the SRV record here.
-			m_sm.ProcEvent ((uint)Ev.HardFail);
+			m_sm.PostEvent ((uint)Ev.HardFail);
 		}
 		private void DoS5Post () {
 			if (0 < m_redirectDowncounter && m_redirectUri.IsHttps ()) {
 				ExecuteHttp (ComputeRedirUri (), m_redirectMethod);
 			} else {
-				m_sm.ProcEvent ((uint)Ev.HardFail);
+				m_sm.PostEvent ((uint)Ev.HardFail);
 			}
 		}
 		private void DoSubCheck () {
@@ -108,16 +108,16 @@ namespace NachoCore.ActiveSync
 			string baseDomain = m_searchDomain;
 			if (baseDomain != m_searchDomain) {
 				m_searchDomain = baseDomain;
-				m_sm.ProcEvent ((uint)Lev.ReStart);
+				m_sm.PostEvent ((uint)Lev.ReStart);
 			} else {
-				m_sm.ProcEvent ((uint)Ev.HardFail);
+				m_sm.PostEvent ((uint)Ev.HardFail);
 			}
 		}
 		private void DoSucceed () {
-			m_parentSm.ProcEvent ((uint)Ev.Success);
+			m_parentSm.PostEvent ((uint)Ev.Success);
 		}
 		private void DoFail () {
-			m_parentSm.ProcEvent ((uint)Ev.HardFail);
+			m_parentSm.PostEvent ((uint)Ev.HardFail);
 		}
 		private XDocument ToXDocument () {
 			var doc = AsCommand.ToEmptyXDocument ();
@@ -158,7 +158,7 @@ namespace NachoCore.ActiveSync
 				Console.WriteLine ("as:autodiscover: OperationCanceledException");
 				if (! token.IsCancellationRequested) {
 					// This is really a timeout (MS bug).
-					m_sm.ProcEvent ((uint)Ev.HardFail);
+					m_sm.PostEvent ((uint)Ev.HardFail);
 				}
 				return;
 			}
@@ -166,7 +166,7 @@ namespace NachoCore.ActiveSync
 				Console.WriteLine ("as:autodiscover: WebException");
 				switch (ex.Status) {
 				case WebExceptionStatus.NameResolutionFailure:
-					m_sm.ProcEvent ((uint)Ev.HardFail);
+					m_sm.PostEvent ((uint)Ev.HardFail);
 					return;
 				default:
 					throw ex;
@@ -174,17 +174,17 @@ namespace NachoCore.ActiveSync
 			}
 			switch (response.StatusCode) {
 				case HttpStatusCode.OK:
-				m_sm.ProcEvent ((uint)Ev.Success);
+				m_sm.PostEvent ((uint)Ev.Success);
 				break;
 				case HttpStatusCode.Unauthorized:
-				m_sm.ProcEvent ((uint)Lev.GetCred);
+				m_sm.PostEvent ((uint)Lev.GetCred);
 				break;
 				case HttpStatusCode.Found:
-				m_sm.ProcEvent ((uint)Lev.ReDir);
+				m_sm.PostEvent ((uint)Lev.ReDir);
 				break;
 				default:
 				// NOTE: we should add more sophistication here.
-				m_sm.ProcEvent ((uint)Ev.HardFail);
+				m_sm.PostEvent ((uint)Ev.HardFail);
 				break;
 			} 
 		}

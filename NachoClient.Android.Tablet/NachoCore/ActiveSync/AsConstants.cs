@@ -33,24 +33,6 @@ namespace NachoCore.ActiveSync {
 
 			public enum TypeCode : uint {PlainText=1, Html=2, Rtf = 3, /* Data element will be base64-encoded. */ Mime = 4};
 		}
-		public class FolderHierarchy {
-			public const string Ns = "FolderHierarchy";
-			// Alpha order.
-			public const string Add = AirSync.Add;
-			public const string Changes = "Changes";
-			public const string Delete = "Delete";
-			public const string DisplayName = "DisplayName";
-			public const string FolderSync = "FolderSync";
-			public const string ParentId = "ParentId";
-			public const string ServerId = AirSync.ServerId;
-			public const string Status = AirSync.Status;
-			public const string SyncKey = AirSync.SyncKey;
-			public const string Type = AirSyncBase.Type;
-			public const string Update = "Update";
-
-			public enum StatusCode : uint {Success=1, Retry=6, ReSync=9, BadFormat=10, Unknown=11, ServerFail=12};
-			// FIXME: with Unknown, we need to retry & watch for a loop.
-		}
 		public class ComposeMail {
 			public const string Ns = "ComposeMail";
 			// Alpha order.
@@ -75,6 +57,38 @@ namespace NachoCore.ActiveSync {
 		}
 		public class Email2 {
 			public const string Ns = "Email2";
+		}
+		public class FolderHierarchy {
+			public const string Ns = "FolderHierarchy";
+			// Alpha order.
+			public const string Add = AirSync.Add;
+			public const string Changes = "Changes";
+			public const string Delete = "Delete";
+			public const string DisplayName = "DisplayName";
+			public const string FolderSync = "FolderSync";
+			public const string ParentId = "ParentId";
+			public const string ServerId = AirSync.ServerId;
+			public const string Status = AirSync.Status;
+			public const string SyncKey = AirSync.SyncKey;
+			public const string Type = AirSyncBase.Type;
+			public const string Update = "Update";
+
+			public enum StatusCode : uint {Success=1, Retry=6, ReSync=9, BadFormat=10, Unknown=11, ServerFail=12};
+			// FIXME: with Unknown, we need to retry & watch for a loop.
+		}
+		public class Ping {
+			public const string Ns = "Ping";
+			// Alpha order.
+			public const string Class = "Class";
+			public const string Folder = "Folder";
+			public const string Folders = "Folders";
+			public const string HeartbeatInterval = "HeartbeatInterval";
+			public const string Id = "Id";
+			public const string MaxFolders = "MaxFolders";
+			public const string Status = AirSync.Status;
+
+			public enum StatusCode : uint {NoChanges=1, Changes=2, MissingParams=3, SyntaxError=4, BadHeartbeat=5, 
+				TooManyFolders=6, NeedFolderSync=7, ServerError=8};
 		}
 	}
 }

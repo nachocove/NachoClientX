@@ -5,7 +5,7 @@ namespace NachoCore.Model
 {
 	public class NcPendingUpdate : NcObject
 	{
-		public enum Operations {Write=0, Delete};
+		public enum Operations {Write=0, Delete, Send};
 		public enum DataTypes {EmailMessage=0};
 
 		public Operations Operation { set; get;}
@@ -13,7 +13,12 @@ namespace NachoCore.Model
 		[Indexed]
 		public int AccountId { set; get;}
 		[Indexed]
-		public bool IsStaged { set; get;}
+		public bool IsDispatched { set; get;}
+
+		// For EmailMessage Sends:
+		[Indexed]
+		public int EmailMessageId { set; get;}
+
 		// For EmailMessage Deletes:
 		[Indexed]
 		public int FolderId { set; get; }

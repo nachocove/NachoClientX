@@ -17,7 +17,7 @@ using NachoCore.Utils;
 // #1 - unable to perform because of present conditions.
 // #2 - unable to perform because of some protocol issue, expected to persist.
 namespace NachoCore.ActiveSync {
-	abstract public class AsCommand {
+	abstract public class AsCommand : IAsCommand {
 		// Constants.
 		public const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
 
@@ -27,15 +27,11 @@ namespace NachoCore.ActiveSync {
 		protected IAsDataSource m_dataSource;
 		CancellationTokenSource m_cts;
 
-		// Class Methods.
-		static internal Uri BaseUri(NcServer server) {
-			var retval = string.Format ("{0}://{1}:{2}{3}",
-			                            server.Scheme, server.Fqdn, server.Port, server.Path);
-			return new Uri(retval);
-		}
+		public TimeSpan Timeout { set; get; }
 
 		// Initializer.
 		public AsCommand(string commandName, IAsDataSource dataSource) {
+			Timeout = TimeSpan.Zero;
 			m_commandName = commandName;
 			m_dataSource = dataSource;
 			m_cts = new CancellationTokenSource();
@@ -46,7 +42,7 @@ namespace NachoCore.ActiveSync {
 			if (null == m_parentSm) {
 				m_parentSm = sm;
 			}
-			// FIXME: need to understand URL escaping.
+			// FIXME: need to fully understand URL escaping in .NET.
 			var requestLine = string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
 			                                 m_commandName, 
 			                                 m_dataSource.Cred.Username,
@@ -54,7 +50,6 @@ namespace NachoCore.ActiveSync {
 			                                 NcDevice.Type ());
 			var rlParams = Params();
 			if (null != rlParams) {
-				// FIXME: untested.
 				var pairs = new List<string>();
 				foreach (KeyValuePair<string,string> pair in rlParams) {
 					pairs.Add (string.Format ("{0}={1}", pair.Key, pair.Value));
@@ -68,6 +63,9 @@ namespace NachoCore.ActiveSync {
 				PreAuthenticate = true
 			};
 			var client = HttpClientFactory(handler);
+			if (TimeSpan.Zero != Timeout) {
+				client.Timeout = Timeout;
+			}
 			var request = new HttpRequestMessage 
 				(HttpMethod.Post, new Uri(AsCommand.BaseUri (m_dataSource.Server), requestLine));
 			var doc = ToXDocument ();
@@ -93,12 +91,19 @@ namespace NachoCore.ActiveSync {
 			}
 			catch (OperationCanceledException) {
 				Console.WriteLine ("as:command: OperationCanceledException");
-				if (! token.IsCancellationRequested) {
-					// This is really a timeout.
-					sm.ProcEvent ((uint)Ev.TempFail);
-				}
 				CancelCleanup ();
+				if (! token.IsCancellationRequested) {
+					// This is how MS' HttpClient presents a timeout.
+					sm.PostEvent ((uint)Ev.TempFail);
+				}
 				return;
+			}
+			catch (WebException) {
+				// FIXME - look at all the causes of this, and figure out right-thing-to-do in each case.
+				Console.WriteLine ("as:command: WebException");
+				CancelCleanup ();
+				sm.PostEvent ((uint)Ev.TempFail);
+
 			}
 			if (HttpStatusCode.OK != response.StatusCode) {
 				CancelCleanup ();
@@ -109,14 +114,14 @@ namespace NachoCore.ActiveSync {
 				    response.Content.Headers.ContentType.MediaType.ToLower()) {
 					byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
 					var responseDoc = wbxmlMessage.LoadWbxml();
-					sm.ProcEvent(ProcessResponse(response, responseDoc));
+					sm.PostEvent(ProcessResponse(response, responseDoc));
 				} else {
-					sm.ProcEvent(ProcessResponse(response));
+					sm.PostEvent(ProcessResponse(response));
 				}
 				break;
 			case HttpStatusCode.BadRequest:
 			case HttpStatusCode.NotFound:
-				sm.ProcEvent((uint)Ev.HardFail);
+				sm.PostEvent((uint)Ev.HardFail);
 				break;
 			case HttpStatusCode.Unauthorized:
 			case HttpStatusCode.Forbidden:
@@ -125,13 +130,13 @@ namespace NachoCore.ActiveSync {
 				if (response.Headers.Contains ("X-MS-RP")) {
 					// Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers.
 					AsOptions.ProcessOptionsHeaders (response.Headers, m_dataSource);
-					sm.ProcEvent ((uint)AsProtoControl.Lev.ReSync);
+					sm.PostEvent ((uint)AsProtoControl.Lev.ReSync);
 				} else {
-					sm.ProcEvent ((uint)AsProtoControl.Lev.ReDisc);
+					sm.PostEvent ((uint)AsProtoControl.Lev.ReDisc);
 				}
 				break;
 			case (HttpStatusCode)449:
-				sm.ProcEvent ((uint)AsProtoControl.Lev.ReProv);
+				sm.PostEvent ((uint)AsProtoControl.Lev.ReProv);
 				break;
 			case (HttpStatusCode)451:
 				if (response.Headers.Contains ("X-MS-Location")) {
@@ -139,7 +144,7 @@ namespace NachoCore.ActiveSync {
 					try {
 						redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
 					} catch {
-						sm.ProcEvent ((uint)AsProtoControl.Lev.ReDisc);
+						sm.PostEvent ((uint)AsProtoControl.Lev.ReDisc);
 						break;
 					}
 					var server = m_dataSource.Server;
@@ -147,8 +152,8 @@ namespace NachoCore.ActiveSync {
 					server.Path = redirUri.AbsolutePath;
 					server.Port = redirUri.Port;
 					server.Scheme = redirUri.Scheme;
-					m_dataSource.Owner.Db.Update (BackEnd.Actors.Proto, m_dataSource.Server);
-					sm.ProcEvent ((uint)Ev.Retry);
+					m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, m_dataSource.Server);
+					sm.PostEvent ((uint)Ev.Launch);
 				}
 				break;
 			case HttpStatusCode.ServiceUnavailable:
@@ -158,18 +163,18 @@ namespace NachoCore.ActiveSync {
 						seconds = uint.Parse(response.Headers.GetValues ("Retry-After").First ());
 					} catch {}
 					if (m_dataSource.Owner.RetryPermissionReq (m_dataSource.Control, seconds)) {
-						sm.ProcEvent ((uint)Ev.Retry, seconds);
+						sm.PostEvent ((uint)Ev.Launch, seconds); // FIXME - PostDelayedEvent.
 						break;
 					}
 				}
-				sm.ProcEvent ((uint)Ev.TempFail);
+				sm.PostEvent ((uint)Ev.TempFail);
 				break;
 			case (HttpStatusCode)507:
 				m_dataSource.Owner.ServerOOSpaceInd (m_dataSource.Control);
-				sm.ProcEvent ((uint)Ev.TempFail);
+				sm.PostEvent ((uint)Ev.TempFail);
 				break;
 			default:
-				sm.ProcEvent ((uint)Ev.HardFail);
+				sm.PostEvent ((uint)Ev.HardFail);
 				break;
 			}
 		}
@@ -196,17 +201,22 @@ namespace NachoCore.ActiveSync {
 		protected virtual void CancelCleanup ( ) {
 		}
 		protected void DoSucceed () {
-			m_parentSm.ProcEvent ((uint)Ev.Success);
+			m_parentSm.PostEvent ((uint)Ev.Success);
 		}
 		protected void DoFail () {
-			m_parentSm.ProcEvent ((uint)Ev.HardFail);
+			m_parentSm.PostEvent ((uint)Ev.HardFail);
 		}
-		// Internal Methods.
-		internal static XDocument ToEmptyXDocument () {
+		// Static Internal Methods.
+		static internal XDocument ToEmptyXDocument () {
 			return new XDocument (new XDeclaration ("1.0", "utf8", null));
 		}
-		internal static HttpClient HttpClientFactory (HttpClientHandler handler) {
+		static internal HttpClient HttpClientFactory (HttpClientHandler handler) {
 			return new HttpClient (handler) { Timeout = new TimeSpan (0,0,9) };
+		}
+		static internal Uri BaseUri(NcServer server) {
+			var retval = string.Format ("{0}://{1}:{2}{3}",
+			                            server.Scheme, server.Fqdn, server.Port, server.Path);
+			return new Uri(retval);
 		}
 	}
 }

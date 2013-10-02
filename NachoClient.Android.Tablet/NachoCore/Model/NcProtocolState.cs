@@ -11,11 +11,15 @@ namespace NachoCore.Model
 			AsProtocolVersion = "12.0";
 			AsPolicyKey = "0";
 			AsSyncKey = "0";
+			HeartbeatInterval = 245;
+			MaxFolders = 200;
 			State = (uint)St.Start;
 		}
 		public string AsProtocolVersion { get; set;}
 		public string AsPolicyKey { get; set;}
 		public string AsSyncKey { get; set;}
+		public uint HeartbeatInterval { get; set; }
+		public uint MaxFolders { get; set; }
 		public uint State { get; set;}
 	}
 }

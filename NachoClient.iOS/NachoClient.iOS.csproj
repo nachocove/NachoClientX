@@ -219,9 +219,6 @@
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcMessage.cs">
       <Link>NachoCore\Model\NcMessage.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
-      <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsConstants.cs">
       <Link>NachoCore\ActiveSync\AsConstants.cs</Link>
     </Compile>
@@ -247,13 +244,19 @@
       <Link>NachoCore\IProtoControlOwner.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\NachoDemo.cs">
-      <Link>NachoCore\NachoDemo.cs</Link>
+      <Link>NachoDemo.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcEmailMessage.cs">
       <Link>NachoCore\Model\NcEmailMessage.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsCommand.cs">
-      <Link>AsCommand.cs</Link>
+      <Link>NachoCore\ActiveSync\AsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsCommand.cs">
+      <Link>NachoCore\ActiveSync\IAsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
+      <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

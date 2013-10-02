@@ -15,7 +15,8 @@ namespace NachoClient.iOS
 			Title = NSBundle.MainBundle.LocalizedString ("Master", "Master");
 			
 			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad) {
-				ContentSizeForViewInPopover = new SizeF (320f, 600f);
+				PreferredContentSize = new SizeF (320f, 600f);
+				//ContentSizeForViewInPopover = new SizeF (320f, 600f);
 				ClearsSelectionOnViewWillAppear = false;
 			}
 			
