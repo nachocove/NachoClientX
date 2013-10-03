@@ -5,13 +5,15 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-	public class NcEmailMessage : NcMessage
+	public class NcEmailMessage : NcItem
 	{
 		private const string CrLf = "\r\n";
 		private const string ColonSpace = ": ";
 
 		public const string ClassName = "NcEmailMessage";
 
+		[Indexed]
+		public bool IsAwatingSend { get; set; }
 		public string Body { set; get; }
 		public string Encoding { set; get; }
 		[Indexed]

@@ -216,9 +216,6 @@
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcFolder.cs">
       <Link>NachoCore\Model\NcFolder.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcMessage.cs">
-      <Link>NachoCore\Model\NcMessage.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsConstants.cs">
       <Link>NachoCore\ActiveSync\AsConstants.cs</Link>
     </Compile>
@@ -257,6 +254,12 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
       <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcContact.cs">
+      <Link>NachoCore\Model\NcContact.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcItem.cs">
+      <Link>NachoCore\Model\NcItem.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

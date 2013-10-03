@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
 								ServerId = change.Element (ns+Xml.FolderHierarchy.ServerId).Value,
 								ParentId = change.Element (ns+Xml.FolderHierarchy.ParentId).Value,
 								DisplayName = change.Element (ns+Xml.FolderHierarchy.DisplayName).Value,
-								Type = change.Element (ns+Xml.FolderHierarchy.Type).Value,
+								Type = uint.Parse (change.Element (ns+Xml.FolderHierarchy.Type).Value),
 								AsSyncKey = Xml.AirSync.SyncKey_Initial,
 								AsSyncRequired = true
 							};
@@ -48,7 +48,7 @@ namespace NachoCore.ActiveSync
 							folder = m_dataSource.Owner.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
 							folder.ParentId = change.Element (ns+Xml.FolderHierarchy.ParentId).Value;
 							folder.DisplayName = change.Element (ns+Xml.FolderHierarchy.DisplayName).Value;
-							folder.Type = change.Element (ns+Xml.FolderHierarchy.Type).Value;
+							folder.Type = uint.Parse (change.Element (ns+Xml.FolderHierarchy.Type).Value);
 							m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
 							break;
 						case Xml.FolderHierarchy.Delete:

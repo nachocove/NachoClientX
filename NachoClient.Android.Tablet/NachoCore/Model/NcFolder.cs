@@ -14,7 +14,7 @@ namespace NachoCore.Model
 		public bool AsSyncRequired { get; set; }
 		[Indexed]
 		public string DisplayName { get; set; }
-		public string Type { get; set; }
+		public uint Type { get; set; }
 	}
 }
 
