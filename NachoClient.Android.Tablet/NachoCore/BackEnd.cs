@@ -61,7 +61,9 @@ namespace NachoCore
 		public void Start (NcAccount account) {
 			// FIXME. This code needs to be able to detect the account type and start the appropriate control.
 			var service = new AsProtoControl (this, account);
-			services.Add (service);
+			if (! services.Any (ctrl => ctrl.Account.Id == account.Id)) {
+				services.Add (service);
+			}
 			service.Execute ();
 		}
 		// For IProtoControlOwner.
