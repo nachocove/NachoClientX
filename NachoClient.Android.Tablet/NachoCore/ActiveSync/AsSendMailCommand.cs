@@ -13,7 +13,7 @@ namespace NachoCore.ActiveSync
 	{
 		private NcPendingUpdate m_update;
 
-		public AsSendMailCommand (IAsDataSource dataSource) : base(Xml.ComposeMail.SendMail, dataSource) {
+		public AsSendMailCommand (IAsDataSource dataSource) : base(Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource) {
 			m_update = NextToSend ();
 		}
 
@@ -21,11 +21,10 @@ namespace NachoCore.ActiveSync
 			if (14.0 > Convert.ToDouble (m_dataSource.ProtocolState.AsProtocolVersion)) {
 				return null;
 			}
-			XNamespace ns = Xml.ComposeMail.Ns;
-			var sendMail = new XElement (ns + Xml.ComposeMail.SendMail, 
+			var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
 			                             // FIXME - ClientId.
-			                             new XElement (ns + Xml.ComposeMail.SaveInSentItems),
-			                             new XElement (ns + Xml.ComposeMail.Mime, ToMime ()));
+			                             new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
+			                             new XElement (m_ns + Xml.ComposeMail.Mime, ToMime ()));
 			var doc = AsCommand.ToEmptyXDocument();
 			doc.Add (sendMail);
 			return doc;

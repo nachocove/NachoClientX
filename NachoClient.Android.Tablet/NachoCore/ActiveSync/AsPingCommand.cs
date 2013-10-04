@@ -11,27 +11,26 @@ namespace NachoCore.ActiveSync
 	{
 		private bool m_hitMaxFolders = false;
 
-		public AsPingCommand (IAsDataSource dataSource) : base(Xml.Ping.Ns, dataSource) {
+		public AsPingCommand (IAsDataSource dataSource) : base(Xml.Ping.Ns, Xml.Ping.Ns, dataSource) {
 			// Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
 			Timeout = new TimeSpan (0, 0, (int)m_dataSource.ProtocolState.HeartbeatInterval + 10);
 		}
 
 		protected override XDocument ToXDocument () {
 			uint foldersLeft = m_dataSource.ProtocolState.MaxFolders;
-			XNamespace ns = Xml.Ping.Ns;
-			var xFolders = new XElement (ns + Xml.Ping.Folders);
+			var xFolders = new XElement (m_ns + Xml.Ping.Folders);
 			var folders = m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id && "Mail:DEFAULT" == x.ServerId);
 			foreach (var folder in folders) {
-				xFolders.Add (new XElement (ns + Xml.Ping.Folder,
-				                           new XElement (ns + Xml.Ping.Id, folder.ServerId),
-				                           new XElement (ns + Xml.Ping.Class, "Email")));
+				xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
+				                           new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
+				                           new XElement (m_ns + Xml.Ping.Class, "Email")));
 				if (0 == (-- foldersLeft)) {
 					m_hitMaxFolders = true;
 					break;
 				}
 			}
-			var ping = new XElement (ns + Xml.Ping.Ns,
-			                         new XElement (ns + Xml.Ping.HeartbeatInterval,
+			var ping = new XElement (m_ns + Xml.Ping.Ns,
+			                         new XElement (m_ns + Xml.Ping.HeartbeatInterval,
 			              						   m_dataSource.ProtocolState.HeartbeatInterval.ToString ()), xFolders);
 			var doc = AsCommand.ToEmptyXDocument ();
 			doc.Add (ping);

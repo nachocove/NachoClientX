@@ -2,6 +2,87 @@ using System;
 
 namespace NachoCore.ActiveSync {
 	public class Xml {
+		// These status code values are common to ALL commands, independent of namespace.
+		public enum StatusCode {
+			InvalidContent=101, // AsCommand. CODEFIX. HTTP 400 in 2007.
+			First = InvalidContent,
+			InvalidWBXML=102, // AsCommand. CODEFIX.
+			InvalidXML=103, // AsCommand. CODEFIX.
+			InvalidDateTime=104, // AsCommand. CODEFIX.
+			InvalidCombinationOfIDs=105, // AsCommand subclass. RECOVER.
+			InvalidIDs=106, // AsCommand subclass. RECOVER. HTTP 400 in 2007, except SendMail which was HTTP 500.
+			InvalidMIME=107, // AsSendMailCommand. RECOVER.
+			DeviceIdMissingOrInvalid=108, // AsCommand. CODEFIX.
+			DeviceTypeMissingOrInvalid=109, // AsCommand. CODEFIX.
+			ServerError=110, // We should NOT retry later. AsCommand => AsControl. ADMIN. HTTP 500 in 2007.
+			ServerErrorRetryLater=111, // AsCommand => AsControl. RECOVER. HTTP 503 in 2007.
+			ActiveDirectoryAccessDenied=112, // AsCommand => AsControl. ADMIN. HTTP 403 in 2007.
+			MailboxQuotaExceeded=113, // AsCommand => AsControl. USER. HTTP 507 in 2007.
+			MailboxServerOffline=114, // AsCommand => AsControl. ADMIN.
+			SendQuotaExceeded=115, // AsCommand => AsControl. ADMIN.
+			MessageRecipientUnresolved=116, // AsSendMailCommand. USER.
+			MessageReplyNotAllowed=117, // AsSendMailCommand. USER.
+			MessagePreviouslySent=118, // AsSendMailCommand. RECOVER.
+			MessageHasNoRecipient=119, // AsSendMailCommand. USER.
+			MailSubmissionFailed=120, // AsSendMailCommand. RECOVER.
+			MessageReplyFailed=121, // AsSendMailCommand. RECOVER.
+			AttachmentIsTooLarge=122, // AsSendMailCommand. USER.
+			UserHasNoMailbox=123, // AsCommand => AsControl. ADMIN.
+			UserCannotBeAnonymous=124, // AsCommand => AsControl. CODEFIX.
+			UserPrincipalCouldNotBeFound=125, // AsCommand => AsControl. ADMIN.
+			UserDisabledForSync=126, // AsCommand => AsControl. ADMIN.
+			UserOnNewMailboxCannotSync=127, // AsCommand => AsControl. ADMIN.
+			UserOnLegacyMailboxCannotSync=128, // AsCommand => AsControl. ADMIN.
+			DeviceIsBlockedForThisUser=129, // AsCommand => AsControl. ADMIN.
+			AccessDenied=130, // AsCommand. ADMIN.
+			AccountDisabled=131, // AsCommand => AsControl. ADMIN.
+			SyncStateNotFound=132, // Do a full re-sync. RECOVER. Let USER know. HTTP 500 in 2007, except Provision which was HTTP 403.
+			SyncStateLocked=133, // AsCommand => AsControl. ADMIN.
+			SyncStateCorrupt=134, // Do a full re-sync. RECOVER. Let USER/ADMIN know.
+			SyncStateAlreadyExists=135, // Do a full re-sync. RECOVER. Let USER/ADMIN know.
+			SyncStateVersionInvalid=136, // Do a full re-sync. RECOVER. Let USER/ADMIN know.
+			CommandNotSupported=137, // AsControl. CODEFIX. HTTP 501 in 2007.
+			VersionNotSupported=138, // AsControl. CODEFIX. HTTP 400 in 2007, except for 1.0 devices which got a 505.
+			DeviceNotFullyProvisionable=139, // AsProvision. CODEFIX.
+			RemoteWipeRequested=140, // AsCommand. Device should wipe via Provision commands. HTTP 449 in 2007, or 403 if no policy header.
+			LegacyDeviceOnStrictPolicy=141, // AsCommand. ADMIN.
+			DeviceNotProvisioned=142, // AsCommand. RECOVER (reprovision). HTTP 449 in 2007.
+			PolicyRefresh=143, // AsCommand. RECOVER (reprovision).
+			InvalidPolicyKey=144, // AsCommand. RECOVER (reprovision).
+			ExternallyManagedDevicesNotAllowed=145, // AsCommand. CODEFIX.
+			NoRecurrenceInCalendar=146, // AsCommand. CODEFIX.
+			UnexpectedItemClass=147, // AsCommand. CODEFIX. HTTP 400 or 501 in 2007.
+			RemoteServerHasNoSSL=148, // AsCommand. ADMIN.
+			InvalidStoredRequest=149, // AsPingCommand? RECOVER.
+			ItemNotFound=150, // SmartReply, SmartForward. RECOVER.
+			TooManyFolders=151, // AsCommand. USER/ADMIN.
+			NoFoldersFound=152, // AsCommand. ADMIN.
+			ItemsLostAfterMove=153, // ItemOperations. USER/ADMIN. RECOVER.
+			FailureInMoveOperation=154, // ItemOperations. USER/ADMIN. RECOVER.
+			MoveCommandDisallowedForNonPersistentMoveAction=155, // ItemOperations. CODEFIX.
+			MoveCommandInvalidDestinationFolder=156, // ItemOperations. RECOVER.
+			// [157,159] unused.
+			AvailabilityTooManyRecipients=160, // AsSendMailCommand. USER.
+			AvailabilityDLLimitReached=161, // AsSendMailCommand. USER.
+			AvailabilityTransientFailure=162, // USER/RECOVER.
+			AvailabilityFailure=163, // USER/ADMIN.
+			BodyPartPreferenceTypeNotSupported=164, // Where? CODEFIX.
+			DeviceInformationRequired=165, // AsProvisionCommand. CODEFIX.
+			InvalidAccountId=166, // Where? USER.
+			AccountSendDisabled=167, // AsSendMailCommand. ADMIN.
+			IRM_FeatureDisabled=168, // IGNORE: No RM yet.
+			IRM_TransientError=169,
+			IRM_PermanentError=170,
+			IRM_InvalidTemplateID=171,
+			IRM_OperationNotPermitted=172,
+			NoPicture=173, // Where? RECOVER.
+			PictureTooLarge=174, // Where? RECOVER.
+			PictureLimitReached=175, // Where? RECOVER.
+			BodyPart_ConversationTooLarge=176, // Where? RECOVER.
+			MaximumDevicesReached=177, // AsCommand. USER/ADMIN.
+			Last = MaximumDevicesReached
+		};
+
 		public class AirSync {
 			public const string Ns = "AirSync";
 			// Alpha order.
@@ -15,6 +96,7 @@ namespace NachoCore.ActiveSync {
 			public const string Delete = "Delete";
 			public const string DeleteAsMoves = "DeleteAsMoves";
 			public const string GetChanges = "GetChanges";
+			public const string MoreAvailable = "MoreAvailable";
 			public const string ServerId = "ServerId";
 			public const string Status = "Status";
 			public const string Sync = "Sync";

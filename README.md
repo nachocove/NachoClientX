@@ -18,8 +18,9 @@
 
 ## TODO (in priority order)
 
-1. Download EAS contacts.
-2. Support Common Status Codes (ASCMD 2.2.4).
+0. Pingwait, incoming email, then it pulls down ALL the emails again - not just the new one!
+1. Support Common Status Codes (ASCMD 2.2.4).
+2. Get AsOptions onto AsCommand.
 3. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
 4. Support attachments (download & upload).
 5. Finish implementing Autodiscovery.

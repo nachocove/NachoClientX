@@ -9,6 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
+
 	public class AsProvisionCommand : AsCommand
 	{
 		public enum Lst : uint {GetWait=(St.Last+1), AckWait};
@@ -18,7 +19,7 @@ namespace NachoCore.ActiveSync
 
 		private StateMachine m_sm;
 
-		public AsProvisionCommand (IAsDataSource dataSource) : base("Provision", dataSource) {
+		public AsProvisionCommand (IAsDataSource dataSource) : base("Provision", "Provision", dataSource) {
 			m_sm = new StateMachine () { Name = "as:provision",
 				LocalStateType = typeof(Lst),
 				TransTable = 
@@ -39,24 +40,22 @@ namespace NachoCore.ActiveSync
 			m_sm.Start ();
 		}
 		protected override XDocument ToXDocument () {
-			XNamespace ns = "Provision";
-			var policy = new XElement (ns + "Policy", 
-		                            new XElement (ns + "PolicyType", "MS-EAS-Provisioning-WBXML"),
-		                            new XElement (ns + "PolicyKey", m_dataSource.ProtocolState.AsPolicyKey));
+			var policy = new XElement (m_ns + "Policy", 
+		                            new XElement (m_ns + "PolicyType", "MS-EAS-Provisioning-WBXML"),
+		                            new XElement (m_ns + "PolicyKey", m_dataSource.ProtocolState.AsPolicyKey));
 			if (DoAck == m_sm.Action) {
 				// FIXME - need to reflect actual status here.
-				policy.Add (new XElement (ns+"Status", "1"));
+				policy.Add (new XElement (m_ns+"Status", "1"));
 			}
 			var doc = AsCommand.ToEmptyXDocument();
-			doc.Add (new XElement (ns+"Provision", new XElement (ns+"Policies", policy)));
+			doc.Add (new XElement (m_ns+"Provision", new XElement (m_ns+"Policies", policy)));
 			return doc;
 		}
 		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
-			XNamespace ns = "Provision";
-			switch ((StatusProvision)Convert.ToUInt32 (doc.Root.Element (ns+"Status").Value)) {
+			switch ((StatusProvision)Convert.ToUInt32 (doc.Root.Element (m_ns+"Status").Value)) {
 			case StatusProvision.Success:
-				m_dataSource.ProtocolState.AsPolicyKey = doc.Root.Element (ns+"Policies").
-					Element (ns+"Policy").Element (ns+"PolicyKey").Value;
+				m_dataSource.ProtocolState.AsPolicyKey = doc.Root.Element (m_ns+"Policies").
+					Element (m_ns+"Policy").Element (m_ns+"PolicyKey").Value;
 				return (uint)Ev.Success;
 			case StatusProvision.ProtocolError:
 				break;

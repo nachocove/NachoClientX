@@ -22,7 +22,8 @@ namespace NachoCore.ActiveSync {
 		public const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
 
 		// Properties & IVars.
-		string m_commandName;
+		protected string m_commandName;
+		protected XNamespace m_ns;
 		protected StateMachine m_parentSm;
 		protected IAsDataSource m_dataSource;
 		CancellationTokenSource m_cts;
@@ -30,9 +31,10 @@ namespace NachoCore.ActiveSync {
 		public TimeSpan Timeout { set; get; }
 
 		// Initializer.
-		public AsCommand(string commandName, IAsDataSource dataSource) {
+		public AsCommand(string commandName, string nsName, IAsDataSource dataSource) {
 			Timeout = TimeSpan.Zero;
 			m_commandName = commandName;
+			m_ns = nsName;
 			m_dataSource = dataSource;
 			m_cts = new CancellationTokenSource();
 		}
@@ -103,7 +105,7 @@ namespace NachoCore.ActiveSync {
 				Console.WriteLine ("as:command: WebException");
 				CancelCleanup ();
 				sm.PostEvent ((uint)Ev.TempFail);
-
+				return;
 			}
 			if (HttpStatusCode.OK != response.StatusCode) {
 				CancelCleanup ();
@@ -114,6 +116,11 @@ namespace NachoCore.ActiveSync {
 				    response.Content.Headers.ContentType.MediaType.ToLower()) {
 					byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
 					var responseDoc = wbxmlMessage.LoadWbxml();
+					var xmlStatus = responseDoc.Root.Element (m_ns + Xml.AirSync.Status);
+					if (null != xmlStatus) {
+						var statusEvent = TopLevelStatusToEvent (uint.Parse (xmlStatus.Value));
+						Console.WriteLine ("STATUS {0}:{1}", xmlStatus.Value, statusEvent);
+					}
 					sm.PostEvent(ProcessResponse(response, responseDoc));
 				} else {
 					sm.PostEvent(ProcessResponse(response));
@@ -185,20 +192,69 @@ namespace NachoCore.ActiveSync {
 		public virtual Dictionary<string,string> Params () {
 			return null;
 		}
-		// Subclass should implement neither or only one of the ToXxx... methods.
+		// The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
 		protected virtual XDocument ToXDocument () {
 			return null;
 		} 
 		protected virtual string ToMime () {
 			return null;
 		}
+		// Called for non-WBXML HTTP 200 responses.
 		protected virtual uint ProcessResponse (HttpResponseMessage response) {
 			return (uint)Ev.Success;
 		}
 		protected virtual uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
 			return (uint)Ev.Success;
 		}
+		// Subclass can cleanup in the case where a ProcessResponse will never be called.
 		protected virtual void CancelCleanup ( ) {
+		}
+		// Subclass can override and add specialized support for top-level status codes as needed.
+		// Subclass must call base if it does not handle the status code itself.
+		protected virtual int TopLevelStatusToEvent (uint status) {
+			// returning -1 means that this function did not know how to convert the status value.
+			// NOTE(A): Subclass can possibly make this a TempFail or Success if the id issue is just a sync issue.
+			// NOTE(B): Subclass can retry with a formatting simplification.
+			// NOTE(C): Subclass MUST catch & handle this code.
+			// FIXME - package enough telemetry information so that we can fix our bugs.
+			// FIXME - catch TempFail loops and convert to HardFail.
+			// FIXME(A): MUST provide user with information about how to possibly rectify.
+			switch ((Xml.StatusCode)status) {
+			case Xml.StatusCode.InvalidContent:
+			case Xml.StatusCode.InvalidWBXML:
+			case Xml.StatusCode.InvalidXML:
+				return (int)Ev.HardFail;
+
+			case Xml.StatusCode.InvalidDateTime: // Maybe the next time generated may parse okay.
+				return (int)Ev.TempFail;
+
+			case Xml.StatusCode.InvalidCombinationOfIDs: // NOTE(A).
+			case Xml.StatusCode.InvalidMIME: // NOTE(B).
+			case Xml.StatusCode.DeviceIdMissingOrInvalid:
+			case Xml.StatusCode.DeviceTypeMissingOrInvalid:
+			case Xml.StatusCode.ServerError:
+				return (int)Ev.HardFail;
+
+			case Xml.StatusCode.ServerErrorRetryLater:
+				return (int)Ev.TempFail;
+
+			case Xml.StatusCode.ActiveDirectoryAccessDenied: // FIXME(A).
+			case Xml.StatusCode.MailboxQuotaExceeded: // FIXME(A).
+			case Xml.StatusCode.MailboxServerOffline: // FIXME(A).
+			case Xml.StatusCode.SendQuotaExceeded: // NOTE(C).
+			case Xml.StatusCode.MessageRecipientUnresolved: // NOTE(C).
+			case Xml.StatusCode.MessageReplyNotAllowed: // NOTE(C).
+			case Xml.StatusCode.MessagePreviouslySent:
+			case Xml.StatusCode.MessageHasNoRecipient: // NOTE(C).
+			case Xml.StatusCode.MailSubmissionFailed:
+			case Xml.StatusCode.MessageReplyFailed:
+			case Xml.StatusCode.UserHasNoMailbox: // FIXME(A).
+			case Xml.StatusCode.UserCannotBeAnonymous: // FIXME(A).
+			case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
+				return (int)Ev.HardFail;
+				// Meh. do some cases end-to-end, with user messaging (before all this typing).
+			}
+			return -1;
 		}
 		protected void DoSucceed () {
 			m_parentSm.PostEvent ((uint)Ev.Success);
@@ -206,7 +262,7 @@ namespace NachoCore.ActiveSync {
 		protected void DoFail () {
 			m_parentSm.PostEvent ((uint)Ev.HardFail);
 		}
-		// Static Internal Methods.
+		// Static internal helper methods.
 		static internal XDocument ToEmptyXDocument () {
 			return new XDocument (new XDeclaration ("1.0", "utf8", null));
 		}
