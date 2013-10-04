@@ -17,11 +17,12 @@
 * UI code can be developed on a branch that syncs with master, or in a forked repo. UI developer choice...
 
 ## TODO (in priority order)
-
-0. Pingwait, incoming email, then it pulls down ALL the emails again - not just the new one!
-1. Support Common Status Codes (ASCMD 2.2.4).
-2. Get AsOptions onto AsCommand.
-3. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
-4. Support attachments (download & upload).
-5. Finish implementing Autodiscovery.
-6. support for XML Schema validation of messages.
+### Before branch collapse:
+1. Support Common Status Codes (ASCMD 2.2.4) - or at least get the framework right by covering a few of them.
+2. Allow the client to create a contact, and make sure that gets pushed to the server.
+3. Support attachment download.
+### After branch collapse:
+1. Tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail.
+2. Support attachment upload.
+3. Finish implementing Autodiscovery.
+4. support for XML Schema validation of messages.

@@ -29,12 +29,17 @@ namespace NachoCore.ActiveSync {
 		CancellationTokenSource m_cts;
 
 		public TimeSpan Timeout { set; get; }
+		public HttpMethod Method { set; get; }
 
-		// Initializer.
-		public AsCommand(string commandName, string nsName, IAsDataSource dataSource) {
+		// Initializers.
+		public AsCommand (string commandName, string nsName, IAsDataSource dataSource) :
+			this (commandName, dataSource) {
+			m_ns = nsName;
+		}
+		public AsCommand (string commandName, IAsDataSource dataSource) {
+			Method = HttpMethod.Post;
 			Timeout = TimeSpan.Zero;
 			m_commandName = commandName;
-			m_ns = nsName;
 			m_dataSource = dataSource;
 			m_cts = new CancellationTokenSource();
 		}
@@ -45,12 +50,8 @@ namespace NachoCore.ActiveSync {
 				m_parentSm = sm;
 			}
 			// FIXME: need to fully understand URL escaping in .NET.
-			var requestLine = string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
-			                                 m_commandName, 
-			                                 m_dataSource.Cred.Username,
-			                                 NcDevice.Identity (),
-			                                 NcDevice.Type ());
-			var rlParams = Params();
+			var requestLine = QueryString ();
+			var rlParams = ExtraQueryStringParams ();
 			if (null != rlParams) {
 				var pairs = new List<string>();
 				foreach (KeyValuePair<string,string> pair in rlParams) {
@@ -64,12 +65,11 @@ namespace NachoCore.ActiveSync {
 				AllowAutoRedirect = false,
 				PreAuthenticate = true
 			};
-			var client = HttpClientFactory(handler);
+			var client = HttpClientFactory (handler);
 			if (TimeSpan.Zero != Timeout) {
 				client.Timeout = Timeout;
 			}
-			var request = new HttpRequestMessage 
-				(HttpMethod.Post, new Uri(AsCommand.BaseUri (m_dataSource.Server), requestLine));
+			var request = new HttpRequestMessage (Method, new Uri(AsCommand.BaseUri (m_dataSource.Server), requestLine));
 			var doc = ToXDocument ();
 			if (null != doc) {
 				var wbxml = doc.ToWbxml ();
@@ -135,8 +135,8 @@ namespace NachoCore.ActiveSync {
 			case HttpStatusCode.InternalServerError:
 			case HttpStatusCode.Found:
 				if (response.Headers.Contains ("X-MS-RP")) {
-					// Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers.
-					AsOptions.ProcessOptionsHeaders (response.Headers, m_dataSource);
+					// Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
+					AsOptionsCommand.ProcessOptionsHeaders (response.Headers, m_dataSource);
 					sm.PostEvent ((uint)AsProtoControl.Lev.ReSync);
 				} else {
 					sm.PostEvent ((uint)AsProtoControl.Lev.ReDisc);
@@ -189,8 +189,17 @@ namespace NachoCore.ActiveSync {
 			m_cts.Cancel ();
 		}
 		// Virtual Methods.
-		public virtual Dictionary<string,string> Params () {
+		// Override if the subclass wants to add more parameters to the query string.
+		protected virtual Dictionary<string,string> ExtraQueryStringParams () {
 			return null;
+		}
+		// Override if the subclass wants total control over the query string.
+		protected virtual string QueryString () {
+			return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
+			                      m_commandName, 
+			                      m_dataSource.Cred.Username,
+			                      NcDevice.Identity (),
+			                      NcDevice.Type ());
 		}
 		// The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
 		protected virtual XDocument ToXDocument () {

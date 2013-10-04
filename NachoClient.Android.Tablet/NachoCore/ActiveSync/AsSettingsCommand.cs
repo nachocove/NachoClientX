@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
 		private enum StatusSettings : uint {Success=1, ProtocolError=2, AccessDenied=3, ServerUnavailable=4,
 			InvalidArgs=5, ConflictingArgs=6, PolicyDeny=7};
 
-		public AsSettingsCommand (IAsDataSource dataSource) : base("Settings", "Settings", dataSource) {}
+		public AsSettingsCommand (IAsDataSource dataSource) : base ("Settings", "Settings", dataSource) {}
 
 		protected override XDocument ToXDocument () {
 			var settings = new XElement (m_ns + "Settings", 

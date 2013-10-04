@@ -215,7 +215,7 @@ namespace NachoCore.ActiveSync
 			Sm.PostEvent ((uint)Ev.Success);
 		}
 		private void DoOpt () {
-			m_cmd = new AsOptions (this);
+			m_cmd = new AsOptionsCommand (this);
 			m_cmd.Execute (Sm);
 		}
 		private void DoProv () {
@@ -224,7 +224,7 @@ namespace NachoCore.ActiveSync
 		}
 		private void DoOldProtoProv () {
 			// If OPTIONS gets a hard failure, then assume oldest supported protocol version and try to 
-			AsOptions.SetOldestProtoVers (this);
+			AsOptionsCommand.SetOldestProtoVers (this);
 			DoProv ();
 		}
 		private void DoSettings () {

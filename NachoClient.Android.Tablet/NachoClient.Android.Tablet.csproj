@@ -48,7 +48,6 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Assets\AsOptions.cs" />
@@ -91,6 +90,7 @@
     <Compile Include="NachoCore\ActiveSync\IAsCommand.cs" />
     <Compile Include="NachoCore\Model\NcItem.cs" />
     <Compile Include="NachoCore\Model\NcContact.cs" />
+    <Compile Include="MainActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
