@@ -17,12 +17,12 @@
 * UI code can be developed on a branch that syncs with master, or in a forked repo. UI developer choice...
 
 ## TODO (in priority order)
-* Housecleaning: support for XML Schema validation of messages.
 * Housecleaning: get platform-specific code organized. Build Android tab w/NachoDemo.
 * Housecleaning: platform neutral, 100% parallel autodiscovery.
 * Housecleaning: spend a day trying to get test going.
 * Housecleaning: 100% tight status code processing.
 * Housecleaning: tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail, itemoperations.
+* Housecleaning: support for XML Schema validation of messages (WAIT on Xamarin support).
 * Email deletes need to clean up any attachments locally!
 * Allow the client to create a contact, and make sure that gets pushed to the server.
 * Support attachment upload.

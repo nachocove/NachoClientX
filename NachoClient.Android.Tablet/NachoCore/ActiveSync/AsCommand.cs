@@ -6,10 +6,13 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
+using System.Xml;
 using System.Xml.Linq;
+using System.Xml.Schema;
 using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
+using MonoTouch.Foundation;
 
 // NOTE: The class that interfaces with HttpClient (or other low-level network API) needs 
 // to manage retries & network conditions. If the operation fails "enough", then the
@@ -22,6 +25,10 @@ namespace NachoCore.ActiveSync {
 		private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
 		private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
 		private const string ContentTypeMail = "message/rfc822";
+
+		private static XmlSchemaSet commonXmlSchemas;
+		private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
+		private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
 
 		// Properties & IVars.
 		protected string m_commandName;
@@ -39,12 +46,34 @@ namespace NachoCore.ActiveSync {
 			this (commandName, dataSource) {
 			m_ns = nsName;
 		}
+
 		public AsCommand (string commandName, IAsDataSource dataSource) {
 			Method = HttpMethod.Post;
 			Timeout = TimeSpan.Zero;
 			m_commandName = commandName;
 			m_dataSource = dataSource;
 			m_cts = new CancellationTokenSource();
+			string xsdPath = Path.Combine (NSBundle.MainBundle.BundlePath, "xsd");
+			if (null == commonXmlSchemas) {
+				commonXmlSchemas = new XmlSchemaSet ();
+				foreach (var xsdFile in Directory.EnumerateFiles (xsdPath)) {
+					commonXmlSchemas.Add (null, new XmlTextReader (xsdFile));
+				}
+			}
+			if (null == requestXmlSchemas) {
+				requestXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
+			}
+			if (null == responseXmlSchemas) {
+				responseXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
+			}
+			if (! requestXmlSchemas.ContainsKey (m_commandName)) {
+				var requestXsdPath = Path.Combine (xsdPath, "Request", m_commandName + ".xsd");
+				if (File.Exists (requestXsdPath)) {
+					var requestSchema = new XmlSchemaSet ();
+					requestSchema.Add (null, new XmlTextReader (requestXsdPath));
+					requestXmlSchemas [m_commandName] = requestSchema;
+				}
+			}
 		}
 
 		// Public Methods.
@@ -75,6 +104,14 @@ namespace NachoCore.ActiveSync {
 			var request = new HttpRequestMessage (Method, new Uri(AsCommand.BaseUri (m_dataSource.Server), requestLine));
 			var doc = ToXDocument ();
 			if (null != doc) {
+				/* WAIT on Xamarin support. Can't find assembly with Validate
+				if (requestXmlSchemas.ContainsKey (m_commandName)) {
+					doc.Validate (requestXmlSchemas [m_commandName],
+					              (xd, err) => {
+						Console.WriteLine ("{0} failed validation: {1}", m_commandName, err);
+					});
+				}
+				*/
 				var wbxml = doc.ToWbxml ();
 				var content = new ByteArrayContent (wbxml);
 				request.Content = content;

@@ -48,7 +48,7 @@ namespace NachoClient.Android.Tablet
 			//foreach (var acc in query) {
 			//	Account = acc;
 			//}
-			Account = new NcAccount () { Username = "jeffe@nachocove.com", EmailAddr = "jeffe@nachocove.com" };
+			Account = new NcAccount { Username = "jeffe@nachocove.com", EmailAddr = "jeffe@nachocove.com" };
 			Cred = new NcCred ();
 			Cred.Username = "jeffe@nachocove.com";
 			Cred.Password = "D0ggie789";

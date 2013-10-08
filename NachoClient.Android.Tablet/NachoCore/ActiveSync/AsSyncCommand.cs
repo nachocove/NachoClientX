@@ -124,7 +124,7 @@ namespace NachoCore.ActiveSync
 		// FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
 		private void AddEmail (XElement command, NcFolder folder) {
 			IEnumerable<XElement> xmlAttachments = null;
-			var emailMessage = new NcEmailMessage () {
+			var emailMessage = new NcEmailMessage {
 				AccountId = m_dataSource.Account.Id,
 				FolderId = folder.Id,
 				ServerId = command.Element(m_ns + Xml.AirSync.ServerId).Value
@@ -192,7 +192,7 @@ namespace NachoCore.ActiveSync
 						continue;
 					}
 					// Create & save the attachment record.
-					var attachment = new NcAttachment () {
+					var attachment = new NcAttachment {
 						AccountId = emailMessage.AccountId,
 						EmailMessageId = emailMessage.Id,
 						IsDownloaded = false,
@@ -212,7 +212,7 @@ namespace NachoCore.ActiveSync
 					/*
 					 * DON'T do this here. Download attachments strategically.
 					// Create & save the pending update record.
-					var update = new NcPendingUpdate () {
+					var update = new NcPendingUpdate {
 						Operation = NcPendingUpdate.Operations.Download,
 						DataType = NcPendingUpdate.DataTypes.Attachment,
 						AccountId = emailMessage.AccountId,
@@ -226,7 +226,7 @@ namespace NachoCore.ActiveSync
 		}
 
 		private void AddContact (XElement command, NcFolder folder) {
-			var contact = new NcContact () {
+			var contact = new NcContact {
 				AccountId = m_dataSource.Account.Id,
 				FolderId = folder.Id,
 				ServerId = command.Element(m_ns + Xml.AirSync.ServerId).Value

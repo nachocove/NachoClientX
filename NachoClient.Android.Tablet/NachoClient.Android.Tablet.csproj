@@ -50,7 +50,6 @@
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Assets\AsOptions.cs" />
     <Compile Include="sqlite-net\SQLite.cs" />
     <Compile Include="sqlite-net\SQLiteAsync.cs" />
     <Compile Include="NachoCore\Model\NcAccount.cs" />
@@ -122,5 +121,23 @@
     <Folder Include="NachoCore\" />
     <Folder Include="Resources\raw\" />
     <Folder Include="Resources\raw\xsd\" />
+    <Folder Include="Assets\xsd\" />
+    <Folder Include="Assets\xsd\Request\" />
+    <Folder Include="Assets\xsd\Response\" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\xsd\airsyncbase.xsd" />
+    <AndroidAsset Include="Assets\xsd\calendar.xsd" />
+    <AndroidAsset Include="Assets\xsd\contacts.xsd" />
+    <AndroidAsset Include="Assets\xsd\contacts2.xsd" />
+    <AndroidAsset Include="Assets\xsd\documentlibrary.xsd" />
+    <AndroidAsset Include="Assets\xsd\email.xsd" />
+    <AndroidAsset Include="Assets\xsd\email2.xsd" />
+    <AndroidAsset Include="Assets\xsd\itemoperations.xsd" />
+    <AndroidAsset Include="Assets\xsd\provision.xsd" />
+    <AndroidAsset Include="Assets\xsd\rightsmanagement.xsd" />
+    <AndroidAsset Include="Assets\xsd\tasks.xsd" />
+    <AndroidAsset Include="Assets\xsd\Request\Ping.xsd" />
+    <AndroidAsset Include="Assets\xsd\Response\Ping.xsd" />
   </ItemGroup>
 </Project>
