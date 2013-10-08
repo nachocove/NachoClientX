@@ -12,17 +12,18 @@ namespace NachoCore.ActiveSync
 		private enum StatusSettings : uint {Success=1, ProtocolError=2, AccessDenied=3, ServerUnavailable=4,
 			InvalidArgs=5, ConflictingArgs=6, PolicyDeny=7};
 
-		public AsSettingsCommand (IAsDataSource dataSource) : base ("Settings", "Settings", dataSource) {}
+		public AsSettingsCommand (IAsDataSource dataSource) : base (Xml.Settings.Ns, Xml.Settings.Ns, dataSource) {}
 
 		protected override XDocument ToXDocument () {
-			var settings = new XElement (m_ns + "Settings", 
-			                             new XElement (m_ns + "UserInformation", new XElement (m_ns + "Get")),
-			                             new XElement (m_ns + "DeviceInformation", 
-			                                           new XElement (m_ns + "Set",
-			                            							new XElement (m_ns + "Model", NcDevice.Model()),
-			                            							new XElement (m_ns + "OS", NcDevice.Os()),
-			                            							new XElement (m_ns + "OSLanguage", NcDevice.OsLanguage()),
-			                            							new XElement (m_ns + "FriendlyName", NcDevice.FriendlyName()))));
+			var settings = new XElement (m_ns + Xml.Settings.Ns, 
+			                             new XElement (m_ns + Xml.Settings.UserInformation, 
+			                             	new XElement (m_ns + Xml.Settings.Get)), 
+			                             new XElement (m_ns + Xml.Settings.DeviceInformation, 
+			                              	new XElement (m_ns + Xml.Settings.Set,
+			              						new XElement (m_ns + Xml.Settings.Model, NcDevice.Model()),
+			              						new XElement (m_ns + Xml.Settings.OS, NcDevice.Os()),
+			              						new XElement (m_ns + Xml.Settings.OSLanguage, NcDevice.OsLanguage()),
+			              						new XElement (m_ns + Xml.Settings.FriendlyName, NcDevice.FriendlyName()))));
 			var doc = AsCommand.ToEmptyXDocument();
 			doc.Add (settings);
 			return doc;

@@ -6,6 +6,7 @@ namespace NachoCore
 	public interface IProtoControlOwner
 	{
 		SQLiteConnectionWithEvents Db { set; get; }
+		string AttachmentsDir { set; get; }
 
 		void CredReq (ProtoControl sender);
 		void ServConfReq (ProtoControl sender);

@@ -59,7 +59,6 @@
     <Compile Include="NachoCore\Model\NcProtocolState.cs" />
     <Compile Include="NachoCore\Model\NcServer.cs" />
     <Compile Include="NachoCore\ActiveSync\AsCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsOptions.cs" />
     <Compile Include="NachoCore\ActiveSync\IAsDataSource.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXML.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXMLByteQueue.cs" />
@@ -67,7 +66,6 @@
     <Compile Include="NachoCore\Extensions\XmlDocument+Wbxml.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProvisionCommand.cs" />
     <Compile Include="NachoCore\Extensions\StateMachine.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsControl.cs" />
     <Compile Include="NachoCore\ActiveSync\AsAutodiscover.cs" />
     <Compile Include="NachoCore\Extensions\Helpers.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSettingsCommand.cs" />
@@ -91,6 +89,10 @@
     <Compile Include="NachoCore\Model\NcItem.cs" />
     <Compile Include="NachoCore\Model\NcContact.cs" />
     <Compile Include="MainActivity.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsOptionsCommand.cs" />
+    <Compile Include="NachoCore\Model\NcAttachment.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsItemOperationsCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

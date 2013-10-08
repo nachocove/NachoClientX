@@ -30,18 +30,23 @@ namespace NachoCore
 		public enum DbEvents {DidWrite, WillDelete};
 
 		public SQLiteConnectionWithEvents Db { set; get; }
+		public string AttachmentsDir { set; get; }
 
 		private List<ProtoControl> services;
 		private IBackEndDelegate m_dele;
+		private string m_dbFilename;
 
 		public BackEnd (IBackEndDelegate dele) {
 			var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-			var filename = Path.Combine (documents, "db");
-			Db = new SQLiteConnectionWithEvents(filename);
+			AttachmentsDir = Path.Combine (documents, "attachments");
+			Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
+			m_dbFilename = Path.Combine (documents, "db");
+			Db = new SQLiteConnectionWithEvents(m_dbFilename);
 			Db.CreateTable<NcAccount> ();
 			Db.CreateTable<NcCred> ();
 			Db.CreateTable<NcFolder> ();
 			Db.CreateTable<NcEmailMessage> ();
+			Db.CreateTable<NcAttachment> ();
 			Db.CreateTable<NcContact> ();
 			Db.CreateTable<NcProtocolState> ();
 			Db.CreateTable<NcServer> ();

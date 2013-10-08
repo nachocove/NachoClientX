@@ -119,11 +119,22 @@ namespace NachoCore.ActiveSync {
 		public class AirSyncBase {
 			public const string Ns = "AirSyncBase";
 			// Alpha order.
+			public const string Attachment = "Attachment";
+			public const string Attachments = "Attachments";
 			public const string Body = "Body";
+			public const string ContentLocation = "ContentLocation";
+			public const string ContentType = "ContentType";
 			public const string Data = "Data";
+			public const string DisplayName = "DisplayName";
+			public const string EstimatedDataSize = "EstimatedDataSize";
+			public const string FileReference = "FileReference";
+			public const string IsInline = "IsInline";
+			public const string Method = "Method";
 			public const string NativeBodyType = "NativeBodyType";
+			public const string Truncated = "Truncated";
 			public const string Type = "Type";
 
+			public enum MethodCode : uint {NormalAttachment=1, /* [2, 4] Reserved. */ EmbeddedEml=5, AttachOle=6};
 			// NOTE that TypeCode is for both Type and NativeBodyType.
 			public enum TypeCode : uint {PlainText=1, Html=2, Rtf = 3, /* Data element will be base64-encoded. */ Mime = 4};
 		}
@@ -223,6 +234,9 @@ namespace NachoCore.ActiveSync {
 		}
 		public class Email2 {
 			public const string Ns = "Email2";
+			// Alpha order.
+			public const string UmAttDuration = "UmAttDuration";
+			public const string UmAttOrder = "UmAttOrder";
 		}
 		public class FolderHierarchy {
 			public const string Ns = "FolderHierarchy";
@@ -230,7 +244,7 @@ namespace NachoCore.ActiveSync {
 			public const string Add = AirSync.Add;
 			public const string Changes = "Changes";
 			public const string Delete = "Delete";
-			public const string DisplayName = "DisplayName";
+			public const string DisplayName = AirSyncBase.DisplayName;
 			public const string FolderSync = "FolderSync";
 			public const string ParentId = "ParentId";
 			public const string ServerId = AirSync.ServerId;
@@ -298,6 +312,40 @@ namespace NachoCore.ActiveSync {
 
 			public enum StatusCode : uint {NoChanges=1, Changes=2, MissingParams=3, SyntaxError=4, BadHeartbeat=5, 
 				TooManyFolders=6, NeedFolderSync=7, ServerError=8};
+		}
+		public class ItemOperations {
+			public const string Ns = "ItemOperations";
+			// Alpha order.
+			public const string Data = AirSyncBase.Data;
+			public const string Fetch = "Fetch";
+			public const string Properties = "Properties";
+			public const string Status = AirSync.Status;
+			public const string Store = "Store";
+			public const string Response = "Response";
+
+			public class StoreCode {
+				public const string DocumentLibrary = "Document Library"; // NOTE: space is intended.
+				public const string Mailbox = "Mailbox";
+			}
+
+			public enum StatusCode : uint {Success=1, ProtocolError=2, ServerError=3, DocLibBadUri=4,
+				DocLibAccessDenied=5, DocLibAccessDeniedOrMissing=6, DocLibFailedServerConn=7,
+				ByteRangeInvalidOrTooLarge=8, StoreUnknownOrNotSupported=9, FileEmpty=10, RequestTooLarge=11,
+				IoFailure=12, /* 13 omitted */ ConversionFailure=14, AttachmentOrIdInvalid=15, 
+				ResourceAccessDenied=16, PartialFailure=17, CredRequired=18, /* [19, 154] omitted */
+				ProtocolErrorMissing=155, ActionNotSupported=156};
+		}
+		public class Settings {
+			public const string Ns = "Settings";
+			// Alpha order.
+			public const string DeviceInformation = "DeviceInformation";
+			public const string FriendlyName = "FriendlyName";
+			public const string Get = "Get";
+			public const string Model = "Model";
+			public const string OS = "OS";
+			public const string OSLanguage = "OSLanguage";
+			public const string Set = "Set";
+			public const string UserInformation = "UserInformation";
 		}
 	}
 }

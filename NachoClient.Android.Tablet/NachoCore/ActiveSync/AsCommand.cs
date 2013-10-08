@@ -19,11 +19,14 @@ using NachoCore.Utils;
 namespace NachoCore.ActiveSync {
 	abstract public class AsCommand : IAsCommand {
 		// Constants.
-		public const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
+		private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
+		private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
+		private const string ContentTypeMail = "message/rfc822";
 
 		// Properties & IVars.
 		protected string m_commandName;
 		protected XNamespace m_ns;
+		protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
 		protected StateMachine m_parentSm;
 		protected IAsDataSource m_dataSource;
 		CancellationTokenSource m_cts;
@@ -80,7 +83,7 @@ namespace NachoCore.ActiveSync {
 			}
 			var mime = ToMime ();
 			if (null != mime) {
-				request.Content = new StringContent (mime, UTF8Encoding.UTF8, "message/rfc822");
+				request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
 			}
 			request.Headers.Add ("User-Agent", NcDevice.UserAgent ());
 			request.Headers.Add ("X-MS-PolicyKey", m_dataSource.ProtocolState.AsPolicyKey);
@@ -112,18 +115,23 @@ namespace NachoCore.ActiveSync {
 			}
 			switch (response.StatusCode) {
 			case HttpStatusCode.OK:
-				if (ContentTypeWbxml ==
-				    response.Content.Headers.ContentType.MediaType.ToLower()) {
+				switch (response.Content.Headers.ContentType.MediaType.ToLower()) {
+				case ContentTypeWbxml:
 					byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
-					var responseDoc = wbxmlMessage.LoadWbxml();
+					var responseDoc = wbxmlMessage.LoadWbxml ();
 					var xmlStatus = responseDoc.Root.Element (m_ns + Xml.AirSync.Status);
 					if (null != xmlStatus) {
 						var statusEvent = TopLevelStatusToEvent (uint.Parse (xmlStatus.Value));
 						Console.WriteLine ("STATUS {0}:{1}", xmlStatus.Value, statusEvent);
 					}
-					sm.PostEvent(ProcessResponse(response, responseDoc));
-				} else {
+					sm.PostEvent (ProcessResponse (response, responseDoc));
+					break;
+				case ContentTypeWbxmlMultipart:
+					// FIXME.
+					throw new Exception ();
+				default:
 					sm.PostEvent(ProcessResponse(response));
+					break;
 				}
 				break;
 			case HttpStatusCode.BadRequest:

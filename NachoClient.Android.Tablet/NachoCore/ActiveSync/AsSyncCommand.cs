@@ -10,13 +10,10 @@ namespace NachoCore.ActiveSync
 {
 	public class AsSyncCommand : AsCommand
 	{
-		private XNamespace m_baseNs = Xml.AirSyncBase.Ns;
-
 		public AsSyncCommand (IAsDataSource dataSource) : base(Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource) {}
 
 		protected override XDocument ToXDocument () {
 			var collections = new XElement (m_ns+Xml.AirSync.Collections);
-			// FIXME - only syncing down Mail:DEFAULT.
 			var folders = FoldersNeedingSync ();
 			foreach (var folder in folders) {
 				var collection = new XElement (m_ns + Xml.AirSync.Collection,
@@ -116,11 +113,17 @@ namespace NachoCore.ActiveSync
 		}
 
 		private SQLite.TableQuery<NcFolder> FoldersNeedingSync () {
+			// FIXME - we need strategy on what folders to sync & when.
 			return m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id &&
-			                                                       true == x.AsSyncRequired);
+			                                                       true == x.AsSyncRequired &&
+			                                                       ((uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type ||
+			 														(uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
+			 														(uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts == x.Type));
 		}
+
 		// FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
 		private void AddEmail (XElement command, NcFolder folder) {
+			IEnumerable<XElement> xmlAttachments = null;
 			var emailMessage = new NcEmailMessage () {
 				AccountId = m_dataSource.Account.Id,
 				FolderId = folder.Id,
@@ -129,7 +132,10 @@ namespace NachoCore.ActiveSync
 			var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
 			foreach (var child in appData.Elements()) {
 				switch (child.Name.LocalName) {
-				case Xml.AirSyncBase.Body:
+					case Xml.AirSyncBase.Attachments:
+					xmlAttachments = child.Elements (m_baseNs + Xml.AirSyncBase.Attachment);
+					break;
+					case Xml.AirSyncBase.Body:
 					emailMessage.Encoding = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value;
 					var body = child.Element (m_baseNs + Xml.AirSyncBase.Data);
 					// NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
@@ -179,7 +185,46 @@ namespace NachoCore.ActiveSync
 				}
 			}
 			m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, emailMessage);
+			if (null != xmlAttachments) {
+				foreach (XElement xmlAttachment in xmlAttachments) {
+					if ((uint)Xml.AirSyncBase.MethodCode.NormalAttachment !=
+						uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value)) {
+						continue;
+					}
+					// Create & save the attachment record.
+					var attachment = new NcAttachment () {
+						AccountId = emailMessage.AccountId,
+						EmailMessageId = emailMessage.Id,
+						IsDownloaded = false,
+						IsInline = false,
+						FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
+						DataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value)
+					};
+					var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
+					if (null != contentLocation) {
+						attachment.ContentLocation = contentLocation.Value;
+					}
+					var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
+					if (null != isInline) {
+						attachment.IsInline = ParseXmlBoolean (isInline);
+					}
+					m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, attachment);
+					/*
+					 * DON'T do this here. Download attachments strategically.
+					// Create & save the pending update record.
+					var update = new NcPendingUpdate () {
+						Operation = NcPendingUpdate.Operations.Download,
+						DataType = NcPendingUpdate.DataTypes.Attachment,
+						AccountId = emailMessage.AccountId,
+						IsDispatched = false,
+						AttachmentId = attachment.Id
+					};
+					m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, update);
+					*/
+				}
+			}
 		}
+
 		private void AddContact (XElement command, NcFolder folder) {
 			var contact = new NcContact () {
 				AccountId = m_dataSource.Account.Id,
@@ -204,6 +249,21 @@ namespace NachoCore.ActiveSync
 				}
 			}
 			m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, contact);
+		}
+
+		// FIXME - make this a generic extension.
+		private bool ParseXmlBoolean (XElement bit) {
+			if (bit.IsEmpty) {
+				return true;
+			}
+			switch (bit.Value) {
+			case "0":
+				return false;
+			case "1":
+				return true;
+			default:
+				throw new Exception ();
+			}
 		}
 	}
 }

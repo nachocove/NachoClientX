@@ -37,9 +37,8 @@ namespace NachoCore.ActiveSync
 			return doc;
 		}
 		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
-			XNamespace ns = Xml.Ping.Ns;
 			// NOTE: Important to remember that in this context, Ev.Success means to do another long-poll.
-			switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (doc.Root.Element (ns + Xml.Ping.Status).Value)) {
+			switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.Ping.Status).Value)) {
 
 			case Xml.Ping.StatusCode.NoChanges:
 				if (m_hitMaxFolders) {
@@ -48,7 +47,7 @@ namespace NachoCore.ActiveSync
 				return (uint)Ev.Success;
 			
 			case Xml.Ping.StatusCode.Changes:
-				var folders = doc.Root.Element (ns + Xml.Ping.Folders).Elements (ns + Xml.Ping.Folder);
+				var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
 				foreach (var xmlFolder in folders) {// FIXME - accountid.
 					var folder = m_dataSource.Owner.Db.Table<NcFolder> ().Single (rec => xmlFolder.Value == rec.ServerId);
 					folder.AsSyncRequired = true;
@@ -62,12 +61,12 @@ namespace NachoCore.ActiveSync
 
 			case Xml.Ping.StatusCode.BadHeartbeat:
 				m_dataSource.ProtocolState.HeartbeatInterval = 
-					uint.Parse (doc.Root.Element (ns + Xml.Ping.HeartbeatInterval).Value);
+					uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
 				return (uint)Ev.Success;
 
 			case Xml.Ping.StatusCode.TooManyFolders:
 				m_dataSource.ProtocolState.MaxFolders =
-					uint.Parse (doc.Root.Element (ns + Xml.Ping.MaxFolders).Value);
+					uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
 				return (uint)Ev.Success;
 
 			case Xml.Ping.StatusCode.NeedFolderSync:

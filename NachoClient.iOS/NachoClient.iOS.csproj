@@ -141,9 +141,6 @@
     <Compile Include="DetailViewController.designer.cs">
       <DependentUpon>DetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsOptions.cs">
-      <Link>NachoCore\ActiveSync\AsOptions.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsDataSource.cs">
       <Link>NachoCore\ActiveSync\IAsDataSource.cs</Link>
     </Compile>
@@ -188,9 +185,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsAutodiscover.cs">
       <Link>NachoCore\ActiveSync\AsAutodiscover.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsControl.cs">
-      <Link>NachoCore\ActiveSync\AsProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\Helpers.cs">
       <Link>NachoCore\Extensions\Helpers.cs</Link>
@@ -260,6 +254,18 @@
     </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcItem.cs">
       <Link>NachoCore\Model\NcItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsOptionsCommand.cs">
+      <Link>NachoCore\ActiveSync\AsOptionsCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcAttachment.cs">
+      <Link>NachoCore\Model\NcAttachment.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsProtoControl.cs">
+      <Link>NachoCore\ActiveSync\AsProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsItemOperationsCommand.cs">
+      <Link>NachoCore\ActiveSync\AsItemOperationsCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

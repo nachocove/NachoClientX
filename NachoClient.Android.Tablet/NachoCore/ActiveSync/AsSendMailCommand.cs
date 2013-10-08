@@ -27,6 +27,8 @@ namespace NachoCore.ActiveSync
 			                             new XElement (m_ns + Xml.ComposeMail.Mime, ToMime ()));
 			var doc = AsCommand.ToEmptyXDocument();
 			doc.Add (sendMail);
+			m_update.IsDispatched = true;
+			m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, m_update);
 			return doc;
 		}
 
@@ -39,10 +41,6 @@ namespace NachoCore.ActiveSync
 			var emailMessage = m_dataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
 			m_dataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, emailMessage);
 			m_dataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, m_update);
-			var possibleNext = NextToSend ();
-			if (null != possibleNext) {
-				return (uint)AsProtoControl.Lev.SendMail;
-			}
 			return (uint)Ev.Success;
 		}
 
