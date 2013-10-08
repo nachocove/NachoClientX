@@ -82,7 +82,6 @@
     <Compile Include="NachoCore\Model\NcPendingUpdate.cs" />
     <Compile Include="NachoCore\ProtoControl.cs" />
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
-    <Compile Include="NachoCore\NachoDemo.cs" />
     <Compile Include="NachoCore\Model\NcEmailMessage.cs" />
     <Compile Include="NachoCore\ActiveSync\IAsCommand.cs" />
     <Compile Include="NachoCore\Model\NcItem.cs" />
@@ -92,6 +91,11 @@
     <Compile Include="NachoCore\Model\NcAttachment.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoCore\ActiveSync\AsItemOperationsCommand.cs" />
+    <Compile Include="Platform.Android\Assets.cs" />
+    <Compile Include="Platform.Android\Device.cs" />
+    <Compile Include="NachoDemo.cs" />
+    <Compile Include="IPlatform.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsSendMailCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -103,41 +107,31 @@
     <AndroidResource Include="Resources\layout\Main.axml" />
     <AndroidResource Include="Resources\values\Strings.xml" />
     <AndroidResource Include="Resources\drawable\Icon.png" />
-    <AndroidResource Include="Resources\raw\xsd\AirSyncBase.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Calendar.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Contacts.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Contacts2.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\DocumentLibrary.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Email.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Email2.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\ItemOperations.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Provision.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\RightsManagement.xsd" />
-    <AndroidResource Include="Resources\raw\xsd\Tasks.xsd" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
     <Folder Include="sqlite-net\" />
     <Folder Include="NachoCore\" />
     <Folder Include="Resources\raw\" />
-    <Folder Include="Resources\raw\xsd\" />
     <Folder Include="Assets\xsd\" />
-    <Folder Include="Assets\xsd\Request\" />
-    <Folder Include="Assets\xsd\Response\" />
+    <Folder Include="Platform.Android\" />
+    <Folder Include="Assets\xsd\response\" />
+    <Folder Include="Assets\xsd\request\" />
+    <Folder Include="Assets\xsd\common\" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="Assets\xsd\airsyncbase.xsd" />
-    <AndroidAsset Include="Assets\xsd\calendar.xsd" />
-    <AndroidAsset Include="Assets\xsd\contacts.xsd" />
-    <AndroidAsset Include="Assets\xsd\contacts2.xsd" />
-    <AndroidAsset Include="Assets\xsd\documentlibrary.xsd" />
-    <AndroidAsset Include="Assets\xsd\email.xsd" />
-    <AndroidAsset Include="Assets\xsd\email2.xsd" />
-    <AndroidAsset Include="Assets\xsd\itemoperations.xsd" />
-    <AndroidAsset Include="Assets\xsd\provision.xsd" />
-    <AndroidAsset Include="Assets\xsd\rightsmanagement.xsd" />
-    <AndroidAsset Include="Assets\xsd\tasks.xsd" />
-    <AndroidAsset Include="Assets\xsd\Request\Ping.xsd" />
-    <AndroidAsset Include="Assets\xsd\Response\Ping.xsd" />
+    <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
+    <AndroidAsset Include="Assets\xsd\request\Ping.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\airsyncbase.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\calendar.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\contacts.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\contacts2.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\documentlibrary.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\email.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\email2.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\itemoperations.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\provision.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\rightsmanagement.xsd" />
+    <AndroidAsset Include="Assets\xsd\common\tasks.xsd" />
   </ItemGroup>
 </Project>

@@ -94,8 +94,10 @@
     <Folder Include="NachoCore\Extensions\" />
     <Folder Include="NachoCore\NachoCore\" />
     <Folder Include="Resources\xsd\" />
-    <Folder Include="Resources\xsd\Request\" />
-    <Folder Include="Resources\xsd\Response\" />
+    <Folder Include="Platform.iOS\" />
+    <Folder Include="Resources\xsd\request\" />
+    <Folder Include="Resources\xsd\response\" />
+    <Folder Include="Resources\xsd\common\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -165,9 +167,6 @@
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsPingCommand.cs">
       <Link>NachoCore\ActiveSync\AsPingCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSendMailCommand.cs">
-      <Link>NachoCore\ActiveSync\AsSendMailCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSettingsCommand.cs">
       <Link>NachoCore\ActiveSync\AsSettingsCommand.cs</Link>
     </Compile>
@@ -204,9 +203,6 @@
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\IProtoControlOwner.cs">
       <Link>NachoCore\IProtoControlOwner.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\NachoDemo.cs">
-      <Link>NachoDemo.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcEmailMessage.cs">
       <Link>NachoCore\Model\NcEmailMessage.cs</Link>
     </Compile>
@@ -237,6 +233,17 @@
     <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsItemOperationsCommand.cs">
       <Link>NachoCore\ActiveSync\AsItemOperationsCommand.cs</Link>
     </Compile>
+    <Compile Include="Platform.iOS\Assets.cs" />
+    <Compile Include="Platform.iOS\Device.cs" />
+    <Compile Include="..\NachoClient.Android.Tablet\IPlatform.cs">
+      <Link>IPlatform.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoDemo.cs">
+      <Link>NachoDemo.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSendMailCommand.cs">
+      <Link>NachoCore\ActiveSync\AsSendMailCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="MainStoryboard_iPhone.storyboard" />
@@ -244,44 +251,44 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\airsyncbase.xsd">
-      <Link>Resources\xsd\airsyncbase.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\request\Ping.xsd">
+      <Link>Resources\xsd\request\Ping.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\calendar.xsd">
-      <Link>Resources\xsd\calendar.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\response\Ping.xsd">
+      <Link>Resources\xsd\response\Ping.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\contacts.xsd">
-      <Link>Resources\xsd\contacts.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\airsyncbase.xsd">
+      <Link>Resources\xsd\common\airsyncbase.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\contacts2.xsd">
-      <Link>Resources\xsd\contacts2.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\calendar.xsd">
+      <Link>Resources\xsd\common\calendar.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\documentlibrary.xsd">
-      <Link>Resources\xsd\documentlibrary.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\contacts.xsd">
+      <Link>Resources\xsd\common\contacts.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\email.xsd">
-      <Link>Resources\xsd\email.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\contacts2.xsd">
+      <Link>Resources\xsd\common\contacts2.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\email2.xsd">
-      <Link>Resources\xsd\email2.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\documentlibrary.xsd">
+      <Link>Resources\xsd\common\documentlibrary.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\itemoperations.xsd">
-      <Link>Resources\xsd\itemoperations.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\email.xsd">
+      <Link>Resources\xsd\common\email.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\provision.xsd">
-      <Link>Resources\xsd\provision.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\email2.xsd">
+      <Link>Resources\xsd\common\email2.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\rightsmanagement.xsd">
-      <Link>Resources\xsd\rightsmanagement.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\itemoperations.xsd">
+      <Link>Resources\xsd\common\itemoperations.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\tasks.xsd">
-      <Link>Resources\xsd\tasks.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\provision.xsd">
+      <Link>Resources\xsd\common\provision.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\Request\Ping.xsd">
-      <Link>Resources\xsd\Request\Ping.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\rightsmanagement.xsd">
+      <Link>Resources\xsd\common\rightsmanagement.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\Response\Ping.xsd">
-      <Link>Resources\xsd\Response\Ping.xsd</Link>
+    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\tasks.xsd">
+      <Link>Resources\xsd\common\tasks.xsd</Link>
     </BundleResource>
   </ItemGroup>
 </Project>

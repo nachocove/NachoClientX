@@ -12,7 +12,6 @@ using System.Xml.Schema;
 using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
-using MonoTouch.Foundation;
 
 // NOTE: The class that interfaces with HttpClient (or other low-level network API) needs 
 // to manage retries & network conditions. If the operation fails "enough", then the
@@ -25,6 +24,10 @@ namespace NachoCore.ActiveSync {
 		private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
 		private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
 		private const string ContentTypeMail = "message/rfc822";
+		private const string KXsd = "xsd";
+		private const string KCommon = "common";
+		private const string KRequest = "request";
+		private const string KResponse = "response";
 
 		private static XmlSchemaSet commonXmlSchemas;
 		private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
@@ -53,25 +56,27 @@ namespace NachoCore.ActiveSync {
 			m_commandName = commandName;
 			m_dataSource = dataSource;
 			m_cts = new CancellationTokenSource();
-			string xsdPath = Path.Combine (NSBundle.MainBundle.BundlePath, "xsd");
+			var assetMgr = new NachoPlatform.Assets ();
 			if (null == commonXmlSchemas) {
 				commonXmlSchemas = new XmlSchemaSet ();
-				foreach (var xsdFile in Directory.EnumerateFiles (xsdPath)) {
-					commonXmlSchemas.Add (null, new XmlTextReader (xsdFile));
+				foreach (var xsdFile in assetMgr.List (Path.Combine(KXsd, KCommon))) {
+					commonXmlSchemas.Add (null, new XmlTextReader (assetMgr.Open (xsdFile)));
 				}
 			}
 			if (null == requestXmlSchemas) {
 				requestXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
+				foreach (var xsdRequest in assetMgr.List (Path.Combine(KXsd, KRequest))) {
+					var requestSchema = new XmlSchemaSet ();
+					requestSchema.Add (null, new XmlTextReader (assetMgr.Open (xsdRequest)));
+					requestXmlSchemas [Path.GetFileNameWithoutExtension (xsdRequest)] = requestSchema;
+				}
 			}
 			if (null == responseXmlSchemas) {
 				responseXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
-			}
-			if (! requestXmlSchemas.ContainsKey (m_commandName)) {
-				var requestXsdPath = Path.Combine (xsdPath, "Request", m_commandName + ".xsd");
-				if (File.Exists (requestXsdPath)) {
+				foreach (var xsdResponse in assetMgr.List (Path.Combine(KXsd, KResponse))) {
 					var requestSchema = new XmlSchemaSet ();
-					requestSchema.Add (null, new XmlTextReader (requestXsdPath));
-					requestXmlSchemas [m_commandName] = requestSchema;
+					requestSchema.Add (null, new XmlTextReader (assetMgr.Open (xsdResponse)));
+					responseXmlSchemas [Path.GetFileNameWithoutExtension (xsdResponse)] = requestSchema;
 				}
 			}
 		}

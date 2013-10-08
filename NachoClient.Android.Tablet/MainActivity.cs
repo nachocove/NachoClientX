@@ -5,23 +5,17 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.OS;
-using SQLite;
-using NachoCore.ActiveSync;
-using NachoCore.Model;
-using NachoCore.Utils;
+using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.Android.Tablet
 {
 	[Activity (Label = "NachoClient.Android.Tablet", MainLauncher = true)]
-	public class MainActivity : Activity, IAsDataSource
+	public class MainActivity : Activity
 	{
 		int count = 1;
-		AsControl backEnd = null;
 
-		public NcServer Server { get; set; }
-		public NcProtocolState ProtocolState { get; set; }
-		public NcAccount Account { get; set;}
-		public NcCred Cred { get; set; }
+		private NachoDemo Demo { get; set; }
 
 		protected override void OnCreate (Bundle bundle)
 		{
@@ -38,31 +32,8 @@ namespace NachoClient.Android.Tablet
 				button.Text = string.Format ("{0} clicks!", count++);
 			};
 
-			//var db = new SQLiteConnection("foofoo");
-			//db.CreateTable<NcAccount>();
-
-			//Account = new NcAccount ();
-			//Account.Username = "jeffe@nachocove.com";
-			//db.Insert (new NcAccount () { Username = "jeffe@nachocove.com" });
-			//var query = db.Table<NcAccount>().Where(v => v.Username.StartsWith("j"));
-			//foreach (var acc in query) {
-			//	Account = acc;
-			//}
-			Account = new NcAccount { Username = "jeffe@nachocove.com", EmailAddr = "jeffe@nachocove.com" };
-			Cred = new NcCred ();
-			Cred.Username = "jeffe@nachocove.com";
-			Cred.Password = "D0ggie789";
-			Server = new NcServer ();
-			Server.Fqdn = "m.google.com";
-			Server.Port = 443;
-			Server.Scheme = "https";
-			ProtocolState = new NcProtocolState ();
-			ProtocolState.AsProtocolVersion = "12.0";
-			backEnd = new AsControl (this,this);
-			backEnd.Execute(); // FIXME - need callback api.
-		}
-
-		public void DoNop (){
+			NachoPlatform.Assets.AndroidAssetManager = Assets;
+			Demo = new NachoDemo ();
 		}
 	}
 }
