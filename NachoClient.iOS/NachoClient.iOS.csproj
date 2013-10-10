@@ -23,6 +23,9 @@
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir} -lplatform -force_load ${ProjectDir}/libplatform.a"</MtouchExtraArgs>
+    <MtouchI18n />
+    <MtouchArch>ARMv7</MtouchArch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>full</DebugType>
@@ -80,9 +83,6 @@
     <Reference Include="System.Core" />
     <Reference Include="monotouch" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="UIDeviceHelper">
-      <HintPath>..\..\UIDeviceHelper\UIDeviceHelper\bin\Release\UIDeviceHelper.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Serialization" />
@@ -101,6 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
+    <None Include="libplatform.a" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -113,137 +114,135 @@
     <Compile Include="DetailViewController.designer.cs">
       <DependentUpon>DetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsDataSource.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\IAsDataSource.cs">
       <Link>NachoCore\ActiveSync\IAsDataSource.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcAccount.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcAccount.cs">
       <Link>NachoCore\Model\NcAccount.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcCred.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcCred.cs">
       <Link>NachoCore\Model\NcCred.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcDevice.cs">
-      <Link>NachoCore\Model\NcDevice.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcProtocolState.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcProtocolState.cs">
       <Link>NachoCore\Model\NcProtocolState.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcServer.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcServer.cs">
       <Link>NachoCore\Model\NcServer.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\sqlite-net\SQLite.cs">
+    <Compile Include="..\NachoClient.Android\sqlite-net\SQLite.cs">
       <Link>sqlite-net\SQLite.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\sqlite-net\SQLiteAsync.cs">
+    <Compile Include="..\NachoClient.Android\sqlite-net\SQLiteAsync.cs">
       <Link>sqlite-net\SQLiteAsync.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsProvisionCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsProvisionCommand.cs">
       <Link>NachoCore\ActiveSync\AsProvisionCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ASWBXML.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXML.cs">
       <Link>NachoCore\Extensions\ASWBXML.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ASWBXMLByteQueue.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXMLByteQueue.cs">
       <Link>NachoCore\Extensions\ASWBXMLByteQueue.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ASWBXMLCodePage.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXMLCodePage.cs">
       <Link>NachoCore\Extensions\ASWBXMLCodePage.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\StateMachine.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\StateMachine.cs">
       <Link>NachoCore\Extensions\StateMachine.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\XmlDocument+Wbxml.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsAutodiscover.cs">
-      <Link>NachoCore\ActiveSync\AsAutodiscover.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsAutodiscover.cs">
+      <Link>AsAutodiscover.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\Helpers.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Helpers.cs">
       <Link>NachoCore\Extensions\Helpers.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsFolderSyncCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsFolderSyncCommand.cs">
       <Link>NachoCore\ActiveSync\AsFolderSyncCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsPingCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsPingCommand.cs">
       <Link>NachoCore\ActiveSync\AsPingCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSettingsCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsSettingsCommand.cs">
       <Link>NachoCore\ActiveSync\AsSettingsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSyncCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsSyncCommand.cs">
       <Link>NachoCore\ActiveSync\AsSyncCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\BackEnd.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd.cs">
       <Link>NachoCore\BackEnd.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcFolder.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcFolder.cs">
       <Link>NachoCore\Model\NcFolder.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsConstants.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsConstants.cs">
       <Link>NachoCore\ActiveSync\AsConstants.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\IBackEndDelegate.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\IBackEndDelegate.cs">
       <Link>NachoCore\IBackEndDelegate.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\ISQLiteEventable.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ISQLiteEventable.cs">
       <Link>NachoCore\Extensions\ISQLiteEventable.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcEventable.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcEventable.cs">
       <Link>NachoCore\Model\NcEventable.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcObject.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcObject.cs">
       <Link>NachoCore\Model\NcObject.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcPendingUpdate.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcPendingUpdate.cs">
       <Link>NachoCore\Model\NcPendingUpdate.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ProtoControl.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ProtoControl.cs">
       <Link>NachoCore\ProtoControl.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\IProtoControlOwner.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\IProtoControlOwner.cs">
       <Link>NachoCore\IProtoControlOwner.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcEmailMessage.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcEmailMessage.cs">
       <Link>NachoCore\Model\NcEmailMessage.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsCommand.cs">
       <Link>NachoCore\ActiveSync\AsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\IAsCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\IAsCommand.cs">
       <Link>NachoCore\ActiveSync\IAsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
       <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcContact.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcContact.cs">
       <Link>NachoCore\Model\NcContact.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcItem.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcItem.cs">
       <Link>NachoCore\Model\NcItem.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsOptionsCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsOptionsCommand.cs">
       <Link>NachoCore\ActiveSync\AsOptionsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\Model\NcAttachment.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcAttachment.cs">
       <Link>NachoCore\Model\NcAttachment.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsProtoControl.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsProtoControl.cs">
       <Link>NachoCore\ActiveSync\AsProtoControl.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsItemOperationsCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsItemOperationsCommand.cs">
       <Link>NachoCore\ActiveSync\AsItemOperationsCommand.cs</Link>
     </Compile>
-    <Compile Include="Platform.iOS\Assets.cs" />
-    <Compile Include="Platform.iOS\Device.cs" />
-    <Compile Include="..\NachoClient.Android.Tablet\IPlatform.cs">
+    <Compile Include="..\NachoClient.Android\IPlatform.cs">
       <Link>IPlatform.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoDemo.cs">
+    <Compile Include="..\NachoClient.Android\NachoDemo.cs">
       <Link>NachoDemo.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android.Tablet\NachoCore\ActiveSync\AsSendMailCommand.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsSendMailCommand.cs">
       <Link>NachoCore\ActiveSync\AsSendMailCommand.cs</Link>
     </Compile>
+    <Compile Include="Platform.iOS\AssetsiOS.cs" />
+    <Compile Include="Platform.iOS\DeviceiOS.cs" />
+    <Compile Include="Platform.iOS\RegDomiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="MainStoryboard_iPhone.storyboard" />
@@ -251,43 +250,43 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\request\Ping.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
       <Link>Resources\xsd\request\Ping.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\response\Ping.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
       <Link>Resources\xsd\response\Ping.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\airsyncbase.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
       <Link>Resources\xsd\common\airsyncbase.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\calendar.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\calendar.xsd">
       <Link>Resources\xsd\common\calendar.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\contacts.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
       <Link>Resources\xsd\common\contacts.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\contacts2.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts2.xsd">
       <Link>Resources\xsd\common\contacts2.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\documentlibrary.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\documentlibrary.xsd">
       <Link>Resources\xsd\common\documentlibrary.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\email.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\email.xsd">
       <Link>Resources\xsd\common\email.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\email2.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\email2.xsd">
       <Link>Resources\xsd\common\email2.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\itemoperations.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\itemoperations.xsd">
       <Link>Resources\xsd\common\itemoperations.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\provision.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\provision.xsd">
       <Link>Resources\xsd\common\provision.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\rightsmanagement.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\rightsmanagement.xsd">
       <Link>Resources\xsd\common\rightsmanagement.xsd</Link>
     </BundleResource>
-    <BundleResource Include="..\NachoClient.Android.Tablet\Assets\xsd\common\tasks.xsd">
+    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
       <Link>Resources\xsd\common\tasks.xsd</Link>
     </BundleResource>
   </ItemGroup>

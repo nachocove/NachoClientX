@@ -3,6 +3,7 @@ using System.IO;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
+using NachoPlatform;
 using SQLite;
 
 namespace NachoClient.iOS

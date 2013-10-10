@@ -1,9 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClient.Android.Tablet", "NachoClient.Android.Tablet\NachoClient.Android.Tablet.csproj", "{D1408661-612A-4362-B534-5BF16C7A8BE0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClient.Android.Phone", "NachoClient.Android.Phone\NachoClient.Android.Phone.csproj", "{D95F0805-000D-4151-B4B6-C6FD1E5114C8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClient.Android", "NachoClient.Android\NachoClient.Android.csproj", "{D1408661-612A-4362-B534-5BF16C7A8BE0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClient.iOS", "NachoClient.iOS\NachoClient.iOS.csproj", "{7B5D1554-2619-4B46-BE91-585C896047AC}"
 EndProject
@@ -51,22 +49,6 @@ Global
 		{D1408661-612A-4362-B534-5BF16C7A8BE0}.Release|iPhone.Build.0 = Release|Any CPU
 		{D1408661-612A-4362-B534-5BF16C7A8BE0}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{D1408661-612A-4362-B534-5BF16C7A8BE0}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Ad-Hoc|iPhone.ActiveCfg = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Ad-Hoc|iPhone.Build.0 = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.AppStore|iPhone.ActiveCfg = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.AppStore|iPhone.Build.0 = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|iPhone.Build.0 = Release|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{D95F0805-000D-4151-B4B6-C6FD1E5114C8}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
