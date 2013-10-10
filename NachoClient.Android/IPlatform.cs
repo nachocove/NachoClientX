@@ -15,7 +15,6 @@ namespace NachoPlatform
     }
     public interface IPlatformDevice
     {
-        bool IsSimulator ();
         string Model ();
         string Type ();
         string Identity ();

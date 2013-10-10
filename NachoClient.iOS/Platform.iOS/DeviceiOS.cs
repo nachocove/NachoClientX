@@ -41,11 +41,10 @@ namespace NachoPlatform
         private static string Build () {
             return nacho_sysctlbyname ("kern.osversion");
         }
-
-
-        public bool IsSimulator () {
+        private static bool IsSimulator () {
             return (0 == nacho_is_simulator ()) ? false : true;
         }
+
         public string Model () {
             return Platform().Replace (',', 'C');
         }
@@ -53,11 +52,12 @@ namespace NachoPlatform
             return Model ().Split (null)[0];
         }
         public string Identity() {
-            // FIXME - hard wired for the moment. iOS Mail App uses 'Appl' + serial number: ApplF17K1P5BF8H4.
+            //NOTE: iOS Mail App uses 'Appl' + serial number. Eg: ApplF17K1P5BF8H4.
             // We can get the serial number, but it may not be kosher w/Apple. If we cant use serial number, 
             // then use either dev or adv uuid replacement.
             // https://github.com/erica/iOS-6-Cookbook
-            return "ApplF17K1P5BF8H3";
+            // For now, use 'Appl' + the identifierForVendor, which can change on delete & re-install.
+            return "Appl" + UIDevice.CurrentDevice.IdentifierForVendor.AsString ().Replace ('-', 'X');
         }
         public string Os () {
             if (IsSimulator ()) {
