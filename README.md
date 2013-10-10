@@ -17,6 +17,7 @@
 * UI code can be developed on a branch that syncs with master, or in a forked repo. UI developer choice...
 
 ## TODO (in priority order)
+* Support inline attachments (images).
 * Housecleaning: platform neutral, 100% parallel autodiscovery.
 * Housecleaning: robustify provisioning state machine.
 * Housecleaning: spend a day trying to get test going.
