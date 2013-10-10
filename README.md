@@ -17,8 +17,8 @@
 * UI code can be developed on a branch that syncs with master, or in a forked repo. UI developer choice...
 
 ## TODO (in priority order)
-* Housecleaning: get platform-specific code organized. p/invoke, all C libs sorted. 1st step: TLD from iOS & Android.
 * Housecleaning: platform neutral, 100% parallel autodiscovery.
+* Housecleaning: robustify provisioning state machine.
 * Housecleaning: spend a day trying to get test going.
 * Housecleaning: 100% tight status code processing.
 * Housecleaning: tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail, itemoperations.
