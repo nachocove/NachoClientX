@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
+using System.IO;
 
 namespace NachoCore.ActiveSync
 {
@@ -21,6 +22,9 @@ namespace NachoCore.ActiveSync
 				                              new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
 				if (Xml.AirSync.SyncKey_Initial != folder.AsSyncKey) {
 					collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
+                    collection.Add (new XElement (m_ns + Xml.AirSync.Options,
+                                                  new XElement (m_ns + Xml.AirSync.MimeSupport, 
+                                                                (uint)Xml.AirSync.MimeSupportCode.AllMime)));
 					// If there are email deletes, then push them up to the server.
 					var deles = m_dataSource.Owner.Db.Table<NcPendingUpdate> ()
 						.Where (x => x.AccountId == m_dataSource.Account.Id &&

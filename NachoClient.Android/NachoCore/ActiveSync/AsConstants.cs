@@ -96,16 +96,14 @@ namespace NachoCore.ActiveSync {
 			public const string Delete = "Delete";
 			public const string DeleteAsMoves = "DeleteAsMoves";
 			public const string GetChanges = "GetChanges";
+            public const string MimeSupport = "MIMESupport";
 			public const string MoreAvailable = "MoreAvailable";
+            public const string Options = "Options";
 			public const string ServerId = "ServerId";
 			public const string Status = "Status";
 			public const string Sync = "Sync";
 			public const string SyncKey = "SyncKey";
 			public const string SyncKey_Initial = "0";
-
-			public enum StatusCode : uint {Success=1, SyncKeyInvalid=3, ProtocolError=4, ServerError=5, ClientError=6,
-				ServerWins=7, NotFound=8, NoSpace=9, FolderChange=12, ResendFull=13, LimitReWait=14, TooMany=15,
-				Retry=16};
 
 			public class ClassCode {
 				public const string Tasks = "Tasks";
@@ -113,8 +111,13 @@ namespace NachoCore.ActiveSync {
 				public const string Calendar = "Calendar";
 				public const string Contacts = "Contacts";
 				public const string Notes = "Notes";
-				public const string SMS = "SMS";
+				public const string Sms = "SMS";
 			}
+            public enum MimeSupportCode : uint {NoMime=0, SMimeOnly=1, AllMime=2};
+            public enum StatusCode : uint {Success=1, SyncKeyInvalid=3, ProtocolError=4, ServerError=5, ClientError=6,
+                ServerWins=7, NotFound=8, NoSpace=9, FolderChange=12, ResendFull=13, LimitReWait=14, TooMany=15,
+                Retry=16};
+
 		}
 		public class AirSyncBase {
 			public const string Ns = "AirSyncBase";
