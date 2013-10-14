@@ -46,6 +46,9 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="MimeKit.Android">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Release\lib\MonoAndroid\MimeKit.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />

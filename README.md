@@ -16,6 +16,10 @@
 * UI code must go in this repo too. The UI code must support "headless"/UI-less debugging of the BE (see NachoDemo for an example).
 * UI code can be developed on a branch that syncs with master, or in a forked repo. UI developer choice...
 
+### NOTE You need more than just this repo!
+* You need to checkout NachoPlatform, and do what the README says.
+* You need to checkout MimeKit (this project references MimeKit).
+
 ## TODO (in priority order)
 * Support inline attachments (images).
 * Housecleaning: platform neutral, 100% parallel autodiscovery.
