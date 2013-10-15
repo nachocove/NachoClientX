@@ -6,6 +6,12 @@ using NachoCore;
 using NachoPlatform;
 using SQLite;
 
+using System.Net.Sockets;
+using DnDns.Enums;
+using DnDns.Query;
+using DnDns.Records;
+using DnDns.Security;
+
 namespace NachoClient.iOS
 {
 	// The UIApplicationDelegate for the application. This class is responsible for launching the 
@@ -39,7 +45,6 @@ namespace NachoClient.iOS
 			}
 
 			Demo = new NachoDemo ();
-
 			return true;
 		}
 

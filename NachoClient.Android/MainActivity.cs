@@ -8,6 +8,12 @@ using Android.OS;
 using NachoCore;
 using NachoPlatform;
 
+using System.Net.Sockets;
+using DnDns.Enums;
+using DnDns.Query;
+using DnDns.Records;
+using DnDns.Security;
+
 namespace NachoClient.Android.Tablet
 {
 	[Activity (Label = "NachoClient.Android", MainLauncher = true)]

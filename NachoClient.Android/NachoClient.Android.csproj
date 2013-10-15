@@ -49,6 +49,13 @@
     <Reference Include="MimeKit.Android">
       <HintPath>..\..\MimeKit\MimeKit\bin\Release\lib\MonoAndroid\MimeKit.Android.dll</HintPath>
     </Reference>
+    <Reference Include="System.Net" />
+    <Reference Include="DnDns.Android">
+      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.Android\bin\Release\DnDns.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="NachoPlatform.Android">
+      <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.Android\bin\Release\NachoPlatform.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
@@ -94,11 +101,7 @@
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoCore\ActiveSync\AsItemOperationsCommand.cs" />
     <Compile Include="NachoDemo.cs" />
-    <Compile Include="IPlatform.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSendMailCommand.cs" />
-    <Compile Include="Platform.Android\AssetsAndroid.cs" />
-    <Compile Include="Platform.Android\DeviceAndroid.cs" />
-    <Compile Include="Platform.Android\RegDomAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -117,7 +120,6 @@
     <Folder Include="NachoCore\" />
     <Folder Include="Resources\raw\" />
     <Folder Include="Assets\xsd\" />
-    <Folder Include="Platform.Android\" />
     <Folder Include="Assets\xsd\response\" />
     <Folder Include="Assets\xsd\request\" />
     <Folder Include="Assets\xsd\common\" />
