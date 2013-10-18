@@ -26,7 +26,7 @@ namespace NachoClient.Android
 		
 		public static void UpdateIdValues()
 		{
-			global::DnDns.Android.Resource.String.library_name = global::NachoClient.Android.Resource.String.library_name;
+			global::DnDns.Resource.String.library_name = global::NachoClient.Android.Resource.String.library_name;
 			global::NachoPlatform.Resource.String.library_name = global::NachoClient.Android.Resource.String.library_name;
 		}
 		

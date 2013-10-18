@@ -1,16 +1,11 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
 using NachoPlatform;
 using SQLite;
-
-using System.Net.Sockets;
-using DnDns.Enums;
-using DnDns.Query;
-using DnDns.Records;
-using DnDns.Security;
 
 namespace NachoClient.iOS
 {
