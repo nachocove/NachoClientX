@@ -96,7 +96,6 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Serialization" />
     <Reference Include="MimeKit.iOS">
       <HintPath>..\..\MimeKit\MimeKit\bin\Release\lib\MonoTouch\MimeKit.iOS.dll</HintPath>
     </Reference>
