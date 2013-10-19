@@ -11,28 +11,47 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-	public class AsAutodiscover : IAsCommand
+	public class AsAutodiscover : AsCommand
 	{
-		public enum Lst : uint {S1PostWait=(St.Last+1), S2PostWait, S3GetWait, S4DnsWait, S5PostWait, SubCheck, CredWait};
-		public enum Lev : uint {ReStart=(Ev.Last+1), ReDir, GetCred};
+        public enum Lst : uint {S14Wait=(St.Last+1), CredWait, ServerWait};
+        public enum Lev : uint {AuthFail=(Ev.Last+1), ReDir, CredSet, ServerSet};
 
-		private string m_searchDomain;
-		private uint m_redirectDowncounter;
-		private Uri m_redirectUri;
+		private string SearchDomain;
+		private uint RedirectDowncounter;
+		private Uri RedirectUri;
 		private HttpMethod m_redirectMethod;
-		private IAsDataSource m_dataSource;
 		private CancellationTokenSource m_cts;
-		private StateMachine m_sm;
+		private StateMachine Sm;
 		private StateMachine m_parentSm;
 
-		public AsAutodiscover (IAsDataSource dataSource)
+        public AsAutodiscover (IAsDataSource dataSource) : base ("Autodiscover", dataSource)
 		{
-			m_dataSource = dataSource;
-			m_searchDomain = m_dataSource.Account.EmailAddr.Split ('@').Last ();
-			m_redirectDowncounter = 10; // NOTE: state external to the state-machine.
-			m_redirectUri = null;
+			SearchDomain = m_dataSource.Account.EmailAddr.Split ('@').Last ();
+			RedirectDowncounter = 10; // NOTE: state external to the state-machine!
+			RedirectUri = null;
 			m_redirectMethod = null;
 			m_cts = new CancellationTokenSource();
+            Sm = new StateMachine () {
+                Name = "as:autodiscover", 
+                LocalEventType = typeof(Lev),
+                LocalStateType = typeof(Lst),
+                TransTable = new[] {
+                    new Node {State = (uint)St.Start, On = new[] {
+                            new Trans {Event = (uint)Ev.Launch, Act = DoS14Pll, State = (uint)Lst.S14Wait}}},
+                    new Node {State = (uint)Lst.S14Wait, On = new[] {
+                            new Trans {Event = (uint)Ev.Launch, Act = DoS14Pll, State = (uint)Lst.S14Wait},
+                            new Trans {Event = (uint)Ev.Success, Act = DoFinish, State = (uint)St.Stop},
+                            new Trans {Event = (uint)Lev.AuthFail, Act = DoGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)Lev.ReDir, Act = DoReDir, State = (uint)Lst.S14Wait}}},
+                    new Node {State = (uint)Lst.CredWait, On = new[] {
+                            new Trans {Event = (uint)Ev.Launch, Act = DoGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S14Wait}}},
+                    new Node {State = (uint)Lst.ServerWait, On = new[] {
+                            new Trans {Event = (uint)Ev.Launch, Act = DoGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)Lev.ServerSet, Act = DoFinish, State = (uint)St.Stop}}}
+                }
+            };
+            /*
 			m_sm = new StateMachine () { Name = "as:autodiscover", 
 				LocalEventType = typeof(Lev),
 				LocalStateType = typeof(Lst), TransTable = 
@@ -69,16 +88,32 @@ namespace NachoCore.ActiveSync
 							new Trans {Event = (uint)Ev.HardFail, Act = DoFail, State = (uint)St.Stop}}}
 				}
 			};
+        */         
 		}
 		public void Execute(StateMachine sm) {
 			m_parentSm = sm;
-			m_sm.Start ();
+			Sm.Start ();
 		}
 		public void Cancel () {
 			m_cts.Cancel ();
 		}
+
+        private void DoS14Pll () {
+            // Launch steps 1-4 in parallel.
+        }
+        private void DoSetServer () {
+            // Set the server settings based on the XML response.
+            // indicate completion.
+        }
 		private void DoGetCred () {
+            // Ask the UI to either re-get the password, or to get the username + (optional) domain.
 		}
+        private void DoGetServer () {
+            // Ask the UI for the server information.
+        }
+        private void DoReDir () {
+        }
+
 		private void DoS1Post () {
 			// FIXME. Clear out existing DB state server.{Scheme, Fqdn, Port}.
 			ExecuteHttp (new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml",

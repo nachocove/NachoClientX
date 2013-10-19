@@ -20,7 +20,7 @@ using NachoPlatform;
 // #1 - unable to perform because of present conditions.
 // #2 - unable to perform because of some protocol issue, expected to persist.
 namespace NachoCore.ActiveSync {
-	abstract public class AsCommand : IAsCommand {
+    public abstract class AsCommand : IAsCommand {
 		// Constants.
 		private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
 		private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
