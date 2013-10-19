@@ -121,36 +121,36 @@ namespace NachoCore.ActiveSync
 		private void DoS1Post () {
 			// FIXME. Clear out existing DB state server.{Scheme, Fqdn, Port}.
 			ExecuteHttp (new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml",
-			                                     m_searchDomain)), HttpMethod.Post);
+			                                     SearchDomain)), HttpMethod.Post);
 		}
 		private void DoS2Post () {
 			ExecuteHttp (new Uri (string.Format ("https://autodiscover.{0}/autodiscover/autodiscover.xml",
-			                                     m_searchDomain)), HttpMethod.Post);
+			                                     SearchDomain)), HttpMethod.Post);
 		}
 		private void DoS3Get () {
 			ExecuteHttp (new Uri (string.Format ("http://autodiscover.{0}/autodiscover/autodiscover.xml",
-			                                     m_searchDomain)), HttpMethod.Get);
+			                                     SearchDomain)), HttpMethod.Get);
 		}
 		private void DoS4Dns () {
 			// FIXME - we should be looking up the SRV record here.
-			m_sm.PostEvent ((uint)Ev.HardFail);
+			Sm.PostEvent ((uint)Ev.HardFail);
 		}
 		private void DoS5Post () {
-			if (0 < m_redirectDowncounter && m_redirectUri.IsHttps ()) {
+			if (0 < RedirectDowncounter && RedirectUri.IsHttps ()) {
 				ExecuteHttp (ComputeRedirUri (), m_redirectMethod);
 			} else {
-				m_sm.PostEvent ((uint)Ev.HardFail);
+				Sm.PostEvent ((uint)Ev.HardFail);
 			}
 		}
 		private void DoSubCheck () {
 			// FIXME. Need iOS and Android C libs support for RegDom check API.
 			// Compute baseDomain from m_searchDomain - the copy is a crowbar. 
-			string baseDomain = m_searchDomain;
-			if (baseDomain != m_searchDomain) {
-				m_searchDomain = baseDomain;
-				m_sm.PostEvent ((uint)Lev.ReStart);
+			string baseDomain = SearchDomain;
+			if (baseDomain != SearchDomain) {
+				SearchDomain = baseDomain;
+				// FIXME Sm.PostEvent ((uint)Lev.ReStart);
 			} else {
-				m_sm.PostEvent ((uint)Ev.HardFail);
+				Sm.PostEvent ((uint)Ev.HardFail);
 			}
 		}
 		private void DoSucceed () {
@@ -198,7 +198,7 @@ namespace NachoCore.ActiveSync
 				Console.WriteLine ("as:autodiscover: OperationCanceledException");
 				if (! token.IsCancellationRequested) {
 					// This is really a timeout (MS bug).
-					m_sm.PostEvent ((uint)Ev.HardFail);
+					Sm.PostEvent ((uint)Ev.HardFail);
 				}
 				return;
 			}
@@ -206,7 +206,7 @@ namespace NachoCore.ActiveSync
 				Console.WriteLine ("as:autodiscover: WebException");
 				switch (ex.Status) {
 				case WebExceptionStatus.NameResolutionFailure:
-					m_sm.PostEvent ((uint)Ev.HardFail);
+					Sm.PostEvent ((uint)Ev.HardFail);
 					return;
 				default:
 					throw ex;
@@ -214,17 +214,17 @@ namespace NachoCore.ActiveSync
 			}
 			switch (response.StatusCode) {
 				case HttpStatusCode.OK:
-				m_sm.PostEvent ((uint)Ev.Success);
+				Sm.PostEvent ((uint)Ev.Success);
 				break;
 				case HttpStatusCode.Unauthorized:
-				m_sm.PostEvent ((uint)Lev.GetCred);
+				// FIXME Sm.PostEvent ((uint)Lev.GetCred);
 				break;
 				case HttpStatusCode.Found:
-				m_sm.PostEvent ((uint)Lev.ReDir);
+				Sm.PostEvent ((uint)Lev.ReDir);
 				break;
 				default:
 				// NOTE: we should add more sophistication here.
-				m_sm.PostEvent ((uint)Ev.HardFail);
+				Sm.PostEvent ((uint)Ev.HardFail);
 				break;
 			} 
 		}
@@ -233,7 +233,7 @@ namespace NachoCore.ActiveSync
 		}
 		private Uri ComputeRedirUri () { // FIXME - maybe we nix this?
 			return new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml",
-			                             m_searchDomain));
+			                             SearchDomain));
 		}
 	}
 }
