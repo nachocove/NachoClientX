@@ -34,7 +34,8 @@ namespace NachoCore.ActiveSync
 			ProtocolState = Owner.Db.Table<NcProtocolState> ().Single (rec => rec.Id == Account.ProtocolStateId);
 			Server = Owner.Db.Table<NcServer> ().Single (rec => rec.Id == Account.ServerId);
 
-			Sm = new StateMachine () { Name = "as:control",
+			Sm = new StateMachine () { 
+                Name = "as:control",
 				LocalEventType = typeof(Lev),
 				LocalStateType = typeof(Lst),
 				StateChangeIndication = UpdateSavedState,

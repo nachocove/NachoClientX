@@ -112,6 +112,10 @@ namespace NachoCore.ActiveSync
             // Ask the UI for the server information.
         }
         private void DoReDir () {
+            // maybe do nothing? maybe the result handler does it all?
+        }
+        private void DoFinish () {
+            // Signal that we are done and that we have a server config.
         }
 
 		private void DoS1Post () {
