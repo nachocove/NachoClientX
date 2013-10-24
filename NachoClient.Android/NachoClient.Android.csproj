@@ -95,13 +95,13 @@
     <Compile Include="NachoCore\ActiveSync\IAsCommand.cs" />
     <Compile Include="NachoCore\Model\NcItem.cs" />
     <Compile Include="NachoCore\Model\NcContact.cs" />
-    <Compile Include="MainActivity.cs" />
     <Compile Include="NachoCore\ActiveSync\AsOptionsCommand.cs" />
     <Compile Include="NachoCore\Model\NcAttachment.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoCore\ActiveSync\AsItemOperationsCommand.cs" />
     <Compile Include="NachoDemo.cs" />
     <Compile Include="NachoCore\ActiveSync\AsSendMailCommand.cs" />
+    <Compile Include="NachoUI.Android\MainActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -127,6 +127,7 @@
     <Folder Include="lib\armeabi\" />
     <Folder Include="lib\armeabi-v7a\" />
     <Folder Include="lib\x86\" />
+    <Folder Include="NachoUI.Android\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

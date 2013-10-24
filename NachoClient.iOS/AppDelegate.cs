@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
-using NachoPlatform;
+using NachoCore.Model;
 using SQLite;
 
 namespace NachoClient.iOS
@@ -13,13 +13,31 @@ namespace NachoClient.iOS
 	// User Interface of the application, as well as listening (and optionally responding) to 
 	// application events from iOS.
 	[Register ("AppDelegate")]
-	public partial class AppDelegate : UIApplicationDelegate
+    public partial class AppDelegate : UIApplicationDelegate, IBackEndDelegate
 	{
 		// class-level declarations
 		public override UIWindow Window { get; set; }
 
 		private NachoDemo Demo { get; set; }
+        public BackEnd Be { get; set;}
+        public NcAccount Account { get; set; }
 
+        private bool launchBe(){
+            // Register to receive DB update indications.
+            NcEventable.DbEvent += (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, NcEventable target, EventArgs e) => {
+                if (BackEnd.DbActors.Ui != dbActor) {
+                    Console.WriteLine("DB Event {1} on {0}", target.ToString(), dbEvent.ToString());
+                }
+            };
+            // There is one back-end object covering all protocols and accounts. It does not go in the DB.
+            // It manages everything while the app is running.
+            Be = new BackEnd (this);
+            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
+                Console.WriteLine ("empty Table");
+            }
+            Be.Start ();
+            return true;
+        }
 		public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
 		{
 			// Override point for customization after application launch.
@@ -39,7 +57,9 @@ namespace NachoClient.iOS
 				splitViewController.WeakDelegate = detailViewController;
 			}
 
-			Demo = new NachoDemo ();
+			// FOR DEBUGGING BE ONLY. Demo = new NachoDemo ();
+            // We launch the DB, or grab a handle on the instance
+            launchBe ();
 			return true;
 		}
 
@@ -65,6 +85,25 @@ namespace NachoClient.iOS
 		public override void WillTerminate (UIApplication application)
 		{
 		}
+
+        //Methods for IBackendDelegate
+        // Methods for IBackEndDelegate:
+        public void CredReq(NcAccount account) {
+        }
+        public void ServConfReq (NcAccount account) {
+            // Will change - needed for current autodiscover flow.
+            Be.Db.Update (BackEnd.DbActors.Ui, account);
+        }
+        public void HardFailInd (NcAccount account) {
+        }
+        public void SoftFailInd (NcAccount account) {
+        }
+        public bool RetryPermissionReq (NcAccount account, uint delaySeconds) {
+            return true;
+        }
+        public void ServerOOSpaceInd (NcAccount account) {
+        }
+
 	}
 }
 

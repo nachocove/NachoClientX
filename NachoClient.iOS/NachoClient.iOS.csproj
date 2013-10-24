@@ -117,6 +117,7 @@
     <Folder Include="Resources\xsd\request\" />
     <Folder Include="Resources\xsd\response\" />
     <Folder Include="Resources\xsd\common\" />
+    <Folder Include="NachoUI.iOS\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -125,14 +126,6 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
-    <Compile Include="RootViewController.cs" />
-    <Compile Include="RootViewController.designer.cs">
-      <DependentUpon>RootViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DetailViewController.cs" />
-    <Compile Include="DetailViewController.designer.cs">
-      <DependentUpon>DetailViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\IAsDataSource.cs">
       <Link>NachoCore\ActiveSync\IAsDataSource.cs</Link>
     </Compile>
@@ -173,7 +166,7 @@
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsAutodiscover.cs">
-      <Link>AsAutodiscover.cs</Link>
+      <Link>NachoCore\ActiveSync\AsAutodiscover.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Helpers.cs">
       <Link>NachoCore\Extensions\Helpers.cs</Link>
@@ -256,10 +249,38 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsSendMailCommand.cs">
       <Link>NachoCore\ActiveSync\AsSendMailCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\DetailViewController.cs" />
+    <Compile Include="NachoUI.iOS\DetailViewController.designer.cs">
+      <DependentUpon>DetailViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\RootViewController.cs" />
+    <Compile Include="NachoUI.iOS\RootViewController.designer.cs">
+      <DependentUpon>RootViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountTableSource.cs" />
+    <Compile Include="NachoUI.iOS\AccountViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
+    <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\FolderTableSource.cs" />
+    <Compile Include="NachoUI.iOS\FolderViewController.cs" />
+    <Compile Include="NachoUI.iOS\FolderViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\LaunchViewController.cs" />
+    <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\MessageTableSource.cs" />
+    <Compile Include="NachoUI.iOS\MessageViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\ReadMsgController.cs" />
+    <Compile Include="NachoUI.iOS\ReadMsgController.designer.cs" />
+    <Compile Include="NachoUI.iOS\ReplyViewController.cs" />
+    <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\composeTextView.cs" />
+    <Compile Include="NachoUI.iOS\composeTextView.designer.cs" />
+    <Compile Include="NachoUI.iOS\MessageSource.cs" />
   </ItemGroup>
   <ItemGroup>
-    <InterfaceDefinition Include="MainStoryboard_iPhone.storyboard" />
-    <InterfaceDefinition Include="MainStoryboard_iPad.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
