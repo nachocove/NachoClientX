@@ -86,7 +86,6 @@
     <Compile Include="NachoCore\Model\NcEmailMessage.cs" />
     <Compile Include="NachoCore\Model\NcItem.cs" />
     <Compile Include="NachoCore\Model\NcContact.cs" />
-    <Compile Include="MainActivity.cs" />
     <Compile Include="NachoCore\Model\NcAttachment.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoDemo.cs" />
@@ -110,6 +109,7 @@
     <Compile Include="NachoCore\Extensions\ServerCertificatePeek.cs" />
     <Compile Include="NachoCore\IBackEndOwner.cs" />
     <Compile Include="NachoCore\IBackEnd.cs" />
+    <Compile Include="NachoUI.Android\MainActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -139,6 +139,7 @@
     <Folder Include="NachoCore\ActiveSync\Commands\" />
     <Folder Include="NachoCore\ActiveSync\Operations\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsAutodiscoverCommand\" />
+    <Folder Include="NachoUI.Android\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
