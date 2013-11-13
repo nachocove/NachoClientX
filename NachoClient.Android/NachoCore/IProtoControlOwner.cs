@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
 using NachoCore.Utils;
 
 namespace NachoCore
@@ -10,8 +11,9 @@ namespace NachoCore
 
 		void CredReq (ProtoControl sender);
 		void ServConfReq (ProtoControl sender);
+        void CertAskReq (ProtoControl sender, X509Certificate2 certificate);
 		void HardFailInd (ProtoControl sender);
-		void SoftFailInd (ProtoControl sender);
+		void TempFailInd (ProtoControl sender);
 		bool RetryPermissionReq (ProtoControl sender, uint delaySeconds);
 		void ServerOOSpaceInd (ProtoControl sender);
 	}

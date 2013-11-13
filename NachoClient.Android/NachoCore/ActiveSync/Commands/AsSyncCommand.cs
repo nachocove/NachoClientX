@@ -13,7 +13,7 @@ namespace NachoCore.ActiveSync
 	{
 		public AsSyncCommand (IAsDataSource dataSource) : base(Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource) {}
 
-		protected override XDocument ToXDocument () {
+        public override XDocument ToXDocument (AsHttpOperation Sender) {
 			var collections = new XElement (m_ns+Xml.AirSync.Collections);
 			var folders = FoldersNeedingSync ();
 			foreach (var folder in folders) {
@@ -26,8 +26,8 @@ namespace NachoCore.ActiveSync
                                                   new XElement (m_ns + Xml.AirSync.MimeSupport, 
                                                                 (uint)Xml.AirSync.MimeSupportCode.AllMime)));
 					// If there are email deletes, then push them up to the server.
-					var deles = m_dataSource.Owner.Db.Table<NcPendingUpdate> ()
-						.Where (x => x.AccountId == m_dataSource.Account.Id &&
+					var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+						.Where (x => x.AccountId == DataSource.Account.Id &&
 						        x.FolderId == folder.Id &&
 						        x.Operation == NcPendingUpdate.Operations.Delete &&
 						        x.DataType == NcPendingUpdate.DataTypes.EmailMessage);
@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
 							commands.Add (new XElement (m_ns + Xml.AirSync.Delete,
 							                            new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
 							change.IsDispatched = true;
-							m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, change);
+							DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, change);
 						}
 						collection.Add (commands);
 					}
@@ -49,12 +49,12 @@ namespace NachoCore.ActiveSync
 			doc.Add (sync);
 			return doc;
 		}
-		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
 		{
 			var collections = doc.Root.Element (m_ns + Xml.AirSync.Collections).Elements (m_ns + Xml.AirSync.Collection);
 			foreach (var collection in collections) {
 				var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
-				var folder = m_dataSource.Owner.Db.Table<NcFolder> ().Single (rec => rec.AccountId == m_dataSource.Account.Id &&
+				var folder = DataSource.Owner.Db.Table<NcFolder> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
 				                                                              rec.ServerId == serverId);
 				var oldSyncKey = folder.AsSyncKey;
 				folder.AsSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey).Value;
@@ -67,15 +67,15 @@ namespace NachoCore.ActiveSync
 				switch (uint.Parse(collection.Element (m_ns + Xml.AirSync.Status).Value)) {
 				case (uint)Xml.AirSync.StatusCode.Success:
 					// Clear any deletes dispached in the request.
-					var deles = m_dataSource.Owner.Db.Table<NcPendingUpdate> ()
-						.Where (x => x.AccountId == m_dataSource.Account.Id &&
+					var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+						.Where (x => x.AccountId == DataSource.Account.Id &&
 						x.FolderId == folder.Id &&
 						x.Operation == NcPendingUpdate.Operations.Delete &&
 						x.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
 						x.IsDispatched == true);
 					if (0 != deles.Count ()) {
 						foreach (var change in deles) {
-							m_dataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, change);
+							DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, change);
 						}
 					}
 					// Perform all commands.
@@ -111,14 +111,14 @@ namespace NachoCore.ActiveSync
 					// FIXME - other status code values.
 				}
 
-				m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+				DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
 			}
-			return (FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.Lev.ReSync : (uint)Ev.Success;
+            return Event.Create ((FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.Lev.ReSync : (uint)Ev.Success);
 		}
 
 		private SQLite.TableQuery<NcFolder> FoldersNeedingSync () {
 			// FIXME - we need strategy on what folders to sync & when.
-			return m_dataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == m_dataSource.Account.Id &&
+			return DataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
 			                                                       true == x.AsSyncRequired &&
 			                                                       ((uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type ||
 			 														(uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
@@ -129,7 +129,7 @@ namespace NachoCore.ActiveSync
 		private void AddEmail (XElement command, NcFolder folder) {
 			IEnumerable<XElement> xmlAttachments = null;
 			var emailMessage = new NcEmailMessage {
-				AccountId = m_dataSource.Account.Id,
+				AccountId = DataSource.Account.Id,
 				FolderId = folder.Id,
 				ServerId = command.Element(m_ns + Xml.AirSync.ServerId).Value
 			};
@@ -188,7 +188,7 @@ namespace NachoCore.ActiveSync
 					break;
 				}
 			}
-			m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, emailMessage);
+			DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, emailMessage);
 			if (null != xmlAttachments) {
 				foreach (XElement xmlAttachment in xmlAttachments) {
 					if ((uint)Xml.AirSyncBase.MethodCode.NormalAttachment !=
@@ -212,7 +212,7 @@ namespace NachoCore.ActiveSync
 					if (null != isInline) {
 						attachment.IsInline = ParseXmlBoolean (isInline);
 					}
-					m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, attachment);
+					DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, attachment);
 					/*
 					 * DON'T do this here. Download attachments strategically.
 					// Create & save the pending update record.
@@ -231,7 +231,7 @@ namespace NachoCore.ActiveSync
 
 		private void AddContact (XElement command, NcFolder folder) {
 			var contact = new NcContact {
-				AccountId = m_dataSource.Account.Id,
+				AccountId = DataSource.Account.Id,
 				FolderId = folder.Id,
 				ServerId = command.Element(m_ns + Xml.AirSync.ServerId).Value
 			};
@@ -252,7 +252,7 @@ namespace NachoCore.ActiveSync
 					break;
 				}
 			}
-			m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, contact);
+			DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, contact);
 		}
 
 		// FIXME - make this a generic extension.

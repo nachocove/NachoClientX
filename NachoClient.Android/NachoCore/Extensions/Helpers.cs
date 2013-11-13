@@ -2,6 +2,7 @@ using System;
 
 namespace NachoCore.Utils
 {
+    // This is a grab-bag of extensions.
 	public static class Uri_Helpers
 	{
 		public static bool IsHttps (this Uri uri) {

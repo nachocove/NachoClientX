@@ -1,21 +1,49 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 
 
 namespace NachoCore.ActiveSync
 {
-
 	public class AsProtoControl : ProtoControl, IAsDataSource
 	{
-		private IAsCommand m_cmd;
+		private IAsCommand Cmd;
 
-		public enum Lst : uint {DiscWait=(St.Last+1), CredWait, ServConfWait, 
-			OptWait, ProvWait, SettingsWait, FSyncWait, SyncWait, PingWait, SendMailWait, DnldAttWait};
-		// NOTE - we may need a default-ignore event list for don't cares in whatever state.
-		public enum Lev : uint {GetCred=(Ev.Last+1), SetCred, SetServConf, ReDisc, ReProv, ReSync, ReFSync, SendMail, DnldAtt};
+		public enum Lst : uint {
+            DiscWait=(St.Last+1), 
+            UiCredWait, 
+            UiServConfWait,
+            UiCertOkWait,
+			OptWait, 
+            ProvWait, 
+            SettingsWait, 
+            FSyncWait, 
+            SyncWait, 
+            PingWait, 
+            SendMailWait, 
+            DnldAttWait,
+        };
+
+        // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
+        // DB-based events (even if UI-driven) and server-based events lack the Ui prefix.
+        public enum Lev : uint {
+            GetCred=(Ev.Last+1),
+            UiSetCred, 
+            GetServConf,
+            UiSetServConf,
+            GetCertOk,
+            UiCertOkYes,
+            UiCertOkNo,
+            ReDisc, 
+            ReProv, 
+            ReSync, 
+            ReFSync, 
+            SendMail, 
+            DnldAtt
+        };
 
 		public NcCred Cred { set; get; }
 		public NcProtocolState ProtocolState { set; get; }
@@ -28,67 +56,86 @@ namespace NachoCore.ActiveSync
 			Control = this;
 			Owner = owner;
 			Account = account;
-			// FIXME - property gets should come from the DB each time.
-			// FIXME - no need for public setters.
+			// FIXME - property gets must come from the DB each time, no need for public setters.
 			Cred = Owner.Db.Table<NcCred> ().Single (rec => rec.Id == Account.CredId);
-			ProtocolState = Owner.Db.Table<NcProtocolState> ().Single (rec => rec.Id == Account.ProtocolStateId);
-			Server = Owner.Db.Table<NcServer> ().Single (rec => rec.Id == Account.ServerId);
+            try {
+			    Server = Owner.Db.Table<NcServer> ().Single (rec => rec.Id == Account.ServerId);
+            } catch (System.InvalidOperationException) {}
 
 			Sm = new StateMachine () { 
-                Name = "as:control",
+                Name = "as:control" + account.Id,
 				LocalEventType = typeof(Lev),
 				LocalStateType = typeof(Lst),
 				StateChangeIndication = UpdateSavedState,
-				// New state guidance: ReSync & SendMail can come directly from the UI's writes to the DB.
-				// TempFail, HardFail, ReSync, ReDisc, and ReProv can come from using an AsCommand sub-class.
-				// Always handle Launch.
 				TransTable = new[] {
 					new Node {
-						State = (uint)St.Start, 
-						Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail,
-							(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.ReDisc,
-							(uint)Lev.ReProv, (uint)Lev.ReSync, (uint)Lev.ReFSync, (uint)Lev.SendMail,
-							(uint)Lev.DnldAtt},
+						State = (uint)St.Start,
+                        Drop = new [] {(uint)Lev.SendMail, (uint)Lev.UiSetCred, (uint)Lev.UiSetServConf, (uint)Lev.UiCertOkNo, 
+                            (uint)Lev.UiCertOkYes},
+                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.TempFail, (uint)Ev.HardFail, (uint)Lev.GetCred, (uint)Lev.ReDisc,
+                            (uint)Lev.ReProv, (uint)Lev.ReSync, (uint)Lev.ReFSync, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, 
+                            (uint)Lev.GetServConf},
 						On = new [] {
-							new Trans {Event = (uint)Ev.Launch, Act = DoDisc, State=(uint)Lst.DiscWait}}},
+                            new Trans {Event = (uint)Ev.Launch, Act = DoDisc, State=(uint)Lst.DiscWait},
+                        }},
 
 					new Node {
+                        // NOTE: There is no HardFail. Can't pass DiscWait w/out a working server - period.
 						State = (uint)Lst.DiscWait, 
-						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
-						Invalid = new [] {(uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.ReDisc, 
-							(uint)Lev.ReProv, (uint)Lev.ReFSync, (uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes},
+						Invalid = new [] {(uint)Ev.HardFail, (uint)Lev.ReDisc, (uint)Lev.ReProv, (uint)Lev.ReFSync, (uint)Lev.DnldAtt},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoDisc, State = (uint)Lst.DiscWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoOpt, State = (uint)Lst.OptWait},
-							new Trans {Event = (uint)Ev.HardFail, Act = DoUiServConfReq, State = (uint)Lst.ServConfWait},
-							new Trans {Event = (uint)Ev.TempFail, Act = DoUiTempFailInd, State = (uint)St.Start},
-							new Trans {Event = (uint)Lev.GetCred, Act = DoUiCredReq, State = (uint)Lst.CredWait}}},
+							new Trans {Event = (uint)Ev.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)Lev.GetCred, Act = DoUiCredReq, State = (uint)Lst.UiCredWait},
+                            new Trans {Event = (uint)Lev.GetServConf, Act = DoUiServConfReq, State = (uint)Lst.UiServConfWait},
+                            new Trans {Event = (uint)Lev.GetCertOk, Act = DoUiCertOkReq, State = (uint)Lst.UiCertOkWait},
+                            new Trans {Event = (uint)Lev.UiSetServConf, Act = DoSetServConf, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)Lev.UiSetCred, Act = DoSetCred, State = (uint)Lst.DiscWait},
+                        }},
 
 					new Node {
-						State = (uint)Lst.CredWait,
-						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
+						State = (uint)Lst.UiCredWait,
+						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes},
 						Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.GetCred,
-							(uint)Lev.SetServConf, (uint)Lev.ReDisc, (uint)Lev.ReProv, (uint)Lev.ReFSync,
-							(uint)Lev.DnldAtt},
+							(uint)Lev.ReDisc, (uint)Lev.ReProv, (uint)Lev.ReFSync,
+                            (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
-							new Trans {Event = (uint)Ev.Launch, Act = DoUiCredReq, State = (uint)Lst.CredWait},
-							new Trans {Event = (uint)Lev.SetCred, Act = DoDisc, State = (uint)Lst.DiscWait}}},
+							new Trans {Event = (uint)Ev.Launch, Act = DoUiCredReq, State = (uint)Lst.UiCredWait},
+							new Trans {Event = (uint)Lev.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)Lev.UiSetServConf, Act = DoSetServConf, State = (uint)Lst.DiscWait},
+                        }},
 
 					new Node {
-						State = (uint)Lst.ServConfWait,
-						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
-						Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.GetCred,
-							(uint)Lev.SetCred, (uint)Lev.ReDisc, (uint)Lev.ReProv, (uint)Lev.ReFSync,
-							(uint)Lev.DnldAtt},
+						State = (uint)Lst.UiServConfWait,
+                        Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail, (uint)Lev.UiSetCred, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes},
+						Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.GetCred, (uint)Lev.ReDisc,
+                            (uint)Lev.ReProv, (uint)Lev.ReFSync, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
-							new Trans {Event = (uint)Ev.Launch, Act = DoUiServConfReq, State = (uint)Lst.ServConfWait},
-							new Trans {Event = (uint)Lev.SetServConf, Act = DoOpt, State = (uint)Lst.OptWait}}},
+							new Trans {Event = (uint)Ev.Launch, Act = DoUiServConfReq, State = (uint)Lst.UiServConfWait},
+							new Trans {Event = (uint)Lev.UiSetServConf, Act = DoSetServConf, State = (uint)Lst.DiscWait},
+                        }},
+
+                    new Node {
+                        State = (uint)Lst.UiCertOkWait,
+                        Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
+                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.GetCred,
+                            (uint)Lev.UiSetCred, (uint)Lev.ReDisc, (uint)Lev.ReProv, (uint)Lev.ReFSync, (uint)Lev.GetServConf,
+                            (uint)Lev.DnldAtt, (uint)Lev.GetCertOk},
+                        On = new [] {
+                            new Trans {Event = (uint)Ev.Launch, Act = DoDisc, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)Lev.UiCertOkYes, Act = DoCertOkYes, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)Lev.UiCertOkNo, Act = DoCertOkNo, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)Lev.UiSetServConf, Act = DoSetServConf, State = (uint)Lst.DiscWait},
+                        }},
 
 					new Node {
 						State = (uint)Lst.OptWait,
-						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.ReDisc,
-							(uint)Lev.ReProv, (uint)Lev.ReFSync, (uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes,
+                            (uint)Lev.UiSetCred, (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.ReDisc, (uint)Lev.ReProv, (uint)Lev.ReFSync,
+                            (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoOpt, State = (uint)Lst.OptWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoProv, State = (uint)Lst.ProvWait},
@@ -97,34 +144,39 @@ namespace NachoCore.ActiveSync
 
 					new Node {
 						State = (uint)Lst.ProvWait,
-						Drop = new [] {(uint)Lev.ReSync,  (uint)Lev.SendMail},
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.ReProv,
-							(uint)Lev.ReFSync, (uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.ReSync,  (uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes,
+                            (uint)Lev.UiSetCred, (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.ReProv, (uint)Lev.ReFSync, (uint)Lev.DnldAtt,
+                            (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoProv, State = (uint)Lst.ProvWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoSettings, State = (uint)Lst.SettingsWait},
 							new Trans {Event = (uint)Ev.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
 							new Trans {Event = (uint)Ev.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.ProvWait},
-							new Trans {Event = (uint)Lev.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait}}},
+							new Trans {Event = (uint)Lev.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
+                        }},
 
 					new Node {
 						State = (uint)Lst.SettingsWait,
-						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.ReFSync,
-							(uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes,
+                            (uint)Lev.UiSetCred, (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.ReFSync, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk,
+                            (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoSettings, State = (uint)Lst.SettingsWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoFSync, State = (uint)Lst.FSyncWait},
 							new Trans {Event = (uint)Ev.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
 							new Trans {Event = (uint)Ev.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.SettingsWait},
 							new Trans {Event = (uint)Lev.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
-							new Trans {Event = (uint)Lev.ReProv, Act = DoProv, State = (uint)Lst.ProvWait}}},
+							new Trans {Event = (uint)Lev.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
+                        }},
 
 					new Node {
 						State = (uint)Lst.FSyncWait,
-						Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail},
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.ReFSync,
-							(uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.ReSync, (uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes,
+                            (uint)Lev.UiSetCred, (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred,  (uint)Lev.ReFSync, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, 
+                            (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoFSync, State = (uint)Lst.FSyncWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoSync, State = (uint)Lst.SyncWait},
@@ -135,8 +187,9 @@ namespace NachoCore.ActiveSync
 
 					new Node {
 						State = (uint)Lst.SyncWait,
-						Drop = new [] {(uint)Lev.SendMail},
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, (uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes, (uint)Lev.UiSetCred,
+                            (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoSync, State = (uint)Lst.SyncWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoPing, State = (uint)Lst.PingWait},
@@ -149,7 +202,8 @@ namespace NachoCore.ActiveSync
 
 					new Node {
 						State = (uint)Lst.PingWait,
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf},
+                        Drop = new [] {(uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes, (uint)Lev.UiSetCred, (uint)Lev.UiSetServConf},
+                        Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoPing, State = (uint)Lst.PingWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoPing, State = (uint)Lst.PingWait},
@@ -164,8 +218,9 @@ namespace NachoCore.ActiveSync
 
 					new Node {
 						State = (uint)Lst.SendMailWait,
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf,
-							(uint)Lev.SendMail, (uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes, (uint)Lev.UiSetCred,
+                            (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoSend, State = (uint)Lst.SendMailWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoPing, State = (uint)Lst.PingWait},
@@ -178,8 +233,9 @@ namespace NachoCore.ActiveSync
 
 					new Node {
 						State = (uint)Lst.DnldAttWait,
-						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.SetCred, (uint)Lev.SetServConf, 
-							(uint)Lev.SendMail, (uint)Lev.DnldAtt},
+                        Drop = new [] {(uint)Lev.SendMail, (uint)Lev.UiCertOkNo, (uint)Lev.UiCertOkYes, (uint)Lev.UiSetCred,
+                            (uint)Lev.UiSetServConf},
+						Invalid = new [] {(uint)Lev.GetCred, (uint)Lev.DnldAtt, (uint)Lev.GetCertOk, (uint)Lev.GetServConf},
 						On = new [] {
 							new Trans {Event = (uint)Ev.Launch, Act = DoDnldAtt, State = (uint)Lst.DnldAttWait},
 							new Trans {Event = (uint)Ev.Success, Act = DoPing, State = (uint)Lst.PingWait},
@@ -191,6 +247,9 @@ namespace NachoCore.ActiveSync
 							new Trans {Event = (uint)Lev.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncWait}}},
 				}
 			};
+            Sm.Validate ();
+            // FIXME - generate protocol state here. load it from DB or create & save to DB.
+            ProtocolState = Owner.Db.Table<NcProtocolState> ().Single (rec => rec.Id == Account.ProtocolStateId);
 			Sm.State = ProtocolState.State;
 
 			var dispached = Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
@@ -202,48 +261,98 @@ namespace NachoCore.ActiveSync
 			NcEventable.DbEvent += DbEventHandler;
 		}
 		// Methods callable by the owner.
-		public void Execute () {
+		public override void Execute ()
+        {
 			Sm.PostAtMostOneEvent ((uint)Ev.Launch);
 		}
-		public void CredResponse () {
-			Sm.PostAtMostOneEvent ((uint)Lev.SetCred);
+
+		public override void CredResp ()
+        {
+			Sm.PostAtMostOneEvent ((uint)Lev.UiSetCred);
 		}
-		public void ServConfResponse () {
-			Sm.PostAtMostOneEvent ((uint)Lev.SetServConf);
-		}
+
+        public override void ServerConfResp ()
+        {
+            Server = Owner.Db.Table<NcServer> ().Single (rec => rec.Id == Account.ServerId);
+            Sm.PostAtMostOneEvent ((uint)Lev.UiSetServConf);
+        }
+
+        public override void CertAskResp (bool isOkay)
+        {
+            // FIXME - make sure that the cmd is an autodiscover command! 
+            // Maybe get the AsAutodiscoverCommand.Lev out of this file.
+            if ((uint)Lst.UiCertOkWait == Sm.State) {
+                Sm.PostEvent ((uint)((isOkay) ? AsAutodiscoverCommand.Lev.ServerCertYes : 
+                                     AsAutodiscoverCommand.Lev.ServerCertNo));
+            }
+        }
+
 		// State-machine's state persistance callback.
 		private void UpdateSavedState () {
 			ProtocolState.State = Sm.State;
 			Owner.Db.Update (BackEnd.DbActors.Proto, ProtocolState);
 		}
+
 		// State-machine action methods.
-		private void DoUiServConfReq () {
-			Owner.ServConfReq (this);
-		}
+
+        private void DoUiServConfReq () {
+            // Send the request toward the UI.
+            Owner.ServConfReq (this);
+        }
+
+        private void DoSetServConf ()
+        {
+            // Send the event to the command.
+            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.Lev.ServerSet);
+        }
+		
 		private void DoUiCredReq () {
+            // Send the request toward the UI.
 			Owner.CredReq (this);
 		}
-		private void DoUiHardFailInd () {
+
+        private void DoSetCred ()
+        {
+            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.Lev.CredSet);
+        }
+
+        private void DoUiCertOkReq () {
+            Owner.CertAskReq (this, (X509Certificate2)Sm.Arg);
+        }
+
+        private void DoCertOkNo () {
+            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.Lev.ServerCertNo);
+        }
+
+        private void DoCertOkYes () {
+            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.Lev.ServerCertYes);
+        }
+
+        private void DoUiHardFailInd () {
+            // Send the indication toward the UI.
 			Owner.HardFailInd (this);
 		}
+
 		private void DoUiTempFailInd () {
-			Console.WriteLine ("TempFail");
-			// FIXME - need to tell the app/UI.
-			Sm.PostEvent ((uint)Ev.Launch);
+            // Send the indication toward the UI.
+            Owner.TempFailInd (this);
+			// Owner needs to send launch to get it going again. Sm.PostEvent ((uint)Ev.Launch);
 		}
 		private void DoDisc () {
-			// FIXME - complete autodiscovery.
-			//var cmd = new AsAutodiscover (this);
-			//cmd.Execute (Sm);
-			Sm.PostEvent ((uint)Ev.Success);
+			Cmd = new AsAutodiscoverCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoOpt () {
-			m_cmd = new AsOptionsCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsOptionsCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoProv () {
-			m_cmd = new AsProvisionCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsProvisionCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoOldProtoProv () {
 			// If OPTIONS gets a hard failure, then assume oldest supported protocol version and try to keep going.
@@ -251,27 +360,27 @@ namespace NachoCore.ActiveSync
 			DoProv ();
 		}
 		private void DoSettings () {
-			m_cmd = new AsSettingsCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsSettingsCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoFSync () {
-			m_cmd = new AsFolderSyncCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsFolderSyncCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoSync () {
-			m_cmd = new AsSyncCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsSyncCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoSend () {
 			if ((uint)Lst.PingWait == Sm.State) {
-				m_cmd.Cancel ();
+				Cmd.Cancel ();
 			}
-			m_cmd = new AsSendMailCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsSendMailCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoDnldAtt () {
-			m_cmd = new AsItemOperationsCommand (this);
-			m_cmd.Execute (Sm);
+			Cmd = new AsItemOperationsCommand (this);
+			Cmd.Execute (Sm);
 		}
 		private void DoPing () {
 			if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
@@ -289,8 +398,8 @@ namespace NachoCore.ActiveSync
 			    rec.Operation == NcPendingUpdate.Operations.Download).Count ()) {
 				Sm.PostEvent ((uint)Lev.DnldAtt);
 			} else {
-				m_cmd = new AsPingCommand (this);
-				m_cmd.Execute (Sm);
+				Cmd = new AsPingCommand (this);
+				Cmd.Execute (Sm);
 			}
 		}
 

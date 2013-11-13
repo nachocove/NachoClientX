@@ -20,15 +20,3 @@
 * You need to checkout NachoPlatform, and do what the README says.
 * You need to checkout MimeKit (this project references MimeKit).
 
-## TODO (in priority order)
-* Support inline attachments (images).
-* Housecleaning: platform neutral, 100% parallel autodiscovery.
-* Housecleaning: robustify provisioning state machine.
-* Housecleaning: spend a day trying to get test going.
-* Housecleaning: 100% tight status code processing.
-* Housecleaning: tighent-up each command: options, provision, settings, foldersync, sync, ping, sendmail, itemoperations.
-* Housecleaning: support for XML Schema validation of messages (WAIT on Xamarin support).
-* Email deletes need to clean up any attachments locally!
-* Allow the client to create a contact, and make sure that gets pushed to the server.
-* Support attachment upload.
-* Get test going. 

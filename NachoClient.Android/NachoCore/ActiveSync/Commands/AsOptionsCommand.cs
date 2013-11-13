@@ -9,21 +9,20 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync {
 	public class AsOptionsCommand : AsCommand {
-		public AsOptionsCommand (IAsDataSource dataSource) : base ("Options", dataSource) {
-			Method = HttpMethod.Options;
-		}
+		public AsOptionsCommand (IAsDataSource dataSource) : base ("Options", dataSource) {}
 
-		protected override uint ProcessResponse (HttpResponseMessage response) {
-			if(ProcessOptionsHeaders (response.Headers, m_dataSource)) {
-				return (uint)Ev.Success;
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
+			if(ProcessOptionsHeaders (response.Headers, DataSource)) {
+                return Event.Create ((uint)Ev.Success);
 			}
-			return (uint)Ev.HardFail;
+            return Event.Create ((uint)Ev.HardFail);
 		}
-
-		protected override string QueryString () {
+        public override HttpMethod Method (AsHttpOperation Sender) {
+            return HttpMethod.Options;
+        }
+        public override string QueryString (AsHttpOperation Sender) {
 			return "";
 		}
-
 		internal static void SetOldestProtoVers (IAsDataSource dataSource) {
 			dataSource.ProtocolState.AsProtocolVersion = "12.0";
 		}

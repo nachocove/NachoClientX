@@ -66,25 +66,17 @@
     <Compile Include="NachoCore\Model\NcCred.cs" />
     <Compile Include="NachoCore\Model\NcProtocolState.cs" />
     <Compile Include="NachoCore\Model\NcServer.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\IAsDataSource.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXML.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXMLByteQueue.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXMLCodePage.cs" />
     <Compile Include="NachoCore\Extensions\XmlDocument+Wbxml.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsProvisionCommand.cs" />
     <Compile Include="NachoCore\Extensions\StateMachine.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsAutodiscover.cs" />
     <Compile Include="NachoCore\Extensions\Helpers.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsSettingsCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsFolderSyncCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsPingCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsSyncCommand.cs" />
     <Compile Include="NachoCore\Model\NcFolder.cs" />
     <Compile Include="NachoCore\BackEnd.cs" />
     <Compile Include="NachoCore\Extensions\SQLiteConnectionWithEvent.cs" />
     <Compile Include="NachoCore\ActiveSync\AsConstants.cs" />
-    <Compile Include="NachoCore\IBackEndDelegate.cs" />
     <Compile Include="NachoCore\Model\NcEventable.cs" />
     <Compile Include="NachoCore\Extensions\ISQLiteEventable.cs" />
     <Compile Include="NachoCore\Model\NcObject.cs" />
@@ -92,22 +84,39 @@
     <Compile Include="NachoCore\ProtoControl.cs" />
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
     <Compile Include="NachoCore\Model\NcEmailMessage.cs" />
-    <Compile Include="NachoCore\ActiveSync\IAsCommand.cs" />
     <Compile Include="NachoCore\Model\NcItem.cs" />
     <Compile Include="NachoCore\Model\NcContact.cs" />
     <Compile Include="MainActivity.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsOptionsCommand.cs" />
     <Compile Include="NachoCore\Model\NcAttachment.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsItemOperationsCommand.cs" />
     <Compile Include="NachoDemo.cs" />
-    <Compile Include="NachoCore\ActiveSync\AsSendMailCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Operations\AsHttpOperation.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsItemOperationsCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsOptionsCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsPingCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSendMailCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsProvisionCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\IAsCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSettingsCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Operations\IAsHttpOperationOwner.cs" />
+    <Compile Include="NachoCore\ActiveSync\Operations\IAsOperation.cs" />
+    <Compile Include="NachoCore\ActiveSync\Operations\AsDnsOperation.cs" />
+    <Compile Include="NachoCore\ActiveSync\Operations\IAsDnsOperationOwner.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsAutodiscoverCommand\StepRobot.cs" />
+    <Compile Include="NachoCore\Extensions\ServerCertificatePeek.cs" />
+    <Compile Include="NachoCore\IBackEndOwner.cs" />
+    <Compile Include="NachoCore\IBackEnd.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="NachoCore\README.md" />
+    <None Include="NachoCore\Extensions\System.Xml.Schema.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\Main.axml" />
@@ -127,6 +136,9 @@
     <Folder Include="lib\armeabi\" />
     <Folder Include="lib\armeabi-v7a\" />
     <Folder Include="lib\x86\" />
+    <Folder Include="NachoCore\ActiveSync\Commands\" />
+    <Folder Include="NachoCore\ActiveSync\Operations\" />
+    <Folder Include="NachoCore\ActiveSync\Commands\AsAutodiscoverCommand\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

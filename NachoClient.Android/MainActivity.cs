@@ -6,9 +6,17 @@ using Android.Views;
 using Android.Widget;
 using Android.OS;
 using NachoCore;
+using NachoCore.Utils;
 using NachoPlatform;
-
+using DnDns.Enums;
+using DnDns.Query;
+using DnDns.Records;
+using System.Net;
+using System.Net.Http;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace NachoClient.Android.Tablet
 {
@@ -37,7 +45,7 @@ namespace NachoClient.Android.Tablet
 			NachoPlatform.Assets.AndroidAssetManager = Assets;
 			Demo = new NachoDemo ();
 		}
-	}
+    }
 }
 
 

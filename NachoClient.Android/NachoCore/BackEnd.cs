@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using SQLite;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -24,7 +26,7 @@ using NachoCore.Utils;
  * */
 namespace NachoCore
 {
-	public class BackEnd : IProtoControlOwner
+	public class BackEnd : IBackEnd, IProtoControlOwner
 	{
 		public enum DbActors {Ui, Proto};
 		public enum DbEvents {DidWrite, WillDelete};
@@ -32,16 +34,27 @@ namespace NachoCore
 		public SQLiteConnectionWithEvents Db { set; get; }
 		public string AttachmentsDir { set; get; }
 
-		private List<ProtoControl> services;
-		private IBackEndDelegate m_dele;
-		private string m_dbFilename;
+		private List<ProtoControl> Services;
+		private IBackEndOwner Owner;
+		private string DbFileName;
 
-		public BackEnd (IBackEndDelegate dele) {
+        private ProtoControl ServiceFromAccount (NcAccount account)
+        {
+            var query = Services.Where (ctrl => ctrl.Account.Id.Equals (account.Id));
+            if (! Services.Any ()) {
+                return null;
+            }
+            return query.Single ();
+        }
+
+        // For IBackEnd.
+
+		public BackEnd (IBackEndOwner owner) {
 			var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
 			AttachmentsDir = Path.Combine (documents, "attachments");
 			Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
-			m_dbFilename = Path.Combine (documents, "db");
-			Db = new SQLiteConnectionWithEvents(m_dbFilename);
+			DbFileName = Path.Combine (documents, "db");
+			Db = new SQLiteConnectionWithEvents(DbFileName);
 			Db.CreateTable<NcAccount> ();
 			Db.CreateTable<NcCred> ();
 			Db.CreateTable<NcFolder> ();
@@ -52,44 +65,75 @@ namespace NachoCore
 			Db.CreateTable<NcServer> ();
 			Db.CreateTable<NcPendingUpdate> ();
 
-			services = new List<ProtoControl> ();
+			Services = new List<ProtoControl> ();
 
-			m_dele = dele;
+			Owner = owner;
+
+            ServicePointManager.DefaultConnectionLimit = 8;
 		}
-		// for each account, fire up an EAS control.
-		public void Start () {
+
+   	    public void Start () {
 			var accounts = Db.Table<NcAccount> ();
 			foreach (var account in accounts) {
 				Start (account);
 			}
 		}
+
 		public void Start (NcAccount account) {
-			// FIXME. This code needs to be able to detect the account type and start the appropriate control.
-			var service = new AsProtoControl (this, account);
-			if (! services.Any (ctrl => ctrl.Account.Id == account.Id)) {
-				services.Add (service);
+            var service = ServiceFromAccount (account);
+            if (null == service) {
+			    /* NOTE: This code needs to be able to detect the account type and start the 
+                 * appropriate control (not just AS).
+                 */
+			    service = new AsProtoControl (this, account);
+				Services.Add (service);
 			}
 			service.Execute ();
 		}
+
+        public void CertAskResp (NcAccount account, bool isOkay)
+        {
+            ServiceFromAccount (account).CertAskResp (isOkay);
+        }
+
+        public void ServerConfResp (NcAccount account)
+        {
+            ServiceFromAccount (account).ServerConfResp ();
+        }
+
+        public void CredResp (NcAccount account)
+        {
+            ServiceFromAccount (account).CredResp ();
+        }
+
 		// For IProtoControlOwner.
+
 		public void CredReq (ProtoControl sender) {
-			m_dele.CredReq (sender.Account);
-		}
-		public void ServConfReq (ProtoControl sender) {
-			m_dele.ServConfReq (sender.Account);
-		}
-		public void HardFailInd (ProtoControl sender) {
-			m_dele.HardFailInd (sender.Account);
-		}
-		public void SoftFailInd (ProtoControl sender) {
-			m_dele.HardFailInd (sender.Account);
-		}
-		public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) {
-			return m_dele.RetryPermissionReq (sender.Account, delaySeconds);
-		}
-		public void ServerOOSpaceInd (ProtoControl sender) {
-			m_dele.ServerOOSpaceInd (sender.Account);
+			Owner.CredReq (sender.Account);
 		}
 
+		public void ServConfReq (ProtoControl sender) {
+			Owner.ServConfReq (sender.Account);
+		}
+
+        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {
+            Owner.CertAskReq (sender.Account, certificate);
+        }
+
+		public void HardFailInd (ProtoControl sender) {
+			Owner.HardFailInd (sender.Account);
+		}
+
+		public void TempFailInd (ProtoControl sender) {
+			Owner.HardFailInd (sender.Account);
+		}
+
+		public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) {
+			return Owner.RetryPermissionReq (sender.Account, delaySeconds);
+		}
+
+		public void ServerOOSpaceInd (ProtoControl sender) {
+			Owner.ServerOOSpaceInd (sender.Account);
+		}
 	}
 }

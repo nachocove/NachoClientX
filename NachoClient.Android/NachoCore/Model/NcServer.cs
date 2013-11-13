@@ -17,5 +17,14 @@ namespace NachoCore.Model
 		public string Path { get; set; }
 		public string Scheme { get; set; }
 		public int Port { get; set; }
+
+        public static NcServer Create (Uri uri) {
+            return new NcServer () {
+                Fqdn = uri.Host,
+                Path = uri.AbsolutePath,
+                Scheme = uri.Scheme,
+                Port = uri.Port
+            };
+        }
 	}
 }

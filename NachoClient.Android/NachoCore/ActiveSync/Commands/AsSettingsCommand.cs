@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
 
 		public AsSettingsCommand (IAsDataSource dataSource) : base (Xml.Settings.Ns, Xml.Settings.Ns, dataSource) {}
 
-		protected override XDocument ToXDocument () {
+        public override XDocument ToXDocument (AsHttpOperation Sender) {
 			var settings = new XElement (m_ns + Xml.Settings.Ns, 
 			                             new XElement (m_ns + Xml.Settings.UserInformation, 
 			                             	new XElement (m_ns + Xml.Settings.Get)), 
@@ -29,8 +29,8 @@ namespace NachoCore.ActiveSync
 			doc.Add (settings);
 			return doc;
 		}
-		protected override uint ProcessResponse (HttpResponseMessage response, XDocument doc) {
-			return (uint)Ev.Success;
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
+            return Event.Create ((uint)Ev.Success);
 		}
 	}
 }

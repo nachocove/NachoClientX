@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using NachoCore;
 using NachoCore.Model;
 
 namespace NachoCore
 {
-	public class NachoDemo : IBackEndDelegate
+	public class NachoDemo : IBackEndOwner
 	{
 		private BackEnd Be { get; set;}
 		private NcAccount Account { get; set; }
@@ -36,9 +37,6 @@ namespace NachoCore
 			// You will always need to supply user credentials (until certs, for sure).
 			var cred = new NcCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
 			Be.Db.Insert (BackEnd.DbActors.Ui, cred);
-			// Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
-			var server = new NcServer () { Fqdn = "nco9.com" };
-			Be.Db.Insert (BackEnd.DbActors.Ui, server);
 			// In the near future, you won't need to create this protocol state object.
 			var protocolState = new NcProtocolState ();
 			Be.Db.Insert (BackEnd.DbActors.Ui, protocolState);
@@ -46,9 +44,13 @@ namespace NachoCore
 			Account = new NcAccount () { EmailAddr = "jeffe@nachocove.com" };
 			// The account object is the "top", pointing to credential, server, and opaque protocol state.
 			Account.CredId = cred.Id;
-			Account.ServerId = server.Id;
 			Account.ProtocolStateId = protocolState.Id;
 			Be.Db.Insert (BackEnd.DbActors.Ui, Account);
+            /* */
+            var server = new NcServer () { Fqdn = "nco9.com" };
+            Be.Db.Insert (BackEnd.DbActors.Ui, server);
+            Account.ServerId = server.Id;
+            Be.Db.Update (BackEnd.DbActors.Ui, Account); 
 		}
 		public void TryDelete () {
 			if (0 != Be.Db.Table<NcEmailMessage> ().Count ()) {
@@ -73,8 +75,19 @@ namespace NachoCore
 		}
 		public void ServConfReq (NcAccount account) {
 			// Will change - needed for current autodiscover flow.
+            var server = new NcServer () { Fqdn = "nco9.com" };
+            Be.Db.Insert (BackEnd.DbActors.Ui, server);
+            account.ServerId = server.Id;
 			Be.Db.Update (BackEnd.DbActors.Ui, account);
+            Be.ServerConfResp (account);
 		}
+        public void CertAskReq (NcAccount account, X509Certificate2 certificate)
+        {
+            Be.CertAskResp (account, true);
+        }
+
+        public void CertAskReq (NcAccount account) {
+        }
 		public void HardFailInd (NcAccount account) {
 		}
 		public void SoftFailInd (NcAccount account) {

@@ -83,6 +83,11 @@ namespace NachoCore.ActiveSync {
 			Last = MaximumDevicesReached
 		};
 
+        /* The following section is organized as follows:
+         * 1) The order is AirSync, AirSyncBase, and then classes are in alpha order.
+         * 2) In order to have only one version of any typed-in string, following classes refer to the
+         * constants in preceding classes.
+         */
 		public class AirSync {
 			public const string Ns = "AirSync";
 			// Alpha order.
@@ -141,6 +146,38 @@ namespace NachoCore.ActiveSync {
 			// NOTE that TypeCode is for both Type and NativeBodyType.
 			public enum TypeCode : uint {PlainText=1, Html=2, Rtf = 3, /* Data element will be base64-encoded. */ Mime = 4};
 		}
+
+        public class Autodisco {
+            public const string Autodiscover = "Autodiscover";
+            // Alpha order.
+            public const string AcceptableResponseSchema = "AcceptableResponseSchema";
+            public const string Action = "Action";
+            public const string Culture = "Culture";
+            public const string DebugData = "DebugData";
+            public const string DisplayName = "DisplayName";
+            public const string EmailAddress = "EmailAddress";
+            public const string Error = "Error";
+            public const string ErrorCode = "ErrorCode";
+            public const string Message = "Message";
+            public const string Name = "Name";
+            public const string Redirect = "Redirect";
+            public const string Request = "Request";
+            public const string Response = "Response";
+            public const string Server = "Server";
+            public const string ServerData = "ServerData";
+            public const string Settings = "Settings";
+            public const string Status = "Status";
+            public const string Type = AirSyncBase.Type;
+            public const string Url = "Url";
+            public const string User = "User";
+
+            public enum ErrorCodeCode : uint {InvalidRequest=600, NoProviderForSchema=601};
+            public enum StatusCode : uint {Success=1, ProtocolError=2};
+            public class TypeCode {
+                public const string MobileSync = "MobileSync";
+                public const string CertEnroll = "CertEnroll";
+            }
+        }
 		public class ComposeMail {
 			public const string Ns = "ComposeMail";
 			// Alpha order.
@@ -302,20 +339,6 @@ namespace NachoCore.ActiveSync {
 				throw new Exception ();
 			}
 		}
-		public class Ping {
-			public const string Ns = "Ping";
-			// Alpha order.
-			public const string Class = "Class";
-			public const string Folder = "Folder";
-			public const string Folders = "Folders";
-			public const string HeartbeatInterval = "HeartbeatInterval";
-			public const string Id = "Id";
-			public const string MaxFolders = "MaxFolders";
-			public const string Status = AirSync.Status;
-
-			public enum StatusCode : uint {NoChanges=1, Changes=2, MissingParams=3, SyntaxError=4, BadHeartbeat=5, 
-				TooManyFolders=6, NeedFolderSync=7, ServerError=8};
-		}
 		public class ItemOperations {
 			public const string Ns = "ItemOperations";
 			// Alpha order.
@@ -324,7 +347,7 @@ namespace NachoCore.ActiveSync {
 			public const string Properties = "Properties";
 			public const string Status = AirSync.Status;
 			public const string Store = "Store";
-			public const string Response = "Response";
+			public const string Response = Autodisco.Response;
 
 			public class StoreCode {
 				public const string DocumentLibrary = "Document Library"; // NOTE: space is intended.
@@ -338,6 +361,20 @@ namespace NachoCore.ActiveSync {
 				ResourceAccessDenied=16, PartialFailure=17, CredRequired=18, /* [19, 154] omitted */
 				ProtocolErrorMissing=155, ActionNotSupported=156};
 		}
+        public class Ping {
+            public const string Ns = "Ping";
+            // Alpha order.
+            public const string Class = "Class";
+            public const string Folder = "Folder";
+            public const string Folders = "Folders";
+            public const string HeartbeatInterval = "HeartbeatInterval";
+            public const string Id = "Id";
+            public const string MaxFolders = "MaxFolders";
+            public const string Status = AirSync.Status;
+
+            public enum StatusCode : uint {NoChanges=1, Changes=2, MissingParams=3, SyntaxError=4, BadHeartbeat=5, 
+                TooManyFolders=6, NeedFolderSync=7, ServerError=8};
+        }
 		public class Settings {
 			public const string Ns = "Settings";
 			// Alpha order.
