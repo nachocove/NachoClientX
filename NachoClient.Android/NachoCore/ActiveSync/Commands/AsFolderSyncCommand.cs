@@ -7,21 +7,21 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
-	public class AsFolderSyncCommand : AsCommand
-	{
-		public AsFolderSyncCommand (IAsDataSource dataSource) : base(Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource) {}
+    public class AsFolderSyncCommand : AsCommand
+    {
+        public AsFolderSyncCommand (IAsDataSource dataSource) : base(Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource) {}
 
         public override XDocument ToXDocument (AsHttpOperation Sender) {
-			var folderSync = new XElement (m_ns+Xml.FolderHierarchy.FolderSync, 
-			                               new XElement (m_ns+Xml.FolderHierarchy.SyncKey, DataSource.ProtocolState.AsSyncKey));
-			var doc = AsCommand.ToEmptyXDocument();
-			doc.Add (folderSync);
-			return doc;
-		}
+            var folderSync = new XElement (m_ns+Xml.FolderHierarchy.FolderSync, 
+                                           new XElement (m_ns+Xml.FolderHierarchy.SyncKey, DataSource.ProtocolState.AsSyncKey));
+            var doc = AsCommand.ToEmptyXDocument();
+            doc.Add (folderSync);
+            return doc;
+        }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
-		{
-			switch ((Xml.FolderHierarchy.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns+Xml.FolderHierarchy.Status).Value)) {
+        {
+            switch ((Xml.FolderHierarchy.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns+Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.StatusCode.Success:
                 DataSource.ProtocolState.AsSyncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
@@ -59,8 +59,8 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.Success);
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail);
-			}
-		}
-	}
+            }
+        }
+    }
 }
 

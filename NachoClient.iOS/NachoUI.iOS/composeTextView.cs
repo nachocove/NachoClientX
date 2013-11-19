@@ -7,12 +7,12 @@ using MonoTouch.UIKit;
 
 namespace NachoClient.iOS
 {
-	public partial class composeTextView : UITextView
-	{
+    public partial class composeTextView : UITextView
+    {
 
 
-		public composeTextView (IntPtr handle) : base (handle)
-		{
-		}
-	}
+        public composeTextView (IntPtr handle) : base (handle)
+        {
+        }
+    }
 }

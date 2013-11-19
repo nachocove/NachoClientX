@@ -5,17 +5,17 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-	public class MessageSource : UIWebView
+    public class MessageSource : UIWebView
 
-	{
-		AppDelegate appDelegate { get; set; }
+    {
+        AppDelegate appDelegate { get; set; }
 
-		public MessageSource ()
-		{
-			appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-		}
+        public MessageSource ()
+        {
+            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+        }
 
-	
-	}
+    
+    }
 }
 

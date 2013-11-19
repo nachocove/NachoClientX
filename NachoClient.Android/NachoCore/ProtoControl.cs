@@ -5,8 +5,8 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-	public abstract class ProtoControl
-	{
+    public abstract class ProtoControl
+    {
         protected int AccountId;
         public IProtoControlOwner Owner { get; set; }
 
@@ -54,5 +54,5 @@ namespace NachoCore
         public abstract void CertAskResp (bool isOkay);
         public abstract void ServerConfResp ();
         public abstract void CredResp ();
-	}
+    }
 }

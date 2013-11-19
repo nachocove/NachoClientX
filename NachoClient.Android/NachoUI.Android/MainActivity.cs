@@ -20,31 +20,31 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoClient.Android.Tablet
 {
-	[Activity (Label = "NachoClient.Android", MainLauncher = true)]
-	public class MainActivity : Activity
-	{
-		int count = 1;
+    [Activity (Label = "NachoClient.Android", MainLauncher = true)]
+    public class MainActivity : Activity
+    {
+        int count = 1;
 
-		private NachoDemo Demo { get; set; }
+        private NachoDemo Demo { get; set; }
 
-		protected override void OnCreate (Bundle bundle)
-		{
-			base.OnCreate (bundle);
+        protected override void OnCreate (Bundle bundle)
+        {
+            base.OnCreate (bundle);
 
-			// Set our view from the "main" layout resource
-			SetContentView (Resource.Layout.Main);
+            // Set our view from the "main" layout resource
+            SetContentView (Resource.Layout.Main);
 
-			// Get our button from the layout resource,
-			// and attach an event to it
-			Button button = FindViewById<Button> (Resource.Id.myButton);
-			
-			button.Click += delegate {
-				button.Text = string.Format ("{0} clicks!", count++);
-			};
+            // Get our button from the layout resource,
+            // and attach an event to it
+            Button button = FindViewById<Button> (Resource.Id.myButton);
+            
+            button.Click += delegate {
+                button.Text = string.Format ("{0} clicks!", count++);
+            };
 
-			NachoPlatform.Assets.AndroidAssetManager = Assets;
-			Demo = new NachoDemo ();
-		}
+            NachoPlatform.Assets.AndroidAssetManager = Assets;
+            Demo = new NachoDemo ();
+        }
     }
 }
 

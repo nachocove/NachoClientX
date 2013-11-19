@@ -10,53 +10,53 @@ using MonoTouch.UIKit;
 
 namespace NachoClient.iOS
 {
-	public partial class FolderViewController : UITableViewController
+    public partial class FolderViewController : UITableViewController
 
-	{
-		/*
-		 *  FIXME - need to make sure that folder table and number of rows gets updated as new events from 
-		 *         - from BE come in. Right now fixed length array will cause fault if email comes in.
-		 *  FIXME - need to add logic for adding folder, 
-		 */
+    {
+        /*
+         *  FIXME - need to make sure that folder table and number of rows gets updated as new events from 
+         *         - from BE come in. Right now fixed length array will cause fault if email comes in.
+         *  FIXME - need to add logic for adding folder, 
+         */
 
-		NcAccount currentAccount { get; set; }
-		public void SetAccount (NcAccount ncaccount) {
-			currentAccount = ncaccount;
-		}
+        NcAccount currentAccount { get; set; }
+        public void SetAccount (NcAccount ncaccount) {
+            currentAccount = ncaccount;
+        }
 
 
-		public override void ViewDidLoad ()
-		{
-			base.ViewDidLoad ();
-			Console.Write ("in account ");
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            Console.Write ("in account ");
 
-			TableView.Source = new FolderTableSource ();
-		}
-		public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-		{
-			NcFolder thisfolder;
-			if (segue.Identifier == "mailview" ){
-				var msgview = (MessageViewController)segue.DestinationViewController; //our destination
+            TableView.Source = new FolderTableSource ();
+        }
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            NcFolder thisfolder;
+            if (segue.Identifier == "mailview" ){
+                var msgview = (MessageViewController)segue.DestinationViewController; //our destination
 
-				var source = TableView.Source as FolderTableSource;
-				var rowPath = TableView.IndexPathForSelectedRow;
-				thisfolder = source.getFolder (rowPath);
-				msgview.SetFolder (thisfolder);
+                var source = TableView.Source as FolderTableSource;
+                var rowPath = TableView.IndexPathForSelectedRow;
+                thisfolder = source.getFolder (rowPath);
+                msgview.SetFolder (thisfolder);
 
-				//Console.Write ("The index of this row is ");
-				//Console.WriteLine(rowPath);
+                //Console.Write ("The index of this row is ");
+                //Console.WriteLine(rowPath);
 
-			// needt to find the "index of this current cell; then pass the FolderID and AccountID in the
-			// segue to the MessageViewController, so we show only messages from this folder.
-			/*FIX
-			msgview.currentfolder = (NcFolder)(thisview.selectedindexrow)
-			msgview.currentaccount = appDe
+            // needt to find the "index of this current cell; then pass the FolderID and AccountID in the
+            // segue to the MessageViewController, so we show only messages from this folder.
+            /*FIX
+            msgview.currentfolder = (NcFolder)(thisview.selectedindexrow)
+            msgview.currentaccount = appDe
 */
 }
-		}
+        }
 
-		public FolderViewController (IntPtr handle) : base (handle)
-		{
-		}
-	}
+        public FolderViewController (IntPtr handle) : base (handle)
+        {
+        }
+    }
 }

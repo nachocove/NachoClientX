@@ -33,8 +33,8 @@ namespace NachoCore.ActiveSync
     /* The only reason we implement & proxy IAsDataSource is so that we can source
      * candidate values for Server to AsHttpOperation when testing them.
      */
-	public partial class AsAutodiscoverCommand : AsCommand, IAsDataSource
-	{
+    public partial class AsAutodiscoverCommand : AsCommand, IAsDataSource
+    {
         public enum Lst : uint {
             S1Wait=(St.Last+1),
             S1AskWait,
@@ -442,10 +442,10 @@ namespace NachoCore.ActiveSync
             DoTest ();
         }
 
-		private void DoUiGetCred () {
+        private void DoUiGetCred () {
             // Ask the UI to either re-get the password, or to get the username + (optional) domain.
             OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetCred);
-		}
+        }
 
         private void DoUiGetServer () {
             OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf);
@@ -484,6 +484,6 @@ namespace NachoCore.ActiveSync
         public NcCred Cred {
             get { return DataSource.Cred; }
         }
-	}
+    }
 }
 

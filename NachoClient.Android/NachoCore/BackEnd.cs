@@ -26,17 +26,17 @@ using NachoCore.Utils;
  * */
 namespace NachoCore
 {
-	public class BackEnd : IBackEnd, IProtoControlOwner
-	{
-		public enum DbActors {Ui, Proto};
-		public enum DbEvents {DidWrite, WillDelete};
+    public class BackEnd : IBackEnd, IProtoControlOwner
+    {
+        public enum DbActors {Ui, Proto};
+        public enum DbEvents {DidWrite, WillDelete};
 
-		public SQLiteConnectionWithEvents Db { set; get; }
-		public string AttachmentsDir { set; get; }
+        public SQLiteConnectionWithEvents Db { set; get; }
+        public string AttachmentsDir { set; get; }
 
-		private List<ProtoControl> Services;
-		private IBackEndOwner Owner;
-		private string DbFileName;
+        private List<ProtoControl> Services;
+        private IBackEndOwner Owner;
+        private string DbFileName;
 
         private ProtoControl ServiceFromAccount (NcAccount account)
         {
@@ -49,47 +49,47 @@ namespace NachoCore
 
         // For IBackEnd.
 
-		public BackEnd (IBackEndOwner owner) {
-			var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-			AttachmentsDir = Path.Combine (documents, "attachments");
-			Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
-			DbFileName = Path.Combine (documents, "db");
-			Db = new SQLiteConnectionWithEvents(DbFileName);
-			Db.CreateTable<NcAccount> ();
-			Db.CreateTable<NcCred> ();
-			Db.CreateTable<NcFolder> ();
-			Db.CreateTable<NcEmailMessage> ();
-			Db.CreateTable<NcAttachment> ();
-			Db.CreateTable<NcContact> ();
-			Db.CreateTable<NcProtocolState> ();
-			Db.CreateTable<NcServer> ();
-			Db.CreateTable<NcPendingUpdate> ();
+        public BackEnd (IBackEndOwner owner) {
+            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            AttachmentsDir = Path.Combine (documents, "attachments");
+            Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
+            DbFileName = Path.Combine (documents, "db");
+            Db = new SQLiteConnectionWithEvents(DbFileName);
+            Db.CreateTable<NcAccount> ();
+            Db.CreateTable<NcCred> ();
+            Db.CreateTable<NcFolder> ();
+            Db.CreateTable<NcEmailMessage> ();
+            Db.CreateTable<NcAttachment> ();
+            Db.CreateTable<NcContact> ();
+            Db.CreateTable<NcProtocolState> ();
+            Db.CreateTable<NcServer> ();
+            Db.CreateTable<NcPendingUpdate> ();
 
-			Services = new List<ProtoControl> ();
+            Services = new List<ProtoControl> ();
 
-			Owner = owner;
+            Owner = owner;
 
             ServicePointManager.DefaultConnectionLimit = 8;
-		}
+        }
 
-   	    public void Start () {
-			var accounts = Db.Table<NcAccount> ();
-			foreach (var account in accounts) {
-				Start (account);
-			}
-		}
+        public void Start () {
+            var accounts = Db.Table<NcAccount> ();
+            foreach (var account in accounts) {
+                Start (account);
+            }
+        }
 
-		public void Start (NcAccount account) {
+        public void Start (NcAccount account) {
             var service = ServiceFromAccount (account);
             if (null == service) {
-			    /* NOTE: This code needs to be able to detect the account type and start the 
+                /* NOTE: This code needs to be able to detect the account type and start the 
                  * appropriate control (not just AS).
                  */
-			    service = new AsProtoControl (this, account);
-				Services.Add (service);
-			}
-			service.Execute ();
-		}
+                service = new AsProtoControl (this, account);
+                Services.Add (service);
+            }
+            service.Execute ();
+        }
 
         public void CertAskResp (NcAccount account, bool isOkay)
         {
@@ -106,34 +106,34 @@ namespace NachoCore
             ServiceFromAccount (account).CredResp ();
         }
 
-		// For IProtoControlOwner.
+        // For IProtoControlOwner.
 
-		public void CredReq (ProtoControl sender) {
-			Owner.CredReq (sender.Account);
-		}
+        public void CredReq (ProtoControl sender) {
+            Owner.CredReq (sender.Account);
+        }
 
-		public void ServConfReq (ProtoControl sender) {
-			Owner.ServConfReq (sender.Account);
-		}
+        public void ServConfReq (ProtoControl sender) {
+            Owner.ServConfReq (sender.Account);
+        }
 
         public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {
             Owner.CertAskReq (sender.Account, certificate);
         }
 
-		public void HardFailInd (ProtoControl sender) {
-			Owner.HardFailInd (sender.Account);
-		}
+        public void HardFailInd (ProtoControl sender) {
+            Owner.HardFailInd (sender.Account);
+        }
 
-		public void TempFailInd (ProtoControl sender) {
-			Owner.HardFailInd (sender.Account);
-		}
+        public void TempFailInd (ProtoControl sender) {
+            Owner.HardFailInd (sender.Account);
+        }
 
-		public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) {
-			return Owner.RetryPermissionReq (sender.Account, delaySeconds);
-		}
+        public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) {
+            return Owner.RetryPermissionReq (sender.Account, delaySeconds);
+        }
 
-		public void ServerOOSpaceInd (ProtoControl sender) {
-			Owner.ServerOOSpaceInd (sender.Account);
-		}
-	}
+        public void ServerOOSpaceInd (ProtoControl sender) {
+            Owner.ServerOOSpaceInd (sender.Account);
+        }
+    }
 }
