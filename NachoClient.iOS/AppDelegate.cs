@@ -35,13 +35,36 @@ namespace NachoClient.iOS
             Be = new BackEnd (this);
             if (0 == Be.Db.Table<NcAccount> ().Count ()) {
                 Console.WriteLine ("empty Table");
+            } else {
+                // FIXME - this is wrong. Need to handle multiple accounts in future
+                this.Account = Be.Db.Table<NcAccount>().ElementAt(0);
             }
             Be.Start ();
             return true;
         }
 		public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
 		{
-			// Override point for customization after application launch.
+            launchBe();
+            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
+                // we will enter the "login schema"
+
+                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
+                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+                this.Window.RootViewController = rootControllerView;
+                this.Window.MakeKeyAndVisible();
+
+                return true;
+            } else {
+                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
+                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+                this.Window.RootViewController = rootControllerView;
+                this.Window.MakeKeyAndVisible();
+
+                return true;
+            }
+            // Override point for customization after application launch.
 			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad) {
 				var splitViewController = (UISplitViewController)Window.RootViewController;
 
@@ -61,7 +84,7 @@ namespace NachoClient.iOS
 			// FOR DEBUGGING BE ONLY. Demo = new NachoDemo ();
             // We launch the DB, or grab a handle on the instance
             // launchBe ();
-            Demo = new NachoDemo ();
+            //Demo = new NachoDemo ();
 			return true;
 		}
 
@@ -93,6 +116,9 @@ namespace NachoClient.iOS
         public void CredReq(NcAccount account) {
         }
         public void ServConfReq (NcAccount account) {
+            Console.WriteLine ("Asking for Config Info");
+            Be.ServerConfResp (account);
+
         }
         public void HardFailInd (NcAccount account) {
         }

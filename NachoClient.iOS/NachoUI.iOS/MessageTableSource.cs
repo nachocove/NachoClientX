@@ -31,6 +31,8 @@ namespace NachoClient.iOS
 			sillybug = appDelegate.Be.Db.Table<NcEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder.Id).Count();
 			Console.Write ("number of rows in this folder = ");
 			Console.WriteLine (sillybug);
+			Console.WriteLine (" the name of this folder is : " + currentFolder.DisplayName);
+
 			return appDelegate.Be.Db.Table<NcEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder.Id).Count();
 
 		}

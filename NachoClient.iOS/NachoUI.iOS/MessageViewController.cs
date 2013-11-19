@@ -6,6 +6,9 @@ using NachoCore.Model;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using MimeKit.Utils;
+using MimeKit;
+
 
 
 namespace NachoClient.iOS

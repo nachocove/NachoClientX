@@ -26,5 +26,12 @@
 	<string>MainStoryboard_iPad</string>
 	<key>MinimumOSVersion</key>
 	<string>6.0</string>
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>Icon</string>
+		<string>Icon@2x</string>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>taco mail</string>
 </dict>
 </plist>
