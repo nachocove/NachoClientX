@@ -116,7 +116,7 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.ReDisc, (uint)AsEvt.E.ReProv, (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.GetCred, (uint)CtlEvt.E.ReFSync, (uint)CtlEvt.E.DnldAtt, (uint)CtlEvt.E.GetCertOk, (uint)CtlEvt.E.GetServConf},
                         On = new [] {
-                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiServConfReq, State = (uint)Lst.UiServConfWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)CtlEvt.E.UiSetServConf, Act = DoSetServConf, State = (uint)Lst.DiscWait},
                         }},
 
