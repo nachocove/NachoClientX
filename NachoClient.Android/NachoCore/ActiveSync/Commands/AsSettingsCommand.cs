@@ -30,7 +30,7 @@ namespace NachoCore.ActiveSync
 			return doc;
 		}
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
-            return Event.Create ((uint)Ev.Success);
+            return Event.Create ((uint)SmEvt.E.Success);
 		}
 	}
 }

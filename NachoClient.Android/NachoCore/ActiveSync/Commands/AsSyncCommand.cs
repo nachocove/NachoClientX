@@ -113,7 +113,7 @@ namespace NachoCore.ActiveSync
 
 				DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
 			}
-            return Event.Create ((FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.Lev.ReSync : (uint)Ev.Success);
+            return Event.Create ((FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.AsEvt.E.ReSync : (uint)SmEvt.E.Success);
 		}
 
 		private SQLite.TableQuery<NcFolder> FoldersNeedingSync () {

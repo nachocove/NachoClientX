@@ -23,7 +23,21 @@ namespace NachoCore.ActiveSync
     public partial class AsAutodiscoverCommand : AsCommand
     {
         private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner {
-            public enum RobotLst : uint {PostWait=(St.Last+1), GetWait, DnsWait, CertWait, OkWait, ReDirWait};
+            public enum RobotLst : uint {
+                PostWait=(St.Last+1),
+                GetWait,
+                DnsWait,
+                CertWait,
+                OkWait,
+                ReDirWait
+            };
+
+            public class RobotEvt : SharedEvt {
+                new public enum E : uint {
+                    ReDir=(SharedEvt.E.Last+1), // 302.
+                    NullCode // Not a real event. A not-yet-set value.
+                };
+            }
 
             // Pseudo-constants.
             public AsAutodiscoverCommand Command;
@@ -53,7 +67,8 @@ namespace NachoCore.ActiveSync
             public bool IsReDir;
             public Uri ReDirUri;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, bool isBaseDomain, string domain) {
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, bool isBaseDomain, string domain)
+            {
                 RefreshRetries();
 
                 Command = command;
@@ -76,7 +91,7 @@ namespace NachoCore.ActiveSync
                 IsBaseDomain = isBaseDomain;
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                ResultingEvent = Event.Create((uint)Lev.NullCode);
+                ResultingEvent = Event.Create((uint)RobotEvt.E.NullCode);
 
                 StepSm = new StateMachine () {
                     /* NOTE: There are three start states:
@@ -85,73 +100,85 @@ namespace NachoCore.ActiveSync
                      * DnsWait - used for S4.
                      */
                     Name = "as:autodiscover:step_robot",
-                    LocalEventType = typeof(Lev),
+                    LocalEventType = typeof(RobotEvt),
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
                         new Node {State = (uint)RobotLst.PostWait, 
-                            Invalid = new [] {(uint)Lev.CredSet, (uint)Lev.ServerSet, (uint)Lev.ServerCertAsk, 
-                                (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)RobotEvt.E.NullCode},
                             On = new[] {
-                                new Trans {Event = (uint)Ev.Launch, Act = DoRobotHttp, State = (uint)RobotLst.PostWait},
-                                new Trans {Event = (uint)Ev.Success, Act = DoRobotSuccess, State = (uint)St.Stop},
-                                new Trans {Event = (uint)Ev.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.PostWait},
-                                new Trans {Event = (uint)Ev.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)Lev.AuthFail, Act = DoRobotAuthFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)Lev.ReDir, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
-                                new Trans {Event = (uint)Lev.ReStart, Act = DoRobotReStart, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotHttp, State = (uint)RobotLst.PostWait},
+                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotSuccess, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.PostWait},
+                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoRobotAuthFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoRobotReStart, State = (uint)St.Stop},
+                                new Trans {Event = (uint)RobotEvt.E.ReDir, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
                             }},
 
                         new Node {State = (uint)RobotLst.GetWait,
-                            Invalid = new [] {(uint)Lev.CredSet, (uint)Lev.ServerSet, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk,
-                                (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)RobotEvt.E.NullCode},
                             On = new[] {
-                                new Trans {Event = (uint)Ev.Launch, Act = DoRobotHttp, State = (uint)RobotLst.GetWait},
-                                new Trans {Event = (uint)Ev.Success, Act = DoRobotHardFail, State = (uint)St.Stop}, // Only 302 is okay.
-                                new Trans {Event = (uint)Ev.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.GetWait},
-                                new Trans {Event = (uint)Ev.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)Lev.AuthFail, Act = DoRobotHardFail, State = (uint)St.Stop}, // Only 302 is okay.
-                                new Trans {Event = (uint)Lev.ReDir, Act = DoRobotGet2ReDir, State = (uint)RobotLst.CertWait},
+                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotHttp, State = (uint)RobotLst.GetWait},
+                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotHardFail, State = (uint)St.Stop}, // Only 302 is okay.
+                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.GetWait},
+                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)RobotEvt.E.ReDir, Act = DoRobotGet2ReDir, State = (uint)RobotLst.CertWait},
                             }},
 
                         new Node {State = (uint)RobotLst.DnsWait,
-                            Invalid = new [] {(uint)Lev.AuthFail, (uint)Lev.CredSet, (uint)Lev.ServerSet, (uint)Lev.ReDir,
-                                (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode},
                             On = new[] {
-                                new Trans {Event = (uint)Ev.Launch, Act = DoRobotDns, State = (uint)RobotLst.DnsWait},
-                                new Trans {Event = (uint)Ev.Success, Act = DoRobotDns2ReDir, State = (uint)RobotLst.CertWait},
-                                new Trans {Event = (uint)Ev.TempFail, Act = DoRobotDns, State = (uint)RobotLst.DnsWait},
-                                new Trans {Event = (uint)Ev.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotDns, State = (uint)RobotLst.DnsWait},
+                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotDns2ReDir, State = (uint)RobotLst.CertWait},
+                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotDns, State = (uint)RobotLst.DnsWait},
+                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
                             }},
 
                         new Node {State = (uint)RobotLst.CertWait,
-                            Invalid = new [] {(uint)Lev.AuthFail, (uint)Lev.CredSet, (uint)Lev.ServerSet, (uint)Lev.ReDir,
-                                (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode},
                             On = new[] {
-                                new Trans {Event = (uint)Ev.Launch, Act = DoRobotGetServerCert, State = (uint)RobotLst.CertWait},
-                                new Trans {Event = (uint)Ev.Success, Act = DoRobotUiCertAsk, State = (uint)RobotLst.OkWait},
-                                new Trans {Event = (uint)Ev.TempFail, Act = DoRobotGetServerCert, State = (uint)RobotLst.CertWait},
-                                new Trans {Event = (uint)Ev.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotGetServerCert, State = (uint)RobotLst.CertWait},
+                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotUiCertAsk, State = (uint)RobotLst.OkWait},
+                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotGetServerCert, State = (uint)RobotLst.CertWait},
+                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
                             }},
 
                         new Node {State = (uint)RobotLst.OkWait,
-                            Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.AuthFail, (uint)Lev.CredSet,
-                                (uint)Lev.ServerSet, (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.NullCode}, 
+                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode}, 
                             On = new[] {
-                                new Trans {Event = (uint)Ev.Launch, Act = DoRobotUiCertAsk, State = (uint)RobotLst.OkWait},
-                                new Trans {Event = (uint)Lev.ServerCertYes, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
-                                new Trans {Event = (uint)Lev.ServerCertNo, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotUiCertAsk, State = (uint)RobotLst.OkWait},
+                                new Trans {Event = (uint)SharedEvt.E.ServerCertYes, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
+                                new Trans {Event = (uint)SharedEvt.E.ServerCertNo, Act = DoRobotHardFail, State = (uint)St.Stop},
                             }},
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                            Invalid = new [] {(uint)Lev.ServerCertAsk, (uint)Lev.AuthFail, (uint)Lev.CredSet, (uint)Lev.ServerSet,
-                                (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)RobotEvt.E.NullCode},
                             On = new[] {
-                                new Trans {Event = (uint)Ev.Launch, Act = DoRobotHttp, State = (uint)RobotLst.ReDirWait },
-                                new Trans {Event = (uint)Ev.Success, Act = DoRobotSuccess, State = (uint)St.Stop },
-                                new Trans {Event = (uint)Ev.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.ReDirWait },
-                                new Trans {Event = (uint)Ev.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop },
-                                new Trans {Event = (uint)Lev.ReDir, Act = DoRobot302, State = (uint)RobotLst.ReDirWait },
-                                new Trans {Event = (uint)Lev.ReStart, Act = DoRobotReStart, State = (uint)St.Stop },
+                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotHttp, State = (uint)RobotLst.ReDirWait},
+                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotSuccess, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.ReDirWait},
+                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoRobotHardFail, State = (uint)St.Stop},
+                                new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoRobotReStart, State = (uint)St.Stop},
+                                new Trans {Event = (uint)RobotEvt.E.ReDir, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
                             }},
                     }
                 };
@@ -227,7 +254,7 @@ namespace NachoCore.ActiveSync
                     HttpOp.Execute (StepSm);
                 } 
                 else {
-                    StepSm.PostEvent ((uint)Ev.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
@@ -236,7 +263,7 @@ namespace NachoCore.ActiveSync
                     DnsOp = new AsDnsOperation (this);
                     DnsOp.Execute (StepSm);
                 } else {
-                    StepSm.PostEvent ((uint)Ev.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
@@ -251,7 +278,7 @@ namespace NachoCore.ActiveSync
                     HttpOp.Execute (StepSm);
                 } 
                 else {
-                    StepSm.PostEvent ((uint)Ev.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
@@ -277,38 +304,38 @@ namespace NachoCore.ActiveSync
                     try {
                         await client.GetAsync (ReDirUri);
                     } catch {
-                        StepSm.PostEvent ((uint)Ev.TempFail);
+                        StepSm.PostEvent ((uint)SmEvt.E.TempFail);
                     }
                     ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
                     if (null == ServerCertificate) {
-                        StepSm.PostEvent ((uint)Ev.TempFail);
+                        StepSm.PostEvent ((uint)SmEvt.E.TempFail);
                     }
-                    StepSm.PostEvent ((uint)Ev.Success);
+                    StepSm.PostEvent ((uint)SmEvt.E.Success);
                 }
                 else {
-                    StepSm.PostEvent ((uint)Ev.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
             private void DoRobotUiCertAsk () {
-                ForTopLevel (Event.Create ((uint)Lev.ServerCertAsk, this));
+                ForTopLevel (Event.Create ((uint)TlEvt.E.ServerCertAsk, this));
             }
 
             private void DoRobotReStart () {
-                ForTopLevel (Event.Create ((uint)Lev.ReStart, this));
+                ForTopLevel (Event.Create ((uint)SharedEvt.E.ReStart, this));
             }
 
             private void DoRobotAuthFail () {
-                ForTopLevel (Event.Create ((uint)Lev.AuthFail, this));
+                ForTopLevel (Event.Create ((uint)SharedEvt.E.AuthFail, this));
             }
 
             private void DoRobotSuccess () {
-                ForTopLevel (Event.Create((uint)Ev.Success, this));
+                ForTopLevel (Event.Create((uint)SmEvt.E.Success, this));
 
             }
 
             private void DoRobotHardFail () {
-                ForTopLevel (Event.Create((uint)Ev.HardFail, this));
+                ForTopLevel (Event.Create((uint)SmEvt.E.HardFail, this));
             }
 
             // *********************************************************************************
@@ -374,16 +401,16 @@ namespace NachoCore.ActiveSync
             public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
                 switch (response.StatusCode) {
                 case HttpStatusCode.Unauthorized:
-                    return Event.Create ((uint)Lev.AuthFail);
+                    return Event.Create ((uint)SharedEvt.E.AuthFail);
 
                 case HttpStatusCode.Found:
                     try {
                         ReDirUri = new Uri (response.Headers.GetValues ("Location").First ());
                         IsReDir = true;
                     } catch {
-                        return Event.Create ((uint)Ev.HardFail);
+                        return Event.Create ((uint)SmEvt.E.HardFail);
                     }
-                    return Event.Create ((uint)Ev.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail);
 
                 case HttpStatusCode.OK:
                     // We want to use the existing AsHttpOperation logic in the 200 case.
@@ -391,13 +418,13 @@ namespace NachoCore.ActiveSync
 
                 default:
                     // The only acceptable status codes are 200, 302 & 401.
-                    return Event.Create ((uint)Ev.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail);
                 }
             }
 
             public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
                 // We should never get back content that isn't XML.
-                return Event.Create ((uint)Ev.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail);
             }
 
             public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
@@ -436,7 +463,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // We should never get here. The XML response is missing both Error and Action.
-                return Event.Create ((uint)Ev.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail);
             }
 
             private Event ProcessXmlError (AsHttpOperation Sender, XElement xmlError) {
@@ -462,13 +489,13 @@ namespace NachoCore.ActiveSync
                 if (null != xmlErrorCode) {
                     ; // FIXME: log this along with request.
                 }
-                return Event.Create ((uint)Ev.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail);
             }
 
             private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect) {
                 SrEmailAddr = xmlRedirect.Value;
                 SrDomain = DomainFromEmailAddr (SrEmailAddr);
-                return Event.Create ((uint)Lev.ReStart);
+                return Event.Create ((uint)SharedEvt.E.ReStart);
             }
 
             private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings) {
@@ -492,11 +519,11 @@ namespace NachoCore.ActiveSync
                         }
                         catch (ArgumentNullException) {
                             // FIXME - log it.
-                            return Event.Create ((uint)Ev.HardFail);
+                            return Event.Create ((uint)SmEvt.E.HardFail);
                         }
                         catch (UriFormatException) {
                             // FIXME - log it.
-                            return Event.Create ((uint)Ev.HardFail);
+                            return Event.Create ((uint)SmEvt.E.HardFail);
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
                             SrServerUri = serverUri;
@@ -514,7 +541,7 @@ namespace NachoCore.ActiveSync
                         // FIXME - add support for CertEnroll.
                     }
                 }
-                return Event.Create ((haveServerSettings) ? (uint)Ev.Success : (uint)Ev.HardFail);
+                return Event.Create ((haveServerSettings) ? (uint)SmEvt.E.Success : (uint)SmEvt.E.HardFail);
             }
 
             // *********************************************************************************
@@ -550,9 +577,9 @@ namespace NachoCore.ActiveSync
                     var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
                     var chosen = (SrvRecord)bestRecs [index];
                     SrDomain = chosen.HostName;
-                    return Event.Create ((uint)Ev.Success);
+                    return Event.Create ((uint)SmEvt.E.Success);
                 } else {
-                    return Event.Create ((uint)Ev.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail);
                 }
             }
         }

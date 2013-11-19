@@ -41,12 +41,12 @@ namespace NachoCore.ActiveSync
 			var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
 			DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, emailMessage);
 			DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, m_update);
-            return Event.Create ((uint)Ev.Success);
+            return Event.Create ((uint)SmEvt.E.Success);
 		}
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
 			// Only needed for the case where there is a failure.
-            return Event.Create ((uint)Ev.Success);
+            return Event.Create ((uint)SmEvt.E.Success);
 		}
 
 		private NcPendingUpdate NextToSend () {

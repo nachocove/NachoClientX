@@ -56,9 +56,9 @@ namespace NachoCore.ActiveSync
                         }
                     }
                 }
-                return Event.Create ((uint)Ev.Success);
+                return Event.Create ((uint)SmEvt.E.Success);
             default:
-                return Event.Create ((uint)Ev.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail);
 			}
 		}
 	}

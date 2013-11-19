@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
                 sm.PostEvent(Event);
             } catch (ObjectDisposedException) {
                 if (wasKilledByTimer) {
-                    sm.PostEvent ((uint)Ev.TempFail);
+                    sm.PostEvent ((uint)SmEvt.E.TempFail);
                 } else {
                     // Do nothing - this is a cancellation.
                     Timer.Dispose ();
@@ -48,7 +48,7 @@ namespace NachoCore.ActiveSync
                     Timer.Dispose ();
                     Timer = null;
                 }
-                sm.PostEvent ((uint)Ev.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail);
             }
         }
 

@@ -112,7 +112,6 @@
     <Folder Include="NachoCore\" />
     <Folder Include="sqlite-net\" />
     <Folder Include="NachoCore\Extensions\" />
-    <Folder Include="NachoCore\NachoCore\" />
     <Folder Include="Resources\xsd\" />
     <Folder Include="Resources\xsd\request\" />
     <Folder Include="Resources\xsd\response\" />

@@ -11,23 +11,33 @@ namespace NachoCore.ActiveSync {
 	public class AsOptionsCommand : AsCommand {
 		public AsOptionsCommand (IAsDataSource dataSource) : base ("Options", dataSource) {}
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        {
 			if(ProcessOptionsHeaders (response.Headers, DataSource)) {
-                return Event.Create ((uint)Ev.Success);
+                return Event.Create ((uint)SmEvt.E.Success);
 			}
-            return Event.Create ((uint)Ev.HardFail);
-		}
-        public override HttpMethod Method (AsHttpOperation Sender) {
-            return HttpMethod.Options;
-        }
-        public override string QueryString (AsHttpOperation Sender) {
-			return "";
-		}
-		internal static void SetOldestProtoVers (IAsDataSource dataSource) {
-			dataSource.ProtocolState.AsProtocolVersion = "12.0";
+            return Event.Create ((uint)SmEvt.E.HardFail);
 		}
 
-		internal static bool ProcessOptionsHeaders(HttpResponseHeaders headers, IAsDataSource dataSource) {
+        public override HttpMethod Method (AsHttpOperation Sender)
+        {
+            return HttpMethod.Options;
+        }
+
+        public override string QueryString (AsHttpOperation Sender)
+        {
+			return "";
+		}
+
+		internal static void SetOldestProtoVers (IAsDataSource dataSource)
+        {
+            NcProtocolState update = dataSource.ProtocolState;
+            update.AsProtocolVersion = "12.0";
+            dataSource.ProtocolState = update;
+		}
+
+		internal static bool ProcessOptionsHeaders(HttpResponseHeaders headers, IAsDataSource dataSource)
+        {
 			IEnumerable<string> values;
 			bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
 			foreach (var value in values) {
@@ -35,7 +45,9 @@ namespace NachoCore.ActiveSync {
 				Array.Sort (float_versions);
 				Array.Reverse (float_versions);
 				string[] versions = Array.ConvertAll(float_versions, x => x.ToString ("0.0"));
-				dataSource.ProtocolState.AsProtocolVersion = versions[0];
+                NcProtocolState update = dataSource.ProtocolState;
+                update.AsProtocolVersion = versions[0];
+                dataSource.ProtocolState = update;
 				// NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.
 			}
 			return retval;

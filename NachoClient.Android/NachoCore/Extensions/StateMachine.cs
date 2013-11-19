@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace NachoCore.Utils
 {
@@ -18,7 +19,10 @@ namespace NachoCore.Utils
     // If we can communicate with the server, and we can't tell that the problem is transient,
     // then we have a HardFail.
 	// Precise events are used to indicate value-based failures (e.g. credential, server config, etc).
-	public enum Ev : uint {Launch, Success, HardFail, TempFail, Last = TempFail};
+    public class SmEvt {
+        public enum E : uint {Launch, Success, HardFail, TempFail, Last = TempFail};
+    }
+
 	// { state => { event => [handlers, ...]}}.
 	// All possible events must be covered.
 	// 1st handler in list is the event hander (required).
@@ -58,36 +62,51 @@ namespace NachoCore.Utils
 		public Cb Action { set; get; }
 		public object Arg { set; get; }
 		public Cb StateChangeIndication { set; get; }
-		private Queue EventQ { set; get; }
-		private bool IsFiring { set; get; }
-		public StateMachine() {
+
+        private Dictionary<string,uint> EventCode;
+        private Dictionary<uint,string> EventName;
+        private Queue EventQ;
+        private bool IsFiring;
+
+        public StateMachine ()
+        {
 			EventQ = new Queue ();
 			State = (uint)St.Start;
 		}
-		public void Start() {
+
+        public void Start ()
+        {
 			Start((uint)St.Start);
 		}
-		public void Start(uint StartState) {
+
+        public void Start (uint StartState)
+        {
 			State = StartState;
-			PostEvent ((uint)Ev.Launch);
+            PostEvent ((uint)SmEvt.E.Launch);
 		}
 
-		public void PostAtMostOneEvent (uint Event) {
+		public void PostAtMostOneEvent (uint Event)
+        {
 			if (! EventQ.Contains (Event)) {
 				PostEvent (Event);
 			}
 		}
 
-		public void PostEvent (uint eventCode) {
+		public void PostEvent (uint eventCode)
+        {
 			PostEvent (eventCode, null);
 		}
 		
-        public void PostEvent (Event smEvent) {
+        public void PostEvent (Event smEvent)
+        {
             PostEvent (smEvent.EventCode, smEvent.Arg);
         }
 
-		public void PostEvent (uint eventCode, object arg) {
-			if ((uint)St.Stop == State) {
+		public void PostEvent (uint eventCode, object arg)
+        {
+            BuildEventDicts ();
+
+            if ((uint)St.Stop == State) {
 				return;
 			}
 			EventQ.Enqueue (Tuple.Create(eventCode, arg));
@@ -101,16 +120,16 @@ namespace NachoCore.Utils
 				Arg = tuple.Item2;
 				var hotNode = TransTable.Where (x => State == x.State).First ();
 				if (null != hotNode.Drop && hotNode.Drop.Contains (FireEvent)) {
-					Console.WriteLine ("SM({0}): S={1} & E={2} => DROPPED EVENT", Name, StateName (State), EventName (FireEvent));
+                    Console.WriteLine ("SM({0}): S={1} & E={2} => DROPPED EVENT", Name, StateName (State), EventName [FireEvent]);
 					continue;
 				}
 				if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEvent)) {
-					Console.WriteLine ("SM({0}): S={1} & E={2} => INVALID EVENT", Name, StateName (State), EventName (FireEvent));
+                    Console.WriteLine ("SM({0}): S={1} & E={2} => INVALID EVENT", Name, StateName (State), EventName [FireEvent]);
 					throw new Exception ();
 				}
 				var hotTrans = hotNode.On.Where (x => FireEvent == x.Event).Single ();
 				Console.WriteLine ("SM({0}): S={1} & E={2} => S={3}", Name, StateName (State), 
-				                   EventName (FireEvent), StateName (hotTrans.State));
+                    EventName [FireEvent], StateName (hotTrans.State));
 				Action = hotTrans.Act;
                 NextState = hotTrans.State;
 				Action ();
@@ -124,18 +143,12 @@ namespace NachoCore.Utils
 
         public void Validate ()
         {
+            BuildEventDicts ();
+
             var errors = new List<string> ();
-            var eventCodes = Enum.GetValues (typeof(Ev));
-            if (null != LocalEventType) {
-                var localCodes = Enum.GetValues (LocalEventType);
-                var allCodes = new uint[eventCodes.Length + localCodes.Length];
-                eventCodes.CopyTo (allCodes, 0);
-                localCodes.CopyTo (allCodes, eventCodes.Length);
-                eventCodes = allCodes;
-            }
             foreach (var stateNode in TransTable) {
-                foreach (var enumEventCode in eventCodes) {
-                    var eventCode = (uint)enumEventCode;
+                foreach (var nameNCode in EventCode) {
+                    var eventCode = nameNCode.Value;
                     var forEventCode = stateNode.On.Where (x => eventCode == x.Event).ToList ();
                     switch (forEventCode.Count) {
                     case 1:
@@ -143,12 +156,12 @@ namespace NachoCore.Utils
                         if (null != stateNode.Drop && Array.Exists (stateNode.Drop, y => eventCode == y)) {
                             errors.Add (string.Format ("State {0}, event code {1} exists both in Drop and Node.", 
                                                        StateName (stateNode.State),
-                                                       EventName (eventCode)));
+                                                       EventName [eventCode]));
                         }
                         if (null != stateNode.Invalid && Array.Exists (stateNode.Invalid, y => eventCode == y)) {
                             errors.Add (string.Format ("State {0}, event code {1} exists both in Invalid and Node.", 
                                                        StateName (stateNode.State),
-                                                       EventName (eventCode)));
+                                                       EventName [eventCode]));
                         }
                         break;
                     case 0:
@@ -163,18 +176,18 @@ namespace NachoCore.Utils
                         if (inDrop && inInvalid) {
                             errors.Add (string.Format ("State {0}, event code {1} exists both in Invalid and Drop.",
                                                        StateName (stateNode.State),
-                                                       EventName (eventCode)));
+                                                       EventName [eventCode]));
                         } else if (!inDrop && !inInvalid) {
                             errors.Add (string.Format ("State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
                                                        StateName (stateNode.State),
-                                                       EventName (eventCode)));
+                                                       EventName [eventCode]));
                         }
                         break;
                     default:
                         // Event is in Node multiple times.
                         errors.Add (string.Format ("State {0}, event code {1} exists in multiple Trans in same Node.",
                                                    StateName (stateNode.State),
-                                                   EventName (eventCode)));
+                                                   EventName [eventCode]));
                         break;
                     }
                 }
@@ -187,7 +200,8 @@ namespace NachoCore.Utils
             }
         }
 
-		private string StateName (uint state) {
+		private string StateName (uint state)
+        {
 			if ((uint)St.Last < (uint)state) {
 				if (null != LocalStateType) {
 					return Enum.GetName (LocalStateType, state);
@@ -196,14 +210,36 @@ namespace NachoCore.Utils
 			}
 			return Enum.GetName (typeof(St), state);
 		}
-		private string EventName (uint evt) {
-			if ((uint)Ev.Last < (uint)evt) {
-				if (null != LocalEventType) {
-					return Enum.GetName (LocalEventType, evt);
-				}
-				return evt.ToString ();
-			}
-			return Enum.GetName (typeof(Ev), evt);
-		}
+
+        private void BuildEventDicts ()
+        {
+            if (null != EventCode) {
+                return;
+            }
+            // NOTE: these could be cached based on the LocalEventType, rather than rebuilding for every instance.
+            EventCode = new Dictionary<string, uint> ();
+            EventName = new Dictionary<uint, string> ();
+            if (null == LocalEventType) {
+                LocalEventType = typeof (SmEvt);
+            }
+            var enumHolderType = LocalEventType;
+
+            while (typeof(System.Object) != enumHolderType) {
+                MemberInfo[] miArr = enumHolderType.GetMember ("E");
+
+                foreach (MemberInfo mi in miArr)
+                {
+                    var enumType = System.Type.GetType(mi.DeclaringType.FullName + "+" + mi.Name);
+                    foreach (var enumMember in enumType.GetFields (BindingFlags.Public | BindingFlags.Static)) {
+                        if (!"Last".Equals (enumMember.Name)) {
+                            uint value = (uint)Convert.ChangeType (enumMember.GetValue (null), typeof(uint));
+                            EventCode.Add (enumMember.Name, value);
+                            EventName.Add (value, enumMember.Name);
+                        }
+                    }
+                }
+                enumHolderType = enumHolderType.BaseType;
+            }
+        }
 	}
 }

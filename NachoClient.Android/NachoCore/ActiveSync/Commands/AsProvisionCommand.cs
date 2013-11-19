@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Xml.Linq;
+using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
@@ -27,25 +28,25 @@ namespace NachoCore.ActiveSync
 				TransTable = new[] {
 					new Node {
                         State = (uint)St.Start,
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail},
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail},
                         On = new [] {
-							new Trans {Event = (uint)Ev.Launch, Act = DoGet, State = (uint)Lst.GetWait},
+							new Trans {Event = (uint)SmEvt.E.Launch, Act = DoGet, State = (uint)Lst.GetWait},
                         }},
 					new Node {
                         State = (uint)Lst.GetWait,
                         On = new [] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoGet, State = (uint)Lst.GetWait},
-							new Trans {Event = (uint)Ev.Success, Act = DoAck, State = (uint)Lst.AckWait},
-							new Trans {Event = (uint)Ev.HardFail, Act = DoHardFail, State = (uint)St.Stop},
-                            new Trans {Event = (uint)Ev.TempFail, Act = DoGet, State = (uint)Lst.GetWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoGet, State = (uint)Lst.GetWait},
+							new Trans {Event = (uint)SmEvt.E.Success, Act = DoAck, State = (uint)Lst.AckWait},
+							new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoHardFail, State = (uint)St.Stop},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoGet, State = (uint)Lst.GetWait},
                         }},
 					new Node {
                         State = (uint)Lst.AckWait,
                         On = new [] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoAck, State = (uint)Lst.AckWait},
-							new Trans {Event = (uint)Ev.Success, Act = DoSucceed, State = (uint)St.Stop},
-							new Trans {Event = (uint)Ev.HardFail, Act = DoHardFail, State = (uint)St.Stop},
-                            new Trans {Event = (uint)Ev.TempFail, Act = DoAck, State = (uint)Lst.AckWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoAck, State = (uint)Lst.AckWait},
+							new Trans {Event = (uint)SmEvt.E.Success, Act = DoSucceed, State = (uint)St.Stop},
+							new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoHardFail, State = (uint)St.Stop},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoAck, State = (uint)Lst.AckWait},
                         }},
 				}
 			};
@@ -73,22 +74,23 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
 			switch ((StatusProvision)Convert.ToUInt32 (doc.Root.Element (m_ns+"Status").Value)) {
             case StatusProvision.Success:
-                DataSource.ProtocolState.AsPolicyKey = doc.Root.Element (m_ns + "Policies").
-					Element (m_ns + "Policy").Element (m_ns + "PolicyKey").Value;
-                return new Event () { EventCode = (uint)Ev.Success };
+                NcProtocolState update = DataSource.ProtocolState;
+                update.AsPolicyKey = doc.Root.Element (m_ns + "Policies").Element (m_ns + "Policy").Element (m_ns + "PolicyKey").Value;
+                DataSource.ProtocolState = update;
+                return new Event () { EventCode = (uint)SmEvt.E.Success };
 			case StatusProvision.ProtocolError:
 				break;
 			case StatusProvision.ServerError:
 				break;
 			}
-            return Event.Create ((uint)Ev.HardFail);
+            return Event.Create ((uint)SmEvt.E.HardFail);
 		}
 
 		private void DoGet () {
             if (0 < RetriesLeft --) {
                 base.Execute (Sm, ref GetOp);
             } else {
-                Sm.PostEvent ((uint)Ev.HardFail);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail);
             }
 		}
 
@@ -96,7 +98,7 @@ namespace NachoCore.ActiveSync
             if (0 < RetriesLeft --) {
                 base.Execute (Sm, ref AckOp);
             } else {
-                Sm.PostEvent ((uint)Ev.HardFail);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail);
             }
 		}
 	}
