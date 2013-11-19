@@ -56,7 +56,7 @@ namespace NachoCore.ActiveSync
 				// FIXME - handle other status values.
 			}
 			DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, m_update);
-            return Event.Create ((uint)Ev.Success);
+            return Event.Create ((uint)SmEvt.E.Success);
 		}
 
 		private NcPendingUpdate NextToDnld () {

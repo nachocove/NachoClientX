@@ -36,15 +36,18 @@ namespace NachoCore.ActiveSync
 			doc.Add (ping);
 			return doc;
 		}
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
-			// NOTE: Important to remember that in this context, Ev.Success means to do another long-poll.
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        {
+            NcProtocolState update;
+
+			// NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
 			switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.Ping.Status).Value)) {
 
             case Xml.Ping.StatusCode.NoChanges:
                 if (m_hitMaxFolders) {
-                    return Event.Create ((uint)AsProtoControl.Lev.ReSync);
+                    return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync);
                 }
-                return Event.Create ((uint)Ev.Success);
+                return Event.Create ((uint)SmEvt.E.Success);
 			
             case Xml.Ping.StatusCode.Changes:
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
@@ -53,31 +56,33 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncRequired = true;
                     DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                 }
-                return Event.Create ((uint)AsProtoControl.Lev.ReSync);
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync);
 			
             case Xml.Ping.StatusCode.MissingParams:
             case Xml.Ping.StatusCode.SyntaxError:
-                return Event.Create ((uint)Ev.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail);
 
             case Xml.Ping.StatusCode.BadHeartbeat:
-                DataSource.ProtocolState.HeartbeatInterval = 
-					uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
-                return Event.Create ((uint)Ev.Success);
+                update = DataSource.ProtocolState;
+                update.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
+                DataSource.ProtocolState = update;
+                return Event.Create ((uint)SmEvt.E.Success);
 
             case Xml.Ping.StatusCode.TooManyFolders:
-                DataSource.ProtocolState.MaxFolders =
-					uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
-                return Event.Create ((uint)Ev.Success);
+                update = DataSource.ProtocolState;
+                update.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
+                DataSource.ProtocolState = update;
+                return Event.Create ((uint)SmEvt.E.Success);
 
             case Xml.Ping.StatusCode.NeedFolderSync:
-                return Event.Create ((uint)AsProtoControl.Lev.ReFSync);
+                return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync);
 			
             case Xml.Ping.StatusCode.ServerError:
-                return Event.Create ((uint)Ev.TempFail);
+                return Event.Create ((uint)SmEvt.E.TempFail);
 
             default:
 				// FIXME - how do we want to handle unknown status codes?
-                return Event.Create ((uint)Ev.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail);
 			}
 		}
 	}

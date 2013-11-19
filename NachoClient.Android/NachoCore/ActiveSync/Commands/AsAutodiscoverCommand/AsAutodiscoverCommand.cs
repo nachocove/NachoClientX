@@ -30,6 +30,9 @@ using NachoPlatform;
  */
 namespace NachoCore.ActiveSync
 {
+    /* The only reason we implement & proxy IAsDataSource is so that we can source
+     * candidate values for Server to AsHttpOperation when testing them.
+     */
 	public partial class AsAutodiscoverCommand : AsCommand, IAsDataSource
 	{
         public enum Lst : uint {
@@ -46,16 +49,23 @@ namespace NachoCore.ActiveSync
             ServerWait, 
             TestWait};
 
-        public enum Lev : uint {
-            AuthFail=(Ev.Last+1), // 401 (Robot or Top-Level).
-            CredSet, // UI has updated the credentials for this account (Top-Level only).
-            ServerSet, // UI has updated the server information for this account (Top-Level only).
-            ServerCertYes, // UI response on server cert.
-            ServerCertNo, // UI response on server cert.
-            ReDir, // 302 (Robot-only).
-            ReStart, // Protocol indicates that search must be restarted from step-1 (Robot or Top-Level).
-            ServerCertAsk, // Robot says UI has to ask user if server cert is okay (Top-Level only).
-            NullCode // Not a real event. A sort of not-yet-set value.
+        // Event codes shared between TL and Robot SMs.
+        public class SharedEvt : AsProtoControl.AsEvt {
+            new public enum E : uint {
+                AuthFail=(AsProtoControl.AsEvt.E.Last+1), // 401.
+                ServerCertYes, // UI response on server cert.
+                ServerCertNo, // UI response on server cert.
+                ReStart, // Protocol indicates that search must be restarted from step-1 (Robot or Top-Level).
+                Last=ReStart
+            };
+        }
+
+        public class TlEvt : SharedEvt {
+            new public enum E : uint {
+                CredSet=(SharedEvt.E.Last+1), // UI has updated the credentials for this account (Top-Level only).
+                ServerSet, // UI has updated the server information for this account (Top-Level only).
+                ServerCertAsk, // Robot says UI has to ask user if server cert is okay (Top-Level only).
+            };
         };
 
         private const string requestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
@@ -82,161 +92,180 @@ namespace NachoCore.ActiveSync
             RefreshRetries ();
             Sm = new StateMachine () {
                 Name = "as:autodiscover", 
-                LocalEventType = typeof(Lev),
+                LocalEventType = typeof(TlEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
                     new Node {State = (uint)St.Start, 
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.TempFail, (uint)Ev.HardFail, (uint)Lev.AuthFail, 
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.ServerCertNo, 
-                            (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
-                        Drop = new [] {(uint)Lev.CredSet},
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)TlEvt.E.ServerCertAsk},
+                        Drop = new [] {(uint)TlEvt.E.CredSet},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.S1Wait,
-                        Invalid = new [] {(uint)Ev.TempFail, (uint)Lev.ReDir, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, 
-                            (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Ev.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Ev.HardFail, Act = DoS2, State = (uint)Lst.S2Wait},
-                            new Trans {Event = (uint)Lev.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Lev.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S1AskWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoS2, State = (uint)Lst.S2Wait},
+                            new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S1AskWait},
                         }},
 
                     new Node {State = (uint)Lst.S1AskWait,
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.AuthFail,
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.ServerCertAsk},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S1AskWait},
-                            new Trans {Event = (uint)Lev.ServerCertYes, Act = DoS1ServerCertYes, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerCertNo, Act = DoS1ServerCertNo, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S1AskWait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertYes, Act = DoS1ServerCertYes, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertNo, Act = DoS1ServerCertNo, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.S2Wait,
-                        Invalid = new [] {(uint)Ev.TempFail, (uint)Lev.ReDir, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes,
-                            (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoS2, State = (uint)Lst.S2Wait},
-                            new Trans {Event = (uint)Ev.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Ev.HardFail, Act = DoS3, State = (uint)Lst.S3Wait},
-                            new Trans {Event = (uint)Lev.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
-                            new Trans {Event = (uint)Lev.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Lev.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S2AskWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoS2, State = (uint)Lst.S2Wait},
+                            new Trans {Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoS3, State = (uint)Lst.S3Wait},
+                            new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S2AskWait},
                         }},
 
                     new Node {State = (uint)Lst.S2AskWait,
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.AuthFail,
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S2AskWait},
-                            new Trans {Event = (uint)Lev.ServerCertYes, Act = DoS2ServerCertYes, State = (uint)Lst.S2Wait},
-                            new Trans {Event = (uint)Lev.ServerCertNo, Act = DoS2ServerCertNo, State = (uint)Lst.S2Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S2AskWait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertYes, Act = DoS2ServerCertYes, State = (uint)Lst.S2Wait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertNo, Act = DoS2ServerCertNo, State = (uint)Lst.S2Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.S3Wait,
-                        Invalid = new [] {(uint)Ev.TempFail, (uint)Lev.ReDir, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes,
-                            (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoS3, State = (uint)Lst.S3Wait},
-                            new Trans {Event = (uint)Ev.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Ev.HardFail, Act = DoS4, State = (uint)Lst.S4Wait},
-                            new Trans {Event = (uint)Lev.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
-                            new Trans {Event = (uint)Lev.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Lev.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S3AskWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoS3, State = (uint)Lst.S3Wait},
+                            new Trans {Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoS4, State = (uint)Lst.S4Wait},
+                            new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S3AskWait},
                         }},
 
                     new Node {State = (uint)Lst.S3AskWait,
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.AuthFail,
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S3AskWait},
-                            new Trans {Event = (uint)Lev.ServerCertYes, Act = DoS3ServerCertYes, State = (uint)Lst.S3Wait},
-                            new Trans {Event = (uint)Lev.ServerCertNo, Act = DoS3ServerCertNo, State = (uint)Lst.S3Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S3AskWait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertYes, Act = DoS3ServerCertYes, State = (uint)Lst.S3Wait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertNo, Act = DoS3ServerCertNo, State = (uint)Lst.S3Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.S4Wait,
-                        Invalid = new [] {(uint)Ev.TempFail, (uint)Lev.ReDir, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes,
-                            (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoS4, State = (uint)Lst.S4Wait},
-                            new Trans {Event = (uint)Ev.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Ev.HardFail, Act = DoBaseMaybe, State = (uint)Lst.BaseWait},
-                            new Trans {Event = (uint)Lev.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
-                            new Trans {Event = (uint)Lev.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Lev.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S4AskWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoS4, State = (uint)Lst.S4Wait},
+                            new Trans {Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoBaseMaybe, State = (uint)Lst.BaseWait},
+                            new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerCertAsk, Act = DoUiServerCertAsk, State = (uint)Lst.S4AskWait},
                         }},
 
                     new Node {State = (uint)Lst.S4AskWait,
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.HardFail, (uint)Ev.TempFail, (uint)Lev.AuthFail,
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.NullCode },
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S4AskWait},
-                            new Trans {Event = (uint)Lev.ServerCertYes, Act = DoS4ServerCertYes, State = (uint)Lst.S4Wait},
-                            new Trans {Event = (uint)Lev.ServerCertNo, Act = DoS4ServerCertNo, State = (uint)Lst.S4Wait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiServerCertAsk, State = (uint)Lst.S4AskWait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertYes, Act = DoS4ServerCertYes, State = (uint)Lst.S4Wait},
+                            new Trans {Event = (uint)SharedEvt.E.ServerCertNo, Act = DoS4ServerCertNo, State = (uint)Lst.S4Wait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.BaseWait,
-                        Invalid = new [] {(uint)Ev.TempFail, (uint)Lev.AuthFail, (uint)Lev.ReDir, (uint)Lev.ReStart, 
-                            (uint)Lev.ServerCertAsk, (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
-                        Drop = new [] {(uint)Lev.CredSet},
+                        Invalid = new [] {(uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)TlEvt.E.ServerCertAsk},
+                        Drop = new [] {(uint)TlEvt.E.CredSet},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoBaseMaybe, State = (uint)Lst.BaseWait},
-                            new Trans {Event = (uint)Ev.Success, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Ev.HardFail, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoBaseMaybe, State = (uint)Lst.BaseWait},
+                            new Trans {Event = (uint)SmEvt.E.Success, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.TestWait,
-                        Invalid = new [] {(uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk,
-                            (uint)Lev.ServerCertNo, (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)TlEvt.E.ServerCertAsk},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoTest, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Ev.Success, Act = DoSaySuccess, State = (uint)St.Stop},
-                            new Trans {Event = (uint)Ev.TempFail, Act = DoTest, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Ev.HardFail, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
-                            new Trans {Event = (uint)Lev.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoTest, State = (uint)Lst.TestWait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoTest, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Success, Act = DoSaySuccess, State = (uint)St.Stop},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoTest, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoUiGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.CredWait,
-                        Invalid = new [] {(uint)Ev.Success, (uint)Ev.TempFail, (uint)Ev.HardFail, (uint)Lev.AuthFail,
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.ServerCertNo,
-                            (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)TlEvt.E.ServerCertAsk},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoUiGetCred, State = (uint)Lst.CredWait},
-                            new Trans {Event = (uint)Lev.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiGetCred, State = (uint)Lst.CredWait},
+                            new Trans {Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
 
                     new Node {State = (uint)Lst.ServerWait, 
-                        Invalid = new [] { (uint)Ev.Success, (uint)Ev.TempFail, (uint)Ev.HardFail, (uint)Lev.AuthFail,
-                            (uint)Lev.ReDir, (uint)Lev.ReStart, (uint)Lev.ServerCertAsk, (uint)Lev.ServerCertNo,
-                            (uint)Lev.ServerCertYes, (uint)Lev.NullCode},
-                        Drop = new [] {(uint)Lev.CredSet},
+                        Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)TlEvt.E.ServerCertAsk},
+                        Drop = new [] {(uint)TlEvt.E.CredSet},
                         On = new[] {
-                            new Trans {Event = (uint)Ev.Launch, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
-                            new Trans {Event = (uint)Lev.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
+                            new Trans {Event = (uint)SmEvt.E.Launch, Act = DoUiGetServer, State = (uint)Lst.ServerWait},
+                            new Trans {Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestWait},
                         }},
                 }
             };
@@ -247,7 +276,7 @@ namespace NachoCore.ActiveSync
             OwnerSm = ownerSm;
             Domain = DomainFromEmailAddr(DataSource.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
-            Sm.PostEvent ((uint)Ev.Launch);
+            Sm.PostEvent ((uint)SmEvt.E.Launch);
         }
 
         // UTILITY METHODS.
@@ -325,7 +354,7 @@ namespace NachoCore.ActiveSync
 
         private void DoSx (StepRobot.Steps step) {
             var robot = FindRobot (step);
-            if ((uint)Lev.NullCode != robot.ResultingEvent.EventCode) {
+            if ((uint)StepRobot.RobotEvt.E.NullCode != robot.ResultingEvent.EventCode) {
                 Sm.PostEvent (robot.ResultingEvent);
             }
         }
@@ -348,35 +377,35 @@ namespace NachoCore.ActiveSync
         }
 
         private void DoS1ServerCertYes () {
-            DoSxServerCerty (StepRobot.Steps.S1, (uint)Lev.ServerCertYes);
+            DoSxServerCerty (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertYes);
         }
 
         private void DoS1ServerCertNo () {
-            DoSxServerCerty (StepRobot.Steps.S1, (uint)Lev.ServerCertNo);
+            DoSxServerCerty (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertNo);
         }
 
         private void DoS2ServerCertYes () {
-            DoSxServerCerty (StepRobot.Steps.S2, (uint)Lev.ServerCertYes);
+            DoSxServerCerty (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertYes);
         }
 
         private void DoS2ServerCertNo () {
-            DoSxServerCerty (StepRobot.Steps.S2, (uint)Lev.ServerCertNo);
+            DoSxServerCerty (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertNo);
         }
 
         private void DoS3ServerCertYes () {
-            DoSxServerCerty (StepRobot.Steps.S3, (uint)Lev.ServerCertYes);
+            DoSxServerCerty (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertYes);
         }
 
         private void DoS3ServerCertNo () {
-            DoSxServerCerty (StepRobot.Steps.S3, (uint)Lev.ServerCertNo);
+            DoSxServerCerty (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertNo);
         }
 
         private void DoS4ServerCertYes () {
-            DoSxServerCerty (StepRobot.Steps.S4, (uint)Lev.ServerCertYes);
+            DoSxServerCerty (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertYes);
         }
 
         private void DoS4ServerCertNo () {
-            DoSxServerCerty (StepRobot.Steps.S4, (uint)Lev.ServerCertNo);
+            DoSxServerCerty (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertNo);
         }
 
         private void DoBaseMaybe () {
@@ -384,9 +413,9 @@ namespace NachoCore.ActiveSync
             // If yes, Success, else HardFail.
             if (BaseDomain != Domain && ! IsTryingBaseDomain) {
                 IsTryingBaseDomain = true;
-                Sm.PostEvent ((uint)Ev.Success);
+                Sm.PostEvent ((uint)SmEvt.E.Success);
             } else {
-                Sm.PostEvent ((uint)Ev.HardFail);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail);
             }
         }
 
@@ -396,7 +425,7 @@ namespace NachoCore.ActiveSync
                 OptCmd = new AsOptionsCommand (this);
                 OptCmd.Execute (Sm);
             } else {
-                Sm.PostEvent ((uint)Ev.HardFail);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail);
             }
         }
 
@@ -413,22 +442,21 @@ namespace NachoCore.ActiveSync
 
 		private void DoUiGetCred () {
             // Ask the UI to either re-get the password, or to get the username + (optional) domain.
-            OwnerSm.PostEvent ((uint)AsProtoControl.Lev.GetCred);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetCred);
 		}
 
         private void DoUiGetServer () {
-            OwnerSm.PostEvent ((uint)AsProtoControl.Lev.GetServConf);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf);
         }
 
         private void DoUiServerCertAsk () {
-            OwnerSm.PostEvent(Event.Create((uint)AsProtoControl.Lev.GetCertOk, 
-                                           Sm.Arg));
+            OwnerSm.PostEvent(Event.Create((uint)AsProtoControl.CtlEvt.E.GetCertOk, Sm.Arg));
         }
 
         private void DoSaySuccess () {
             // Signal that we are done and that we have a server config.
             // Success is the only way we finish - either by UI setting or autodiscovery.
-            OwnerSm.PostEvent ((uint)Ev.Success);
+            OwnerSm.PostEvent ((uint)SmEvt.E.Success);
         }
 
         // IAsDataSource proxying.
@@ -450,11 +478,9 @@ namespace NachoCore.ActiveSync
         }
         public NcAccount Account {
             get { return DataSource.Account; }
-            set { DataSource.Account = value; }
         }
         public NcCred Cred {
             get { return DataSource.Cred; }
-            set { DataSource.Cred = value; }
         }
 	}
 }

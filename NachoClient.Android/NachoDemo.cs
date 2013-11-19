@@ -47,7 +47,7 @@ namespace NachoCore
 			Account.ProtocolStateId = protocolState.Id;
 			Be.Db.Insert (BackEnd.DbActors.Ui, Account);
             /* */
-            var server = new NcServer () { Fqdn = "nco9.com" };
+            var server = new NcServer () { Fqdn = "m.google.com" };
             Be.Db.Insert (BackEnd.DbActors.Ui, server);
             Account.ServerId = server.Id;
             Be.Db.Update (BackEnd.DbActors.Ui, Account); 

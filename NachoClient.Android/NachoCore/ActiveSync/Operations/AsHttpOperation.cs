@@ -44,11 +44,13 @@ namespace NachoCore.ActiveSync {
 
         // Initializers.
         public AsHttpOperation (string commandName, string nsName, IAsHttpOperationOwner owner, IAsDataSource dataSource) :
-            this (commandName, owner, dataSource) {
+            this (commandName, owner, dataSource)
+        {
             m_ns = nsName;
         }
 
-        public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource) {
+        public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource)
+        {
             Timeout = TimeSpan.Zero;
             m_commandName = commandName;
             m_owner = owner;
@@ -80,7 +82,8 @@ namespace NachoCore.ActiveSync {
         }
 
         // Public Methods.
-        public virtual async void Execute(StateMachine sm) {
+        public virtual async void Execute(StateMachine sm)
+        {
             var uri = m_owner.ServerUriCandidate (this);
             var handler = new HttpClientHandler () {
                 AllowAutoRedirect = false,
@@ -135,7 +138,7 @@ namespace NachoCore.ActiveSync {
                 m_owner.CancelCleanup (this);
                 if (! token.IsCancellationRequested) {
                     // This is how MS' HttpClient presents a timeout.
-                    sm.PostEvent ((uint)Ev.TempFail);
+                    sm.PostEvent ((uint)SmEvt.E.TempFail);
                 }
                 return;
             }
@@ -143,7 +146,7 @@ namespace NachoCore.ActiveSync {
                 // FIXME - look at all the causes of this, and figure out right-thing-to-do in each case.
                 Console.WriteLine ("as:command: WebException");
                 m_owner.CancelCleanup (this);
-                sm.PostEvent ((uint)Ev.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail);
                 return;
             }
             if (HttpStatusCode.OK != response.StatusCode) {
@@ -183,7 +186,7 @@ namespace NachoCore.ActiveSync {
                 break;
                 case HttpStatusCode.BadRequest:
                 case HttpStatusCode.NotFound:
-                sm.PostEvent((uint)Ev.HardFail);
+                sm.PostEvent((uint)SmEvt.E.HardFail);
                 break;
                 case HttpStatusCode.Unauthorized:
                 case HttpStatusCode.Forbidden:
@@ -192,13 +195,13 @@ namespace NachoCore.ActiveSync {
                 if (response.Headers.Contains ("X-MS-RP")) {
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, m_dataSource);
-                    sm.PostEvent ((uint)AsProtoControl.Lev.ReSync);
+                    sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync);
                 } else {
-                    sm.PostEvent ((uint)AsProtoControl.Lev.ReDisc);
+                    sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
                 }
                 break;
                 case (HttpStatusCode)449:
-                sm.PostEvent ((uint)AsProtoControl.Lev.ReProv);
+                sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReProv);
                 break;
                 case (HttpStatusCode)451:
                 if (response.Headers.Contains ("X-MS-Location")) {
@@ -206,7 +209,7 @@ namespace NachoCore.ActiveSync {
                     try {
                         redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
                     } catch {
-                        sm.PostEvent ((uint)AsProtoControl.Lev.ReDisc);
+                        sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
                         break;
                     }
                     // FIXME - anyone else need to know?
@@ -216,8 +219,9 @@ namespace NachoCore.ActiveSync {
                     server.Port = redirUri.Port;
                     server.Scheme = redirUri.Scheme;
                     m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, m_dataSource.Server);
-                    sm.PostEvent ((uint)Ev.Launch);
+                    sm.PostEvent ((uint)SmEvt.E.Launch);
                 }
+                // FIXME - what to do when no X-MS-Location?
                 break;
                 case HttpStatusCode.ServiceUnavailable:
                 if (response.Headers.Contains ("Retry-After")) {
@@ -226,18 +230,18 @@ namespace NachoCore.ActiveSync {
                         seconds = uint.Parse(response.Headers.GetValues ("Retry-After").First ());
                     } catch {}
                     if (m_dataSource.Owner.RetryPermissionReq (m_dataSource.Control, seconds)) {
-                        sm.PostEvent ((uint)Ev.Launch, seconds); // FIXME - PostDelayedEvent.
+                        sm.PostEvent ((uint)SmEvt.E.Launch, seconds); // FIXME - PostDelayedEvent.
                         break;
                     }
                 }
-                sm.PostEvent ((uint)Ev.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail);
                 break;
                 case (HttpStatusCode)507:
                 m_dataSource.Owner.ServerOOSpaceInd (m_dataSource.Control);
-                sm.PostEvent ((uint)Ev.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail);
                 break;
                 default:
-                sm.PostEvent ((uint)Ev.HardFail);
+                sm.PostEvent ((uint)SmEvt.E.HardFail);
                 break;
             }
         }

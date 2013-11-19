@@ -47,12 +47,13 @@ namespace NachoCore.ActiveSync {
 		public TimeSpan Timeout { set; get; }
 
 		// Initializers.
-		public AsCommand (string commandName, string nsName, IAsDataSource dataSource) :
-			this (commandName, dataSource) {
+        public AsCommand (string commandName, string nsName, IAsDataSource dataSource) : this (commandName, dataSource)
+        {
 			m_ns = nsName;
 		}
 
-		public AsCommand (string commandName, IAsDataSource dataSource) {
+		public AsCommand (string commandName, IAsDataSource dataSource)
+        {
 			Timeout = TimeSpan.Zero;
             RetriesMax = 3;
             RefreshRetries ();
@@ -82,41 +83,57 @@ namespace NachoCore.ActiveSync {
 				}
 			}
 		}		
+
 		// Virtual Methods.
-        protected virtual void Execute (StateMachine sm, ref AsHttpOperation opRef) {
+        protected virtual void Execute (StateMachine sm, ref AsHttpOperation opRef)
+        {
             Op = new AsHttpOperation (CommandName, this, DataSource);
             opRef = Op;
             Op.Execute (sm);
         }
-        public virtual void Execute(StateMachine sm) {
+
+        public virtual void Execute(StateMachine sm)
+        {
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
         }
-        public virtual void Cancel () {
+
+        public virtual void Cancel ()
+        {
             if (null != Op) {
                 Op.Cancel ();
                 Op = null;
             }
         }
-        public virtual bool UseWbxml (AsHttpOperation Sender) {
+
+        public virtual bool UseWbxml (AsHttpOperation Sender)
+        {
             return true;
         }
+
 		// Override if the subclass wants to add more parameters to the query string.
-        public virtual HttpMethod Method (AsHttpOperation Sender) {
+        public virtual HttpMethod Method (AsHttpOperation Sender)
+        {
             return HttpMethod.Post;
         }
-        public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender) {
+
+        public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
+        {
 			return null;
 		}
+
 		// Override if the subclass wants total control over the query string.
-        public virtual string QueryString (AsHttpOperation Sender) {
+        public virtual string QueryString (AsHttpOperation Sender)
+        {
 			return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
 			                      CommandName, 
 			                      DataSource.Cred.Username,
 			                      Device.Instance.Identity (),
 			                      Device.Instance.Type ());
 		}
-        public virtual Uri ServerUriCandidate (AsHttpOperation Sender) {
+
+        public virtual Uri ServerUriCandidate (AsHttpOperation Sender)
+        {
             var requestLine = QueryString (Sender);
             var rlParams = ExtraQueryStringParams (Sender);
             if (null != rlParams) {
@@ -128,29 +145,43 @@ namespace NachoCore.ActiveSync {
             }
             return new Uri (AsCommand.BaseUri (DataSource.Server), requestLine);
         }
+
 		// The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
-        public virtual XDocument ToXDocument (AsHttpOperation Sender) {
+        public virtual XDocument ToXDocument (AsHttpOperation Sender)
+        {
 			return null;
 		} 
-        public virtual string ToMime (AsHttpOperation Sender) {
+
+        public virtual string ToMime (AsHttpOperation Sender)
+        {
 			return null;
 		}
-        public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
+
+        public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        {
             return null;
         }
+
 		// Called for non-WBXML HTTP 200 responses.
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
-            return new Event () { EventCode = (uint)Ev.Success };
+        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        {
+            return new Event () { EventCode = (uint)SmEvt.E.Success };
 		}
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
-            return new Event () { EventCode = (uint)Ev.Success };
+
+        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        {
+            return new Event () { EventCode = (uint)SmEvt.E.Success };
 		}
+
 		// Subclass can cleanup in the case where a ProcessResponse will never be called.
-        public virtual void CancelCleanup (AsHttpOperation Sender) {
+        public virtual void CancelCleanup (AsHttpOperation Sender)
+        {
 		}
+
 		// Subclass can override and add specialized support for top-level status codes as needed.
 		// Subclass must call base if it does not handle the status code itself.
-        public virtual int TopLevelStatusToEvent (AsHttpOperation Sender, uint status) {
+        public virtual int TopLevelStatusToEvent (AsHttpOperation Sender, uint status)
+        {
 			// returning -1 means that this function did not know how to convert the status value.
 			// NOTE(A): Subclass can possibly make this a TempFail or Success if the id issue is just a sync issue.
 			// NOTE(B): Subclass can retry with a formatting simplification.
@@ -162,20 +193,20 @@ namespace NachoCore.ActiveSync {
 			case Xml.StatusCode.InvalidContent:
 			case Xml.StatusCode.InvalidWBXML:
 			case Xml.StatusCode.InvalidXML:
-				return (int)Ev.HardFail;
+				return (int)SmEvt.E.HardFail;
 
 			case Xml.StatusCode.InvalidDateTime: // Maybe the next time generated may parse okay.
-				return (int)Ev.TempFail;
+				return (int)SmEvt.E.TempFail;
 
 			case Xml.StatusCode.InvalidCombinationOfIDs: // NOTE(A).
 			case Xml.StatusCode.InvalidMIME: // NOTE(B).
 			case Xml.StatusCode.DeviceIdMissingOrInvalid:
 			case Xml.StatusCode.DeviceTypeMissingOrInvalid:
 			case Xml.StatusCode.ServerError:
-				return (int)Ev.HardFail;
+				return (int)SmEvt.E.HardFail;
 
 			case Xml.StatusCode.ServerErrorRetryLater:
-				return (int)Ev.TempFail;
+				return (int)SmEvt.E.TempFail;
 
 			case Xml.StatusCode.ActiveDirectoryAccessDenied: // FIXME(A).
 			case Xml.StatusCode.MailboxQuotaExceeded: // FIXME(A).
@@ -190,7 +221,7 @@ namespace NachoCore.ActiveSync {
 			case Xml.StatusCode.UserHasNoMailbox: // FIXME(A).
 			case Xml.StatusCode.UserCannotBeAnonymous: // FIXME(A).
 			case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
-				return (int)Ev.HardFail;
+				return (int)SmEvt.E.HardFail;
 				// Meh. do some cases end-to-end, with user messaging (before all this typing).
 			}
 			return -1;
@@ -203,19 +234,22 @@ namespace NachoCore.ActiveSync {
 
         protected void DoSucceed ()
         {
-            OwnerSm.PostEvent ((uint)Ev.Success);
+            OwnerSm.PostEvent ((uint)SmEvt.E.Success);
         }
 
         protected void DoHardFail ()
         {
-            OwnerSm.PostEvent ((uint)Ev.HardFail);
+            OwnerSm.PostEvent ((uint)SmEvt.E.HardFail);
         }
 
 		// Static internal helper methods.
-		static internal XDocument ToEmptyXDocument () {
+		static internal XDocument ToEmptyXDocument ()
+        {
 			return new XDocument (new XDeclaration ("1.0", "utf8", null));
 		}
-        static internal Uri BaseUri(NcServer server) {
+
+        static internal Uri BaseUri(NcServer server)
+        {
             var retval = string.Format ("{0}://{1}:{2}{3}",
                                         server.Scheme, server.Fqdn, server.Port, server.Path);
             return new Uri(retval);
