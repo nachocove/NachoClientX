@@ -87,7 +87,8 @@ namespace NachoCore.ActiveSync
 		}
 
 		private void DoGet () {
-            if (0 < RetriesLeft --) {
+            if (0 < RetriesLeft) {
+                --RetriesLeft;
                 base.Execute (Sm, ref GetOp);
             } else {
                 Sm.PostEvent ((uint)SmEvt.E.HardFail);
@@ -95,7 +96,8 @@ namespace NachoCore.ActiveSync
 		}
 
 		private void DoAck () {
-            if (0 < RetriesLeft --) {
+            if (0 < RetriesLeft) {
+                --RetriesLeft;
                 base.Execute (Sm, ref AckOp);
             } else {
                 Sm.PostEvent ((uint)SmEvt.E.HardFail);

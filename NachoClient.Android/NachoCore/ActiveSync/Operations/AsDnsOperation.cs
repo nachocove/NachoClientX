@@ -11,57 +11,71 @@ namespace NachoCore.ActiveSync
 {
     public class AsDnsOperation : IAsOperation
     {
-        private bool wasKilledByTimer;
-        private IAsDnsOperationOwner m_owner;
         public TimeSpan Timeout;
-        private Timer Timer;
+
+        private bool wasKilledByTimer;
+        private bool wasCancelled;
+        private IAsDnsOperationOwner m_owner;
+        private Timer TimeoutTimer;
+        private DnsQueryRequest Request;
 
         public AsDnsOperation(IAsDnsOperationOwner owner) {
             Timeout = TimeSpan.Zero;
             m_owner = owner;
         }
 
-        private DnsQueryRequest Request;
-
         public async void Execute (StateMachine sm) {
             Request = new DnsQueryRequest ();
-            Timer = new Timer (TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
-                               System.Threading.Timeout.Infinite);
+            TimeoutTimer = new Timer (TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
+                System.Threading.Timeout.Infinite);
             try {
-                var Response = await Request.ResolveAsync(m_owner.DnsHost (this),
-                                                          m_owner.DnsType (this),
-                                                          m_owner.DnsClass (this), ProtocolType.Udp);
-                Timer.Dispose();
-                Timer = null;
-                var Event = m_owner.ProcessResponse(this, Response);
-                sm.PostEvent(Event);
-            } catch (ObjectDisposedException) {
-                if (wasKilledByTimer) {
-                    sm.PostEvent ((uint)SmEvt.E.TempFail);
+                var Response = await Request.ResolveAsync (m_owner.DnsHost (this),
+                                   m_owner.DnsType (this),
+                                   m_owner.DnsClass (this), ProtocolType.Udp);
+                CleanupTimeoutTimer();
+                if (! wasCancelled) {
+                    var Event = m_owner.ProcessResponse (this, Response);
+                    sm.PostEvent (Event);
+                }
+            } catch (Exception ex) {
+                if (ex is ObjectDisposedException || ex is SocketException) {
+                    if (wasKilledByTimer ||
+                        (ex is SocketException && !wasCancelled)) {
+                        sm.PostEvent ((uint)SmEvt.E.TempFail);
+                    }
                 } else {
-                    // Do nothing - this is a cancellation.
-                    Timer.Dispose ();
-                    Timer = null;
+                    throw;
                 }
-            } catch (SocketException) {
-                if (! wasKilledByTimer) {
-                    Timer.Dispose ();
-                    Timer = null;
-                }
-                sm.PostEvent ((uint)SmEvt.E.TempFail);
             }
         }
 
-        public void Cancel () {
+        public void Cancel ()
+        {
+            wasCancelled = true;
+            CleanupTimeoutTimer ();
+            Close ();
+        }
+
+        private void Close ()
+        {
             if (null != Request && null != Request.UdpClient) {
                 Request.UdpClient.Close ();
             }
         }
 
-        public void TimerCallback (object State) {
+        private void CleanupTimeoutTimer ()
+        {
+            if (null != TimeoutTimer) {
+                TimeoutTimer.Dispose ();
+                TimeoutTimer = null;
+            }
+        }
+
+        private void TimerCallback (object State)
+        {
             wasKilledByTimer = true;
-            Cancel ();
-            Timer = null;
+            CleanupTimeoutTimer ();
+            Close ();
         }
     }
 }
