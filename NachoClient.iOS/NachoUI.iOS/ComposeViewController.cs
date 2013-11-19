@@ -14,7 +14,7 @@ namespace NachoClient.iOS
 	
 	{
 		/*
-		 * THis is the basic compose email viewer code. It will be reachable via a number of paths (compose buttons). It
+		 * This is the basic compose email viewer code. It will be reachable via a number of paths (compose buttons). It
 		 * is a navigation controller (ie. every segue will be a "push".
 		 * FIXME- Need to store curent email message to drafts folder if send button not hit, but cancel is.
 		 *     - no dialogue button the storage to drafts, clean out drafts every 48 hours or some such in backend.
@@ -34,11 +34,11 @@ namespace NachoClient.iOS
 		public override void ViewDidLoad ()
 		{
 			base.ViewDidLoad ();
-			getRecipList();
+			getToList();
 			getSubject ();
 
 		}
-		void getRecipList(){
+		void getToList(){
 			// add all logic to ensure that any change in the field is updated .. unless cancel hit
 			txtToField.EditingDidBegin += delegate {
 				txtComposeMsg.ResignFirstResponder ();
