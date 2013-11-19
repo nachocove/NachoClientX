@@ -19,11 +19,14 @@ namespace NachoCore.ActiveSync
         public override XDocument ToXDocument (AsHttpOperation Sender) {
             uint foldersLeft = DataSource.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
-            var folders = DataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == DataSource.Account.Id && "Mail:DEFAULT" == x.ServerId);
+            var folders = DataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
+                          ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type));
+            // FIXME: Steve add this in when ready: (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type
             foreach (var folder in folders) {
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
-                                           new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
-                                           new XElement (m_ns + Xml.Ping.Class, "Email")));
+                    new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
+                    new XElement (m_ns + Xml.Ping.Class, Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type))));
                 if (0 == (-- foldersLeft)) {
                     m_hitMaxFolders = true;
                     break;
