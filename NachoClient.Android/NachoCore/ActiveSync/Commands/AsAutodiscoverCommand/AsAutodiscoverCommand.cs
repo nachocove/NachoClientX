@@ -89,7 +89,6 @@ namespace NachoCore.ActiveSync
                                                                  dataSource)
         {
             ReDirsLeft = 10;
-            RefreshRetries ();
             Sm = new StateMachine () {
                 Name = "as:autodiscover", 
                 LocalEventType = typeof(TlEvt),
@@ -421,7 +420,8 @@ namespace NachoCore.ActiveSync
 
         private void DoTest () {
             Cancel ();
-            if (0 < RetriesLeft --) {
+            if (0 < RetriesLeft) {
+                --RetriesLeft;
                 OptCmd = new AsOptionsCommand (this);
                 OptCmd.Execute (Sm);
             } else {
@@ -430,11 +430,13 @@ namespace NachoCore.ActiveSync
         }
 
         private void DoTestFromUi () {
+            RefreshRetries ();
             ServerCandidate = DataSource.Server;
             DoTest ();
         }
 
         private void DoTestFromRobot () {
+            RefreshRetries ();
             var robot = (StepRobot)Sm.Arg;
             ServerCandidate = NcServer.Create (robot.SrServerUri);
             DoTest ();
