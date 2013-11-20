@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
         Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc);
-        int TopLevelStatusToEvent (AsHttpOperation Sender, uint status);
+        Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status);
         XDocument ToXDocument (AsHttpOperation Sender);
         string ToMime (AsHttpOperation Sender);
         Uri ServerUriCandidate (AsHttpOperation Sender);

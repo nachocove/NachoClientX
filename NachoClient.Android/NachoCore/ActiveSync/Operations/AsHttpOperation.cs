@@ -16,8 +16,10 @@ using NachoCore.Wbxml;
 using NachoCore.Utils;
 using NachoPlatform;
 
-namespace NachoCore.ActiveSync {
-    public class AsHttpOperation : IAsOperation {
+namespace NachoCore.ActiveSync
+{
+    public class AsHttpOperation : IAsOperation
+    {
         // Constants.
         private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
         private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
@@ -27,11 +29,9 @@ namespace NachoCore.ActiveSync {
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
-
         private static XmlSchemaSet commonXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
-
         // Properties & IVars.
         protected string m_commandName;
         protected XNamespace m_ns;
@@ -41,7 +41,6 @@ namespace NachoCore.ActiveSync {
         protected CancellationTokenSource m_cts;
 
         public TimeSpan Timeout { set; get; }
-
         // Initializers.
         public AsHttpOperation (string commandName, string nsName, IAsHttpOperationOwner owner, IAsDataSource dataSource) :
             this (commandName, owner, dataSource)
@@ -55,7 +54,7 @@ namespace NachoCore.ActiveSync {
             m_commandName = commandName;
             m_owner = owner;
             m_dataSource = dataSource;
-            m_cts = new CancellationTokenSource();
+            m_cts = new CancellationTokenSource ();
             var assetMgr = new NachoPlatform.Assets ();
             if (null == commonXmlSchemas) {
                 commonXmlSchemas = new XmlSchemaSet ();
@@ -80,9 +79,8 @@ namespace NachoCore.ActiveSync {
                 }
             }
         }
-
         // Public Methods.
-        public virtual async void Execute(StateMachine sm)
+        public virtual async void Execute (StateMachine sm)
         {
             var uri = m_owner.ServerUriCandidate (this);
             var handler = new HttpClientHandler () {
@@ -91,7 +89,7 @@ namespace NachoCore.ActiveSync {
             };
             if (uri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                handler.Credentials = new NetworkCredential(m_dataSource.Cred.Username, m_dataSource.Cred.Password);
+                handler.Credentials = new NetworkCredential (m_dataSource.Cred.Username, m_dataSource.Cred.Password);
             }
             var client = HttpClientFactory (handler);
             if (TimeSpan.Zero != Timeout) {
@@ -115,8 +113,7 @@ namespace NachoCore.ActiveSync {
                     request.Content = content;
                     request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
                     request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
-                }
-                else {
+                } else {
                     request.Content = new StringContent (doc.ToString (), UTF8Encoding.UTF8, ContentTypeXml);
                 }
             }
@@ -132,21 +129,18 @@ namespace NachoCore.ActiveSync {
 
             try {
                 response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
-            }
-            catch (OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 Console.WriteLine ("as:command: OperationCanceledException");
                 m_owner.CancelCleanup (this);
-                if (! token.IsCancellationRequested) {
-                    // This is how MS' HttpClient presents a timeout.
-                    sm.PostEvent ((uint)SmEvt.E.TempFail);
+                if (!token.IsCancellationRequested) {
+                    sm.PostEvent ((uint)SmEvt.E.TempFail, null, "Timeout");
                 }
                 return;
-            }
-            catch (WebException) {
+            } catch (WebException ex) {
                 // FIXME - look at all the causes of this, and figure out right-thing-to-do in each case.
                 Console.WriteLine ("as:command: WebException");
                 m_owner.CancelCleanup (this);
-                sm.PostEvent ((uint)SmEvt.E.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("WebException: {0}", ex.Message));
                 return;
             }
             if (HttpStatusCode.OK != response.StatusCode) {
@@ -159,8 +153,8 @@ namespace NachoCore.ActiveSync {
             }
             XDocument responseDoc;
             switch (response.StatusCode) {
-                case HttpStatusCode.OK:
-                switch (response.Content.Headers.ContentType.MediaType.ToLower()) {
+            case HttpStatusCode.OK:
+                switch (response.Content.Headers.ContentType.MediaType.ToLower ()) {
                 case ContentTypeWbxml:
                     byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
                     responseDoc = wbxmlMessage.LoadWbxml ();
@@ -184,14 +178,14 @@ namespace NachoCore.ActiveSync {
                     break;
                 }
                 break;
-                case HttpStatusCode.BadRequest:
-                case HttpStatusCode.NotFound:
-                sm.PostEvent((uint)SmEvt.E.HardFail);
+            case HttpStatusCode.BadRequest:
+            case HttpStatusCode.NotFound:
+                sm.PostEvent ((uint)SmEvt.E.HardFail, null, "HttpStatusCode.BadRequest or NotFound");
                 break;
-                case HttpStatusCode.Unauthorized:
-                case HttpStatusCode.Forbidden:
-                case HttpStatusCode.InternalServerError:
-                case HttpStatusCode.Found:
+            case HttpStatusCode.Unauthorized:
+            case HttpStatusCode.Forbidden:
+            case HttpStatusCode.InternalServerError:
+            case HttpStatusCode.Found:
                 if (response.Headers.Contains ("X-MS-RP")) {
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, m_dataSource);
@@ -200,10 +194,10 @@ namespace NachoCore.ActiveSync {
                     sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
                 }
                 break;
-                case (HttpStatusCode)449:
+            case (HttpStatusCode)449:
                 sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReProv);
                 break;
-                case (HttpStatusCode)451:
+            case (HttpStatusCode)451:
                 if (response.Headers.Contains ("X-MS-Location")) {
                     Uri redirUri;
                     try {
@@ -223,37 +217,40 @@ namespace NachoCore.ActiveSync {
                 }
                 // FIXME - what to do when no X-MS-Location?
                 break;
-                case HttpStatusCode.ServiceUnavailable:
+            case HttpStatusCode.ServiceUnavailable:
                 if (response.Headers.Contains ("Retry-After")) {
                     uint seconds = 0;
                     try {
-                        seconds = uint.Parse(response.Headers.GetValues ("Retry-After").First ());
-                    } catch {}
+                        seconds = uint.Parse (response.Headers.GetValues ("Retry-After").First ());
+                    } catch {
+                    }
                     if (m_dataSource.Owner.RetryPermissionReq (m_dataSource.Control, seconds)) {
-                        sm.PostEvent ((uint)SmEvt.E.Launch, seconds); // FIXME - PostDelayedEvent.
+                        sm.PostEvent ((uint)SmEvt.E.Launch, seconds, "Retry-After"); // FIXME - PostDelayedEvent.
                         break;
                     }
                 }
-                sm.PostEvent ((uint)SmEvt.E.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.ServiceUnavailable");
                 break;
-                case (HttpStatusCode)507:
+            case (HttpStatusCode)507:
                 m_dataSource.Owner.ServerOOSpaceInd (m_dataSource.Control);
-                sm.PostEvent ((uint)SmEvt.E.TempFail);
+                sm.PostEvent ((uint)SmEvt.E.TempFail, null, "HttpStatusCode 507");
                 break;
-                default:
-                sm.PostEvent ((uint)SmEvt.E.HardFail);
+            default:
+                sm.PostEvent ((uint)SmEvt.E.HardFail, null, 
+                    string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
                 break;
             }
         }
-        public void Cancel() {
+
+        public void Cancel ()
+        {
             m_cts.Cancel ();
         }
-
         // Static internal helper methods.
-        static internal HttpClient HttpClientFactory (HttpClientHandler handler) {
-            return new HttpClient (handler) { Timeout = new TimeSpan (0,0,9) };
+        static internal HttpClient HttpClientFactory (HttpClientHandler handler)
+        {
+            return new HttpClient (handler) { Timeout = new TimeSpan (0, 0, 9) };
         }
-
     }
 }
 

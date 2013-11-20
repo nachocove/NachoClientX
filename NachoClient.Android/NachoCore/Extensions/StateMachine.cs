@@ -66,6 +66,8 @@ namespace NachoCore.Utils
 
         public object Arg { get; set; }
 
+        public string Message { get; set; }
+
         public static Event Create (uint eventCode)
         {
             return new Event () { EventCode = eventCode };
@@ -74,6 +76,11 @@ namespace NachoCore.Utils
         public static Event Create (uint eventCode, object arg)
         {
             return new Event () { EventCode = eventCode, Arg = arg };
+        }
+
+        public static Event Create (uint eventCode, object arg, string message)
+        {
+            return new Event () { EventCode = eventCode, Arg = arg, Message = message };
         }
     }
 
@@ -96,6 +103,8 @@ namespace NachoCore.Utils
         public Cb Action { set; get; }
 
         public object Arg { set; get; }
+
+        public string Message { set; get; }
 
         public Cb StateChangeIndication { set; get; }
 
@@ -121,51 +130,59 @@ namespace NachoCore.Utils
             PostEvent ((uint)SmEvt.E.Launch);
         }
 
-        public void PostAtMostOneEvent (uint Event)
+        public void PostAtMostOneEvent (uint eventCode)
         {
-            if (!EventQ.Contains (Event)) {
-                PostEvent (Event);
+            foreach (var elem in EventQ) {
+                var tupEvent = (Tuple<uint,object,string>)elem;
+                if (eventCode == tupEvent.Item1) {
+                    Console.WriteLine ("SM({0}): E={1} already in queue.", Name, EventName [eventCode]);
+                    return;
+                }
             }
+            PostEvent (eventCode);
         }
 
         public void PostEvent (uint eventCode)
         {
-            PostEvent (eventCode, null);
+            PostEvent (eventCode, null, null);
         }
 
         public void PostEvent (Event smEvent)
         {
-            PostEvent (smEvent.EventCode, smEvent.Arg);
+            PostEvent (smEvent.EventCode, smEvent.Arg, smEvent.Message);
         }
 
-        public void PostEvent (uint eventCode, object arg)
+        public void PostEvent (uint eventCode, object arg, string message)
         {
             BuildEventDicts ();
 
             if ((uint)St.Stop == State) {
                 return;
             }
-            EventQ.Enqueue (Tuple.Create (eventCode, arg));
+            EventQ.Enqueue (Tuple.Create (eventCode, arg, message));
             if (IsFiring) {
                 return;
             }
             IsFiring = true;
             while (0 != EventQ.Count) {
-                var tuple = (Tuple<uint,object>)EventQ.Dequeue ();
+                var tuple = (Tuple<uint,object,string>)EventQ.Dequeue ();
                 FireEvent = tuple.Item1;
                 Arg = tuple.Item2;
+                Message = tuple.Item3;
                 var hotNode = TransTable.Where (x => State == x.State).First ();
                 if (null != hotNode.Drop && hotNode.Drop.Contains (FireEvent)) {
-                    Console.WriteLine ("SM({0}): S={1} & E={2} => DROPPED EVENT", Name, StateName (State), EventName [FireEvent]);
+                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => DROPPED EVENT",
+                        Name, StateName (State), EventName [FireEvent]), Message));
                     continue;
                 }
                 if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEvent)) {
-                    Console.WriteLine ("SM({0}): S={1} & E={2} => INVALID EVENT", Name, StateName (State), EventName [FireEvent]);
+                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => INVALID EVENT",
+                        Name, StateName (State), EventName [FireEvent]), Message));
                     throw new Exception ();
                 }
                 var hotTrans = hotNode.On.Where (x => FireEvent == x.Event).Single ();
-                Console.WriteLine ("SM({0}): S={1} & E={2} => S={3}", Name, StateName (State), 
-                    EventName [FireEvent], StateName (hotTrans.State));
+                Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => S={3}",
+                    Name, StateName (State), EventName [FireEvent], StateName (hotTrans.State)), Message));
                 Action = hotTrans.Act;
                 NextState = hotTrans.State;
                 Action ();
@@ -234,6 +251,14 @@ namespace NachoCore.Utils
             if (0 != errors.Count) {
                 throw new Exception (string.Format ("State machine {0} needs to be rectified.", Name));
             }
+        }
+
+        private string LogLine (string preString, string message)
+        {
+            if (null != message) {
+                return string.Format ("{0}: {1}", preString, message);
+            }
+            return preString;
         }
 
         private string StateName (uint state)

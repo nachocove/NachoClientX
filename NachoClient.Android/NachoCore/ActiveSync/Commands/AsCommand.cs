@@ -180,7 +180,7 @@ namespace NachoCore.ActiveSync {
 
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
-        public virtual int TopLevelStatusToEvent (AsHttpOperation Sender, uint status)
+        public virtual Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status)
         {
             // returning -1 means that this function did not know how to convert the status value.
             // NOTE(A): Subclass can possibly make this a TempFail or Success if the id issue is just a sync issue.
@@ -193,20 +193,20 @@ namespace NachoCore.ActiveSync {
             case Xml.StatusCode.InvalidContent:
             case Xml.StatusCode.InvalidWBXML:
             case Xml.StatusCode.InvalidXML:
-                return (int)SmEvt.E.HardFail;
+                return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
 
             case Xml.StatusCode.InvalidDateTime: // Maybe the next time generated may parse okay.
-                return (int)SmEvt.E.TempFail;
+                return Event.Create ((uint)SmEvt.E.TempFail, null, "Xml.StatusCode.InvalidDateTime");
 
             case Xml.StatusCode.InvalidCombinationOfIDs: // NOTE(A).
             case Xml.StatusCode.InvalidMIME: // NOTE(B).
             case Xml.StatusCode.DeviceIdMissingOrInvalid:
             case Xml.StatusCode.DeviceTypeMissingOrInvalid:
             case Xml.StatusCode.ServerError:
-                return (int)SmEvt.E.HardFail;
+                return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
 
             case Xml.StatusCode.ServerErrorRetryLater:
-                return (int)SmEvt.E.TempFail;
+                return Event.Create ((uint)SmEvt.E.TempFail, null, "Xml.StatusCode.ServerErrorRetryLater");
 
             case Xml.StatusCode.ActiveDirectoryAccessDenied: // FIXME(A).
             case Xml.StatusCode.MailboxQuotaExceeded: // FIXME(A).
@@ -221,10 +221,10 @@ namespace NachoCore.ActiveSync {
             case Xml.StatusCode.UserHasNoMailbox: // FIXME(A).
             case Xml.StatusCode.UserCannotBeAnonymous: // FIXME(A).
             case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
-                return (int)SmEvt.E.HardFail;
+                return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
                 // Meh. do some cases end-to-end, with user messaging (before all this typing).
             }
-            return -1;
+            return null;
         }
 
         protected void RefreshRetries ()

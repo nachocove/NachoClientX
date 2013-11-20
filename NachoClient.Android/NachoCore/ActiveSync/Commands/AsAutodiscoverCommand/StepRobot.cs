@@ -367,9 +367,9 @@ namespace NachoCore.ActiveSync
                 // Nothing to cleanup on cancel from Op.
             }
 
-            public int TopLevelStatusToEvent (AsHttpOperation Sender, uint status) {
+            public Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status) {
                 // There is no AS XML <Status> to report on.
-                return -1;
+                return null;
             }
 
             public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender) {

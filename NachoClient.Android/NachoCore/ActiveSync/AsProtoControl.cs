@@ -89,7 +89,7 @@ namespace NachoCore.ActiveSync
                         On = new [] {
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoOpt, State = (uint)Lst.OptWait},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.DiscWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)CtlEvt.E.GetCred, Act = DoUiCredReq, State = (uint)Lst.UiCredWait},
                             new Trans {Event = (uint)CtlEvt.E.GetServConf, Act = DoUiServConfReq, State = (uint)Lst.UiServConfWait},
                             new Trans {Event = (uint)CtlEvt.E.GetCertOk, Act = DoUiCertOkReq, State = (uint)Lst.UiCertOkWait},
@@ -144,7 +144,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoOpt, State = (uint)Lst.OptWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoOldProtoProv, State = (uint)Lst.ProvWait},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.OptWait}}},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoOpt, State = (uint)Lst.OptWait}}},
 
                     new Node {
                         State = (uint)Lst.ProvWait,
@@ -156,7 +156,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoSettings, State = (uint)Lst.SettingsWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.ProvWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                         }},
 
@@ -169,7 +169,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoSettings, State = (uint)Lst.SettingsWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.SettingsWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoSettings, State = (uint)Lst.SettingsWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
                         }},
@@ -183,7 +183,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoFSync, State = (uint)Lst.FSyncWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.SettingsWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoFSync, State = (uint)Lst.FSyncWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
                         }},
@@ -196,7 +196,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.SyncWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncWait},
@@ -211,7 +211,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoPing, State = (uint)Lst.PingWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.PingWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoPing, State = (uint)Lst.PingWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncWait},
@@ -228,7 +228,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoSend, State = (uint)Lst.SendMailWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.SendMailWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoSend, State = (uint)Lst.SendMailWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncWait},
@@ -243,7 +243,7 @@ namespace NachoCore.ActiveSync
                             new Trans {Event = (uint)SmEvt.E.Launch, Act = DoDnldAtt, State = (uint)Lst.DnldAttWait},
                             new Trans {Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingWait},
                             new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop},
-                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoUiTempFailInd, State = (uint)Lst.DnldAttWait},
+                            new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoDnldAtt, State = (uint)Lst.DnldAttWait},
                             new Trans {Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait},
                             new Trans {Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait},
                             new Trans {Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncWait},
@@ -341,11 +341,6 @@ namespace NachoCore.ActiveSync
             Owner.HardFailInd (this);
         }
 
-        private void DoUiTempFailInd () {
-            // Send the indication toward the UI.
-            Owner.TempFailInd (this);
-            // Owner needs to send launch to get it going again. Sm.PostEvent ((uint)SmEvt.E.Launch);
-        }
         private void DoDisc () {
             Cmd = new AsAutodiscoverCommand (this);
             Cmd.Execute (Sm);

@@ -54,8 +54,9 @@ namespace NachoCore.ActiveSync
             
             case Xml.Ping.StatusCode.Changes:
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
-                foreach (var xmlFolder in folders) {// FIXME - accountid.
-                    var folder = DataSource.Owner.Db.Table<NcFolder> ().Single (rec => xmlFolder.Value == rec.ServerId);
+                foreach (var xmlFolder in folders) {
+                    var folder = DataSource.Owner.Db.Table<NcFolder> ().Single (
+                        rec => DataSource.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
                     folder.AsSyncRequired = true;
                     DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                 }
