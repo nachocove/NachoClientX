@@ -17,14 +17,17 @@ namespace NachoCore.ActiveSync
             var collections = new XElement (m_ns+Xml.AirSync.Collections);
             var folders = FoldersNeedingSync ();
             foreach (var folder in folders) {
+                var classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
                 var collection = new XElement (m_ns + Xml.AirSync.Collection,
                                               new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
                                               new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
                 if (Xml.AirSync.SyncKey_Initial != folder.AsSyncKey) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
-                    collection.Add (new XElement (m_ns + Xml.AirSync.Options,
-                                                  new XElement (m_ns + Xml.AirSync.MimeSupport, 
-                                                                (uint)Xml.AirSync.MimeSupportCode.AllMime)));
+                    if (Xml.AirSync.ClassCode.Email.Equals (classCode)) {
+                        collection.Add (new XElement (m_ns + Xml.AirSync.Options,
+                            new XElement (m_ns + Xml.AirSync.MimeSupport, 
+                                (uint)Xml.AirSync.MimeSupportCode.AllMime)));
+                    }
                     // If there are email deletes, then push them up to the server.
                     var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
