@@ -109,6 +109,7 @@ namespace NachoCore.ActiveSync {
             public const string Sync = "Sync";
             public const string SyncKey = "SyncKey";
             public const string SyncKey_Initial = "0";
+            public const string WindowSize = "WindowSize";
 
             public class ClassCode {
                 public const string Tasks = "Tasks";
@@ -130,6 +131,7 @@ namespace NachoCore.ActiveSync {
             public const string Attachment = "Attachment";
             public const string Attachments = "Attachments";
             public const string Body = "Body";
+            public const string BodyPreference = "BodyPreference";
             public const string ContentLocation = "ContentLocation";
             public const string ContentType = "ContentType";
             public const string Data = "Data";
@@ -140,6 +142,7 @@ namespace NachoCore.ActiveSync {
             public const string Method = "Method";
             public const string NativeBodyType = "NativeBodyType";
             public const string Truncated = "Truncated";
+            public const string TruncationSize = "TruncationSize";
             public const string Type = "Type";
 
             public enum MethodCode : uint {NormalAttachment=1, /* [2, 4] Reserved. */ EmbeddedEml=5, AttachOle=6};
