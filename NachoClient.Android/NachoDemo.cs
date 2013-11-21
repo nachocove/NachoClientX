@@ -46,7 +46,7 @@ namespace NachoCore
             Account.CredId = cred.Id;
             Account.ProtocolStateId = protocolState.Id;
             Be.Db.Insert (BackEnd.DbActors.Ui, Account);
-            /* */
+
             var server = new NcServer () { Fqdn = "m.google.com" };
             Be.Db.Insert (BackEnd.DbActors.Ui, server);
             Account.ServerId = server.Id;
@@ -75,10 +75,10 @@ namespace NachoCore
         }
         public void ServConfReq (NcAccount account) {
             // Will change - needed for current autodiscover flow.
-            var server = new NcServer () { Fqdn = "nco9.com" };
+            /*var server = new NcServer () { Fqdn = "nco9.com" };
             Be.Db.Insert (BackEnd.DbActors.Ui, server);
             account.ServerId = server.Id;
-            Be.Db.Update (BackEnd.DbActors.Ui, account);
+            Be.Db.Update (BackEnd.DbActors.Ui, account);*/
             Be.ServerConfResp (account);
         }
         public void CertAskReq (NcAccount account, X509Certificate2 certificate)

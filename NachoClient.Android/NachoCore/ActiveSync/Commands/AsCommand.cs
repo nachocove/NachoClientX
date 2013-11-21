@@ -14,13 +14,15 @@ using NachoCore.Wbxml;
 using NachoCore.Utils;
 using NachoPlatform;
 
-// NOTE: The class that interfaces with HttpClient (or other low-level network API) needs 
+// NOTE: The class that interfaces with HttpClient (or other low-level network API) needs
 // to manage retries & network conditions. If the operation fails "enough", then the
 // state machine gets the failure event. There are three classes of failure:
 // #1 - unable to perform because of present conditions.
 // #2 - unable to perform because of some protocol issue, expected to persist.
-namespace NachoCore.ActiveSync {
-    public abstract class AsCommand : IAsCommand, IAsHttpOperationOwner {
+namespace NachoCore.ActiveSync
+{
+    public abstract class AsCommand : IAsCommand, IAsHttpOperationOwner
+    {
         // Constants.
         private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
         private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
@@ -29,11 +31,9 @@ namespace NachoCore.ActiveSync {
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
-
         private static XmlSchemaSet commonXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
-
         // Properties & IVars.
         protected string CommandName;
         protected XNamespace m_ns;
@@ -44,8 +44,8 @@ namespace NachoCore.ActiveSync {
         protected uint RetriesLeft;
 
         public uint RetriesMax { set; get; }
-        public TimeSpan Timeout { set; get; }
 
+        public TimeSpan Timeout { set; get; }
         // Initializers.
         public AsCommand (string commandName, string nsName, IAsDataSource dataSource) : this (commandName, dataSource)
         {
@@ -82,8 +82,7 @@ namespace NachoCore.ActiveSync {
                     responseXmlSchemas [Path.GetFileNameWithoutExtension (xsdResponse)] = requestSchema;
                 }
             }
-        }       
-
+        }
         // Virtual Methods.
         protected virtual void Execute (StateMachine sm, ref AsHttpOperation opRef)
         {
@@ -92,7 +91,7 @@ namespace NachoCore.ActiveSync {
             Op.Execute (sm);
         }
 
-        public virtual void Execute(StateMachine sm)
+        public virtual void Execute (StateMachine sm)
         {
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
@@ -110,7 +109,6 @@ namespace NachoCore.ActiveSync {
         {
             return true;
         }
-
         // Override if the subclass wants to add more parameters to the query string.
         public virtual HttpMethod Method (AsHttpOperation Sender)
         {
@@ -121,15 +119,14 @@ namespace NachoCore.ActiveSync {
         {
             return null;
         }
-
         // Override if the subclass wants total control over the query string.
         public virtual string QueryString (AsHttpOperation Sender)
         {
             return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
-                                  CommandName, 
-                                  DataSource.Cred.Username,
-                                  Device.Instance.Identity (),
-                                  Device.Instance.Type ());
+                CommandName, 
+                DataSource.Cred.Username,
+                Device.Instance.Identity (),
+                Device.Instance.Type ());
         }
 
         public virtual Uri ServerUriCandidate (AsHttpOperation Sender)
@@ -137,7 +134,7 @@ namespace NachoCore.ActiveSync {
             var requestLine = QueryString (Sender);
             var rlParams = ExtraQueryStringParams (Sender);
             if (null != rlParams) {
-                var pairs = new List<string>();
+                var pairs = new List<string> ();
                 foreach (KeyValuePair<string,string> pair in rlParams) {
                     pairs.Add (string.Format ("{0}={1}", pair.Key, pair.Value));
                     requestLine = requestLine + '&' + string.Join ("&", pair);
@@ -145,12 +142,11 @@ namespace NachoCore.ActiveSync {
             }
             return new Uri (AsCommand.BaseUri (DataSource.Server), requestLine);
         }
-
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
         public virtual XDocument ToXDocument (AsHttpOperation Sender)
         {
             return null;
-        } 
+        }
 
         public virtual string ToMime (AsHttpOperation Sender)
         {
@@ -161,7 +157,6 @@ namespace NachoCore.ActiveSync {
         {
             return null;
         }
-
         // Called for non-WBXML HTTP 200 responses.
         public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
@@ -172,12 +167,10 @@ namespace NachoCore.ActiveSync {
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
-
         // Subclass can cleanup in the case where a ProcessResponse will never be called.
         public virtual void CancelCleanup (AsHttpOperation Sender)
         {
         }
-
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
         public virtual Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status)
@@ -222,7 +215,7 @@ namespace NachoCore.ActiveSync {
             case Xml.StatusCode.UserCannotBeAnonymous: // FIXME(A).
             case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
                 return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
-                // Meh. do some cases end-to-end, with user messaging (before all this typing).
+            // Meh. do some cases end-to-end, with user messaging (before all this typing).
             }
             return null;
         }
@@ -241,18 +234,17 @@ namespace NachoCore.ActiveSync {
         {
             OwnerSm.PostEvent ((uint)SmEvt.E.HardFail);
         }
-
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {
             return new XDocument (new XDeclaration ("1.0", "utf8", null));
         }
 
-        static internal Uri BaseUri(NcServer server)
+        static internal Uri BaseUri (NcServer server)
         {
             var retval = string.Format ("{0}://{1}:{2}{3}",
-                                        server.Scheme, server.Fqdn, server.Port, server.Path);
-            return new Uri(retval);
+                             server.Scheme, server.Fqdn, server.Port, server.Path);
+            return new Uri (retval);
         }
     }
 }
