@@ -130,7 +130,6 @@ namespace NachoCore.ActiveSync
             try {
                 response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
             } catch (OperationCanceledException) {
-                Console.WriteLine ("as:command: OperationCanceledException");
                 m_owner.CancelCleanup (this);
                 if (!token.IsCancellationRequested) {
                     sm.PostEvent ((uint)SmEvt.E.TempFail, null, "Timeout");
@@ -138,11 +137,15 @@ namespace NachoCore.ActiveSync
                 return;
             } catch (WebException ex) {
                 // FIXME - look at all the causes of this, and figure out right-thing-to-do in each case.
-                Console.WriteLine ("as:command: WebException");
                 m_owner.CancelCleanup (this);
                 sm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("WebException: {0}", ex.Message));
                 return;
+            } catch (NullReferenceException ex) {
+                m_owner.CancelCleanup (this);
+                sm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("NullReferenceException: {0}", ex.Message));
+                return;
             }
+
             if (HttpStatusCode.OK != response.StatusCode) {
                 m_owner.CancelCleanup (this);
             }
@@ -216,6 +219,9 @@ namespace NachoCore.ActiveSync
                     sm.PostEvent ((uint)SmEvt.E.Launch);
                 }
                 // FIXME - what to do when no X-MS-Location?
+                break;
+            case HttpStatusCode.BadGateway:
+                sm.PostEvent ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.BadGateway");
                 break;
             case HttpStatusCode.ServiceUnavailable:
                 if (response.Headers.Contains ("Retry-After")) {

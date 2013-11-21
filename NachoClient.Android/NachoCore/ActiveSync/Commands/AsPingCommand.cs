@@ -11,34 +11,37 @@ namespace NachoCore.ActiveSync
     {
         private bool m_hitMaxFolders = false;
 
-        public AsPingCommand (IAsDataSource dataSource) : base(Xml.Ping.Ns, Xml.Ping.Ns, dataSource) {
+        public AsPingCommand (IAsDataSource dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
+        {
             // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
             Timeout = new TimeSpan (0, 0, (int)DataSource.ProtocolState.HeartbeatInterval + 10);
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender) {
+        public override XDocument ToXDocument (AsHttpOperation Sender)
+        {
             uint foldersLeft = DataSource.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
             var folders = DataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
                           ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type ||
                           (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type));
-            // FIXME: Steve add this in when ready: (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type
             foreach (var folder in folders) {
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
                     new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
                     new XElement (m_ns + Xml.Ping.Class, Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type))));
-                if (0 == (-- foldersLeft)) {
+                if (0 == (--foldersLeft)) {
                     m_hitMaxFolders = true;
                     break;
                 }
             }
             var ping = new XElement (m_ns + Xml.Ping.Ns,
-                                     new XElement (m_ns + Xml.Ping.HeartbeatInterval,
-                                                   DataSource.ProtocolState.HeartbeatInterval.ToString ()), xFolders);
+                           new XElement (m_ns + Xml.Ping.HeartbeatInterval,
+                               DataSource.ProtocolState.HeartbeatInterval.ToString ()), xFolders);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (ping);
             return doc;
         }
+
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             NcProtocolState update;
@@ -56,7 +59,7 @@ namespace NachoCore.ActiveSync
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
                     var folder = DataSource.Owner.Db.Table<NcFolder> ().Single (
-                        rec => DataSource.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
+                                     rec => DataSource.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
                     folder.AsSyncRequired = true;
                     DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                 }
@@ -64,7 +67,7 @@ namespace NachoCore.ActiveSync
             
             case Xml.Ping.StatusCode.MissingParams:
             case Xml.Ping.StatusCode.SyntaxError:
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, null, "Xml.Ping.StatusCode.MissingParams/SyntaxError");
 
             case Xml.Ping.StatusCode.BadHeartbeat:
                 update = DataSource.ProtocolState;
@@ -82,7 +85,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync);
             
             case Xml.Ping.StatusCode.ServerError:
-                return Event.Create ((uint)SmEvt.E.TempFail);
+                return Event.Create ((uint)SmEvt.E.TempFail, null, "Xml.Ping.StatusCode.ServerError");
 
             default:
                 // FIXME - how do we want to handle unknown status codes?

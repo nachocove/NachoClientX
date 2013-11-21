@@ -100,6 +100,7 @@ namespace NachoCore.ActiveSync {
             public const string Commands = "Commands";
             public const string Delete = "Delete";
             public const string DeleteAsMoves = "DeleteAsMoves";
+            public const string FilterType = "FilterType";
             public const string GetChanges = "GetChanges";
             public const string MimeSupport = "MIMESupport";
             public const string MoreAvailable = "MoreAvailable";
