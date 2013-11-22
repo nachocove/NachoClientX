@@ -23,7 +23,9 @@ namespace NachoCore.ActiveSync
         {
             switch ((Xml.FolderHierarchy.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns+Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.StatusCode.Success:
-                DataSource.ProtocolState.AsSyncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                var protocolState = DataSource.ProtocolState;
+                protocolState.AsSyncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                DataSource.Owner.Db.Update(BackEnd.DbActors.Proto, protocolState);
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     foreach (var change in changes) {

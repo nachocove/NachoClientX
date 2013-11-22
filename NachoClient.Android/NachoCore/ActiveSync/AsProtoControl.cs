@@ -293,7 +293,9 @@ namespace NachoCore.ActiveSync
 
         // State-machine's state persistance callback.
         private void UpdateSavedState () {
-            ProtocolState.State = Sm.State;
+            var protocolState = ProtocolState;
+            protocolState.State = Sm.State;
+            Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
         }
 
         // State-machine action methods.
