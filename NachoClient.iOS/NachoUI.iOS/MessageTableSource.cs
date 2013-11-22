@@ -32,6 +32,7 @@ namespace NachoClient.iOS
             Console.Write ("number of rows in this folder = ");
             Console.WriteLine (sillybug);
             Console.WriteLine (" the name of this folder is : " + currentFolder.DisplayName);
+          
 
             return appDelegate.Be.Db.Table<NcEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder.Id).Count();
 
@@ -44,7 +45,7 @@ namespace NachoClient.iOS
             //var accountdetail = appDelegate.Be.Db.Tabe<NcAccount> ().ElementAt (self.AccountIndexinfo);
 
 
-            var msgHeader= appDelegate.Be.Db.Table<NcEmailMessage>() .Where (rec=> rec.FolderId ==this.currentFolder.Id).ElementAt (indexPath.Row);
+            var msgHeader= appDelegate.Be.Db.Table<NcEmailMessage>() .OrderByDescending( rec=> rec.DateReceived).Where (rec=> rec.FolderId ==this.currentFolder.Id).ElementAt (indexPath.Row);
             cell.TextLabel.Text = msgHeader.Subject;
             cell.DetailTextLabel.Text = msgHeader.From;
             //Console.WriteLine (msgHeader.Body);

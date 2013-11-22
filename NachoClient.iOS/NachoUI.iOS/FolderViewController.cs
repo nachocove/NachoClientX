@@ -32,6 +32,13 @@ namespace NachoClient.iOS
 
             TableView.Source = new FolderTableSource ();
         }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            this.TableView.ReloadData ();
+
+        }
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             NcFolder thisfolder;
@@ -42,6 +49,7 @@ namespace NachoClient.iOS
                 var rowPath = TableView.IndexPathForSelectedRow;
                 thisfolder = source.getFolder (rowPath);
                 msgview.SetFolder (thisfolder);
+
 
                 //Console.Write ("The index of this row is ");
                 //Console.WriteLine(rowPath);

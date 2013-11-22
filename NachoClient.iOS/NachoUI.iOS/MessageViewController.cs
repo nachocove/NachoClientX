@@ -49,7 +49,9 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
             TableView.Source = new MessageTableSource (currentFolder);
+            TableView.ReloadData ();
         }
 
 
