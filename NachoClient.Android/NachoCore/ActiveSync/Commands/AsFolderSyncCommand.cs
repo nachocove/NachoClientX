@@ -12,8 +12,9 @@ namespace NachoCore.ActiveSync
         public AsFolderSyncCommand (IAsDataSource dataSource) : base(Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource) {}
 
         public override XDocument ToXDocument (AsHttpOperation Sender) {
-            var folderSync = new XElement (m_ns+Xml.FolderHierarchy.FolderSync, 
-                                           new XElement (m_ns+Xml.FolderHierarchy.SyncKey, DataSource.ProtocolState.AsSyncKey));
+            var syncKey = DataSource.ProtocolState.AsSyncKey;
+            Console.WriteLine ("AsFolderSyncCommand: AsSyncKey=" + syncKey);
+            var folderSync = new XElement (m_ns+Xml.FolderHierarchy.FolderSync, new XElement (m_ns+Xml.FolderHierarchy.SyncKey, syncKey));
             var doc = AsCommand.ToEmptyXDocument();
             doc.Add (folderSync);
             return doc;
@@ -24,7 +25,9 @@ namespace NachoCore.ActiveSync
             switch ((Xml.FolderHierarchy.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns+Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.StatusCode.Success:
                 var protocolState = DataSource.ProtocolState;
-                protocolState.AsSyncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                Console.WriteLine ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
+                protocolState.AsSyncKey = syncKey;
                 DataSource.Owner.Db.Update(BackEnd.DbActors.Proto, protocolState);
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
@@ -40,6 +43,7 @@ namespace NachoCore.ActiveSync
                                 AsSyncKey = Xml.AirSync.SyncKey_Initial,
                                 AsSyncRequired = true
                             };
+                            Console.WriteLine("foldersync - add - " + folder.ToString());
                             DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, folder);
                             break;
                         case Xml.FolderHierarchy.Update:
@@ -48,6 +52,7 @@ namespace NachoCore.ActiveSync
                             folder.ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             folder.DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value;
                             folder.Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value);
+                            Console.WriteLine("foldersync - update - " + folder.ToString());
                             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                             break;
                         case Xml.FolderHierarchy.Delete:

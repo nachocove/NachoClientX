@@ -19,22 +19,35 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            var collections = new XElement (m_ns + Xml.AirSync.Collections);
+            // Get the folders needed sync
             var folders = FoldersNeedingSync ();
+            // This becomes the folders in the xml <Collections>
+            var collections = new XElement (m_ns + Xml.AirSync.Collections);
+            // Save the list for later; so we can eliminiate redundant sync requests
             FoldersInRequest = new List<NcFolder> ();
             foreach (var folder in folders) {
                 FoldersInRequest.Add (folder);
-                var classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
+                // E.g.
+                // <Collection>
+                //  <SyncKey>0</SyncKey>
+                //  <CollectionId>Contact:DEFAULT</CollectionId>
+                // </Collection>
                 var collection = new XElement (m_ns + Xml.AirSync.Collection,
                                      new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
                                      new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
+                // Add <GetChanges/> if we've done a sync before
                 if (Xml.AirSync.SyncKey_Initial != folder.AsSyncKey) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
+                    // Set flags when syncing email
+                    var classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
                     if (Xml.AirSync.ClassCode.Email.Equals (classCode)) {
+                        // <Options>
+                        //   <MIMESupport>2</MIMESupport> -- Send MIME data for all messages
+                        //   <FilterType>3</FilterType>  -- One week time window
+                        // </Options>
                         collection.Add (new XElement (m_ns + Xml.AirSync.Options,
-                            new XElement (m_ns + Xml.AirSync.MimeSupport, 
-                                (uint)Xml.AirSync.MimeSupportCode.AllMime),
-                            new XElement (m_ns + Xml.AirSync.FilterType, "3")));
+                                            new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime),
+                                            new XElement (m_ns + Xml.AirSync.FilterType, "3")));
                     }
                     // If there are email deletes, then push them up to the server.
                     var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
@@ -46,7 +59,7 @@ namespace NachoCore.ActiveSync
                         var commands = new XElement (m_ns + Xml.AirSync.Commands);
                         foreach (var change in deles) {
                             commands.Add (new XElement (m_ns + Xml.AirSync.Delete,
-                                new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
+                                            new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
                             change.IsDispatched = true;
                             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, change);
                         }
