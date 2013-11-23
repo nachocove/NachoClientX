@@ -33,5 +33,7 @@
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>taco mail</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.monkeylicense.taco-mail</string>
 </dict>
 </plist>
