@@ -131,6 +131,7 @@
     <Folder Include="NachoCore\ActiveSync\" />
     <Folder Include="NachoCore\ActiveSync\Commands\" />
     <Folder Include="NachoUI.iOS\" />
+    <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -265,9 +266,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSettingsCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSettingsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand.cs">
-      <Link>NachoCore\ActiveSync\Commands\AsSyncCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\IAsCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\IAsCommand.cs</Link>
     </Compile>
@@ -314,6 +312,12 @@
     <Compile Include="NachoUI.iOS\composeTextView.cs" />
     <Compile Include="NachoUI.iOS\composeTextView.designer.cs" />
     <Compile Include="NachoUI.iOS\MessageSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

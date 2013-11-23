@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Xml.Linq;
+using NachoCore.Model;
+using NachoCore.Utils;
+using System.IO;
 
-namespace NachoClient.Android
+namespace NachoCore.ActiveSync
 {
-    public class EmptyClass
+    public partial class AsSyncCommand : AsCommand
     {
-        public EmptyClass ()
-        {
-        }
     }
 }
-

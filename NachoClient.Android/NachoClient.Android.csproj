@@ -97,7 +97,6 @@
     <Compile Include="NachoCore\ActiveSync\Commands\AsPingCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSendMailCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsProvisionCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\IAsCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSettingsCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Operations\IAsHttpOperationOwner.cs" />
@@ -110,6 +109,8 @@
     <Compile Include="NachoCore\IBackEndOwner.cs" />
     <Compile Include="NachoCore\IBackEnd.cs" />
     <Compile Include="NachoUI.Android\MainActivity.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -140,6 +141,7 @@
     <Folder Include="NachoCore\ActiveSync\Operations\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsAutodiscoverCommand\" />
     <Folder Include="NachoUI.Android\" />
+    <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
