@@ -25,7 +25,7 @@ namespace NachoClient.iOS
          * /
          */
 
-        private string ncToList;
+//        private string ncToList;
         AppDelegate appDelegate { get; set; }
 
 

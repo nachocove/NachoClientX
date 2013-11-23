@@ -37,7 +37,7 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             base.PrepareForSegue (segue, sender);
-            NcEmailMessage thisemailmsg;
+//            NcEmailMessage thisemailmsg;
 
             if (segue.Identifier == "replymessagesegue" ){
                 var replymsg = (ReplyViewController)segue.DestinationViewController; //our destination
@@ -50,13 +50,13 @@ namespace NachoClient.iOS
 
         private void createMessage(){
             //try to create a MIME formatted message using msg data
-            var mymsg = new MimeMessage (   new Header ("From", "chrisp@nachocove.com"),
-                                       new Header ("To", "jeffe@xnachocove.com"),
-                                       new Header[] { new Header ("Cc", "chris.perret@nachocove.com"), new Header ("Cc", "chris.perret13@gmail.com") },
-                                       new Header ("Subject", "Hello"),
-                                       new TextPart ("plain", "Just a short message to say hello!")
-            );
-        
+//            var mymsg = new MimeMessage (   new Header ("From", "chrisp@nachocove.com"),
+//                                       new Header ("To", "jeffe@xnachocove.com"),
+//                                       new Header[] { new Header ("Cc", "chris.perret@nachocove.com"), new Header ("Cc", "chris.perret13@gmail.com") },
+//                                       new Header ("Subject", "Hello"),
+//                                       new TextPart ("plain", "Just a short message to say hello!")
+//            );
+//        
 
             //Console.WriteLine (mymsg.Body.ToString);
             // var buffer = new MemoryStream ();
@@ -270,7 +270,7 @@ void RenderEntity (MimeEntity entity, UIWebView webview)
 
         public override void ViewDidLoad ()
         {
-            string contentDirectoryPath = "here/";
+//            string contentDirectoryPath = "here/";
             base.ViewDidLoad ();
             // need to see senders NcEname
             var webView = new UIWebView (View.Bounds);
@@ -292,7 +292,7 @@ void RenderEntity (MimeEntity entity, UIWebView webview)
 
             
             //var attach = new IList<MimePart>;
-            var attachments = new IList<MimePart>[0];
+//            var attachments = new IList<MimePart>[0];
 
             RenderEntity (message.Body, webView); //attachments);
 
