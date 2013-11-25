@@ -5,9 +5,9 @@ using NachoCore;
 namespace Test.iOS
 {
     [TestFixture]
-    public class NcEventTest
+    public class NcCalendarTest
     {
-        NachoCore.Model.NcEvent c = new NachoCore.Model.NcEvent ();
+        NachoCore.Model.NcCalendar c = new NachoCore.Model.NcCalendar ();
 
         public void GoodCompactDateTime(string compactDateTime, DateTime match)
         {
