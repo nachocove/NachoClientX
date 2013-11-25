@@ -101,6 +101,15 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="UnitTestAppDelegate.cs" />
+    <Compile Include="..\Test.Android\NcEventTest.cs">
+      <Link>NcEventTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\NachoClient.iOS\NachoClient.iOS.csproj">
+      <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>
+      <Name>NachoClient.iOS</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>
