@@ -111,6 +111,7 @@
     <Compile Include="NachoUI.Android\MainActivity.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
+    <Compile Include="NachoCore\Model\NcEvent.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

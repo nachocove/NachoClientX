@@ -46,8 +46,8 @@ namespace NachoCore.ActiveSync
                         //   <FilterType>3</FilterType>  -- One week time window
                         // </Options>
                         collection.Add (new XElement (m_ns + Xml.AirSync.Options,
-                                            new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime),
-                                            new XElement (m_ns + Xml.AirSync.FilterType, "3")));
+                            new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime),
+                            new XElement (m_ns + Xml.AirSync.FilterType, "3")));
                     }
                     // If there are email deletes, then push them up to the server.
                     var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
@@ -59,7 +59,7 @@ namespace NachoCore.ActiveSync
                         var commands = new XElement (m_ns + Xml.AirSync.Commands);
                         foreach (var change in deles) {
                             commands.Add (new XElement (m_ns + Xml.AirSync.Delete,
-                                            new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
+                                new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
                             change.IsDispatched = true;
                             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, change);
                         }
@@ -87,9 +87,9 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
                 (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
                 Console.WriteLine ("MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
-                Console.WriteLine ("Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", 
-                    folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
-                switch (uint.Parse (collection.Element (m_ns + Xml.AirSync.Status).Value)) {
+                Console.WriteLine ("Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
+                var status = collection.Element (m_ns + Xml.AirSync.Status);
+                switch (uint.Parse (status.Value)) {
                 case (uint)Xml.AirSync.StatusCode.Success:
                     // Clear any deletes dispached in the request.
                     var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
@@ -129,16 +129,23 @@ namespace NachoCore.ActiveSync
                                     AddEmail (command, folder);
                                     break;
                                 case Xml.AirSync.ClassCode.Calendar:
-                                    // FIXME - save contact here.
-                                    Console.WriteLine ("Coulda-woulda-shoulda added a EVENT to the DB.");
+                                    AddEvent (command, folder);
+                                    break;
+                                default:
+                                    Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
                                     break;
                                 }
+                                break;
+                            default:
+                                Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
                                 break;
                             }
                         }
                     }
                     break;
-                // FIXME - other status code values.
+                default:
+                    Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED status " + status.ToString());
+                    break;
                 }
 
                 DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);

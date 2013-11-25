@@ -318,6 +318,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcEvent.cs">
+      <Link>NachoCore\Model\NcEvent.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
