@@ -12,6 +12,9 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { get; set; }
 
+        [Indexed]
+        public bool IsAwatingCreate { get; set; }
+
         public string AsSyncKey { get; set; }
 
         public bool AsSyncRequired { get; set; }

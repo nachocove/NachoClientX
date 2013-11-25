@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using System.Xml.Linq;
-using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -9,12 +8,16 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderSyncCommand : AsCommand
     {
-        public AsFolderSyncCommand (IAsDataSource dataSource) : base(Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource) {}
+        public AsFolderSyncCommand (IAsDataSource dataSource) :
+            base (Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource)
+        {
+        }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender) {
+        public override XDocument ToXDocument (AsHttpOperation Sender)
+        {
             var syncKey = DataSource.ProtocolState.AsSyncKey;
             Console.WriteLine ("AsFolderSyncCommand: AsSyncKey=" + syncKey);
-            var folderSync = new XElement (m_ns+Xml.FolderHierarchy.FolderSync, new XElement (m_ns+Xml.FolderHierarchy.SyncKey, syncKey));
+            var folderSync = new XElement (m_ns + Xml.FolderHierarchy.FolderSync, new XElement (m_ns + Xml.FolderHierarchy.SyncKey, syncKey));
             var doc = AsCommand.ToEmptyXDocument();
             doc.Add (folderSync);
             return doc;
@@ -22,13 +25,13 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            switch ((Xml.FolderHierarchy.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns+Xml.FolderHierarchy.Status).Value)) {
-            case Xml.FolderHierarchy.StatusCode.Success:
+            switch ((Xml.FolderHierarchy.FolderSyncStatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.FolderHierarchy.Status).Value)) {
+            case Xml.FolderHierarchy.FolderSyncStatusCode.Success:
                 var protocolState = DataSource.ProtocolState;
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 Console.WriteLine ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
                 protocolState.AsSyncKey = syncKey;
-                DataSource.Owner.Db.Update(BackEnd.DbActors.Proto, protocolState);
+                DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     foreach (var change in changes) {
@@ -65,6 +68,7 @@ namespace NachoCore.ActiveSync
                 }
                 return Event.Create ((uint)SmEvt.E.Success);
             default:
+                // FIXME - case-specific behavior.
                 return Event.Create ((uint)SmEvt.E.HardFail);
             }
         }
