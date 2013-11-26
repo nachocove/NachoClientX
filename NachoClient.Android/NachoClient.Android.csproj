@@ -113,6 +113,7 @@
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
     <Compile Include="NachoCore\Model\NcCalendar.cs" />
     <Compile Include="NachoCore\Extensions\Log.cs" />
+    <Compile Include="NachoCore\Extensions\NcResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

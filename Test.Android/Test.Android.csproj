@@ -53,6 +53,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="NcCalendarTest.cs" />
     <Compile Include="LogTest.cs" />
+    <Compile Include="NcResultTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -107,6 +107,9 @@
     <Compile Include="..\Test.Android\LogTest.cs">
       <Link>LogTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcResultTest.cs">
+      <Link>NcResultTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
