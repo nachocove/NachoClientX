@@ -104,6 +104,8 @@ namespace NachoCore.ActiveSync
                         }
                     }
                     // Perform all commands.
+                    XElement xmlClass;
+                    string classCode;
                     var commandsNode = collection.Element (m_ns + Xml.AirSync.Commands);
                     if (null != commandsNode) {
                         var commands = commandsNode.Elements ();
@@ -113,8 +115,7 @@ namespace NachoCore.ActiveSync
                                 // If the Class element is present, respect it. Otherwise key off
                                 // the type of the folder.
                                 // FIXME - 12.1-isms.
-                                var xmlClass = command.Element (m_ns + Xml.AirSync.Class);
-                                string classCode;
+                                xmlClass = command.Element (m_ns + Xml.AirSync.Class);
                                 if (null != xmlClass) {
                                     classCode = xmlClass.Value;
                                 } else {
@@ -136,6 +137,24 @@ namespace NachoCore.ActiveSync
                                     break;
                                 }
                                 break;
+                            case Xml.AirSync.Change:
+                                // TODO: Merge with Add
+                                xmlClass = command.Element (m_ns + Xml.AirSync.Class);
+                                if (null != xmlClass) {
+                                    classCode = xmlClass.Value;
+                                } else {
+                                    classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
+                                }
+                                switch (classCode) {
+                                case Xml.AirSync.ClassCode.Calendar:
+                                    UpdateEvent (command, folder);
+                                    break;
+                                default:
+                                    Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
+                                    break;
+                                }
+                                break;
+
                             default:
                                 Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
                                 break;

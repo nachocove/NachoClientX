@@ -93,6 +93,7 @@ namespace NachoCore.ActiveSync {
             // Alpha order.
             public const string Add = "Add";
             public const string ApplicationData = "ApplicationData";
+            public const string Change = "Change";
             public const string Class = "Class";
             public const string Collection = "Collection";
             public const string CollectionId = "CollectionId";
