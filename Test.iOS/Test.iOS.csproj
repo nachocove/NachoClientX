@@ -101,8 +101,11 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="UnitTestAppDelegate.cs" />
-    <Compile Include="..\Test.Android\NcEventTest.cs">
-      <Link>NcEventTest.cs</Link>
+    <Compile Include="..\Test.Android\NcCalendarTest.cs">
+      <Link>NcCalendarTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\LogTest.cs">
+      <Link>LogTest.cs</Link>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

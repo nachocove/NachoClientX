@@ -321,6 +321,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\NcCalendar.cs">
       <Link>NachoCore\Model\NcCalendar.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Log.cs">
+      <Link>NachoCore\Extensions\Log.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
