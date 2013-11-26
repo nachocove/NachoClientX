@@ -7,6 +7,7 @@ namespace NachoCore.Utils
         public enum Filter {
             LOG_SYNC = 2,
             LOG_CALENDAR = 4,
+            LOG_UI = 8,
         }
 
         public static Filter logLevel = 0;
