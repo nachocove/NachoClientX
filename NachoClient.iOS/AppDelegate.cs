@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 using SQLite;
 
 namespace NachoClient.iOS
@@ -34,7 +35,7 @@ namespace NachoClient.iOS
             // It manages everything while the app is running.
             Be = new BackEnd (this);
             if (0 == Be.Db.Table<NcAccount> ().Count ()) {
-                Console.WriteLine ("empty Table");
+                Log.Info(Log.LOG_UI, "empty Table");
             } else {
                 // FIXME - this is wrong. Need to handle multiple accounts in future
                 this.Account = Be.Db.Table<NcAccount>().ElementAt(0);
@@ -45,6 +46,8 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             launchBe();
+
+
             if (0 == Be.Db.Table<NcAccount> ().Count ()) {
                 // we will enter the "login schema"
 
@@ -114,6 +117,8 @@ namespace NachoClient.iOS
         // Methods for IBackEndOwner
 
         public void CredReq(NcAccount account) {
+            Console.WriteLine ("Asking for Credentials");
+            Be.CredResp (account);
         }
         public void ServConfReq (NcAccount account) {
             Console.WriteLine ("Asking for Config Info");

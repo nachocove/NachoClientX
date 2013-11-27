@@ -42,20 +42,21 @@ namespace NachoClient.iOS
              
 
             UITableViewCell cell = tableView.DequeueReusableCell ("msgheader");
-            //var accountdetail = appDelegate.Be.Db.Tabe<NcAccount> ().ElementAt (self.AccountIndexinfo);
+
 
 
             var msgHeader= appDelegate.Be.Db.Table<NcEmailMessage>() .OrderByDescending( rec=> rec.DateReceived).Where (rec=> rec.FolderId ==this.currentFolder.Id).ElementAt (indexPath.Row);
             cell.TextLabel.Text = msgHeader.Subject;
             cell.DetailTextLabel.Text = msgHeader.From;
-            //Console.WriteLine (msgHeader.Body);
         
             return cell;
         }
         public NcEmailMessage getEmailMessage (NSIndexPath id){
             // force this to happen. Might be smarter to just pass the index, then, since the appDelegate
-            // is common for all objects, the indexID in the selected row should be the NcFolder (or other type)..
-            return appDelegate.Be.Db.Table<NcEmailMessage> ().ElementAt (id.Row);
+            // is common for all objects, the indexID in the selected row should be the NcFolder (or other type)
+            // had to fox to make sure that all references are in sunc. see "GetCell" above
+            return appDelegate.Be.Db.Table<NcEmailMessage> ().OrderByDescending (rec=> rec.DateReceived).Where (rec=> rec.FolderId== this.currentFolder.Id).ElementAt (id.Row);
+           
         }
 
     }

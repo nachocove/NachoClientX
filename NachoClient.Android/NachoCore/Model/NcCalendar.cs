@@ -169,9 +169,9 @@ namespace NachoCore.Model
     // Compact DateTime represents a UTC data and time as a string.
     // date_string = year month day "T" hour minute seconds [milliseconds]
 
-    public class NcEvent : NcItem
+    public class NcCalendar : NcItem
     {
-        public const string ClassName = "NcEvent";
+        public const string ClassName = "NcCalendar";
 
         public NcTimeZone TimeZone; // TZ of the calendar item
         public bool AllDayEvent; // Item or exception runs for the entire day

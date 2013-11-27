@@ -23,24 +23,14 @@ namespace NachoClient.iOS
         {
             NcEmailMessage thisemailmsg;
 
-            if (segue.Identifier == "readmessagesegue" ){
+            if (segue.Identifier == "readmessagesegue") {
                 var rdmsg = (ReadMsgController)segue.DestinationViewController; //our destination
 
                 var source = TableView.Source as MessageTableSource;
                 var rowPath = TableView.IndexPathForSelectedRow;
-                thisemailmsg = source.getEmailMessage(rowPath);
-                rdmsg.SetMessage(thisemailmsg);
-
-                //Console.Write ("The index of this row is ");
-                //Console.WriteLine(rowPath);
-
-                // needt to find the "index of this current cell; then pass the FolderID and AccountID in the
-                // segue to the MessageViewController, so we show only messages from this folder.
-                /*FIX
-            msgview.currentfolder = (NcFolder)(thisview.selectedindexrow)
-            msgview.currentaccount = appDe
-*/
-}
+                thisemailmsg = source.getEmailMessage (rowPath);
+                rdmsg.SetMessage (thisemailmsg);
+            }
         }
 
 

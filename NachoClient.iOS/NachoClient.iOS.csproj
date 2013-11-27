@@ -318,8 +318,14 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcEvent.cs">
-      <Link>NachoCore\Model\NcEvent.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcCalendar.cs">
+      <Link>NachoCore\Model\NcCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Log.cs">
+      <Link>NachoCore\Extensions\Log.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NcResult.cs">
+      <Link>NachoCore\Extensions\NcResult.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\NcPolicy.cs">
       <Link>NachoCore\Model\NcPolicy.cs</Link>
