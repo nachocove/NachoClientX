@@ -234,6 +234,17 @@ namespace NachoCore.ActiveSync
         {
             OwnerSm.PostEvent ((uint)SmEvt.E.HardFail);
         }
+
+        protected void DoReSync ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync);
+        }
+
+        protected void DoReDisc ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
+        }
+
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {

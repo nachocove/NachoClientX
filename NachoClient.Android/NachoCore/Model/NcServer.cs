@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class NcServer
+    public class NcServer : NcObject
     {
         public NcServer () {
             // FIXME - need a per-protocol subclass. This is AS-specific.
@@ -11,8 +11,6 @@ namespace NachoCore.Model
             Scheme = "https";
             Port = 443;
         }
-        [PrimaryKey, AutoIncrement]
-        public int Id { get; set; }
         public string Fqdn { get; set; }
         public string Path { get; set; }
         public string Scheme { get; set; }

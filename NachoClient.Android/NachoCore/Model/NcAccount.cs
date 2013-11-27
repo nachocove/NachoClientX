@@ -14,6 +14,8 @@ namespace NachoCore.Model
         public int ServerId { get; set; }
         [Unique]
         public int ProtocolStateId { get; set; }
+        [Unique]
+        public int PolicyId { get; set; }
     }
 }
 

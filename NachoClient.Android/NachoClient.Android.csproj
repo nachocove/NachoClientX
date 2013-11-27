@@ -112,6 +112,8 @@
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
     <Compile Include="NachoCore\Model\NcEvent.cs" />
+    <Compile Include="NachoCore\Model\NcPolicy.cs" />
+    <Compile Include="NachoCore\Enforcer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -418,7 +418,9 @@ namespace NachoCore.ActiveSync
             public const string UmAttDuration = "UmAttDuration";
             public const string UmAttOrder = "UmAttOrder";
         }
-        public class Event {
+
+        public class Event
+        {
             public const string Timezone = "Timezone";
             public const string AllDayEvent = "AllDayEvent";
             // public const string airsyncbase:Body = "airsyncbase:Body";
@@ -467,7 +469,9 @@ namespace NachoCore.ActiveSync
             public const string OnlineMeetingConfLink = "OnlineMeetingConfLink";
             public const string OnlineMeetingExternalLink = "OnlineMeetingExternalLink";
         }
-        public class FolderHierarchy {
+
+        public class FolderHierarchy
+        {
             public const string Ns = "FolderHierarchy";
             // Alpha order.
             public const string Add = AirSync.Add;
@@ -651,11 +655,59 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Provision";
             // Alpha order.
+            public const string AllowBluetooth = "AllowBluetooth";
+            public const string AllowBrowser = "AllowBrowser";
+            public const string AllowCamera = "AllowCamera";
+            public const string AllowConsumerEmail = "AllowConsumerEmail";
+            public const string AllowDesktopSync = "AllowDesktopSync";
+            public const string AllowHTMLEmail = "AllowHTMLEmail";
+            public const string AllowInternetSharing = "AllowInternetSharing";
+            public const string AllowIrDA = "AllowIrDA";
+            public const string AllowPOPIMAPEmail = "AllowPOPIMAPEmail";
+            public const string AllowRemoteDesktop = "AllowRemoteDesktop";
+            public const string AllowSimpleDevicePassword = "AllowSimpleDevicePassword";
+            public const string AllowSMIMEEncryptionAlgorithmNegotiation = "AllowSMIMEEncryptionAlgorithmNegotiation";
+            public const string AllowSMIMESoftCerts = "AllowSMIMESoftCerts";
+            public const string AllowStorageCard = "AllowStorageCard";
+            public const string AllowTextMessaging = "AllowTextMessaging";
+            public const string AllowUnsignedApplications = "AllowUnsignedApplications";
+            public const string AllowUnsignedInstallationPackages = "AllowUnsignedInstallationPackages";
+            public const string AllowWifi = "AllowWifi";
+            public const string AlphanumericDevicePasswordRequired = "AlphanumericDevicePasswordRequired";
+            public const string ApplicationName = "ApplicationName";
+            public const string ApprovedApplicationList = "ApprovedApplicationList";
+            public const string AttachmentsEnabled = "AttachmentsEnabled";
+            public const string Data = AirSyncBase.Data;
+            public const string DevicePasswordEnabled = "DevicePasswordEnabled";
+            public const string DevicePasswordExpiration = "DevicePasswordExpiration";
+            public const string DevicePasswordHistory = "DevicePasswordHistory";
+            public const string EASProvisionDoc = "EASProvisionDoc";
+            public const string Hash = "Hash";
+            public const string MaxAttachmentSize = "MaxAttachmentSize";
+            public const string MaxCalendarAgeFilter = "MaxCalendarAgeFilter";
+            public const string MaxDevicePasswordFailedAttempts = "MaxDevicePasswordFailedAttempts";
+            public const string MaxEmailAgeFilter = "MaxEmailAgeFilter";
+            public const string MaxEmailBodyTruncationSize = "MaxEmailBodyTruncationSize";
+            public const string MaxEmailHTMLBodyTruncationSize = "MaxEmailHTMLBodyTruncationSize";
+            public const string MaxInactivityTimeDeviceLock = "MaxInactivityTimeDeviceLock";
+            public const string MinDevicePasswordComplexCharacters = "MinDevicePasswordComplexCharacters";
+            public const string MinDevicePasswordLength = "MinDevicePasswordLength";
+            public const string PasswordRecoveryEnabled = "PasswordRecoveryEnabled";
             public const string Policies = "Policies";
             public const string Policy = "Policy";
             public const string PolicyKey = "PolicyKey";
             public const string PolicyType = "PolicyType";
+            public const string PolicyTypeValue = "MS-EAS-Provisioning-WBXML";
+            public const string RemoteWipe = "RemoteWipe";
+            public const string RequireDeviceEncryption = "RequireDeviceEncryption";
+            public const string RequireEncryptedSMIMEMessages = "RequireEncryptedSMIMEMessages";
+            public const string RequireEncryptionSMIMEAlgorithm = "RequireEncryptionSMIMEAlgorithm";
+            public const string RequireManualSyncWhenRoaming = "RequireManualSyncWhenRoaming";
+            public const string RequireSignedSMIMEAlgorithm = "RequireSignedSMIMEAlgorithm";
+            public const string RequireSignedSMIMEMessages = "RequireSignedSMIMEMessages";
+            public const string RequireStorageCardEncryption = "RequireStorageCardEncryption";
             public const string Status = AirSync.Status;
+            public const string UnapprovedInROMApplicationList = "UnapprovedInROMApplicationList";
 
             public enum ProvisionStatusCode : uint
             {
@@ -664,7 +716,7 @@ namespace NachoCore.ActiveSync
                 ServerError = 3}
             ;
 
-            private enum PolicyStatusCode : uint
+            public enum PolicyRespStatusCode : uint
             {
                 Success = 1,
                 NoPolicy = 2,
@@ -673,10 +725,31 @@ namespace NachoCore.ActiveSync
                 WrongPolicyKey = 5}
             ;
 
-            private enum RemoteWipeStatusCode : uint
+            public enum PolicyReqStatusCode : uint
+            {
+                Success = 1,
+                PartialSuccess = 2,
+                NotApplied = 3,
+                External = 4, // MDM case.
+            }
+            ;
+
+            public enum RemoteWipeStatusCode : uint
             {
                 Success = 1,
                 Failure = 2}
+            ;
+
+            public enum MaxAgeFilterCode : uint
+            {
+                Min = 0,
+                SyncAll = Min,
+                OneDay = 1,
+                ThreeDays = 2,
+                OneWeek = 3,
+                TwoWeeks = 4,
+                OneMonth = 5,
+                Max = OneMonth}
             ;
         }
 
