@@ -87,6 +87,6 @@ Global
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Test.Android\Test.Android.csproj
+		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
 	EndGlobalSection
 EndGlobal

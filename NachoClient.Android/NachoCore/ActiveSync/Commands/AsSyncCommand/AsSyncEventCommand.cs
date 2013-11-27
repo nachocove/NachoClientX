@@ -11,12 +11,25 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        private void AddEvent (XElement command, NcFolder folder)
+        // public for unit tests
+        public void AddEvent (XElement command, NcFolder folder)
         {
             // <ApplicationData>...</ApplicationData>
+            Log.Info (Log.LOG_CALENDAR, "AddEvent\n{0}", command.ToString ());
             var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
             foreach (var child in appData.Elements()) {
                 Console.WriteLine ("addEvent: " + child.Name.LocalName + " value=" + child.Value);
+            }
+        }
+
+        // public for unit tests
+        public void UpdateEvent (XElement command, NcFolder folder)
+        {
+            // <ApplicationData>...</ApplicationData>
+            var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
+            Log.Info (Log.LOG_CALENDAR, "UpdateEvent\n{0}", appData.ToString ());
+            foreach (var child in appData.Elements()) {
+                Console.WriteLine ("updateEvent: " + child.Name.LocalName + " value=" + child.Value);
             }
         }
     }

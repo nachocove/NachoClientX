@@ -46,6 +46,10 @@
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
     <Reference Include="Xamarin.Android.NUnitLite" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="NachoPlatform.Android">
+      <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.Android\bin\Release\NachoPlatform.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
@@ -69,5 +73,49 @@
       <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
       <Name>NachoClient.Android</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Assets\xsd\" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">
+      <Link>Assets\xsd\Request\Ping.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Response\Ping.xsd">
+      <Link>Assets\xsd\Response\Ping.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
+      <Link>Assets\xsd\common\airsyncbase.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\calendar.xsd">
+      <Link>Assets\xsd\common\calendar.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
+      <Link>Assets\xsd\common\contacts.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\contacts2.xsd">
+      <Link>Assets\xsd\common\contacts2.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\documentlibrary.xsd">
+      <Link>Assets\xsd\common\documentlibrary.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\email.xsd">
+      <Link>Assets\xsd\common\email.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\email2.xsd">
+      <Link>Assets\xsd\common\email2.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\itemoperations.xsd">
+      <Link>Assets\xsd\common\itemoperations.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\provision.xsd">
+      <Link>Assets\xsd\common\provision.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\rightsmanagement.xsd">
+      <Link>Assets\xsd\common\rightsmanagement.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
+      <Link>Assets\xsd\common\tasks.xsd</Link>
+    </AndroidAsset>
   </ItemGroup>
 </Project>
