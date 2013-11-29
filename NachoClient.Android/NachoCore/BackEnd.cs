@@ -54,7 +54,7 @@ namespace NachoCore
             AttachmentsDir = Path.Combine (documents, "attachments");
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
             DbFileName = Path.Combine (documents, "db");
-            Db = new SQLiteConnectionWithEvents(DbFileName);
+            Db = new SQLiteConnectionWithEvents(DbFileName, storeDateTimeAsTicks: true);
             Db.CreateTable<NcAccount> ();
             Db.CreateTable<NcCred> ();
             Db.CreateTable<NcFolder> ();
@@ -65,7 +65,11 @@ namespace NachoCore
             Db.CreateTable<NcProtocolState> ();
             Db.CreateTable<NcServer> ();
             Db.CreateTable<NcPendingUpdate> ();
-
+            Db.CreateTable<NcCalendar> ();
+            Db.CreateTable<NcCategory> ();
+            Db.CreateTable<NcAttendee> ();
+            Db.CreateTable<NcTimeZone> ();
+ 
             Services = new List<ProtoControl> ();
 
             Owner = owner;

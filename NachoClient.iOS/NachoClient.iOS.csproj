@@ -333,6 +333,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Enforcer.cs">
       <Link>NachoCore\Enforcer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsHelpers.cs">
+      <Link>NachoCore\ActiveSync\AsHelpers.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
