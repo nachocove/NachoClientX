@@ -36,7 +36,7 @@ namespace NachoCore.ActiveSync
         private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
         // Properties & IVars.
         protected string CommandName;
-        protected XNamespace m_ns;
+        public XNamespace m_ns;
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
         protected StateMachine OwnerSm;
         protected IAsDataSource DataSource;
