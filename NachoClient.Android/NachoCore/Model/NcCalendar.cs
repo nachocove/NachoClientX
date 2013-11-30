@@ -1,5 +1,6 @@
 using SQLite;
 using System;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -146,6 +147,9 @@ namespace NachoCore.Model
         public int FirstDayOfWeek { get; set; }
 
         // End of Recurrence fields
+
+        // Implicit [Ignore]
+        public List<NcAttendee> attendees;
        
     }
 

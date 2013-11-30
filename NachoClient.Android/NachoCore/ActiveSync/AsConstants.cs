@@ -352,14 +352,14 @@ namespace NachoCore.ActiveSync
 
             public class Attendees
             {
-                public const string Ns = "Calendar";
+                public const string ElementName = "Attendees";
                 // Alpha order.
                 public const string Attendee = "Attendee";
             }
 
             public class Attendee
             {
-                public const string Ns = "Attendee";
+                public const string ElementName = "Attendee";
                 // Alpha order.
                 public const string AttendeeStatus = "AttendeeStatus";
                 public const string AttendeeType = "AttendeeType";
@@ -369,7 +369,7 @@ namespace NachoCore.ActiveSync
 
             public class Categories
             {
-                public const string Ns = "Categories";
+                public const string ElementName = "Categories";
                 // Alpha order.
                 public const string Category = "Category";
             }

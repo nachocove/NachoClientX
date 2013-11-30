@@ -300,8 +300,11 @@ namespace Test.iOS
         [Test]
         public void ParseInteger ()
         {
+            // String int to boolean
             Assert.IsTrue ("1".ToBoolean ());
             Assert.IsFalse ("0".ToBoolean ());
+
+            // Int to enums
             Assert.AreEqual (NcRecurrenceType.Daily, "0".ParseInteger<NcRecurrenceType> ());
             Assert.AreEqual (NcResponseType.Accepted, "3".ParseInteger<NcResponseType> ());
             Assert.AreEqual (NcSensitivity.Confidential, "3".ParseInteger<NcSensitivity> ());
@@ -309,6 +312,8 @@ namespace Test.iOS
             Assert.AreEqual (NcDayOfWeek.Friday, "32".ParseInteger<NcDayOfWeek> ());
             Assert.AreEqual (NcCalendarType.ChineseLunar, "15".ParseInteger<NcCalendarType> ());
             Assert.AreEqual (NcBusyStatus.Busy, "2".ParseInteger<NcBusyStatus> ());
+            Assert.AreEqual (NcAttendeeType.Optional, "2".ParseInteger<NcAttendeeType> ());
+            Assert.AreEqual (NcAttendeeStatus.Accept, "3".ParseInteger<NcAttendeeStatus> ());
             Assert.AreNotEqual (NcRecurrenceType.YearlyOnDay, "0".ParseInteger<NcRecurrenceType> ());
             Assert.AreNotEqual (NcResponseType.Tentative, "3".ParseInteger<NcResponseType> ());
             Assert.AreNotEqual (NcSensitivity.Private, "3".ParseInteger<NcSensitivity> ());
@@ -316,9 +321,13 @@ namespace Test.iOS
             Assert.AreNotEqual (NcDayOfWeek.Tuesday, "32".ParseInteger<NcDayOfWeek> ());
             Assert.AreNotEqual (NcCalendarType.UmalQuraReservedMustNotBeUsed, "15".ParseInteger<NcCalendarType> ());
             Assert.AreNotEqual (NcBusyStatus.Tentative, "2".ParseInteger<NcBusyStatus> ());
+            Assert.AreNotEqual (NcAttendeeType.Unknown, "2".ParseInteger<NcAttendeeType> ());
+            Assert.AreNotEqual (NcAttendeeStatus.Tentative, "3".ParseInteger<NcAttendeeStatus> ());
+
+            // String to int
             Assert.AreEqual ("1".ToInt (), 1);
             Assert.AreEqual ("1".ToUint (), 1);
-
+           
         }
 
         [Test]
@@ -351,6 +360,8 @@ namespace Test.iOS
             Assert.AreEqual ((int)c.MeetingStatus, 0);
             Assert.AreEqual (c.OrganizerEmail, "steves@nachocove.com");
             Assert.AreEqual (c.OrganizerName, "Steve Scalpone");
+            Assert.IsNotNull (c.attendees);
+            Assert.AreEqual (c.attendees.Count, 4);
         }
 
         String addString_01 = @"

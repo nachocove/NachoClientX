@@ -1,6 +1,7 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -117,6 +118,47 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        // TODO: Handle missing name & email better
+        // TODO: Make sure we don't have extra fields
+        public List<NcAttendee> ParseAttendees(XNamespace ns, XElement attendees)
+        {
+            System.Diagnostics.Debug.Assert (attendees.Name.LocalName.Equals (Xml.Calendar.Attendees.ElementName));
+
+            var list = new List<NcAttendee> ();
+
+            foreach(var attendee in attendees.Elements()) {
+                System.Diagnostics.Debug.Assert(attendee.Name.LocalName.Equals(Xml.Calendar.Attendee.ElementName));
+
+                // Required
+                var nameElement = attendee.Element (ns + Xml.Calendar.Attendee.Name);
+                string name = nameElement.Value;
+
+                // Required
+                var emailElement = attendee.Element (ns + Xml.Calendar.Attendee.Email);
+                string email = emailElement.Value;
+
+                // Optional
+                NcAttendeeStatus status = NcAttendeeStatus.NotResponded;
+                var statusElement = attendee.Element (ns + Xml.Calendar.Attendee.AttendeeStatus);
+                if (null != statusElement) {
+                    status = statusElement.Value.ToEnum<NcAttendeeStatus> ();
+                }
+
+                // Optional
+                NcAttendeeType type = NcAttendeeType.Unknown;
+                var typeElement = attendee.Element(ns + Xml.Calendar.Attendee.AttendeeType);
+                if (null != typeElement) {
+                    type = typeElement.Value.ToEnum<NcAttendeeType> ();
+                }
+
+                var a = new NcAttendee (0, name, email);
+                a.AttendeeStatus = status;
+                a.AttendeeType = type;
+                list.Add (a);
+            }
+            return list;
+        }
+
         public NcRecurrenceType ToNcRecurrenceType (int i)
         {
             return (NcRecurrenceType)i;
@@ -143,7 +185,6 @@ namespace NachoCore.ActiveSync
 
             Log.Info (Log.LOG_CALENDAR, "CreateNcCalendarFromXML\n{0}", applicationData.ToString ());
             foreach (var child in applicationData.Elements()) {
-
                 switch (child.Name.LocalName) {
                 case Xml.Calendar.AllDayEvent:
                     c.AllDayEvent = child.Value.ToBoolean ();
@@ -151,8 +192,9 @@ namespace NachoCore.ActiveSync
                 case Xml.Calendar.AppointmentReplyTime:
                     c.AppointmentReplyTime = ParseAsCompactDateTime (child.Value);
                     break;
-//                case Xml.Calendar.Attendees:
-//                    break;
+                case Xml.Calendar.Attendees.ElementName:
+                    c.attendees = ParseAttendees (child.GetDefaultNamespace(), child);
+                    break;
 //                case Xml.Calendar.airsyncbase:Body:
 //                    break
                 case Xml.Calendar.BusyStatus:
