@@ -182,6 +182,7 @@ namespace NachoCore.ActiveSync
         public NcResult CreateNcCalendarFromXML (XNamespace ns, XElement applicationData)
         {
             NcCalendar c = new NcCalendar ();
+            c.Kind = NcCalendar.CALENDAR;
 
             Log.Info (Log.LOG_CALENDAR, "CreateNcCalendarFromXML\n{0}", applicationData.ToString ());
             foreach (var child in applicationData.Elements()) {
@@ -193,7 +194,8 @@ namespace NachoCore.ActiveSync
                     c.AppointmentReplyTime = ParseAsCompactDateTime (child.Value);
                     break;
                 case Xml.Calendar.Attendees.ElementName:
-                    c.attendees = ParseAttendees (child.GetDefaultNamespace(), child);
+                    XNamespace nsCalendar = "Calendar";
+                    c.attendees = ParseAttendees (nsCalendar, child);
                     break;
 //                case Xml.Calendar.airsyncbase:Body:
 //                    break
@@ -307,9 +309,9 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-
             return NcResult.OK (c);
         }
+   
     }
 }
 

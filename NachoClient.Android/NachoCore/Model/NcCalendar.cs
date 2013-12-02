@@ -9,23 +9,21 @@ namespace NachoCore.Model
     // Table of categories, referring back to entry they are modifying (1 unique set per entry)
     // Table of timezones, referred to by the calendar entry
 
-    public partial class NcCalendar
+    public partial class NcCalendar : NcObject
     {
-        public const string ClassName = "NcCalendar";
         public const int CALENDAR = 0;
         public const int EXCEPTION = 1;
 
-        [PrimaryKey, AutoIncrement, Unique]
-        public int Id { get; set; }
+//        NcObject
+//        [PrimaryKey, AutoIncrement, Unique]
+//        public int Id { get; set; }
+//        public DateTime LastModified { get; set; }
 
         [Indexed]
         public string ServerId { get; set; }
 
         [Indexed]
         public int FolderId { get; set; }
-
-        // Optimistic concurrency control
-        public DateTime LastModified { get; set; }
 
         // Calendar or Exception
         public int Kind { get; set; }
@@ -155,16 +153,15 @@ namespace NachoCore.Model
 
     // The attendee table is a big old list of non-unique names.
     // Each attendee record refers back to its Calendar record.
-    public partial class NcAttendee
+    public partial class NcAttendee : NcObject
     {
-        [PrimaryKey, AutoIncrement, Unique]
-        public int Id { get; set; }
+//        NcObject
+//        [PrimaryKey, AutoIncrement, Unique]
+//        public int Id { get; set; }
+//        public DateTime LastModified { get; set; }
 
         [Indexed]
-        public int CalendarId { get; set; }
-
-        // Optimistic concurrency control
-        public DateTime LastModified { get; set; }
+        public Int64 CalendarId { get; set; }
 
         [MaxLength(256)]
         // Email address of attendee
@@ -184,16 +181,15 @@ namespace NachoCore.Model
 
     // The category table represents a collection of categories
     // assigned to a calendar or exception item.
-    public partial class NcCategory
+    public partial class NcCategory : NcObject
     {
-        [PrimaryKey, AutoIncrement, Unique]
-        public int Id { get; set; }
+//        NcObject
+//        [PrimaryKey, AutoIncrement, Unique]
+//        public int Id { get; set; }
+//        public DateTime LastModified { get; set; }
 
         [Indexed]
         public int CalendarId { get; set; }
-
-        // Optimistic concurrency control
-        public DateTime LastModified { get; set; }
 
         [MaxLength(256)]
         // Name of category
@@ -201,13 +197,12 @@ namespace NachoCore.Model
        
     }
 
-    public class NcTimeZone
+    public class NcTimeZone : NcObject
     {
-        [PrimaryKey, AutoIncrement, Unique]
-        public int Id { get; set; }
-
-        // Optimistic concurrency control
-        public DateTime LastModified { get; set; }
+//        NcObject
+//        [PrimaryKey, AutoIncrement, Unique]
+//        public int Id { get; set; }
+//        public DateTime LastModified { get; set; }
 
         // The offset from UTC, in minutes;
         public int Bias { get; set; }
