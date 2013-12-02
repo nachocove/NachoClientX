@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
 using SQLite;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -61,6 +62,13 @@ namespace NachoCore.Utils
         {
             return m_db.CreateTable (ty, createFlags);
         }
+
+        // For unit tests
+        public int DropTable<T>()
+        {
+            return m_db.DropTable<T> ();
+        }
+
         // The client-invoked method (that throw events) are below.
         public int InsertAll (BackEnd.DbActors actor, System.Collections.IEnumerable objects)
         {
@@ -192,6 +200,48 @@ namespace NachoCore.Utils
         {
             return m_db.Get<T> (predicate);
         }
+
+        // Return the newly inserted row's id.
+        public Int64 LastId()
+        {
+            string sql = @"select last_insert_rowid()";
+            return (Int64)m_db.ExecuteScalar<Int64> (sql); 
+        }
+
+        // Insert & return last row id.
+        // TODO: Add event support?
+        public NcResult Insert (NcObject obj)
+        {
+            System.Diagnostics.Debug.Assert (obj.Id < 0);
+
+            Int64 lastId = 0;
+            obj.LastModified = DateTime.UtcNow;
+            m_db.RunInTransaction(() => {
+                m_db.Insert(obj);
+                lastId = LastId();
+            });
+            // TODO: Handled errors
+            return NcResult.OK (lastId);
+        }
+
+
+        // Update, no event.  Temporary?
+        // Lots of TODOs in this code.
+        public NcResult Update (NcObject obj)
+        {
+            System.Diagnostics.Debug.Assert (obj.Id >= 0);
+
+            DateTime lastModified = obj.LastModified;
+            obj.LastModified = DateTime.UtcNow;
+
+            m_db.RunInTransaction(() => {
+                // TODO: Check that lastModified is unchanged
+                m_db.Update(obj);
+            });
+            // TODO: Handled errors
+            return NcResult.OK (obj.Id);
+        }
+
     }
 }
 
