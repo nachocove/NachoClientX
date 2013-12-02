@@ -58,6 +58,8 @@
     <Compile Include="NcCalendarTest.cs" />
     <Compile Include="LogTest.cs" />
     <Compile Include="NcResultTest.cs" />
+    <Compile Include="NcItemTest.cs" />
+    <Compile Include="NcObjectTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
