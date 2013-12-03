@@ -68,6 +68,20 @@ namespace Test.iOS
         public void ServerOOSpaceInd (ProtoControl sender) { }
     }
 
+    public class MockNcFolder : NcFolder
+    {
+
+        public MockNcFolder()
+        {
+            this.Id = 86;
+            this.ServerId = "mock folder";
+            this.ParentId = "mock folder parent";
+            this.AsSyncKey = "mock folder sync key";
+            this.DisplayName = "mock folder";
+            this.Type = 1;
+        }
+    }
+
 
     [TestFixture]
     public class NcCalendarTest
@@ -155,7 +169,7 @@ namespace Test.iOS
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
-            asSync.AddCalendarItem (command, null);
+            asSync.ServerSaysAddCalendarItem (command, new MockNcFolder());
         }
         //        [Test]
         public void UpdateEntryWithAdd ()
@@ -390,15 +404,14 @@ namespace Test.iOS
         public void CreateNcCalendarFromXML ()
         {
             var ds = new MockDataSource ();
+            var ncFolder = new MockNcFolder ();
+
             var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
-            // <ApplicationData>...</ApplicationData>
-            var appData = command.Element (asSync.m_ns + Xml.AirSync.ApplicationData);
-            Assert.IsNotNull (appData);
             var h = new NachoCore.ActiveSync.AsHelpers ();
-            NcResult r = h.CreateNcCalendarFromXML (asSync.m_ns, appData);
+            NcResult r = h.CreateNcCalendarFromXML (asSync.m_ns, command, ncFolder);
             Assert.IsNotNull (r.GetObject ());
             var c = (NcCalendar)r.GetObject ();
             Assert.AreEqual (c.DTStamp, new DateTime (2013, 11, 26, 12, 49, 29));

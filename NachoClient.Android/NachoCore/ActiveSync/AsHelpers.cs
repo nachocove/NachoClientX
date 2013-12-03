@@ -179,10 +179,24 @@ namespace NachoCore.ActiveSync
         // <TimeZone xmlns="Calendar:"> LAEAAEUAUw...P///w== </TimeZone>
         // <Organizer_Email xmlns="Calendar:"> steves@nachocove.com </Organizer_Email>
         // <Organizer_Name xmlns="Calendar:"> Steve Scalpone </Organizer_Name>
-        public NcResult CreateNcCalendarFromXML (XNamespace ns, XElement applicationData)
+        public NcResult CreateNcCalendarFromXML (XNamespace ns, XElement command, NcFolder folder)
         {
+            // <ServerId>..</ServerId>
+            var serverId = command.Element (ns + Xml.AirSync.ServerId);
+            System.Diagnostics.Trace.Assert (null != serverId);
+
+            // Folder must exist & have a key
+            System.Diagnostics.Trace.Assert (null != folder);
+            System.Diagnostics.Trace.Assert (folder.Id > 0);
+
             NcCalendar c = new NcCalendar ();
             c.Kind = NcCalendar.CALENDAR;
+            c.ServerId = serverId.Value;
+            c.FolderId = folder.Id;
+
+            // <ApplicationData>...</ApplicationData>
+            var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
+            System.Diagnostics.Trace.Assert (null != applicationData);
 
             Log.Info (Log.LOG_CALENDAR, "CreateNcCalendarFromXML\n{0}", applicationData.ToString ());
             foreach (var child in applicationData.Elements()) {

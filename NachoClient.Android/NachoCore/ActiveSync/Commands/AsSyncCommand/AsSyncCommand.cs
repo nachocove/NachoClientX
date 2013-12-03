@@ -130,7 +130,7 @@ namespace NachoCore.ActiveSync
                                     AddEmail (command, folder);
                                     break;
                                 case Xml.AirSync.ClassCode.Calendar:
-                                    AddCalendarItem (command, folder);
+                                    ServerSaysAddCalendarItem (command, folder);
                                     break;
                                 default:
                                     Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
                                 }
                                 switch (classCode) {
                                 case Xml.AirSync.ClassCode.Calendar:
-                                    UpdateCalendarItem (command, folder);
+                                    ServerSaysChangeCalendarItem (command, folder);
                                     break;
                                 default:
                                     Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);

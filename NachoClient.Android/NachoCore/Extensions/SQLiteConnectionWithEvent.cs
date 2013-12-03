@@ -242,6 +242,17 @@ namespace NachoCore.Utils
             return NcResult.OK (obj.Id);
         }
 
+
+        // Delete, no event.  Temporary?
+        // Lots of TODOs in this code.
+        public NcResult Delete (NcObject obj)
+        {
+            System.Diagnostics.Debug.Assert (obj.Id >= 0);
+            m_db.Delete(obj);
+            // TODO: Handled errors
+            return NcResult.OK (obj.Id);
+        }
+
     }
 }
 
