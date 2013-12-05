@@ -259,6 +259,8 @@ namespace NachoCore.ActiveSync
             foreach (var exception in exceptions.Elements()) {
                 System.Diagnostics.Trace.Assert (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new NcException ();
+                e.attendees = new List<NcAttendee> ();
+                e.categories = new List<NcCategory> ();
                 foreach (var child in exception.Elements()) {
                     switch (child.Name.LocalName) {
                     // Containers
