@@ -66,8 +66,10 @@ namespace NachoCore
             Db.CreateTable<NcServer> ();
             Db.CreateTable<NcPendingUpdate> ();
             Db.CreateTable<NcCalendar> ();
-            Db.CreateTable<NcCategory> ();
+            Db.CreateTable<NcException> ();
             Db.CreateTable<NcAttendee> ();
+            Db.CreateTable<NcCategory> ();
+            Db.CreateTable<NcRecurrence> ();
             Db.CreateTable<NcTimeZone> ();
  
             Services = new List<ProtoControl> ();

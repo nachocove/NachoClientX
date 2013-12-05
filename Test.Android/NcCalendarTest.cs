@@ -30,10 +30,20 @@ namespace Test.iOS
             DropTable<NcAttendee> ();
             CreateTable<NcAttendee> ();
 
-            // Categorie
+            // Category
             CreateTable<NcCategory> ();
             DropTable<NcCategory> ();
             CreateTable<NcCategory> ();
+
+            // Exception
+            CreateTable<NcException> ();
+            DropTable<NcException> ();
+            CreateTable<NcException> ();
+
+            // Recurrence
+            CreateTable<NcRecurrence> ();
+            DropTable<NcRecurrence> ();
+            CreateTable<NcRecurrence> ();
         }
     }
 
@@ -189,19 +199,21 @@ namespace Test.iOS
             // Create a new db
             db.CreateTable<NcCategory> ();
 
-            var c01 = new NcCategory (5, "test");
+            var c01 = new NcCategory ("test");
+            c01.ParentId = 5;
+            c01.ParentType = NcCategory.CALENDAR;
             db.Insert (c01);
 
-            var c02 = db.Get<NcCategory> (x => x.CalendarId == 5);
+            var c02 = db.Get<NcCategory> (x => x.ParentId == 5);
             Assert.IsNotNull (c02);
             Assert.AreEqual (c02.Id, 1);
-            Assert.AreEqual (c02.CalendarId, 5);
+            Assert.AreEqual (c02.ParentId, 5);
             Assert.AreEqual (c02.Name, "test");
 
             var c03 = db.Get<NcCategory> (x => x.Name == "test");
             Assert.IsNotNull (c03);
             Assert.AreEqual (c03.Id, 1);
-            Assert.AreEqual (c03.CalendarId, 5);
+            Assert.AreEqual (c03.ParentId, 5);
             Assert.AreEqual (c03.Name, "test");
 
             c03.Name = "changed";
@@ -214,17 +226,19 @@ namespace Test.iOS
             var c05 = db.Get<NcCategory> (x => x.Name == "changed");
             Assert.IsNotNull (c05);
             Assert.AreEqual (c05.Id, 1);
-            Assert.AreEqual (c05.CalendarId, 5);
+            Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "changed");
 
-            var c06 = new NcCategory (5, "second");
+            var c06 = new NcCategory ("second");
+            c06.Id = 5;
             db.Insert (c06);
-            var c07 = new NcCategory (6, "do not see");
+            var c07 = new NcCategory ("do not see");
+            c07.Id = 6;
             db.Insert (c07);
 
             Assert.AreEqual (db.Table<NcCategory> ().Count (), 3);
 
-            var c08 = db.Get<NcCategory> (x => x.CalendarId == 5);
+            var c08 = db.Get<NcCategory> (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
 
 //            // TODO: Implement Query in SQLConnectionWithEvents
@@ -234,7 +248,7 @@ namespace Test.iOS
 //                Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
 //            }
 
-            var c10 = db.Table<NcCategory> ().Where (x => x.CalendarId == 5);
+            var c10 = db.Table<NcCategory> ().Where (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
@@ -254,20 +268,21 @@ namespace Test.iOS
             // Create a new db
             db.CreateTable<NcAttendee> ();
 
-            var c01 = new NcAttendee (5, "Steve", "rascal2210@hotmail.com");
+            var c01 = new NcAttendee ("Steve", "rascal2210@hotmail.com");
+            c01.ParentId = 5;
             db.Insert (c01);
 
-            var c02 = db.Get<NcAttendee> (x => x.CalendarId == 5);
+            var c02 = db.Get<NcAttendee> (x => x.ParentId == 5);
             Assert.IsNotNull (c02);
             Assert.AreEqual (c02.Id, 1);
-            Assert.AreEqual (c02.CalendarId, 5);
+            Assert.AreEqual (c02.ParentId, 5);
             Assert.AreEqual (c02.Name, "Steve");
             Assert.AreEqual (c02.Email, "rascal2210@hotmail.com");
 
             var c03 = db.Get<NcAttendee> (x => x.Name == "Steve");
             Assert.IsNotNull (c03);
             Assert.AreEqual (c03.Id, 1);
-            Assert.AreEqual (c03.CalendarId, 5);
+            Assert.AreEqual (c03.ParentId, 5);
             Assert.AreEqual (c03.Name, "Steve");
             Assert.AreEqual (c03.Email, "rascal2210@hotmail.com");
 
@@ -281,26 +296,28 @@ namespace Test.iOS
             var c05 = db.Get<NcAttendee> (x => x.Name == "Steve");
             Assert.IsNotNull (c05);
             Assert.AreEqual (c05.Id, 1);
-            Assert.AreEqual (c05.CalendarId, 5);
+            Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "Steve");
             Assert.AreEqual (c05.Email, "steves@nachocove.com");
 
             var c05a = db.Get<NcAttendee> (x => x.Email == "steves@nachocove.com");
             Assert.IsNotNull (c05a);
             Assert.AreEqual (c05a.Id, 1);
-            Assert.AreEqual (c05a.CalendarId, 5);
+            Assert.AreEqual (c05a.ParentId, 5);
             Assert.AreEqual (c05a.Name, "Steve");
             Assert.AreEqual (c05a.Email, "steves@nachocove.com");
 
 
-            var c06 = new NcAttendee (5, "Chris", "chrisp@nachocove.com");
+            var c06 = new NcAttendee ("Chris", "chrisp@nachocove.com");
+            c06.Id = 5;
             db.Insert (c06);
-            var c07 = new NcAttendee (6, "Jeff", "jeffe@nachocove.com");
+            var c07 = new NcAttendee ("Jeff", "jeffe@nachocove.com");
+            c07.Id = 6;
             db.Insert (c07);
 
             Assert.AreEqual (db.Table<NcAttendee> ().Count (), 3);
 
-            var c08 = db.Get<NcAttendee> (x => x.CalendarId == 5);
+            var c08 = db.Get<NcAttendee> (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
 
 //            // TODO: implement Query in SQLConnectionWithEvents
@@ -310,7 +327,7 @@ namespace Test.iOS
 //                Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
 //            }
 
-            var c10 = db.Table<NcAttendee> ().Where (x => x.CalendarId == 5);
+            var c10 = db.Table<NcAttendee> ().Where (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
@@ -434,6 +451,39 @@ namespace Test.iOS
             Assert.AreEqual (c.attendees.Count, 4);
         }
 
+        [Test]
+        public void CreateNcCalendarFromXML2 ()
+        {
+            var ds = new MockDataSource ();
+            var ncFolder = new MockNcFolder ();
+
+            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
+            var command = System.Xml.Linq.XElement.Parse (addString_02);
+            Assert.IsNotNull (command);
+            Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
+            var h = new NachoCore.ActiveSync.AsHelpers ();
+            NcResult r = h.CreateNcCalendarFromXML (asSync.m_ns, command, ncFolder);
+            Assert.IsNotNull (r.GetObject ());
+            var c = (NcCalendar)r.GetObject ();
+            Assert.IsNull (c.Location);
+            Assert.AreEqual (c.Subject, "Re-dog");
+            Assert.AreEqual (c.UID, "7j5do4kr7q8fi67ubq7bdpr01c@google.com");
+            Assert.AreEqual (c.Sensitivity, NcSensitivity.Normal);
+            Assert.AreEqual ((int)c.Sensitivity, 0);
+            Assert.AreEqual (c.BusyStatus, NcBusyStatus.Busy);
+            Assert.AreEqual ((int)c.BusyStatus, 2);
+            Assert.False (c.AllDayEvent);
+            Assert.AreEqual (c.Reminder, 10);
+            Assert.AreEqual (c.MeetingStatus, NcMeetingStatus.Appointment);
+            Assert.AreEqual ((int)c.MeetingStatus, 0);
+            Assert.AreEqual (c.OrganizerEmail, "steves@nachocove.com");
+            Assert.AreEqual (c.OrganizerName, "Steve Scalpone");
+            Assert.IsNotNull (c.attendees);
+            Assert.AreEqual (c.attendees.Count, 0);
+            Assert.IsNotNull (c.exceptions);
+            Assert.AreEqual (c.exceptions.Count, 2);
+        }
+
         String addString_01 = @"
                 <Add xmlns=""AirSync"">
                   <ServerId>beb8a513-a054-4829-a3c8-81fc27bf9033</ServerId>
@@ -481,6 +531,70 @@ namespace Test.iOS
                   </ApplicationData>
                 </Add>
         ";
+
+        String addString_02 = @"
+            <Add xmlns=""AirSync"">
+              <ServerId>40f792c2-1370-44dc-ba9a-2eab5db56102</ServerId>
+              <ApplicationData>
+                <Body xmlns=""AirSyncBase"">
+                  <Type>1</Type>
+                  <Data> </Data>
+                </Body>
+                <DtStamp xmlns=""Calendar"">20131203T172804Z</DtStamp>
+                <StartTime xmlns=""Calendar"">20131204T120000Z</StartTime>
+                <EndTime xmlns=""Calendar"">20131204T130000Z</EndTime>
+                <Subject xmlns=""Calendar"">Re-dog</Subject>
+                <UID xmlns=""Calendar"">7j5do4kr7q8fi67ubq7bdpr01c@google.com</UID>
+                <Sensitivity xmlns=""Calendar"">0</Sensitivity>
+                <BusyStatus xmlns=""Calendar"">2</BusyStatus>
+                <AllDayEvent xmlns=""Calendar"">0</AllDayEvent>
+                <Reminder xmlns=""Calendar"">10</Reminder>
+                <MeetingStatus xmlns=""Calendar"">0</MeetingStatus>
+                <TimeZone xmlns=""Calendar"">4AEAAFAAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAIAAAAAAAAAAAAAAFAARABUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAIAAAAAAAAAxP///w==</TimeZone>
+                <OrganizerEmail xmlns=""Calendar"">steves@nachocove.com</OrganizerEmail>
+                <OrganizerName xmlns=""Calendar"">Steve Scalpone</OrganizerName>
+                <Recurrence xmlns=""Calendar"">
+                  <Type>1</Type>
+                  <Interval>1</Interval>
+                  <DayOfWeek>42</DayOfWeek>
+                  <Until>20140108T080000Z</Until>
+                </Recurrence>
+                <Exceptions xmlns=""Calendar"">
+                  <Exception>
+                    <DtStamp>20131203T172914Z</DtStamp>
+                    <StartTime>20131204T120000Z</StartTime>
+                    <EndTime>20131204T130000Z</EndTime>
+                    <Subject>Re-dog</Subject>
+                    <Sensitivity>0</Sensitivity>
+                    <BusyStatus>2</BusyStatus>
+                    <AllDayEvent>0</AllDayEvent>
+                    <MeetingStatus>0</MeetingStatus>
+                    <Body xmlns=""AirSyncBase"">
+                      <Type>1</Type>
+                      <Data> </Data>
+                    </Body>
+                    <ExceptionStartTime>20131204T120000Z</ExceptionStartTime>
+                  </Exception>
+                  <Exception>
+                    <DtStamp>20131203T172843Z</DtStamp>
+                    <StartTime>20131206T120000Z</StartTime>
+                    <EndTime>20131206T130000Z</EndTime>
+                    <Subject>Re-dog</Subject>
+                    <Sensitivity>0</Sensitivity>
+                    <BusyStatus>2</BusyStatus>
+                    <AllDayEvent>0</AllDayEvent>
+                    <MeetingStatus>0</MeetingStatus>
+                    <Body xmlns=""AirSyncBase"">
+                      <Type>1</Type>
+                      <Data> </Data>
+                    </Body>
+                    <Deleted>1</Deleted>
+                    <ExceptionStartTime>20131206T120000Z</ExceptionStartTime>
+                  </Exception>
+                </Exceptions>
+              </ApplicationData>
+            </Add>
+            ";
     }
 }
 

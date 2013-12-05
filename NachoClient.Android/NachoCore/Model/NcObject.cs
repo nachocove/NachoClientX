@@ -13,7 +13,7 @@ namespace NachoCore.Model
 
         public NcObject()
         {
-            Id = -1;
+            Id = 0;
             LastModified = DateTime.MinValue;
         }
     }

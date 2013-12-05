@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using SQLite;
@@ -212,7 +213,7 @@ namespace NachoCore.Utils
         // TODO: Add event support?
         public NcResult Insert (NcObject obj)
         {
-            System.Diagnostics.Debug.Assert (obj.Id < 0);
+            System.Diagnostics.Debug.Assert (obj.Id == 0);
 
             Int64 lastId = 0;
             obj.LastModified = DateTime.UtcNow;
@@ -229,7 +230,7 @@ namespace NachoCore.Utils
         // Lots of TODOs in this code.
         public NcResult Update (NcObject obj)
         {
-            System.Diagnostics.Debug.Assert (obj.Id >= 0);
+            System.Diagnostics.Debug.Assert (obj.Id > 0);
 
             DateTime lastModified = obj.LastModified;
             obj.LastModified = DateTime.UtcNow;
@@ -247,10 +248,15 @@ namespace NachoCore.Utils
         // Lots of TODOs in this code.
         public NcResult Delete (NcObject obj)
         {
-            System.Diagnostics.Debug.Assert (obj.Id >= 0);
+            System.Diagnostics.Debug.Assert (obj.Id > 0);
             m_db.Delete(obj);
             // TODO: Handled errors
             return NcResult.OK (obj.Id);
+        }
+
+        public List<T> Query<T> (string query, params object[] args) where T : new()
+        {
+            return m_db.Query<T> (query, args);
         }
 
     }

@@ -28,12 +28,12 @@ namespace NachoCore.ActiveSync
             return System.Convert.ToBoolean (i);
         }
 
-        public static int ToInt(this string intString)
+        public static int ToInt (this string intString)
         {
             return int.Parse (intString);
         }
 
-        public static uint ToUint(this string intString)
+        public static uint ToUint (this string intString)
         {
             return uint.Parse (intString);
         }
@@ -76,7 +76,12 @@ namespace NachoCore.ActiveSync
             }
             return DateTime.MinValue;
         }
-        // DecodeAsTimeZone
+
+        /// <summary>
+        /// Parses a time zone string.
+        /// </summary>
+        /// <returns>The time zone record.</returns>
+        /// <param name="encodedTimeZone">Encoded time zone.</param>
         // TODO: The bias fields of the timezone
         public NcTimeZone ParseAsTimeZone (string encodedTimeZone)
         {
@@ -102,10 +107,16 @@ namespace NachoCore.ActiveSync
             tz.DaylightName = DaylightName;
             return tz;     
         }
-        // ExtractStringFromAsTimeZone
-        // The value of this field is an array of 32 WCHARs
-        // It contains an optional description for standard time.
-        // Any unused WCHARs in the array MUST be set to 0x0000.
+
+        /// <summary>
+        /// Extracts a string field from a TimeZone record.
+        /// The value of this field is an array of 32 WCHARs
+        /// Any unused WCHARs in the array MUST be set to 0x0000.
+        /// </summary>
+        /// <returns>The string from the time zone.</returns>
+        /// <param name="binaryData">The packaged string</param>
+        /// <param name="start">Starting offset of the first character</param>
+        /// <param name="fieldLength">Length of the field.</param>
         public string ExtractStringFromAsTimeZone (byte[] binaryData, int start, int fieldLength)
         {
             System.Diagnostics.Debug.Assert ((start + fieldLength) <= binaryData.Length);
@@ -118,16 +129,20 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        /// <returns>
+        /// A list of attendees not yet associated with an NcCalendar or NcException. Not null.
+        /// </returns>
         // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
-        public List<NcAttendee> ParseAttendees(XNamespace ns, XElement attendees)
+        public List<NcAttendee> ParseAttendees (XNamespace ns, XElement attendees)
         {
-            System.Diagnostics.Debug.Assert (attendees.Name.LocalName.Equals (Xml.Calendar.Attendees.ElementName));
+            System.Diagnostics.Trace.Assert (null != attendees);
+            System.Diagnostics.Trace.Assert (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
 
             var list = new List<NcAttendee> ();
 
-            foreach(var attendee in attendees.Elements()) {
-                System.Diagnostics.Debug.Assert(attendee.Name.LocalName.Equals(Xml.Calendar.Attendee.ElementName));
+            foreach (var attendee in attendees.Elements()) {
+                System.Diagnostics.Debug.Assert (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
 
                 // Required
                 var nameElement = attendee.Element (ns + Xml.Calendar.Attendee.Name);
@@ -146,22 +161,182 @@ namespace NachoCore.ActiveSync
 
                 // Optional
                 NcAttendeeType type = NcAttendeeType.Unknown;
-                var typeElement = attendee.Element(ns + Xml.Calendar.Attendee.AttendeeType);
+                var typeElement = attendee.Element (ns + Xml.Calendar.Attendee.AttendeeType);
                 if (null != typeElement) {
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
                 }
 
-                var a = new NcAttendee (0, name, email);
-                a.AttendeeStatus = status;
-                a.AttendeeType = type;
+                var a = new NcAttendee (name, email, type, status);
                 list.Add (a);
             }
             return list;
         }
 
-        public NcRecurrenceType ToNcRecurrenceType (int i)
+        /// <returns>
+        /// A list of categories not yet associated with an NcCalendar or NcException. Not null.
+        /// </returns>
+        // TODO: Handle missing name & email better
+        // TODO: Make sure we don't have extra fields
+        public List<NcCategory> ParseCategories (XNamespace ns, XElement categories)
         {
-            return (NcRecurrenceType)i;
+            System.Diagnostics.Trace.Assert (null != categories);
+            System.Diagnostics.Trace.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
+
+            var list = new List<NcCategory> ();
+
+            foreach (var category in categories.Elements()) {
+                System.Diagnostics.Debug.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
+                var n = new NcCategory (category.Value);
+                list.Add (n);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Parses the recurrence section of a calendar item.
+        /// </summary>
+        /// <returns>The recurrence record</returns>
+        /// <param name="ns">XML namespace to use to fetch elements</param>
+        /// <param name="recurrence">Recurrence element</param>
+        public NcRecurrence ParseRecurrence (XNamespace ns, XElement recurrence)
+        {
+            System.Diagnostics.Trace.Assert (null != recurrence);
+            System.Diagnostics.Trace.Assert (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
+
+            var r = new NcRecurrence ();
+
+            foreach (var child in recurrence.Elements()) {
+                switch (child.Name.LocalName) {
+                case Xml.Calendar.Recurrence.CalendarType:
+                    r.CalendarType = child.Value.ToEnum<NcCalendarType> ();
+                    break;
+                case Xml.Calendar.Recurrence.DayOfMonth:
+                    r.DayOfMonth = child.Value.ToInt ();
+                    break;
+                case Xml.Calendar.Recurrence.DayOfWeek:
+                    r.DayOfWeek = child.Value.ToEnum<NcDayOfWeek> ();
+                    break;
+                case Xml.Calendar.Recurrence.FirstDayOfWeek:
+                    r.FirstDayOfWeek = child.Value.ToInt ();
+                    break;
+                case Xml.Calendar.Recurrence.Interval:
+                    r.Interval = child.Value.ToInt ();
+                    break;
+                case Xml.Calendar.Recurrence.IsLeapMonth:
+                    r.isLeapMonth = child.Value.ToBoolean ();
+                    break;
+                case Xml.Calendar.Recurrence.MonthOfYear:
+                    r.MonthOfYear = child.Value.ToInt ();
+                    break;
+                case Xml.Calendar.Recurrence.Occurrences:
+                    r.Occurences = int.Parse (child.Value);
+                    break;
+                case Xml.Calendar.Recurrence.Type:
+                    r.Type = child.Value.ParseInteger<NcRecurrenceType> ();
+                    break;
+                case Xml.Calendar.Recurrence.Until:
+                    r.Until = ParseAsCompactDateTime (child.Value);
+                    break;
+                case Xml.Calendar.Recurrence.WeekOfMonth:
+                    r.WeekOfMonth = child.Value.ToInt ();
+                    break;
+                default:
+                    Console.WriteLine ("ParseRecurrence UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                    break;
+                }
+            }
+            return r;
+        }
+
+        public List<NcException> ParseExceptions (XNamespace ns, XElement exceptions)
+        {
+            System.Diagnostics.Trace.Assert (null != exceptions);
+            System.Diagnostics.Trace.Assert (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
+
+            var l = new List<NcException> ();
+
+            Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions.ToString ());
+            foreach (var exception in exceptions.Elements()) {
+                System.Diagnostics.Trace.Assert (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
+                var e = new NcException ();
+                foreach (var child in exception.Elements()) {
+                    switch (child.Name.LocalName) {
+                    // Containers
+                    case Xml.Calendar.Exception.Attendees:
+                        var attendees = ParseAttendees (ns, child);
+                        if (null == e.attendees) {
+                            e.attendees = attendees;
+                        } else {
+                            e.attendees.AddRange (attendees);
+                        }
+                        break;
+                    case Xml.Calendar.Exception.Categories:
+                        var categories = ParseCategories (ns, child);
+                        if (null == e.categories) {
+                            e.categories = categories;
+                        } else {
+                            e.categories.AddRange (categories);
+                        }
+                        break;
+                    // Elements
+                    case Xml.Calendar.Exception.AllDayEvent:
+                        e.AllDayEvent = child.Value.ToBoolean ();
+                        break;
+                    case Xml.Calendar.Exception.AppointmentReplyTime:
+                        e.AppointmentReplyTime = ParseAsCompactDateTime (child.Value);
+                        break;
+                    case Xml.Calendar.Exception.BusyStatus:
+                        e.BusyStatus = child.Value.ToEnum<NcBusyStatus> ();
+                        break;
+                    case Xml.Calendar.Exception.Deleted:
+                        e.Deleted = child.Value.ToUint ();
+                        break;
+                    case Xml.Calendar.Exception.DtStamp:
+                        e.DTStamp = ParseAsCompactDateTime (child.Value);
+                        break;
+                    case Xml.Calendar.Exception.EndTime:
+                        e.EndTime = ParseAsCompactDateTime (child.Value);
+                        break;
+                    case Xml.Calendar.Exception.ExceptionStartTime:
+                        e.ExceptionStartTime = ParseAsCompactDateTime (child.Value);
+                        break;
+                    case Xml.Calendar.Exception.Location:
+                        e.Location = child.Value;
+                        break;
+                    case Xml.Calendar.Exception.MeetingStatus:
+                        e.MeetingStatus = child.Value.ParseInteger<NcMeetingStatus> ();
+                        break;
+                    case Xml.Calendar.Exception.OnlineMeetingConfLink:
+                        e.OnlineMeetingConfLink = child.Value;
+                        break;
+                    case Xml.Calendar.Exception.OnlineMeetingExternalLink:
+                        e.OnlineMeetingExternalLink = child.Value;
+                        break;
+                    case Xml.Calendar.Exception.Reminder:
+                        e.Reminder = child.Value.ToUint ();
+                        break;
+                    case Xml.Calendar.Exception.ResponseType:
+                        e.ResponseType = child.Value.ParseInteger<NcResponseType> ();
+                        break;
+                    case Xml.Calendar.Exception.Sensitivity:
+                        e.Sensitivity = child.Value.ParseInteger<NcSensitivity> ();
+                        break;
+                    case Xml.Calendar.Exception.StartTime:
+                        e.StartTime = ParseAsCompactDateTime (child.Value);
+                        break;
+                    case Xml.Calendar.Exception.Subject:
+                        e.Subject = child.Value;
+                        break;
+//                  case Xml.Calendar.airsyncbase:Body:
+//                      break
+                    default:
+                        Console.WriteLine ("CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                        break;
+                    }
+                }
+                l.Add (e);
+            }
+            return l;
         }
         // CreateNcCalendarFromXML
         // <Body xmlns="AirSyncBase:"> <Type> 1 </Type> <Data> </Data> </Body>
@@ -190,10 +365,16 @@ namespace NachoCore.ActiveSync
             System.Diagnostics.Trace.Assert (folder.Id > 0);
 
             NcCalendar c = new NcCalendar ();
-            c.Kind = NcCalendar.CALENDAR;
             c.ServerId = serverId.Value;
             c.FolderId = folder.Id;
 
+            c.attendees = new List<NcAttendee> ();
+            c.categories = new List<NcCategory> ();
+            c.exceptions = new List<NcException> ();
+            c.recurrences = new List<NcRecurrence> ();
+
+
+            XNamespace nsCalendar = "Calendar";
             // <ApplicationData>...</ApplicationData>
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             System.Diagnostics.Trace.Assert (null != applicationData);
@@ -201,34 +382,36 @@ namespace NachoCore.ActiveSync
             Log.Info (Log.LOG_CALENDAR, "CreateNcCalendarFromXML\n{0}", applicationData.ToString ());
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
+                // Containers
+                case Xml.Calendar.Calendar_Attendees:
+                    var attendees = ParseAttendees (nsCalendar, child);
+                    c.attendees.AddRange (attendees);
+                    break;
+                case Xml.Calendar.Calendar_Categories:
+                    var categories = ParseCategories (nsCalendar, child);
+                    c.categories.AddRange (categories);
+                    break;
+                case Xml.Calendar.Calendar_Exceptions:
+                    var exceptions = ParseExceptions (nsCalendar, child);
+                    c.exceptions.AddRange (exceptions);
+                    break;
+                case Xml.Calendar.Calendar_Recurrence:
+                    var recurrence = ParseRecurrence (nsCalendar, child);
+                    c.recurrences.Add (recurrence);
+                    break;
+//                case Xml.Calendar.airsyncbase:Body:
+//                    break
+//                case Xml.Calendar.airsyncbase:NativeBodyType:
+//                    break;
+                // Elements
                 case Xml.Calendar.AllDayEvent:
                     c.AllDayEvent = child.Value.ToBoolean ();
                     break;
                 case Xml.Calendar.AppointmentReplyTime:
                     c.AppointmentReplyTime = ParseAsCompactDateTime (child.Value);
                     break;
-                case Xml.Calendar.Attendees.ElementName:
-                    XNamespace nsCalendar = "Calendar";
-                    c.attendees = ParseAttendees (nsCalendar, child);
-                    break;
-//                case Xml.Calendar.airsyncbase:Body:
-//                    break
                 case Xml.Calendar.BusyStatus:
                     c.BusyStatus = child.Value.ToEnum<NcBusyStatus> ();
-                    break;
-                case Xml.Calendar.CalendarType:
-                    c.CalendarType = child.Value.ToEnum<NcCalendarType> ();
-                    break;
-//                case Xml.Calendar.Categories:
-//                    break;
-                case Xml.Calendar.DayOfMonth:
-                    c.DayOfMonth = child.Value.ToInt ();
-                    break;
-                case Xml.Calendar.DayOfWeek:
-                    c.DayOfWeek = child.Value.ToEnum<NcDayOfWeek> ();
-                    break;
-                case Xml.Calendar.Deleted:
-                    c.Deleted = child.Value.ToUint ();
                     break;
                 case Xml.Calendar.DisallowNewTimeProposal:
                     c.DisallowNewTimeProposal = child.Value.ToBoolean ();
@@ -239,35 +422,11 @@ namespace NachoCore.ActiveSync
                 case Xml.Calendar.EndTime:
                     c.EndTime = ParseAsCompactDateTime (child.Value);
                     break;
-//                case Xml.Calendar.Exception:
-//                    break;
-                case Xml.Calendar.ExceptionStartTime:
-                    c.ExceptionStartTime = ParseAsCompactDateTime (child.Value);
-                    break;
-//                case Xml.Calendar.Exceptions:
-//                    break;
-                case Xml.Calendar.FirstDayOfWeek:
-                    c.FirstDayOfWeek = child.Value.ToInt ();
-                    break;
-                case Xml.Calendar.Interval:
-                    c.Interval = child.Value.ToInt ();
-                    break;
-                case Xml.Calendar.IsLeapMonth:
-                    c.isLeapMonth = child.Value.ToBoolean ();
-                    break;
                 case Xml.Calendar.Location:
                     c.Location = child.Value;
                     break;
                 case Xml.Calendar.MeetingStatus:
                     c.MeetingStatus = child.Value.ParseInteger<NcMeetingStatus> ();
-                    break;
-                case Xml.Calendar.MonthOfYear:
-                    c.MonthOfYear = child.Value.ToInt ();
-                    break;
-//                case Xml.Calendar.airsyncbase:NativeBodyType:
-//                    break;
-                case Xml.Calendar.Occurrences:
-                    c.Occurences = int.Parse (child.Value);
                     break;
                 case Xml.Calendar.OnlineMeetingConfLink:
                     c.OnlineMeetingConfLink = child.Value;
@@ -281,10 +440,8 @@ namespace NachoCore.ActiveSync
                 case Xml.Calendar.OrganizerName:
                     c.OrganizerName = child.Value;
                     break;
-//                case Xml.Calendar.Recurrence:
-//                    break;
                 case Xml.Calendar.Reminder:
-                    c.Reminder = child.Value.ToUint();
+                    c.Reminder = child.Value.ToUint ();
                     break;
                 case Xml.Calendar.ResponseRequested:
                     c.ResponseRequested = child.Value.ToBoolean ();
@@ -305,27 +462,16 @@ namespace NachoCore.ActiveSync
 //                    stringValue = child.Value;
 //                    NcTimeZone tz = ParseAsTimeZone (stringValue);
 //                    break;
-                case Xml.Calendar.Type:
-                    c.Type = child.Value.ParseInteger<NcRecurrenceType> ();
-                    break;
                 case Xml.Calendar.UID:
                     c.UID = child.Value;
-                    break;
-                case Xml.Calendar.Until:
-                    c.Until = ParseAsCompactDateTime (child.Value);
-                    break;
-                case Xml.Calendar.WeekOfMonth:
-                    c.WeekOfMonth = child.Value.ToInt();
                     break;
                 default:
                     Console.WriteLine ("CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                     break;
                 }
             }
-
             return NcResult.OK (c);
         }
-   
     }
 }
 

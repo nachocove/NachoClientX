@@ -26,6 +26,7 @@ namespace Test.Android
 
         public class MyObject : NcObject
         {
+
         }
 
         [Test]
@@ -42,7 +43,7 @@ namespace Test.Android
 
             NcResult r;
             MyObject i = new MyObject ();
-            Assert.AreEqual(i.Id, -1);
+            Assert.AreEqual(i.Id, 0);
 
             r = db.Insert (i);
             Assert.IsTrue (r.isOK ());
