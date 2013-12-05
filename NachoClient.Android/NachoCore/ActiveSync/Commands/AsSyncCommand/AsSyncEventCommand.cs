@@ -97,6 +97,7 @@ namespace NachoCore.ActiveSync
             MergeAttendees (newItem);
             MergeCategories (newItem);
             MergeExceptions (newItem);
+            MergeRecurrences (newItem);
         }
 
         /// <param name="parentType">CALENDAR or EXCEPTION</param>
@@ -105,7 +106,7 @@ namespace NachoCore.ActiveSync
         {
             System.Diagnostics.Trace.Assert (r.Id > 0);
             string query = "select * from NcAttendee where parentType = ? and parentId = ?";
-            var l = DataSource.Owner.Db.Query<NcAttendee> (query, NcAttendee.GetParentType(r), r.Id);
+            var l = DataSource.Owner.Db.Query<NcAttendee> (query, NcAttendee.GetParentType (r), r.Id);
             System.Diagnostics.Trace.Assert (l.Count >= 0);
             return l;
         }
@@ -116,7 +117,7 @@ namespace NachoCore.ActiveSync
         {
             System.Diagnostics.Trace.Assert (r.Id > 0);
             string query = "select * from NcCategory where parentType = ? and parentId = ?";
-            var l = DataSource.Owner.Db.Query<NcCategory> (query, NcCategory.GetParentType(r), r.Id);
+            var l = DataSource.Owner.Db.Query<NcCategory> (query, NcCategory.GetParentType (r), r.Id);
             System.Diagnostics.Trace.Assert (l.Count >= 0);
             return l;
         }
@@ -152,9 +153,11 @@ namespace NachoCore.ActiveSync
         /// attendee lists, so taking the slow & safe road
         /// of deleting the old and inserting the new.
         /// </summary>
-        /// TODO: Handle errors
+        // TODO: Handle errors
         public void MergeAttendees (NcCalendarRoot c)
         {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
             List<NcAttendee> attendees = GetAttendees (c);
 
             // Delete the old
@@ -172,7 +175,7 @@ namespace NachoCore.ActiveSync
                     System.Diagnostics.Trace.Assert (r.isOK ());
                 } else {
                     attendee.ParentId = c.Id;
-                    attendee.ParentType = NcAttendee.GetParentType(c);
+                    attendee.ParentType = NcAttendee.GetParentType (c);
                     NcResult r = DataSource.Owner.Db.Insert (attendee);
                     System.Diagnostics.Trace.Assert (r.isOK ());
                     attendee.Id = r.GetIndex ();
@@ -180,12 +183,18 @@ namespace NachoCore.ActiveSync
             }
 
         }
-        // I didn't see any fancy rules about how to merge
-        // category lists, so taking the slow & safe road
-        // of deleting the old and inserting the new.
+
+        /// <summary>
+        /// I didn't see any fancy rules about how to merge
+        /// category lists, so taking the slow & safe road
+        /// of deleting the old and inserting the new.
+        /// </summary>
+        /// <param name="c">C.</param>
         // TODO: Handle errors
         public void MergeCategories (NcCalendarRoot c)
         {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
             List<NcCategory> categories = GetCategories (c);
 
             // Delete the old
@@ -209,12 +218,18 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
-        // I didn't see any fancy rules about how to merge
-        // exception lists, so taking the slow & safe road
-        // of deleting the old and inserting the new.
+
+        /// <summary>
+        /// I didn't see any fancy rules about how to merge
+        /// exception lists, so taking the slow & safe road
+        /// of deleting the old and inserting the new.
+        /// </summary>
+        /// <param name="c">C.</param>
         // TODO: Handle errors
         public void MergeExceptions (NcCalendar c)
         {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
             List<NcException> exceptions = GetExceptions (c);
 
             // Delete the old
@@ -223,7 +238,7 @@ namespace NachoCore.ActiveSync
             }
 
             // Add the new, if any
-            System.Diagnostics.Trace.Assert (null != c.categories);
+            System.Diagnostics.Trace.Assert (null != c.exceptions);
 
             // Add the new
             foreach (var exception in c.exceptions) {
@@ -235,7 +250,63 @@ namespace NachoCore.ActiveSync
                     System.Diagnostics.Trace.Assert (r.isOK ());
                     exception.Id = r.GetIndex ();
                 }
+                MergeAttendees (exception);
+                MergeCategories (exception);
             }
+        }
+
+        public void MergeRecurrences (NcCalendar c)
+        {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
+            List<NcRecurrence> recurrences = GetRecurrences (c);
+
+            // Delete the old
+            foreach (var recurrence in recurrences) {
+                DataSource.Owner.Db.Delete (recurrence);
+            }
+
+            // Add the new, if any
+            System.Diagnostics.Trace.Assert (null != c.recurrences);
+
+            // Add the new
+            foreach (var recurrence in c.recurrences) {
+                if (recurrence.Id > 0) {
+                    NcResult r = DataSource.Owner.Db.Update (recurrence);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                } else {
+                    NcResult r = DataSource.Owner.Db.Insert (recurrence);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                    recurrence.Id = r.GetIndex ();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the exception and its attendees and categories
+        /// </summary>
+        /// <param name="exception">An NcException object</param>
+        // TODO: error checking and unit tests.
+        public void DeleteException(NcException exception)
+        {
+            System.Diagnostics.Trace.Assert (null != exception);
+
+            var attendees = GetAttendees (exception);
+            System.Diagnostics.Trace.Assert (null != attendees);
+
+            foreach (var attendee in attendees) {
+                DataSource.Owner.Db.Delete (attendee);
+            }
+
+            var categories = GetCategories (exception);
+            System.Diagnostics.Trace.Assert (null != categories);
+
+            foreach (var category in categories) {
+                DataSource.Owner.Db.Delete (category);
+            }
+
+            DataSource.Owner.Db.Delete (exception);
+
         }
     }
 }
