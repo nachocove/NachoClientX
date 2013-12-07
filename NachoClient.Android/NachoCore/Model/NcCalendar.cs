@@ -79,7 +79,7 @@ namespace NachoCore.Model
         public bool ResponseRequested { get; set; }
 
         /// The default is False.  Calendar only
-        public bool DisallowNewTimeProposal;
+        public bool DisallowNewTimeProposal { get; set; }
 
         /// Name of the creator of the calendar item (optional). Calendar only.
         [MaxLength (256)]
