@@ -11,41 +11,303 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        // public for unit tests
-        public void AddEvent (XElement command, NcFolder folder)
+        // [MS-ASCMD]
+        // When the client sends a Sync command request to the server and
+        // a new item has been added to the server collection since the last
+        // synchronization, the server responds with an Add element in a
+        // Commands element. This Add element specifies the server ID and
+        // data of the item to be added to the collection on the client.
+        //
+        // If the server ID in an Add element from the server matches the
+        // server ID for an item on the client, the client treats the
+        // addition as a CHANGE to the client item.
+        //
+        // This method is public for unit tests.
+        public void ServerSaysAddCalendarItem (XElement command, NcFolder folder)
         {
-            // <ApplicationData>...</ApplicationData>
-            Log.Info (Log.LOG_CALENDAR, "AddEvent\n{0}", command.ToString ());
-            var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
-            foreach (var child in appData.Elements()) {
-                Console.WriteLine ("addEvent: " + child.Name.LocalName + " value=" + child.Value);
+            Log.Info (Log.LOG_CALENDAR, "ServerSaysAddCalendarItem\n{0}", command.ToString ());
+            ProcessCalendarItem (command, folder);
+        }
+        // [MS-ASCMD]
+        // If a calendar:Exceptions node is not specified, the properties
+        // for that calendar:Exceptions node will remain unchanged. If a
+        // calendar:Exception node within the calendar:Exceptions node
+        // is not present, that particular exception will remain unchanged.
+        // If the airsyncbase:Body or airsyncbase:Data elements are not
+        // present, the corresponding properties will remain unchanged.
+        //
+        // In all other cases, if an in-schema property is not specified
+        // in a change request, the property is actively deleted from the
+        // item on the server.
+        //
+        // This method is public for unit tests.
+        public void ServerSaysChangeCalendarItem (XElement command, NcFolder folder)
+        {
+            Log.Info (Log.LOG_CALENDAR, "ServerSaysChangeCalendarItem\n{0}", command.ToString ());
+            ProcessCalendarItem (command, folder);
+        }
+
+        public void ProcessCalendarItem (XElement command, NcFolder folder)
+        {
+            // Convert the event to an NcCalendar
+            var h = new AsHelpers ();
+            var r = h.CreateNcCalendarFromXML (m_ns, command, folder);
+            NcCalendar newItem = (NcCalendar)r.GetObject ();
+
+            System.Diagnostics.Trace.Assert (r.isOK ());
+            System.Diagnostics.Trace.Assert (null != newItem);
+
+            // Look up the event by ServerId
+            NcCalendar oldItem = null;
+
+            try {
+                oldItem = DataSource.Owner.Db.Get<NcCalendar> (x => x.ServerId == newItem.ServerId);
+            } catch (System.InvalidOperationException) {
+                Log.Info (Log.LOG_CALENDAR, "ProcessCalendarItem: System.InvalidOperationException handled");
+            } catch (Exception e) {
+                Log.Info ("ProcessCalendarItem:\n{0}", e.ToString ());
+            }
+
+            // If there is no match, insert the new item.
+            if (null == oldItem) {
+                NcResult ir = DataSource.Owner.Db.Insert (newItem);
+                System.Diagnostics.Trace.Assert (ir.isOK ());
+                newItem.Id = ir.GetIndex ();
+                MergeAttendees (newItem);
+                MergeCategories (newItem);
+                MergeExceptions (newItem);
+                return;
+            }
+
+            // For a merge, we'll update the new entry following
+            // the rules stated in the docs & repeated up above.
+
+            // Pull over the Body
+            if (0 == newItem.BodyId) {
+                newItem.BodyId = newItem.BodyId;
+            }
+
+            // Overwrite the old item with the new item
+            // to preserve the index, in
+            newItem.Id = oldItem.Id;
+            NcResult ur = DataSource.Owner.Db.Update (oldItem);
+            System.Diagnostics.Trace.Assert (ur.isOK ());
+
+            // Update the entries that refer to the updated entry
+            MergeAttendees (newItem);
+            MergeCategories (newItem);
+            MergeExceptions (newItem);
+            MergeRecurrences (newItem);
+        }
+
+        /// <param name="parentType">CALENDAR or EXCEPTION</param>
+        /// <param name="parentId">Id field from NcCalendar or NcException</param>
+        public List<NcAttendee> GetAttendees (NcCalendarRoot r)
+        {
+            System.Diagnostics.Trace.Assert (r.Id > 0);
+            string query = "select * from NcAttendee where parentType = ? and parentId = ?";
+            var l = DataSource.Owner.Db.Query<NcAttendee> (query, NcAttendee.GetParentType (r), r.Id);
+            System.Diagnostics.Trace.Assert (l.Count >= 0);
+            return l;
+        }
+
+        /// <param name="parentType">CALENDAR or EXCEPTION</param>
+        /// <param name="parentId">Id field from NcCalendar or NcException</param>
+        public List<NcCategory> GetCategories (NcCalendarRoot r)
+        {
+            System.Diagnostics.Trace.Assert (r.Id > 0);
+            string query = "select * from NcCategory where parentType = ? and parentId = ?";
+            var l = DataSource.Owner.Db.Query<NcCategory> (query, NcCategory.GetParentType (r), r.Id);
+            System.Diagnostics.Trace.Assert (l.Count >= 0);
+            return l;
+        }
+
+        /// <summary>
+        /// Gets the exceptions.
+        /// </summary>
+        /// <returns>The exception list for this calendar item</returns>
+        /// <param name="calendar">Calendar item</param>
+        public List<NcException> GetExceptions (NcCalendar calendar)
+        {
+            System.Diagnostics.Trace.Assert (calendar.Id > 0);
+            var l = DataSource.Owner.Db.Table<NcException> ().Where (x => x.CalendarId == calendar.Id).ToList ();
+            System.Diagnostics.Trace.Assert (l.Count >= 0);
+            return l;
+        }
+
+        /// <summary>
+        /// Gets the recurrences.
+        /// </summary>
+        /// <returns>The recurrences for this calendar item</returns>
+        /// <param name="calendar">Calendar item</param>
+        public List<NcRecurrence> GetRecurrences (NcCalendar calendar)
+        {
+            System.Diagnostics.Trace.Assert (calendar.Id > 0);
+            var l = DataSource.Owner.Db.Table<NcRecurrence> ().Where (x => x.CalendarId == calendar.Id).ToList ();
+            System.Diagnostics.Trace.Assert (l.Count >= 0);
+            return l;
+        }
+
+        /// <summary>
+        /// I didn't see any fancy rules about how to merge
+        /// attendee lists, so taking the slow & safe road
+        /// of deleting the old and inserting the new.
+        /// </summary>
+        // TODO: Handle errors
+        public void MergeAttendees (NcCalendarRoot c)
+        {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
+            List<NcAttendee> attendees = GetAttendees (c);
+
+            // Delete the old
+            foreach (var attendee in attendees) {
+                DataSource.Owner.Db.Delete (attendee);
+            }
+
+            // Add the new, if any
+            System.Diagnostics.Trace.Assert (null != c.attendees);
+
+            // Add the new
+            foreach (var attendee in c.attendees) {
+                if (attendee.Id > 0) {
+                    NcResult r = DataSource.Owner.Db.Update (attendee);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                } else {
+                    attendee.ParentId = c.Id;
+                    attendee.ParentType = NcAttendee.GetParentType (c);
+                    NcResult r = DataSource.Owner.Db.Insert (attendee);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                    attendee.Id = r.GetIndex ();
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// I didn't see any fancy rules about how to merge
+        /// category lists, so taking the slow & safe road
+        /// of deleting the old and inserting the new.
+        /// </summary>
+        /// <param name="c">C.</param>
+        // TODO: Handle errors
+        public void MergeCategories (NcCalendarRoot c)
+        {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
+            List<NcCategory> categories = GetCategories (c);
+
+            // Delete the old
+            foreach (var category in categories) {
+                DataSource.Owner.Db.Delete (category);
+            }
+
+            // Add the new, if any
+            System.Diagnostics.Trace.Assert (null != c.categories);
+
+            // Add the new
+            foreach (var category in c.categories) {
+                if (category.Id > 0) {
+                    NcResult r = DataSource.Owner.Db.Update (category);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                } else {
+                    category.ParentId = NcCategory.GetParentType (c);
+                    NcResult r = DataSource.Owner.Db.Insert (category);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                    category.Id = r.GetIndex ();
+                }
             }
         }
 
-        // public for unit tests
-        public void UpdateEvent (XElement command, NcFolder folder)
+        /// <summary>
+        /// I didn't see any fancy rules about how to merge
+        /// exception lists, so taking the slow & safe road
+        /// of deleting the old and inserting the new.
+        /// </summary>
+        /// <param name="c">C.</param>
+        // TODO: Handle errors
+        public void MergeExceptions (NcCalendar c)
         {
-            // <ApplicationData>...</ApplicationData>
-            var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
-            Log.Info (Log.LOG_CALENDAR, "UpdateEvent\n{0}", appData.ToString ());
-            foreach (var child in appData.Elements()) {
-                Console.WriteLine ("updateEvent: " + child.Name.LocalName + " value=" + child.Value);
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
+            List<NcException> exceptions = GetExceptions (c);
+
+            // Delete the old
+            foreach (var exception in exceptions) {
+                DataSource.Owner.Db.Delete (exception);
+            }
+
+            // Add the new, if any
+            System.Diagnostics.Trace.Assert (null != c.exceptions);
+
+            // Add the new
+            foreach (var exception in c.exceptions) {
+                if (exception.Id > 0) {
+                    NcResult r = DataSource.Owner.Db.Update (exception);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                } else {
+                    NcResult r = DataSource.Owner.Db.Insert (exception);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                    exception.Id = r.GetIndex ();
+                }
+                MergeAttendees (exception);
+                MergeCategories (exception);
             }
         }
+
+        public void MergeRecurrences (NcCalendar c)
+        {
+            // Get the old list
+            System.Diagnostics.Trace.Assert (null != c);
+            List<NcRecurrence> recurrences = GetRecurrences (c);
+
+            // Delete the old
+            foreach (var recurrence in recurrences) {
+                DataSource.Owner.Db.Delete (recurrence);
+            }
+
+            // Add the new, if any
+            System.Diagnostics.Trace.Assert (null != c.recurrences);
+
+            // Add the new
+            foreach (var recurrence in c.recurrences) {
+                if (recurrence.Id > 0) {
+                    NcResult r = DataSource.Owner.Db.Update (recurrence);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                } else {
+                    NcResult r = DataSource.Owner.Db.Insert (recurrence);
+                    System.Diagnostics.Trace.Assert (r.isOK ());
+                    recurrence.Id = r.GetIndex ();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the exception and its attendees and categories
+        /// </summary>
+        /// <param name="exception">An NcException object</param>
+        // TODO: error checking and unit tests.
+        public void DeleteException(NcException exception)
+        {
+            System.Diagnostics.Trace.Assert (null != exception);
+
+            var attendees = GetAttendees (exception);
+            System.Diagnostics.Trace.Assert (null != attendees);
+
+            foreach (var attendee in attendees) {
+                DataSource.Owner.Db.Delete (attendee);
+            }
+
+            var categories = GetCategories (exception);
+            System.Diagnostics.Trace.Assert (null != categories);
+
+            foreach (var category in categories) {
+                DataSource.Owner.Db.Delete (category);
+            }
+
+            DataSource.Owner.Db.Delete (exception);
+
+        }
     }
-    // <Body xmlns="AirSyncBase:"> <Type> 1 </Type> <Data> </Data> </Body>
-    // <DTStamp xmlns="Calendar:"> 20131123T190243Z </DTStamp>
-    // <StartTime xmlns="Calendar:"> 20131123T223000Z </StartTime>
-    // <EndTime xmlns="Calendar:"> 20131123T233000Z </EndTime>
-    // <Location xmlns="Calendar:"> the Dogg House!  </Location>
-    // <Subject xmlns="Calendar:"> Big dog party at the Dogg House!  </Subject>
-    // <UID xmlns="Calendar:"> 3rrr5stn6eld9qmv8dviolj3u0@google.com </UID>
-    // <Sensitivity xmlns="Calendar:"> 0 </Sensitivity>
-    // <BusyStatus xmlns="Calendar:"> 2 </BusyStatus>
-    // <AllDayEvent xmlns="Calendar:"> 0 </AllDayEvent>
-    // <Reminder xmlns="Calendar:"> 10 </Reminder>
-    // <MeetingStatus xmlns="Calendar:"> 0 </MeetingStatus>
-    // <TimeZone xmlns="Calendar:"> LAEAAEUAUw...P///w== </TimeZone>
-    // <Organizer_Email xmlns="Calendar:"> steves@nachocove.com </Organizer_Email>
-    // <Organizer_Name xmlns="Calendar:"> Steve Scalpone </Organizer_Name>
 }
+   

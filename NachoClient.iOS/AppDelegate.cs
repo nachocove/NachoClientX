@@ -50,6 +50,7 @@ namespace NachoClient.iOS
 
             if (0 == Be.Db.Table<NcAccount> ().Count ()) {
                 // we will enter the "login schema"
+                // FIXME - need to address ipad/iphone in future release
 
                 UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");

@@ -304,6 +304,109 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        public class Calendar
+        {
+            public const string Ns = "Calendar";
+            // Elements in alpha order.
+            public const string AllDayEvent = "AllDayEvent";
+            public const string AppointmentReplyTime = "AppointmentReplyTime";
+            // public const string airsyncbase:Body = "airsyncbase:Body";
+            public const string BusyStatus = "BusyStatus";
+            public const string DisallowNewTimeProposal = "DisallowNewTimeProposal";
+            public const string DtStamp = "DtStamp";
+            public const string EndTime = "EndTime";
+            public const string Location = "Location";
+            public const string MeetingStatus = "MeetingStatus";
+            // public const string airsyncbase:NativeBodyType = "airsyncbase:NativeBodyType";
+            public const string OnlineMeetingConfLink = "OnlineMeetingConfLink";
+            public const string OnlineMeetingExternalLink = "OnlineMeetingExternalLink";
+            public const string OrganizerEmail = "OrganizerEmail";
+            public const string OrganizerName = "OrganizerName";
+            public const string Reminder = "Reminder";
+            public const string ResponseRequested = "ResponseRequested";
+            public const string ResponseType = "ResponseType";
+            public const string Sensitivity = "Sensitivity";
+            public const string StartTime = "StartTime";
+            public const string Subject = "Subject";
+            public const string Timezone = "Timezone";
+            public const string UID = "UID";
+            // Containers in alpha order
+            public const string Calendar_Attendees = "Attendees";
+            public const string Calendar_Categories = "Categories";
+            public const string Calendar_Exceptions = "Exceptions";
+            public const string Calendar_Recurrence = "Recurrence";
+
+            public class Attendees
+            {
+                // Alpha order.
+                public const string Attendee = "Attendee";
+            }
+
+            public class Attendee
+            {
+                // Alpha order.
+                public const string AttendeeStatus = "AttendeeStatus";
+                public const string AttendeeType = "AttendeeType";
+                public const string Email = "Email";
+                public const string Name = "Name";
+            }
+
+            public class Categories
+            {
+                // Alpha order.
+                public const string Category = "Category";
+            }
+
+            public class Exceptions
+            {
+                // Alpha order
+                public const string Exception = "Exception";
+            }
+
+            public class Exception
+            {
+                // Alpha order.
+                public const string AllDayEvent = "AllDayEvent";
+                public const string AppointmentReplyTime = "AppointmentReplyTime";
+                public const string Attendees = "Attendees";
+                public const string BusyStatus = "BusyStatus";
+                public const string Categories = "Categories";
+                public const string Deleted = "Deleted";
+                public const string DtStamp = "DtStamp";
+                public const string EndTime = "EndTime";
+                public const string ExceptionStartTime = "ExceptionStartTime";
+                public const string Location = "Location";
+                public const string MeetingStatus = "MeetingStatus";
+                public const string OnlineMeetingConfLink = "OnlineMeetingConfLink";
+                public const string OnlineMeetingExternalLink = "OnlineMeetingExternalLink";
+                public const string Reminder = "Reminder";
+                public const string ResponseType = "ResponseType";
+                public const string Sensitivity = "Sensitivity";
+                public const string StartTime = "StartTime";
+                public const string Subject = "Subject";
+                // public const string airsyncbase:Body = "airsyncbase:Body";
+                // Containers in alpha order
+                public const string Exception_Attendees = "Attendees";
+                public const string Exception_Categories = "Categories";
+            }
+     
+            public class Recurrence
+            {
+                // Alpha order.
+                public const string CalendarType = "CalendarType";
+                public const string DayOfMonth = "DayOfMonth";
+                public const string DayOfWeek = "DayOfWeek";
+                public const string FirstDayOfWeek = "FirstDayOfWeek";
+                public const string Interval = "Interval";
+                public const string IsLeapMonth = "IsLeapMonth";
+                public const string MonthOfYear = "MonthOfYear";
+                public const string Occurrences = "Occurrences";
+                public const string Type = "Type";
+                public const string Until = "Until";
+                public const string WeekOfMonth = "WeekOfMonth";
+            }
+        }
+
         public class ComposeMail
         {
             public const string Ns = "ComposeMail";
@@ -418,59 +521,6 @@ namespace NachoCore.ActiveSync
             // Alpha order.
             public const string UmAttDuration = "UmAttDuration";
             public const string UmAttOrder = "UmAttOrder";
-        }
-
-        public class Calendar
-        {
-            public const string Ns = "Calendar";
-            // Alpha order.
-            public const string AllDayEvent = "AllDayEvent";
-            public const string AppointmentReplyTime = "AppointmentReplyTime";
-            public const string Attendee = "Attendee";
-            public const string AttendeeStatus = "AttendeeStatus";
-            public const string AttendeeType = "AttendeeType";
-            public const string Attendees = "Attendees";
-            // public const string airsyncbase:Body = "airsyncbase:Body";
-            public const string BusyStatus = "BusyStatus";
-            public const string CalendarType = "CalendarType";
-            public const string Categories = "Categories";
-            public const string Category = "Category";
-            public const string DayOfMonth = "DayOfMonth";
-            public const string DayOfWeek = "DayOfWeek";
-            public const string Deleted = "Deleted";
-            public const string DisallowNewTimeProposal = "DisallowNewTimeProposal";
-            public const string DtStamp = "DtStamp";
-            public const string Email = "Email";
-            public const string EndTime = "EndTime";
-            public const string Exception = "Exception";
-            public const string ExceptionStartTime = "ExceptionStartTime";
-            public const string Exceptions = "Exceptions";
-            public const string FirstDayOfWeek = "FirstDayOfWeek";
-            public const string Interval = "Interval";
-            public const string IsLeapMonth = "IsLeapMonth";
-            public const string Location = "Location";
-            public const string MeetingStatus = "MeetingStatus";
-            public const string MonthOfYear = "MonthOfYear";
-            public const string Name = "Name";
-            // public const string airsyncbase:NativeBodyType = "airsyncbase:NativeBodyType";
-            public const string Occurrences = "Occurrences";
-            public const string OnlineMeetingConfLink = "OnlineMeetingConfLink";
-            public const string OnlineMeetingExternalLink = "OnlineMeetingExternalLink";
-            public const string OrganizerEmail = "OrganizerEmail";
-            public const string OrganizerName = "OrganizerName";
-            public const string Recurrence = "Recurrence";
-            public const string Reminder = "Reminder";
-            public const string ResponseRequested = "ResponseRequested";
-            public const string ResponseType = "ResponseType";
-            public const string Sensitivity = "Sensitivity";
-            public const string Specifies = "Specifies";
-            public const string StartTime = "StartTime";
-            public const string Subject = "Subject";
-            public const string Timezone = "Timezone";
-            public const string Type = "Type";
-            public const string UID = "UID";
-            public const string Until = "Until";
-            public const string WeekOfMonth = "WeekOfMonth";
         }
 
         public class FolderHierarchy

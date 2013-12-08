@@ -27,6 +27,11 @@ namespace NachoClient.iOS
             // FIXME : Need to associate with Account.Id and Current_folder (folder tapped)
             // FIXME : when a new email comes in, this aray needs to be reconstituted, otherwise an error occurs
 
+            // Default calendar or user-created calendar
+            if ((8 == currentFolder.Type) || (13 == currentFolder.Type)) {
+                return appDelegate.Be.Db.Table<NcCalendar> ().Where (x => x.FolderId == currentFolder.Id).Count();
+            }
+
             //return appDelegate.Be.Db.Table<NcEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder).Count();
             sillybug = appDelegate.Be.Db.Table<NcEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder.Id).Count();
             Console.Write ("number of rows in this folder = ");
@@ -42,6 +47,14 @@ namespace NachoClient.iOS
              
 
             UITableViewCell cell = tableView.DequeueReusableCell ("msgheader");
+
+            if ((8 == currentFolder.Type) || (13 == currentFolder.Type)) {
+                var calendarItem = appDelegate.Be.Db.Table<NcCalendar> ().OrderByDescending (rec => rec.StartTime).Where (rec => rec.FolderId == this.currentFolder.Id).ElementAt (indexPath.Row);
+                cell.TextLabel.Text = calendarItem.Subject;
+                cell.DetailTextLabel.Text = calendarItem.OrganizerEmail;
+                return cell;
+            }
+
 
 
 

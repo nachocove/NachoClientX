@@ -1,6 +1,9 @@
 using System.Reflection;
 using Android.App;
 using Android.OS;
+using Android.Content;
+using NachoPlatform;
+
 using Xamarin.Android.NUnitLite;
 
 namespace Test.Android
@@ -17,6 +20,8 @@ namespace Test.Android
 
             // Once you called base.OnCreate(), you cannot add more assemblies.
             base.OnCreate (bundle);
+
+            NachoPlatform.Assets.AndroidAssetManager = Assets;
         }
     }
 }

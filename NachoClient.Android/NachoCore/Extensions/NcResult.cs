@@ -63,12 +63,17 @@ namespace NachoCore.Utils
             return value;
         }
 
+        public int GetIndex()
+        {
+            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
+            return System.Convert.ToInt32(value);
+        }
+
         public String GetMessage()
         {
             System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
             return message;
         }
-
 
     }
 }

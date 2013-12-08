@@ -116,8 +116,9 @@
     <Compile Include="NachoCore\Model\NcPolicy.cs" />
     <Compile Include="NachoCore\Extensions\Log.cs" />
     <Compile Include="NachoCore\Extensions\NcResult.cs" />
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; 6ed5044fa13b2de77821112730445a1647895974
-  <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" /></ItemGroup>
+    <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsHelpers.cs" />
+</ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
