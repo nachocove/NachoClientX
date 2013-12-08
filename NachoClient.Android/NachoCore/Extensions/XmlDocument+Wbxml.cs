@@ -1,10 +1,11 @@
 using System;
 using System.IO;
 using System.Xml.Linq;
+using NachoCore.Wbxml;
 
-namespace NachoCore.Wbxml
+namespace NachoCore.Utils
 {
-    public static class XDocument_Wbxml
+    public static partial class XDocument_Extension
     {
         public static byte[] ToWbxml (this XDocument doc)
         {
@@ -13,7 +14,7 @@ namespace NachoCore.Wbxml
             return encoder.GetBytes ();
         }
 
-        public static XDocument LoadWbxml (this byte[] wbxml)
+        public static XDocument LoadWbxml (this Stream wbxml)
         {
             ASWBXML decoder = new ASWBXML ();
             decoder.LoadBytes (wbxml);

@@ -59,7 +59,7 @@ namespace NachoCore.Model
 
         public bool AllowUnsignedInstallationPackages { get; set; }
 
-        public bool AllowWifi { get; set; }
+        public bool AllowWiFi { get; set; }
 
         public bool AlphanumericDevicePasswordRequired { get; set; }
 
@@ -126,12 +126,14 @@ namespace NachoCore.Model
 
         public enum RequireEncryptionSMIMEAlgorithmValue : uint
         {
-            Unspecified = 0,
+            Min = 0,
+            Unspecified = Min,
             TripleDes = 1,
             Des = 2,
             Rc2_128bit = 3,
             Rc2_64bit = 4,
-            Rc2_40bit = 5}
+            Rc2_40bit = 5,
+            Max = Rc2_40bit}
         ;
 
         public uint RequireEncryptionSMIMEAlgorithm { get; set; }
@@ -140,9 +142,11 @@ namespace NachoCore.Model
 
         public enum RequireSignedSMIMEAlgorithmValue : uint
         {
-            Unspecified = 0,
+            Min = 0,
+            Unspecified = Min,
             Sha1 = 1,
-            Md5 = 2}
+            Md5 = 2,
+            Max = Md5}
         ;
 
         public uint RequireSignedSMIMEAlgorithm { get; set; }
@@ -181,7 +185,7 @@ namespace NachoCore.Model
             AllowTextMessaging = true;
             AllowUnsignedApplications = true;
             AllowUnsignedInstallationPackages = true;
-            AllowWifi = true;
+            AllowWiFi = true;
             MaxEmailBodyTruncationSize = (uint)MaxEmailTruncationSizeValue.NoTruncation;
             MaxEmailHTMLBodyTruncationSize = (uint)MaxEmailTruncationSizeValue.NoTruncation;
             RequireEncryptionSMIMEAlgorithm = (uint)RequireEncryptionSMIMEAlgorithmValue.Unspecified;

@@ -25,9 +25,9 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
-                                         // FIXME - ClientId.
+                               new XElement (m_ns + Xml.ComposeMail.ClientId, Guid.NewGuid ()),
                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
-                               new XElement (m_ns + Xml.ComposeMail.Mime, ToMime (Sender)));
+                               new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
             m_update.IsDispatched = true;
@@ -37,8 +37,10 @@ namespace NachoCore.ActiveSync
 
         public override string ToMime (AsHttpOperation Sender)
         {
-            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
-            return emailMessage.ToMime ();
+            if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+                return GenerateMime ();
+            }
+            return null;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
@@ -51,8 +53,14 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            // FIXME Only needed for the case where there is a failure.
-            return Event.Create ((uint)SmEvt.E.HardFail);
+            return Event.Create ((uint)SmEvt.E.HardFail, null, 
+                string.Format("Server sent non-empty response to SendMail: {0}", doc.ToString()));
+        }
+
+        private string GenerateMime ()
+        {
+            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
+            return emailMessage.ToMime ();
         }
 
         private NcPendingUpdate NextToSend ()

@@ -1,5 +1,7 @@
 // # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
+using DnDns.Enums;
+using DnDns.Query;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +22,24 @@ namespace NachoCore.ActiveSync
 {
     public class AsHttpOperation : IAsOperation
     {
+        public enum HttpOpLst : uint
+        {
+            HttpWait = (St.Last + 1),
+            DelayWait}
+        ;
+
+        public class HttpOpEvt : SmEvt
+        {
+            new public enum E : uint
+            {
+                Cancel = (SmEvt.E.Last + 1),
+                Delay,
+                Timeout,
+                Final}
+            ;
+        }
         // Constants.
+        private const string ContentTypeHtml = "text/html";
         private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
         private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
         private const string ContentTypeMail = "message/rfc822";
@@ -29,33 +48,88 @@ namespace NachoCore.ActiveSync
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
+        private const uint KDefaultDelaySeconds = 10;
+        private const int KDefaultTimeoutSeconds = 10;
+        private const uint KDefaultRetries = 2;
         private static XmlSchemaSet commonXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
-        // Properties & IVars.
-        protected string m_commandName;
-        protected XNamespace m_ns;
-        protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
-        protected IAsDataSource m_dataSource;
-        protected IAsHttpOperationOwner m_owner;
-        protected CancellationTokenSource m_cts;
-
+        // IVars. FIXME - make m_commandName private when referenced.
+        public string m_commandName;
+        private IAsDataSource DataSource;
+        private IAsHttpOperationOwner Owner;
+        private CancellationTokenSource Cts;
+        private Timer DelayTimer;
+        private Timer TimeoutTimer;
+        private StateMachine HttpOpSm;
+        private StateMachine OwnerSm;
+        private HttpClient Client;
+        private Uri ServerUri;
+        private uint TriesLeft;
+        private Stream ContentData;
+        private string ContentType;
+        // Properties.
         public TimeSpan Timeout { set; get; }
         // Initializers.
-        public AsHttpOperation (string commandName, string nsName, IAsHttpOperationOwner owner, IAsDataSource dataSource) :
-            this (commandName, owner, dataSource)
-        {
-            m_ns = nsName;
-        }
-
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource)
         {
-            Timeout = TimeSpan.Zero;
+            Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
+            TriesLeft = KDefaultRetries + 1;
             m_commandName = commandName;
-            m_owner = owner;
-            m_dataSource = dataSource;
-            m_cts = new CancellationTokenSource ();
+            Owner = owner;
+            DataSource = dataSource;
             var assetMgr = new NachoPlatform.Assets ();
+
+            HttpOpSm = new StateMachine () {
+                Name = "as:http_op",
+                LocalEventType = typeof(HttpOpEvt),
+                LocalStateType = typeof(HttpOpLst),
+                TransTable = new [] {
+                    new Node {State = (uint)St.Start,
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
+                            (uint)HttpOpEvt.E.Cancel, (uint)HttpOpEvt.E.Delay, (uint)HttpOpEvt.E.Timeout, (uint)HttpOpEvt.E.Final
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
+                        }
+                    },
+                    new Node {State = (uint)HttpOpLst.HttpWait,
+                        Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = DoHttp,
+                                State = (uint)HttpOpLst.HttpWait
+                            },
+                            new Trans { Event = (uint)HttpOpEvt.E.Cancel, Act = DoCancelHttp, State = (uint)St.Stop },
+                            new Trans {
+                                Event = (uint)HttpOpEvt.E.Delay,
+                                Act = DoDelay,
+                                State = (uint)HttpOpLst.DelayWait
+                            },
+                            new Trans {
+                                Event = (uint)HttpOpEvt.E.Timeout,
+                                Act = DoTimeoutHttp,
+                                State = (uint)HttpOpLst.HttpWait
+                            },
+                            new Trans { Event = (uint)HttpOpEvt.E.Final, Act = DoFinal, State = (uint)St.Stop },
+                        }
+                    },
+                    new Node {State = (uint)HttpOpLst.DelayWait,
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
+                            (uint)HttpOpEvt.E.Delay, (uint)HttpOpEvt.E.Timeout, (uint)HttpOpEvt.E.Final
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
+                            new Trans { Event = (uint)HttpOpEvt.E.Cancel, Act = DoCancelDelay, State = (uint)St.Stop },
+                        }
+                    },
+                }
+            };
+
+            HttpOpSm.Validate ();
+
             if (null == commonXmlSchemas) {
                 commonXmlSchemas = new XmlSchemaSet ();
                 foreach (var xsdFile in assetMgr.List (Path.Combine(KXsd, KCommon))) {
@@ -80,26 +154,115 @@ namespace NachoCore.ActiveSync
             }
         }
         // Public Methods.
-        public virtual async void Execute (StateMachine sm)
+        public virtual void Execute (StateMachine sm)
         {
-            var uri = m_owner.ServerUriCandidate (this);
+            OwnerSm = sm;
+            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
+        }
+
+        public void Cancel ()
+        {
+            var cancelEvent = Event.Create ((uint)HttpOpEvt.E.Cancel);
+            cancelEvent.DropIfStopped = true;
+            HttpOpSm.PostEvent (cancelEvent);
+        }
+
+        private void DoDelay ()
+        {
+            DelayTimer = new Timer (DelayTimerCallback, null, Convert.ToInt32 (HttpOpSm.Arg),
+                System.Threading.Timeout.Infinite);
+        }
+
+        private void DoCancelDelay ()
+        {
+            DelayTimer.Dispose ();
+            DelayTimer = null;
+        }
+
+        private void DoHttp ()
+        {
+            if (0 < TriesLeft) {
+                --TriesLeft;
+                AttemptHttp ();
+            } else {
+                OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, null, "Too many retries.");
+            }
+        }
+
+        private void DoCancelHttp ()
+        {
+            CancelTimeoutTimer ();
+            if (null != Cts) {
+                Cts.Cancel ();
+            }
+            Client = null;
+            Cts = null;
+        }
+
+        private void DoTimeoutHttp ()
+        {
+            DoCancelHttp ();
+            DoHttp ();
+        }
+
+        private void DoFinal ()
+        {
+            // The Arg is the Event we need to post to the Owner.
+            OwnerSm.PostEvent ((Event)HttpOpSm.Arg);
+        }
+
+        private void DelayTimerCallback (object State)
+        {
+            DoCancelDelay ();
+            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
+        }
+
+        private void CancelTimeoutTimer ()
+        {
+            if (null != TimeoutTimer) {
+                TimeoutTimer.Dispose ();
+                TimeoutTimer = null;
+            }
+        }
+
+        private void TimeoutTimerCallback (object State)
+        {
+            if ((HttpClient)State == Client) {
+                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, null, string.Format ("Uri: {0}", ServerUri));
+            }
+        }
+        // Final is how to pass the ultimate Event back to OwnerSm.
+        private Event Final (uint eventCode)
+        {
+            return Final (eventCode, null, null);
+        }
+
+        private Event Final (uint eventCode, object arg, string message)
+        {
+            return Final (Event.Create (eventCode, arg, message));
+        }
+
+        private Event Final (Event endEvent)
+        {
+            return Event.Create ((uint)HttpOpEvt.E.Final, endEvent, null);
+        }
+
+        private async void AttemptHttp ()
+        {
             var handler = new HttpClientHandler () {
                 AllowAutoRedirect = false,
                 PreAuthenticate = true
             };
-            if (uri.IsHttps ()) {
+            ServerUri = Owner.ServerUriCandidate (this);
+            if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                handler.Credentials = new NetworkCredential (m_dataSource.Cred.Username, m_dataSource.Cred.Password);
+                handler.Credentials = new NetworkCredential (DataSource.Cred.Username, DataSource.Cred.Password);
             }
-            var client = HttpClientFactory (handler);
-            if (TimeSpan.Zero != Timeout) {
-                client.Timeout = Timeout;
-            }
-            // FIXME. Need to refer to delegate for URI.
-            var request = new HttpRequestMessage (m_owner.Method (this), uri);
-            var doc = m_owner.ToXDocument (this);
+            Client = new HttpClient (handler) { Timeout = this.Timeout };
+            var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
+            var doc = Owner.ToXDocument (this);
             if (null != doc) {
-                /* WAIT on Xamarin support. Can't find assembly with Validate
+                /* Need to test with Mono's Validate - may not be fully implemented.
                 if (requestXmlSchemas.ContainsKey (m_commandName)) {
                     doc.Validate (requestXmlSchemas [m_commandName],
                                   (xd, err) => {
@@ -107,155 +270,185 @@ namespace NachoCore.ActiveSync
                     });
                 }
                 */
-                if (m_owner.UseWbxml (this)) {
+                if (Owner.UseWbxml (this)) {
                     var wbxml = doc.ToWbxml ();
                     var content = new ByteArrayContent (wbxml);
                     request.Content = content;
                     request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
                     request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
                 } else {
-                    request.Content = new StringContent (doc.ToString (), UTF8Encoding.UTF8, ContentTypeXml);
+                    // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
+                    // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
+                    // Method once bug is fixed.
+                    var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
+                    request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
                 }
             }
-            var mime = m_owner.ToMime (this);
+            var mime = Owner.ToMime (this);
             if (null != mime) {
                 request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
             }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
-            request.Headers.Add ("X-MS-PolicyKey", m_dataSource.ProtocolState.AsPolicyKey);
-            request.Headers.Add ("MS-ASProtocolVersion", m_dataSource.ProtocolState.AsProtocolVersion);
-            CancellationToken token = m_cts.Token;
+            if (DataSource.ProtocolState.InitialProvisionCompleted) {
+                request.Headers.Add ("X-MS-PolicyKey", DataSource.ProtocolState.AsPolicyKey);
+            }
+            request.Headers.Add ("MS-ASProtocolVersion", DataSource.ProtocolState.AsProtocolVersion);
+            Cts = new CancellationTokenSource ();
+            CancellationToken token = Cts.Token;
             HttpResponseMessage response = null;
 
+            // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+            // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
+            // assume the HttpClient instance has been abandoned.
+            var myClient = Client;
+            TimeoutTimer = new Timer (TimeoutTimerCallback, myClient, Timeout, 
+                System.Threading.Timeout.InfiniteTimeSpan);
             try {
-                response = await client.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
+                response = await myClient.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
             } catch (OperationCanceledException) {
-                m_owner.CancelCleanup (this);
-                if (!token.IsCancellationRequested) {
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, null, "Timeout");
+                if (myClient == Client) {
+                    CancelTimeoutTimer ();
+                    if (!token.IsCancellationRequested) {
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                    }
                 }
                 return;
             } catch (WebException ex) {
-                // FIXME - look at all the causes of this, and figure out right-thing-to-do in each case.
-                m_owner.CancelCleanup (this);
-                sm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("WebException: {0}", ex.Message));
+                if (myClient == Client) {
+                    CancelTimeoutTimer ();
+                    // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                }
                 return;
             } catch (NullReferenceException ex) {
-                m_owner.CancelCleanup (this);
-                sm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("NullReferenceException: {0}", ex.Message));
+                // As best I can tell, this may be driven by bug(s) in the Mono stack.
+                if (myClient == Client) {
+                    CancelTimeoutTimer ();
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("NullReferenceException: {0}, Uri: {1}", ex.Message, ServerUri));
+                }
                 return;
             }
 
-            if (HttpStatusCode.OK != response.StatusCode) {
-                m_owner.CancelCleanup (this);
+            if (myClient == Client) {
+                CancelTimeoutTimer ();
+                var contentType = response.Content.Headers.ContentType;
+                ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
+                ContentData = await response.Content.ReadAsStreamAsync ();
+
+                try {
+                    HttpOpSm.PostEvent (ProcessHttpResponse (response));
+                } catch (Exception ex) {
+                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, null, 
+                        string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
+                }
             }
-            Event preProcessEvent = m_owner.PreProcessResponse (this, response);
+        }
+
+        private Event ProcessHttpResponse (HttpResponseMessage response)
+        {
+            Event preProcessEvent = Owner.PreProcessResponse (this, response);
             if (null != preProcessEvent) {
-                sm.PostEvent (preProcessEvent);
-                return;
+                return Final (preProcessEvent);
             }
             XDocument responseDoc;
+
             switch (response.StatusCode) {
             case HttpStatusCode.OK:
-                switch (response.Content.Headers.ContentType.MediaType.ToLower ()) {
-                case ContentTypeWbxml:
-                    byte[] wbxmlMessage = await response.Content.ReadAsByteArrayAsync ();
-                    responseDoc = wbxmlMessage.LoadWbxml ();
-                    var xmlStatus = responseDoc.Root.Element (m_ns + Xml.AirSync.Status);
-                    if (null != xmlStatus) {
-                        var statusEvent = m_owner.TopLevelStatusToEvent (this, uint.Parse (xmlStatus.Value));
-                        // FIXME - need to use the event generated!
-                        Console.WriteLine ("STATUS {0}:{1}", xmlStatus.Value, statusEvent);
+                if (0 != ContentData.Length) {
+                    switch (ContentType) {
+                    case ContentTypeWbxml:
+                        responseDoc = ContentData.LoadWbxml ();
+                        var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
+                        if (null != xmlStatus) {
+                            var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
+                            if (null != statusEvent) {
+                                Console.WriteLine ("Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
+                                return Final (statusEvent);
+                            }
+                        }
+                        return Final (Owner.ProcessResponse (this, response, responseDoc));
+                    case ContentTypeWbxmlMultipart:
+                        throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
+                    case ContentTypeXml:
+                        responseDoc = XDocument.Load (ContentData);
+                        return Final (Owner.ProcessResponse (this, response, responseDoc));
+                    default:
+                        if (null == ContentType) {
+                            Console.WriteLine ("ProcessHttpResponse: received HTTP response with content but no Content-Type.");
+                        }
+                        return Final (Owner.ProcessResponse (this, response));
                     }
-                    sm.PostEvent (m_owner.ProcessResponse (this, response, responseDoc));
-                    break;
-                case ContentTypeWbxmlMultipart:
-                    throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
-                case ContentTypeXml:
-                    var xmlMessage = await response.Content.ReadAsStreamAsync ();
-                    responseDoc = XDocument.Load (xmlMessage);
-                    sm.PostEvent (m_owner.ProcessResponse (this, response, responseDoc));
-                    break;
-                default:
-                    sm.PostEvent (m_owner.ProcessResponse (this, response));
-                    break;
-                }
-                break;
+                } 
+                return Final (Owner.ProcessResponse (this, response));
+
             case HttpStatusCode.BadRequest:
             case HttpStatusCode.NotFound:
-                sm.PostEvent ((uint)SmEvt.E.HardFail, null, "HttpStatusCode.BadRequest or NotFound");
-                break;
+                return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode.BadRequest or NotFound");
+
             case HttpStatusCode.Unauthorized:
             case HttpStatusCode.Forbidden:
             case HttpStatusCode.InternalServerError:
             case HttpStatusCode.Found:
+                // MINOR FIXME - fork on OK/not, and dump this output for any non-OK response too.
+                if (ContentTypeHtml == ContentType) {
+                    var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
+                    Console.WriteLine ("HTML response: {0}", possibleMessage);
+                }
                 if (response.Headers.Contains ("X-MS-RP")) {
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
-                    AsOptionsCommand.ProcessOptionsHeaders (response.Headers, m_dataSource);
-                    sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync);
-                } else {
-                    sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
+                    AsOptionsCommand.ProcessOptionsHeaders (response.Headers, DataSource);
+                    return Final ((uint)AsProtoControl.AsEvt.E.ReSync);
                 }
-                break;
+                return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
+
             case (HttpStatusCode)449:
-                sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReProv);
-                break;
+                return Final ((uint)AsProtoControl.AsEvt.E.ReProv);
+
             case (HttpStatusCode)451:
                 if (response.Headers.Contains ("X-MS-Location")) {
                     Uri redirUri;
                     try {
                         redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
                     } catch {
-                        sm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
-                        break;
+                        return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
                     }
-                    // FIXME - anyone else need to know?
-                    var server = m_dataSource.Server;
+                    // FIXME - need to test address before updating it.
+                    var server = DataSource.Server;
                     server.Fqdn = redirUri.Host;
                     server.Path = redirUri.AbsolutePath;
                     server.Port = redirUri.Port;
                     server.Scheme = redirUri.Scheme;
-                    m_dataSource.Owner.Db.Update (BackEnd.DbActors.Proto, m_dataSource.Server);
-                    sm.PostEvent ((uint)SmEvt.E.Launch);
+                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, DataSource.Server);
+                    return Event.Create ((uint)SmEvt.E.Launch);
                 }
-                // FIXME - what to do when no X-MS-Location?
-                break;
+                // If no X-MS-Location, just treat it as a transient and hope for the best.
+                return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.451 with no X-MS-Location.");
+
             case HttpStatusCode.BadGateway:
-                sm.PostEvent ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.BadGateway");
-                break;
+                return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.BadGateway");
+
             case HttpStatusCode.ServiceUnavailable:
+                uint seconds = KDefaultDelaySeconds;
                 if (response.Headers.Contains ("Retry-After")) {
-                    uint seconds = 0;
                     try {
                         seconds = uint.Parse (response.Headers.GetValues ("Retry-After").First ());
                     } catch {
+                        return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Could not parse Retry-After value.");
                     }
-                    if (m_dataSource.Owner.RetryPermissionReq (m_dataSource.Control, seconds)) {
-                        sm.PostEvent ((uint)SmEvt.E.Launch, seconds, "Retry-After"); // FIXME - PostDelayedEvent.
-                        break;
+                    if (DataSource.Owner.RetryPermissionReq (DataSource.Control, seconds)) {
+                        return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Retry-After");
                     }
                 }
-                sm.PostEvent ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.ServiceUnavailable");
-                break;
-            case (HttpStatusCode)507:
-                m_dataSource.Owner.ServerOOSpaceInd (m_dataSource.Control);
-                sm.PostEvent ((uint)SmEvt.E.TempFail, null, "HttpStatusCode 507");
-                break;
-            default:
-                sm.PostEvent ((uint)SmEvt.E.HardFail, null, 
-                    string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
-                break;
-            }
-        }
+                return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "HttpStatusCode.ServiceUnavailable");
 
-        public void Cancel ()
-        {
-            m_cts.Cancel ();
-        }
-        // Static internal helper methods.
-        static internal HttpClient HttpClientFactory (HttpClientHandler handler)
-        {
-            return new HttpClient (handler) { Timeout = new TimeSpan (0, 0, 9) };
+            case (HttpStatusCode)507:
+                DataSource.Owner.ServerOOSpaceInd (DataSource.Control);
+                return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode 507 - Out of space on server.");
+
+            default:
+                return Final ((uint)SmEvt.E.HardFail, null, 
+                    string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
+            }
         }
     }
 }

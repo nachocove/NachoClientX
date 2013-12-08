@@ -269,7 +269,7 @@ namespace NachoCore.ActiveSync
             public const string Culture = "Culture";
             public const string DebugData = "DebugData";
             public const string DisplayName = "DisplayName";
-            public const string EmailAddress = "EmailAddress";
+            public const string EMailAddress = "EMailAddress";
             public const string Error = "Error";
             public const string ErrorCode = "ErrorCode";
             public const string Message = "Message";
@@ -280,7 +280,7 @@ namespace NachoCore.ActiveSync
             public const string Server = "Server";
             public const string ServerData = "ServerData";
             public const string Settings = "Settings";
-            public const string Status = "Status";
+            public const string Status = AirSync.Status;
             public const string Type = AirSyncBase.Type;
             public const string Url = "Url";
             public const string User = "User";
@@ -675,7 +675,7 @@ namespace NachoCore.ActiveSync
             public const string AllowTextMessaging = "AllowTextMessaging";
             public const string AllowUnsignedApplications = "AllowUnsignedApplications";
             public const string AllowUnsignedInstallationPackages = "AllowUnsignedInstallationPackages";
-            public const string AllowWifi = "AllowWifi";
+            public const string AllowWiFi = "AllowWiFi";
             public const string AlphanumericDevicePasswordRequired = "AlphanumericDevicePasswordRequired";
             public const string ApplicationName = "ApplicationName";
             public const string ApprovedApplicationList = "ApprovedApplicationList";
@@ -733,7 +733,8 @@ namespace NachoCore.ActiveSync
                 Success = 1,
                 PartialSuccess = 2,
                 NotApplied = 3,
-                External = 4, // MDM case.
+                External = 4,
+                // MDM case.
             }
             ;
 
@@ -767,7 +768,19 @@ namespace NachoCore.ActiveSync
             public const string OS = "OS";
             public const string OSLanguage = "OSLanguage";
             public const string Set = "Set";
+            public const string UserAgent = "UserAgent";
             public const string UserInformation = "UserInformation";
+
+            public enum StatusCode : uint
+            {
+                Success = 1,
+                ProtocolError = 2,
+                AccessDenied = 3,
+                ServerUnavailable = 4,
+                InvalidArgs = 5,
+                ConflictingArgs = 6,
+                PolicyDeny = 7
+            }
         }
     }
 }

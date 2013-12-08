@@ -1,3 +1,5 @@
+// # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+//
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -5,6 +7,8 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 
+// FIXME - we can't recover from the Stop state, so we should never go to it.
+// If we need to wait for ui-ack after hardfail, then have a wait-state.
 namespace NachoCore.ActiveSync
 {
     public class AsProtoControl : ProtoControl, IAsDataSource
@@ -35,7 +39,6 @@ namespace NachoCore.ActiveSync
                 ReProv,
                 ReSync,
                 Last = ReSync}
-
             ;
         }
         // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
@@ -97,7 +100,11 @@ namespace NachoCore.ActiveSync
                     new Node {
                         // NOTE: There is no HardFail. Can't pass DiscWait w/out a working server - period.
                         State = (uint)Lst.DiscWait, 
-                        Drop = new [] { (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.UiCertOkNo, (uint)CtlEvt.E.UiCertOkYes },
+                        Drop = new [] {
+                            (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes
+                        },
                         Invalid = new [] {(uint)SmEvt.E.HardFail,
                             (uint)AsEvt.E.ReDisc, (uint)AsEvt.E.ReProv, (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.ReFSync, (uint)CtlEvt.E.DnldAtt
@@ -106,7 +113,11 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoOpt, State = (uint)Lst.OptWait },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDisc, State = (uint)Lst.DiscWait },
-                            new Trans { Event = (uint)CtlEvt.E.GetCred, Act = DoUiCredReq, State = (uint)Lst.UiCredWait },
+                            new Trans {
+                                Event = (uint)CtlEvt.E.GetCred,
+                                Act = DoUiCredReq,
+                                State = (uint)Lst.UiCredWait
+                            },
                             new Trans {
                                 Event = (uint)CtlEvt.E.GetServConf,
                                 Act = DoUiServConfReq,
@@ -128,7 +139,11 @@ namespace NachoCore.ActiveSync
 
                     new Node {
                         State = (uint)Lst.UiCredWait,
-                        Drop = new [] { (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.UiCertOkNo, (uint)CtlEvt.E.UiCertOkYes },
+                        Drop = new [] {
+                            (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes
+                        },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
@@ -208,7 +223,11 @@ namespace NachoCore.ActiveSync
                                 Act = DoCertOkYes,
                                 State = (uint)Lst.DiscWait
                             },
-                            new Trans { Event = (uint)CtlEvt.E.UiCertOkNo, Act = DoCertOkNo, State = (uint)Lst.DiscWait },
+                            new Trans {
+                                Event = (uint)CtlEvt.E.UiCertOkNo,
+                                Act = DoCertOkNo,
+                                State = (uint)Lst.DiscWait
+                            },
                             new Trans {
                                 Event = (uint)CtlEvt.E.UiSetServConf,
                                 Act = DoSetServConf,
@@ -268,7 +287,11 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoProv, State = (uint)Lst.ProvWait },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSettings, State = (uint)Lst.SettingsWait },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Success,
+                                Act = DoSettings,
+                                State = (uint)Lst.SettingsWait
+                            },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoProv, State = (uint)Lst.ProvWait },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait },
@@ -293,7 +316,11 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSettings, State = (uint)Lst.SettingsWait },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch,
+                                Act = DoSettings,
+                                State = (uint)Lst.SettingsWait
+                            },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncWait },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop },
                             new Trans {
@@ -368,7 +395,11 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.UiSetServConf
                         },
-                        Invalid = new [] { (uint)CtlEvt.E.GetCred, (uint)CtlEvt.E.GetCertOk, (uint)CtlEvt.E.GetServConf },
+                        Invalid = new [] {
+                            (uint)CtlEvt.E.GetCred,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.GetServConf
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPing, State = (uint)Lst.PingWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingWait },
@@ -379,7 +410,11 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncWait },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncWait },
                             new Trans { Event = (uint)CtlEvt.E.SendMail, Act = DoSend, State = (uint)Lst.SendMailWait },
-                            new Trans { Event = (uint)CtlEvt.E.DnldAtt, Act = DoDnldAtt, State = (uint)Lst.DnldAttWait },
+                            new Trans {
+                                Event = (uint)CtlEvt.E.DnldAtt,
+                                Act = DoDnldAtt,
+                                State = (uint)Lst.DnldAttWait
+                            },
                         }
                     },
 
@@ -429,7 +464,11 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDnldAtt, State = (uint)Lst.DnldAttWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingWait },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDnldAtt, State = (uint)Lst.DnldAttWait },
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = DoDnldAtt,
+                                State = (uint)Lst.DnldAttWait
+                            },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscWait },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvWait },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncWait },
@@ -469,15 +508,8 @@ namespace NachoCore.ActiveSync
 
         public override void CertAskResp (bool isOkay)
         {
-            // FIXME - make sure that the cmd is an autodiscover command! 
-            // Maybe get the AsAutodiscoverCommand.Lev out of this file.
-            if ((uint)Lst.UiCertOkWait == Sm.State) {
-                Sm.PostEvent ((uint)((isOkay) ? 
-                    AsAutodiscoverCommand.SharedEvt.E.ServerCertYes : 
-                    AsAutodiscoverCommand.SharedEvt.E.ServerCertNo));
-            }
+            Sm.PostEvent ((uint)((isOkay) ? CtlEvt.E.UiCertOkYes : CtlEvt.E.UiCertOkNo));
         }
-
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
@@ -485,7 +517,6 @@ namespace NachoCore.ActiveSync
             protocolState.State = Sm.State;
             Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
         }
-
         // State-machine action methods.
         private void DoUiServConfReq ()
         {
@@ -495,9 +526,10 @@ namespace NachoCore.ActiveSync
 
         private void DoSetServConf ()
         {
-            // Send the event to the command.
-            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet);
+            if (Cmd is AsAutodiscoverCommand) {
+                var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet);
+            }
         }
 
         private void DoUiCredReq ()
@@ -508,8 +540,10 @@ namespace NachoCore.ActiveSync
 
         private void DoSetCred ()
         {
-            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet);
+            if (Cmd is AsAutodiscoverCommand) {
+                var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet);
+            }
         }
 
         private void DoUiCertOkReq ()
@@ -519,14 +553,18 @@ namespace NachoCore.ActiveSync
 
         private void DoCertOkNo ()
         {
-            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertNo);
+            if (Cmd is AsAutodiscoverCommand) {
+                var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertNo);
+            }
         }
 
         private void DoCertOkYes ()
         {
-            var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-            autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertYes);
+            if (Cmd is AsAutodiscoverCommand) {
+                var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertYes);
+            }
         }
 
         private void DoUiHardFailInd ()
@@ -600,12 +638,12 @@ namespace NachoCore.ActiveSync
                 rec.Operation == NcPendingUpdate.Operations.Delete).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync);
             } else if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                     rec.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
-                     rec.Operation == NcPendingUpdate.Operations.Send).Count ()) {
+                       rec.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
+                       rec.Operation == NcPendingUpdate.Operations.Send).Count ()) {
                 Sm.PostEvent ((uint)CtlEvt.E.SendMail);
             } else if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                     rec.DataType == NcPendingUpdate.DataTypes.Attachment &&
-                     rec.Operation == NcPendingUpdate.Operations.Download).Count ()) {
+                       rec.DataType == NcPendingUpdate.DataTypes.Attachment &&
+                       rec.Operation == NcPendingUpdate.Operations.Download).Count ()) {
                 Sm.PostEvent ((uint)CtlEvt.E.DnldAtt);
             } else {
                 Cmd = new AsPingCommand (this);

@@ -1,3 +1,5 @@
+// # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+//
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -68,6 +70,8 @@ namespace NachoCore.Utils
 
         public string Message { get; set; }
 
+        public bool DropIfStopped { get; set; }
+
         public static Event Create (uint eventCode)
         {
             return new Event () { EventCode = eventCode };
@@ -98,7 +102,7 @@ namespace NachoCore.Utils
 
         public uint NextState { set; get; }
 
-        public uint FireEvent { set; get; }
+        public uint FireEventCode { set; get; }
 
         public Cb Action { set; get; }
 
@@ -133,8 +137,8 @@ namespace NachoCore.Utils
         public void PostAtMostOneEvent (uint eventCode)
         {
             foreach (var elem in EventQ) {
-                var tupEvent = (Tuple<uint,object,string>)elem;
-                if (eventCode == tupEvent.Item1) {
+                var inQEvent = (Event)elem;
+                if (eventCode == inQEvent.EventCode) {
                     Console.WriteLine ("SM({0}): E={1} already in queue.", Name, EventName [eventCode]);
                     return;
                 }
@@ -147,42 +151,53 @@ namespace NachoCore.Utils
             PostEvent (eventCode, null, null);
         }
 
-        public void PostEvent (Event smEvent)
+        public void PostEvent (uint eventCode, object arg, string message)
         {
-            PostEvent (smEvent.EventCode, smEvent.Arg, smEvent.Message);
+            PostEvent (Event.Create (eventCode, arg, message));
         }
 
-        public void PostEvent (uint eventCode, object arg, string message)
+        public void PostEvent (Event smEvent)
         {
             BuildEventDicts ();
 
             if ((uint)St.Stop == State) {
                 return;
             }
-            EventQ.Enqueue (Tuple.Create (eventCode, arg, message));
+            EventQ.Enqueue (smEvent);
             if (IsFiring) {
                 return;
             }
             IsFiring = true;
             while (0 != EventQ.Count) {
-                var tuple = (Tuple<uint,object,string>)EventQ.Dequeue ();
-                FireEvent = tuple.Item1;
-                Arg = tuple.Item2;
-                Message = tuple.Item3;
-                var hotNode = TransTable.Where (x => State == x.State).First ();
-                if (null != hotNode.Drop && hotNode.Drop.Contains (FireEvent)) {
+                var fireEvent = (Event)EventQ.Dequeue ();
+                FireEventCode = fireEvent.EventCode;
+                Arg = fireEvent.Arg;
+                Message = fireEvent.Message;
+                if ((uint)St.Stop == State) {
+                    if (fireEvent.DropIfStopped) {
+                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => DROPPED IN St.Stop",
+                            Name, StateName (State), EventName [FireEventCode]), Message));
+                        continue;
+                    } else {
+                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => EVENT WHILE IN St.Stop",
+                            Name, StateName (State), EventName [FireEventCode]), Message));
+                        throw new Exception ();
+                    }
+                }
+                var hotNode = TransTable.Where (x => State == x.State).Single ();
+                if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
                     Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => DROPPED EVENT",
-                        Name, StateName (State), EventName [FireEvent]), Message));
+                        Name, StateName (State), EventName [FireEventCode]), Message));
                     continue;
                 }
-                if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEvent)) {
+                if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
                     Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => INVALID EVENT",
-                        Name, StateName (State), EventName [FireEvent]), Message));
+                        Name, StateName (State), EventName [FireEventCode]), Message));
                     throw new Exception ();
                 }
-                var hotTrans = hotNode.On.Where (x => FireEvent == x.Event).Single ();
+                var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
                 Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => S={3}",
-                    Name, StateName (State), EventName [FireEvent], StateName (hotTrans.State)), Message));
+                    Name, StateName (State), EventName [FireEventCode], StateName (hotTrans.State)), Message));
                 Action = hotTrans.Act;
                 NextState = hotTrans.State;
                 Action ();

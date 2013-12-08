@@ -552,7 +552,7 @@ namespace NachoCore.Wbxml
             codePages [15].AddToken (0x1B, "GreaterThan");
             codePages [15].AddToken (0x1E, "UserName");
             codePages [15].AddToken (0x1F, "Password");
-            codePages [15].AddToken (0x20, "ConversationId");
+            codePages [15].AddToken (0x20, "ConversationId", true);
             codePages [15].AddToken (0x21, "Picture");
             codePages [15].AddToken (0x22, "MaxSize");
             codePages [15].AddToken (0x23, "MaxPictures");
@@ -697,7 +697,7 @@ namespace NachoCore.Wbxml
             codePages [20].AddToken (0x15, "Password");
             codePages [20].AddToken (0x16, "Move");
             codePages [20].AddToken (0x17, "DstFldId");
-            codePages [20].AddToken (0x18, "ConversationId");
+            codePages [20].AddToken (0x18, "ConversationId", true);
             codePages [20].AddToken (0x19, "MoveAlways");
             #endregion
 
@@ -717,7 +717,7 @@ namespace NachoCore.Wbxml
             codePages [21].AddToken (0x0D, "ItemId");
             codePages [21].AddToken (0x0E, "LongId");
             codePages [21].AddToken (0x0F, "InstanceId");
-            codePages [21].AddToken (0x10, "Mime");
+            codePages [21].AddToken (0x10, "Mime", true);
             codePages [21].AddToken (0x11, "ClientId");
             codePages [21].AddToken (0x12, "Status");
             codePages [21].AddToken (0x13, "AccountId");
@@ -733,8 +733,8 @@ namespace NachoCore.Wbxml
             codePages [22].AddToken (0x06, "UmUserNotes");
             codePages [22].AddToken (0x07, "UmAttDuration");
             codePages [22].AddToken (0x08, "UmAttOrder");
-            codePages [22].AddToken (0x09, "ConversationId");
-            codePages [22].AddToken (0x0A, "ConversationIndex");
+            codePages [22].AddToken (0x09, "ConversationId", true);
+            codePages [22].AddToken (0x0A, "ConversationIndex", true);
             codePages [22].AddToken (0x0B, "LastVerbExecuted");
             codePages [22].AddToken (0x0C, "LastVerbExecutionTime");
             codePages [22].AddToken (0x0D, "ReceivedAsBcc");
@@ -794,7 +794,7 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (byte[] byteWBXML)
+        public void LoadBytes (Stream byteWBXML)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
 
@@ -954,8 +954,13 @@ namespace NachoCore.Wbxml
                 break;
             case XmlNodeType.Text:
                 var text = (XText)node;
-                byteList.Add ((byte)GlobalTokens.STR_I);
-                byteList.AddRange (EncodeString (text.Value));
+                if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
+                    byteList.Add ((byte)GlobalTokens.OPAQUE);
+                    byteList.AddRange (EncodeOpaque (text.Value));
+                } else {
+                    byteList.Add ((byte)GlobalTokens.STR_I);
+                    byteList.AddRange (EncodeString (text.Value));
+                }
                 break;
             case XmlNodeType.CDATA:
                 var cdata = (XCData)node;

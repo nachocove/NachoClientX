@@ -11,6 +11,7 @@ namespace NachoCore.Wbxml
         private string strXmlns = "";
         private Dictionary<byte, string> tokenLookup = new Dictionary<byte,string> ();
         private Dictionary<string, byte> tagLookup = new Dictionary<string, byte> ();
+        private Dictionary<string, bool> isOpaqueLookup = new Dictionary<string, bool> ();
 
         public string Namespace {
             get {
@@ -30,6 +31,12 @@ namespace NachoCore.Wbxml
             }
         }
 
+        public void AddToken (byte token, string tag, bool isOpaque)
+        {
+            isOpaqueLookup.Add (tag, isOpaque);
+            AddToken (token, tag);
+        }
+
         public void AddToken (byte token, string tag)
         {
             tokenLookup.Add (token, tag);
@@ -42,6 +49,14 @@ namespace NachoCore.Wbxml
                 return tagLookup [tag];
 
             return 0xFF;
+        }
+
+        public bool GetIsOpaque (string tag)
+        {
+            if (isOpaqueLookup.ContainsKey (tag)) {
+                return isOpaqueLookup [tag];
+            }
+            return false;
         }
 
         public string GetTag (byte token)

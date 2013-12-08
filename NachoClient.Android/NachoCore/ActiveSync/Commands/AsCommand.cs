@@ -15,8 +15,7 @@ using NachoCore.Utils;
 using NachoPlatform;
 
 // NOTE: The class that interfaces with HttpClient (or other low-level network API) needs
-// to manage retries & network conditions. If the operation fails "enough", then the
-// state machine gets the failure event. There are three classes of failure:
+// to manage network conditions. There are three classes of failure:
 // #1 - unable to perform because of present conditions.
 // #2 - unable to perform because of some protocol issue, expected to persist.
 namespace NachoCore.ActiveSync
@@ -41,9 +40,6 @@ namespace NachoCore.ActiveSync
         protected StateMachine OwnerSm;
         protected IAsDataSource DataSource;
         protected AsHttpOperation Op;
-        protected uint RetriesLeft;
-
-        public uint RetriesMax { set; get; }
 
         public TimeSpan Timeout { set; get; }
         // Initializers.
@@ -55,8 +51,6 @@ namespace NachoCore.ActiveSync
         public AsCommand (string commandName, IAsDataSource dataSource)
         {
             Timeout = TimeSpan.Zero;
-            RetriesMax = 3;
-            RefreshRetries ();
             CommandName = commandName;
             DataSource = dataSource;
             var assetMgr = new NachoPlatform.Assets ();
@@ -87,6 +81,9 @@ namespace NachoCore.ActiveSync
         protected virtual void Execute (StateMachine sm, ref AsHttpOperation opRef)
         {
             Op = new AsHttpOperation (CommandName, this, DataSource);
+            if (TimeSpan.Zero != Timeout) {
+                Op.Timeout = Timeout;
+            }
             opRef = Op;
             Op.Execute (sm);
         }
@@ -167,13 +164,9 @@ namespace NachoCore.ActiveSync
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
-        // Subclass can cleanup in the case where a ProcessResponse will never be called.
-        public virtual void CancelCleanup (AsHttpOperation Sender)
-        {
-        }
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
-        public virtual Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status)
+        public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
         {
             // returning -1 means that this function did not know how to convert the status value.
             // NOTE(A): Subclass can possibly make this a TempFail or Success if the id issue is just a sync issue.
@@ -220,11 +213,6 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        protected void RefreshRetries ()
-        {
-            RetriesLeft = RetriesMax;
-        }
-
         protected void DoSucceed ()
         {
             OwnerSm.PostEvent ((uint)SmEvt.E.Success);
@@ -248,7 +236,9 @@ namespace NachoCore.ActiveSync
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {
-            return new XDocument (new XDeclaration ("1.0", "utf8", null));
+            var doc = new XDocument ();
+            doc.Declaration = new XDeclaration ("1.0", "utf-8", "no");
+            return doc;
         }
 
         static internal Uri BaseUri (NcServer server)

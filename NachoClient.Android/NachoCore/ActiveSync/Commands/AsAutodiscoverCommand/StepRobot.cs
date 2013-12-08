@@ -17,37 +17,47 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
 
-
 namespace NachoCore.ActiveSync
 {
     public partial class AsAutodiscoverCommand : AsCommand
     {
-        private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner {
-            public enum RobotLst : uint {
-                PostWait=(St.Last+1),
+        private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner
+        {
+            public enum RobotLst : uint
+            {
+                PostWait = (St.Last + 1),
                 GetWait,
                 DnsWait,
                 CertWait,
                 OkWait,
-                ReDirWait
-            };
+                ReDirWait}
+            ;
 
-            public class RobotEvt : SharedEvt {
-                new public enum E : uint {
-                    ReDir=(SharedEvt.E.Last+1), // 302.
-                    NullCode // Not a real event. A not-yet-set value.
-                };
+            public class RobotEvt : SharedEvt
+            {
+                new public enum E : uint
+                {
+                    ReDir = (SharedEvt.E.Last + 1),
+                    // 302.
+                    NullCode}
+                    // Not a real event. A not-yet-set value.}
+                ;
             }
-
             // Pseudo-constants.
             public AsAutodiscoverCommand Command;
             public XNamespace Ns;
             // Initial programming of the Robot.
-            public enum Steps {S1, S2, S3, S4};
+            public enum Steps
+            {
+                S1,
+                S2,
+                S3,
+                S4}
+            ;
+
             public Steps Step;
             public HttpMethod MethodToUse;
             public bool IsBaseDomain;
-
             // Stored results. These will be copied back to the configuration upon top-level success.
             // EmailAddr and Domain are pre-loaded at the start.
             public string SrEmailAddr;
@@ -55,10 +65,8 @@ namespace NachoCore.ActiveSync
             public string SrDisplayName;
             public string SrCulture;
             public Uri SrServerUri;
-
             public Event ResultingEvent;
             public X509Certificate2 ServerCertificate;
-
             // Owned operations and execution values.
             public StateMachine StepSm;
             public AsHttpOperation HttpOp;
@@ -69,10 +77,10 @@ namespace NachoCore.ActiveSync
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, bool isBaseDomain, string domain)
             {
-                RefreshRetries();
+                RefreshRetries ();
 
                 Command = command;
-                Ns = Command.m_ns;
+                Ns = AsAutodiscoverCommand.RequestSchema;
 
                 Step = step;
                 switch (step) {
@@ -91,7 +99,7 @@ namespace NachoCore.ActiveSync
                 IsBaseDomain = isBaseDomain;
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                ResultingEvent = Event.Create((uint)RobotEvt.E.NullCode);
+                ResultingEvent = Event.Create ((uint)RobotEvt.E.NullCode);
 
                 StepSm = new StateMachine () {
                     /* NOTE: There are three start states:
@@ -104,106 +112,272 @@ namespace NachoCore.ActiveSync
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
                         new Node {State = (uint)RobotLst.PostWait, 
-                        Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)RobotEvt.E.NullCode},
+                            Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)RobotEvt.E.NullCode
+                            },
                             On = new[] {
-                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotHttp, State = (uint)RobotLst.PostWait},
-                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotSuccess, State = (uint)St.Stop},
-                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.PostWait},
-                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)SharedEvt.E.AuthFail, Act = DoRobotAuthFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoRobotReStart, State = (uint)St.Stop},
-                                new Trans {Event = (uint)RobotEvt.E.ReDir, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
-                            }},
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotHttp,
+                                    State = (uint)RobotLst.PostWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Success,
+                                    Act = DoRobotSuccess,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.TempFail,
+                                    Act = DoRobotHttp,
+                                    State = (uint)RobotLst.PostWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.HardFail,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReProv,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReSync,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SharedEvt.E.AuthFail,
+                                    Act = DoRobotAuthFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SharedEvt.E.ReStart,
+                                    Act = DoRobotReStart,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)RobotEvt.E.ReDir,
+                                    Act = DoRobot302,
+                                    State = (uint)RobotLst.ReDirWait
+                                },
+                            }
+                        },
 
                         new Node {State = (uint)RobotLst.GetWait,
-                        Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)RobotEvt.E.NullCode},
+                            Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)RobotEvt.E.NullCode
+                            },
                             On = new[] {
-                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotHttp, State = (uint)RobotLst.GetWait},
-                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotHardFail, State = (uint)St.Stop}, // Only 302 is okay.
-                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.GetWait},
-                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)RobotEvt.E.ReDir, Act = DoRobotGet2ReDir, State = (uint)RobotLst.CertWait},
-                            }},
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotHttp,
+                                    State = (uint)RobotLst.GetWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Success,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                }, // Only 302 is okay.
+                                new Trans {
+                                    Event = (uint)SmEvt.E.TempFail,
+                                    Act = DoRobotHttp,
+                                    State = (uint)RobotLst.GetWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.HardFail,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReProv,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReSync,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)RobotEvt.E.ReDir,
+                                    Act = DoRobotGet2ReDir,
+                                    State = (uint)RobotLst.CertWait
+                                },
+                            }
+                        },
 
                         new Node {State = (uint)RobotLst.DnsWait,
-                        Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode},
+                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            },
                             On = new[] {
-                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotDns, State = (uint)RobotLst.DnsWait},
-                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotDns2ReDir, State = (uint)RobotLst.CertWait},
-                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotDns, State = (uint)RobotLst.DnsWait},
-                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                            }},
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotDns,
+                                    State = (uint)RobotLst.DnsWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Success,
+                                    Act = DoRobotDns2ReDir,
+                                    State = (uint)RobotLst.CertWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.TempFail,
+                                    Act = DoRobotDns,
+                                    State = (uint)RobotLst.DnsWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.HardFail,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                            }
+                        },
 
                         new Node {State = (uint)RobotLst.CertWait,
-                        Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode},
+                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            },
                             On = new[] {
-                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotGetServerCert, State = (uint)RobotLst.CertWait},
-                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotUiCertAsk, State = (uint)RobotLst.OkWait},
-                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotGetServerCert, State = (uint)RobotLst.CertWait},
-                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                            }},
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotGetServerCert,
+                                    State = (uint)RobotLst.CertWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Success,
+                                    Act = DoRobotUiCertAsk,
+                                    State = (uint)RobotLst.OkWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.TempFail,
+                                    Act = DoRobotGetServerCert,
+                                    State = (uint)RobotLst.CertWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.HardFail,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                            }
+                        },
 
                         new Node {State = (uint)RobotLst.OkWait,
                             Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
-                            (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode}, 
+                                (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
+                                (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            }, 
                             On = new[] {
-                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotUiCertAsk, State = (uint)RobotLst.OkWait},
-                                new Trans {Event = (uint)SharedEvt.E.ServerCertYes, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
-                                new Trans {Event = (uint)SharedEvt.E.ServerCertNo, Act = DoRobotHardFail, State = (uint)St.Stop},
-                            }},
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotUiCertAsk,
+                                    State = (uint)RobotLst.OkWait
+                                },
+                                new Trans {
+                                    Event = (uint)SharedEvt.E.ServerCertYes,
+                                    Act = DoRobot302,
+                                    State = (uint)RobotLst.ReDirWait
+                                },
+                                new Trans {
+                                    Event = (uint)SharedEvt.E.ServerCertNo,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                            }
+                        },
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                        Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)RobotEvt.E.NullCode},
+                            Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)RobotEvt.E.NullCode
+                            },
                             On = new[] {
-                                new Trans {Event = (uint)SmEvt.E.Launch, Act = DoRobotHttp, State = (uint)RobotLst.ReDirWait},
-                                new Trans {Event = (uint)SmEvt.E.Success, Act = DoRobotSuccess, State = (uint)St.Stop},
-                                new Trans {Event = (uint)SmEvt.E.TempFail, Act = DoRobotHttp, State = (uint)RobotLst.ReDirWait},
-                                new Trans {Event = (uint)SmEvt.E.HardFail, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoRobotHardFail, State = (uint)St.Stop},
-                                new Trans {Event = (uint)SharedEvt.E.ReStart, Act = DoRobotReStart, State = (uint)St.Stop},
-                                new Trans {Event = (uint)RobotEvt.E.ReDir, Act = DoRobot302, State = (uint)RobotLst.ReDirWait},
-                            }},
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotHttp,
+                                    State = (uint)RobotLst.ReDirWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Success,
+                                    Act = DoRobotSuccess,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.TempFail,
+                                    Act = DoRobotHttp,
+                                    State = (uint)RobotLst.ReDirWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.HardFail,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReProv,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)AsProtoControl.AsEvt.E.ReSync,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SharedEvt.E.ReStart,
+                                    Act = DoRobotReStart,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)RobotEvt.E.ReDir,
+                                    Act = DoRobot302,
+                                    State = (uint)RobotLst.ReDirWait
+                                },
+                            }
+                        },
                     }
                 };
-                StepSm.Validate();
+                StepSm.Validate ();
             }
 
-            public void Execute () {
+            public void Execute ()
+            {
                 StepSm.Name = StepSm.Name + ":" + Enum.GetName (typeof(Steps), Step);
                 switch (Step) {
-                    case Steps.S1:
-                    case Steps.S2:
+                case Steps.S1:
+                case Steps.S2:
                     StepSm.Start ((uint)RobotLst.PostWait);
                     break;
-                    case Steps.S3:
+                case Steps.S3:
                     StepSm.Start ((uint)RobotLst.GetWait);
                     break;
-                    case Steps.S4:
+                case Steps.S4:
                     StepSm.Start ((uint)RobotLst.DnsWait);
                     break;
-                    default:
+                default:
                     throw new Exception ("Unknown Step value.");
                 }
             }
 
-            public void Cancel () {
+            public void Cancel ()
+            {
                 if (null != HttpOp) {
                     HttpOp.Cancel ();
                     HttpOp = null;
@@ -213,14 +387,14 @@ namespace NachoCore.ActiveSync
                     DnsOp = null;
                 }
             }
-
             // UTILITY METHODS.
-
-            private void RefreshRetries () {
+            private void RefreshRetries ()
+            {
                 RetriesLeft = 2;
             }
 
-            private void ForTopLevel (Event Event) {
+            private void ForTopLevel (Event Event)
+            {
                 // If Top-Level SM is waiting on us, then report directly. Otherwise record the result
                 // So that the Top-Level SM can find it when it is ready.
                 if (Command.MatchesState (Step, IsBaseDomain)) {
@@ -231,35 +405,35 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public void ServerCertificateEventHandler(HttpWebRequest sender,
-                                                      X509Certificate2 certificate,
-                                                      X509Chain chain,
-                                                      SslPolicyErrors sslPolicyErrors, 
-                                                      EventArgs e) {
+            public void ServerCertificateEventHandler (HttpWebRequest sender,
+                                                       X509Certificate2 certificate,
+                                                       X509Chain chain,
+                                                       SslPolicyErrors sslPolicyErrors, 
+                                                       EventArgs e)
+            {
                 if (sender.RequestUri.Equals (ReDirUri)) {
                     // Capture the server cert.
                     ServerCertificate = certificate;
                 }
             }
-
             // *********************************************************************************
             // Step Robot state machine action commands.
             // *********************************************************************************
-
-            private void DoRobotHttp () {
-                if (0 < RetriesLeft --) {
+            private void DoRobotHttp ()
+            {
+                if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
                         Timeout = new TimeSpan (0, 0, 4)
                     };
                     HttpOp.Execute (StepSm);
-                } 
-                else {
+                } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
-            private void DoRobotDns () {
-                if (0 < RetriesLeft --) {
+            private void DoRobotDns ()
+            {
+                if (0 < RetriesLeft--) {
                     DnsOp = new AsDnsOperation (this);
                     DnsOp.Execute (StepSm);
                 } else {
@@ -267,28 +441,30 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            private void DoRobot302 () {
+            private void DoRobot302 ()
+            {
                 // NOTE: this handles the 302 case, NOT the <Redirect> in XML after 200 case.
                 // FIXME: catch loops by recording been-there URLs.
-                if (0 < Command.ReDirsLeft --) {
+                if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
                         Timeout = new TimeSpan (0, 0, 4)
                     };
                     HttpOp.Execute (StepSm);
-                } 
-                else {
+                } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
-            private void DoRobotGet2ReDir () {
+            private void DoRobotGet2ReDir ()
+            {
                 MethodToUse = HttpMethod.Post;
                 RefreshRetries ();
                 DoRobotGetServerCert ();
             }
 
-            private void DoRobotDns2ReDir () {
+            private void DoRobotDns2ReDir ()
+            {
                 // Make the successful SRV lookup seem like a 302 so that the code for
                 // the remaining flow is unified for both paths (GET/DNS).
                 IsReDir = true;
@@ -296,9 +472,10 @@ namespace NachoCore.ActiveSync
                 DoRobotGet2ReDir ();
             }
 
-            private async void DoRobotGetServerCert () {
+            private async void DoRobotGetServerCert ()
+            {
                 // FIXME: need to set & handle timeout.
-                if (0 < RetriesLeft --) {
+                if (0 < RetriesLeft--) {
                     var client = new HttpClient (new HttpClientHandler () { AllowAutoRedirect = false });
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
@@ -311,94 +488,100 @@ namespace NachoCore.ActiveSync
                         StepSm.PostEvent ((uint)SmEvt.E.TempFail);
                     }
                     StepSm.PostEvent ((uint)SmEvt.E.Success);
-                }
-                else {
+                } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail);
                 }
             }
 
-            private void DoRobotUiCertAsk () {
+            private void DoRobotUiCertAsk ()
+            {
                 ForTopLevel (Event.Create ((uint)TlEvt.E.ServerCertAsk, this));
             }
 
-            private void DoRobotReStart () {
+            private void DoRobotReStart ()
+            {
                 ForTopLevel (Event.Create ((uint)SharedEvt.E.ReStart, this));
             }
 
-            private void DoRobotAuthFail () {
+            private void DoRobotAuthFail ()
+            {
                 ForTopLevel (Event.Create ((uint)SharedEvt.E.AuthFail, this));
             }
 
-            private void DoRobotSuccess () {
-                ForTopLevel (Event.Create((uint)SmEvt.E.Success, this));
+            private void DoRobotSuccess ()
+            {
+                ForTopLevel (Event.Create ((uint)SmEvt.E.Success, this));
 
             }
 
-            private void DoRobotHardFail () {
-                ForTopLevel (Event.Create((uint)SmEvt.E.HardFail, this));
+            private void DoRobotHardFail ()
+            {
+                ForTopLevel (Event.Create ((uint)SmEvt.E.HardFail, this));
             }
-
             // *********************************************************************************
             // AsHttpOperationOwner callbacks.
             // *********************************************************************************
-
-            public Uri ServerUriCandidate (AsHttpOperation Sender) {
+            public Uri ServerUriCandidate (AsHttpOperation Sender)
+            {
                 if (IsReDir) {
                     return ReDirUri;
                 }
                 switch (Step) {
-                    case StepRobot.Steps.S1:
+                case StepRobot.Steps.S1:
                     return new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml", SrDomain));
-                    case StepRobot.Steps.S2:
+                case StepRobot.Steps.S2:
                     return new Uri (string.Format ("https://autodiscover.{0}/autodiscover/autodiscover.xml", SrDomain));
-                    case StepRobot.Steps.S3:
+                case StepRobot.Steps.S3:
                     return new Uri (string.Format ("http://autodiscover.{0}/autodiscover/autodiscover.xml", SrDomain));
-                    default:
+                default:
                     throw new Exception ();
                 }
             }
 
-            public virtual string ToMime (AsHttpOperation Sender) {
+            public virtual string ToMime (AsHttpOperation Sender)
+            {
                 // We don't generate MIME.
                 return null;
             }
 
-            public virtual void CancelCleanup (AsHttpOperation Sender) {
-                // Nothing to cleanup on cancel from Op.
-            }
-
-            public Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status) {
+            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
+            {
                 // There is no AS XML <Status> to report on.
                 return null;
             }
 
-            public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender) {
+            public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
+            {
                 // We take over URI generation elsewhere.
                 return null;
             }
 
-            public HttpMethod Method (AsHttpOperation Sender) {
+            public HttpMethod Method (AsHttpOperation Sender)
+            {
                 return MethodToUse;
             }
 
-            public bool UseWbxml (AsHttpOperation Sender) {
+            public bool UseWbxml (AsHttpOperation Sender)
+            {
                 // Autodiscovery is XML only.
                 return false;
             }
 
-            public XDocument ToXDocument (AsHttpOperation Sender) {
+            public XDocument ToXDocument (AsHttpOperation Sender)
+            {
                 if (HttpMethod.Post != MethodToUse) {
                     return null;
                 }
                 var doc = AsCommand.ToEmptyXDocument ();
-                doc.Add (new XElement(Ns + Xml.Autodisco.Autodiscover,
-                                      new XElement (Ns + Xml.Autodisco.Request,
-                              new XElement (Ns + Xml.Autodisco.EmailAddress, SrEmailAddr),
-                              new XElement (Ns + Xml.Autodisco.AcceptableResponseSchema, responseSchema))));
+                doc.Add (new XElement (Ns + Xml.Autodisco.Autodiscover,
+                    new XElement (Ns + Xml.Autodisco.Request,
+                        new XElement (Ns + Xml.Autodisco.EMailAddress, SrEmailAddr),
+                        new XElement (Ns + Xml.Autodisco.AcceptableResponseSchema, AsAutodiscoverCommand.ResponseSchema))));
                 return doc;
             }
 
-            public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
+            public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            {
                 switch (response.StatusCode) {
                 case HttpStatusCode.Unauthorized:
                     return Event.Create ((uint)SharedEvt.E.AuthFail);
@@ -410,7 +593,7 @@ namespace NachoCore.ActiveSync
                     } catch {
                         return Event.Create ((uint)SmEvt.E.HardFail);
                     }
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    return Event.Create ((uint)RobotEvt.E.ReDir);
 
                 case HttpStatusCode.OK:
                     // We want to use the existing AsHttpOperation logic in the 200 case.
@@ -422,42 +605,44 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response) {
+            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            {
                 // We should never get back content that isn't XML.
                 return Event.Create ((uint)SmEvt.E.HardFail);
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
-                var xmlResponse = doc.Root.Element (Ns + Xml.Autodisco.Response);
-
-                var xmlUser = xmlResponse.Element (Ns + Xml.Autodisco.User);
-                SrEmailAddr = xmlUser.Element (Ns + Xml.Autodisco.EmailAddress).Value;
-                var xmlDisplayName = xmlUser.Element (Ns + Xml.Autodisco.DisplayName);
-                if (null != xmlDisplayName) {
-                    SrDisplayName = xmlDisplayName.Value;
+            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+            {
+                var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
+                var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
+                if (null != xmlUser) {
+                    SrEmailAddr = xmlUser.ElementAnyNs (Xml.Autodisco.EMailAddress).Value;
+                    var xmlDisplayName = xmlUser.ElementAnyNs (Xml.Autodisco.DisplayName);
+                    if (null != xmlDisplayName) {
+                        SrDisplayName = xmlDisplayName.Value;
+                    }
                 }
-
-                var xmlCulture = xmlResponse.Element (Ns + Xml.Autodisco.Culture);
+                var xmlCulture = xmlResponse.ElementAnyNs (Xml.Autodisco.Culture);
                 if (null != xmlCulture) {
                     SrCulture = xmlCulture.Value;
                 }
 
-                var xmlError = xmlResponse.Element (Ns + Xml.Autodisco.Error);
+                var xmlError = xmlResponse.ElementAnyNs (Xml.Autodisco.Error);
                 if (null != xmlError) {
                     return ProcessXmlError (Sender, xmlError);
                 }
 
-                var xmlAction = xmlResponse.Element (Ns + Xml.Autodisco.Action);
+                var xmlAction = xmlResponse.ElementAnyNs (Xml.Autodisco.Action);
                 if (null != xmlAction) {
-                    xmlError = xmlAction.Element (Ns + Xml.Autodisco.Error);
+                    xmlError = xmlAction.ElementAnyNs (Xml.Autodisco.Error);
                     if (null != xmlError) {
                         return ProcessXmlError (Sender, xmlError);
                     }
-                    var xmlRedirect = xmlAction.Element (Ns + Xml.Autodisco.Redirect);
+                    var xmlRedirect = xmlAction.ElementAnyNs (Xml.Autodisco.Redirect);
                     if (null != xmlRedirect) {
                         return ProcessXmlRedirect (Sender, xmlRedirect);
                     }
-                    var xmlSettings = xmlAction.Element (Ns + Xml.Autodisco.Settings);
+                    var xmlSettings = xmlAction.ElementAnyNs (Xml.Autodisco.Settings);
                     if (null != xmlSettings) {
                         return ProcessXmlSettings (Sender, xmlSettings);
                     }
@@ -466,62 +651,62 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail);
             }
 
-            private Event ProcessXmlError (AsHttpOperation Sender, XElement xmlError) {
-                var xmlStatus = xmlError.Element (Ns + Xml.Autodisco.Status);
+            private Event ProcessXmlError (AsHttpOperation Sender, XElement xmlError)
+            {
+                var xmlStatus = xmlError.ElementAnyNs (Xml.Autodisco.Status);
                 // FIXME: log Time and Id attributes if present:
                 // Time="16:56:32.6164027" Id="1054084152".
                 if (null != xmlStatus) {
-                    if ((uint)Xml.Autodisco.StatusCode.ProtocolError != uint.Parse(xmlStatus.Value)) {
+                    if ((uint)Xml.Autodisco.StatusCode.ProtocolError != uint.Parse (xmlStatus.Value)) {
                         // ProtocolError is the only valid value, but MSFT does not always obey! See
                         // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
                         ; // FIXME: log this case.
                     }
                 }
-                var xmlMessage = xmlError.Element (Ns + Xml.Autodisco.Message);
+                var xmlMessage = xmlError.ElementAnyNs (Xml.Autodisco.Message);
                 if (null != xmlMessage) {
                     ; // FIXME: pass this back to the user.
                 }
-                var xmlDebugData = xmlError.Element (Ns + Xml.Autodisco.DebugData);
+                var xmlDebugData = xmlError.ElementAnyNs (Xml.Autodisco.DebugData);
                 if (null != xmlDebugData) {
                     ; // FIXME: pass back to admin.
                 }
-                var xmlErrorCode = xmlError.Element (Ns + Xml.Autodisco.ErrorCode);
+                var xmlErrorCode = xmlError.ElementAnyNs (Xml.Autodisco.ErrorCode);
                 if (null != xmlErrorCode) {
                     ; // FIXME: log this along with request.
                 }
                 return Event.Create ((uint)SmEvt.E.HardFail);
             }
 
-            private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect) {
+            private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect)
+            {
                 SrEmailAddr = xmlRedirect.Value;
                 SrDomain = DomainFromEmailAddr (SrEmailAddr);
                 return Event.Create ((uint)SharedEvt.E.ReStart);
             }
 
-            private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings) {
+            private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings)
+            {
                 bool haveServerSettings = false;
-                var xmlServers = xmlSettings.Elements (Ns + Xml.Autodisco.Server);
+                var xmlServers = xmlSettings.ElementsAnyNs (Xml.Autodisco.Server);
                 foreach (var xmlServer in xmlServers) {
-                    var xmlType = xmlServer.Element (Ns + Xml.Autodisco.Type);
+                    var xmlType = xmlServer.ElementAnyNs (Xml.Autodisco.Type);
                     string serverType;
                     if (null != xmlType) {
                         serverType = xmlType.Value;
-                    } 
-                    else {
+                    } else {
                         // FIXME: log that Type is missing, assume MobileSync.
                         serverType = Xml.Autodisco.TypeCode.MobileSync;
                     }
-                    var xmlUrl = xmlServer.Element (Ns + Xml.Autodisco.Url);
+                    var xmlUrl = xmlServer.ElementAnyNs (Xml.Autodisco.Url);
                     if (null != xmlUrl) {
                         Uri serverUri;
                         try {
-                            serverUri = new Uri(xmlUrl.Value);
-                        }
-                        catch (ArgumentNullException) {
+                            serverUri = new Uri (xmlUrl.Value);
+                        } catch (ArgumentNullException) {
                             // FIXME - log it.
                             return Event.Create ((uint)SmEvt.E.HardFail);
-                        }
-                        catch (UriFormatException) {
+                        } catch (UriFormatException) {
                             // FIXME - log it.
                             return Event.Create ((uint)SmEvt.E.HardFail);
                         }
@@ -531,49 +716,51 @@ namespace NachoCore.ActiveSync
                         }
                         // FIXME: add support for CertEnroll.
                     }
-                    var xmlName = xmlServer.Element (Ns + Xml.Autodisco.Name);
+                    var xmlName = xmlServer.ElementAnyNs (Xml.Autodisco.Name);
                     if (null != xmlName) {
                         // FIXME - log it.
                         // We should have gotten our server info from Url.
                     }
-                    var xmlServerData = xmlServer.Element (Ns + Xml.Autodisco.ServerData);
+                    var xmlServerData = xmlServer.ElementAnyNs (Xml.Autodisco.ServerData);
                     if (null != xmlServerData) {
                         // FIXME - add support for CertEnroll.
                     }
                 }
                 return Event.Create ((haveServerSettings) ? (uint)SmEvt.E.Success : (uint)SmEvt.E.HardFail);
             }
-
             // *********************************************************************************
             // AsDnsOperationOwner callbacks.
             // *********************************************************************************
-
-            public void CancelCleanup (AsDnsOperation Sender) {
+            public void CancelCleanup (AsDnsOperation Sender)
+            {
                 // Do nothing on cancellation.
             }
 
-            public string DnsHost (AsDnsOperation Sender) {
+            public string DnsHost (AsDnsOperation Sender)
+            {
                 return "_autodiscover._tcp." + SrDomain;
             }
 
-            public NsType DnsType (AsDnsOperation Sender) {
+            public NsType DnsType (AsDnsOperation Sender)
+            {
                 return NsType.SRV;
             }
 
-            public NsClass DnsClass (AsDnsOperation Sender) {
+            public NsClass DnsClass (AsDnsOperation Sender)
+            {
                 return NsClass.INET;
             }
-
             // Must be static to work properly.
-            static Random picker = new Random();
+            static Random picker = new Random ();
 
-            public Event ProcessResponse (AsDnsOperation Sender, DnsQueryResponse response) {
+            public Event ProcessResponse (AsDnsOperation Sender, DnsQueryResponse response)
+            {
                 if (RCode.NoError == response.RCode &&
                     0 < response.AnswerRRs &&
                     NsType.SRV == response.NsType) {
                     var aBest = (SrvRecord)response.Answers.OrderBy (r1 => ((SrvRecord)r1).Priority).ThenByDescending (r2 => ((SrvRecord)r2).Weight).First ();
                     var bestRecs = response.Answers.Where (r1 => aBest.Priority == ((SrvRecord)r1).Priority &&
-                                                           aBest.Weight == ((SrvRecord)r1).Weight).ToArray ();
+                                   aBest.Weight == ((SrvRecord)r1).Weight).ToArray ();
                     var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
                     var chosen = (SrvRecord)bestRecs [index];
                     SrDomain = chosen.HostName;

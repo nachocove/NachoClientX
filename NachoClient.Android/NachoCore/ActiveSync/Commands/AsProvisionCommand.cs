@@ -124,9 +124,16 @@ namespace NachoCore.ActiveSync
                         Xml.Provision.RemoteWipeStatusCode.Failure));
                 }
             } else {
+                if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
+                    GetOp == Sender && 
+                    "14.1" == DataSource.ProtocolState.AsProtocolVersion) {
+                    provision.Add (AsSettingsCommand.DeviceInformation ());
+                }
                 var policy = new XElement (m_ns + Xml.Provision.Policy, 
-                                 new XElement (m_ns + Xml.Provision.PolicyType, Xml.Provision.PolicyTypeValue),
-                                 new XElement (m_ns + Xml.Provision.PolicyKey, DataSource.ProtocolState.AsPolicyKey));
+                                 new XElement (m_ns + Xml.Provision.PolicyType, Xml.Provision.PolicyTypeValue));
+                if (DataSource.ProtocolState.InitialProvisionCompleted) {
+                    policy.Add (new XElement (m_ns + Xml.Provision.PolicyKey, DataSource.ProtocolState.AsPolicyKey));
+                }
                 if (AckOp == Sender) {
                     policy.Add (new XElement (m_ns + Xml.Provision.Status,
                         ((uint)Enforcer.Instance.Compliance (DataSource.Account)).ToString ()));
@@ -140,10 +147,15 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            try {
                 var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
                 switch ((Xml.Provision.ProvisionStatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
                 case Xml.Provision.ProvisionStatusCode.Success:
+                    if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
+                        GetOp == Sender) {
+                        var protocolState = DataSource.ProtocolState;
+                        protocolState.InitialProvisionCompleted = true;
+                        DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
+                    }
                     var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                     if (null != xmlRemoteWipe) {
                         WipeSucceeded = Enforcer.Instance.Wipe (DataSource.Account);
@@ -208,29 +220,16 @@ namespace NachoCore.ActiveSync
                     // Unknown Provision Status code.
                     return Event.Create ((uint)SmEvt.E.HardFail);
                 }
-            } catch (Exception ex) {
-                return Event.Create ((uint)SmEvt.E.HardFail, null, ex.ToString ());
-            }
-        }
-
-        private void HttpOrHardFail (ref AsHttpOperation op)
-        {
-            if (0 < RetriesLeft) {
-                --RetriesLeft;
-                base.Execute (Sm, ref op);
-            } else {
-                Sm.PostEvent ((uint)SmEvt.E.HardFail);
-            }
         }
 
         private void DoGet ()
         {
-            HttpOrHardFail (ref GetOp);
+            base.Execute (Sm, ref GetOp);
         }
 
         private void DoAck ()
         {
-            HttpOrHardFail (ref AckOp);
+            base.Execute (Sm, ref AckOp);
         }
 
         private void ApplyEasProvisionDocToPolicy (XElement xmlEASProvisionDoc, NcPolicy policy)
@@ -254,7 +253,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Provision.AllowTextMessaging:
                 case Xml.Provision.AllowUnsignedApplications:
                 case Xml.Provision.AllowUnsignedInstallationPackages:
-                case Xml.Provision.AllowWifi:
+                case Xml.Provision.AllowWiFi:
                 case Xml.Provision.AlphanumericDevicePasswordRequired:
                 case Xml.Provision.AttachmentsEnabled:
                 case Xml.Provision.DevicePasswordEnabled:
@@ -389,8 +388,8 @@ namespace NachoCore.ActiveSync
                     return;
                 }
                 var numValue = uint.Parse (value);
-                var min = Enum.Parse (Type.GetType (targetPropEnum), "Min");
-                var max = Enum.Parse (Type.GetType (targetPropEnum), "Max");
+                var min = Enum.Parse (Type.GetType (prop.DeclaringType.FullName + "+" + targetPropEnum), "Min");
+                var max = Enum.Parse (Type.GetType (prop.DeclaringType.FullName + "+" + targetPropEnum), "Max");
                 if (numValue >= (uint)min && numValue <= (uint)max) {
                     prop.SetValue (targetObj, numValue);
                 } else {

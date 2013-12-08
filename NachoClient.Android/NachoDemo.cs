@@ -1,3 +1,5 @@
+// # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+//
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -35,19 +37,22 @@ namespace NachoCore
 
         private void EnterFullConfiguration () {
             // You will always need to supply user credentials (until certs, for sure).
-            var cred = new NcCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
+            var cred = new NcCred () { Username = "jeffe@nac01.com", Password = "D0ggie789" };
             Be.Db.Insert (BackEnd.DbActors.Ui, cred);
             // In the near future, you won't need to create this protocol state object.
             var protocolState = new NcProtocolState ();
             Be.Db.Insert (BackEnd.DbActors.Ui, protocolState);
+            var policy = new NcPolicy ();
+            Be.Db.Insert (BackEnd.DbActors.Ui, policy);
             // You will always need to supply the user's email address.
-            Account = new NcAccount () { EmailAddr = "jeffe@nachocove.com" };
+            Account = new NcAccount () { EmailAddr = "jeffe@nac01.com" };
             // The account object is the "top", pointing to credential, server, and opaque protocol state.
             Account.CredId = cred.Id;
             Account.ProtocolStateId = protocolState.Id;
+            Account.PolicyId = policy.Id;
             Be.Db.Insert (BackEnd.DbActors.Ui, Account);
 
-            var server = new NcServer () { Fqdn = "m.google.com" };
+            var server = new NcServer () { Fqdn = "m.bad.com" };
             Be.Db.Insert (BackEnd.DbActors.Ui, server);
             Account.ServerId = server.Id;
             Be.Db.Update (BackEnd.DbActors.Ui, Account); 
@@ -63,7 +68,7 @@ namespace NachoCore
             var email = new NcEmailMessage () {
                 AccountId = Account.Id,
                 To = "jeff.enderwick@gmail.com",
-                From = "jeffe@nachocove.com",
+                From = "jeffe@nac01.com",
                 Subject = "test",
                 Body = "this is a simple test.",
                 IsAwatingSend = true

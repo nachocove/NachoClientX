@@ -7,6 +7,8 @@ using DnDns.Query;
 using DnDns.Enums;
 using NachoCore.Utils;
 
+// FIXME - push Timeout logic into DnDns.
+
 namespace NachoCore.ActiveSync
 {
     public class AsDnsOperation : IAsOperation

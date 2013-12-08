@@ -1,15 +1,31 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace NachoCore.Wbxml
 {
-    class ASWBXMLByteQueue : Queue<byte>
+    class ASWBXMLByteQueue
     {
-        public ASWBXMLByteQueue (byte[] bytes)
-: base (bytes)
+        public long Count { set; get; }
+
+        private Stream ByteStream;
+
+        public ASWBXMLByteQueue (Stream bytes)
         {
+            ByteStream = bytes;
+            Count = ByteStream.Length;
+        }
+
+        public byte Dequeue ()
+        {
+            var value = ByteStream.ReadByte ();
+            if (-1 == value) {
+                throw new Exception ("ASWBXMLByteQueue: attempted read past end.");
+            }
+            --Count;
+            return Convert.ToByte (value);
         }
 
         public int DequeueMultibyteInt ()

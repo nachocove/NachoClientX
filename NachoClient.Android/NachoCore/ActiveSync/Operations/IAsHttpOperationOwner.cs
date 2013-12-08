@@ -10,12 +10,11 @@ namespace NachoCore.ActiveSync
 {
     public interface IAsHttpOperationOwner
     {
-        void CancelCleanup (AsHttpOperation Sender);
         Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender);
         Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc);
-        Event TopLevelStatusToEvent (AsHttpOperation Sender, uint status);
+        Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status);
         XDocument ToXDocument (AsHttpOperation Sender);
         string ToMime (AsHttpOperation Sender);
         Uri ServerUriCandidate (AsHttpOperation Sender);
