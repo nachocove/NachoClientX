@@ -7,8 +7,9 @@ namespace NachoCore.Utils
 
         public const int LOG_SYNC = 1;
         public const int LOG_CALENDAR = 2;
-        public const int LOG_UI = 4;
-        public static int logLevel = LOG_CALENDAR;
+        public const int LOG_CONTACTS = 4;
+        public const int LOG_UI = 8;
+        public static int logLevel = 0;
 
 
         public Log ()
