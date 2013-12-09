@@ -47,7 +47,8 @@ namespace NachoCore.ActiveSync
             NcProtocolState update;
 
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
-            switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.Ping.Status).Value)) {
+            string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;
+            switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
 
             case Xml.Ping.StatusCode.NoChanges:
                 if (m_hitMaxFolders) {
@@ -89,6 +90,7 @@ namespace NachoCore.ActiveSync
 
             default:
                 // FIXME - how do we want to handle unknown status codes?
+                Log.Error ("AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
                 return Event.Create ((uint)SmEvt.E.HardFail);
             }
         }
