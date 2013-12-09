@@ -16,7 +16,7 @@ namespace NachoCore.Model
         public bool AllDayEvent { get; set; }
 
         /// When this item was created or modified (Compact DateTime, optional)
-        public DateTime DTStamp { get; set; }
+        public DateTime DtStamp { get; set; }
 
         /// Start time of this item (Compact DateTime)
         public DateTime StartTime { get; set; }

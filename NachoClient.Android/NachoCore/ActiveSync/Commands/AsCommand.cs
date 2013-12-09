@@ -247,6 +247,7 @@ namespace NachoCore.ActiveSync
                              server.Scheme, server.Fqdn, server.Port, server.Path);
             return new Uri (retval);
         }
+
     }
 }
 

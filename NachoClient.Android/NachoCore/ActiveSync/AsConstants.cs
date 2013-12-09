@@ -422,13 +422,11 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Contacts";
             // Alpha order.
+            public const string Alias = "Alias";
             public const string Anniversary = "Anniversary";
-            // UTC.
             public const string AssistantName = "AssistantName";
             public const string AssistantPhoneNumber = "AssistantPhoneNumber";
             public const string Birthday = "Birthday";
-            // UTC.
-            // NOTE: AirSyncBase.Body is used to contain notes for the contact.
             public const string BusinessAddressCity = "BusinessAddressCity";
             public const string BusinessAddressCountry = "BusinessAddressCountry";
             public const string BusinessAddressPostalCode = "BusinessAddressPostalCode";
@@ -439,18 +437,15 @@ namespace NachoCore.ActiveSync
             public const string Business2PhoneNumber = "Business2PhoneNumber";
             public const string CarPhoneNumber = "CarPhoneNumber";
             public const string Categories = "Categories";
-            // Container of 1..300 Category.
             public const string Category = "Category";
-            public const string Children = "Children";
-            // Container of 0..300 Child.
             public const string Child = "Child";
+            public const string Children = "Children";
             public const string CompanyName = "CompanyName";
             public const string Department = "Department";
             public const string Email1Address = "Email1Address";
             public const string Email2Address = "Email2Address";
             public const string Email3Address = "Email3Address";
             public const string FileAs = "FileAs";
-            // RIC - understand.
             public const string FirstName = "FirstName";
             public const string HomeAddressCity = "HomeAddressCity";
             public const string HomeAddressCountry = "HomeAddressCountry";
@@ -472,14 +467,12 @@ namespace NachoCore.ActiveSync
             public const string OtherAddressStreet = "OtherAddressStreet";
             public const string PagerNumber = "PagerNumber";
             public const string Picture = "Picture";
-            // base64-encoded img, <= 48kB.
             public const string RadioPhoneNumber = "RadioPhoneNumber";
             public const string Spouse = "Spouse";
             public const string Suffix = "Suffix";
             public const string Title = "Title";
             public const string WebPage = "WebPage";
             public const string WeightedRank = "WeightedRank";
-            // Only in RIC response, int not string.
             public const string YomiCompanyName = "YomiCompanyName";
             public const string YomiFirstName = "YomiFirstName";
             public const string YomiLastName = "YomiLastName";
@@ -489,6 +482,7 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Contacts2";
             // Alpha order.
+            public const string AccountName = "AccountName";
             public const string CompanyMainPhone = "CompanyMainPhone";
             public const string CustomerId = "CustomerId";
             public const string GovernmentId = "GovernmentId";
@@ -805,6 +799,22 @@ namespace NachoCore.ActiveSync
                 OneMonth = 5,
                 Max = OneMonth}
             ;
+        }
+
+        public class Search
+        {
+            public const string Ns = "Search";
+            public const string Command = "Search";
+            // Alpha order
+            public const string Name = "Name";
+            public const string Options = "Options";
+            public const string Query = "Query";
+
+            public class SearchOptions {
+                public const string DeepTraversal = "DeepTraversal";
+                public const string Range = "Range";
+                public const string RebuildResults = "RebuildResults";
+            }
         }
 
         public class Settings

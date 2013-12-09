@@ -339,6 +339,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsHelpers.cs">
       <Link>NachoCore\ActiveSync\AsHelpers.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

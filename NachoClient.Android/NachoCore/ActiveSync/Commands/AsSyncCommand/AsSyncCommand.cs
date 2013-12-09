@@ -76,6 +76,7 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
+            Log.Info(Log.LOG_SYNC, "{0}", doc);
             var collections = doc.Root.Element (m_ns + Xml.AirSync.Collections).Elements (m_ns + Xml.AirSync.Collection);
             foreach (var collection in collections) {
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
@@ -86,8 +87,8 @@ namespace NachoCore.ActiveSync
 
                 folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
                 (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
-                Console.WriteLine ("MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
-                Console.WriteLine ("Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
+                Log.Info(Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
+                Log.Info(Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
                 var status = collection.Element (m_ns + Xml.AirSync.Status);
                 switch (uint.Parse (status.Value)) {
                 case (uint)Xml.AirSync.StatusCode.Success:
@@ -123,8 +124,7 @@ namespace NachoCore.ActiveSync
                                 }
                                 switch (classCode) {
                                 case Xml.AirSync.ClassCode.Contacts:
-                                    Console.WriteLine ("Coulda-woulda-shoulda added a CONTACT to the DB.");
-                                    AddContact (command, folder);
+                                    ServerSaysAddContact (command, folder);
                                     break;
                                 case Xml.AirSync.ClassCode.Email:
                                     AddEmail (command, folder);
@@ -133,7 +133,7 @@ namespace NachoCore.ActiveSync
                                     ServerSaysAddCalendarItem (command, folder);
                                     break;
                                 default:
-                                    Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
+                                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
                                     break;
                                 }
                                 break;
@@ -150,20 +150,20 @@ namespace NachoCore.ActiveSync
                                     ServerSaysChangeCalendarItem (command, folder);
                                     break;
                                 default:
-                                    Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
+                                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
                                     break;
                                 }
                                 break;
 
                             default:
-                                Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
+                                Log.Error ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
                                 break;
                             }
                         }
                     }
                     break;
                 default:
-                    Console.WriteLine ("AsSyncCommand ProcessResponse UNHANDLED status " + status.ToString());
+                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED status " + status.ToString());
                     break;
                 }
 
@@ -295,32 +295,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private void AddContact (XElement command, NcFolder folder)
-        {
-            var contact = new NcContact {
-                AccountId = DataSource.Account.Id,
-                FolderId = folder.Id,
-                ServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value
-            };
-            var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
-            foreach (var child in appData.Elements()) {
-                switch (child.Name.LocalName) {
-                case Xml.Contacts.LastName:
-                    contact.LastName = child.Value;
-                    break;
-                case Xml.Contacts.FirstName:
-                    contact.FirstName = child.Value;
-                    break;
-                case Xml.Contacts.Email1Address:
-                    contact.Email1Address = child.Value;
-                    break;
-                case Xml.Contacts.MobilePhoneNumber:
-                    contact.MobilePhoneNumber = child.Value;
-                    break;
-                }
-            }
-            DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, contact);
-        }
+
         // FIXME - make this a generic extension.
         private bool ParseXmlBoolean (XElement bit)
         {

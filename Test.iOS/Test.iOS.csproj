@@ -95,6 +95,7 @@
     <Reference Include="NachoPlatform.iOS">
       <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.iOS\bin\Release\NachoPlatform.iOS.dll</HintPath>
     </Reference>
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -116,6 +117,9 @@
     </Compile>
     <Compile Include="..\Test.Android\NcObjectTest.cs">
       <Link>NcObjectTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\NcContactTest.cs">
+      <Link>NcContactTest.cs</Link>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

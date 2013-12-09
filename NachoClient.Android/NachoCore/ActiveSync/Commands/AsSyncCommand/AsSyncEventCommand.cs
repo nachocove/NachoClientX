@@ -51,7 +51,7 @@ namespace NachoCore.ActiveSync
         {
             // Convert the event to an NcCalendar
             var h = new AsHelpers ();
-            var r = h.CreateNcCalendarFromXML (m_ns, command, folder);
+            var r = h.ParseCalendar (m_ns, command, folder);
             NcCalendar newItem = (NcCalendar)r.GetObject ();
 
             System.Diagnostics.Trace.Assert (r.isOK ());

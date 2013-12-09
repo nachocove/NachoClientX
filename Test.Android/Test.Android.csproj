@@ -50,6 +50,7 @@
     <Reference Include="NachoPlatform.Android">
       <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.Android\bin\Release\NachoPlatform.Android.dll</HintPath>
     </Reference>
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="NcResultTest.cs" />
     <Compile Include="NcItemTest.cs" />
     <Compile Include="NcObjectTest.cs" />
+    <Compile Include="NcContactTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

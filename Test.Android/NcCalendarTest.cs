@@ -44,6 +44,21 @@ namespace Test.iOS
             CreateTable<NcRecurrence> ();
             DropTable<NcRecurrence> ();
             CreateTable<NcRecurrence> ();
+
+            // NcContact
+            CreateTable<NcContact> ();
+            DropTable<NcContact> ();
+            CreateTable<NcContact> ();
+
+            // NcFolder
+            CreateTable<NcFolder> ();
+            DropTable<NcFolder> ();
+            CreateTable<NcFolder> ();
+
+            // NcPendingUpdate
+            CreateTable<NcPendingUpdate> ();
+            DropTable<NcPendingUpdate> ();
+            CreateTable<NcPendingUpdate> ();
         }
     }
 
@@ -123,6 +138,36 @@ namespace Test.iOS
             BadCompactDateTime ("20131123T19024312Z");
             BadCompactDateTime ("20131123T1902431234Z");
         }
+
+        /// <A:DateReceived>2009-11-12T00:45:06.000Z</A:DateReceived>
+        /// 
+        public void GoodDateTime (string compactDateTime, DateTime match)
+        {
+            var d = c.ParseAsDateTime (compactDateTime);
+            Assert.False (d.Equals (DateTime.MinValue));
+            Assert.True (d.Equals (match));
+        }
+
+        public void BadDateTime (string compactDateTime)
+        {
+            var d = c.ParseAsCompactDateTime (compactDateTime);
+            Assert.True (d.Equals (DateTime.MinValue));
+        }
+
+        [Test]
+        public void DateTimeParsing ()
+        {
+            GoodDateTime ("2013-11-23T19:02:43.000Z", new DateTime (2013, 11, 23, 19, 2, 43, 00));
+            GoodDateTime ("2013-11-23T19:02:43.123Z", new DateTime (2013, 11, 23, 19, 2, 43, 123));
+            BadDateTime (null);
+            BadDateTime ("");
+            BadDateTime ("2013-11-23T19:02:43Z");
+            BadDateTime ("2013-11-23T19:02:43Z1");
+            BadDateTime ("2013-11-23T19:02:43.1Z");
+            BadDateTime ("2013-11-23T19:02:43.12Z");
+            BadDateTime ("2013-11-23T19:02:43.1234Z");
+        }
+
 
         public void GoodTimeZone (string encodedTimeZone, string targetStandardName, string targetDaylightName)
         {
@@ -428,10 +473,10 @@ namespace Test.iOS
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
-            NcResult r = h.CreateNcCalendarFromXML (asSync.m_ns, command, ncFolder);
+            NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
             Assert.IsNotNull (r.GetObject ());
             var c = (NcCalendar)r.GetObject ();
-            Assert.AreEqual (c.DTStamp, new DateTime (2013, 11, 26, 12, 49, 29));
+            Assert.AreEqual (c.DtStamp, new DateTime (2013, 11, 26, 12, 49, 29));
             Assert.AreEqual (c.StartTime, new DateTime (2013, 11, 28, 01, 00, 00));
             Assert.AreEqual (c.EndTime, new DateTime (2013, 11, 29, 02, 00, 00));
             Assert.AreEqual (c.Location, "the Dogg House!");
@@ -462,7 +507,7 @@ namespace Test.iOS
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
-            NcResult r = h.CreateNcCalendarFromXML (asSync.m_ns, command, ncFolder);
+            NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
             Assert.IsNotNull (r.GetObject ());
             var c = (NcCalendar)r.GetObject ();
             Assert.IsNull (c.Location);
