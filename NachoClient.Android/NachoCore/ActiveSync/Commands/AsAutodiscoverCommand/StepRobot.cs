@@ -423,7 +423,8 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 4)
+                        Timeout = new TimeSpan (0, 0, 4),
+                        Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
                 } else {
@@ -448,7 +449,8 @@ namespace NachoCore.ActiveSync
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 4)
+                        Timeout = new TimeSpan (0, 0, 4),
+                        Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
                 } else {
@@ -521,7 +523,7 @@ namespace NachoCore.ActiveSync
             // *********************************************************************************
             // AsHttpOperationOwner callbacks.
             // *********************************************************************************
-            public Uri ServerUriCandidate (AsHttpOperation Sender)
+            public Uri ServerUri (AsHttpOperation Sender)
             {
                 if (IsReDir) {
                     return ReDirUri;
@@ -536,6 +538,11 @@ namespace NachoCore.ActiveSync
                 default:
                     throw new Exception ();
                 }
+            }
+
+            public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
+            {
+                throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
             public virtual string ToMime (AsHttpOperation Sender)

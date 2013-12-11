@@ -126,7 +126,7 @@ namespace NachoCore.ActiveSync
                 Device.Instance.Type ());
         }
 
-        public virtual Uri ServerUriCandidate (AsHttpOperation Sender)
+        public virtual Uri ServerUri (AsHttpOperation Sender)
         {
             var requestLine = QueryString (Sender);
             var rlParams = ExtraQueryStringParams (Sender);
@@ -139,6 +139,18 @@ namespace NachoCore.ActiveSync
             }
             return new Uri (AsCommand.BaseUri (DataSource.Server), requestLine);
         }
+
+        public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
+        {
+            var server = DataSource.Server;
+            server.Scheme = ServerUri.Scheme;
+            server.Fqdn = ServerUri.Host;
+            server.Port = ServerUri.Port;
+            server.Path = ServerUri.AbsolutePath;
+            // Updates the value in the DB.
+            DataSource.Server = server;
+        }
+
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
         public virtual XDocument ToXDocument (AsHttpOperation Sender)
         {

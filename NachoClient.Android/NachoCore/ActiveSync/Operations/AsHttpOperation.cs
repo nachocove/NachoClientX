@@ -65,16 +65,20 @@ namespace NachoCore.ActiveSync
         private StateMachine OwnerSm;
         private HttpClient Client;
         private Uri ServerUri;
-        private uint TriesLeft;
+        private bool ServerUriBeingTested;
         private Stream ContentData;
         private string ContentType;
         // Properties.
         public TimeSpan Timeout { set; get; }
+        public uint TriesLeft { set; get; }
+        public bool Allow451Follow { set; get; }
+
         // Initializers.
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource)
         {
             Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
             TriesLeft = KDefaultRetries + 1;
+            Allow451Follow = true;
             m_commandName = commandName;
             Owner = owner;
             DataSource = dataSource;
@@ -157,6 +161,7 @@ namespace NachoCore.ActiveSync
         public virtual void Execute (StateMachine sm)
         {
             OwnerSm = sm;
+            ServerUri = Owner.ServerUri (this);
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
         }
 
@@ -231,6 +236,16 @@ namespace NachoCore.ActiveSync
                 HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, null, string.Format ("Uri: {0}", ServerUri));
             }
         }
+
+        // This method should only be called if the response indicates that the new server is a legit AS server.
+        private void IndicateUriIfChanged ()
+        {
+            if (ServerUriBeingTested) {
+                Owner.ServerUriChanged (ServerUri, this);
+                ServerUriBeingTested = false;
+            }
+        }
+
         // Final is how to pass the ultimate Event back to OwnerSm.
         private Event Final (uint eventCode)
         {
@@ -253,7 +268,6 @@ namespace NachoCore.ActiveSync
                 AllowAutoRedirect = false,
                 PreAuthenticate = true
             };
-            ServerUri = Owner.ServerUriCandidate (this);
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
                 handler.Credentials = new NetworkCredential (DataSource.Cred.Username, DataSource.Cred.Password);
@@ -354,6 +368,7 @@ namespace NachoCore.ActiveSync
 
             switch (response.StatusCode) {
             case HttpStatusCode.OK:
+                IndicateUriIfChanged ();
                 if (0 != ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
@@ -397,29 +412,40 @@ namespace NachoCore.ActiveSync
                 if (response.Headers.Contains ("X-MS-RP")) {
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, DataSource);
+                    IndicateUriIfChanged ();
                     return Final ((uint)AsProtoControl.AsEvt.E.ReSync);
                 }
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
 
             case (HttpStatusCode)449:
+                IndicateUriIfChanged ();
+
                 return Final ((uint)AsProtoControl.AsEvt.E.ReProv);
 
             case (HttpStatusCode)451:
+                if (!Allow451Follow) {
+                    return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.451 follow not allowed.");
+                }
                 if (response.Headers.Contains ("X-MS-Location")) {
-                    Uri redirUri;
                     try {
-                        redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
+                        // Re-try the access using the new URI. If it works, then accept the new URI.
+                        var redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
+                        if (! redirUri.IsHttps()) {
+                            // Don't be duped into accepting a non-HTTPS URI.
+                            return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
+                        }
+                        ServerUriBeingTested = true;
+                        NcServer dummy = new NcServer() {
+                            Scheme = redirUri.Scheme,
+                            Fqdn = redirUri.Host,
+                            Port = redirUri.Port,
+                            Path = redirUri.AbsolutePath
+                        };
+                        ServerUri = new Uri (AsCommand.BaseUri (dummy), redirUri.Query);
+                        return Event.Create ((uint)SmEvt.E.Launch);
                     } catch {
                         return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
                     }
-                    // FIXME - need to test address before updating it.
-                    var server = DataSource.Server;
-                    server.Fqdn = redirUri.Host;
-                    server.Path = redirUri.AbsolutePath;
-                    server.Port = redirUri.Port;
-                    server.Scheme = redirUri.Scheme;
-                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, DataSource.Server);
-                    return Event.Create ((uint)SmEvt.E.Launch);
                 }
                 // If no X-MS-Location, just treat it as a transient and hope for the best.
                 return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.451 with no X-MS-Location.");
@@ -442,6 +468,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)507:
+                IndicateUriIfChanged ();
                 DataSource.Owner.ServerOOSpaceInd (DataSource.Control);
                 return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode 507 - Out of space on server.");
 
