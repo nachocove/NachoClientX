@@ -276,14 +276,7 @@ namespace NachoCore.ActiveSync
             var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             var doc = Owner.ToXDocument (this);
             if (null != doc) {
-                /* Need to test with Mono's Validate - may not be fully implemented.
-                if (requestXmlSchemas.ContainsKey (m_commandName)) {
-                    doc.Validate (requestXmlSchemas [m_commandName],
-                                  (xd, err) => {
-                        Console.WriteLine ("{0} failed validation: {1}", m_commandName, err);
-                    });
-                }
-                */
+                // Sadly, Xamarin does not support schema-based XML validation APIs.
                 if (Owner.UseWbxml (this)) {
                     var wbxml = doc.ToWbxml ();
                     var content = new ByteArrayContent (wbxml);
