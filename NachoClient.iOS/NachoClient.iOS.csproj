@@ -118,6 +118,9 @@
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
+    <Reference Include="WBXML.iOS">
+      <HintPath>..\..\WBXML\WBXML.iOS\bin\Release\WBXML.iOS.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
