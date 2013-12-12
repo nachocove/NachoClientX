@@ -136,6 +136,8 @@ namespace NachoClient.iOS
         public void ServerOOSpaceInd (NcAccount account) {
         }
         public void CertAskReq (NcAccount account, X509Certificate2 certificate) {
+            // UI FIXME - ask user and call CertAskResp async'ly.
+            Be.CertAskResp (account, true);
         }
     }
 }

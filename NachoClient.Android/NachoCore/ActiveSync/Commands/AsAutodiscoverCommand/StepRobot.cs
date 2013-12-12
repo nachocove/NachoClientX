@@ -301,7 +301,7 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                            Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                                 (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -338,6 +338,11 @@ namespace NachoCore.ActiveSync
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReSync,
                                     Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SharedEvt.E.AuthFail,
+                                    Act = DoRobotAuthFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {

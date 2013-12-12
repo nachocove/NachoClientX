@@ -346,12 +346,18 @@ namespace NachoCore.ActiveSync
 
         private Event ProcessHttpResponse (HttpResponseMessage response)
         {
+            if (HttpStatusCode.OK != response.StatusCode &&
+                ContentTypeHtml == ContentType) {
+                // There is a chance that the non-OK status comes with an HTML explaination.
+                // If so, then dump it.
+                var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
+                Console.WriteLine ("HTML response: {0}", possibleMessage);
+            }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
             if (null != preProcessEvent) {
                 return Final (preProcessEvent);
             }
             XDocument responseDoc;
-
             switch (response.StatusCode) {
             case HttpStatusCode.OK:
                 if (0 != ContentData.Length) {
@@ -389,11 +395,6 @@ namespace NachoCore.ActiveSync
             case HttpStatusCode.Forbidden:
             case HttpStatusCode.InternalServerError:
             case HttpStatusCode.Found:
-                // MINOR FIXME - fork on OK/not, and dump this output for any non-OK response too.
-                if (ContentTypeHtml == ContentType) {
-                    var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
-                    Console.WriteLine ("HTML response: {0}", possibleMessage);
-                }
                 if (response.Headers.Contains ("X-MS-RP")) {
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, DataSource);
