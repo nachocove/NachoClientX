@@ -107,7 +107,7 @@ namespace NachoCore.ActiveSync
                      * GetWait - used for S3,
                      * DnsWait - used for S4.
                      */
-                    Name = "as:autodiscover:step_robot",
+                    Name = "SR",
                     LocalEventType = typeof(RobotEvt),
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
@@ -364,7 +364,7 @@ namespace NachoCore.ActiveSync
 
             public void Execute ()
             {
-                StepSm.Name = StepSm.Name + ":" + Enum.GetName (typeof(Steps), Step);
+                StepSm.Name = Command.Sm.Name + ":" + StepSm.Name + "(" + Enum.GetName (typeof(Steps), Step) + ")";
                 switch (Step) {
                 case Steps.S1:
                 case Steps.S2:
@@ -403,7 +403,6 @@ namespace NachoCore.ActiveSync
                 // If Top-Level SM is waiting on us, then report directly. Otherwise record the result
                 // So that the Top-Level SM can find it when it is ready.
                 if (Command.MatchesState (Step, IsBaseDomain)) {
-                    Command.Cancel ();
                     Command.Sm.PostEvent (Event);
                 } else {
                     ResultingEvent = Event;

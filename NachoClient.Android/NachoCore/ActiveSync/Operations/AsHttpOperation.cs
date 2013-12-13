@@ -157,6 +157,7 @@ namespace NachoCore.ActiveSync
         public virtual void Execute (StateMachine sm)
         {
             OwnerSm = sm;
+            HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
         }
 
