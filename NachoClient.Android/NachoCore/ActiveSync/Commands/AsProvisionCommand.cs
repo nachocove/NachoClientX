@@ -39,7 +39,7 @@ namespace NachoCore.ActiveSync
 
         public AsProvisionCommand (IAsDataSource dataSource) : base (Xml.Provision.Ns, Xml.Provision.Ns, dataSource)
         {
-            Sm = new StateMachine () { Name = "as:provision",
+            Sm = new StateMachine () { 
                 LocalStateType = typeof(Lst),
                 LocalEventType = typeof(AsProtoControl.AsEvt),
                 TransTable = new[] {
@@ -111,6 +111,7 @@ namespace NachoCore.ActiveSync
         public override void Execute (StateMachine sm)
         {
             OwnerSm = sm;
+            Sm.Name = OwnerSm.Name + ":PROV";
             Sm.Start ();
         }
 

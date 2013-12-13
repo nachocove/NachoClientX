@@ -69,7 +69,7 @@ namespace NachoCore.ActiveSync
             AccountId = account.Id;
 
             Sm = new StateMachine () { 
-                Name = "as:control" + account.Id,
+                Name = string.Format("ASPC({0})", AccountId),
                 LocalEventType = typeof(CtlEvt),
                 LocalStateType = typeof(Lst),
                 StateChangeIndication = UpdateSavedState,

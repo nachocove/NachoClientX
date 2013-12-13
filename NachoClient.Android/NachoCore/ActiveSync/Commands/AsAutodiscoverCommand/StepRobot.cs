@@ -107,7 +107,7 @@ namespace NachoCore.ActiveSync
                      * GetWait - used for S3,
                      * DnsWait - used for S4.
                      */
-                    Name = "as:autodiscover:step_robot",
+                    Name = "SR",
                     LocalEventType = typeof(RobotEvt),
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
@@ -301,7 +301,7 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                            Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                                 (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -341,6 +341,11 @@ namespace NachoCore.ActiveSync
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
+                                    Event = (uint)SharedEvt.E.AuthFail,
+                                    Act = DoRobotAuthFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
                                     Event = (uint)SharedEvt.E.ReStart,
                                     Act = DoRobotReStart,
                                     State = (uint)St.Stop
@@ -359,7 +364,7 @@ namespace NachoCore.ActiveSync
 
             public void Execute ()
             {
-                StepSm.Name = StepSm.Name + ":" + Enum.GetName (typeof(Steps), Step);
+                StepSm.Name = Command.Sm.Name + ":" + StepSm.Name + "(" + Enum.GetName (typeof(Steps), Step) + ")";
                 switch (Step) {
                 case Steps.S1:
                 case Steps.S2:
@@ -398,7 +403,6 @@ namespace NachoCore.ActiveSync
                 // If Top-Level SM is waiting on us, then report directly. Otherwise record the result
                 // So that the Top-Level SM can find it when it is ready.
                 if (Command.MatchesState (Step, IsBaseDomain)) {
-                    Command.Cancel ();
                     Command.Sm.PostEvent (Event);
                 } else {
                     ResultingEvent = Event;

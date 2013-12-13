@@ -99,7 +99,6 @@ namespace NachoCore.ActiveSync
         {
             ReDirsLeft = 10;
             Sm = new StateMachine () {
-                Name = "as:autodiscover", 
                 LocalEventType = typeof(TlEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
@@ -489,6 +488,7 @@ namespace NachoCore.ActiveSync
         public override void Execute (StateMachine ownerSm)
         {
             OwnerSm = ownerSm;
+            Sm.Name = OwnerSm.Name + ":AUTOD";
             Domain = DomainFromEmailAddr (DataSource.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
             Sm.PostEvent ((uint)SmEvt.E.Launch);
@@ -556,16 +556,18 @@ namespace NachoCore.ActiveSync
             Cancel ();
             Robots = new List<StepRobot> ();
             // Try to perform steps 1-4 in parallel.
-            AddStartRobot (StepRobot.Steps.S1, false, Domain);
-            AddStartRobot (StepRobot.Steps.S2, false, Domain);
-            AddStartRobot (StepRobot.Steps.S3, false, Domain);
-            AddStartRobot (StepRobot.Steps.S4, false, Domain);
-            // If there is a base domain we might end up searching, then start that in parallel too.
-            if (Domain != BaseDomain) {
+            if (IsTryingBaseDomain) {
+                // We could run these in parallel, but we'd need to 2x the SM size.
+                // Maybe do that in the future.
                 AddStartRobot (StepRobot.Steps.S1, true, BaseDomain);
                 AddStartRobot (StepRobot.Steps.S2, true, BaseDomain);
                 AddStartRobot (StepRobot.Steps.S3, true, BaseDomain);
                 AddStartRobot (StepRobot.Steps.S4, true, BaseDomain);
+            } else {
+                AddStartRobot (StepRobot.Steps.S1, false, Domain);
+                AddStartRobot (StepRobot.Steps.S2, false, Domain);
+                AddStartRobot (StepRobot.Steps.S3, false, Domain);
+                AddStartRobot (StepRobot.Steps.S4, false, Domain);
             }
         }
 
