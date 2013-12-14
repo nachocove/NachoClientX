@@ -47,27 +47,30 @@ namespace NachoClient.iOS
         {
             launchBe();
 
+            Console.WriteLine ("AppDelegate FinishedLaunching done.");
 
-            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
-                // we will enter the "login schema"
-                // FIXME - need to address ipad/iphone in future release
+            return true;
 
-                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
-                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-                this.Window.RootViewController = rootControllerView;
-                this.Window.MakeKeyAndVisible();
-
-                return true;
-            } else {
-                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
-                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-                this.Window.RootViewController = rootControllerView;
-                this.Window.MakeKeyAndVisible();
-
-                return true;
-            }
+//            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
+//                // we will enter the "login schema"
+//                // FIXME - need to address ipad/iphone in future release
+//
+//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
+//                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+//                this.Window.RootViewController = rootControllerView;
+//                this.Window.MakeKeyAndVisible();
+//
+//                return true;
+//            } else {
+//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
+//                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+//                this.Window.RootViewController = rootControllerView;
+//                this.Window.MakeKeyAndVisible();
+//
+//                return true;
+//            }
 //            // Override point for customization after application launch.
 //            if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad) {
 //                var splitViewController = (UISplitViewController)Window.RootViewController;

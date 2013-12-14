@@ -345,6 +345,18 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\MainViewController.cs" />
+    <Compile Include="NachoUI.iOS\MainViewController.designer.cs">
+      <DependentUpon>MainViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SidebarViewController.cs" />
+    <Compile Include="NachoUI.iOS\SidebarViewController.designer.cs">
+      <DependentUpon>SidebarViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\HomeViewController.cs" />
+    <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
+      <DependentUpon>HomeViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -394,5 +406,17 @@
     <BundleResource Include="Resources\Icon.png" />
     <BundleResource Include="Resources\Icon%402x.png" />
     <BundleResource Include="Resources\Default.png" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
+    <BundleResource Include="Resources\.DS_Store" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SWReveal\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
+      <Project>{867AF543-B319-4267-8BBE-4854D99E67F0}</Project>
+      <Name>SWRevealViewControllerBinding</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
