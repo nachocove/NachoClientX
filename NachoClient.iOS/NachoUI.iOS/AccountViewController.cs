@@ -8,7 +8,7 @@ using NachoCore.Model;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-
+using SWRevealViewControllerBinding;
 
 
 namespace NachoClient.iOS
@@ -25,8 +25,11 @@ namespace NachoClient.iOS
             TableView.Source = new AccountTableSource ();
 
             Console.WriteLine ("Account Tables shown");
-        
 
+            // Navigation
+            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+            revealButton.Target = this.RevealViewController ();
+            this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
         }
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {

@@ -9,8 +9,8 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AccountViewController")]
-	partial class AccountViewController
+	[Register ("ContactsViewController")]
+	partial class ContactsViewController
 	{
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }

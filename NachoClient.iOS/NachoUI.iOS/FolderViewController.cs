@@ -6,7 +6,7 @@ using MonoTouch.Foundation;
 using NachoCore;
 using NachoCore.Model;
 using MonoTouch.UIKit;
-
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -31,6 +31,11 @@ namespace NachoClient.iOS
             Console.Write ("in account ");
 
             TableView.Source = new FolderTableSource ();
+
+            // Navigation
+            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+            revealButton.Target = this.RevealViewController ();
+            this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
         }
 
         public override void ViewWillAppear (bool animated)

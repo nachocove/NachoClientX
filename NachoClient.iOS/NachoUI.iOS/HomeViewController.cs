@@ -21,18 +21,23 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+//            if (0 == appDelegate.Be.Db.Table<NcAccount> ().Count ()) {
+//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
+//                appDelegate.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+//                appDelegate.Window.RootViewController = rootControllerView;
+//                appDelegate.Window.MakeKeyAndVisible ();
+//            } else {
+//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
+//                appDelegate.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+//                appDelegate.Window.RootViewController = rootControllerView;
+//                appDelegate.Window.MakeKeyAndVisible ();
+//            }
             if (0 == appDelegate.Be.Db.Table<NcAccount> ().Count ()) {
-                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
-                appDelegate.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-                appDelegate.Window.RootViewController = rootControllerView;
-                appDelegate.Window.MakeKeyAndVisible ();
+                PerformSegue ("HomeToLaunch", this);
             } else {
-                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
-                appDelegate.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-                appDelegate.Window.RootViewController = rootControllerView;
-                appDelegate.Window.MakeKeyAndVisible ();
+                PerformSegue ("HomeToAccounts", this);
             }
         }
     }

@@ -49,6 +49,9 @@ namespace NachoClient.iOS
 
             // Perform any additional setup after loading the view, typically from a nib.
 
+            // TODO: Add reveal button
+            // No going back from here.
+            NavigationItem.SetHidesBackButton (true, true);
 
             // listen for changes here
             getServerName ();
