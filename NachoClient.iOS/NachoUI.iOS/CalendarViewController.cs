@@ -18,11 +18,6 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             // Navigation
-            // TODO: Fix this kludge
-            if (NavigationItem.RightBarButtonItem == revealButton) {
-                NavigationItem.RightBarButtonItem = null;
-            }
-            NavigationItem.LeftBarButtonItem = revealButton;
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);

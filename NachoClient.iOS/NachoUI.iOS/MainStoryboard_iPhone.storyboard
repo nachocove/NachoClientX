@@ -97,12 +97,12 @@
             </objects>
             <point key="canvasLocation" x="-2203" y="-1183"/>
         </scene>
-        <!--Calendar View Controller - Title-->
+        <!--Calendar View Controller - Calendar-->
         <scene sceneID="6Ul-I4-1j0">
             <objects>
                 <tableViewController storyboardIdentifier="CalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ef5-Td-j3Y" customClass="CalendarViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="ejc-y1-8q9">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -130,10 +130,11 @@
                         </connections>
                     </tableView>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Title" id="lSV-M1-mR3">
-                        <barButtonItem key="rightBarButtonItem" title="Menu" id="tmU-Hu-v9N"/>
+                    <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="tmU-Hu-v9N"/>
                     </navigationItem>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="revealButton" destination="tmU-Hu-v9N" id="YzY-zA-O1i"/>
                     </connections>
@@ -142,12 +143,12 @@
             </objects>
             <point key="canvasLocation" x="-1435" y="-1627"/>
         </scene>
-        <!--Contacts View Controller - Title-->
+        <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
             <objects>
                 <tableViewController storyboardIdentifier="ContactsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="jTc-Vg-SXZ" customClass="ContactsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="MBn-W2-0u6">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -174,9 +175,10 @@
                             <outlet property="delegate" destination="jTc-Vg-SXZ" id="MWL-O5-QFz"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="Title" id="zrg-GA-kfR">
-                        <barButtonItem key="rightBarButtonItem" title="Menu" id="jLa-UU-2VJ"/>
+                    <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR">
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="jLa-UU-2VJ"/>
                     </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="revealButton" destination="jLa-UU-2VJ" id="dUB-Zb-Sre"/>
                     </connections>
@@ -190,7 +192,7 @@
             <objects>
                 <tableViewController restorationIdentifier="SettingsViewController" storyboardIdentifier="SettingsViewController" id="n4d-09-jTS" customClass="SettingsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NSF-cU-4FU">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -218,8 +220,9 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" title="Title" id="adw-HC-FaJ">
-                        <barButtonItem key="rightBarButtonItem" title="Menu" id="iWE-UD-FOg"/>
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="iWE-UD-FOg"/>
                     </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="revealButton" destination="iWE-UD-FOg" id="NKz-Ge-qr2"/>
                     </connections>
@@ -228,12 +231,12 @@
             </objects>
             <point key="canvasLocation" x="-1435" y="397"/>
         </scene>
-        <!--Accounts View Controller - Title-->
+        <!--Accounts View Controller - Accounts-->
         <scene sceneID="Axk-hT-xAZ">
             <objects>
                 <tableViewController storyboardIdentifier="AccountsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="KvB-j8-wfn" customClass="AccountsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="aZb-Ef-WnL">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -261,12 +264,13 @@
                         </connections>
                     </tableView>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Title" id="dQE-jZ-sB2">
-                        <barButtonItem key="rightBarButtonItem" title="Menu" id="Ogn-AN-3sV"/>
+                    <navigationItem key="navigationItem" title="Accounts" id="dQE-jZ-sB2">
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="o0L-DA-IuO"/>
                     </navigationItem>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="revealButton" destination="Ogn-AN-3sV" id="Bb2-QX-Nr7"/>
+                        <outlet property="revealButton" destination="o0L-DA-IuO" id="sNC-t6-Mxf"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="DfX-V3-vYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -278,7 +282,7 @@
             <objects>
                 <pageViewController storyboardIdentifier="HomeViewController" autoresizesArchivedViewToFullSize="NO" useStoryboardIdentifierAsRestorationIdentifier="YES" transitionStyle="pageCurl" navigationOrientation="horizontal" spineLocation="min" id="OQ8-xH-iKh" customClass="HomeViewController" sceneMemberID="viewController">
                     <navigationItem key="navigationItem" id="CJe-bJ-vOa">
-                        <barButtonItem key="leftBarButtonItem" title="Menu" id="5xM-Np-yHN"/>
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="5xM-Np-yHN"/>
                     </navigationItem>
                     <connections>
                         <outlet property="revealButton" destination="5xM-Np-yHN" id="4Xf-uv-Ic1"/>
@@ -357,7 +361,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="FoldersView_Storyboard" title="Folder View" id="UKd-1I-ARy" customClass="FolderViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="FgN-WS-Sie">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -381,14 +385,15 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
-                        <barButtonItem key="leftBarButtonItem" title="Menu" id="puc-hC-DdW"/>
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="puc-hC-DdW"/>
                         <barButtonItem key="rightBarButtonItem" title="Compose" id="JfL-cu-kdr">
                             <connections>
                                 <segue destination="3Dv-ky-fxU" kind="push" identifier="folderComposeSegue" id="gwT-pf-Oz7"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="revealButton" destination="puc-hC-DdW" id="cgH-Sc-5L7"/>
                     </connections>
@@ -402,7 +407,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessagesView-Storyboard" id="6P1-gN-xvf" customClass="MessageViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="Dnb-vi-jXs">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -458,7 +463,7 @@
             <objects>
                 <viewController title="compose" hidesBottomBarWhenPushed="YES" id="3Dv-ky-fxU" customClass="ComposeViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5wN-fO-BRH">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="To:" minimumFontSize="17" id="MSv-Bp-Ea4">
@@ -527,7 +532,7 @@
             <objects>
                 <viewController id="Ko0-NA-sWD" customClass="ReplyViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="yLC-ul-ctZ">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Reply To: " minimumFontSize="17" id="66D-fh-T3q">
@@ -593,11 +598,11 @@
             <objects>
                 <viewController id="vd4-1f-HSj" customClass="ReadMsgController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Thc-bq-vyd">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <webView contentMode="scaleToFill" id="BJK-6d-RrU">
-                                <rect key="frame" x="0.0" y="113" width="320" height="455"/>
+                                <rect key="frame" x="0.0" y="113" width="320" height="391"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" red="0.26992492709999999" green="0.68042456230000004" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                             </webView>
@@ -625,7 +630,8 @@
             <objects>
                 <navigationController storyboardIdentifier="HomeNavigationController" automaticallyAdjustsScrollViewInsets="NO" id="0Qz-3B-5qw" sceneMemberID="viewController">
                     <toolbarItems/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="3hW-Ow-lb9">
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="3hW-Ow-lb9">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
@@ -639,17 +645,20 @@
             <point key="canvasLocation" x="-2661" y="-431"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="Menu.png" width="20" height="20"/>
+    </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="6IA-LE-E8D"/>
-        <segue reference="lzp-XD-dor"/>
-        <segue reference="VrW-k4-eyP"/>
-        <segue reference="wSf-Ax-NJc"/>
-        <segue reference="GNr-eh-wrb"/>
+        <segue reference="HWi-cR-6dy"/>
+        <segue reference="94n-oi-d18"/>
+        <segue reference="vqJ-JJ-lWw"/>
+        <segue reference="huJ-1R-03E"/>
+        <segue reference="La0-6B-K9W"/>
         <segue reference="gwT-pf-Oz7"/>
     </inferredMetricsTieBreakers>
 </document>
