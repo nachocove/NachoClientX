@@ -9,18 +9,12 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("HomeViewController")]
-	partial class HomeViewController
+	[Register ("HomePageViewController")]
+	partial class HomePageViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
 		}
 	}
 }

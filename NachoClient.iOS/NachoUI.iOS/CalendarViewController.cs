@@ -4,14 +4,13 @@ using System;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-
 using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-	public partial class ContactsViewController : UITableViewController
+	public partial class CalendarViewController : UITableViewController
 	{
-		public ContactsViewController (IntPtr handle) : base (handle)
+		public CalendarViewController (IntPtr handle) : base (handle)
 		{
 		}
 

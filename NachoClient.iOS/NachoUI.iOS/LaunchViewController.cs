@@ -64,8 +64,8 @@ namespace NachoClient.iOS
             EnterFullConfiguration();
             appDelegate.Be.Start ();
         
-            PerformSegue("launchAccountSegue", this);
-
+            //[self dismissViewControllerAnimated:TRUE completion:nil];
+            DismissViewController(true, null);
         }
 
         void getServerName(){
