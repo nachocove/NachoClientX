@@ -119,6 +119,10 @@
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
+    <Reference Include="Xamarin.Mobile">
+      <HintPath>..\..\NachoPlatform\xamarin.mobile-0.7.1\lib\ios\Xamarin.Mobile.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoTouch.Dialog-1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -394,6 +398,11 @@
     <Compile Include="NachoUI.iOS\HomePageViewController.designer.cs">
       <DependentUpon>HomePageViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoContacts.cs">
+      <Link>NachoCore\INachoContacts.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\DeviceContacts.cs" />
+    <Compile Include="NachoUI.iOS\NachoContacts.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

@@ -3,18 +3,25 @@
 using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using System.Collections.Generic;
 using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
     public partial class SidebarViewController : UITableViewController
     {
-        protected string[] tableItems = {
-            "SidebarToAccounts",
-            "SidebarToCalendar",
-            "SidebarToContacts",
-            "SidebarToFolders",
-            "SidebarToSettings",
+        ///   cellIDs
+        ///      "SidebarToAccounts"
+        ///      "SidebarToCalendar"
+        ///      "SidebarToContacts"
+        ///      "SidebarToFolders"
+        ///      "SidebarToSettings"
+
+        static List<Tuple<string, string>> crowbarList = new List<Tuple<string, string>> {
+            new Tuple<string, string> ("Folders", "SidebarToFolders"),
+            new Tuple<string, string> ("AS Contacts", "SidebarToContacts"),
+            new Tuple<string, string> ("Device Contacts", "SidebarToContacts"),
+//            new Tuple<string, string> ("Merged Contacts", "SidebarToContacts")
         };
 
         public SidebarViewController (IntPtr handle) : base (handle)
@@ -27,7 +34,7 @@ namespace NachoClient.iOS
 
             NSIndexPath indexPath = this.TableView.IndexPathForSelectedRow;
             UIViewController destViewController = (UIViewController)segue.DestinationViewController;
-            destViewController.Title = tableItems [indexPath.Row];
+            destViewController.Title = crowbarList [indexPath.Row].Item1;
 
             if (segue.GetType () == typeof(SWRevealViewControllerSegue)) {
                 Console.WriteLine ("PrepareForSqueue: SWRevealViewControllerSegue");
@@ -57,30 +64,24 @@ namespace NachoClient.iOS
         /// </summary>
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return tableItems.Length;
+            return crowbarList.Count;
         }
-        //        /// <summary>
-        //        /// Called when a row is touched
-        //        /// </summary>
-        //        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
-        //        {
-        //            Console.WriteLine ("Selected row {0}", indexPath);
-        //        }
+
         /// <summary>
         /// Called by the TableView to get the actual UITableViewCell to render for the particular row
         /// </summary>
         public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
-            string cellID = tableItems [indexPath.Row];
+            var tuple = crowbarList [indexPath.Row];
 
-            UITableViewCell cell = tableView.DequeueReusableCell (cellID);
+            UITableViewCell cell = tableView.DequeueReusableCell (tuple.Item2);
 
             //---- if there are no cells to reuse, create a new one
             if (cell == null) {
-                cell = new UITableViewCell (UITableViewCellStyle.Default, cellID);
+                cell = new UITableViewCell (UITableViewCellStyle.Default, tuple.Item2);
             }
 
-            cell.TextLabel.Text = cellID;
+            cell.TextLabel.Text = tuple.Item1;
 
             return cell;
         }
