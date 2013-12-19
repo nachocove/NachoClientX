@@ -56,9 +56,6 @@
     <Reference Include="NachoPlatform.Android">
       <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.Android\bin\Release\NachoPlatform.Android.dll</HintPath>
     </Reference>
-    <Reference Include="WBXML.Android">
-      <HintPath>..\..\WBXML\WBXML.Android\bin\Release\WBXML.Android.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
