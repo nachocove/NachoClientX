@@ -403,6 +403,10 @@
     </Compile>
     <Compile Include="NachoUI.iOS\DeviceContacts.cs" />
     <Compile Include="NachoUI.iOS\NachoContacts.cs" />
+    <Compile Include="NachoUI.iOS\ContactViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
+      <DependentUpon>ContactViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -455,6 +459,11 @@
     <BundleResource Include="Resources\Default.png" />
     <BundleResource Include="Resources\Menu%402x.png" />
     <BundleResource Include="Resources\Menu.png" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SWReveal\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">

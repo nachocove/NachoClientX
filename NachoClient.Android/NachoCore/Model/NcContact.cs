@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class NcContact : NcItem
+    public partial class NcContact : NcItem
     {
         public string ClassName = "NcContact";
 
@@ -209,6 +209,28 @@ namespace NachoCore.Model
     public class NcContactCategory : NcObject
     {
         public string Category { get; set; }
+    }
 
+    public partial class NcContact
+    {
+        public string DisplayName ()
+        {
+            string name;
+
+            if ((null == FirstName) || (null == LastName)) {
+                name = (FirstName ?? "") + (LastName ?? "");
+            } else {
+                name = FirstName + " " + LastName;
+            }
+            if (name.Length == 0) {
+                name = Email1Address ?? "";
+            }
+            return name;
+        }
+
+        public string DisplayAddress ()
+        {
+            return Email1Address ?? "";
+        }
     }
 }
