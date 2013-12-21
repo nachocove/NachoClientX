@@ -121,6 +121,7 @@
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs" />
     <Compile Include="NachoCore\INachoContacts.cs" />
+    <Compile Include="NachoCore\INachoCalendar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

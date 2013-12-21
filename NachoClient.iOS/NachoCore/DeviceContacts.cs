@@ -7,7 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Xamarin.Contacts;
 
-namespace NachoClient.iOS
+namespace NachoCore
 {
     public class DeviceContacts : INachoContacts
     {

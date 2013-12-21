@@ -401,11 +401,20 @@
     <Compile Include="..\NachoClient.Android\NachoCore\INachoContacts.cs">
       <Link>NachoCore\INachoContacts.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\DeviceContacts.cs" />
-    <Compile Include="NachoUI.iOS\NachoContacts.cs" />
     <Compile Include="NachoUI.iOS\ContactViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
       <DependentUpon>ContactViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoCalendar.cs">
+      <Link>NachoCore\INachoCalendar.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\DeviceContacts.cs" />
+    <Compile Include="NachoCore\NachoCalendar.cs" />
+    <Compile Include="NachoCore\NachoContacts.cs" />
+    <Compile Include="NachoCore\Model\DeviceCalendar.cs" />
+    <Compile Include="NachoUI.iOS\CalendarItemViewController.cs" />
+    <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
+      <DependentUpon>CalendarItemViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

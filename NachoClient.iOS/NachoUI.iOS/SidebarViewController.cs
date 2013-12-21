@@ -21,6 +21,8 @@ namespace NachoClient.iOS
             new Tuple<string, string> ("Folders", "SidebarToFolders"),
             new Tuple<string, string> ("AS Contacts", "SidebarToContacts"),
             new Tuple<string, string> ("Device Contacts", "SidebarToContacts"),
+            new Tuple<string, string> ("AS Calendar", "SidebarToCalendar"),
+            new Tuple<string, string> ("Device Calendar", "SidebarToCalendar"),
 //            new Tuple<string, string> ("Merged Contacts", "SidebarToContacts")
         };
 

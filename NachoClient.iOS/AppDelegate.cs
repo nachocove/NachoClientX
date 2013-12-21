@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using MonoTouch.EventKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -23,6 +24,11 @@ namespace NachoClient.iOS
         private NachoDemo Demo { get; set; }
         public BackEnd Be { get; set;}
         public NcAccount Account { get; set; }
+
+        public EKEventStore EventStore {
+            get { return eventStore; }
+        }
+        protected EKEventStore eventStore;
 
         private bool launchBe(){
             // Register to receive DB update indications.
@@ -45,6 +51,8 @@ namespace NachoClient.iOS
         }
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
+            eventStore = new EKEventStore ( );
+
             launchBe();
 
             Console.WriteLine ("AppDelegate FinishedLaunching done.");

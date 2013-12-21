@@ -106,22 +106,32 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" textLabel="yv1-jc-2u9" style="IBUITableViewCellStyleDefault" id="BdV-el-rbL">
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="CalendarToCalendarItem" textLabel="yv1-jc-2u9" detailTextLabel="2Wm-zj-T2L" style="IBUITableViewCellStyleSubtitle" id="BdV-el-rbL">
                                 <rect key="frame" x="0.0" y="22" width="320" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="BdV-el-rbL" id="moG-EF-Nk7">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="287" height="43"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="This is Calendar" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="yv1-jc-2u9">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
+                                            <rect key="frame" x="15" y="3" width="130" height="22"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="18"/>
                                             <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
+                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Subtitle" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="2Wm-zj-T2L">
+                                            <rect key="frame" x="15" y="25" width="43" height="15"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="12"/>
+                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
                                     </subviews>
                                 </tableViewCellContentView>
+                                <connections>
+                                    <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToCalendarItem" id="X0Z-QM-gfH"/>
+                                </connections>
                             </tableViewCell>
                         </prototypes>
                         <connections>
@@ -132,6 +142,7 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="tmU-Hu-v9N"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="JIw-qG-pPK"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
@@ -142,6 +153,23 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dzm-K4-fVM" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-1435" y="-1627"/>
+        </scene>
+        <!--Calendar Item View Controller - Calendar Item-->
+        <scene sceneID="RpJ-bl-dQ1">
+            <objects>
+                <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Calendar Item" id="fZY-MQ-nPh">
+                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="pLL-Ph-CEQ"/>
+                    </navigationItem>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-909" y="-1627"/>
         </scene>
         <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
@@ -200,7 +228,7 @@
                     </tableView>
                     <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="jLa-UU-2VJ"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="search" id="uyu-bB-1zI"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="uyu-bB-1zI"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
@@ -230,11 +258,13 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Contact" id="qGr-Yu-K1Y"/>
+                    <navigationItem key="navigationItem" title="Contact" id="qGr-Yu-K1Y">
+                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="1h5-H1-Tex"/>
+                    </navigationItem>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-699" y="-1259"/>
+            <point key="canvasLocation" x="-902" y="-983"/>
         </scene>
         <!--Settings View Controller - Title-->
         <scene sceneID="Jbb-0l-SOs">
