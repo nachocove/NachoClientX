@@ -6,15 +6,36 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
 using NachoCore.Model;
+using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-	public partial class ContactViewController : UIViewController
+    public partial class ContactViewController : DialogViewController
 	{
         public NcContact contact;
 
 		public ContactViewController (IntPtr handle) : base (handle)
 		{
 		}
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+
+            // Handle button press
+            NavigationItem.RightBarButtonItem.Clicked += (object sender, EventArgs e) => {
+                Console.WriteLine ("ContactViewController editBarButtonItem pressed");
+            };
+
+            // Set up view
+            Pushing = true;
+            if (null == contact) {
+                Root = new RootElement ("New Contact") { new Section () };
+                NavigationItem.RightBarButtonItem = null;
+            } else {
+                Root = new RootElement (contact.DisplayName()) { new Section () };
+                NavigationItem.RightBarButtonItem.Enabled = true;
+            }
+        }
 	}
 }

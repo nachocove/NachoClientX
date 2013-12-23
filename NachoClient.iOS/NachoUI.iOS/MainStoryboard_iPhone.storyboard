@@ -142,7 +142,11 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="tmU-Hu-v9N"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="JIw-qG-pPK"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="JIw-qG-pPK">
+                            <connections>
+                                <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToNewCalendarItem" id="5fj-Ta-mc9"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
@@ -166,6 +170,9 @@
                     <navigationItem key="navigationItem" title="Calendar Item" id="fZY-MQ-nPh">
                         <barButtonItem key="rightBarButtonItem" systemItem="edit" id="pLL-Ph-CEQ"/>
                     </navigationItem>
+                    <connections>
+                        <outlet property="editBarButtonItem" destination="pLL-Ph-CEQ" id="ZX5-DJ-fvj"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -228,7 +235,11 @@
                     </tableView>
                     <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="jLa-UU-2VJ"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="uyu-bB-1zI"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="uyu-bB-1zI">
+                            <connections>
+                                <segue destination="cRD-uS-uKj" kind="push" identifier="ContactsToNewContact" id="PxE-UU-EfC"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
@@ -261,6 +272,9 @@
                     <navigationItem key="navigationItem" title="Contact" id="qGr-Yu-K1Y">
                         <barButtonItem key="rightBarButtonItem" systemItem="edit" id="1h5-H1-Tex"/>
                     </navigationItem>
+                    <connections>
+                        <outlet property="editBarButtonItem" destination="1h5-H1-Tex" id="9XF-DO-UnU"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -733,11 +747,13 @@
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="wSf-Ax-NJc"/>
         <segue reference="lzp-XD-dor"/>
+        <segue reference="wSf-Ax-NJc"/>
+        <segue reference="VrW-k4-eyP"/>
         <segue reference="6IA-LE-E8D"/>
         <segue reference="GNr-eh-wrb"/>
-        <segue reference="VrW-k4-eyP"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="5fj-Ta-mc9"/>
         <segue reference="gwT-pf-Oz7"/>
     </inferredMetricsTieBreakers>
 </document>

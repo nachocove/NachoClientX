@@ -12,9 +12,15 @@ namespace NachoClient.iOS
 	[Register ("ContactViewController")]
 	partial class ContactViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem editBarButtonItem { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (editBarButtonItem != null) {
+				editBarButtonItem.Dispose ();
+				editBarButtonItem = null;
+			}
 		}
 	}
 }

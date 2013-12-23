@@ -86,6 +86,8 @@ namespace NachoClient.iOS
         /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            // The "+" button segues with ContactsToNewContact
+            // Cells segue with CellSegueID, ContactsToContact
             if (segue.Identifier.Equals (CellSegueID)) {
                 NcContact contact;
                 UITableViewCell cell = (UITableViewCell)sender;

@@ -65,6 +65,8 @@ namespace NachoClient.iOS
         /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            // The "+" button segues with CalendarToNewCalendarItem
+            // Cells segue with CellSegueID, CalendarToCalendarItem
             if (segue.Identifier.Equals (CellSegueID)) {
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = TableView.IndexPathForCell (cell);
