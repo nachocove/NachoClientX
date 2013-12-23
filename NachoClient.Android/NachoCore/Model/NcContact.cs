@@ -42,7 +42,7 @@ namespace NachoCore.Model
         /// Business state for the contact
         public string BusinessAddressState { get; set; }
 
-        /// Business stree address for the contact
+        /// Business street address for the contact
         public string BusinessAddressStreet { get; set; }
 
         /// Business fax number for the contact
@@ -213,24 +213,40 @@ namespace NachoCore.Model
 
     public partial class NcContact
     {
-        public string DisplayName ()
-        {
-            string name;
+        /// The display name, if set explicityly
+        protected string DisplayName { get; set; }
 
+        /// <summary>
+        /// Gets the display name.
+        /// </summary>
+        /// <value>The display name is calculated unless set non-null.</value>
+        public string GetDisplayName ()
+        {
+            if (null != DisplayName) {
+                return DisplayName;
+            }
             if ((null == FirstName) || (null == LastName)) {
-                name = (FirstName ?? "") + (LastName ?? "");
+                return (FirstName ?? "") + (LastName ?? "");
+            } else if ((null != FirstName) && (null != LastName)) {
+                return FirstName + " " + LastName;
             } else {
-                name = FirstName + " " + LastName;
+                return Email1Address ?? "";
             }
-            if (name.Length == 0) {
-                name = Email1Address ?? "";
-            }
-            return name;
         }
 
         public string DisplayAddress ()
         {
             return Email1Address ?? "";
+        }
+
+        public static bool IsNull (DateTime t)
+        {
+            return (DateTime.MinValue == t);
+        }
+
+        public static bool IsNull (int i)
+        {
+            return (int.MinValue == 1);
         }
     }
 }
