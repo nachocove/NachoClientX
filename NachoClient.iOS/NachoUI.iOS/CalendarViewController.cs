@@ -12,6 +12,7 @@ namespace NachoClient.iOS
 {
     public partial class CalendarViewController : UITableViewController
     {
+        public bool UseDeviceCalendar;
         UIAlertView alert;
         INachoCalendar calendar;
         /// <summary>
@@ -38,11 +39,7 @@ namespace NachoClient.iOS
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
-            if (Title.Equals ("AS Calendar")) {
-                // TODO: Properly choose cal
-                calendar = new NachoCalendar ();
-                TableView.ReloadData ();
-            } else {
+            if (UseDeviceCalendar) {
                 appDelegate.EventStore.RequestAccess (EKEntityType.Event, 
                     (bool granted, NSError e) => {
                         InvokeOnMainThread (() => {
@@ -55,6 +52,9 @@ namespace NachoClient.iOS
                             }
                         });
                     });
+            } else {
+                calendar = new NachoCalendar ();
+                TableView.ReloadData ();
             }
         }
 

@@ -416,6 +416,10 @@
     <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
       <DependentUpon>CalendarItemViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoFolders.cs">
+      <Link>NachoCore\INachoFolders.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\NachoFolders.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

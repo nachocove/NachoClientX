@@ -5,29 +5,102 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Collections.Generic;
 using SWRevealViewControllerBinding;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
     public partial class SidebarViewController : UITableViewController
     {
-        ///   cellIDs
+        ///   cellIDs for segues
         ///      "SidebarToAccounts"
         ///      "SidebarToCalendar"
         ///      "SidebarToContacts"
         ///      "SidebarToFolders"
         ///      "SidebarToSettings"
+     
+        class SidebarMenu
+        {
+            public int Indent;
+            public string SegueName;
+            public string DisplayName;
+            public NcFolder Folder;
+            public bool isDeviceContactsKludge;
+            public bool isDeviceCalendarKludge;
 
-        static List<Tuple<string, string>> crowbarList = new List<Tuple<string, string>> {
-            new Tuple<string, string> ("Folders", "SidebarToFolders"),
-            new Tuple<string, string> ("AS Contacts", "SidebarToContacts"),
-            new Tuple<string, string> ("Device Contacts", "SidebarToContacts"),
-            new Tuple<string, string> ("AS Calendar", "SidebarToCalendar"),
-            new Tuple<string, string> ("Device Calendar", "SidebarToCalendar"),
-//            new Tuple<string, string> ("Merged Contacts", "SidebarToContacts")
+            public SidebarMenu (NcFolder folder, string displayName, string segueName)
+            {
+                Indent = 0;
+                SegueName = segueName;
+                DisplayName = displayName;
+                Folder = folder;
+                isDeviceContactsKludge = false;
+                isDeviceCalendarKludge = false;
+            }
         };
+
+        List<SidebarMenu> menu;
+        NachoFolders email;
+        NachoFolders contacts;
+        NachoFolders calendars;
+
+        const string SidebarToFolderSegueId = "SidebarToFolder";
+        const string SidebarToFoldersSegueId = "SidebarToFolders";
+        const string SidebarToContactsSegueId = "SidebarToContacts";
+        const string SidebarToCalendarSegueId = "SidebarToCalendar";
 
         public SidebarViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        /// <summary>
+        /// Update the list of folders when we appear
+        /// </summary>
+        /// <param name="animated">If set to <c>true</c> animated.</param>
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+
+            menu = new List<SidebarMenu> ();
+
+            email = new NachoFolders (NachoFolders.FilterForEmail);
+            contacts = new NachoFolders (NachoFolders.FilterForContacts);
+            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+
+            menu.Add (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId));
+
+            for (int i = 0; i < email.Count (); i++) {
+                NcFolder f = email.GetFolder (i);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToFoldersSegueId);
+                m.Indent = 1;
+                menu.Add (m);
+            }
+
+            menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
+            for (int i = 0; i < contacts.Count (); i++) {
+                NcFolder f = contacts.GetFolder (i);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId);
+                m.Indent = 1;
+                menu.Add (m);
+            }
+            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
+            deviceContacts.isDeviceContactsKludge = true;
+            menu.Add (deviceContacts);
+
+            menu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId));
+            for (int i = 0; i < calendars.Count (); i++) {
+                NcFolder f = calendars.GetFolder (i);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId);
+                m.Indent = 1;
+                menu.Add (m);
+            }
+            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
+            deviceCalendar.isDeviceCalendarKludge = true;
+            menu.Add (deviceCalendar);
+
+            menu.Add (new SidebarMenu (null, "Accounts", "SidebarToAccounts"));
+            menu.Add (new SidebarMenu (null, "Settings", "SidebarToSettings"));
+
+            TableView.ReloadData ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -36,7 +109,25 @@ namespace NachoClient.iOS
 
             NSIndexPath indexPath = this.TableView.IndexPathForSelectedRow;
             UIViewController destViewController = (UIViewController)segue.DestinationViewController;
-            destViewController.Title = crowbarList [indexPath.Row].Item1;
+
+            SidebarMenu m = menu [indexPath.Row];
+
+            destViewController.Title = m.DisplayName;
+
+            switch (segue.Identifier) {
+            case SidebarToContactsSegueId:
+                {
+                    ContactsViewController vc = (ContactsViewController)destViewController;
+                    vc.UseDeviceContacts = m.isDeviceContactsKludge;
+                }
+                break;
+            case SidebarToCalendarSegueId:
+                {
+                    CalendarViewController vc = (CalendarViewController)destViewController;
+                    vc.UseDeviceCalendar = m.isDeviceCalendarKludge;
+                }
+                break;
+            }
 
             if (segue.GetType () == typeof(SWRevealViewControllerSegue)) {
                 Console.WriteLine ("PrepareForSqueue: SWRevealViewControllerSegue");
@@ -45,6 +136,9 @@ namespace NachoClient.iOS
             }
         }
 
+        /// <summary>
+        /// Started from PrepareForSegue
+        /// </summary>
         public void PerformBlock (SWRevealViewControllerSegue s, UIViewController svc, UIViewController dvc)
         {
             Console.WriteLine ("PrepareForSegue: PerformBlock");
@@ -66,7 +160,7 @@ namespace NachoClient.iOS
         /// </summary>
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return crowbarList.Count;
+            return menu.Count;
         }
 
         /// <summary>
@@ -74,17 +168,11 @@ namespace NachoClient.iOS
         /// </summary>
         public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
-            var tuple = crowbarList [indexPath.Row];
-
-            UITableViewCell cell = tableView.DequeueReusableCell (tuple.Item2);
-
-            //---- if there are no cells to reuse, create a new one
-            if (cell == null) {
-                cell = new UITableViewCell (UITableViewCellStyle.Default, tuple.Item2);
-            }
-
-            cell.TextLabel.Text = tuple.Item1;
-
+            // TODO: Highlight folders
+            var m = menu [indexPath.Row];
+            UITableViewCell cell = tableView.DequeueReusableCell (m.SegueName);
+            System.Diagnostics.Trace.Assert (null != cell);
+            cell.TextLabel.Text = m.DisplayName;
             return cell;
         }
     }

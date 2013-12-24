@@ -22,6 +22,7 @@ namespace NachoCore.Model
         [Indexed]
         public string DisplayName { get; set; }
 
+        // TODO: Need enumeration
         public uint Type { get; set; }
 
         public override string ToString ()

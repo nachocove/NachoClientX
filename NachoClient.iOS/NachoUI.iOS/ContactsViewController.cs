@@ -26,6 +26,7 @@ namespace NachoClient.iOS
     /// </summary>
     public partial class ContactsViewController : UITableViewController
     {
+        public bool UseDeviceContacts;
         UIAlertView alert;
         INachoContacts contacts;
         List<NcContact> searchResults = null;
@@ -62,10 +63,8 @@ namespace NachoClient.iOS
             // We must request permission to access the user's address book
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
-            if (Title.Equals ("AS Contacts")) {
-                contacts = new NachoContacts ();
-                TableView.ReloadData ();
-            } else {
+
+            if (UseDeviceContacts) {
                 var book = new AddressBook ();
                 book.RequestPermission ().ContinueWith (t => {
                     if (!t.Result) {
@@ -76,6 +75,9 @@ namespace NachoClient.iOS
                         TableView.ReloadData ();
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext ());
+            } else {
+                contacts = new NachoContacts ();
+                TableView.ReloadData ();
             }
         }
 
@@ -100,7 +102,7 @@ namespace NachoClient.iOS
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
-                destinationController.Title = contact.GetDisplayName();
+                destinationController.Title = contact.GetDisplayName ();
             }
         }
 
@@ -134,7 +136,7 @@ namespace NachoClient.iOS
                 contact = contacts.GetContact (indexPath.Row);
             }
 
-            cell.TextLabel.Text = contact.GetDisplayName();
+            cell.TextLabel.Text = contact.GetDisplayName ();
             cell.DetailTextLabel.Text = contact.DisplayAddress ();
 
             return cell;
