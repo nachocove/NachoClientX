@@ -10,30 +10,167 @@ namespace NachoClient.iOS
 {
     public partial class CalendarItemViewController : DialogViewController
     {
+        public bool editing;
         public NcCalendar calendarItem;
+        UIBarButtonItem doneButton;
+        UIBarButtonItem editButton;
 
         public CalendarItemViewController (IntPtr handle) : base (handle)
         {
+            doneButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
+            editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            // Handle button press
-            NavigationItem.RightBarButtonItem.Clicked += (object sender, EventArgs e) => {
-                Console.WriteLine ("CalendarItemViewController editBarButtonItem pressed");
+            // When user clicks done, check, confirm, and save
+            doneButton.Clicked += (object sender, EventArgs e) => {
+                // TODO: Check for changes before asking the user
+                UIAlertView alert = new UIAlertView ();
+                alert.Title = "Confirmation";
+                alert.Message = "Save this calendar event?";
+                alert.AddButton ("Yes");
+                alert.AddButton ("No");
+                alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                    if (0 == alertEvent.ButtonIndex) {
+                        editing = false;
+                        // TODO: Save the new
+                        NavigationItem.RightBarButtonItem = editButton;
+                        Root = ToDialogElement (calendarItem);
+                        ReloadComplete ();
+                    }
+                };
+                alert.Show ();
+            };
+
+            editButton.Clicked += (object sender, EventArgs e) => {
+                editing = true;
+                NavigationItem.RightBarButtonItem = doneButton;
+                Root = ToDialogElement (calendarItem);
+                ReloadComplete ();
             };
 
             // Set up view
             Pushing = true;
             if (null == calendarItem) {
-                Root = new RootElement ("New Calendar Item") { new Section () };
-                NavigationItem.RightBarButtonItem = null;
+                editing = true;
+                calendarItem = new NcCalendar ();
+                Root = ToDialogElement (calendarItem);
+                NavigationItem.RightBarButtonItem = doneButton;
             } else {
-                Root = new RootElement (calendarItem.Subject) { new Section () };
-                NavigationItem.RightBarButtonItem.Enabled = true;
+                editing = false;
+                Root = ToDialogElement (calendarItem);
+                NavigationItem.RightBarButtonItem = editButton;
             }
+        }
+
+        public void AddIfSet (ref Section section, string name, string value, UIKeyboardType kbt = UIKeyboardType.Default)
+        {
+            if (editing) {
+                EntryElement e = new EntryElement (name, "", value ?? "");
+                e.KeyboardType = kbt;
+                section.Add (e);
+            } else if (null != value) {
+                section.Add (new StringElement (name, value));
+            }
+        }
+
+        public void AddIfSet (ref Section section, string name, DateTime value)
+        {
+            if (!NcContact.IsNull (value)) {
+                // Note DateTime, not Date, for calendar
+                section.Add (new DateTimeElement (name, value));
+            }
+        }
+
+        public void AddIfSet (ref Section section, string name, int value)
+        {
+            if (!NcContact.IsNull (value)) {
+                section.Add (new StringElement (name, value.ToString ()));
+            }
+        }
+
+        public void AddRadioGroup (ref Section section, string name, Enum value)
+        {
+            Section radioButtons = new Section ();
+            Array values = Enum.GetValues (value.GetType ());
+            foreach (Enum e in values) {
+                radioButtons.Add (new RadioElement (e.ToString ()));
+            }
+            int i = Array.IndexOf (values, value);
+            System.Diagnostics.Trace.Assert (i >= 0);
+
+            var radioGroup = new RadioGroup (i);
+            var radioRoot = new RootElement (name, radioGroup);
+            radioRoot.Add (radioButtons);
+            section.Add (radioRoot);
+        }
+
+        public RootElement ToDialogElement (NcCalendar c)
+        {
+            System.Diagnostics.Trace.Assert (null != c);
+
+            var root = new RootElement (c.Subject);
+            var section = new Section ();
+
+            AddIfSet (ref section, "Location", c.Location);
+
+            section.Add (new BooleanElement ("All Day Event", c.AllDayEvent));
+
+            AddIfSet (ref section, "Start time", c.StartTime);
+            AddIfSet (ref section, "End time", c.EndTime);
+
+            AddIfSet (ref section, "Reminder", (int)c.Reminder);
+
+            AddIfSet (ref section, "Organizer name", c.OrganizerName);
+            AddIfSet (ref section, "Organizer email", c.OrganizerEmail);
+
+            AddRadioGroup (ref section, "Sensitivity", c.Sensitivity);
+            AddRadioGroup (ref section, "Busy status", c.BusyStatus);
+            AddRadioGroup (ref section, "Response type", c.ResponseType);
+            AddRadioGroup (ref section, "Meeting status", c.MeetingStatus);
+
+            section.Add(new BooleanElement("Disallow new time proposal", c.DisallowNewTimeProposal));
+            section.Add (new BooleanElement ("Response requested", c.ResponseRequested));
+            AddIfSet (ref section, "Appointment reply time", c.AppointmentReplyTime);
+
+            AddIfSet (ref section, "Online meeting link", c.OnlineMeetingConfLink);
+            AddIfSet (ref section, "Online meeting external link", c.OnlineMeetingExternalLink);
+
+            // TODO: Shouldn't be null
+            if (null != c.attendees) {
+                System.Diagnostics.Trace.Assert (null != c.attendees);
+                foreach (NcAttendee a in c.attendees) {
+                    AddIfSet (ref section, "Attendee", a.Email);
+                }
+            }
+
+            // TODO: Shouldn't be null
+            if (null != c.recurrences) {
+                System.Diagnostics.Trace.Assert (null != c.recurrences);
+                foreach (var r in c.recurrences) {
+                    var s = new Section ();
+                    AddRadioGroup (ref s, "Recurrence Type", r.Type);
+                    AddIfSet (ref s, "Occurences", r.Occurences);
+                    AddIfSet (ref s, "Interval", r.Interval);
+                    AddIfSet (ref s, "Week of month", r.WeekOfMonth);
+                    AddRadioGroup(ref s, "Day of week", r.DayOfWeek); // hmmm
+                    AddIfSet (ref s, "Month of year", r.MonthOfYear);
+                    AddIfSet (ref s, "Until", r.Until);
+                    AddIfSet (ref s, "Day of month", r.DayOfMonth);
+                    AddRadioGroup (ref s, "Calendar type", r.CalendarType);
+                    s.Add (new BooleanElement ("Is leap month", r.isLeapMonth));
+                    AddIfSet (ref s, "First day of week", r.FirstDayOfWeek);
+                    var recurrenceElement = new RootElement("Recurrence");
+                    recurrenceElement.Add(s);
+                    section.Add(recurrenceElement);
+                }
+            }
+
+            root.Add (section);
+            return root;
         }
     }
 }
