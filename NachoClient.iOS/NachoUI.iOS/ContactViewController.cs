@@ -11,35 +11,69 @@ namespace NachoClient.iOS
 {
     public partial class ContactViewController : DialogViewController
     {
+        public bool editing;
         public NcContact contact;
+        UIBarButtonItem doneButton;
+        UIBarButtonItem editButton;
 
         public ContactViewController (IntPtr handle) : base (handle)
         {
+            doneButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
+            editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            // Handle button press
-            NavigationItem.RightBarButtonItem.Clicked += (object sender, EventArgs e) => {
-                Console.WriteLine ("ContactViewController editBarButtonItem pressed");
+            // When user clicks done, check, confirm, and save
+            doneButton.Clicked += (object sender, EventArgs e) => {
+                // TODO: Check for changes before asking the user
+                UIAlertView alert = new UIAlertView();
+                alert.Title = "Confirmation";
+                alert.Message = "Save this contact?";
+                alert.AddButton("Yes");
+                alert.AddButton("No");
+                alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                    if(0 == alertEvent.ButtonIndex) {
+                        editing = false;
+                        // TODO: Save the new
+                        NavigationItem.RightBarButtonItem = editButton;
+                        Root = ToDialogElement (contact);
+                        ReloadComplete ();
+                    }
+                };
+                alert.Show();
+            };
+
+            editButton.Clicked += (object sender, EventArgs e) => {
+                editing = true;
+                NavigationItem.RightBarButtonItem = doneButton;
+                Root = ToDialogElement (contact);
+                ReloadComplete ();
             };
 
             // Set up view
             Pushing = true;
             if (null == contact) {
-                Root = new RootElement ("New Contact") { new Section () };
-                NavigationItem.RightBarButtonItem = null;
-            } else {
+                editing = true;
+                contact = new NcContact ();
                 Root = ToDialogElement (contact);
-                NavigationItem.RightBarButtonItem.Enabled = true;
+                NavigationItem.RightBarButtonItem = doneButton;
+            } else {
+                editing = false;
+                Root = ToDialogElement (contact);
+                NavigationItem.RightBarButtonItem = editButton;
             }
         }
 
-        public void AddIfSet (ref Section section, string name, string value)
+        public void AddIfSet (ref Section section, string name, string value, UIKeyboardType kbt = UIKeyboardType.Default)
         {
-            if (null != value) {
+            if (editing) {
+                EntryElement e = new EntryElement (name, "", value ?? "");
+                e.KeyboardType = kbt;
+                section.Add (e);
+            } else if (null != value) {
                 section.Add (new StringElement (name, value));
             }
         }
@@ -47,14 +81,14 @@ namespace NachoClient.iOS
         public void AddIfSet (ref Section section, string name, DateTime value)
         {
             if (!NcContact.IsNull (value)) {
-                section.Add (new DateTimeElement (name, value));
+                section.Add (new DateElement (name, value));
             }
         }
 
         public void AddIfSet (ref Section section, string name, int value)
         {
             if (!NcContact.IsNull (value)) {
-                section.Add (new StringElement (name, value.ToString()));
+                section.Add (new StringElement (name, value.ToString ()));
             }
         }
 
@@ -62,6 +96,7 @@ namespace NachoClient.iOS
         {
             System.Diagnostics.Trace.Assert (null != c);
 
+            var root = new RootElement (c.GetDisplayName ());
             var section = new Section ();
 
             // Person
@@ -80,37 +115,54 @@ namespace NachoClient.iOS
             AddIfSet (ref section, "Government Id", c.GovernmentId);
 
             // Business Phone number stuff
-            AddIfSet (ref section, "Business phone number", c.BusinessPhoneNumber);
-            AddIfSet (ref section, "Business phone number", c.Business2PhoneNumber);
-            AddIfSet (ref section, "Business fax number", c.BusinessFaxNumber);
-            AddIfSet (ref section, "Mobile phone number", c.MobilePhoneNumber);
-            AddIfSet (ref section, "Radio phone number", c.RadioPhoneNumber);
-            AddIfSet (ref section, "Pager number", c.PagerNumber);
-            AddIfSet (ref section, "MMS number", c.MMS);
+            AddIfSet (ref section, "Business phone number", c.BusinessPhoneNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Business phone number", c.Business2PhoneNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Business fax number", c.BusinessFaxNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Mobile phone number", c.MobilePhoneNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Radio phone number", c.RadioPhoneNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Pager number", c.PagerNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "MMS number", c.MMS, UIKeyboardType.NumbersAndPunctuation);
 
             // Email addresses
-            AddIfSet (ref section, "Email", c.Email1Address);
-            AddIfSet (ref section, "Email", c.Email2Address);
-            AddIfSet (ref section, "Email", c.Email3Address);
+            AddIfSet (ref section, "Email", c.Email1Address, UIKeyboardType.EmailAddress);
+            AddIfSet (ref section, "Email", c.Email2Address, UIKeyboardType.EmailAddress);
+            AddIfSet (ref section, "Email", c.Email3Address, UIKeyboardType.EmailAddress);
 
             // IM
             AddIfSet (ref section, "IM Address", c.IMAddress);
             AddIfSet (ref section, "IM Address", c.IMAddress2);
             AddIfSet (ref section, "IM Address", c.IMAddress3);
 
-            AddIfSet (ref section, "Web page", c.WebPage);
+            AddIfSet (ref section, "Web page", c.WebPage, UIKeyboardType.Url);
 
             // Others at work
             AddIfSet (ref section, "Manager name", c.ManagerName);
             AddIfSet (ref section, "Assistant name", c.AssistantName);
-            AddIfSet (ref section, "Assistant phone number", c.AssistantPhoneNumber);
+            AddIfSet (ref section, "Assistant phone number", c.AssistantPhoneNumber, UIKeyboardType.NumbersAndPunctuation);
 
             // Company stuff
             AddIfSet (ref section, "Company name", c.CompanyName);
             AddIfSet (ref section, "Department name", c.Department);
             AddIfSet (ref section, "Office location", c.OfficeLocation);
-            AddIfSet (ref section, "Company phone number", c.CompanyMainPhone);
+            AddIfSet (ref section, "Company phone number", c.CompanyMainPhone, UIKeyboardType.NumbersAndPunctuation);
 
+            // Home stuff
+            AddIfSet (ref section, "Home phone number", c.HomePhoneNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Home phone number", c.Home2PhoneNumber, UIKeyboardType.NumbersAndPunctuation);
+            AddIfSet (ref section, "Home fax number", c.HomeFaxNumber, UIKeyboardType.NumbersAndPunctuation);
+
+            // Personal
+            AddIfSet (ref section, "Birthday", c.Birthday);
+            AddIfSet (ref section, "Spouse", c.Spouse);
+            AddIfSet (ref section, "Anniversary", c.Anniversary);
+
+            // Weighted rank is inside baseball
+            AddIfSet (ref section, "Weighted rank", c.WeightedRank);
+
+            // End section
+            root.Add (section);
+
+            // New section for business address
             Section businessAddress = new Section ("Business Address");
             AddIfSet (ref businessAddress, "Street", c.BusinessAddressStreet);
             AddIfSet (ref businessAddress, "City", c.BusinessAddressCity);
@@ -118,13 +170,8 @@ namespace NachoClient.iOS
             AddIfSet (ref businessAddress, "Country", c.BusinessAddressCountry);
             AddIfSet (ref businessAddress, "Postal code", c.BusinessAddressPostalCode);
             if (businessAddress.Count > 0) {
-                section.Add (businessAddress);
+                root.Add (businessAddress);
             }
-
-            // Home stuff
-            AddIfSet (ref section, "Home phone number", c.HomePhoneNumber);
-            AddIfSet (ref section, "Home phone number", c.Home2PhoneNumber);
-            AddIfSet (ref section, "Home fax number", c.HomeFaxNumber);
 
             Section homeAddress = new Section ("Home Address");
             AddIfSet (ref homeAddress, "Street", c.HomeAddressStreet);
@@ -133,13 +180,8 @@ namespace NachoClient.iOS
             AddIfSet (ref homeAddress, "Country", c.HomeAddressCountry);
             AddIfSet (ref homeAddress, "Postal code", c.HomeAddressPostalCode);
             if (homeAddress.Count > 0) {
-                section.Add (homeAddress);
+                root.Add (homeAddress);
             }
-
-            // Personal
-            AddIfSet (ref section, "Birthday", c.Birthday);
-            AddIfSet (ref section, "Spouse", c.Spouse);
-            AddIfSet (ref section, "Anniversary", c.Anniversary);
 
             Section otherAddress = new Section ("Other Address");
             AddIfSet (ref otherAddress, "Street", c.OtherAddressStreet);
@@ -148,10 +190,8 @@ namespace NachoClient.iOS
             AddIfSet (ref otherAddress, "Country", c.OtherAddressCountry);
             AddIfSet (ref otherAddress, "Postal code", c.OtherAddressPostalCode);
             if (otherAddress.Count > 0) {
-                section.Add (otherAddress);
+                root.Add (otherAddress);
             }
-
-            AddIfSet (ref section, "Weighted rank", c.WeightedRank);
 
             // Unhandled
 //            public List<NcContactCategory> categories;
@@ -162,9 +202,6 @@ namespace NachoClient.iOS
 //            public string YomiLastName { get; set; }
 //            public string YomiCompanyName { get; set; }
 
-            // Finish up
-            var root = new RootElement (c.GetDisplayName());
-            root.Add (section);
             return root;
         }
     }
