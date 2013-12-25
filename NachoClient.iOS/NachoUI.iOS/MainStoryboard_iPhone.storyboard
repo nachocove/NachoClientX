@@ -86,6 +86,17 @@
                                     <segue destination="n4d-09-jTS" kind="custom" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="VrW-k4-eyP"/>
                                 </connections>
                             </tableViewCell>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToMessages" id="yba-YA-xWm">
+                                <rect key="frame" x="0.0" y="242" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="yba-YA-xWm" id="LHS-b9-5IJ">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                                <connections>
+                                    <segue destination="6P1-gN-xvf" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="B91-cb-nUT"/>
+                                </connections>
+                            </tableViewCell>
                         </prototypes>
                         <connections>
                             <outlet property="dataSource" destination="vTX-M4-ELu" id="Ypi-m7-7Vb"/>
@@ -478,7 +489,7 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="puc-hC-DdW"/>
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="puc-hC-DdW" userLabel="Bar Button Item - Taco"/>
                         <barButtonItem key="rightBarButtonItem" title="Compose" id="JfL-cu-kdr">
                             <connections>
                                 <segue destination="3Dv-ky-fxU" kind="push" identifier="folderComposeSegue" id="gwT-pf-Oz7"/>
@@ -539,6 +550,11 @@
                     </tableView>
                     <navigationItem key="navigationItem" title="Messages" id="971-En-wKt">
                         <barButtonItem key="backBarButtonItem" title="Cancel" id="S4g-xg-wbN"/>
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="HaM-Dc-b18">
+                            <connections>
+                                <action selector="btnComposeMessage:" destination="6P1-gN-xvf" id="R4P-wK-bvS"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" title="Compose" id="9Bo-DZ-yhg">
                             <connections>
                                 <action selector="btnComposeMessage:" destination="6P1-gN-xvf" id="M1O-O9-HQA"/>
@@ -546,6 +562,10 @@
                             </connections>
                         </barButtonItem>
                     </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <connections>
+                        <outlet property="revealButton" destination="HaM-Dc-b18" id="Sh2-Wf-sC5"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0lV-Qi-K87" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -747,13 +767,14 @@
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="lzp-XD-dor"/>
-        <segue reference="wSf-Ax-NJc"/>
         <segue reference="VrW-k4-eyP"/>
+        <segue reference="wSf-Ax-NJc"/>
+        <segue reference="lzp-XD-dor"/>
         <segue reference="6IA-LE-E8D"/>
         <segue reference="GNr-eh-wrb"/>
         <segue reference="PxE-UU-EfC"/>
         <segue reference="5fj-Ta-mc9"/>
-        <segue reference="gwT-pf-Oz7"/>
+        <segue reference="Mbi-ya-LF9"/>
+        <segue reference="sOM-XD-L7F"/>
     </inferredMetricsTieBreakers>
 </document>

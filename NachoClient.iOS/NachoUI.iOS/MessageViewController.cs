@@ -7,6 +7,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MimeKit.Utils;
 using MimeKit;
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -36,6 +37,11 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            // Navigation
+            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+            revealButton.Target = this.RevealViewController ();
+            this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
             TableView.Source = new MessageTableSource (currentFolder);
             TableView.ReloadData ();

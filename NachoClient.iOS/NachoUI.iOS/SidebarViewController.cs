@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         ///      "SidebarToContacts"
         ///      "SidebarToFolders"
         ///      "SidebarToSettings"
+        ///      "SidebarToMessages"
      
         class SidebarMenu
         {
@@ -47,6 +48,8 @@ namespace NachoClient.iOS
         const string SidebarToFoldersSegueId = "SidebarToFolders";
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
+        const string SidebarToMessagesSegueId = "SidebarToMessages";
+
 
         public SidebarViewController (IntPtr handle) : base (handle)
         {
@@ -70,7 +73,7 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < email.Count (); i++) {
                 NcFolder f = email.GetFolder (i);
-                var m = new SidebarMenu (f, f.DisplayName, SidebarToFoldersSegueId);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId);
                 m.Indent = 1;
                 menu.Add (m);
             }
@@ -125,6 +128,12 @@ namespace NachoClient.iOS
                 {
                     CalendarViewController vc = (CalendarViewController)destViewController;
                     vc.UseDeviceCalendar = m.isDeviceCalendarKludge;
+                }
+                break;
+            case SidebarToMessagesSegueId:
+                {
+                    MessageViewController vc = (MessageViewController)destViewController;
+                    vc.SetFolder (m.Folder);
                 }
                 break;
             }

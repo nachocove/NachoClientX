@@ -12,11 +12,18 @@ namespace NachoClient.iOS
 	[Register ("MessageViewController")]
 	partial class MessageViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
+
 		[Action ("btnComposeMessage:")]
 		partial void btnComposeMessage (MonoTouch.Foundation.NSObject sender);
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
+			}
 		}
 	}
 }
