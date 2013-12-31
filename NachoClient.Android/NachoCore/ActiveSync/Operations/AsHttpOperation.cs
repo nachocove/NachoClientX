@@ -61,6 +61,11 @@ namespace NachoCore.ActiveSync
         private CancellationTokenSource Cts;
         private Timer DelayTimer;
         private Timer TimeoutTimer;
+        // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
+        #pragma warning disable 414
+        private Timer DisposedDelayTimer;
+        private Timer DisposedTimeoutTimer;
+        #pragma warning restore 414
         private StateMachine HttpOpSm;
         private StateMachine OwnerSm;
         private HttpClient Client;
@@ -122,7 +127,7 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
-                            new Trans { Event = (uint)HttpOpEvt.E.Cancel, Act = DoCancelDelay, State = (uint)St.Stop },
+                            new Trans { Event = (uint)HttpOpEvt.E.Cancel, Act = DoCancelDelayTimer, State = (uint)St.Stop },
                         }
                     },
                 }
@@ -174,10 +179,13 @@ namespace NachoCore.ActiveSync
                 System.Threading.Timeout.Infinite);
         }
 
-        private void DoCancelDelay ()
+        private void DoCancelDelayTimer ()
         {
-            DelayTimer.Dispose ();
-            DelayTimer = null;
+            if (null != DelayTimer) {
+                DelayTimer.Dispose ();
+                DisposedDelayTimer = DelayTimer;
+                DelayTimer = null;
+            }
         }
 
         private void DoHttp ()
@@ -193,6 +201,7 @@ namespace NachoCore.ActiveSync
         private void DoCancelHttp ()
         {
             CancelTimeoutTimer ();
+            DoCancelDelayTimer ();
             if (null != Cts) {
                 Cts.Cancel ();
             }
@@ -214,7 +223,7 @@ namespace NachoCore.ActiveSync
 
         private void DelayTimerCallback (object State)
         {
-            DoCancelDelay ();
+            DoCancelDelayTimer ();
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
         }
 
@@ -222,6 +231,7 @@ namespace NachoCore.ActiveSync
         {
             if (null != TimeoutTimer) {
                 TimeoutTimer.Dispose ();
+                DisposedTimeoutTimer = TimeoutTimer;
                 TimeoutTimer = null;
             }
         }
