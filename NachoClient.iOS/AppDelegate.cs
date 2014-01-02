@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using MonoTouch.EventKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -23,6 +24,11 @@ namespace NachoClient.iOS
         private NachoDemo Demo { get; set; }
         public BackEnd Be { get; set;}
         public NcAccount Account { get; set; }
+
+        public EKEventStore EventStore {
+            get { return eventStore; }
+        }
+        protected EKEventStore eventStore;
 
         private bool launchBe(){
             // Register to receive DB update indications.
@@ -45,29 +51,34 @@ namespace NachoClient.iOS
         }
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
+            eventStore = new EKEventStore ( );
+
             launchBe();
-            //Demo = new NachoDemo ();
-            //return true;
-            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
-                // we will enter the "login schema"
-                // FIXME - need to address ipad/iphone in future release
 
-                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
-                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-                this.Window.RootViewController = rootControllerView;
-                this.Window.MakeKeyAndVisible();
+            Console.WriteLine ("AppDelegate FinishedLaunching done.");
 
-                return true;
-            } else {
-                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
-                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-                this.Window.RootViewController = rootControllerView;
-                this.Window.MakeKeyAndVisible();
+            return true;
 
-                return true;
-            }
+//            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
+//                // we will enter the "login schema"
+//                // FIXME - need to address ipad/iphone in future release
+//
+//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
+//                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+//                this.Window.RootViewController = rootControllerView;
+//                this.Window.MakeKeyAndVisible();
+//
+//                return true;
+//            } else {
+//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
+//                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
+//                this.Window.RootViewController = rootControllerView;
+//                this.Window.MakeKeyAndVisible();
+//
+//                return true;
+//            }
 //            // Override point for customization after application launch.
 //            if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad) {
 //                var splitViewController = (UISplitViewController)Window.RootViewController;

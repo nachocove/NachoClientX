@@ -10,36 +10,30 @@ namespace NachoClient.iOS
     {
         AppDelegate appDelegate { get; set; }
 
+        NachoFolders folders;
+
         public FolderTableSource ()
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+            folders = new NachoFolders (NachoFolders.FilterForEmail);
         }
+
         public override int RowsInSection (UITableView tableview, int section)
         {
-            // NOTE: Don't call the base implementation on a Model class
-            // see http://docs.xamarin.com/ios/tutorials/Events%2c_Protocols_and_Delegates 
-            // get somethinng here
-
-            // FIX: need association with account ID
-            return appDelegate.Be.Db.Table<NcFolder> ().Count ();
+            return folders.Count ();
         }
-        public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-        {
-            // NOTE: Don't call the base implementation on a Model class
-            // see http://docs.xamarin.com/ios/tutorials/Events%2c_Protocols_and_Delegates 
-            UITableViewCell cell = tableView.DequeueReusableCell ("mailview");
-            var folder= appDelegate.Be.Db.Table<NcFolder> ().ElementAt (indexPath.Row);
-            // so at each "indexPathRow" in the array (think of it that way; we have a NcFoldertype);
-            cell.TextLabel.Text = folder.DisplayName;
 
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            UITableViewCell cell = tableView.DequeueReusableCell ("mailview");
+            var folder = folders.GetFolder (indexPath.Row);
+            cell.TextLabel.Text = folder.DisplayName;
             return cell;
         }
-        public NcFolder getFolder (NSIndexPath id){
-            // force this to happen. Might be smarter to just pass the index, then, since the appDelegate
-            // is common for all objects, the indexID in the selected row should be the NcFolder (or other type)..
-            return appDelegate.Be.Db.Table<NcFolder> ().ElementAt (id.Row);
-        }
 
+        public NcFolder getFolder (NSIndexPath indexPath)
+        {
+            return folders.GetFolder (indexPath.Row);
+        }
     }
 }
 

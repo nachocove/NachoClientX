@@ -3,22 +3,23 @@
 using System;
 using NachoCore;
 using NachoCore.Model;
-
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MimeKit.Utils;
 using MimeKit;
-
-
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
     public partial class MessageViewController : UITableViewController
     {
         NcFolder currentFolder { get; set; }
-        public void SetFolder (NcFolder ncfolder) {
+
+        public void SetFolder (NcFolder ncfolder)
+        {
             currentFolder = ncfolder;
         }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             NcEmailMessage thisemailmsg;
@@ -33,17 +34,18 @@ namespace NachoClient.iOS
             }
         }
 
-
-
-
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
+            // Navigation
+            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+            revealButton.Target = this.RevealViewController ();
+            this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+
             TableView.Source = new MessageTableSource (currentFolder);
             TableView.ReloadData ();
         }
-
 
         public MessageViewController (IntPtr handle) : base (handle)
         {

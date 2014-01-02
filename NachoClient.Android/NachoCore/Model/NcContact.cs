@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class NcContact : NcItem
+    public partial class NcContact : NcItem
     {
         public string ClassName = "NcContact";
 
@@ -42,7 +42,7 @@ namespace NachoCore.Model
         /// Business state for the contact
         public string BusinessAddressState { get; set; }
 
-        /// Business stree address for the contact
+        /// Business street address for the contact
         public string BusinessAddressStreet { get; set; }
 
         /// Business fax number for the contact
@@ -209,6 +209,44 @@ namespace NachoCore.Model
     public class NcContactCategory : NcObject
     {
         public string Category { get; set; }
+    }
 
+    public partial class NcContact
+    {
+        /// The display name, if set explicityly
+        protected string DisplayName { get; set; }
+
+        /// <summary>
+        /// Gets the display name.
+        /// </summary>
+        /// <value>The display name is calculated unless set non-null.</value>
+        public string GetDisplayName ()
+        {
+            if (null != DisplayName) {
+                return DisplayName;
+            }
+            if ((null == FirstName) || (null == LastName)) {
+                return (FirstName ?? "") + (LastName ?? "");
+            } else if ((null != FirstName) && (null != LastName)) {
+                return FirstName + " " + LastName;
+            } else {
+                return Email1Address ?? "";
+            }
+        }
+
+        public string DisplayAddress ()
+        {
+            return Email1Address ?? "";
+        }
+
+        public static bool IsNull (DateTime t)
+        {
+            return (DateTime.MinValue == t);
+        }
+
+        public static bool IsNull (int i)
+        {
+            return (int.MinValue == 1);
+        }
     }
 }

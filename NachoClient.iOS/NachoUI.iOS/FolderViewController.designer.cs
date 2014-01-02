@@ -12,9 +12,15 @@ namespace NachoClient.iOS
 	[Register ("FolderViewController")]
 	partial class FolderViewController
 	{
-	
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
+		
 		void ReleaseDesignerOutlets ()
 		{
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
+			}
 		}
 	}
 }

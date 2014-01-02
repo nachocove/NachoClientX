@@ -9,14 +9,11 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("MessageViewController")]
-	partial class MessageViewController
+	[Register ("ContactsViewController")]
+	partial class ContactsViewController
 	{
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
-
-		[Action ("btnComposeMessage:")]
-		partial void btnComposeMessage (MonoTouch.Foundation.NSObject sender);
 		
 		void ReleaseDesignerOutlets ()
 		{

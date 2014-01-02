@@ -38,6 +38,7 @@
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir} -lplatform -force_load ${ProjectDir}/libplatform.a"</MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
     <DebugSymbols>true</DebugSymbols>
@@ -118,6 +119,10 @@
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
+    <Reference Include="Xamarin.Mobile">
+      <HintPath>..\..\NachoPlatform\xamarin.mobile-0.7.1\lib\ios\Xamarin.Mobile.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoTouch.Dialog-1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -294,23 +299,39 @@
     </Compile>
     <Compile Include="NachoUI.iOS\AccountTableSource.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
+      <DependentUpon>AccountViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
-    <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs">
+      <DependentUpon>ComposeViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\FolderTableSource.cs" />
     <Compile Include="NachoUI.iOS\FolderViewController.cs" />
-    <Compile Include="NachoUI.iOS\FolderViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\FolderViewController.designer.cs">
+      <DependentUpon>FolderViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\LaunchViewController.cs" />
-    <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs">
+      <DependentUpon>LaunchViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\MessageTableSource.cs" />
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
+      <DependentUpon>MessageViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\ReadMsgController.cs" />
-    <Compile Include="NachoUI.iOS\ReadMsgController.designer.cs" />
+    <Compile Include="NachoUI.iOS\ReadMsgController.designer.cs">
+      <DependentUpon>ReadMsgController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\ReplyViewController.cs" />
-    <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs" />
+    <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs">
+      <DependentUpon>ReplyViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\composeTextView.cs" />
-    <Compile Include="NachoUI.iOS\composeTextView.designer.cs" />
+    <Compile Include="NachoUI.iOS\composeTextView.designer.cs">
+      <DependentUpon>composeTextView.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\MessageSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs</Link>
@@ -345,10 +366,65 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSearchCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSearchCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\MainViewController.cs" />
+    <Compile Include="NachoUI.iOS\MainViewController.designer.cs">
+      <DependentUpon>MainViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SidebarViewController.cs" />
+    <Compile Include="NachoUI.iOS\SidebarViewController.designer.cs">
+      <DependentUpon>SidebarViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ContactsViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactsViewController.designer.cs">
+      <DependentUpon>ContactsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
+    <Compile Include="NachoUI.iOS\CalendarViewController.designer.cs">
+      <DependentUpon>CalendarViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\SettingsViewController.designer.cs">
+      <DependentUpon>SettingsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountsViewController.designer.cs">
+      <DependentUpon>AccountsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\HomeViewController.cs" />
+    <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
+      <DependentUpon>HomeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\HomePageViewController.cs" />
+    <Compile Include="NachoUI.iOS\HomePageViewController.designer.cs">
+      <DependentUpon>HomePageViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoContacts.cs">
+      <Link>NachoCore\INachoContacts.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ContactViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
+      <DependentUpon>ContactViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoCalendar.cs">
+      <Link>NachoCore\INachoCalendar.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\DeviceContacts.cs" />
+    <Compile Include="NachoCore\NachoCalendar.cs" />
+    <Compile Include="NachoCore\NachoContacts.cs" />
+    <Compile Include="NachoCore\Model\DeviceCalendar.cs" />
+    <Compile Include="NachoUI.iOS\CalendarItemViewController.cs" />
+    <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
+      <DependentUpon>CalendarItemViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoFolders.cs">
+      <Link>NachoCore\INachoFolders.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\NachoFolders.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
+    <InterfaceDefinition Include="Resources\HomePageController.xib" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -394,5 +470,18 @@
     <BundleResource Include="Resources\Icon.png" />
     <BundleResource Include="Resources\Icon%402x.png" />
     <BundleResource Include="Resources\Default.png" />
+    <BundleResource Include="Resources\Menu%402x.png" />
+    <BundleResource Include="Resources\Menu.png" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SWReveal\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
+      <Project>{867AF543-B319-4267-8BBE-4854D99E67F0}</Project>
+      <Name>SWRevealViewControllerBinding</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

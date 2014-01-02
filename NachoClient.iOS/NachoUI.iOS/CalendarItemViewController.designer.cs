@@ -9,20 +9,17 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("MessageViewController")]
-	partial class MessageViewController
+	[Register ("CalendarItemViewController")]
+	partial class CalendarItemViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
-
-		[Action ("btnComposeMessage:")]
-		partial void btnComposeMessage (MonoTouch.Foundation.NSObject sender);
+		MonoTouch.UIKit.UIBarButtonItem editBarButtonItem { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
+			if (editBarButtonItem != null) {
+				editBarButtonItem.Dispose ();
+				editBarButtonItem = null;
 			}
 		}
 	}
