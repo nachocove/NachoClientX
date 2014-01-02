@@ -119,7 +119,7 @@
     <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
     <Compile Include="NachoCore\ActiveSync\AsHelpers.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSearchCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -75,7 +75,7 @@ namespace Test.iOS
         public void SearchXML ()
         {
             var ds = new MockDataSource ();
-            var a = new AsContactSearchCommand (ds);
+            var a = new AsSearchCommand (ds);
             a.ToXDocument (null);
         }
 

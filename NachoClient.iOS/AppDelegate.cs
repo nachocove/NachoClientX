@@ -46,8 +46,8 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             launchBe();
-
-
+            //Demo = new NachoDemo ();
+            //return true;
             if (0 == Be.Db.Table<NcAccount> ().Count ()) {
                 // we will enter the "login schema"
                 // FIXME - need to address ipad/iphone in future release
@@ -138,6 +138,10 @@ namespace NachoClient.iOS
         public void CertAskReq (NcAccount account, X509Certificate2 certificate) {
             // UI FIXME - ask user and call CertAskResp async'ly.
             Be.CertAskResp (account, true);
+        }
+        public void SearchContactsResp (NcAccount account, string prefix, string token)
+        {
+            // FIXME.
         }
     }
 }

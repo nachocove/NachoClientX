@@ -42,6 +42,8 @@ namespace NachoCore
         bool RetryPermissionReq (NcAccount account, uint delaySeconds);
 
         void ServerOOSpaceInd (NcAccount account);
+
+        void SearchContactsResp (NcAccount account, string prefix, string token);
     }
 }
 

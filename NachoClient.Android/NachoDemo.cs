@@ -31,13 +31,14 @@ namespace NachoCore
                 Account = Be.Db.Table<NcAccount> ().First ();
             }
             Be.Start ();
-            TrySend ();
+            //TrySend ();
             //TryDelete ();
+            //TrySearch ();
         }
 
         private void EnterFullConfiguration () {
             // You will always need to supply user credentials (until certs, for sure).
-            var cred = new NcCred () { Username = "jeffe@nac01.com", Password = "D0ggie789" };
+            var cred = new NcCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
             Be.Db.Insert (BackEnd.DbActors.Ui, cred);
             // In the near future, you won't need to create this protocol state object.
             var protocolState = new NcProtocolState ();
@@ -45,14 +46,14 @@ namespace NachoCore
             var policy = new NcPolicy ();
             Be.Db.Insert (BackEnd.DbActors.Ui, policy);
             // You will always need to supply the user's email address.
-            Account = new NcAccount () { EmailAddr = "jeffe@nac01.com" };
+            Account = new NcAccount () { EmailAddr = "jeffe@nachocove.com" };
             // The account object is the "top", pointing to credential, server, and opaque protocol state.
             Account.CredId = cred.Id;
             Account.ProtocolStateId = protocolState.Id;
             Account.PolicyId = policy.Id;
             Be.Db.Insert (BackEnd.DbActors.Ui, Account);
 
-            var server = new NcServer () { Fqdn = "m.bad.com" };
+            var server = new NcServer () { Fqdn = "m.google.com" };
             Be.Db.Insert (BackEnd.DbActors.Ui, server);
             Account.ServerId = server.Id;
             Be.Db.Update (BackEnd.DbActors.Ui, Account); 
@@ -64,11 +65,16 @@ namespace NachoCore
             }
         }
 
+        public void TrySearch ()
+        {
+            Be.SearchContactsReq (Account, "c", null, "dogbreath");
+        }
+
         public void TrySend () {
             var email = new NcEmailMessage () {
                 AccountId = Account.Id,
                 To = "jeff.enderwick@gmail.com",
-                From = "jeffe@nac01.com",
+                From = "jeffe@nachocove.com",
                 Subject = "test",
                 Body = "this is a simple test.",
                 IsAwatingSend = true
@@ -91,16 +97,25 @@ namespace NachoCore
             Be.CertAskResp (account, true);
         }
 
-        public void CertAskReq (NcAccount account) {
+        public void CertAskReq (NcAccount account)
+        {
         }
-        public void HardFailInd (NcAccount account) {
+        public void HardFailInd (NcAccount account)
+        {
         }
-        public void SoftFailInd (NcAccount account) {
+        public void SoftFailInd (NcAccount account)
+        {
         }
-        public bool RetryPermissionReq (NcAccount account, uint delaySeconds) {
+        public bool RetryPermissionReq (NcAccount account, uint delaySeconds)
+        {
             return true;
         }
-        public void ServerOOSpaceInd (NcAccount account) {
+        public void ServerOOSpaceInd (NcAccount account)
+        {
+        }
+        public void SearchContactsResp (NcAccount account, string prefix, string token)
+        {
+            // FIXME.
         }
     }
 }

@@ -40,6 +40,7 @@ namespace NachoCore.ActiveSync
         protected StateMachine OwnerSm;
         protected IAsDataSource DataSource;
         protected AsHttpOperation Op;
+        protected NcPendingUpdate Update;
 
         public TimeSpan Timeout { set; get; }
         // Initializers.
@@ -94,6 +95,7 @@ namespace NachoCore.ActiveSync
             Execute (sm, ref Op);
         }
 
+        // Cancel() must be safe to call even when the command has already completed.
         public virtual void Cancel ()
         {
             if (null != Op) {

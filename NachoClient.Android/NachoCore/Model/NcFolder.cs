@@ -7,6 +7,9 @@ namespace NachoCore.Model
     public class NcFolder : NcEventable
     {
         [Indexed]
+        public bool IsPseudo { get; set; }
+
+        [Indexed]
         public string ServerId { get; set; }
 
         [Indexed]

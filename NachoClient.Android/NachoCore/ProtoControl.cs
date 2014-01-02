@@ -54,5 +54,8 @@ namespace NachoCore
         public abstract void CertAskResp (bool isOkay);
         public abstract void ServerConfResp ();
         public abstract void CredResp ();
+        public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
+        public abstract void SearchContactsReq (string prefix, uint? maxResults, string token);
+        public abstract void CancelSearchContactsReq (string token);
     }
 }

@@ -342,8 +342,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs">
-      <Link>NachoCore\ActiveSync\Commands\AsContactSearchCommand.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSearchCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsSearchCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

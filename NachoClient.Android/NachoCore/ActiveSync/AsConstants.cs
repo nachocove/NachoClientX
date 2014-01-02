@@ -268,7 +268,7 @@ namespace NachoCore.ActiveSync
             public const string Action = "Action";
             public const string Culture = "Culture";
             public const string DebugData = "DebugData";
-            public const string DisplayName = "DisplayName";
+            public const string DisplayName = AirSyncBase.DisplayName;
             public const string EMailAddress = "EMailAddress";
             public const string Error = "Error";
             public const string ErrorCode = "ErrorCode";
@@ -389,7 +389,7 @@ namespace NachoCore.ActiveSync
                 public const string Exception_Attendees = "Attendees";
                 public const string Exception_Categories = "Categories";
             }
-     
+
             public class Recurrence
             {
                 // Alpha order.
@@ -629,6 +629,33 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        public class Gal
+        {
+            public const string Ns = "GAL";
+            // Alpha order.
+            public const string Alias = Contacts.Alias;
+            public const string Company = "Company";
+            public const string Data = AirSyncBase.Data;
+            public const string DisplayName = AirSyncBase.DisplayName;
+            public const string EmailAddress = "EmailAddress";
+            public const string FirstName = Contacts.FirstName;
+            public const string HomePhone = "HomePhone";
+            public const string LastName = Contacts.LastName;
+            public const string MobilePhone = "MobilePhone";
+            public const string Office = "Office";
+            public const string Phone = "Phone";
+            public const string Picture = Contacts.Picture;
+            public const string Status = AirSync.Status;
+
+            public enum StatusCode : uint
+            {
+                Success = 1,
+                NoPhoto = 173,
+                TooBig = 174,
+                TooMany = 175,
+            };
+        }
+
         public class ItemOperations
         {
             public const string Ns = "ItemOperations";
@@ -642,7 +669,7 @@ namespace NachoCore.ActiveSync
 
             public class StoreCode
             {
-                public const string DocumentLibrary = "Document Library";
+                public const string DocumentLibrary = "DocumentLibrary";
                 // NOTE: space is intended.
                 public const string Mailbox = "Mailbox";
             }
@@ -760,8 +787,9 @@ namespace NachoCore.ActiveSync
             {
                 Success = 1,
                 ProtocolError = 2,
-                ServerError = 3}
-            ;
+                ServerError = 3,
+
+            };
 
             public enum PolicyRespStatusCode : uint
             {
@@ -769,24 +797,23 @@ namespace NachoCore.ActiveSync
                 NoPolicy = 2,
                 UnknownPolicyType = 3,
                 ServerCorrupt = 4,
-                WrongPolicyKey = 5}
-            ;
+                WrongPolicyKey = 5,
+            };
 
             public enum PolicyReqStatusCode : uint
             {
                 Success = 1,
                 PartialSuccess = 2,
                 NotApplied = 3,
+                // MDM case:
                 External = 4,
-                // MDM case.
-            }
-            ;
+            };
 
             public enum RemoteWipeStatusCode : uint
             {
                 Success = 1,
-                Failure = 2}
-            ;
+                Failure = 2,
+            };
 
             public enum MaxAgeFilterCode : uint
             {
@@ -797,24 +824,59 @@ namespace NachoCore.ActiveSync
                 OneWeek = 3,
                 TwoWeeks = 4,
                 OneMonth = 5,
-                Max = OneMonth}
-            ;
+                Max = OneMonth,
+            };
         }
 
         public class Search
         {
             public const string Ns = "Search";
-            public const string Command = "Search";
-            // Alpha order
+            // Alpha order.
+            public const string DeepTraversal = "DeepTraversal";
             public const string Name = "Name";
             public const string Options = "Options";
             public const string Query = "Query";
+            public const string Range = "Range";
+            public const string RebuildResults = "RebuildResults";
+            public const string Response = Autodisco.Response;
+            public const string Status = AirSync.Status;
+            public const string Store = ItemOperations.Store;
 
-            public class SearchOptions {
-                public const string DeepTraversal = "DeepTraversal";
-                public const string Range = "Range";
-                public const string RebuildResults = "RebuildResults";
+            public class NameCode
+            {
+                public const string DocumentLibrary = ItemOperations.StoreCode.DocumentLibrary;
+                public const string Mailbox = ItemOperations.StoreCode.Mailbox;
+                public const string GAL = Gal.Ns;
             }
+
+            public enum SearchStatusCode : uint
+            {
+                Success = 1,
+                ServerError = 3,
+            };
+
+            public enum StoreStatusCode : uint
+            {
+                Success = 1,
+                InvalidRequest = 2,
+                // likely transient - do retry.
+                ServerError = 3,
+                BadLink = 4,
+                AccessDenied = 5,
+                // "Prompt user."
+                NotFound = 6,
+                // "Prompt the user. Sometimes these are transient, so retry. If it continues to fail, point user to administrator."
+                ConnectionFailed = 7, 
+                TooComplex = 8,
+                // 9 omitted.
+                // "The search timed out. Retry with or without rebuilding results. If it continues, contact the Administrator."
+                TimedOut = 10,
+                // do FSync.
+                FSyncRequired = 11,
+                EndOfRRange = 12,
+                AccessBlocked = 13,
+                CredRequired = 14,
+            };
         }
 
         public class Settings

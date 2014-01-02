@@ -113,6 +113,21 @@ namespace NachoCore
             ServiceFromAccount (account).CredResp ();
         }
 
+        public string StartSearchContactsReq (NcAccount account, string prefix, uint? maxResults)
+        {
+            return ServiceFromAccount (account).StartSearchContactsReq (prefix, maxResults);
+        }
+
+        public void SearchContactsReq (NcAccount account, string prefix, uint? maxResults, string token)
+        {
+            ServiceFromAccount (account).SearchContactsReq (prefix, maxResults, token);
+        }
+
+        public void CancelSearchContactsReq (NcAccount account, string token)
+        {
+            ServiceFromAccount (account).CancelSearchContactsReq (token);
+        }
+
         // For IProtoControlOwner.
 
         public void CredReq (ProtoControl sender) {

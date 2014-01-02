@@ -28,7 +28,6 @@ namespace NachoClient.Android
 		{
 			global::DnDns.Resource.String.library_name = global::NachoClient.Android.Resource.String.library_name;
 			global::NachoPlatform.Resource.String.library_name = global::NachoClient.Android.Resource.String.library_name;
-			global::WBXML.Android.Resource.String.library_name = global::NachoClient.Android.Resource.String.library_name;
 		}
 		
 		public partial class Attribute

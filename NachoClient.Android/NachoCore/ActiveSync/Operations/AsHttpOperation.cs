@@ -70,9 +70,10 @@ namespace NachoCore.ActiveSync
         private string ContentType;
         // Properties.
         public TimeSpan Timeout { set; get; }
-        public uint TriesLeft { set; get; }
-        public bool Allow451Follow { set; get; }
 
+        public uint TriesLeft { set; get; }
+
+        public bool Allow451Follow { set; get; }
         // Initializers.
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource)
         {
@@ -237,7 +238,6 @@ namespace NachoCore.ActiveSync
                 HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, null, string.Format ("Uri: {0}", ServerUri));
             }
         }
-
         // This method should only be called if the response indicates that the new server is a legit AS server.
         private void IndicateUriIfChanged ()
         {
@@ -246,7 +246,6 @@ namespace NachoCore.ActiveSync
                 ServerUriBeingTested = false;
             }
         }
-
         // Final is how to pass the ultimate Event back to OwnerSm.
         private Event Final (uint eventCode)
         {
@@ -425,12 +424,12 @@ namespace NachoCore.ActiveSync
                     try {
                         // Re-try the access using the new URI. If it works, then accept the new URI.
                         var redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
-                        if (! redirUri.IsHttps()) {
+                        if (!redirUri.IsHttps ()) {
                             // Don't be duped into accepting a non-HTTPS URI.
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
                         }
                         ServerUriBeingTested = true;
-                        NcServer dummy = new NcServer() {
+                        NcServer dummy = new NcServer () {
                             Scheme = redirUri.Scheme,
                             Fqdn = redirUri.Host,
                             Port = redirUri.Port,

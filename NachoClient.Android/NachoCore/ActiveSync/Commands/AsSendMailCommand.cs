@@ -11,15 +11,13 @@ namespace NachoCore.ActiveSync
 {
     public class AsSendMailCommand : AsCommand
     {
-        private NcPendingUpdate m_update;
-
         public AsSendMailCommand (IAsDataSource dataSource) : base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
         {
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            m_update = NextToSend ();
+            Update = NextToSend ();
 
             if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
                 return null;
@@ -30,8 +28,8 @@ namespace NachoCore.ActiveSync
                                new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
-            m_update.IsDispatched = true;
-            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, m_update);
+            Update.IsDispatched = true;
+            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, Update);
             return doc;
         }
 
@@ -45,9 +43,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
+            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, emailMessage);
-            DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, m_update);
+            DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, Update);
             return Event.Create ((uint)SmEvt.E.Success);
         }
 
@@ -57,9 +55,15 @@ namespace NachoCore.ActiveSync
                 string.Format("Server sent non-empty response to SendMail: {0}", doc.ToString()));
         }
 
+        public override void Cancel ()
+        {
+            base.Cancel ();
+            // FIXME - revert IsDispatched.
+        }
+
         private string GenerateMime ()
         {
-            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == m_update.EmailMessageId);
+            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             return emailMessage.ToMime ();
         }
 

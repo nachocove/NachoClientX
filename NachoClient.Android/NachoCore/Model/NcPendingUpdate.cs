@@ -14,14 +14,18 @@ namespace NachoCore.Model
             // Send means to transmit the record. This only applies to EmailMessage right now.
             Send,
             // Download means to pull down a file associated with the record.
-            Download}
+            Download,
+            // Search for something on the server. Note that pending searches aren't considered relevant across app
+            // re-starts, and so they are purged from the pending update queue on app launch.
+            Search}
         ;
 
         public enum DataTypes
         {
             EmailMessage = 0,
             Attachment,
-            Folder}
+            Folder,
+            Contact}
         ;
 
         public Operations Operation { set; get; }
@@ -44,6 +48,12 @@ namespace NachoCore.Model
         // For Attachment Downloads:
         [Indexed]
         public int AttachmentId { set; get; }
+        // For Contact searches:
+        public string Prefix { set; get; }
+
+        public uint MaxResults { set; get; }
+        [Indexed]
+        public string Token { set; get; }
     }
 }
 
