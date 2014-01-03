@@ -8,6 +8,6 @@ namespace NachoCore
     public interface INachoCalendar
     {
         int Count ();
-        NcCalendar GetCalendarItem(int i);
+        McCalendar GetCalendarItem(int i);
     }
 }

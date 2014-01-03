@@ -11,7 +11,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        private List<NcFolder> FoldersInRequest;
+        private List<McFolder> FoldersInRequest;
 
         public AsSyncCommand (IAsDataSource dataSource) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource)
         {
@@ -24,7 +24,7 @@ namespace NachoCore.ActiveSync
             // This becomes the folders in the xml <Collections>
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
             // Save the list for later; so we can eliminiate redundant sync requests
-            FoldersInRequest = new List<NcFolder> ();
+            FoldersInRequest = new List<McFolder> ();
             foreach (var folder in folders) {
                 FoldersInRequest.Add (folder);
                 // E.g.
@@ -50,11 +50,11 @@ namespace NachoCore.ActiveSync
                             new XElement (m_ns + Xml.AirSync.FilterType, "3")));
                     }
                     // If there are email deletes, then push them up to the server.
-                    var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+                    var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderId == folder.Id &&
-                                x.Operation == NcPendingUpdate.Operations.Delete &&
-                                x.DataType == NcPendingUpdate.DataTypes.EmailMessage);
+                                x.Operation == McPendingUpdate.Operations.Delete &&
+                                x.DataType == McPendingUpdate.DataTypes.EmailMessage);
                     if (0 != deles.Count ()) {
                         var commands = new XElement (m_ns + Xml.AirSync.Commands);
                         foreach (var change in deles) {
@@ -80,7 +80,7 @@ namespace NachoCore.ActiveSync
             var collections = doc.Root.Element (m_ns + Xml.AirSync.Collections).Elements (m_ns + Xml.AirSync.Collection);
             foreach (var collection in collections) {
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
-                var folder = DataSource.Owner.Db.Table<NcFolder> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
+                var folder = DataSource.Owner.Db.Table<McFolder> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
                              rec.ServerId == serverId);
                 var oldSyncKey = folder.AsSyncKey;
                 folder.AsSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey).Value;
@@ -93,11 +93,11 @@ namespace NachoCore.ActiveSync
                 switch (uint.Parse (status.Value)) {
                 case (uint)Xml.AirSync.StatusCode.Success:
                     // Clear any deletes dispached in the request.
-                    var deles = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+                    var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderId == folder.Id &&
-                                x.Operation == NcPendingUpdate.Operations.Delete &&
-                                x.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
+                                x.Operation == McPendingUpdate.Operations.Delete &&
+                                x.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                                 x.IsDispatched == true);
                     if (0 != deles.Count ()) {
                         foreach (var change in deles) {
@@ -181,20 +181,20 @@ namespace NachoCore.ActiveSync
             return Event.Create ((FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.AsEvt.E.ReSync : (uint)SmEvt.E.Success);
         }
 
-        private SQLite.TableQuery<NcFolder> FoldersNeedingSync ()
+        private SQLite.TableQuery<McFolder> FoldersNeedingSync ()
         {
             // FIXME - we need strategy on what folders to sync & when.
-            return DataSource.Owner.Db.Table<NcFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
+            return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
             true == x.AsSyncRequired &&
             ((uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type ||
             (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
             (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type));
         }
         // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
-        private void AddEmail (XElement command, NcFolder folder)
+        private void AddEmail (XElement command, McFolder folder)
         {
             IEnumerable<XElement> xmlAttachments = null;
-            var emailMessage = new NcEmailMessage {
+            var emailMessage = new McEmailMessage {
                 AccountId = DataSource.Account.Id,
                 FolderId = folder.Id,
                 ServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value
@@ -262,7 +262,7 @@ namespace NachoCore.ActiveSync
                         continue;
                     }
                     // Create & save the attachment record.
-                    var attachment = new NcAttachment {
+                    var attachment = new McAttachment {
                         AccountId = emailMessage.AccountId,
                         EmailMessageId = emailMessage.Id,
                         IsDownloaded = false,

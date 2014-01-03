@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
     // NOTE: right now we just download attachments. ItemOperations is overloaded in the protocol, and we may want to subclass.
     public class AsItemOperationsCommand : AsCommand
     {
-        private NcPendingUpdate m_update;
+        private McPendingUpdate m_update;
 
         public AsItemOperationsCommand (IAsDataSource dataSource) : base(Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource) {
             m_update = NextToDnld ();
@@ -59,19 +59,19 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.Success);
         }
 
-        private NcPendingUpdate NextToDnld () {
-            var query = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+        private McPendingUpdate NextToDnld () {
+            var query = DataSource.Owner.Db.Table<McPendingUpdate> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
-                        NcPendingUpdate.DataTypes.Attachment == rec.DataType &&
-                        NcPendingUpdate.Operations.Download == rec.Operation);
+                        McPendingUpdate.DataTypes.Attachment == rec.DataType &&
+                        McPendingUpdate.Operations.Download == rec.Operation);
             if (0 == query.Count ()) {
                 return null;
             }
             return query.First ();
         }
 
-        private NcAttachment Attachment () {
-            return DataSource.Owner.Db.Table<NcAttachment> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
+        private McAttachment Attachment () {
+            return DataSource.Owner.Db.Table<McAttachment> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
                                                                         rec.Id == m_update.AttachmentId);
         }
     }

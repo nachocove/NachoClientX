@@ -35,7 +35,7 @@ namespace NachoClient.iOS
             InitializePageViewController ();
 
             // Initial view
-            if (0 == appDelegate.Be.Db.Table<NcAccount> ().Count ()) {
+            if (0 == appDelegate.Be.Db.Table<McAccount> ().Count ()) {
                 PerformSegue ("HomeToLaunch", this); // modal
             } else {
                 PerformSegue ("HomeToFolders", this); // push

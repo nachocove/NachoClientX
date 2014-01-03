@@ -63,15 +63,12 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.CredRequired:
                     // FIXME - We should never get this, because we are implementing only contact search.
                     return Event.Create ((uint)SmEvt.E.HardFail);
-                    break;
 
                 case Xml.Search.StoreStatusCode.ServerError:
                 case Xml.Search.StoreStatusCode.ConnectionFailed:
                 case Xml.Search.StoreStatusCode.TimedOut:
                     // FIXME - retry later, catch a loop. Possibly drop rebuild ask on timeout.
                     return Event.Create ((uint)SmEvt.E.TempFail);
-
-                    break;
 
                 case Xml.Search.StoreStatusCode.FSyncRequired:
                     Update.IsDispatched = false;
@@ -98,12 +95,12 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private NcPendingUpdate NextToSearch ()
+        private McPendingUpdate NextToSearch ()
         {
-            var query = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+            var query = DataSource.Owner.Db.Table<McPendingUpdate> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
-                        NcPendingUpdate.DataTypes.Contact == rec.DataType &&
-                        NcPendingUpdate.Operations.Search == rec.Operation);
+                        McPendingUpdate.DataTypes.Contact == rec.DataType &&
+                        McPendingUpdate.Operations.Search == rec.Operation);
             if (0 == query.Count ()) {
                 return null;
             }

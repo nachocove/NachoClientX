@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class NcPendingUpdate : NcObject
+    public class McPendingUpdate : McObject
     {
         public enum Operations
         {

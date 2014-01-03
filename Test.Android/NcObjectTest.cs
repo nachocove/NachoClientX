@@ -24,7 +24,7 @@ namespace Test.Android
             }
         }
 
-        public class MyObject : NcObject
+        public class MyObject : McObject
         {
 
         }

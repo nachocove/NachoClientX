@@ -24,11 +24,11 @@ namespace NachoClient.iOS
             public int Indent;
             public string SegueName;
             public string DisplayName;
-            public NcFolder Folder;
+            public McFolder Folder;
             public bool isDeviceContactsKludge;
             public bool isDeviceCalendarKludge;
 
-            public SidebarMenu (NcFolder folder, string displayName, string segueName)
+            public SidebarMenu (McFolder folder, string displayName, string segueName)
             {
                 Indent = 0;
                 SegueName = segueName;
@@ -72,7 +72,7 @@ namespace NachoClient.iOS
             menu.Add (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId));
 
             for (int i = 0; i < email.Count (); i++) {
-                NcFolder f = email.GetFolder (i);
+                McFolder f = email.GetFolder (i);
                 var m = new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId);
                 m.Indent = 1;
                 menu.Add (m);
@@ -80,7 +80,7 @@ namespace NachoClient.iOS
 
             menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
             for (int i = 0; i < contacts.Count (); i++) {
-                NcFolder f = contacts.GetFolder (i);
+                McFolder f = contacts.GetFolder (i);
                 var m = new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId);
                 m.Indent = 1;
                 menu.Add (m);
@@ -91,7 +91,7 @@ namespace NachoClient.iOS
 
             menu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId));
             for (int i = 0; i < calendars.Count (); i++) {
-                NcFolder f = calendars.GetFolder (i);
+                McFolder f = calendars.GetFolder (i);
                 var m = new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId);
                 m.Indent = 1;
                 menu.Add (m);

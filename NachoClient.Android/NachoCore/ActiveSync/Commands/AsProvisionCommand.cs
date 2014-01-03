@@ -171,7 +171,7 @@ namespace NachoCore.ActiveSync
                         var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
 
                         // PolicyKey required element of Policy.
-                        NcProtocolState update = DataSource.ProtocolState;
+                        McProtocolState update = DataSource.ProtocolState;
                         update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
                         DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, update);
 
@@ -198,7 +198,7 @@ namespace NachoCore.ActiveSync
                         var xmlData = xmlPolicy.Element (m_ns + Xml.Provision.Data);
                         if (null != xmlData) {
                             var policyId = DataSource.Account.PolicyId;
-                            var policy = DataSource.Owner.Db.Table<NcPolicy> ().Where (x => x.Id == policyId).Single ();
+                            var policy = DataSource.Owner.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
                             foreach (var xmlEASProvisionDoc in xmlData.Elements(m_ns+Xml.Provision.EASProvisionDoc)) {
                                 // Right now, we serially apply EASProvisionDoc elements against the policy. It is not clear
                                 // that there is ever really more than one EASProvisionDoc. Maybe someday we are required to
@@ -233,7 +233,7 @@ namespace NachoCore.ActiveSync
             base.Execute (Sm, ref AckOp);
         }
 
-        private void ApplyEasProvisionDocToPolicy (XElement xmlEASProvisionDoc, NcPolicy policy)
+        private void ApplyEasProvisionDocToPolicy (XElement xmlEASProvisionDoc, McPolicy policy)
         {
             var children = xmlEASProvisionDoc.Elements ();
             foreach (var elem in children) {
@@ -465,13 +465,13 @@ namespace NachoCore.ActiveSync
                     return;
                 }
                 if (0 > numValue) {
-                    propEnum.SetValue (targetObj, NcPolicy.MaxEmailTruncationSizeValue.NoTruncation);
+                    propEnum.SetValue (targetObj, McPolicy.MaxEmailTruncationSizeValue.NoTruncation);
                     propUint.SetValue (targetObj, 0u);
                 } else if (0 == numValue) {
-                    propEnum.SetValue (targetObj, NcPolicy.MaxEmailTruncationSizeValue.OnlyHeader);
+                    propEnum.SetValue (targetObj, McPolicy.MaxEmailTruncationSizeValue.OnlyHeader);
                     propUint.SetValue (targetObj, 0u);
                 } else {
-                    propEnum.SetValue (targetObj, NcPolicy.MaxEmailTruncationSizeValue.PerSizeBytes);
+                    propEnum.SetValue (targetObj, McPolicy.MaxEmailTruncationSizeValue.PerSizeBytes);
                     propUint.SetValue (targetObj, numValue);
                 }
             } catch (Exception ex) {

@@ -16,9 +16,9 @@ namespace NachoClient.iOS
          * where we will get the current email message data (reply to field, subject; and the actual message itself
          * */
         AppDelegate appDelegate { get; set; }
-        NcEmailMessage currentMessage { get; set; }
+        McEmailMessage currentMessage { get; set; }
     
-        public void SetMessage (NcEmailMessage ncemailmsg) {
+        public void SetMessage (McEmailMessage ncemailmsg) {
             currentMessage = ncemailmsg;
         }
 
@@ -118,7 +118,7 @@ namespace NachoClient.iOS
             txtComposeReply.ResignFirstResponder ();
 
 
-            var email = new NcEmailMessage () {
+            var email = new McEmailMessage () {
                 AccountId = appDelegate.Account.Id,
                 To = txtReplyList.Text,
                 From = appDelegate.Account.EmailAddr,

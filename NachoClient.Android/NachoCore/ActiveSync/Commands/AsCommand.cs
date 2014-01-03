@@ -40,7 +40,7 @@ namespace NachoCore.ActiveSync
         protected StateMachine OwnerSm;
         protected IAsDataSource DataSource;
         protected AsHttpOperation Op;
-        protected NcPendingUpdate Update;
+        protected McPendingUpdate Update;
 
         public TimeSpan Timeout { set; get; }
         // Initializers.
@@ -255,7 +255,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        static internal Uri BaseUri (NcServer server)
+        static internal Uri BaseUri (McServer server)
         {
             var retval = string.Format ("{0}://{1}:{2}{3}",
                              server.Scheme, server.Fqdn, server.Port, server.Path);

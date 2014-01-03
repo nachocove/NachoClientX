@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
+            var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, emailMessage);
             DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, Update);
             return Event.Create ((uint)SmEvt.E.Success);
@@ -63,16 +63,16 @@ namespace NachoCore.ActiveSync
 
         private string GenerateMime ()
         {
-            var emailMessage = DataSource.Owner.Db.Table<NcEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
+            var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             return emailMessage.ToMime ();
         }
 
-        private NcPendingUpdate NextToSend ()
+        private McPendingUpdate NextToSend ()
         {
-            var query = DataSource.Owner.Db.Table<NcPendingUpdate> ()
+            var query = DataSource.Owner.Db.Table<McPendingUpdate> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
-                        NcPendingUpdate.DataTypes.EmailMessage == rec.DataType &&
-                        NcPendingUpdate.Operations.Send == rec.Operation);
+                        McPendingUpdate.DataTypes.EmailMessage == rec.DataType &&
+                        McPendingUpdate.Operations.Send == rec.Operation);
             if (0 == query.Count ()) {
                 return null;
             }

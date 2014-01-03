@@ -10,7 +10,7 @@ namespace NachoCore.Model
     /// Table of categories, referring back to entry they categorize (1 unique set per entry)
     /// Table of exceptions, referring back to entry they are modifying (1 unique set per entry)
     /// Table of timezones, referred to by the calendar entry    /// </summary>
-    public partial class NcCalendarRoot : NcItem
+    public partial class McCalendarRoot : McItem
     {
         /// Item runs for the entire day
         public bool AllDayEvent { get; set; }
@@ -63,17 +63,17 @@ namespace NachoCore.Model
         public int BodyId { get; set; }
 
         /// Implicit [Ignore]
-        public List<NcAttendee> attendees;
+        public List<McAttendee> attendees;
         /// Implicit [Ignore]
-        public List<NcCategory> categories;
+        public List<McCategory> categories;
     }
 
-    public partial class NcCalendar : NcCalendarRoot
+    public partial class McCalendar : McCalendarRoot
     {
         /// Implicit [Ignore]
-        public List<NcException> exceptions;
+        public List<McException> exceptions;
         /// Implicit [Ignore]
-        public List<NcRecurrence> recurrences;
+        public List<McRecurrence> recurrences;
 
         /// Is a response to this meeting required? Calendar only.
         public bool ResponseRequested { get; set; }
@@ -97,7 +97,7 @@ namespace NachoCore.Model
         public int NativeBodyType { get; set; }
     }
 
-    public partial class NcException : NcCalendarRoot
+    public partial class McException : McCalendarRoot
     {
         [Indexed]
         public Int64 CalendarId { get; set; }
@@ -111,7 +111,7 @@ namespace NachoCore.Model
     // The attendee table is a big old list of non-unique names.
     // Each attendee record refers back to its Calendar record or
     // exception record.
-    public partial class NcAttendee : NcObject
+    public partial class McAttendee : McObject
     {
         /// Parent Calendar or Exception item index.
         [Indexed]
@@ -140,7 +140,7 @@ namespace NachoCore.Model
 
     /// The category table represents a collection of categories
     /// assigned to a calendar or exception item.
-    public partial class NcCategory : NcObject
+    public partial class McCategory : McObject
     {
         /// Parent Calendar or Exception item index.
         [Indexed]
@@ -156,7 +156,7 @@ namespace NachoCore.Model
         public string Name { get; set; }
     }
 
-    public partial class NcRecurrence : NcObject
+    public partial class McRecurrence : McObject
     {
         /// Recurrence.  Calendar only.
 
@@ -198,7 +198,7 @@ namespace NachoCore.Model
         public int FirstDayOfWeek { get; set; }
     }
 
-    public class NcTimeZone : NcObject
+    public class McTimeZone : McObject
     {
         /// The offset from UTC, in minutes;
         public int Bias { get; set; }
@@ -221,7 +221,7 @@ namespace NachoCore.Model
         /// Number of miniutes to add to Bias during DST
         public int DaylightBias { get; set; }
 
-        public NcTimeZone ()
+        public McTimeZone ()
         {
             LastModified = DateTime.UtcNow;
         }
@@ -360,13 +360,13 @@ namespace NachoCore.Model
         UmalQuraReservedMustNotBeUsed = 23,
     }
 
-    public partial class NcCalendar
+    public partial class McCalendar
     {
     }
 
-    public partial class NcAttendee
+    public partial class McAttendee
     {
-        public NcAttendee ()
+        public McAttendee ()
         {
             Id = 0;
             ParentId = 0;
@@ -377,7 +377,7 @@ namespace NachoCore.Model
             AttendeeStatus = NcAttendeeStatus.NotResponded;
         }
 
-        public NcAttendee (string name, string email, NcAttendeeType type = NcAttendeeType.Unknown, NcAttendeeStatus status = NcAttendeeStatus.NotResponded)
+        public McAttendee (string name, string email, NcAttendeeType type = NcAttendeeType.Unknown, NcAttendeeStatus status = NcAttendeeStatus.NotResponded)
         {
             Id = 0;
             ParentId = 0;
@@ -388,11 +388,11 @@ namespace NachoCore.Model
             AttendeeStatus = status;
         }
 
-        public static int GetParentType (NcCalendarRoot r)
+        public static int GetParentType (McCalendarRoot r)
         {
-            if (r.GetType () == typeof(NcCalendar)) {
+            if (r.GetType () == typeof(McCalendar)) {
                 return CALENDAR;
-            } else if (r.GetType () == typeof(NcException)) {
+            } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
             } else {
                 System.Diagnostics.Trace.Assert (false);
@@ -400,16 +400,16 @@ namespace NachoCore.Model
             }
         }
 
-        public void SetParent (NcCalendarRoot r)
+        public void SetParent (McCalendarRoot r)
         {
             ParentId = r.Id;
             ParentType = GetParentType (r);
         }
     }
 
-    public partial class NcCategory
+    public partial class McCategory
     {
-        public NcCategory ()
+        public McCategory ()
         {
             Id = 0;
             ParentId = 0;
@@ -417,16 +417,16 @@ namespace NachoCore.Model
             Name = null;
         }
 
-        public NcCategory (string name) : this ()
+        public McCategory (string name) : this ()
         {
             Name = name;
         }
 
-        public static int GetParentType (NcCalendarRoot r)
+        public static int GetParentType (McCalendarRoot r)
         {
-            if (r.GetType () == typeof(NcCalendar)) {
+            if (r.GetType () == typeof(McCalendar)) {
                 return CALENDAR;
-            } else if (r.GetType () == typeof(NcException)) {
+            } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
             } else {
                 System.Diagnostics.Trace.Assert (false);
@@ -434,7 +434,7 @@ namespace NachoCore.Model
             }
         }
 
-        public void SetParent (NcCalendarRoot r)
+        public void SetParent (McCalendarRoot r)
         {
             ParentId = r.Id;
             ParentType = GetParentType (r);

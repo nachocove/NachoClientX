@@ -72,10 +72,10 @@ namespace NachoCore
             return events.Length;
         }
 
-        public NcCalendar GetCalendarItem (int i)
+        public McCalendar GetCalendarItem (int i)
         {
             var e = events [i];
-            var c = new NcCalendar ();
+            var c = new McCalendar ();
             c.StartTime = DecipherStartTime (e);
             c.EndTime = DecipherEndTime (e);
             c.Subject = e.Title;

@@ -5,7 +5,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class NcEmailMessage : NcItem
+    public class McEmailMessage : McItem
     {
         private const string CrLf = "\r\n";
         private const string ColonSpace = ": ";
@@ -43,7 +43,7 @@ namespace NachoCore.Model
         }
 
         private string Append(string message, string propertyName) {
-            string propertyValue = (string)typeof(NcEmailMessage).GetProperty (propertyName).GetValue (this);
+            string propertyValue = (string)typeof(McEmailMessage).GetProperty (propertyName).GetValue (this);
             if (null == propertyValue) {
                 return message;
             }

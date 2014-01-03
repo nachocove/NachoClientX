@@ -211,7 +211,7 @@ namespace NachoCore.Utils
 
         // Insert & return last row id.
         // TODO: Add event support?
-        public NcResult Insert (NcObject obj)
+        public NcResult Insert (McObject obj)
         {
             System.Diagnostics.Trace.Assert (obj.Id == 0);
 
@@ -228,7 +228,7 @@ namespace NachoCore.Utils
 
         // Update, no event.  Temporary?
         // Lots of TODOs in this code.
-        public NcResult Update (NcObject obj)
+        public NcResult Update (McObject obj)
         {
             System.Diagnostics.Trace.Assert (obj.Id > 0);
 
@@ -246,7 +246,7 @@ namespace NachoCore.Utils
 
         // Delete, no event.  Temporary?
         // Lots of TODOs in this code.
-        public NcResult Delete (NcObject obj)
+        public NcResult Delete (McObject obj)
         {
             System.Diagnostics.Trace.Assert (obj.Id > 0);
             m_db.Delete(obj);

@@ -14,14 +14,14 @@ namespace NachoCore
     {
         AppDelegate appDelegate { get; set; }
 
-        List<NcCalendar> list;
+        List<McCalendar> list;
 
         public NachoCalendar ()
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            list = appDelegate.Be.Db.Table<NcCalendar> ().OrderBy (c => c.StartTime).ToList ();
+            list = appDelegate.Be.Db.Table<McCalendar> ().OrderBy (c => c.StartTime).ToList ();
             if (null == list) {
-                list = new List<NcCalendar> ();
+                list = new List<McCalendar> ();
             }
         }
 
@@ -30,7 +30,7 @@ namespace NachoCore
             return list.Count;
         }
 
-        public NcCalendar GetCalendarItem (int i)
+        public McCalendar GetCalendarItem (int i)
         {
             return list.ElementAt (i);
         }

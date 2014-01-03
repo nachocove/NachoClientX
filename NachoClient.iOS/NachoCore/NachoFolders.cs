@@ -52,7 +52,7 @@ namespace NachoClient
 
         AppDelegate appDelegate { get; set; }
 
-        List<NcFolder> list;
+        List<McFolder> list;
 
         // TODO: Should use Nacho type
         public NachoFolders (Xml.FolderHierarchy.TypeCode[] types)
@@ -60,8 +60,8 @@ namespace NachoClient
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
             // TODO: Fix this
-            list = new List<NcFolder> ();
-            var temp = appDelegate.Be.Db.Table<NcFolder> ().OrderBy (f => f.DisplayName).ToList ();
+            list = new List<McFolder> ();
+            var temp = appDelegate.Be.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
                 // TODO: Need a matching enumeration
                 var match = (Xml.FolderHierarchy.TypeCode)l.Type;
@@ -76,7 +76,7 @@ namespace NachoClient
             return list.Count;
         }
 
-        public NcFolder GetFolder (int i)
+        public McFolder GetFolder (int i)
         {
             return list.ElementAt (i);
         }

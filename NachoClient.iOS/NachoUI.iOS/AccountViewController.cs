@@ -36,7 +36,7 @@ namespace NachoClient.iOS
             // prepare for segue. Target view controller here is folderView
             // pass the account ID to the target view controller, so that we show the right
             // folders here.
-            NcAccount thisaccount;
+            McAccount thisaccount;
 
             Console.WriteLine ("In accountviewController PrepareforSegue");
 

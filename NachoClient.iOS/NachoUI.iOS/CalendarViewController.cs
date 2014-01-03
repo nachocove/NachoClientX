@@ -70,7 +70,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals (CellSegueID)) {
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = TableView.IndexPathForCell (cell);
-                NcCalendar i = calendar.GetCalendarItem (indexPath.Row);
+                McCalendar i = calendar.GetCalendarItem (indexPath.Row);
                 CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
                 destinationController.calendarItem = i;
                 destinationController.Title = i.Subject;
@@ -93,7 +93,7 @@ namespace NachoClient.iOS
             // Should always get a prototype cell
             System.Diagnostics.Trace.Assert (null != cell);
 
-            NcCalendar c = calendar.GetCalendarItem (indexPath.Row);
+            McCalendar c = calendar.GetCalendarItem (indexPath.Row);
 
             cell.TextLabel.Text = c.Subject;
             cell.DetailTextLabel.Text = c.StartTime.ToString ();

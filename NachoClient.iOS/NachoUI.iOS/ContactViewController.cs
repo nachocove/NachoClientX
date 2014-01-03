@@ -12,7 +12,7 @@ namespace NachoClient.iOS
     public partial class ContactViewController : DialogViewController
     {
         public bool editing;
-        public NcContact contact;
+        public McContact contact;
         UIBarButtonItem doneButton;
         UIBarButtonItem editButton;
 
@@ -57,7 +57,7 @@ namespace NachoClient.iOS
             Pushing = true;
             if (null == contact) {
                 editing = true;
-                contact = new NcContact ();
+                contact = new McContact ();
                 Root = ToDialogElement (contact);
                 NavigationItem.RightBarButtonItem = doneButton;
             } else {
@@ -80,19 +80,19 @@ namespace NachoClient.iOS
 
         public void AddIfSet (ref Section section, string name, DateTime value)
         {
-            if (!NcContact.IsNull (value)) {
+            if (!McContact.IsNull (value)) {
                 section.Add (new DateElement (name, value));
             }
         }
 
         public void AddIfSet (ref Section section, string name, int value)
         {
-            if (!NcContact.IsNull (value)) {
+            if (!McContact.IsNull (value)) {
                 section.Add (new StringElement (name, value.ToString ()));
             }
         }
 
-        public RootElement ToDialogElement (NcContact c)
+        public RootElement ToDialogElement (McContact c)
         {
             System.Diagnostics.Trace.Assert (null != c);
 

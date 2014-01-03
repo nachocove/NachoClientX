@@ -14,12 +14,12 @@ namespace NachoCore
     {
         AppDelegate appDelegate { get; set; }
 
-        List<NcContact> list;
+        List<McContact> list;
 
         public NachoContacts ()
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            list = appDelegate.Be.Db.Table<NcContact> ().OrderBy (c => c.LastName).ToList ();
+            list = appDelegate.Be.Db.Table<McContact> ().OrderBy (c => c.LastName).ToList ();
         }
 
         public int Count ()
@@ -27,7 +27,7 @@ namespace NachoCore
             return list.Count;
         }
 
-        public NcContact GetContact (int i)
+        public McContact GetContact (int i)
         {
             return list.ElementAt (i);
         }

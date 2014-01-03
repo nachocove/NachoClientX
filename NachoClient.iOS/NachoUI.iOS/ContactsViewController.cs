@@ -29,7 +29,7 @@ namespace NachoClient.iOS
         public bool UseDeviceContacts;
         UIAlertView alert;
         INachoContacts contacts;
-        List<NcContact> searchResults = null;
+        List<McContact> searchResults = null;
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>
@@ -91,7 +91,7 @@ namespace NachoClient.iOS
             // The "+" button segues with ContactsToNewContact
             // Cells segue with CellSegueID, ContactsToContact
             if (segue.Identifier.Equals (CellSegueID)) {
-                NcContact contact;
+                McContact contact;
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = SearchDisplayController.SearchResultsTableView.IndexPathForCell (cell);
                 if (null != indexPath) {
@@ -129,7 +129,7 @@ namespace NachoClient.iOS
             // Should always get a prototype cell
             System.Diagnostics.Trace.Assert (null != cell);
 
-            NcContact contact;
+            McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 contact = searchResults.ElementAt (indexPath.Row);
             } else {
@@ -153,9 +153,9 @@ namespace NachoClient.iOS
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
             // TODO: Make this work like EAS
-            searchResults = new List<NcContact> ();
+            searchResults = new List<McContact> ();
             for (int i = 0; i < contacts.Count (); i++) {
-                NcContact c = contacts.GetContact (i);
+                McContact c = contacts.GetContact (i);
                 if (StartsWithIgnoringNull (forSearchString, c.FirstName)) {
                     searchResults.Add (c);
                     continue;

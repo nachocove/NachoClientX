@@ -3,7 +3,7 @@ using System;
 
 namespace NachoCore.Model
 {
-    public class NcAttachment : NcEventable
+    public class McAttachment : McEventable
     {
         [Indexed]
         public string FileReference { get; set; }

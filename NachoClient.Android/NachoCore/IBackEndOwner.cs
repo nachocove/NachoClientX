@@ -13,37 +13,37 @@ namespace NachoCore
          * the account record. The BE will act based on the update event for the
          * account record.
          */
-        void CredReq (NcAccount account);
+        void CredReq (McAccount account);
 
         /* ServConfRequest: When called the callee must gather the server information for the 
          * specified account and nd add/update it to/in the DB. The callee must then update
          * the account record. The BE will act based on the update event for the
          * account record.
          */
-        void ServConfReq (NcAccount account);
+        void ServConfReq (McAccount account);
 
         /* CertAskReq: When called the callee must ask the user whether the passed server cert can
          * be trusted for the specified account. 
          */
-        void CertAskReq (NcAccount account, X509Certificate2 certificate);
+        void CertAskReq (McAccount account, X509Certificate2 certificate);
 
         /* HardFailureIndication: Called to indicate to the callee that there is a failure
          * that will require some sort of intervention. The callee must call the BE method
          * Start(account) to get the BE going again (post intervention).
          */
-        void HardFailInd (NcAccount account);
+        void HardFailInd (McAccount account);
 
         /* SoftFailureIndication: Called to indicate that "it aint workin' right now." The
          * callee must call the BE method Start(account) to get the BE going again. We will
          * want to add some autorecovery here in the future.
          */
-        void SoftFailInd (NcAccount account);
+        void SoftFailInd (McAccount account);
 
-        bool RetryPermissionReq (NcAccount account, uint delaySeconds);
+        bool RetryPermissionReq (McAccount account, uint delaySeconds);
 
-        void ServerOOSpaceInd (NcAccount account);
+        void ServerOOSpaceInd (McAccount account);
 
-        void SearchContactsResp (NcAccount account, string prefix, string token);
+        void SearchContactsResp (McAccount account, string prefix, string token);
     }
 }
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public partial class NcContact : NcItem
+    public partial class McContact : McItem
     {
         public string ClassName = "NcContact";
 
@@ -58,7 +58,7 @@ namespace NachoCore.Model
         public string CarPhoneNumber { get; set; }
 
         /// A collection of user labels assigned to the contact
-        public List<NcContactCategory> categories;
+        public List<McContactCategory> categories;
 
         /// A collection of the contact's children (pickle)
         public string Children { get; set; }
@@ -206,12 +206,12 @@ namespace NachoCore.Model
         public string NickName { get; set; }
     }
 
-    public class NcContactCategory : NcObject
+    public class McContactCategory : McObject
     {
         public string Category { get; set; }
     }
 
-    public partial class NcContact
+    public partial class McContact
     {
         /// The display name, if set explicityly
         protected string DisplayName { get; set; }

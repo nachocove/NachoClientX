@@ -10,24 +10,24 @@ namespace NachoCore
         protected int AccountId;
         public IProtoControlOwner Owner { get; set; }
 
-        public NcAccount Account {
+        public McAccount Account {
             get {
-                return Owner.Db.Table<NcAccount> ().Where (acc => acc.Id == AccountId).Single ();
+                return Owner.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
             }
         }
 
-        public NcCred Cred {
+        public McCred Cred {
             get {
                 // Note the lack of join :-(.
                 var account = Account;
-                return Owner.Db.Table<NcCred> ().Where (crd => crd.Id == Account.CredId).Single ();
+                return Owner.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).Single ();
             }
         }
 
-        public NcServer Server { 
+        public McServer Server { 
             get {
                 var account = Account;
-                return Owner.Db.Table<NcServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
+                return Owner.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
             }
             set {
                 var update = value;
@@ -36,10 +36,10 @@ namespace NachoCore
             }
         }
 
-        public NcProtocolState ProtocolState { 
+        public McProtocolState ProtocolState { 
             get {
                 var account = Account;
-                return Owner.Db.Table<NcProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
+                return Owner.Db.Table<McProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
             }
             set {
                 var update = value;

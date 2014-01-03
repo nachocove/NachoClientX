@@ -29,13 +29,13 @@ namespace NachoCore
             }
         }
 
-        public Xml.Provision.PolicyReqStatusCode Compliance (NcAccount account)
+        public Xml.Provision.PolicyReqStatusCode Compliance (McAccount account)
         {
             // FIXME - this is unimplemented.
             return Xml.Provision.PolicyReqStatusCode.Success;
         }
 
-        public bool Wipe (NcAccount account)
+        public bool Wipe (McAccount account)
         {
             // FIXME - this is unimplemented.
             return true;

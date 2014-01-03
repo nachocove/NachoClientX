@@ -31,7 +31,7 @@ namespace NachoCore.ActiveSync {
 
         internal static void SetOldestProtoVers (IAsDataSource dataSource)
         {
-            NcProtocolState update = dataSource.ProtocolState;
+            McProtocolState update = dataSource.ProtocolState;
             update.AsProtocolVersion = "12.0";
             dataSource.ProtocolState = update;
         }
@@ -45,7 +45,7 @@ namespace NachoCore.ActiveSync {
                 Array.Sort (float_versions);
                 Array.Reverse (float_versions);
                 string[] versions = Array.ConvertAll(float_versions, x => x.ToString ("0.0"));
-                NcProtocolState update = dataSource.ProtocolState;
+                McProtocolState update = dataSource.ProtocolState;
                 update.AsProtocolVersion = versions[0];
                 dataSource.ProtocolState = update;
                 // NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.

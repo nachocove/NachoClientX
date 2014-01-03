@@ -24,10 +24,10 @@ namespace NachoCore
             return list.Count;
         }
 
-        public NcContact GetContact (int i)
+        public McContact GetContact (int i)
         {
             var c = list.ElementAt (i);
-            var nc = new NcContact ();
+            var nc = new McContact ();
 
             nc.Title = c.Prefix;
             nc.FirstName = c.FirstName;

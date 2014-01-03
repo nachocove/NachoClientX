@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
                     foreach (var change in changes) {
                         switch (change.Name.LocalName) {
                         case Xml.FolderHierarchy.Add:
-                            var folder = new NcFolder () {
+                            var folder = new McFolder () {
                                 AccountId = DataSource.Account.Id,
                                 ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value,
                                 ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value,
@@ -51,7 +51,7 @@ namespace NachoCore.ActiveSync
                             break;
                         case Xml.FolderHierarchy.Update:
                             var serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            folder = DataSource.Owner.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
+                            folder = DataSource.Owner.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
                             folder.ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             folder.DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value;
                             folder.Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value);
@@ -60,7 +60,7 @@ namespace NachoCore.ActiveSync
                             break;
                         case Xml.FolderHierarchy.Delete:
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            folder = DataSource.Owner.Db.Table<NcFolder> ().Where (rec => rec.ServerId == serverId).First ();
+                            folder = DataSource.Owner.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
                             DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, folder);
                             break;
                         }

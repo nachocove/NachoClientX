@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class NcAccount : NcEventable
+    public class McAccount : McEventable
     {
         [Unique]
         public string EmailAddr { get; set; }

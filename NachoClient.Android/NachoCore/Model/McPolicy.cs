@@ -5,7 +5,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class NcPolicy : NcObject
+    public class McPolicy : McObject
     {
         public enum AllowBluetoothValue : uint
         {
@@ -157,7 +157,7 @@ namespace NachoCore.Model
 
         public string UnapprovedInROMApplicationList { get; set; }
 
-        public NcPolicy ()
+        public McPolicy ()
         {
             AllowBluetooth = (uint)AllowBluetoothValue.Allow;
             AllowBrowser = true;

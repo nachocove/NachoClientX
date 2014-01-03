@@ -13,19 +13,19 @@ namespace NachoCore
         // (if it isn't already running).
         void Start ();
         // attempt to (re)start a specific account.
-        void Start (NcAccount account);
+        void Start (McAccount account);
         // let the BE know that the asked-about server cert is/not okay to trust.
-        void CertAskResp (NcAccount account, bool isOkay);
+        void CertAskResp (McAccount account, bool isOkay);
         // let the BE know that the server info has been updated for this account.
-        void ServerConfResp (NcAccount account);
+        void ServerConfResp (McAccount account);
         // let the BE know that the credentials have been updated for this account.
-        void CredResp (NcAccount account);
+        void CredResp (McAccount account);
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
-        string StartSearchContactsReq (NcAccount account, string prefix, uint? maxResults);
+        string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults);
         // follow-on contacts search.
-        void SearchContactsReq (NcAccount account, string prefix, uint? maxResults, string token);
+        void SearchContactsReq (McAccount account, string prefix, uint? maxResults, string token);
         // cancel contacts search. You don't need to call this if the latest search has completed.
-        void CancelSearchContactsReq (NcAccount account, string token);
+        void CancelSearchContactsReq (McAccount account, string token);
     }
 }
 

@@ -3,7 +3,7 @@ using System;
 
 namespace NachoCore.Model
 {
-    public abstract class NcObject
+    public abstract class McObject
     {
         [PrimaryKey, AutoIncrement, Unique]
         public int Id { get; set; }
@@ -11,7 +11,7 @@ namespace NachoCore.Model
         // Optimistic concurrency control
         public DateTime LastModified { get; set; }
 
-        public NcObject()
+        public McObject()
         {
             Id = 0;
             LastModified = DateTime.MinValue;

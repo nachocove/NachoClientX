@@ -30,7 +30,7 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        public NcFolder getFolder (NSIndexPath indexPath)
+        public McFolder getFolder (NSIndexPath indexPath)
         {
             return folders.GetFolder (indexPath.Row);
         }

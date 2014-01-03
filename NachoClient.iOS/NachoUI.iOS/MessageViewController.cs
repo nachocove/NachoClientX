@@ -13,16 +13,16 @@ namespace NachoClient.iOS
 {
     public partial class MessageViewController : UITableViewController
     {
-        NcFolder currentFolder { get; set; }
+        McFolder currentFolder { get; set; }
 
-        public void SetFolder (NcFolder ncfolder)
+        public void SetFolder (McFolder ncfolder)
         {
             currentFolder = ncfolder;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            NcEmailMessage thisemailmsg;
+            McEmailMessage thisemailmsg;
 
             if (segue.Identifier == "readmessagesegue") {
                 var rdmsg = (ReadMsgController)segue.DestinationViewController; //our destination

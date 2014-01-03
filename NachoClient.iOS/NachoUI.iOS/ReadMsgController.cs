@@ -28,9 +28,9 @@ namespace NachoClient.iOS
                 */
 
         AppDelegate appDelegate { get; set; }
-        NcEmailMessage currentMessage { get; set; }
+        McEmailMessage currentMessage { get; set; }
 
-        public void SetMessage (NcEmailMessage ncemailmsg) {
+        public void SetMessage (McEmailMessage ncemailmsg) {
             currentMessage = ncemailmsg;
         }
 

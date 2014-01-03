@@ -3,9 +3,9 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class NcServer : NcObject
+    public class McServer : McObject
     {
-        public NcServer ()
+        public McServer ()
         {
             // FIXME - need a per-protocol subclass. This is AS-specific.
             Path = "/Microsoft-Server-ActiveSync";
@@ -21,9 +21,9 @@ namespace NachoCore.Model
 
         public int Port { get; set; }
 
-        public static NcServer Create (Uri uri)
+        public static McServer Create (Uri uri)
         {
-            return new NcServer () {
+            return new McServer () {
                 Fqdn = uri.Host,
                 Path = uri.AbsolutePath,
                 Scheme = uri.Scheme,
@@ -31,7 +31,7 @@ namespace NachoCore.Model
             };
         }
 
-        public void Update (NcServer src)
+        public void Update (McServer src)
         {
             // FIXME Do we need a generic way to do this, using reflection?
             Fqdn = src.Fqdn;

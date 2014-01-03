@@ -439,7 +439,7 @@ namespace NachoCore.ActiveSync
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
                         }
                         ServerUriBeingTested = true;
-                        NcServer dummy = new NcServer () {
+                        McServer dummy = new McServer () {
                             Scheme = redirUri.Scheme,
                             Fqdn = redirUri.Host,
                             Port = redirUri.Port,

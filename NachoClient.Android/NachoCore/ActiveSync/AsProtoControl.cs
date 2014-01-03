@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl Control { set; get; }
 
-        public AsProtoControl (IProtoControlOwner owner, NcAccount account)
+        public AsProtoControl (IProtoControlOwner owner, McAccount account)
         {
             Control = this;
             Owner = owner;
@@ -494,13 +494,13 @@ namespace NachoCore.ActiveSync
             // FIXME - generate protocol state here. load it from DB or create & save to DB.
             Sm.State = ProtocolState.State;
 
-            var dispached = Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            var dispached = Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                             rec.IsDispatched == true).ToList ();
             foreach (var update in dispached) {
                 update.IsDispatched = false;
                 Owner.Db.Update (BackEnd.DbActors.Proto, update);
             }
-            NcEventable.DbEvent += DbEventHandler;
+            McEventable.DbEvent += DbEventHandler;
         }
         // Methods callable by the owner.
         public override void Execute ()
@@ -515,7 +515,7 @@ namespace NachoCore.ActiveSync
 
         public override void ServerConfResp ()
         {
-            Server = Owner.Db.Table<NcServer> ().Single (rec => rec.Id == Account.ServerId);
+            Server = Owner.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetServConf);
         }
 
@@ -647,21 +647,21 @@ namespace NachoCore.ActiveSync
         private void DoPing ()
         {
             // Handle the pending updates in priority order, or if none then Ping & wait.
-            if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                rec.DataType == NcPendingUpdate.DataTypes.Contact &&
-                rec.Operation == NcPendingUpdate.Operations.Search).Count ()) {
+            if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+                rec.DataType == McPendingUpdate.DataTypes.Contact &&
+                rec.Operation == McPendingUpdate.Operations.Search).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch);
-            } else if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
-                       rec.Operation == NcPendingUpdate.Operations.Send).Count ()) {
+            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
+                       rec.Operation == McPendingUpdate.Operations.Send).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail);
-            } else if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == NcPendingUpdate.DataTypes.Attachment &&
-                       rec.Operation == NcPendingUpdate.Operations.Download).Count ()) {
+            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+                       rec.DataType == McPendingUpdate.DataTypes.Attachment &&
+                       rec.Operation == McPendingUpdate.Operations.Download).Count ()) {
                 Sm.PostEvent ((uint)CtlEvt.E.DnldAtt);
-            } else if (0 < Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == NcPendingUpdate.DataTypes.EmailMessage &&
-                       rec.Operation == NcPendingUpdate.Operations.Delete).Count ()) {
+            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
+                       rec.Operation == McPendingUpdate.Operations.Delete).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync);
             } else {
                 Cmd = new AsPingCommand (this);
@@ -683,21 +683,21 @@ namespace NachoCore.ActiveSync
             return (null != Cmd && Cmd.GetType () == cmdType);
         }
         // Methods that inject-into/delete-from the Q.
-        private void DbEventHandler (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, NcEventable target, EventArgs e)
+        private void DbEventHandler (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, McEventable target, EventArgs e)
         {
             if (BackEnd.DbActors.Proto == dbActor || target.AccountId != Account.Id) {
                 return;
             }
             switch (target.GetType ().Name) {
-            case NcEmailMessage.ClassName:
-                NcEmailMessage emailMessage = (NcEmailMessage)target;
+            case McEmailMessage.ClassName:
+                McEmailMessage emailMessage = (McEmailMessage)target;
                 switch (dbEvent) {
                 case BackEnd.DbEvents.WillDelete:
                     if (emailMessage.IsAwatingSend) {
                         /* UI is deleting a to-be-sent message. Cancel send by deleting
                          * The pending update if possible.
                          */
-                        var existingUpdate = Owner.Db.Table<NcPendingUpdate> ().Single (rec => rec.AccountId == Account.Id &&
+                        var existingUpdate = Owner.Db.Table<McPendingUpdate> ().Single (rec => rec.AccountId == Account.Id &&
                                              rec.EmailMessageId == emailMessage.Id);
                         if (!existingUpdate.IsDispatched) {
                             Owner.Db.Delete (BackEnd.DbActors.Proto, existingUpdate);
@@ -705,10 +705,10 @@ namespace NachoCore.ActiveSync
                         Owner.Db.Delete (BackEnd.DbActors.Proto, existingUpdate);
                     } else {
                         // UI is deleting a message. We need to delete it on the server.
-                        var deleUpdate = new NcPendingUpdate () {
+                        var deleUpdate = new McPendingUpdate () {
                             AccountId = Account.Id,
-                            Operation = NcPendingUpdate.Operations.Delete,
-                            DataType = NcPendingUpdate.DataTypes.EmailMessage,
+                            Operation = McPendingUpdate.Operations.Delete,
+                            DataType = McPendingUpdate.DataTypes.EmailMessage,
                             FolderId = emailMessage.FolderId,
                             ServerId = emailMessage.ServerId
                         };
@@ -718,10 +718,10 @@ namespace NachoCore.ActiveSync
                     break;
                 case BackEnd.DbEvents.DidWrite:
                     if (emailMessage.IsAwatingSend) {
-                        var sendUpdate = new NcPendingUpdate () {
+                        var sendUpdate = new McPendingUpdate () {
                             AccountId = Account.Id,
-                            Operation = NcPendingUpdate.Operations.Send,
-                            DataType = NcPendingUpdate.DataTypes.EmailMessage,
+                            Operation = McPendingUpdate.Operations.Send,
+                            DataType = McPendingUpdate.DataTypes.EmailMessage,
                             EmailMessageId = emailMessage.Id
                         };
                         Owner.Db.Insert (BackEnd.DbActors.Proto, sendUpdate);
@@ -735,7 +735,7 @@ namespace NachoCore.ActiveSync
 
         private void DeletePendingSearchReqs (string token, bool ignoreDispatched)
         {
-            var query = Owner.Db.Table<NcPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            var query = Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                         rec.Token == token);
             if (ignoreDispatched) {
                 query = query.Where (rec => false == rec.IsDispatched);
@@ -756,10 +756,10 @@ namespace NachoCore.ActiveSync
         public override void SearchContactsReq (string prefix, uint? maxResults, string token)
         {
             DeletePendingSearchReqs (token, true);
-            var newSearch = new NcPendingUpdate () {
+            var newSearch = new McPendingUpdate () {
                 AccountId = Account.Id,
-                Operation = NcPendingUpdate.Operations.Search,
-                DataType = NcPendingUpdate.DataTypes.Contact,
+                Operation = McPendingUpdate.Operations.Search,
+                DataType = McPendingUpdate.DataTypes.Contact,
                 Prefix = prefix,
                 MaxResults = (null == maxResults) ? 0 : (uint)maxResults,
                 Token = token

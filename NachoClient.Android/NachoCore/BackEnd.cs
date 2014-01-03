@@ -38,7 +38,7 @@ namespace NachoCore
         private IBackEndOwner Owner;
         private string DbFileName;
 
-        private ProtoControl ServiceFromAccount (NcAccount account)
+        private ProtoControl ServiceFromAccount (McAccount account)
         {
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (account.Id));
             if (! Services.Any ()) {
@@ -55,22 +55,22 @@ namespace NachoCore
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
             DbFileName = Path.Combine (documents, "db");
             Db = new SQLiteConnectionWithEvents(DbFileName, storeDateTimeAsTicks: true);
-            Db.CreateTable<NcAccount> ();
-            Db.CreateTable<NcCred> ();
-            Db.CreateTable<NcFolder> ();
-            Db.CreateTable<NcEmailMessage> ();
-            Db.CreateTable<NcAttachment> ();
-            Db.CreateTable<NcContact> ();
-            Db.CreateTable<NcPolicy> ();
-            Db.CreateTable<NcProtocolState> ();
-            Db.CreateTable<NcServer> ();
-            Db.CreateTable<NcPendingUpdate> ();
-            Db.CreateTable<NcCalendar> ();
-            Db.CreateTable<NcException> ();
-            Db.CreateTable<NcAttendee> ();
-            Db.CreateTable<NcCategory> ();
-            Db.CreateTable<NcRecurrence> ();
-            Db.CreateTable<NcTimeZone> ();
+            Db.CreateTable<McAccount> ();
+            Db.CreateTable<McCred> ();
+            Db.CreateTable<McFolder> ();
+            Db.CreateTable<McEmailMessage> ();
+            Db.CreateTable<McAttachment> ();
+            Db.CreateTable<McContact> ();
+            Db.CreateTable<McPolicy> ();
+            Db.CreateTable<McProtocolState> ();
+            Db.CreateTable<McServer> ();
+            Db.CreateTable<McPendingUpdate> ();
+            Db.CreateTable<McCalendar> ();
+            Db.CreateTable<McException> ();
+            Db.CreateTable<McAttendee> ();
+            Db.CreateTable<McCategory> ();
+            Db.CreateTable<McRecurrence> ();
+            Db.CreateTable<McTimeZone> ();
  
             Services = new List<ProtoControl> ();
 
@@ -80,13 +80,13 @@ namespace NachoCore
         }
 
         public void Start () {
-            var accounts = Db.Table<NcAccount> ();
+            var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Start (account);
             }
         }
 
-        public void Start (NcAccount account) {
+        public void Start (McAccount account) {
             var service = ServiceFromAccount (account);
             if (null == service) {
                 /* NOTE: This code needs to be able to detect the account type and start the 
@@ -98,32 +98,32 @@ namespace NachoCore
             service.Execute ();
         }
 
-        public void CertAskResp (NcAccount account, bool isOkay)
+        public void CertAskResp (McAccount account, bool isOkay)
         {
             ServiceFromAccount (account).CertAskResp (isOkay);
         }
 
-        public void ServerConfResp (NcAccount account)
+        public void ServerConfResp (McAccount account)
         {
             ServiceFromAccount (account).ServerConfResp ();
         }
 
-        public void CredResp (NcAccount account)
+        public void CredResp (McAccount account)
         {
             ServiceFromAccount (account).CredResp ();
         }
 
-        public string StartSearchContactsReq (NcAccount account, string prefix, uint? maxResults)
+        public string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults)
         {
             return ServiceFromAccount (account).StartSearchContactsReq (prefix, maxResults);
         }
 
-        public void SearchContactsReq (NcAccount account, string prefix, uint? maxResults, string token)
+        public void SearchContactsReq (McAccount account, string prefix, uint? maxResults, string token)
         {
             ServiceFromAccount (account).SearchContactsReq (prefix, maxResults, token);
         }
 
-        public void CancelSearchContactsReq (NcAccount account, string token)
+        public void CancelSearchContactsReq (McAccount account, string token)
         {
             ServiceFromAccount (account).CancelSearchContactsReq (token);
         }

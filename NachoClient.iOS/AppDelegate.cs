@@ -23,7 +23,7 @@ namespace NachoClient.iOS
 
         private NachoDemo Demo { get; set; }
         public BackEnd Be { get; set;}
-        public NcAccount Account { get; set; }
+        public McAccount Account { get; set; }
 
         public EKEventStore EventStore {
             get { return eventStore; }
@@ -32,7 +32,7 @@ namespace NachoClient.iOS
 
         private bool launchBe(){
             // Register to receive DB update indications.
-            NcEventable.DbEvent += (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, NcEventable target, EventArgs e) => {
+            McEventable.DbEvent += (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, McEventable target, EventArgs e) => {
                 if (BackEnd.DbActors.Ui != dbActor) {
                     Console.WriteLine("DB Event {1} on {0}", target.ToString(), dbEvent.ToString());
                 }
@@ -40,11 +40,11 @@ namespace NachoClient.iOS
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
             Be = new BackEnd (this);
-            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
+            if (0 == Be.Db.Table<McAccount> ().Count ()) {
                 Log.Info(Log.LOG_UI, "empty Table");
             } else {
                 // FIXME - this is wrong. Need to handle multiple accounts in future
-                this.Account = Be.Db.Table<NcAccount>().ElementAt(0);
+                this.Account = Be.Db.Table<McAccount>().ElementAt(0);
             }
             Be.Start ();
             return true;
@@ -128,29 +128,29 @@ namespace NachoClient.iOS
 
         // Methods for IBackEndOwner
 
-        public void CredReq(NcAccount account) {
+        public void CredReq(McAccount account) {
             Console.WriteLine ("Asking for Credentials");
             Be.CredResp (account);
         }
-        public void ServConfReq (NcAccount account) {
+        public void ServConfReq (McAccount account) {
             Console.WriteLine ("Asking for Config Info");
             Be.ServerConfResp (account);
 
         }
-        public void HardFailInd (NcAccount account) {
+        public void HardFailInd (McAccount account) {
         }
-        public void SoftFailInd (NcAccount account) {
+        public void SoftFailInd (McAccount account) {
         }
-        public bool RetryPermissionReq (NcAccount account, uint delaySeconds) {
+        public bool RetryPermissionReq (McAccount account, uint delaySeconds) {
             return true;
         }
-        public void ServerOOSpaceInd (NcAccount account) {
+        public void ServerOOSpaceInd (McAccount account) {
         }
-        public void CertAskReq (NcAccount account, X509Certificate2 certificate) {
+        public void CertAskReq (McAccount account, X509Certificate2 certificate) {
             // UI FIXME - ask user and call CertAskResp async'ly.
             Be.CertAskResp (account, true);
         }
-        public void SearchContactsResp (NcAccount account, string prefix, string token)
+        public void SearchContactsResp (McAccount account, string prefix, string token)
         {
             // FIXME.
         }

@@ -4,7 +4,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class NcFolder : NcEventable
+    public class McFolder : McEventable
     {
         [Indexed]
         public bool IsPseudo { get; set; }

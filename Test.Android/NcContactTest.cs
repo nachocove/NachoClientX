@@ -19,19 +19,19 @@ namespace Test.iOS
 
             public AsProtoControl Control { set; get; }
 
-            public NcProtocolState ProtocolState { get; set; }
+            public McProtocolState ProtocolState { get; set; }
 
-            public NcServer Server { get; set; }
+            public McServer Server { get; set; }
 
-            public NcAccount Account { get; set; }
+            public McAccount Account { get; set; }
 
-            public NcCred Cred { get; set; }
+            public McCred Cred { get; set; }
 
             public MockDataSource ()
             {
                 Owner = new MockProtoControlOwner ();
                 Owner.Db = new TestDb ();
-                Account = new NcAccount();
+                Account = new McAccount();
             }
         }
 
@@ -89,7 +89,7 @@ namespace Test.iOS
             Assert.AreEqual (command02a.Name.LocalName, Xml.AirSync.Add);
             asSync.ServerSaysAddContact (command02a, new MockNcFolder ());
 
-            var c02a = ds.Owner.Db.Get<NcContact> (x => x.LastName == "Steve");
+            var c02a = ds.Owner.Db.Get<McContact> (x => x.LastName == "Steve");
             Assert.IsNotNull (c02a);
             Assert.AreEqual ("Steve", c02a.LastName);
 
@@ -109,7 +109,7 @@ namespace Test.iOS
         {
             var ds = new MockDataSource ();
             // Set up folder
-            var f = new NcFolder ();
+            var f = new McFolder ();
             f.ServerId = "Contact:DEFAULT";
             f.Type = (uint) Xml.FolderHierarchy.TypeCode.DefaultContacts;
             ds.Owner.Db.Insert (f);
@@ -125,7 +125,7 @@ namespace Test.iOS
         {
             var ds = new MockDataSource ();
             // Set up folder
-            var f = new NcFolder ();
+            var f = new McFolder ();
             f.ServerId = "Contact:DEFAULT";
             f.Type = (uint) Xml.FolderHierarchy.TypeCode.DefaultContacts;
             ds.Owner.Db.Insert (f);

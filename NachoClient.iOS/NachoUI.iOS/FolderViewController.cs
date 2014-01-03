@@ -16,9 +16,9 @@ namespace NachoClient.iOS
          *         - from BE come in. Right now fixed length array will cause fault if email comes in.
          *  FIXME - need to add logic for adding folder, 
          */
-        NcAccount currentAccount { get; set; }
+        McAccount currentAccount { get; set; }
 
-        public void SetAccount (NcAccount ncaccount)
+        public void SetAccount (McAccount ncaccount)
         {
             currentAccount = ncaccount;
         }

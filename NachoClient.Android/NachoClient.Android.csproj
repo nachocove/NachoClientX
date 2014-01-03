@@ -62,10 +62,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="sqlite-net\SQLite.cs" />
     <Compile Include="sqlite-net\SQLiteAsync.cs" />
-    <Compile Include="NachoCore\Model\NcAccount.cs" />
-    <Compile Include="NachoCore\Model\NcCred.cs" />
-    <Compile Include="NachoCore\Model\NcProtocolState.cs" />
-    <Compile Include="NachoCore\Model\NcServer.cs" />
     <Compile Include="NachoCore\ActiveSync\IAsDataSource.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXML.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXMLByteQueue.cs" />
@@ -73,20 +69,12 @@
     <Compile Include="NachoCore\Extensions\XmlDocument+Wbxml.cs" />
     <Compile Include="NachoCore\Extensions\StateMachine.cs" />
     <Compile Include="NachoCore\Extensions\Helpers.cs" />
-    <Compile Include="NachoCore\Model\NcFolder.cs" />
     <Compile Include="NachoCore\BackEnd.cs" />
     <Compile Include="NachoCore\Extensions\SQLiteConnectionWithEvent.cs" />
     <Compile Include="NachoCore\ActiveSync\AsConstants.cs" />
-    <Compile Include="NachoCore\Model\NcEventable.cs" />
     <Compile Include="NachoCore\Extensions\ISQLiteEventable.cs" />
-    <Compile Include="NachoCore\Model\NcObject.cs" />
-    <Compile Include="NachoCore\Model\NcPendingUpdate.cs" />
     <Compile Include="NachoCore\ProtoControl.cs" />
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
-    <Compile Include="NachoCore\Model\NcEmailMessage.cs" />
-    <Compile Include="NachoCore\Model\NcItem.cs" />
-    <Compile Include="NachoCore\Model\NcContact.cs" />
-    <Compile Include="NachoCore\Model\NcAttachment.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoDemo.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsCommand.cs" />
@@ -112,8 +100,6 @@
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
     <Compile Include="NachoCore\Enforcer.cs" />
-    <Compile Include="NachoCore\Model\NcCalendar.cs" />
-    <Compile Include="NachoCore\Model\NcPolicy.cs" />
     <Compile Include="NachoCore\Extensions\Log.cs" />
     <Compile Include="NachoCore\Extensions\NcResult.cs" />
     <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
@@ -123,6 +109,20 @@
     <Compile Include="NachoCore\INachoContacts.cs" />
     <Compile Include="NachoCore\INachoCalendar.cs" />
     <Compile Include="NachoCore\INachoFolders.cs" />
+    <Compile Include="NachoCore\Model\McAccount.cs" />
+    <Compile Include="NachoCore\Model\McAttachment.cs" />
+    <Compile Include="NachoCore\Model\McCalendar.cs" />
+    <Compile Include="NachoCore\Model\McContact.cs" />
+    <Compile Include="NachoCore\Model\McCred.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage.cs" />
+    <Compile Include="NachoCore\Model\McEventable.cs" />
+    <Compile Include="NachoCore\Model\McFolder.cs" />
+    <Compile Include="NachoCore\Model\McItem.cs" />
+    <Compile Include="NachoCore\Model\McObject.cs" />
+    <Compile Include="NachoCore\Model\McPendingUpdate.cs" />
+    <Compile Include="NachoCore\Model\McPolicy.cs" />
+    <Compile Include="NachoCore\Model\McProtocolState.cs" />
+    <Compile Include="NachoCore\Model\McServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

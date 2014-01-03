@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public abstract class NcItem : NcEventable
+    public abstract class McItem : McEventable
     {
 
         // The ServerId represents a unique identifier that is assigned by the server

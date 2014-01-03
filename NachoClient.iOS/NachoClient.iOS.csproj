@@ -145,18 +145,6 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AppDelegate.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcAccount.cs">
-      <Link>NachoCore\Model\NcAccount.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcCred.cs">
-      <Link>NachoCore\Model\NcCred.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcProtocolState.cs">
-      <Link>NachoCore\Model\NcProtocolState.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcServer.cs">
-      <Link>NachoCore\Model\NcServer.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\sqlite-net\SQLite.cs">
       <Link>sqlite-net\SQLite.cs</Link>
     </Compile>
@@ -184,20 +172,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd.cs">
       <Link>NachoCore\BackEnd.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcFolder.cs">
-      <Link>NachoCore\Model\NcFolder.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ISQLiteEventable.cs">
       <Link>NachoCore\Extensions\ISQLiteEventable.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcEventable.cs">
-      <Link>NachoCore\Model\NcEventable.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcObject.cs">
-      <Link>NachoCore\Model\NcObject.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcPendingUpdate.cs">
-      <Link>NachoCore\Model\NcPendingUpdate.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ProtoControl.cs">
       <Link>NachoCore\ProtoControl.cs</Link>
@@ -205,20 +181,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\IProtoControlOwner.cs">
       <Link>NachoCore\IProtoControlOwner.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcEmailMessage.cs">
-      <Link>NachoCore\Model\NcEmailMessage.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
       <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcContact.cs">
-      <Link>NachoCore\Model\NcContact.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcItem.cs">
-      <Link>NachoCore\Model\NcItem.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcAttachment.cs">
-      <Link>NachoCore\Model\NcAttachment.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoDemo.cs">
       <Link>NachoDemo.cs</Link>
@@ -339,17 +303,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcCalendar.cs">
-      <Link>NachoCore\Model\NcCalendar.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Log.cs">
       <Link>NachoCore\Extensions\Log.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NcResult.cs">
       <Link>NachoCore\Extensions\NcResult.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcPolicy.cs">
-      <Link>NachoCore\Model\NcPolicy.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Enforcer.cs">
       <Link>NachoCore\Enforcer.cs</Link>
@@ -420,6 +378,48 @@
       <Link>NachoCore\INachoFolders.cs</Link>
     </Compile>
     <Compile Include="NachoCore\NachoFolders.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
+      <Link>NachoCore\Model\McAccount.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAttachment.cs">
+      <Link>NachoCore\Model\McAttachment.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCalendar.cs">
+      <Link>NachoCore\Model\McCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContact.cs">
+      <Link>NachoCore\Model\McContact.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCred.cs">
+      <Link>NachoCore\Model\McCred.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage.cs">
+      <Link>NachoCore\Model\McEmailMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEventable.cs">
+      <Link>NachoCore\Model\McEventable.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolder.cs">
+      <Link>NachoCore\Model\McFolder.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McItem.cs">
+      <Link>NachoCore\Model\McItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McObject.cs">
+      <Link>NachoCore\Model\McObject.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPendingUpdate.cs">
+      <Link>NachoCore\Model\McPendingUpdate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPolicy.cs">
+      <Link>NachoCore\Model\McPolicy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McProtocolState.cs">
+      <Link>NachoCore\Model\McProtocolState.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
+      <Link>NachoCore\Model\McServer.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

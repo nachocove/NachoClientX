@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class NcCred : NcObject
+    public class McCred : McObject
     {
         public string Username { get; set;}
         public string Password { get; set;}

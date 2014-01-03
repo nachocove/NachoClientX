@@ -9,10 +9,10 @@ namespace NachoCore.ActiveSync
     {
         IProtoControlOwner Owner { set; get; }
         AsProtoControl Control { set; get; }
-        NcProtocolState ProtocolState { get; set; }
-        NcServer Server { get; set; }
-        NcAccount Account { get; }
-        NcCred Cred { get; }
+        McProtocolState ProtocolState { get; set; }
+        McServer Server { get; set; }
+        McAccount Account { get; }
+        McCred Cred { get; }
     }
 }
 

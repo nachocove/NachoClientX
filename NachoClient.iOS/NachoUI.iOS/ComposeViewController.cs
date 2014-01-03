@@ -125,7 +125,7 @@ namespace NachoClient.iOS
             txtComposeMsg.ResignFirstResponder ();
         
 
-            var email = new NcEmailMessage () {
+            var email = new McEmailMessage () {
                 AccountId = appDelegate.Account.Id,
                 To = txtToField.Text,
                 From = appDelegate.Account.EmailAddr,

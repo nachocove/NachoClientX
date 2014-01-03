@@ -5,9 +5,9 @@ using NachoCore.Utils;
 namespace NachoCore.Model
 {
     // NOTE: eventually this will be a base class, with an active-sync sub-class.
-    public class NcProtocolState : NcObject
+    public class McProtocolState : McObject
     {
-        public NcProtocolState ()
+        public McProtocolState ()
         {
             AsProtocolVersion = "12.0";
             AsPolicyKey = "0";

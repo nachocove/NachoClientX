@@ -88,7 +88,7 @@ namespace NachoCore.ActiveSync
         private string Domain;
         private string BaseDomain;
         private bool IsTryingBaseDomain;
-        private NcServer ServerCandidate;
+        private McServer ServerCandidate;
         public uint ReDirsLeft;
 
         public StateMachine Sm { get; set; }
@@ -668,7 +668,7 @@ namespace NachoCore.ActiveSync
         private void DoTestFromRobot ()
         {
             var robot = (StepRobot)Sm.Arg;
-            ServerCandidate = NcServer.Create (robot.SrServerUri);
+            ServerCandidate = McServer.Create (robot.SrServerUri);
             DoTest ();
         }
 
@@ -709,21 +709,21 @@ namespace NachoCore.ActiveSync
             set { DataSource.Control = value; }
         }
 
-        public NcProtocolState ProtocolState {
+        public McProtocolState ProtocolState {
             get { return DataSource.ProtocolState; }
             set { DataSource.ProtocolState = value; }
         }
 
-        public NcServer Server {
+        public McServer Server {
             get { return ServerCandidate; }
             set { throw new Exception ("Illegal set of Server by AsOptionsCommand."); }
         }
 
-        public NcAccount Account {
+        public McAccount Account {
             get { return DataSource.Account; }
         }
 
-        public NcCred Cred {
+        public McCred Cred {
             get { return DataSource.Cred; }
         }
     }

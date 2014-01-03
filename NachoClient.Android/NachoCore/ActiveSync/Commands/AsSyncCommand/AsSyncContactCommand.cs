@@ -12,33 +12,33 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        public void ServerSaysAddContact (XElement command, NcFolder folder)
+        public void ServerSaysAddContact (XElement command, McFolder folder)
         {
             Log.Info (Log.LOG_CONTACTS, "ServerSaysAddContact\n{0}", command.ToString ());
             ProcessContactItem (command, folder);
         }
 
-        public void ServerSaysChangeContact (XElement command, NcFolder folder)
+        public void ServerSaysChangeContact (XElement command, McFolder folder)
         {
             Log.Info (Log.LOG_CONTACTS, "ServerSaysChangeContact\n{0}", command.ToString ());
             ProcessContactItem (command, folder);
         }
 
-        public void ProcessContactItem (XElement command, NcFolder folder)
+        public void ProcessContactItem (XElement command, McFolder folder)
         {
             // Convert the XML to an NcContact
             var h = new AsHelpers ();
             var r = h.ParseContact (m_ns, command, folder);
-            var newItem = (NcContact)r.GetObject ();
+            var newItem = (McContact)r.GetObject ();
 
             System.Diagnostics.Trace.Assert (r.isOK ());
             System.Diagnostics.Trace.Assert (null != newItem);
 
             // Look up the event by ServerId
-            NcContact oldItem = null;
+            McContact oldItem = null;
 
             try {
-                oldItem = DataSource.Owner.Db.Get<NcContact> (x => x.ServerId == newItem.ServerId);
+                oldItem = DataSource.Owner.Db.Get<McContact> (x => x.ServerId == newItem.ServerId);
             } catch (System.InvalidOperationException) {
                 Log.Info (Log.LOG_CONTACTS, "ProcessContactItem: System.InvalidOperationException handled");
             } catch (Exception e) {

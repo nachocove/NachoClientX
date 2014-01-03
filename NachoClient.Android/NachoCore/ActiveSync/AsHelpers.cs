@@ -100,7 +100,7 @@ namespace NachoCore.ActiveSync
         /// <returns>The time zone record.</returns>
         /// <param name="encodedTimeZone">Encoded time zone.</param>
         // TODO: The bias fields of the timezone
-        public NcTimeZone ParseAsTimeZone (string encodedTimeZone)
+        public McTimeZone ParseAsTimeZone (string encodedTimeZone)
         {
             // Convert the Base64 UUEncoded input into binary output. 
             byte[] binaryData;
@@ -119,7 +119,7 @@ namespace NachoCore.ActiveSync
             }
             string StandardName = ExtractStringFromAsTimeZone (binaryData, 4, 64);
             string DaylightName = ExtractStringFromAsTimeZone (binaryData, 4 + 64 + 16 + 4, 64);
-            NcTimeZone tz = new NcTimeZone ();
+            McTimeZone tz = new McTimeZone ();
             tz.StandardName = StandardName;
             tz.DaylightName = DaylightName;
             return tz;     
@@ -151,12 +151,12 @@ namespace NachoCore.ActiveSync
         /// </returns>
         // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
-        public List<NcAttendee> ParseAttendees (XNamespace ns, XElement attendees)
+        public List<McAttendee> ParseAttendees (XNamespace ns, XElement attendees)
         {
             System.Diagnostics.Trace.Assert (null != attendees);
             System.Diagnostics.Trace.Assert (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
 
-            var list = new List<NcAttendee> ();
+            var list = new List<McAttendee> ();
 
             foreach (var attendee in attendees.Elements()) {
                 System.Diagnostics.Debug.Assert (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
@@ -183,7 +183,7 @@ namespace NachoCore.ActiveSync
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
                 }
 
-                var a = new NcAttendee (name, email, type, status);
+                var a = new McAttendee (name, email, type, status);
                 list.Add (a);
             }
             return list;
@@ -194,16 +194,16 @@ namespace NachoCore.ActiveSync
         /// </returns>
         // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
-        public List<NcCategory> ParseCategories (XNamespace ns, XElement categories)
+        public List<McCategory> ParseCategories (XNamespace ns, XElement categories)
         {
             System.Diagnostics.Trace.Assert (null != categories);
             System.Diagnostics.Trace.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
 
-            var list = new List<NcCategory> ();
+            var list = new List<McCategory> ();
 
             foreach (var category in categories.Elements()) {
                 System.Diagnostics.Debug.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
-                var n = new NcCategory (category.Value);
+                var n = new McCategory (category.Value);
                 list.Add (n);
             }
             return list;
@@ -215,12 +215,12 @@ namespace NachoCore.ActiveSync
         /// <returns>The recurrence record</returns>
         /// <param name="ns">XML namespace to use to fetch elements</param>
         /// <param name="recurrence">Recurrence element</param>
-        public NcRecurrence ParseRecurrence (XNamespace ns, XElement recurrence)
+        public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence)
         {
             System.Diagnostics.Trace.Assert (null != recurrence);
             System.Diagnostics.Trace.Assert (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
 
-            var r = new NcRecurrence ();
+            var r = new McRecurrence ();
 
             foreach (var child in recurrence.Elements()) {
                 switch (child.Name.LocalName) {
@@ -265,19 +265,19 @@ namespace NachoCore.ActiveSync
             return r;
         }
 
-        public List<NcException> ParseExceptions (XNamespace ns, XElement exceptions)
+        public List<McException> ParseExceptions (XNamespace ns, XElement exceptions)
         {
             System.Diagnostics.Trace.Assert (null != exceptions);
             System.Diagnostics.Trace.Assert (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
 
-            var l = new List<NcException> ();
+            var l = new List<McException> ();
 
             Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions.ToString ());
             foreach (var exception in exceptions.Elements()) {
                 System.Diagnostics.Trace.Assert (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
-                var e = new NcException ();
-                e.attendees = new List<NcAttendee> ();
-                e.categories = new List<NcCategory> ();
+                var e = new McException ();
+                e.attendees = new List<McAttendee> ();
+                e.categories = new List<McCategory> ();
                 foreach (var child in exception.Elements()) {
                     switch (child.Name.LocalName) {
                     // Containers
@@ -359,7 +359,7 @@ namespace NachoCore.ActiveSync
         // <TimeZone xmlns="Calendar:"> LAEAAEUAUw...P///w== </TimeZone>
         // <Organizer_Email xmlns="Calendar:"> steves@nachocove.com </Organizer_Email>
         // <Organizer_Name xmlns="Calendar:"> Steve Scalpone </Organizer_Name>
-        public NcResult ParseCalendar (XNamespace ns, XElement command, NcFolder folder)
+        public NcResult ParseCalendar (XNamespace ns, XElement command, McFolder folder)
         {
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
@@ -369,14 +369,14 @@ namespace NachoCore.ActiveSync
             System.Diagnostics.Trace.Assert (null != folder);
             System.Diagnostics.Trace.Assert (folder.Id > 0);
 
-            NcCalendar c = new NcCalendar ();
+            McCalendar c = new McCalendar ();
             c.ServerId = serverId.Value;
             c.FolderId = folder.Id;
 
-            c.attendees = new List<NcAttendee> ();
-            c.categories = new List<NcCategory> ();
-            c.exceptions = new List<NcException> ();
-            c.recurrences = new List<NcRecurrence> ();
+            c.attendees = new List<McAttendee> ();
+            c.categories = new List<McCategory> ();
+            c.exceptions = new List<McException> ();
+            c.recurrences = new List<McRecurrence> ();
 
             XNamespace nsCalendar = "Calendar";
             // <ApplicationData>...</ApplicationData>
@@ -459,7 +459,7 @@ namespace NachoCore.ActiveSync
             return NcResult.OK (c);
         }
 
-        public NcResult ParseContact (XNamespace ns, XElement command, NcFolder folder)
+        public NcResult ParseContact (XNamespace ns, XElement command, McFolder folder)
         {
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
@@ -469,11 +469,11 @@ namespace NachoCore.ActiveSync
             System.Diagnostics.Trace.Assert (null != folder);
             System.Diagnostics.Trace.Assert (folder.Id > 0);
 
-            var c = new NcContact ();
+            var c = new McContact ();
             c.ServerId = serverId.Value;
             c.FolderId = folder.Id;
 
-            c.categories = new List<NcContactCategory> ();
+            c.categories = new List<McContactCategory> ();
 
 //            XNamespace nsContact = "Contact";
             // <ApplicationData>...</ApplicationData>

@@ -8,6 +8,6 @@ namespace NachoClient
     public interface INachoFolders
     {
         int Count();
-        NcFolder GetFolder (int i);
+        McFolder GetFolder (int i);
     }
 }

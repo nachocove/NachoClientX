@@ -11,7 +11,7 @@ namespace NachoClient.iOS
     public partial class CalendarItemViewController : DialogViewController
     {
         public bool editing;
-        public NcCalendar calendarItem;
+        public McCalendar calendarItem;
         UIBarButtonItem doneButton;
         UIBarButtonItem editButton;
 
@@ -56,7 +56,7 @@ namespace NachoClient.iOS
             Pushing = true;
             if (null == calendarItem) {
                 editing = true;
-                calendarItem = new NcCalendar ();
+                calendarItem = new McCalendar ();
                 Root = ToDialogElement (calendarItem);
                 NavigationItem.RightBarButtonItem = doneButton;
             } else {
@@ -79,7 +79,7 @@ namespace NachoClient.iOS
 
         public void AddIfSet (ref Section section, string name, DateTime value)
         {
-            if (!NcContact.IsNull (value)) {
+            if (!McContact.IsNull (value)) {
                 // Note DateTime, not Date, for calendar
                 section.Add (new DateTimeElement (name, value));
             }
@@ -87,7 +87,7 @@ namespace NachoClient.iOS
 
         public void AddIfSet (ref Section section, string name, int value)
         {
-            if (!NcContact.IsNull (value)) {
+            if (!McContact.IsNull (value)) {
                 section.Add (new StringElement (name, value.ToString ()));
             }
         }
@@ -108,7 +108,7 @@ namespace NachoClient.iOS
             section.Add (radioRoot);
         }
 
-        public RootElement ToDialogElement (NcCalendar c)
+        public RootElement ToDialogElement (McCalendar c)
         {
             System.Diagnostics.Trace.Assert (null != c);
 
@@ -142,7 +142,7 @@ namespace NachoClient.iOS
             // TODO: Shouldn't be null
             if (null != c.attendees) {
                 System.Diagnostics.Trace.Assert (null != c.attendees);
-                foreach (NcAttendee a in c.attendees) {
+                foreach (McAttendee a in c.attendees) {
                     AddIfSet (ref section, "Attendee", a.Email);
                 }
             }

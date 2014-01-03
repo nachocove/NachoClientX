@@ -16,49 +16,49 @@ namespace Test.iOS
         public TestDb () : base (System.IO.Path.GetTempFileName (), true)
         {
             // Calendar
-            CreateTable<NcCalendar> ();
-            DropTable<NcCalendar> ();
-            CreateTable<NcCalendar> ();
+            CreateTable<McCalendar> ();
+            DropTable<McCalendar> ();
+            CreateTable<McCalendar> ();
 
             // TimeZone
-            CreateTable<NcTimeZone> ();
-            DropTable<NcTimeZone> ();
-            CreateTable<NcTimeZone> ();
+            CreateTable<McTimeZone> ();
+            DropTable<McTimeZone> ();
+            CreateTable<McTimeZone> ();
 
             // Attendee
-            CreateTable<NcAttendee> ();
-            DropTable<NcAttendee> ();
-            CreateTable<NcAttendee> ();
+            CreateTable<McAttendee> ();
+            DropTable<McAttendee> ();
+            CreateTable<McAttendee> ();
 
             // Category
-            CreateTable<NcCategory> ();
-            DropTable<NcCategory> ();
-            CreateTable<NcCategory> ();
+            CreateTable<McCategory> ();
+            DropTable<McCategory> ();
+            CreateTable<McCategory> ();
 
             // Exception
-            CreateTable<NcException> ();
-            DropTable<NcException> ();
-            CreateTable<NcException> ();
+            CreateTable<McException> ();
+            DropTable<McException> ();
+            CreateTable<McException> ();
 
             // Recurrence
-            CreateTable<NcRecurrence> ();
-            DropTable<NcRecurrence> ();
-            CreateTable<NcRecurrence> ();
+            CreateTable<McRecurrence> ();
+            DropTable<McRecurrence> ();
+            CreateTable<McRecurrence> ();
 
             // NcContact
-            CreateTable<NcContact> ();
-            DropTable<NcContact> ();
-            CreateTable<NcContact> ();
+            CreateTable<McContact> ();
+            DropTable<McContact> ();
+            CreateTable<McContact> ();
 
             // NcFolder
-            CreateTable<NcFolder> ();
-            DropTable<NcFolder> ();
-            CreateTable<NcFolder> ();
+            CreateTable<McFolder> ();
+            DropTable<McFolder> ();
+            CreateTable<McFolder> ();
 
             // NcPendingUpdate
-            CreateTable<NcPendingUpdate> ();
-            DropTable<NcPendingUpdate> ();
-            CreateTable<NcPendingUpdate> ();
+            CreateTable<McPendingUpdate> ();
+            DropTable<McPendingUpdate> ();
+            CreateTable<McPendingUpdate> ();
         }
     }
 
@@ -66,10 +66,10 @@ namespace Test.iOS
     {
         public IProtoControlOwner Owner { set; get; }
         public AsProtoControl Control { set; get; }
-        public NcProtocolState ProtocolState { get; set; }
-        public NcServer Server { get; set; }
-        public NcAccount Account { get; set; }
-        public NcCred Cred { get; set; }
+        public McProtocolState ProtocolState { get; set; }
+        public McServer Server { get; set; }
+        public McAccount Account { get; set; }
+        public McCred Cred { get; set; }
 
         public MockDataSource()
         {
@@ -93,7 +93,7 @@ namespace Test.iOS
         public void ServerOOSpaceInd (ProtoControl sender) { }
     }
 
-    public class MockNcFolder : NcFolder
+    public class MockNcFolder : McFolder
     {
 
         public MockNcFolder()
@@ -238,24 +238,24 @@ namespace Test.iOS
             TestDb db = new TestDb ();
 
             // Start with a clean db
-            db.CreateTable<NcCategory> ();
-            db.DropTable<NcCategory> ();
+            db.CreateTable<McCategory> ();
+            db.DropTable<McCategory> ();
 
             // Create a new db
-            db.CreateTable<NcCategory> ();
+            db.CreateTable<McCategory> ();
 
-            var c01 = new NcCategory ("test");
+            var c01 = new McCategory ("test");
             c01.ParentId = 5;
-            c01.ParentType = NcCategory.CALENDAR;
+            c01.ParentType = McCategory.CALENDAR;
             db.Insert (c01);
 
-            var c02 = db.Get<NcCategory> (x => x.ParentId == 5);
+            var c02 = db.Get<McCategory> (x => x.ParentId == 5);
             Assert.IsNotNull (c02);
             Assert.AreEqual (c02.Id, 1);
             Assert.AreEqual (c02.ParentId, 5);
             Assert.AreEqual (c02.Name, "test");
 
-            var c03 = db.Get<NcCategory> (x => x.Name == "test");
+            var c03 = db.Get<McCategory> (x => x.Name == "test");
             Assert.IsNotNull (c03);
             Assert.AreEqual (c03.Id, 1);
             Assert.AreEqual (c03.ParentId, 5);
@@ -264,36 +264,36 @@ namespace Test.iOS
             c03.Name = "changed";
             db.Update (c03);
 
-            Assert.AreEqual (db.Table<NcCategory> ().Count (), 1);
+            Assert.AreEqual (db.Table<McCategory> ().Count (), 1);
 
-            Assert.Throws<System.InvalidOperationException> (() => db.Get<NcCategory> (x => x.Name == "test"));
+            Assert.Throws<System.InvalidOperationException> (() => db.Get<McCategory> (x => x.Name == "test"));
 
-            var c05 = db.Get<NcCategory> (x => x.Name == "changed");
+            var c05 = db.Get<McCategory> (x => x.Name == "changed");
             Assert.IsNotNull (c05);
             Assert.AreEqual (c05.Id, 1);
             Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "changed");
 
-            var c06 = new NcCategory ("second");
+            var c06 = new McCategory ("second");
             c06.Id = 5;
             db.Insert (c06);
-            var c07 = new NcCategory ("do not see");
+            var c07 = new McCategory ("do not see");
             c07.Id = 6;
             db.Insert (c07);
 
-            Assert.AreEqual (db.Table<NcCategory> ().Count (), 3);
+            Assert.AreEqual (db.Table<McCategory> ().Count (), 3);
 
-            var c08 = db.Get<NcCategory> (x => x.ParentId == 5);
+            var c08 = db.Get<McCategory> (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
 
 //            // TODO: Implement Query in SQLConnectionWithEvents
-//            var c09 = db.Query<NcCategory> ("select * from NcCategory where CalendarId = ?", 5);
+//            var c09 = db.Query<NcCategory> ("select * from McCategory where CalendarId = ?", 5);
 //            NachoCore.Utils.Log.Info ("c09 {0}", c09.ToString ());
 //            foreach (var c in c09) {
 //                Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
 //            }
 
-            var c10 = db.Table<NcCategory> ().Where (x => x.ParentId == 5);
+            var c10 = db.Table<McCategory> ().Where (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
@@ -307,24 +307,24 @@ namespace Test.iOS
             TestDb db = new TestDb ();
 
             // Start with a clean db
-            db.CreateTable<NcAttendee> ();
-            db.DropTable<NcAttendee> ();
+            db.CreateTable<McAttendee> ();
+            db.DropTable<McAttendee> ();
 
             // Create a new db
-            db.CreateTable<NcAttendee> ();
+            db.CreateTable<McAttendee> ();
 
-            var c01 = new NcAttendee ("Steve", "rascal2210@hotmail.com");
+            var c01 = new McAttendee ("Steve", "rascal2210@hotmail.com");
             c01.ParentId = 5;
             db.Insert (c01);
 
-            var c02 = db.Get<NcAttendee> (x => x.ParentId == 5);
+            var c02 = db.Get<McAttendee> (x => x.ParentId == 5);
             Assert.IsNotNull (c02);
             Assert.AreEqual (c02.Id, 1);
             Assert.AreEqual (c02.ParentId, 5);
             Assert.AreEqual (c02.Name, "Steve");
             Assert.AreEqual (c02.Email, "rascal2210@hotmail.com");
 
-            var c03 = db.Get<NcAttendee> (x => x.Name == "Steve");
+            var c03 = db.Get<McAttendee> (x => x.Name == "Steve");
             Assert.IsNotNull (c03);
             Assert.AreEqual (c03.Id, 1);
             Assert.AreEqual (c03.ParentId, 5);
@@ -334,18 +334,18 @@ namespace Test.iOS
             c03.Email = "steves@nachocove.com";
             db.Update (c03);
 
-            Assert.AreEqual (db.Table<NcAttendee> ().Count (), 1);
+            Assert.AreEqual (db.Table<McAttendee> ().Count (), 1);
 
-            Assert.Throws<System.InvalidOperationException> (() => db.Get<NcAttendee> (x => x.Email == "rascal2210@hotmail.com"));
+            Assert.Throws<System.InvalidOperationException> (() => db.Get<McAttendee> (x => x.Email == "rascal2210@hotmail.com"));
 
-            var c05 = db.Get<NcAttendee> (x => x.Name == "Steve");
+            var c05 = db.Get<McAttendee> (x => x.Name == "Steve");
             Assert.IsNotNull (c05);
             Assert.AreEqual (c05.Id, 1);
             Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "Steve");
             Assert.AreEqual (c05.Email, "steves@nachocove.com");
 
-            var c05a = db.Get<NcAttendee> (x => x.Email == "steves@nachocove.com");
+            var c05a = db.Get<McAttendee> (x => x.Email == "steves@nachocove.com");
             Assert.IsNotNull (c05a);
             Assert.AreEqual (c05a.Id, 1);
             Assert.AreEqual (c05a.ParentId, 5);
@@ -353,26 +353,26 @@ namespace Test.iOS
             Assert.AreEqual (c05a.Email, "steves@nachocove.com");
 
 
-            var c06 = new NcAttendee ("Chris", "chrisp@nachocove.com");
+            var c06 = new McAttendee ("Chris", "chrisp@nachocove.com");
             c06.Id = 5;
             db.Insert (c06);
-            var c07 = new NcAttendee ("Jeff", "jeffe@nachocove.com");
+            var c07 = new McAttendee ("Jeff", "jeffe@nachocove.com");
             c07.Id = 6;
             db.Insert (c07);
 
-            Assert.AreEqual (db.Table<NcAttendee> ().Count (), 3);
+            Assert.AreEqual (db.Table<McAttendee> ().Count (), 3);
 
-            var c08 = db.Get<NcAttendee> (x => x.ParentId == 5);
+            var c08 = db.Get<McAttendee> (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
 
 //            // TODO: implement Query in SQLConnectionWithEvents
-//            var c09 = db.Query<NcAttendee> ("select * from NcAttendee where CalendarId = ?", 5);
+//            var c09 = db.Query<McAttendee> ("select * from McAttendee where CalendarId = ?", 5);
 //            NachoCore.Utils.Log.Info ("c09 {0}", c09.ToString ());
 //            foreach (var c in c09) {
 //                Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
 //            }
 
-            var c10 = db.Table<NcAttendee> ().Where (x => x.ParentId == 5);
+            var c10 = db.Table<McAttendee> ().Where (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
@@ -386,13 +386,13 @@ namespace Test.iOS
             TestDb db = new TestDb ();
 
             // Start with a clean db
-            db.CreateTable<NcTimeZone> ();
-            db.DropTable<NcTimeZone> ();
+            db.CreateTable<McTimeZone> ();
+            db.DropTable<McTimeZone> ();
 
             // Create a new db
-            db.CreateTable<NcTimeZone> ();
+            db.CreateTable<McTimeZone> ();
 
-            NcTimeZone t01 = new NcTimeZone ();
+            McTimeZone t01 = new McTimeZone ();
             t01.Bias = 10;
             t01.DaylightBias = 11;
             t01.StandardBias = 12;
@@ -402,7 +402,7 @@ namespace Test.iOS
             t01.StandardName = "Standard Name 10";
             db.Insert (t01);
 
-            NcTimeZone t02 = new NcTimeZone ();
+            McTimeZone t02 = new McTimeZone ();
             t02.Bias = 20;
             t02.DaylightBias = 21;
             t02.StandardBias = 22;
@@ -412,9 +412,9 @@ namespace Test.iOS
             t02.StandardName = "Standard Name 20";
             db.Insert (t02);
 
-            Assert.AreEqual (db.Table<NcTimeZone> ().Count (), 2);
+            Assert.AreEqual (db.Table<McTimeZone> ().Count (), 2);
 
-            NcTimeZone t03 = db.Get<NcTimeZone> (x => x.Id == 2);
+            McTimeZone t03 = db.Get<McTimeZone> (x => x.Id == 2);
             Assert.AreEqual (t03.StandardName, "Standard Name 20");
             Assert.AreEqual (t03.StandardDate, new DateTime (2013, 2, 2, 2, 2, 2, 222));
 
@@ -422,9 +422,9 @@ namespace Test.iOS
             t03.DaylightDate = new DateTime (2013, 2, 1, 1, 1, 1, 222);
             db.Update (t03);
 
-            Assert.AreEqual (db.Table<NcTimeZone> ().Count (), 2);
+            Assert.AreEqual (db.Table<McTimeZone> ().Count (), 2);
 
-            NcTimeZone t04 = db.Get<NcTimeZone> (x => x.Id == 2);
+            McTimeZone t04 = db.Get<McTimeZone> (x => x.Id == 2);
             Assert.AreEqual (t04.DaylightName, "New Daylight Name 20");
             Assert.AreEqual (t04.DaylightDate, new DateTime (2013, 2, 1, 1, 1, 1, 222));
         }
@@ -475,7 +475,7 @@ namespace Test.iOS
             var h = new NachoCore.ActiveSync.AsHelpers ();
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
             Assert.IsNotNull (r.GetObject ());
-            var c = (NcCalendar)r.GetObject ();
+            var c = (McCalendar)r.GetObject ();
             Assert.AreEqual (c.DtStamp, new DateTime (2013, 11, 26, 12, 49, 29));
             Assert.AreEqual (c.StartTime, new DateTime (2013, 11, 28, 01, 00, 00));
             Assert.AreEqual (c.EndTime, new DateTime (2013, 11, 29, 02, 00, 00));
@@ -509,7 +509,7 @@ namespace Test.iOS
             var h = new NachoCore.ActiveSync.AsHelpers ();
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
             Assert.IsNotNull (r.GetObject ());
-            var c = (NcCalendar)r.GetObject ();
+            var c = (McCalendar)r.GetObject ();
             Assert.IsNull (c.Location);
             Assert.AreEqual (c.Subject, "Re-dog");
             Assert.AreEqual (c.UID, "7j5do4kr7q8fi67ubq7bdpr01c@google.com");
