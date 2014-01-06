@@ -71,13 +71,13 @@ namespace Test.iOS
             }
         }
 
-        [Test]
-        public void SearchXML ()
-        {
-            var ds = new MockDataSource ();
-            var a = new AsSearchCommand (ds);
-            a.ToXDocument (null);
-        }
+//        [Test]
+//        public void SearchXML ()
+//        {
+//            var ds = new MockDataSource ();
+//            var a = new AsSearchCommand (ds);
+//            a.ToXDocument (null);
+//        }
 
         [Test]
         public void BasicSyncResults ()
