@@ -130,6 +130,7 @@ namespace NachoCore.Utils
 
         public void Start (uint StartState)
         {
+            Log.Info (Log.LOG_STATE, "State Machine start {0}", StartState);
             State = StartState;
             PostEvent ((uint)SmEvt.E.Launch);
         }
@@ -161,6 +162,7 @@ namespace NachoCore.Utils
             BuildEventDicts ();
 
             if ((uint)St.Stop == State) {
+                Log.Info (Log.LOG_STATE, "PostEvent stop");
                 return;
             }
             EventQ.Enqueue (smEvent);

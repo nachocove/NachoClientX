@@ -24,7 +24,12 @@ namespace NachoCore.ActiveSync
             var folders = DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
                           ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
                           (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type ||
-                          (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type));
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type ||
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultDrafts == x.Type ||
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultSent == x.Type ||
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultOutbox == x.Type ||
+                          (uint)Xml.FolderHierarchy.TypeCode.DefaultDeleted == x.Type)
+                          );
             foreach (var folder in folders) {
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
                     new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
@@ -39,12 +44,15 @@ namespace NachoCore.ActiveSync
                                DataSource.ProtocolState.HeartbeatInterval.ToString ()), xFolders);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (ping);
+            Log.Info(Log.LOG_SYNC,"Sync:\n{0}", doc.ToString ());
             return doc;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             McProtocolState update;
+
+            Log.Info(Log.LOG_SYNC, "Sync response:\n{0}", doc.ToString ());
 
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
             string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;

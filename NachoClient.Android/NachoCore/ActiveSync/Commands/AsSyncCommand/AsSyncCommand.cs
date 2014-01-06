@@ -71,12 +71,13 @@ namespace NachoCore.ActiveSync
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sync);
+            Log.Info (Log.LOG_SYNC, "AsSyncCommand:\n{0}", doc.ToString ());
             return doc;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            Log.Info(Log.LOG_SYNC, "{0}", doc);
+            Log.Info (Log.LOG_SYNC, "AsSyncCommand response:\n{0}", doc);
             var collections = doc.Root.Element (m_ns + Xml.AirSync.Collections).Elements (m_ns + Xml.AirSync.Collection);
             foreach (var collection in collections) {
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
@@ -87,8 +88,8 @@ namespace NachoCore.ActiveSync
 
                 folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
                 (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
-                Log.Info(Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
-                Log.Info(Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
+                Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
+                Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
                 var status = collection.Element (m_ns + Xml.AirSync.Status);
                 switch (uint.Parse (status.Value)) {
                 case (uint)Xml.AirSync.StatusCode.Success:
@@ -163,7 +164,7 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 default:
-                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED status " + status.ToString());
+                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED status " + status.ToString ());
                     break;
                 }
 
@@ -183,12 +184,10 @@ namespace NachoCore.ActiveSync
 
         private SQLite.TableQuery<McFolder> FoldersNeedingSync ()
         {
-            // FIXME - we need strategy on what folders to sync & when.
-            return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
-            true == x.AsSyncRequired &&
-            ((uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type ||
-            (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
-            (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type));
+            // Ping, et al, decide what needs to be checked.  We sync what needs sync'ing.
+            // If we don't sync the flagged folders, then the ping command starts right back up.
+            // TODO: We need to be smarter about prioritization of sync'ing.
+            return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id && true == x.AsSyncRequired);
         }
         // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
         private void AddEmail (XElement command, McFolder folder)
@@ -294,8 +293,6 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
-
-
         // FIXME - make this a generic extension.
         private bool ParseXmlBoolean (XElement bit)
         {

@@ -494,6 +494,8 @@ namespace NachoCore.ActiveSync
             // FIXME - generate protocol state here. load it from DB or create & save to DB.
             Sm.State = ProtocolState.State;
 
+            Log.Info (Log.LOG_STATE, "Initial state: {0}", Sm.State);
+
             var dispached = Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                             rec.IsDispatched == true).ToList ();
             foreach (var update in dispached) {

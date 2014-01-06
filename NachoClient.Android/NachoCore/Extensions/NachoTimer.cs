@@ -12,6 +12,13 @@ namespace NachoCore.Utils
         static int nextId = 0;
         static int id;
 
+        public NachoTimer(TimerCallback c)
+        {
+            id = ++nextId;
+            Log.Info(Log.LOG_TIMER, "NachoTimer {0} created", id);
+            timer = new Timer(c);
+        }
+
         public NachoTimer(TimerCallback c, Object o, Int32 i1, Int32 i2)
         {
             id = ++nextId;

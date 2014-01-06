@@ -322,7 +322,8 @@ namespace NachoCore.ActiveSync
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
                 response = await myClient.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
-            } catch (OperationCanceledException) {
+            } catch (OperationCanceledException ex) {
+                Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     if (!token.IsCancellationRequested) {
@@ -331,6 +332,7 @@ namespace NachoCore.ActiveSync
                 }
                 return;
             } catch (WebException ex) {
+                Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
@@ -338,6 +340,7 @@ namespace NachoCore.ActiveSync
                 }
                 return;
             } catch (NullReferenceException ex) {
+                Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
                 // As best I can tell, this may be driven by bug(s) in the Mono stack.
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
@@ -355,9 +358,9 @@ namespace NachoCore.ActiveSync
                 try {
                     HttpOpSm.PostEvent (ProcessHttpResponse (response));
                 } catch (Exception ex) {
-                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, null, 
-                        string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
-                }
+                    Log.Info (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}", ex, ServerUri, ex.Message);
+                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
+                 }
             }
         }
 
@@ -447,7 +450,8 @@ namespace NachoCore.ActiveSync
                         };
                         ServerUri = new Uri (AsCommand.BaseUri (dummy), redirUri.Query);
                         return Event.Create ((uint)SmEvt.E.Launch);
-                    } catch {
+                    } catch(Exception ex) {
+                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                         return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
                     }
                 }
@@ -462,7 +466,8 @@ namespace NachoCore.ActiveSync
                 if (response.Headers.Contains ("Retry-After")) {
                     try {
                         seconds = uint.Parse (response.Headers.GetValues ("Retry-After").First ());
-                    } catch {
+                    } catch(Exception ex) {
+                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                         return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Could not parse Retry-After value.");
                     }
                     if (DataSource.Owner.RetryPermissionReq (DataSource.Control, seconds)) {

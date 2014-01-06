@@ -369,7 +369,6 @@
     <Compile Include="NachoCore\DeviceContacts.cs" />
     <Compile Include="NachoCore\NachoCalendar.cs" />
     <Compile Include="NachoCore\NachoContacts.cs" />
-    <Compile Include="NachoCore\Model\DeviceCalendar.cs" />
     <Compile Include="NachoUI.iOS\CalendarItemViewController.cs" />
     <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
       <DependentUpon>CalendarItemViewController.cs</DependentUpon>
@@ -423,6 +422,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoTimer.cs">
       <Link>NachoCore\Extensions\NachoTimer.cs</Link>
     </Compile>
+    <Compile Include="NachoCore\DeviceCalendar.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
