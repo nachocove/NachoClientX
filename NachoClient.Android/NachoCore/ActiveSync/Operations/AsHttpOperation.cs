@@ -59,12 +59,12 @@ namespace NachoCore.ActiveSync
         private IAsDataSource DataSource;
         private IAsHttpOperationOwner Owner;
         private CancellationTokenSource Cts;
-        private Timer DelayTimer;
-        private Timer TimeoutTimer;
+        private NachoTimer DelayTimer;
+        private NachoTimer TimeoutTimer;
         // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
         #pragma warning disable 414
-        private Timer DisposedDelayTimer;
-        private Timer DisposedTimeoutTimer;
+        private NachoTimer DisposedDelayTimer;
+        private NachoTimer DisposedTimeoutTimer;
         #pragma warning restore 414
         private StateMachine HttpOpSm;
         private StateMachine OwnerSm;
@@ -181,7 +181,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDelay ()
         {
-            DelayTimer = new Timer (DelayTimerCallback, null, Convert.ToInt32 (HttpOpSm.Arg),
+            DelayTimer = new NachoTimer (DelayTimerCallback, null, Convert.ToInt32 (HttpOpSm.Arg),
                 System.Threading.Timeout.Infinite);
         }
 
@@ -318,7 +318,7 @@ namespace NachoCore.ActiveSync
             // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
             // assume the HttpClient instance has been abandoned.
             var myClient = Client;
-            TimeoutTimer = new Timer (TimeoutTimerCallback, myClient, Timeout, 
+            TimeoutTimer = new NachoTimer (TimeoutTimerCallback, myClient, Timeout, 
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
                 response = await myClient.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);

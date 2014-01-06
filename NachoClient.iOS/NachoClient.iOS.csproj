@@ -420,6 +420,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoTimer.cs">
+      <Link>NachoCore\Extensions\NachoTimer.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

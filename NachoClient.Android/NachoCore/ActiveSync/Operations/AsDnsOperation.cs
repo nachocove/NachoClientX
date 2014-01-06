@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
         private bool wasKilledByTimer;
         private bool wasCancelled;
         private IAsDnsOperationOwner m_owner;
-        private Timer TimeoutTimer;
+        private NachoTimer TimeoutTimer;
         private DnsQueryRequest Request;
 
         public AsDnsOperation(IAsDnsOperationOwner owner) {
@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
 
         public async void Execute (StateMachine sm) {
             Request = new DnsQueryRequest ();
-            TimeoutTimer = new Timer (TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
+            TimeoutTimer = new NachoTimer (TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
                 System.Threading.Timeout.Infinite);
             try {
                 var Response = await Request.ResolveAsync (m_owner.DnsHost (this),
