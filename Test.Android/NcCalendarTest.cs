@@ -31,9 +31,9 @@ namespace Test.iOS
             CreateTable<McAttendee> ();
 
             // Category
-            CreateTable<McCategory> ();
-            DropTable<McCategory> ();
-            CreateTable<McCategory> ();
+            CreateTable<McCalendarCategory> ();
+            DropTable<McCalendarCategory> ();
+            CreateTable<McCalendarCategory> ();
 
             // Exception
             CreateTable<McException> ();
@@ -238,24 +238,24 @@ namespace Test.iOS
             TestDb db = new TestDb ();
 
             // Start with a clean db
-            db.CreateTable<McCategory> ();
-            db.DropTable<McCategory> ();
+            db.CreateTable<McCalendarCategory> ();
+            db.DropTable<McCalendarCategory> ();
 
             // Create a new db
-            db.CreateTable<McCategory> ();
+            db.CreateTable<McCalendarCategory> ();
 
-            var c01 = new McCategory ("test");
+            var c01 = new McCalendarCategory ("test");
             c01.ParentId = 5;
-            c01.ParentType = McCategory.CALENDAR;
+            c01.ParentType = McCalendarCategory.CALENDAR;
             db.Insert (c01);
 
-            var c02 = db.Get<McCategory> (x => x.ParentId == 5);
+            var c02 = db.Get<McCalendarCategory> (x => x.ParentId == 5);
             Assert.IsNotNull (c02);
             Assert.AreEqual (c02.Id, 1);
             Assert.AreEqual (c02.ParentId, 5);
             Assert.AreEqual (c02.Name, "test");
 
-            var c03 = db.Get<McCategory> (x => x.Name == "test");
+            var c03 = db.Get<McCalendarCategory> (x => x.Name == "test");
             Assert.IsNotNull (c03);
             Assert.AreEqual (c03.Id, 1);
             Assert.AreEqual (c03.ParentId, 5);
@@ -264,36 +264,36 @@ namespace Test.iOS
             c03.Name = "changed";
             db.Update (c03);
 
-            Assert.AreEqual (db.Table<McCategory> ().Count (), 1);
+            Assert.AreEqual (db.Table<McCalendarCategory> ().Count (), 1);
 
-            Assert.Throws<System.InvalidOperationException> (() => db.Get<McCategory> (x => x.Name == "test"));
+            Assert.Throws<System.InvalidOperationException> (() => db.Get<McCalendarCategory> (x => x.Name == "test"));
 
-            var c05 = db.Get<McCategory> (x => x.Name == "changed");
+            var c05 = db.Get<McCalendarCategory> (x => x.Name == "changed");
             Assert.IsNotNull (c05);
             Assert.AreEqual (c05.Id, 1);
             Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "changed");
 
-            var c06 = new McCategory ("second");
+            var c06 = new McCalendarCategory ("second");
             c06.Id = 5;
             db.Insert (c06);
-            var c07 = new McCategory ("do not see");
+            var c07 = new McCalendarCategory ("do not see");
             c07.Id = 6;
             db.Insert (c07);
 
-            Assert.AreEqual (db.Table<McCategory> ().Count (), 3);
+            Assert.AreEqual (db.Table<McCalendarCategory> ().Count (), 3);
 
-            var c08 = db.Get<McCategory> (x => x.ParentId == 5);
+            var c08 = db.Get<McCalendarCategory> (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
 
 //            // TODO: Implement Query in SQLConnectionWithEvents
-//            var c09 = db.Query<NcCategory> ("select * from McCategory where CalendarId = ?", 5);
+//            var c09 = db.Query<NcCategory> ("select * from McCalendarCategory where CalendarId = ?", 5);
 //            NachoCore.Utils.Log.Info ("c09 {0}", c09.ToString ());
 //            foreach (var c in c09) {
 //                Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
 //            }
 
-            var c10 = db.Table<McCategory> ().Where (x => x.ParentId == 5);
+            var c10 = db.Table<McCalendarCategory> ().Where (x => x.ParentId == 5);
             NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));

@@ -68,7 +68,7 @@ namespace NachoCore
             Db.CreateTable<McCalendar> ();
             Db.CreateTable<McException> ();
             Db.CreateTable<McAttendee> ();
-            Db.CreateTable<McCategory> ();
+            Db.CreateTable<McCalendarCategory> ();
             Db.CreateTable<McRecurrence> ();
             Db.CreateTable<McTimeZone> ();
  

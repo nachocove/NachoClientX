@@ -194,16 +194,16 @@ namespace NachoCore.ActiveSync
         /// </returns>
         // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
-        public List<McCategory> ParseCategories (XNamespace ns, XElement categories)
+        public List<McCalendarCategory> ParseCategories (XNamespace ns, XElement categories)
         {
             System.Diagnostics.Trace.Assert (null != categories);
             System.Diagnostics.Trace.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
 
-            var list = new List<McCategory> ();
+            var list = new List<McCalendarCategory> ();
 
             foreach (var category in categories.Elements()) {
                 System.Diagnostics.Debug.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
-                var n = new McCategory (category.Value);
+                var n = new McCalendarCategory (category.Value);
                 list.Add (n);
             }
             return list;
@@ -277,7 +277,7 @@ namespace NachoCore.ActiveSync
                 System.Diagnostics.Trace.Assert (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
                 e.attendees = new List<McAttendee> ();
-                e.categories = new List<McCategory> ();
+                e.categories = new List<McCalendarCategory> ();
                 foreach (var child in exception.Elements()) {
                     switch (child.Name.LocalName) {
                     // Containers
@@ -374,7 +374,7 @@ namespace NachoCore.ActiveSync
             c.FolderId = folder.Id;
 
             c.attendees = new List<McAttendee> ();
-            c.categories = new List<McCategory> ();
+            c.categories = new List<McCalendarCategory> ();
             c.exceptions = new List<McException> ();
             c.recurrences = new List<McRecurrence> ();
 

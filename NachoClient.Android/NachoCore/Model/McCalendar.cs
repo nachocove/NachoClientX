@@ -65,7 +65,7 @@ namespace NachoCore.Model
         /// Implicit [Ignore]
         public List<McAttendee> attendees;
         /// Implicit [Ignore]
-        public List<McCategory> categories;
+        public List<McCalendarCategory> categories;
     }
 
     public partial class McCalendar : McCalendarRoot
@@ -97,6 +97,9 @@ namespace NachoCore.Model
         public int NativeBodyType { get; set; }
     }
 
+    /// <summary>
+    /// List of exceptions associated with the calendar entry
+    /// </summary>
     public partial class McException : McCalendarRoot
     {
         [Indexed]
@@ -108,9 +111,12 @@ namespace NachoCore.Model
         /// Start time of the original recurring meeting (Compact DateTime). Exception only.
         public DateTime ExceptionStartTime { get; set; }
     }
-    // The attendee table is a big old list of non-unique names.
-    // Each attendee record refers back to its Calendar record or
-    // exception record.
+
+    /// <summary>
+    /// The attendee table is a big old list of non-unique names.
+    /// Each attendee record refers back to its Calendar record or
+    /// exception record.
+    /// </summary>
     public partial class McAttendee : McObject
     {
         /// Parent Calendar or Exception item index.
@@ -138,9 +144,11 @@ namespace NachoCore.Model
         public NcAttendeeStatus AttendeeStatus { get; set; }
     }
 
+    /// <summary>
     /// The category table represents a collection of categories
     /// assigned to a calendar or exception item.
-    public partial class McCategory : McObject
+    /// </summary>
+    public partial class McCalendarCategory : McObject
     {
         /// Parent Calendar or Exception item index.
         [Indexed]
@@ -156,6 +164,10 @@ namespace NachoCore.Model
         public string Name { get; set; }
     }
 
+    /// <summary>
+    /// A calendar entry can have one or more
+    /// recurrence records associated with it.
+    /// </summary>
     public partial class McRecurrence : McObject
     {
         /// Recurrence.  Calendar only.
@@ -407,9 +419,9 @@ namespace NachoCore.Model
         }
     }
 
-    public partial class McCategory
+    public partial class McCalendarCategory
     {
-        public McCategory ()
+        public McCalendarCategory ()
         {
             Id = 0;
             ParentId = 0;
@@ -417,7 +429,7 @@ namespace NachoCore.Model
             Name = null;
         }
 
-        public McCategory (string name) : this ()
+        public McCalendarCategory (string name) : this ()
         {
             Name = name;
         }

@@ -113,11 +113,11 @@ namespace NachoCore.ActiveSync
 
         /// <param name="parentType">CALENDAR or EXCEPTION</param>
         /// <param name="parentId">Id field from McCalendar or NcException</param>
-        public List<McCategory> GetCategories (McCalendarRoot r)
+        public List<McCalendarCategory> GetCategories (McCalendarRoot r)
         {
             System.Diagnostics.Trace.Assert (r.Id > 0);
-            string query = "select * from McCategory where parentType = ? and parentId = ?";
-            var l = DataSource.Owner.Db.Query<McCategory> (query, McCategory.GetParentType (r), r.Id);
+            string query = "select * from McCalendarCategory where parentType = ? and parentId = ?";
+            var l = DataSource.Owner.Db.Query<McCalendarCategory> (query, McCalendarCategory.GetParentType (r), r.Id);
             System.Diagnostics.Trace.Assert (l.Count >= 0);
             return l;
         }
@@ -195,7 +195,7 @@ namespace NachoCore.ActiveSync
         {
             // Get the old list
             System.Diagnostics.Trace.Assert (null != c);
-            List<McCategory> categories = GetCategories (c);
+            List<McCalendarCategory> categories = GetCategories (c);
 
             // Delete the old
             foreach (var category in categories) {
@@ -211,7 +211,7 @@ namespace NachoCore.ActiveSync
                     NcResult r = DataSource.Owner.Db.Update (category);
                     System.Diagnostics.Trace.Assert (r.isOK ());
                 } else {
-                    category.ParentId = McCategory.GetParentType (c);
+                    category.ParentId = McCalendarCategory.GetParentType (c);
                     NcResult r = DataSource.Owner.Db.Insert (category);
                     System.Diagnostics.Trace.Assert (r.isOK ());
                     category.Id = r.GetIndex ();
