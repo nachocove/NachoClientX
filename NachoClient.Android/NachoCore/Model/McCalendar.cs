@@ -407,7 +407,7 @@ namespace NachoCore.Model
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
             } else {
-                System.Diagnostics.Trace.Assert (false);
+                NachoCore.NachoAssert.True (false);
                 return 0;
             }
         }
@@ -441,7 +441,7 @@ namespace NachoCore.Model
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
             } else {
-                System.Diagnostics.Trace.Assert (false);
+                NachoCore.NachoAssert.True (false);
                 return 0;
             }
         }

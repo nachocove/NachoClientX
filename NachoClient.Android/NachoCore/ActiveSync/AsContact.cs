@@ -217,7 +217,7 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (null != Categories);
 
             foreach (var category in categories.Elements()) {
-                System.Diagnostics.Debug.Assert (categories.Name.LocalName.Equals (Xml.Contacts.Category));
+                NachoCore.NachoAssert.True (categories.Name.LocalName.Equals (Xml.Contacts.Category));
                 Categories.Add (category.Value);
             }
         }
@@ -229,7 +229,7 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (null != Children);
 
             foreach (var category in children.Elements()) {
-                System.Diagnostics.Debug.Assert (children.Name.LocalName.Equals (Xml.Contacts.Child));
+                NachoCore.NachoAssert.True (children.Name.LocalName.Equals (Xml.Contacts.Child));
                 Children.Add (category.Value);
             }
         }

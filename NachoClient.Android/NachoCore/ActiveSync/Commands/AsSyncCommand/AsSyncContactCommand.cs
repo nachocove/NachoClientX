@@ -29,19 +29,19 @@ namespace NachoCore.ActiveSync
             // Convert the XML to an AsContact
             var asResult = AsContact.FromXML (m_ns, command);
             var asContact = (AsContact)asResult.GetObject ();
-            System.Diagnostics.Trace.Assert (asResult.isOK ());
-            System.Diagnostics.Trace.Assert (null != asContact);
+            NachoCore.NachoAssert.True (asResult.isOK ());
+            NachoCore.NachoAssert.True (null != asContact);
 
             // Convert the AsContact to an McContact
             var mcResult = asContact.ToMcContact (folder);
             var mcContact = (McContact)mcResult.GetObject ();
-            System.Diagnostics.Trace.Assert (mcResult.isOK ());
-            System.Diagnostics.Trace.Assert (null != mcContact);
+            NachoCore.NachoAssert.True (mcResult.isOK ());
+            NachoCore.NachoAssert.True (null != mcContact);
 
             // TODO: Do we have to ghost or merge here?
 
             var ur = mcContact.Insert (DataSource.Owner.Db);
-            System.Diagnostics.Trace.Assert (ur.isOK ());
+            NachoCore.NachoAssert.True (ur.isOK ());
         }
     }
 }

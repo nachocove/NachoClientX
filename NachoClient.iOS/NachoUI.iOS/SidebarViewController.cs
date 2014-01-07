@@ -180,7 +180,7 @@ namespace NachoClient.iOS
             // TODO: Highlight folders
             var m = menu [indexPath.Row];
             UITableViewCell cell = tableView.DequeueReusableCell (m.SegueName);
-            System.Diagnostics.Trace.Assert (null != cell);
+            NachoCore.NachoAssert.True (null != cell);
             cell.TextLabel.Text = m.DisplayName;
             return cell;
         }

@@ -136,7 +136,7 @@ namespace NachoCore.ActiveSync
         /// <param name="fieldLength">Length of the field.</param>
         public string ExtractStringFromAsTimeZone (byte[] binaryData, int start, int fieldLength)
         {
-            System.Diagnostics.Debug.Assert ((start + fieldLength) <= binaryData.Length);
+            NachoCore.NachoAssert.True ((start + fieldLength) <= binaryData.Length);
             String field = System.Text.UnicodeEncoding.Unicode.GetString (binaryData, start, fieldLength);
             int index = field.IndexOf (System.Convert.ToChar (0)); // trim trailing null padding
             if (index < 0) { // no nulls
@@ -159,7 +159,7 @@ namespace NachoCore.ActiveSync
             var list = new List<McAttendee> ();
 
             foreach (var attendee in attendees.Elements()) {
-                System.Diagnostics.Debug.Assert (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
+                NachoCore.NachoAssert.True (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
 
                 // Required
                 var nameElement = attendee.Element (ns + Xml.Calendar.Attendee.Name);
@@ -202,7 +202,7 @@ namespace NachoCore.ActiveSync
             var list = new List<McCalendarCategory> ();
 
             foreach (var category in categories.Elements()) {
-                System.Diagnostics.Debug.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
+                NachoCore.NachoAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
                 var n = new McCalendarCategory (category.Value);
                 list.Add (n);
             }

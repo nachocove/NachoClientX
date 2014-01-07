@@ -127,7 +127,7 @@ namespace NachoClient.iOS
             // cell that's hooked up to the segue and has matching attributes.
             UITableViewCell cell = TableView.DequeueReusableCell (CellSegueID);
             // Should always get a prototype cell
-            System.Diagnostics.Trace.Assert (null != cell);
+            NachoCore.NachoAssert.True (null != cell);
 
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
@@ -176,7 +176,7 @@ namespace NachoClient.iOS
 
         protected bool StartsWithIgnoringNull (string prefix, string target)
         {
-            System.Diagnostics.Trace.Assert (null != prefix);
+            NachoCore.NachoAssert.True (null != prefix);
             // Can't match a field that doesn't exist
             if (null == target) {
                 return false;

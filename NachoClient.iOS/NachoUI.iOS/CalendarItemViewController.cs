@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                 radioButtons.Add (new RadioElement (e.ToString ()));
             }
             int i = Array.IndexOf (values, value);
-            System.Diagnostics.Trace.Assert (i >= 0);
+            NachoCore.NachoAssert.True (i >= 0);
 
             var radioGroup = new RadioGroup (i);
             var radioRoot = new RootElement (name, radioGroup);
@@ -110,7 +110,7 @@ namespace NachoClient.iOS
 
         public RootElement ToDialogElement (McCalendar c)
         {
-            System.Diagnostics.Trace.Assert (null != c);
+            NachoCore.NachoAssert.True (null != c);
 
             var root = new RootElement (c.Subject);
             var section = new Section ();
@@ -141,7 +141,7 @@ namespace NachoClient.iOS
 
             // TODO: Shouldn't be null
             if (null != c.attendees) {
-                System.Diagnostics.Trace.Assert (null != c.attendees);
+                NachoCore.NachoAssert.True (null != c.attendees);
                 foreach (McAttendee a in c.attendees) {
                     AddIfSet (ref section, "Attendee", a.Email);
                 }
@@ -149,7 +149,7 @@ namespace NachoClient.iOS
 
             // TODO: Shouldn't be null
             if (null != c.recurrences) {
-                System.Diagnostics.Trace.Assert (null != c.recurrences);
+                NachoCore.NachoAssert.True (null != c.recurrences);
                 foreach (var r in c.recurrences) {
                     var s = new Section ();
                     AddRadioGroup (ref s, "Recurrence Type", r.Type);
