@@ -46,7 +46,7 @@ namespace Test.Android
 
             r = db.Insert (i);
             Assert.IsTrue (r.isOK ());
-            Assert.AreEqual (r.GetObject (), 1);
+            Assert.AreEqual (1, i.Id);
             Assert.AreEqual (1, db.Table<MyObject> ().Count ());
 
             try {
@@ -59,7 +59,7 @@ namespace Test.Android
             i.Id = 0;
             r = db.Insert (i);
             Assert.IsTrue (r.isOK ());
-            Assert.AreEqual (r.GetObject (), 2);
+            Assert.AreEqual (2, i.Id);
             Assert.AreEqual (2, db.Table<MyObject> ().Count ());
 
             r = db.Update (i);

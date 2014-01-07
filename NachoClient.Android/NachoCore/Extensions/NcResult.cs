@@ -1,4 +1,5 @@
 using System;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -51,23 +52,11 @@ namespace NachoCore.Utils
             return (Kind.Error == kind);
         }
 
-        public String GetString()
+        public T GetValue<T>()
         {
             NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
-            return (String)value;
+            return (T) value;
         }
-
-        public Object GetObject()
-        {
-            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
-            return value;
-        }
-
-//        public int GetIndex()
-//        {
-//            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
-//            return System.Convert.ToInt32(value);
-//        }
 
         public String GetMessage()
         {

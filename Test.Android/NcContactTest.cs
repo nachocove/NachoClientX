@@ -161,17 +161,17 @@ namespace Test.iOS
 
             var x05 = System.Xml.Linq.XElement.Parse (string_05);
             var cr05 = AsContact.FromXML (asSync.m_ns, x05);
-            var c05 = (AsContact)cr05.GetObject ();
+            var c05 = cr05.GetValue<AsContact> ();
             Assert.True (cr05.isOK ());
             Assert.NotNull (c05);
 
             var mr05 = c05.ToMcContact (f);
-            var m05 = (McContact)mr05.GetObject ();
+            var m05 = mr05.GetValue<McContact> ();
             Assert.True (mr05.isOK ());
             Assert.IsNotNull (m05);
 
             var nr05 = AsContact.FromMcContact (m05);
-            var n05 = (AsContact)nr05.GetObject ();
+            var n05 = nr05.GetValue<AsContact> ();
             Assert.True (nr05.isOK ());
             Assert.IsNotNull (n05);
 

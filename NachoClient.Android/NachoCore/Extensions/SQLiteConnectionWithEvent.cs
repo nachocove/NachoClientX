@@ -220,7 +220,7 @@ namespace NachoCore.Utils
                 NachoCore.NachoAssert.True (0 != obj.Id);
             });
             // TODO: Handled errors
-            return NcResult.OK (obj.Id);
+            return NcResult.OK ();
         }
 
         // Update, no event.  Temporary?

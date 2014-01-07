@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
             // Convert the event to an NcCalendar
             var h = new AsHelpers ();
             var r = h.ParseCalendar (m_ns, command, folder);
-            McCalendar newItem = (McCalendar)r.GetObject ();
+            McCalendar newItem = r.GetValue<McCalendar> ();
 
             NachoCore.NachoAssert.True (r.isOK ());
             NachoCore.NachoAssert.True (null != newItem);

@@ -28,13 +28,13 @@ namespace NachoCore.ActiveSync
         {
             // Convert the XML to an AsContact
             var asResult = AsContact.FromXML (m_ns, command);
-            var asContact = (AsContact)asResult.GetObject ();
+            var asContact = asResult.GetValue<AsContact> ();
             NachoCore.NachoAssert.True (asResult.isOK ());
             NachoCore.NachoAssert.True (null != asContact);
 
             // Convert the AsContact to an McContact
             var mcResult = asContact.ToMcContact (folder);
-            var mcContact = (McContact)mcResult.GetObject ();
+            var mcContact = mcResult.GetValue<McContact> ();
             NachoCore.NachoAssert.True (mcResult.isOK ());
             NachoCore.NachoAssert.True (null != mcContact);
 

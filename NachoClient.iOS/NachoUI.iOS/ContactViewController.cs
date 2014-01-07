@@ -100,7 +100,7 @@ namespace NachoClient.iOS
             var section = new Section ();
 
             var r = AsContact.FromMcContact (m);
-            var c = (AsContact)r.GetObject ();
+            var c = r.GetValue<AsContact> ();
 
             // Person
             AddIfSet (ref section, "Title", c.Title);

@@ -470,8 +470,9 @@ namespace Test.iOS
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
-            Assert.IsNotNull (r.GetObject ());
-            var c = (McCalendar)r.GetObject ();
+            Assert.IsNotNull (r.GetValue<McCalendar>());
+            var c = r.GetValue<McCalendar> ();
+            Assert.IsNotNull (c);
             Assert.AreEqual (c.DtStamp, new DateTime (2013, 11, 26, 12, 49, 29));
             Assert.AreEqual (c.StartTime, new DateTime (2013, 11, 28, 01, 00, 00));
             Assert.AreEqual (c.EndTime, new DateTime (2013, 11, 29, 02, 00, 00));
@@ -504,8 +505,8 @@ namespace Test.iOS
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
-            Assert.IsNotNull (r.GetObject ());
-            var c = (McCalendar)r.GetObject ();
+            Assert.IsNotNull (r.GetValue<McCalendar>());
+            var c = r.GetValue<McCalendar> ();
             Assert.IsNull (c.Location);
             Assert.AreEqual (c.Subject, "Re-dog");
             Assert.AreEqual (c.UID, "7j5do4kr7q8fi67ubq7bdpr01c@google.com");
