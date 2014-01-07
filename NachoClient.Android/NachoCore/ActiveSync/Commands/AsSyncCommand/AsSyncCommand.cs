@@ -150,6 +150,9 @@ namespace NachoCore.ActiveSync
                                 case Xml.AirSync.ClassCode.Calendar:
                                     ServerSaysChangeCalendarItem (command, folder);
                                     break;
+                                case Xml.AirSync.ClassCode.Contacts:
+                                    ServerSaysChangeContact (command, folder);
+                                    break;
                                 default:
                                     Log.Error ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
                                     break;

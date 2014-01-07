@@ -92,12 +92,15 @@ namespace NachoClient.iOS
             }
         }
 
-        public RootElement ToDialogElement (McContact c)
+        public RootElement ToDialogElement (McContact m)
         {
-            System.Diagnostics.Trace.Assert (null != c);
+            System.Diagnostics.Trace.Assert (null != m);
 
-            var root = new RootElement (c.GetDisplayName ());
+            var root = new RootElement (m.DisplayName);
             var section = new Section ();
+
+            var r = AsContact.FromMcContact (m);
+            var c = (AsContact)r.GetObject ();
 
             // Person
             AddIfSet (ref section, "Title", c.Title);
@@ -115,6 +118,9 @@ namespace NachoClient.iOS
             AddIfSet (ref section, "Government Id", c.GovernmentId);
 
             // Business Phone number stuff
+
+
+
             AddIfSet (ref section, "Business phone number", c.BusinessPhoneNumber, UIKeyboardType.NumbersAndPunctuation);
             AddIfSet (ref section, "Business phone number", c.Business2PhoneNumber, UIKeyboardType.NumbersAndPunctuation);
             AddIfSet (ref section, "Business fax number", c.BusinessFaxNumber, UIKeyboardType.NumbersAndPunctuation);

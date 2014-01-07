@@ -27,7 +27,7 @@ namespace NachoCore
         public McContact GetContact (int i)
         {
             var c = list.ElementAt (i);
-            var nc = new McContact ();
+            var nc = new McContact (McContact.McContactSource.Device);
 
             nc.Title = c.Prefix;
             nc.FirstName = c.FirstName;
@@ -43,25 +43,25 @@ namespace NachoCore
             foreach (Phone p in c.Phones) {
                 switch (p.Type) {
                 case PhoneType.Work:
-                    nc.BusinessPhoneNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("Work", p.Label ?? "Work", p.Number);
                     break;
                 case PhoneType.WorkFax:
-                    nc.BusinessFaxNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("WorkFax", p.Label ?? "Work Fax", p.Number);
                     break;
                 case PhoneType.Home:
-                    nc.HomePhoneNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("Home", p.Label ?? "Home", p.Number);
                     break;
                 case PhoneType.HomeFax:
-                    nc.HomeFaxNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("HomeFax", p.Label ?? "Home Fax", p.Number);
                     break;
                 case PhoneType.Pager:
-                    nc.PagerNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("Pager", p.Label ?? "Pager", p.Number);
                     break;
                 case PhoneType.Mobile:
-                    nc.MobilePhoneNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("Mobile", p.Label ?? "Mobile", p.Number);
                     break;
                 case PhoneType.Other:
-                    nc.Business2PhoneNumber = p.Number;
+                    nc.AddPhoneNumberAttribute ("Other", p.Label ?? "Other", p.Number);
                     break;
                 default:
                     System.Diagnostics.Trace.Fail ("GetContact unhandled enumeration");

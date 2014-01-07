@@ -26,7 +26,6 @@ namespace Test.Android
 
         public class MyObject : McObject
         {
-
         }
 
         [Test]
@@ -43,23 +42,37 @@ namespace Test.Android
 
             NcResult r;
             MyObject i = new MyObject ();
-            Assert.AreEqual(i.Id, 0);
+            Assert.AreEqual (i.Id, 0);
 
             r = db.Insert (i);
             Assert.IsTrue (r.isOK ());
-            Assert.AreEqual(r.GetObject(), 1);
-            Assert.AreEqual (1, db.Table<MyObject> ().Count());
+            Assert.AreEqual (r.GetObject (), 1);
+            Assert.AreEqual (1, db.Table<MyObject> ().Count ());
 
+            try {
+                r = db.Insert (i);
+                Assert.Fail ("Do not allow insertion if ID is set");
+            } catch (NachoAssert.NachoAssertionFailure) {
+                // Don't allow duplicate 
+            }
+
+            i.Id = 0;
             r = db.Insert (i);
             Assert.IsTrue (r.isOK ());
-            Assert.AreEqual(r.GetObject(), 2);
-            Assert.AreEqual (2, db.Table<MyObject> ().Count());
-
+            Assert.AreEqual (r.GetObject (), 2);
+            Assert.AreEqual (2, db.Table<MyObject> ().Count ());
 
             r = db.Update (i);
             Assert.IsTrue (r.isOK ());
-            Assert.AreEqual (2, db.Table<MyObject> ().Count());
+            Assert.AreEqual (2, db.Table<MyObject> ().Count ());
 
+            try {
+                i.Id = 0;
+                r = db.Update (i);
+                Assert.Fail ("Do not allow update if ID is 0");
+            } catch (NachoAssert.NachoAssertionFailure) {
+                // Don't allow duplicate 
+            }
         }
     }
 }

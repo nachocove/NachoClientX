@@ -6,6 +6,8 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 using System.Security.Cryptography.X509Certificates;
+using System.Reflection;
+using System.Collections;
 using SQLite;
 
 namespace Test.iOS
@@ -31,7 +33,7 @@ namespace Test.iOS
             {
                 Owner = new MockProtoControlOwner ();
                 Owner.Db = new TestDb ();
-                Account = new McAccount();
+                Account = new McAccount ();
             }
         }
 
@@ -70,15 +72,13 @@ namespace Test.iOS
             {
             }
         }
-
-//        [Test]
-//        public void SearchXML ()
-//        {
-//            var ds = new MockDataSource ();
-//            var a = new AsSearchCommand (ds);
-//            a.ToXDocument (null);
-//        }
-
+        //        [Test]
+        //        public void SearchXML ()
+        //        {
+        //            var ds = new MockDataSource ();
+        //            var a = new AsSearchCommand (ds);
+        //            a.ToXDocument (null);
+        //        }
         [Test]
         public void BasicSyncResults ()
         {
@@ -105,38 +105,77 @@ namespace Test.iOS
         }
 
         [Test]
-        public void ProcessResponse()
+        public void ProcessResponse ()
         {
-            var ds = new MockDataSource ();
-            // Set up folder
-            var f = new McFolder ();
-            f.ServerId = "Contact:DEFAULT";
-            f.Type = (uint) Xml.FolderHierarchy.TypeCode.DefaultContacts;
-            ds.Owner.Db.Insert (f);
-            // Process sync command
-            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
-            var c04 = System.Xml.Linq.XDocument.Parse (string_04);
-            Assert.IsNotNull (c04);
-            asSync.ProcessResponse (null, null, c04);
+            try {
+                var ds = new MockDataSource ();
+                // Set up folder
+                var f = new McFolder ();
+                f.ServerId = "Contact:DEFAULT";
+                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
+                ds.Owner.Db.Insert (f);
+                // Process sync command
+                var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
+                var c04 = System.Xml.Linq.XDocument.Parse (string_04);
+                Assert.IsNotNull (c04);
+                asSync.ProcessResponse (null, null, c04);
+            } catch { 
+                Assert.Fail ("exception tossed");
+            }
+
         }
 
         [Test]
-        public void ProcessResponse2()
+        public void ProcessResponse2 ()
+        {
+            try {
+                var ds = new MockDataSource ();
+                // Set up folder
+                var f = new McFolder ();
+                f.ServerId = "Contact:DEFAULT";
+                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
+                ds.Owner.Db.Insert (f);
+                // Process sync command
+                var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
+                var c04 = System.Xml.Linq.XDocument.Parse (string_04);
+                Assert.IsNotNull (c04);
+                // write it
+                asSync.ProcessResponse (null, null, c04);
+                // update it
+                asSync.ProcessResponse (null, null, c04);
+            } catch {
+                Assert.Fail ("Exception tossed");
+            }
+        }
+
+        [Test]
+        public void Conversions ()
         {
             var ds = new MockDataSource ();
             // Set up folder
             var f = new McFolder ();
             f.ServerId = "Contact:DEFAULT";
-            f.Type = (uint) Xml.FolderHierarchy.TypeCode.DefaultContacts;
+            f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
             ds.Owner.Db.Insert (f);
-            // Process sync command
-            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
-            var c04 = System.Xml.Linq.XDocument.Parse (string_04);
-            Assert.IsNotNull (c04);
-            // write it
-            asSync.ProcessResponse (null, null, c04);
-            // update it
-            asSync.ProcessResponse (null, null, c04);
+            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);  
+
+            var x05 = System.Xml.Linq.XElement.Parse (string_05);
+            var cr05 = AsContact.FromXML (asSync.m_ns, x05);
+            var c05 = (AsContact)cr05.GetObject ();
+            Assert.True (cr05.isOK ());
+            Assert.NotNull (c05);
+
+            var mr05 = c05.ToMcContact (f);
+            var m05 = (McContact)mr05.GetObject ();
+            Assert.True (mr05.isOK ());
+            Assert.IsNotNull (m05);
+
+            var nr05 = AsContact.FromMcContact (m05);
+            var n05 = (AsContact)nr05.GetObject ();
+            Assert.True (nr05.isOK ());
+            Assert.IsNotNull (n05);
+
+            PropertyValuesAreEquals(c05, n05);
         }
 
         public string string_01 = @"
@@ -255,5 +294,64 @@ namespace Test.iOS
               </Collections>
             </Sync>
             ";
+        public const string string_05 = @"
+             <Sync xmlns=""AirSync"">
+                      <ServerId>1734050566625401231</ServerId>
+                      <ApplicationData>
+                        <Body xmlns=""AirSyncBase"">
+                          <Type>1</Type>
+                        </Body>
+                        <Anniversary xmlns=""Contacts"">1965-04-05T11:00:00.000Z</Anniversary>
+                        <Birthday xmlns=""Contacts"">1945-03-04T11:00:00.000Z</Birthday>
+                        <BusinessAddressCity xmlns=""Contacts"">Portland</BusinessAddressCity>
+                        <BusinessAddressPostalCode xmlns=""Contacts"">97210</BusinessAddressPostalCode>
+                        <BusinessAddressState xmlns=""Contacts"">Or</BusinessAddressState>
+                        <BusinessAddressStreet xmlns=""Contacts"">2543 NW Raleigh St.</BusinessAddressStreet>
+                        <BusinessPhoneNumber xmlns=""Contacts"">5035505669</BusinessPhoneNumber>
+                        <Children xmlns=""Contacts"">
+                          <Child>fred-son</Child>
+                          <Child>fred-daughter</Child>
+                        </Children>
+                        <CompanyName xmlns=""Contacts"">Nacho Cove</CompanyName>
+                        <Email1Address xmlns=""Contacts"">rascal2210@hotmail.com</Email1Address>
+                        <Email2Address xmlns=""Contacts"">rascal2210@work-mail.com</Email2Address>
+                        <Email3Address xmlns=""Contacts"">rascal2210@home-mail.com</Email3Address>
+                        <FileAs xmlns=""Contacts"">Steve, Contact</FileAs>
+                        <FirstName xmlns=""Contacts"">Contact</FirstName>
+                        <JobTitle xmlns=""Contacts"">MTS</JobTitle>
+                        <LastName xmlns=""Contacts"">Steve</LastName>
+                        <MobilePhoneNumber xmlns=""Contacts"">5030456067</MobilePhoneNumber>
+                        <Spouse xmlns=""Contacts"">fred-wife</Spouse>
+                        <IMAddress xmlns=""Contacts2"">fred-yahoo-im</IMAddress>
+                        <IMAddress2 xmlns=""Contacts2"">fred-skype-im</IMAddress2>
+                        <IMAddress3 xmlns=""Contacts2"">f-icq</IMAddress3>
+                        <NickName xmlns=""Contacts2"">Freddy</NickName>
+                      </ApplicationData>
+            </Sync>
+            ";
+
+        public static void PropertyValuesAreEquals (object actual, object expected)
+        {
+            PropertyInfo[] properties = expected.GetType ().GetProperties ();
+            foreach (PropertyInfo property in properties) {
+                object expectedValue = property.GetValue (expected, null);
+                object actualValue = property.GetValue (actual, null);
+
+                if (actualValue is IList)
+                    AssertListsAreEquals (property, (IList)actualValue, (IList)expectedValue);
+                else if (!Equals (expectedValue, actualValue))
+                    Assert.Fail ("Property {0}.{1} does not match. Expected: {2} but was: {3}", property.DeclaringType.Name, property.Name, expectedValue, actualValue);
+            }
+        }
+
+        private static void AssertListsAreEquals (PropertyInfo property, IList actualList, IList expectedList)
+        {
+            if (actualList.Count != expectedList.Count)
+                Assert.Fail ("Property {0}.{1} does not match. Expected IList containing {2} elements but was IList containing {3} elements", property.PropertyType.Name, property.Name, expectedList.Count, actualList.Count);
+
+            for (int i = 0; i < actualList.Count; i++)
+                if (!Equals (actualList [i], expectedList [i]))
+                    Assert.Fail ("Property {0}.{1} does not match. Expected IList with element {1} equals to {2} but was IList with element {1} equals to {3}", property.PropertyType.Name, property.Name, expectedList [i], actualList [i]);
+        }
     }
 }

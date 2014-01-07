@@ -102,7 +102,7 @@ namespace NachoClient.iOS
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
-                destinationController.Title = contact.GetDisplayName ();
+                destinationController.Title = contact.DisplayName;
             }
         }
 
@@ -136,8 +136,8 @@ namespace NachoClient.iOS
                 contact = contacts.GetContact (indexPath.Row);
             }
 
-            cell.TextLabel.Text = contact.GetDisplayName ();
-            cell.DetailTextLabel.Text = contact.DisplayAddress ();
+            cell.TextLabel.Text = contact.DisplayName;
+            cell.DetailTextLabel.Text = contact.DisplayEmailAddress;
 
             return cell;
         }
@@ -164,9 +164,11 @@ namespace NachoClient.iOS
                     searchResults.Add (c);
                     continue;
                 }
-                if (StartsWithIgnoringNull (forSearchString, c.Email1Address)) {
-                    searchResults.Add (c);
-                    continue;
+                foreach (var e in c.EmailAddresses) {
+                    if (StartsWithIgnoringNull (forSearchString, e.Value)) {
+                        searchResults.Add (c);
+                        break;
+                    }
                 }
             }
             return true;

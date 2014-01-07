@@ -61,6 +61,9 @@ namespace NachoCore
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McAttachment> ();
             Db.CreateTable<McContact> ();
+            Db.CreateTable<McContactDateAttribute> ();
+            Db.CreateTable<McContactStringAttribute> ();
+            Db.CreateTable<McContactAddressAttribute> ();
             Db.CreateTable<McPolicy> ();
             Db.CreateTable<McProtocolState> ();
             Db.CreateTable<McServer> ();

@@ -50,6 +50,21 @@ namespace Test.iOS
             DropTable<McContact> ();
             CreateTable<McContact> ();
 
+            // McContactDateAttribute
+            CreateTable<McContactDateAttribute> ();
+            DropTable<McContactDateAttribute> ();
+            CreateTable<McContactDateAttribute> ();
+
+            // McContactStringAttribute
+            CreateTable<McContactStringAttribute> ();
+            DropTable<McContactStringAttribute> ();
+            CreateTable<McContactStringAttribute> ();
+
+            // McContactAddressAttribute
+            CreateTable<McContactAddressAttribute> ();
+            DropTable<McContactAddressAttribute> ();
+            CreateTable<McContactAddressAttribute> ();
+
             // NcFolder
             CreateTable<McFolder> ();
             DropTable<McFolder> ();
@@ -275,25 +290,16 @@ namespace Test.iOS
             Assert.AreEqual (c05.Name, "changed");
 
             var c06 = new McCalendarCategory ("second");
-            c06.Id = 5;
+            c06.ParentId = 5;
             db.Insert (c06);
             var c07 = new McCalendarCategory ("do not see");
-            c07.Id = 6;
+            c07.ParentId = 6;
             db.Insert (c07);
 
-            Assert.AreEqual (db.Table<McCalendarCategory> ().Count (), 3);
-
-            var c08 = db.Get<McCalendarCategory> (x => x.ParentId == 5);
-            NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
-
-//            // TODO: Implement Query in SQLConnectionWithEvents
-//            var c09 = db.Query<NcCategory> ("select * from McCalendarCategory where CalendarId = ?", 5);
-//            NachoCore.Utils.Log.Info ("c09 {0}", c09.ToString ());
-//            foreach (var c in c09) {
-//                Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
-//            }
+            Assert.AreEqual (3, db.Table<McCalendarCategory> ().Count ());
 
             var c10 = db.Table<McCalendarCategory> ().Where (x => x.ParentId == 5);
+            Assert.AreEqual (2, c10.Count ());
             NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
@@ -354,26 +360,16 @@ namespace Test.iOS
 
 
             var c06 = new McAttendee ("Chris", "chrisp@nachocove.com");
-            c06.Id = 5;
+            c06.ParentId = 5;
             db.Insert (c06);
             var c07 = new McAttendee ("Jeff", "jeffe@nachocove.com");
-            c07.Id = 6;
+            c07.ParentId = 6;
             db.Insert (c07);
 
-            Assert.AreEqual (db.Table<McAttendee> ().Count (), 3);
-
-            var c08 = db.Get<McAttendee> (x => x.ParentId == 5);
-            NachoCore.Utils.Log.Info ("c08 {0}", c08.ToString ());
-
-//            // TODO: implement Query in SQLConnectionWithEvents
-//            var c09 = db.Query<McAttendee> ("select * from McAttendee where CalendarId = ?", 5);
-//            NachoCore.Utils.Log.Info ("c09 {0}", c09.ToString ());
-//            foreach (var c in c09) {
-//                Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
-//            }
+            Assert.AreEqual (3, db.Table<McAttendee> ().Count ());
 
             var c10 = db.Table<McAttendee> ().Where (x => x.ParentId == 5);
-            NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
+            Assert.AreEqual(2, c10.Count());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
             }

@@ -209,28 +209,25 @@ namespace NachoCore.Utils
             return (Int64)m_db.ExecuteScalar<Int64> (sql); 
         }
 
-        // Insert & return last row id.
+        // Insert & set Id
         // TODO: Add event support?
         public NcResult Insert (McObject obj)
         {
-            System.Diagnostics.Trace.Assert (obj.Id == 0);
-
-            Int64 lastId = 0;
+            NachoCore.NachoAssert.True (0 == obj.Id);
             obj.LastModified = DateTime.UtcNow;
             m_db.RunInTransaction(() => {
                 m_db.Insert(obj);
-                lastId = LastId();
+                NachoCore.NachoAssert.True (0 != obj.Id);
             });
             // TODO: Handled errors
-            return NcResult.OK (lastId);
+            return NcResult.OK (obj.Id);
         }
-
 
         // Update, no event.  Temporary?
         // Lots of TODOs in this code.
         public NcResult Update (McObject obj)
         {
-            System.Diagnostics.Trace.Assert (obj.Id > 0);
+            NachoCore.NachoAssert.True (obj.Id > 0);
 
             DateTime lastModified = obj.LastModified;
             obj.LastModified = DateTime.UtcNow;
@@ -248,7 +245,7 @@ namespace NachoCore.Utils
         // Lots of TODOs in this code.
         public NcResult Delete (McObject obj)
         {
-            System.Diagnostics.Trace.Assert (obj.Id > 0);
+            NachoCore.NachoAssert.True (obj.Id > 0);
             m_db.Delete(obj);
             // TODO: Handled errors
             return NcResult.OK (obj.Id);

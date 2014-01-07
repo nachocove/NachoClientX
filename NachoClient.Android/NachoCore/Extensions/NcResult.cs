@@ -41,37 +41,37 @@ namespace NachoCore.Utils
 
         public bool isOK()
         {
-            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
+            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return (Kind.OK == kind);
         }
 
         public bool isError()
         {
-            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
+            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return (Kind.Error == kind);
         }
 
         public String GetString()
         {
-            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
+            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return (String)value;
         }
 
         public Object GetObject()
         {
-            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
+            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return value;
         }
 
-        public int GetIndex()
-        {
-            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
-            return System.Convert.ToInt32(value);
-        }
+//        public int GetIndex()
+//        {
+//            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
+//            return System.Convert.ToInt32(value);
+//        }
 
         public String GetMessage()
         {
-            System.Diagnostics.Debug.Assert (Kind.Uninitialized != kind);
+            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return message;
         }
 

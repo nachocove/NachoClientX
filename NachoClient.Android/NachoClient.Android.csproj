@@ -124,6 +124,8 @@
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
     <Compile Include="NachoCore\Model\McServer.cs" />
     <Compile Include="NachoCore\Extensions\NachoTimer.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsContact.cs" />
+    <Compile Include="NachoCore\Extensions\NachoAssert.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

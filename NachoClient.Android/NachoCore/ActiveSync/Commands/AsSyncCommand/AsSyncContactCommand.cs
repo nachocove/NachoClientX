@@ -26,40 +26,22 @@ namespace NachoCore.ActiveSync
 
         public void ProcessContactItem (XElement command, McFolder folder)
         {
-            // Convert the XML to an NcContact
-            var h = new AsHelpers ();
-            var r = h.ParseContact (m_ns, command, folder);
-            var newItem = (McContact)r.GetObject ();
+            // Convert the XML to an AsContact
+            var asResult = AsContact.FromXML (m_ns, command);
+            var asContact = (AsContact)asResult.GetObject ();
+            System.Diagnostics.Trace.Assert (asResult.isOK ());
+            System.Diagnostics.Trace.Assert (null != asContact);
 
-            System.Diagnostics.Trace.Assert (r.isOK ());
-            System.Diagnostics.Trace.Assert (null != newItem);
+            // Convert the AsContact to an McContact
+            var mcResult = asContact.ToMcContact (folder);
+            var mcContact = (McContact)mcResult.GetObject ();
+            System.Diagnostics.Trace.Assert (mcResult.isOK ());
+            System.Diagnostics.Trace.Assert (null != mcContact);
 
-            // Look up the event by ServerId
-            McContact oldItem = null;
+            // TODO: Do we have to ghost or merge here?
 
-            try {
-                oldItem = DataSource.Owner.Db.Get<McContact> (x => x.ServerId == newItem.ServerId);
-            } catch (System.InvalidOperationException) {
-                Log.Info (Log.LOG_CONTACTS, "ProcessContactItem: System.InvalidOperationException handled");
-            } catch (Exception e) {
-                Log.Info ("ProcessContactItem:\n{0}", e.ToString ());
-            }
-
-            // If there is no match, insert the new item.
-            if (null == oldItem) {
-                NcResult ir = DataSource.Owner.Db.Insert (newItem);
-                System.Diagnostics.Trace.Assert (ir.isOK ());
-                newItem.Id = ir.GetIndex ();
-                return;
-            }
-
-            // Update existing item
-            // Overwrite the old item with the new item
-            // to preserve the index, in
-            newItem.Id = oldItem.Id;
-            NcResult ur = DataSource.Owner.Db.Update (oldItem);
+            var ur = mcContact.Insert (DataSource.Owner.Db);
             System.Diagnostics.Trace.Assert (ur.isOK ());
-
         }
     }
 }

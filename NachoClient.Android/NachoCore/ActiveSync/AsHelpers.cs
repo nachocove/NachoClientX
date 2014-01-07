@@ -153,8 +153,8 @@ namespace NachoCore.ActiveSync
         // TODO: Make sure we don't have extra fields
         public List<McAttendee> ParseAttendees (XNamespace ns, XElement attendees)
         {
-            System.Diagnostics.Trace.Assert (null != attendees);
-            System.Diagnostics.Trace.Assert (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
+            NachoCore.NachoAssert.True (null != attendees);
+            NachoCore.NachoAssert.True (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
 
             var list = new List<McAttendee> ();
 
@@ -196,8 +196,8 @@ namespace NachoCore.ActiveSync
         // TODO: Make sure we don't have extra fields
         public List<McCalendarCategory> ParseCategories (XNamespace ns, XElement categories)
         {
-            System.Diagnostics.Trace.Assert (null != categories);
-            System.Diagnostics.Trace.Assert (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
+            NachoCore.NachoAssert.True (null != categories);
+            NachoCore.NachoAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
 
             var list = new List<McCalendarCategory> ();
 
@@ -217,8 +217,8 @@ namespace NachoCore.ActiveSync
         /// <param name="recurrence">Recurrence element</param>
         public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence)
         {
-            System.Diagnostics.Trace.Assert (null != recurrence);
-            System.Diagnostics.Trace.Assert (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
+            NachoCore.NachoAssert.True (null != recurrence);
+            NachoCore.NachoAssert.True (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
 
             var r = new McRecurrence ();
 
@@ -267,14 +267,14 @@ namespace NachoCore.ActiveSync
 
         public List<McException> ParseExceptions (XNamespace ns, XElement exceptions)
         {
-            System.Diagnostics.Trace.Assert (null != exceptions);
-            System.Diagnostics.Trace.Assert (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
+            NachoCore.NachoAssert.True (null != exceptions);
+            NachoCore.NachoAssert.True (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
 
             var l = new List<McException> ();
 
             Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions.ToString ());
             foreach (var exception in exceptions.Elements()) {
-                System.Diagnostics.Trace.Assert (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
+                NachoCore.NachoAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
                 e.attendees = new List<McAttendee> ();
                 e.categories = new List<McCalendarCategory> ();
@@ -363,11 +363,11 @@ namespace NachoCore.ActiveSync
         {
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
-            System.Diagnostics.Trace.Assert (null != serverId);
+            NachoCore.NachoAssert.True (null != serverId);
 
             // Folder must exist & have a key
-            System.Diagnostics.Trace.Assert (null != folder);
-            System.Diagnostics.Trace.Assert (folder.Id > 0);
+            NachoCore.NachoAssert.True (null != folder);
+            NachoCore.NachoAssert.True (folder.Id > 0);
 
             McCalendar c = new McCalendar ();
             c.ServerId = serverId.Value;
@@ -381,7 +381,7 @@ namespace NachoCore.ActiveSync
             XNamespace nsCalendar = "Calendar";
             // <ApplicationData>...</ApplicationData>
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
-            System.Diagnostics.Trace.Assert (null != applicationData);
+            NachoCore.NachoAssert.True (null != applicationData);
 
             Log.Info (Log.LOG_CALENDAR, "ParseCalendar\n{0}", applicationData.ToString ());
             foreach (var child in applicationData.Elements()) {
@@ -459,108 +459,6 @@ namespace NachoCore.ActiveSync
             return NcResult.OK (c);
         }
 
-        public NcResult ParseContact (XNamespace ns, XElement command, McFolder folder)
-        {
-            // <ServerId>..</ServerId>
-            var serverId = command.Element (ns + Xml.AirSync.ServerId);
-            System.Diagnostics.Trace.Assert (null != serverId);
-
-            // Folder must exist & have a key
-            System.Diagnostics.Trace.Assert (null != folder);
-            System.Diagnostics.Trace.Assert (folder.Id > 0);
-
-            var c = new McContact ();
-            c.ServerId = serverId.Value;
-            c.FolderId = folder.Id;
-
-            c.categories = new List<McContactCategory> ();
-
-//            XNamespace nsContact = "Contact";
-            // <ApplicationData>...</ApplicationData>
-            var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
-            System.Diagnostics.Trace.Assert (null != applicationData);
-
-            Log.Info (Log.LOG_CALENDAR, "ParseContact\n{0}", applicationData.ToString ());
-            foreach (var child in applicationData.Elements()) {
-                switch (child.Name.LocalName) {
-                case Xml.Contacts.Anniversary:
-                case Xml.Contacts.Birthday:
-                    TrySetDateTimeFromXml (c, child.Name.LocalName, child.Value);
-                    break;
-//                case Xml.Contacts.categories;
-//                    break;
-                case Xml.Contacts.WeightedRank:
-                    TrySetIntFromXml (c, child.Name.LocalName, child.Value);
-                    break;
-                case Xml.Contacts.Alias:
-                case Xml.Contacts.AssistantName:
-                case Xml.Contacts.AssistantPhoneNumber:
-                case Xml.Contacts.Business2PhoneNumber:
-                case Xml.Contacts.BusinessAddressCity:
-                case Xml.Contacts.BusinessAddressCountry:
-                case Xml.Contacts.BusinessAddressPostalCode:
-                case Xml.Contacts.BusinessAddressState:
-                case Xml.Contacts.BusinessAddressStreet:
-                case Xml.Contacts.BusinessFaxNumber:
-                case Xml.Contacts.BusinessPhoneNumber:
-                case Xml.Contacts.CarPhoneNumber:
-                case Xml.Contacts.Category:
-                case Xml.Contacts.Children:
-                case Xml.Contacts.CompanyName:
-                case Xml.Contacts.Department:
-                case Xml.Contacts.Email1Address:
-                case Xml.Contacts.Email2Address:
-                case Xml.Contacts.Email3Address:
-                case Xml.Contacts.FileAs:
-                case Xml.Contacts.FirstName:
-                case Xml.Contacts.Home2PhoneNumber:
-                case Xml.Contacts.HomeAddressCity:
-                case Xml.Contacts.HomeAddressCountry:
-                case Xml.Contacts.HomeAddressPostalCode:
-                case Xml.Contacts.HomeAddressState:
-                case Xml.Contacts.HomeAddressStreet:
-                case Xml.Contacts.HomeFaxNumber:
-                case Xml.Contacts.HomePhoneNumber:
-                case Xml.Contacts.JobTitle:
-                case Xml.Contacts.LastName:
-                case Xml.Contacts.MiddleName:
-                case Xml.Contacts.MobilePhoneNumber:
-                case Xml.Contacts.OfficeLocation:
-                case Xml.Contacts.OtherAddressCity:
-                case Xml.Contacts.OtherAddressCountry:
-                case Xml.Contacts.OtherAddressPostalCode:
-                case Xml.Contacts.OtherAddressState:
-                case Xml.Contacts.OtherAddressStreet:
-                case Xml.Contacts.PagerNumber:
-                case Xml.Contacts.Picture:
-                case Xml.Contacts.RadioPhoneNumber:
-                case Xml.Contacts.Spouse:
-                case Xml.Contacts.Suffix:
-                case Xml.Contacts.Title:
-                case Xml.Contacts.WebPage:
-                case Xml.Contacts.YomiCompanyName:
-                case Xml.Contacts.YomiFirstName:
-                case Xml.Contacts.YomiLastName:
-                case Xml.Contacts2.AccountName:
-                case Xml.Contacts2.CompanyMainPhone:
-                case Xml.Contacts2.CustomerId:
-                case Xml.Contacts2.GovernmentId:
-                case Xml.Contacts2.IMAddress2:
-                case Xml.Contacts2.IMAddress3:
-                case Xml.Contacts2.IMAddress:
-                case Xml.Contacts2.MMS:
-                case Xml.Contacts2.ManagerName:
-                case Xml.Contacts2.NickName:
-                    TrySetStringFromXml (c, child.Name.LocalName, child.Value);
-                    break;
-                default:
-                    Console.WriteLine ("ParseContact UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
-                    break;
-                }
-            }
-            return NcResult.OK (c);
-        }
-
         /// <summary>
         /// Tries the set string from xml.
         /// </summary>
@@ -571,7 +469,7 @@ namespace NachoCore.ActiveSync
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                System.Diagnostics.Trace.Assert (null != prop);
+                NachoCore.NachoAssert.True (null != prop);
                 if (typeof(string) != prop.PropertyType) {
                     Console.WriteLine ("TrySetStringFromXml: Property {0} is not string.", targetProp);
                     return;
@@ -588,11 +486,11 @@ namespace NachoCore.ActiveSync
         /// <param name="targetObj">Target object.</param>
         /// <param name="targetProp">Target property.</param>
         /// <param name="value">Value.</param>
-        private void TrySetIntFromXml (object targetObj, string targetProp, string value)
+        public void TrySetIntFromXml (object targetObj, string targetProp, string value)
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                System.Diagnostics.Trace.Assert (null != prop);
+                NachoCore.NachoAssert.True (null != prop);
                 if (typeof(int) != prop.PropertyType) {
                     Console.WriteLine ("TrySetIntFromXml: Property {0} is not int.", targetProp);
                     return;
@@ -610,11 +508,11 @@ namespace NachoCore.ActiveSync
         /// <param name="targetObj">Target object.</param>
         /// <param name="targetProp">Target property.</param>
         /// <param name="value">Value.</param>
-        private void TrySetDateTimeFromXml (object targetObj, string targetProp, string value)
+        public void TrySetDateTimeFromXml (object targetObj, string targetProp, string value)
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                System.Diagnostics.Trace.Assert(null != prop);
+                NachoCore.NachoAssert.True (null != prop);
                 if (typeof(DateTime) != prop.PropertyType) {
                     Console.WriteLine ("TrySetDateTimeFromXml: Property {0} is not int.", targetProp);
                     return;
@@ -626,11 +524,11 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private void TrySetCompactDateTimeFromXml (object targetObj, string targetProp, string value)
+        public void TrySetCompactDateTimeFromXml (object targetObj, string targetProp, string value)
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                System.Diagnostics.Trace.Assert(null != prop);
+                NachoCore.NachoAssert.True (null != prop);
                 if (typeof(DateTime) != prop.PropertyType) {
                     Console.WriteLine ("TrySetCompactDateTimeFromXml: Property {0} is not int.", targetProp);
                     return;

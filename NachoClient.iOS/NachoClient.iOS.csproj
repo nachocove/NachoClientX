@@ -423,6 +423,12 @@
       <Link>NachoCore\Extensions\NachoTimer.cs</Link>
     </Compile>
     <Compile Include="NachoCore\DeviceCalendar.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsContact.cs">
+      <Link>NachoCore\ActiveSync\AsContact.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoAssert.cs">
+      <Link>NachoCore\Extensions\NachoAssert.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
