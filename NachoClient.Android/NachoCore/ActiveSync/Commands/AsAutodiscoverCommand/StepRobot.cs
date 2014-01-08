@@ -276,8 +276,7 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.OkWait,
-                        Drop = new [] {(uint)SmEvt.E.TempFail}, // FIXME.
-                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
+                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
                                 (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
                                 (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
@@ -483,6 +482,7 @@ namespace NachoCore.ActiveSync
             {
                 // FIXME: need to set & handle timeout.
                 if (0 < RetriesLeft--) {
+                    ServerCertificate = null;
                     var client = new HttpClient (new HttpClientHandler () { AllowAutoRedirect = false });
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
