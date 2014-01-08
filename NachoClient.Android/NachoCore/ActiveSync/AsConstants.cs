@@ -599,7 +599,8 @@ namespace NachoCore.ActiveSync
                 case (uint)TypeCode.Unknown:
                 case (uint)TypeCode.Ric:
                     //FIXME - we don't know what to do with these yet.
-                    throw new Exception ();
+                    Console.WriteLine ("TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
+                    return AirSync.ClassCode.Notes;
 
                 case (uint)TypeCode.DefaultInbox:
                 case (uint)TypeCode.DefaultDrafts:
