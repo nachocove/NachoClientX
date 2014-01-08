@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
@@ -130,13 +132,106 @@ namespace NachoClient.iOS
 
         public void CredReq(McAccount account) {
             Console.WriteLine ("Asking for Credentials");
-            Be.CredResp (account);
-        }
-        public void ServConfReq (McAccount account) {
-            Console.WriteLine ("Asking for Config Info");
-            Be.ServerConfResp (account);
+            InvokeOnMainThread (delegate {
+            var credView = new UIAlertView ();
+           
+            var tmpCred =Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
+            credView.Title = "Need to update Login Credentials";
+            credView.AddButton ("Update");
+            credView.AlertViewStyle= UIAlertViewStyle.LoginAndPasswordInput;
+            credView.Show ();
+          
+            credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                var parent = (UIAlertView)sender;
+                // FIXME - collect login credentials, also try to display the login id they used
+                var tmplog = parent.GetTextField(0); // login id
+                var tmppwd = parent.GetTextField(1); // password
+                if ((tmplog != null) && (tmppwd != null)) {
+                    tmpCred.Username = (string) tmplog.Text;
+                    tmpCred.Password = (string) tmppwd.Text;
+                        Be.Db.Update(BackEnd.DbActors.Ui, tmpCred); //  update with new username/password
+                    
+                    Be.CredResp(account);
+                    credView.ResignFirstResponder();
+                } else {
+                    var DoitYadummy = new UIAlertView();
+                    DoitYadummy.Title = "You need to enter fields for Login ID and Password";
+                    DoitYadummy.AddButton("OK - Enter Login Data");
+                    DoitYadummy.AddButton("Cancel");
+                    DoitYadummy.CancelButtonIndex = 1;
+                    DoitYadummy.Clicked+= delegate(object silly, UIButtonEventArgs e) {
+
+                        if (e.ButtonIndex == 0) { // I want to actually enter login data
+                            CredReq(account);    // call to get credentials
+                        };
+
+                        DoitYadummy.ResignFirstResponder();
+                       
+                    };
+                   };
+                credView.ResignFirstResponder(); // might want this moved
+            };
+            }); // end invokeonMain
         }
+           
+
+           
+
+
+        public void ServConfReq (McAccount account) {
+            // called if server name is wrong
+            // cancel should call "exit program, enter new server name should be updated server
+
+            Console.WriteLine ("Asking for Config Info");
+            InvokeOnMainThread (delegate {  // lock on main thread
+            var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
+
+            var credView = new UIAlertView ();
+
+            credView.Title = "Need Correct Server Name";
+            credView.AddButton ("Update");
+            credView.AddButton ("Cancel");
+            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
+            credView.Show ();
+            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
+                var parent = (UIAlertView)a;
+                if (b.ButtonIndex == 0) {
+                    var txt = parent.GetTextField (0).Text;
+                    // FIXME need to scan string to make sure it is of right format
+                    if (txt != null) {
+                        Console.WriteLine(" New Server Name = " + txt);
+                        tmpServer.Fqdn = txt;
+                        Be.Db.Update(BackEnd.DbActors.Ui, tmpServer);
+                        Be.ServerConfResp (account); 
+                        credView.ResignFirstResponder();
+                    };
+
+                };
+              
+                if (b.ButtonIndex == 1) {
+                    var gonnaquit = new UIAlertView ();
+                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
+
+                    gonnaquit.AddButton ("Ok"); // continue exiting
+                    gonnaquit.AddButton ("CANCEL"); // enter info
+                    gonnaquit.CancelButtonIndex = 1;
+                    gonnaquit.Show ();
+                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
+                        if (e.ButtonIndex== 1){
+                            ServConfReq (account); // go again
+                        }
+                        gonnaquit.ResignFirstResponder();
+                    
+                    };
+                };
+             
+
+            };
+
+            }); // end invoke MainThread
+        }
+
         public void HardFailInd (McAccount account) {
         }
         public void SoftFailInd (McAccount account) {
