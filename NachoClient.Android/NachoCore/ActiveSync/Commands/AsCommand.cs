@@ -247,6 +247,11 @@ namespace NachoCore.ActiveSync
             OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
         }
 
+        protected void DoUiGetCred ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.AuthFail);
+        }
+
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {

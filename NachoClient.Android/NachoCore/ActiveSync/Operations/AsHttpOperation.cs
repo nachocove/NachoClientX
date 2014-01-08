@@ -321,6 +321,7 @@ namespace NachoCore.ActiveSync
             TimeoutTimer = new NachoTimer (TimeoutTimerCallback, myClient, Timeout, 
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
+                Console.WriteLine("HTTPOP:URL:{0}", request.RequestUri.ToString());
                 response = await myClient.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
             } catch (OperationCanceledException ex) {
                 Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
@@ -413,6 +414,8 @@ namespace NachoCore.ActiveSync
                 return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode.BadRequest or NotFound");
 
             case HttpStatusCode.Unauthorized:
+                return Final ((uint)AsProtoControl.AsEvt.E.AuthFail);
+
             case HttpStatusCode.Forbidden:
             case HttpStatusCode.InternalServerError:
             case HttpStatusCode.Found:

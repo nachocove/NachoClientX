@@ -46,7 +46,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)St.Start,
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail,
                             (uint)ProvEvt.E.Wipe
                         },
                         On = new [] {
@@ -75,6 +75,11 @@ namespace NachoCore.ActiveSync
                                 Act = DoReSync,
                                 State = (uint)St.Stop
                             },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = DoUiGetCred,
+                                State = (uint)St.Stop
+                            },
                             new Trans { Event = (uint)ProvEvt.E.Wipe, Act = DoAck, State = (uint)Lst.AckWait },
                         }
                     },
@@ -98,6 +103,11 @@ namespace NachoCore.ActiveSync
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReSync,
                                 Act = DoReSync,
+                                State = (uint)St.Stop
+                            },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = DoUiGetCred,
                                 State = (uint)St.Stop
                             },
                             new Trans { Event = (uint)ProvEvt.E.Wipe, Act = DoGet, State = (uint)Lst.AckWait },
@@ -126,7 +136,7 @@ namespace NachoCore.ActiveSync
                 }
             } else {
                 if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
-                    GetOp == Sender && 
+                    GetOp == Sender &&
                     "14.1" == DataSource.ProtocolState.AsProtocolVersion) {
                     provision.Add (AsSettingsCommand.DeviceInformation ());
                 }
@@ -148,79 +158,79 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-                var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
-                switch ((Xml.Provision.ProvisionStatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
-                case Xml.Provision.ProvisionStatusCode.Success:
-                    if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
+            var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
+            switch ((Xml.Provision.ProvisionStatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
+            case Xml.Provision.ProvisionStatusCode.Success:
+                if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
                         GetOp == Sender) {
-                        var protocolState = DataSource.ProtocolState;
-                        protocolState.InitialProvisionCompleted = true;
-                        DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
-                    }
-                    var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
-                    if (null != xmlRemoteWipe) {
-                        WipeSucceeded = Enforcer.Instance.Wipe (DataSource.Account);
-                        if (!MustWipe) {
-                            MustWipe = true;
-                            return Event.Create ((uint)ProvEvt.E.Wipe, null, "RemoteWipe element in Provision.");
-                        }
-                    }
-                    var xmlPolicies = doc.Root.Element (m_ns + Xml.Provision.Policies);
-                    if (null != xmlPolicies) {
-                        // Policy required element of Policies.
-                        var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
-
-                        // PolicyKey required element of Policy.
-                        McProtocolState update = DataSource.ProtocolState;
-                        update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
-                        DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, update);
-
-                        // PolicyType required element of Policy, but we don't care much.
-                        var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
-                        if (null != xmlPolicyType && !Xml.Provision.PolicyTypeValue.Equals (xmlPolicyType.Value)) {
-                            Console.WriteLine ("AsProvisionCommand: unexpected value for PolicyType: {0}", xmlPolicyType.Value);
-                        }
-
-                        // Status required element of Policy.
-                        var xmlPolicyStatus = xmlPolicy.Element (m_ns + Xml.Provision.Status);
-                        switch ((Xml.Provision.PolicyRespStatusCode)Convert.ToUInt32 (xmlPolicyStatus.Value)) {
-                        case Xml.Provision.PolicyRespStatusCode.Success:
-                            break;
-                        case Xml.Provision.PolicyRespStatusCode.NoPolicy:
-                        case Xml.Provision.PolicyRespStatusCode.UnknownPolicyType:
-                        case Xml.Provision.PolicyRespStatusCode.ServerCorrupt:
-                        case Xml.Provision.PolicyRespStatusCode.WrongPolicyKey:
-                            return Event.Create ((uint)SmEvt.E.HardFail);
-                        }
-
-                        // Data only required element of Policy in get, not ack.
-                        // One or more EASProvisionDoc are required underneath the Data element.
-                        var xmlData = xmlPolicy.Element (m_ns + Xml.Provision.Data);
-                        if (null != xmlData) {
-                            var policyId = DataSource.Account.PolicyId;
-                            var policy = DataSource.Owner.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
-                            foreach (var xmlEASProvisionDoc in xmlData.Elements(m_ns+Xml.Provision.EASProvisionDoc)) {
-                                // Right now, we serially apply EASProvisionDoc elements against the policy. It is not clear
-                                // that there is ever really more than one EASProvisionDoc. Maybe someday we are required to
-                                // intelligently merge EASProvisionDoc elements. I hope not.
-                                
-                                ApplyEasProvisionDocToPolicy (xmlEASProvisionDoc, policy);
-                            }
-                            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, policy);
-                        }
-                    }
-                    return Event.Create ((uint)SmEvt.E.Success);
-
-                case Xml.Provision.ProvisionStatusCode.ProtocolError:
-                    return Event.Create ((uint)SmEvt.E.HardFail);
-
-                case Xml.Provision.ProvisionStatusCode.ServerError:
-                    return Event.Create ((uint)SmEvt.E.TempFail);
-
-                default:
-                    // Unknown Provision Status code.
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    var protocolState = DataSource.ProtocolState;
+                    protocolState.InitialProvisionCompleted = true;
+                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
                 }
+                var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
+                if (null != xmlRemoteWipe) {
+                    WipeSucceeded = Enforcer.Instance.Wipe (DataSource.Account);
+                    if (!MustWipe) {
+                        MustWipe = true;
+                        return Event.Create ((uint)ProvEvt.E.Wipe, null, "RemoteWipe element in Provision.");
+                    }
+                }
+                var xmlPolicies = doc.Root.Element (m_ns + Xml.Provision.Policies);
+                if (null != xmlPolicies) {
+                    // Policy required element of Policies.
+                    var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
+
+                    // PolicyKey required element of Policy.
+                    McProtocolState update = DataSource.ProtocolState;
+                    update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
+                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, update);
+
+                    // PolicyType required element of Policy, but we don't care much.
+                    var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
+                    if (null != xmlPolicyType && !Xml.Provision.PolicyTypeValue.Equals (xmlPolicyType.Value)) {
+                        Console.WriteLine ("AsProvisionCommand: unexpected value for PolicyType: {0}", xmlPolicyType.Value);
+                    }
+
+                    // Status required element of Policy.
+                    var xmlPolicyStatus = xmlPolicy.Element (m_ns + Xml.Provision.Status);
+                    switch ((Xml.Provision.PolicyRespStatusCode)Convert.ToUInt32 (xmlPolicyStatus.Value)) {
+                    case Xml.Provision.PolicyRespStatusCode.Success:
+                        break;
+                    case Xml.Provision.PolicyRespStatusCode.NoPolicy:
+                    case Xml.Provision.PolicyRespStatusCode.UnknownPolicyType:
+                    case Xml.Provision.PolicyRespStatusCode.ServerCorrupt:
+                    case Xml.Provision.PolicyRespStatusCode.WrongPolicyKey:
+                        return Event.Create ((uint)SmEvt.E.HardFail);
+                    }
+
+                    // Data only required element of Policy in get, not ack.
+                    // One or more EASProvisionDoc are required underneath the Data element.
+                    var xmlData = xmlPolicy.Element (m_ns + Xml.Provision.Data);
+                    if (null != xmlData) {
+                        var policyId = DataSource.Account.PolicyId;
+                        var policy = DataSource.Owner.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
+                        foreach (var xmlEASProvisionDoc in xmlData.Elements(m_ns+Xml.Provision.EASProvisionDoc)) {
+                            // Right now, we serially apply EASProvisionDoc elements against the policy. It is not clear
+                            // that there is ever really more than one EASProvisionDoc. Maybe someday we are required to
+                            // intelligently merge EASProvisionDoc elements. I hope not.
+                                
+                            ApplyEasProvisionDocToPolicy (xmlEASProvisionDoc, policy);
+                        }
+                        DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, policy);
+                    }
+                }
+                return Event.Create ((uint)SmEvt.E.Success);
+
+            case Xml.Provision.ProvisionStatusCode.ProtocolError:
+                return Event.Create ((uint)SmEvt.E.HardFail);
+
+            case Xml.Provision.ProvisionStatusCode.ServerError:
+                return Event.Create ((uint)SmEvt.E.TempFail);
+
+            default:
+                    // Unknown Provision Status code.
+                return Event.Create ((uint)SmEvt.E.HardFail);
+            }
         }
 
         private void DoGet ()

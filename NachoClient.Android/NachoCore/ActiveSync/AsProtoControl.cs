@@ -18,7 +18,8 @@ namespace NachoCore.ActiveSync
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
-            UiCredW,
+            UiDCrdW,
+            UiPCrdW,
             UiServConfW,
             UiCertOkW,
             OptW,
@@ -39,7 +40,8 @@ namespace NachoCore.ActiveSync
                 ReDisc = (SmEvt.E.Last + 1),
                 ReProv,
                 ReSync,
-                Last = ReSync}
+                AuthFail,
+                Last = AuthFail}
             ;
         }
         // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
@@ -48,8 +50,7 @@ namespace NachoCore.ActiveSync
         {
             new public enum E : uint
             {
-                GetCred = (AsEvt.E.Last + 1),
-                UiSetCred,
+                UiSetCred = (AsEvt.E.Last + 1),
                 GetServConf,
                 UiSetServConf,
                 GetCertOk,
@@ -88,7 +89,7 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.ReSync,
-                            (uint)CtlEvt.E.GetCred,
+                            (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
@@ -115,7 +116,11 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoOpt, State = (uint)Lst.OptW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)CtlEvt.E.GetCred, Act = DoUiCredReq, State = (uint)Lst.UiCredW },
+                            new Trans {
+                                Event = (uint)AsEvt.E.AuthFail,
+                                Act = DoUiCredReq,
+                                State = (uint)Lst.UiDCrdW
+                            },
                             new Trans {
                                 Event = (uint)CtlEvt.E.GetServConf,
                                 Act = DoUiServConfReq,
@@ -136,7 +141,7 @@ namespace NachoCore.ActiveSync
                     },
 
                     new Node {
-                        State = (uint)Lst.UiCredW,
+                        State = (uint)Lst.UiDCrdW,
                         Drop = new [] {
                             (uint)CtlEvt.E.SendMail,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -150,19 +155,52 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.ReSync,
-                            (uint)CtlEvt.E.GetCred,
+                            (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiCredReq, State = (uint)Lst.UiCredW },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch, Act = DoUiCredReq, State = (uint)Lst.UiDCrdW
+                            },
                             new Trans { Event = (uint)CtlEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans {
                                 Event = (uint)CtlEvt.E.UiSetServConf,
                                 Act = DoSetServConf,
                                 State = (uint)Lst.DiscW
+                            },
+                        }
+                    },
+
+                    new Node {
+                        State = (uint)Lst.UiPCrdW,
+                        Drop = new [] {
+                            (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.UiSearch
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsEvt.E.ReDisc,
+                            (uint)AsEvt.E.ReProv,
+                            (uint)AsEvt.E.ReSync,
+                            (uint)AsEvt.E.AuthFail,
+                            (uint)CtlEvt.E.ReFSync,
+                            (uint)CtlEvt.E.DnldAtt,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.GetServConf,
+                        },
+                        On = new [] {
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW
+                            },
+                            new Trans { Event = (uint)CtlEvt.E.UiSetCred, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)CtlEvt.E.UiSetServConf, Act = DoSetServConf, State = (uint)Lst.ProvW
                             },
                         }
                     },
@@ -183,7 +221,7 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.ReSync,
-                            (uint)CtlEvt.E.GetCred,
+                            (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
@@ -209,10 +247,10 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)CtlEvt.E.GetCred,
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.ReSync,
+                            (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.GetServConf,
@@ -249,7 +287,6 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
@@ -259,7 +296,8 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoOpt, State = (uint)Lst.OptW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoOldProtoProv, State = (uint)Lst.ProvW },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoOpt, State = (uint)Lst.OptW }
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoOpt, State = (uint)Lst.OptW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                         }
                     },
 
@@ -276,7 +314,6 @@ namespace NachoCore.ActiveSync
                         },
                         Invalid = new [] {
                             (uint)AsEvt.E.ReProv,
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
@@ -288,6 +325,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoUiHardFailInd, State = (uint)St.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                         }
                     },
 
@@ -303,7 +341,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSearch
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
@@ -316,6 +353,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSettings, State = (uint)Lst.SettingsW },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                         }
                     },
 
@@ -330,7 +368,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
@@ -343,7 +380,8 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
-                            new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW }
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
                         }
                     },
 
@@ -357,7 +395,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf,
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf
@@ -370,6 +407,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
                         }
@@ -384,7 +422,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf
                         },
@@ -396,6 +433,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.SendMail, Act = DoSend, State = (uint)Lst.SendMailW },
                             new Trans { Event = (uint)CtlEvt.E.DnldAtt, Act = DoDnldAtt, State = (uint)Lst.DnldAttW },
@@ -413,7 +451,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf,
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf
@@ -426,6 +463,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
                         }
@@ -441,7 +479,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf
@@ -454,6 +491,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
                         }
@@ -470,7 +508,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSearch
                         },
                         Invalid = new [] {
-                            (uint)CtlEvt.E.GetCred,
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf
@@ -484,7 +521,8 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSearch, State = (uint)Lst.SrchW },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
-                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },                     
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
                     },
@@ -550,6 +588,9 @@ namespace NachoCore.ActiveSync
         private void DoUiCredReq ()
         {
             // Send the request toward the UI.
+            if (null != Cmd && ! CmdIs (typeof(AsAutodiscoverCommand))) {
+                Cmd.Cancel ();
+            }
             Owner.CredReq (this);
         }
 

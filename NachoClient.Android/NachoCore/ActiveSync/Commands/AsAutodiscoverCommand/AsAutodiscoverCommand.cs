@@ -56,14 +56,12 @@ namespace NachoCore.ActiveSync
         {
             new public enum E : uint
             {
-                AuthFail = (AsProtoControl.AsEvt.E.Last + 1),
-                // 401.
-                ServerCertYes,
+                // UI response on server cert.
+                ServerCertYes = (AsProtoControl.AsEvt.E.Last + 1),
                 // UI response on server cert.
                 ServerCertNo,
-                // UI response on server cert.
-                ReStart,
                 // Protocol indicates that search must be restarted from step-1 (Robot or Top-Level).
+                ReStart,
                 Last = ReStart}
             ;
         }
@@ -104,8 +102,8 @@ namespace NachoCore.ActiveSync
                 TransTable = new[] {
                     new Node {State = (uint)St.Start, 
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         Drop = new [] { (uint)TlEvt.E.CredSet },
@@ -133,7 +131,7 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoS2, State = (uint)Lst.S2Wait },
                             new Trans {
-                                Event = (uint)SharedEvt.E.AuthFail,
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
                                 State = (uint)Lst.CredWait
                             },
@@ -154,8 +152,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.S1AskWait,
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.ServerCertAsk
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.ServerCertAsk
                         },
                         On = new[] {
                             new Trans {
@@ -196,7 +194,7 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoS3, State = (uint)Lst.S3Wait },
                             new Trans {
-                                Event = (uint)SharedEvt.E.AuthFail,
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
                                 State = (uint)Lst.CredWait
                             },
@@ -217,8 +215,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.S2AskWait,
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         On = new[] {
@@ -260,7 +258,7 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoS4, State = (uint)Lst.S4Wait },
                             new Trans {
-                                Event = (uint)SharedEvt.E.AuthFail,
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
                                 State = (uint)Lst.CredWait
                             },
@@ -281,8 +279,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.S3AskWait,
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         On = new[] {
@@ -324,7 +322,7 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoBaseMaybe, State = (uint)Lst.BaseWait },
                             new Trans {
-                                Event = (uint)SharedEvt.E.AuthFail,
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
                                 State = (uint)Lst.CredWait
                             },
@@ -345,8 +343,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.S4AskWait,
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         On = new[] {
@@ -376,8 +374,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.BaseWait,
                         Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         Drop = new [] { (uint)TlEvt.E.CredSet },
@@ -430,7 +428,7 @@ namespace NachoCore.ActiveSync
                                 State = (uint)Lst.ServerWait
                             },
                             new Trans {
-                                Event = (uint)SharedEvt.E.AuthFail,
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
                                 State = (uint)Lst.CredWait
                             },
@@ -445,8 +443,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.CredWait,
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         On = new[] {
@@ -462,8 +460,8 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.ServerWait, 
                         Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                             (uint)TlEvt.E.ServerCertAsk
                         },
                         Drop = new [] { (uint)TlEvt.E.CredSet },
@@ -670,12 +668,6 @@ namespace NachoCore.ActiveSync
             var robot = (StepRobot)Sm.Arg;
             ServerCandidate = McServer.Create (robot.SrServerUri);
             DoTest ();
-        }
-
-        private void DoUiGetCred ()
-        {
-            // Ask the UI to either re-get the password, or to get the username + (optional) domain.
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetCred);
         }
 
         private void DoUiGetServer ()

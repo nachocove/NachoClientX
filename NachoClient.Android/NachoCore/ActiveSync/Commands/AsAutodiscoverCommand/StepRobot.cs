@@ -152,7 +152,7 @@ namespace NachoCore.ActiveSync
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
-                                    Event = (uint)SharedEvt.E.AuthFail,
+                                    Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                     Act = DoRobotAuthFail,
                                     State = (uint)St.Stop
                                 },
@@ -170,7 +170,7 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.GetWait,
-                            Invalid = new [] {(uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                                 (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -219,7 +219,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.DnsWait,
                             Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -248,7 +248,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.CertWait,
                             Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -278,7 +278,7 @@ namespace NachoCore.ActiveSync
                         new Node {State = (uint)RobotLst.OkWait,
                             Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
                                 (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
-                                (uint)SharedEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
                             }, 
                             On = new[] {
@@ -341,7 +341,7 @@ namespace NachoCore.ActiveSync
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
-                                    Event = (uint)SharedEvt.E.AuthFail,
+                                    Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                     Act = DoRobotAuthFail,
                                     State = (uint)St.Stop
                                 },
@@ -427,7 +427,7 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 4),
+                        Timeout = new TimeSpan (0, 0, 30),
                         Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
@@ -453,7 +453,7 @@ namespace NachoCore.ActiveSync
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 4),
+                        Timeout = new TimeSpan (0, 0, 30),
                         Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
@@ -511,13 +511,12 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotAuthFail ()
             {
-                ForTopLevel (Event.Create ((uint)SharedEvt.E.AuthFail, this));
+                ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, this));
             }
 
             private void DoRobotSuccess ()
             {
                 ForTopLevel (Event.Create ((uint)SmEvt.E.Success, this));
-
             }
 
             private void DoRobotHardFail ()
@@ -594,9 +593,6 @@ namespace NachoCore.ActiveSync
             public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
             {
                 switch (response.StatusCode) {
-                case HttpStatusCode.Unauthorized:
-                    return Event.Create ((uint)SharedEvt.E.AuthFail);
-
                 case HttpStatusCode.Found:
                     try {
                         ReDirUri = new Uri (response.Headers.GetValues ("Location").First ());
@@ -607,7 +603,8 @@ namespace NachoCore.ActiveSync
                     return Event.Create ((uint)RobotEvt.E.ReDir);
 
                 case HttpStatusCode.OK:
-                    // We want to use the existing AsHttpOperation logic in the 200 case.
+                case HttpStatusCode.Unauthorized:
+                    // We want to use the existing AsHttpOperation logic in the 200/401 cases.
                     return null;
 
                 default:
