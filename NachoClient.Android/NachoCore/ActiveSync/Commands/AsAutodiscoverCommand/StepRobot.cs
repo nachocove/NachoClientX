@@ -427,7 +427,7 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 30),
+                        Timeout = new TimeSpan (0, 0, 8),
                         Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
@@ -453,7 +453,7 @@ namespace NachoCore.ActiveSync
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 30),
+                        Timeout = new TimeSpan (0, 0, 8),
                         Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
@@ -596,6 +596,7 @@ namespace NachoCore.ActiveSync
                 case HttpStatusCode.Found:
                     try {
                         ReDirUri = new Uri (response.Headers.GetValues ("Location").First ());
+                        Console.WriteLine("REDIRURI: {0}", ReDirUri);
                         IsReDir = true;
                     } catch {
                         return Event.Create ((uint)SmEvt.E.HardFail);
