@@ -276,7 +276,8 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.OkWait,
-                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
+                        Drop = new [] {(uint)SmEvt.E.TempFail}, // FIXME.
+                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
                                 (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
                                 (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
