@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
         // This method is public for unit tests.
         public void ServerSaysAddCalendarItem (XElement command, McFolder folder)
         {
-            Log.Info (Log.LOG_CALENDAR, "ServerSaysAddCalendarItem\n{0}", command.ToString ());
+            Log.Info (Log.LOG_CALENDAR, "ServerSaysAddCalendarItem\n{0}", command);
             ProcessCalendarItem (command, folder);
         }
         // [MS-ASCMD]
@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
         // This method is public for unit tests.
         public void ServerSaysChangeCalendarItem (XElement command, McFolder folder)
         {
-            Log.Info (Log.LOG_CALENDAR, "ServerSaysChangeCalendarItem\n{0}", command.ToString ());
+            Log.Info (Log.LOG_CALENDAR, "ServerSaysChangeCalendarItem\n{0}", command);
             ProcessCalendarItem (command, folder);
         }
 
@@ -65,7 +65,7 @@ namespace NachoCore.ActiveSync
             } catch (System.InvalidOperationException) {
                 Log.Info (Log.LOG_CALENDAR, "ProcessCalendarItem: System.InvalidOperationException handled");
             } catch (Exception e) {
-                Log.Info ("ProcessCalendarItem:\n{0}", e.ToString ());
+                Log.Info ("ProcessCalendarItem:\n{0}", e);
             }
 
             // If there is no match, insert the new item.

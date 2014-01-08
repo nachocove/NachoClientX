@@ -20,7 +20,7 @@ namespace NachoCore.ActiveSync
             var folderSync = new XElement (m_ns + Xml.FolderHierarchy.FolderSync, new XElement (m_ns + Xml.FolderHierarchy.SyncKey, syncKey));
             var doc = AsCommand.ToEmptyXDocument();
             doc.Add (folderSync);
-            Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand:\n{0}", doc.ToString ());
+            Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand:\n{0}", doc);
             return doc;
         }
 
@@ -33,7 +33,7 @@ namespace NachoCore.ActiveSync
                 var protocolState = DataSource.ProtocolState;
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 Log.Info ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
-                Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand response:\n{0}", doc.ToString ());
+                Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand response:\n{0}", doc);
                 protocolState.AsSyncKey = syncKey;
                 DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
@@ -50,7 +50,7 @@ namespace NachoCore.ActiveSync
                                 AsSyncKey = Xml.AirSync.SyncKey_Initial,
                                 AsSyncRequired = true
                             };
-                            Log.Info("foldersync - add - " + folder.ToString());
+                            Log.Info("foldersync - add - " + folder);
                             DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, folder);
                             break;
                         case Xml.FolderHierarchy.Update:
@@ -59,7 +59,7 @@ namespace NachoCore.ActiveSync
                             folder.ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             folder.DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value;
                             folder.Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value);
-                            Log.Info("foldersync - update - " + folder.ToString());
+                            Log.Info("foldersync - update - " + folder);
                             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                             break;
                         case Xml.FolderHierarchy.Delete:

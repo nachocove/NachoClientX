@@ -252,7 +252,7 @@ namespace NachoCore.ActiveSync
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             NachoCore.NachoAssert.True (null != applicationData);
 
-            Log.Info (Log.LOG_CALENDAR, "AsContact FromXML\n{0}", applicationData.ToString ());
+            Log.Info (Log.LOG_CALENDAR, "AsContact FromXML\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.Contacts.Anniversary:

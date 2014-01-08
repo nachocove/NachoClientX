@@ -44,7 +44,7 @@ namespace NachoCore.ActiveSync
                                DataSource.ProtocolState.HeartbeatInterval.ToString ()), xFolders);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (ping);
-            Log.Info(Log.LOG_SYNC,"Sync:\n{0}", doc.ToString ());
+            Log.Info(Log.LOG_SYNC,"Sync:\n{0}", doc);
             return doc;
         }
 
@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
         {
             McProtocolState update;
 
-            Log.Info(Log.LOG_SYNC, "Sync response:\n{0}", doc.ToString ());
+            Log.Info(Log.LOG_SYNC, "Sync response:\n{0}", doc);
 
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
             string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;
