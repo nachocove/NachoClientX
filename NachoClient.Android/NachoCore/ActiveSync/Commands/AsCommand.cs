@@ -9,6 +9,7 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
@@ -223,6 +224,9 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
                 return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
             // Meh. do some cases end-to-end, with user messaging (before all this typing).
+
+            case Xml.StatusCode.DeviceNotProvisioned:
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, null, "Global DeviceNotProvisioned");
             }
             return null;
         }
