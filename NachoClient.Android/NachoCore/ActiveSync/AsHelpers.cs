@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
+using System.Xml;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -36,6 +37,30 @@ namespace NachoCore.ActiveSync
         public static uint ToUint (this string intString)
         {
             return uint.Parse (intString);
+        }
+
+        public static string ToStringWithoutCharacterChecking(this XDocument xElement)
+        {
+            using (System.IO.StringWriter stringWriter = new System.IO.StringWriter())
+            {
+                using (System.Xml.XmlTextWriter xmlTextWriter = new XmlTextWriter(stringWriter))
+                {
+                    xElement.WriteTo(xmlTextWriter);
+                }
+                return stringWriter.ToString();
+            }
+        }
+
+        public static string ToStringWithoutCharacterChecking(this XElement xElement)
+        {
+            using (System.IO.StringWriter stringWriter = new System.IO.StringWriter())
+            {
+                using (System.Xml.XmlTextWriter xmlTextWriter = new XmlTextWriter(stringWriter))
+                {
+                    xElement.WriteTo(xmlTextWriter);
+                }
+                return stringWriter.ToString();
+            }
         }
     }
 
@@ -202,7 +227,7 @@ namespace NachoCore.ActiveSync
             var list = new List<McCalendarCategory> ();
 
             foreach (var category in categories.Elements()) {
-                NachoCore.NachoAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
+                NachoCore.NachoAssert.True (category.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
                 var n = new McCalendarCategory (category.Value);
                 list.Add (n);
             }

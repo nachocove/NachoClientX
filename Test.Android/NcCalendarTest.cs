@@ -10,7 +10,6 @@ using SQLite;
 
 namespace Test.iOS
 {
-
     public class TestDb : SQLiteConnectionWithEvents
     {
         public TestDb () : base (System.IO.Path.GetTempFileName (), true)
@@ -80,38 +79,63 @@ namespace Test.iOS
     public class MockDataSource : IAsDataSource
     {
         public IProtoControlOwner Owner { set; get; }
+
         public AsProtoControl Control { set; get; }
+
         public McProtocolState ProtocolState { get; set; }
+
         public McServer Server { get; set; }
+
         public McAccount Account { get; set; }
+
         public McCred Cred { get; set; }
 
-        public MockDataSource()
+        public MockDataSource ()
         {
             Owner = new MockProtoControlOwner ();
             Owner.Db = new TestDb ();
         }
-
     }
 
-        public class MockProtoControlOwner : IProtoControlOwner
+    public class MockProtoControlOwner : IProtoControlOwner
     {
         public SQLiteConnectionWithEvents Db { set; get; }
+
         public string AttachmentsDir { set; get; }
 
-        public void CredReq (ProtoControl sender) {  }
-        public void ServConfReq (ProtoControl sender) {  }
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) { }
-        public void HardFailInd (ProtoControl sender) { }
-        public void TempFailInd (ProtoControl sender) { }
-        public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) { return true; }
-        public void ServerOOSpaceInd (ProtoControl sender) { }
+        public void CredReq (ProtoControl sender)
+        {
+        }
+
+        public void ServConfReq (ProtoControl sender)
+        {
+        }
+
+        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+        {
+        }
+
+        public void HardFailInd (ProtoControl sender)
+        {
+        }
+
+        public void TempFailInd (ProtoControl sender)
+        {
+        }
+
+        public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds)
+        {
+            return true;
+        }
+
+        public void ServerOOSpaceInd (ProtoControl sender)
+        {
+        }
     }
 
     public class MockNcFolder : McFolder
     {
-
-        public MockNcFolder()
+        public MockNcFolder ()
         {
             this.Id = 86;
             this.ServerId = "mock folder";
@@ -121,7 +145,6 @@ namespace Test.iOS
             this.Type = 1;
         }
     }
-
 
     [TestFixture]
     public class NcCalendarTest
@@ -183,7 +206,6 @@ namespace Test.iOS
             BadDateTime ("2013-11-23T19:02:43.1234Z");
         }
 
-
         public void GoodTimeZone (string encodedTimeZone, string targetStandardName, string targetDaylightName)
         {
             var t = c.ParseAsTimeZone (encodedTimeZone);
@@ -239,7 +261,7 @@ namespace Test.iOS
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
-            asSync.ServerSaysAddCalendarItem (command, new MockNcFolder());
+            asSync.ServerSaysAddCalendarItem (command, new MockNcFolder ());
         }
         //        [Test]
         public void UpdateEntryWithAdd ()
@@ -369,7 +391,7 @@ namespace Test.iOS
             Assert.AreEqual (3, db.Table<McAttendee> ().Count ());
 
             var c10 = db.Table<McAttendee> ().Where (x => x.ParentId == 5);
-            Assert.AreEqual(2, c10.Count());
+            Assert.AreEqual (2, c10.Count ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
             }
@@ -470,7 +492,7 @@ namespace Test.iOS
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
-            Assert.IsNotNull (r.GetValue<McCalendar>());
+            Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);
             Assert.AreEqual (c.DtStamp, new DateTime (2013, 11, 26, 12, 49, 29));
@@ -505,7 +527,7 @@ namespace Test.iOS
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
-            Assert.IsNotNull (r.GetValue<McCalendar>());
+            Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNull (c.Location);
             Assert.AreEqual (c.Subject, "Re-dog");
@@ -524,6 +546,22 @@ namespace Test.iOS
             Assert.AreEqual (c.attendees.Count, 0);
             Assert.IsNotNull (c.exceptions);
             Assert.AreEqual (c.exceptions.Count, 2);
+        }
+
+        [Test]
+        public void CreateNcCalendarFromXML3 ()
+        {
+            var ds = new MockDataSource ();
+            var ncFolder = new MockNcFolder ();
+
+            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
+            var command = System.Xml.Linq.XElement.Parse (addString_03);
+            Assert.IsNotNull (command);
+            Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
+            var h = new NachoCore.ActiveSync.AsHelpers ();
+            NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
+            Assert.IsNotNull (r.GetValue<McCalendar> ());
+            var c = r.GetValue<McCalendar> ();
         }
 
         String addString_01 = @"
@@ -573,7 +611,6 @@ namespace Test.iOS
                   </ApplicationData>
                 </Add>
         ";
-
         String addString_02 = @"
             <Add xmlns=""AirSync"">
               <ServerId>40f792c2-1370-44dc-ba9a-2eab5db56102</ServerId>
@@ -637,6 +674,54 @@ namespace Test.iOS
               </ApplicationData>
             </Add>
             ";
+        String addString_03 = @"
+            <Add xmlns=""AirSync"">
+              <ServerId>1:1</ServerId>
+              <ApplicationData>
+                <TimeZone xmlns=""Calendar"">4AEAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAsAAAABAAIAAAAAAAAAAAAAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAMAAAACAAIAAAAAAAAAxP///w==</TimeZone>
+                <DtStamp xmlns=""Calendar"">20140107T193959Z</DtStamp>
+                <StartTime xmlns=""Calendar"">20140110T200000Z</StartTime>
+                <Subject xmlns=""Calendar"">Test event #2</Subject>
+                <UID xmlns=""Calendar"">040000008200E00074C5B7101A82E00800000000743B700EE00BCF010000000000000000100000007FB086F7F2E23E4889D76035FFF1CE41</UID>
+                <OrganizerName xmlns=""Calendar"">steve scalpone</OrganizerName>
+                <OrganizerEmail xmlns=""Calendar"">steves@nac01.com</OrganizerEmail>
+                <Attendees xmlns=""Calendar"">
+                  <Attendee>
+                    <Email>jeffe@nac01.com</Email>
+                    <Name>jeff enderwick</Name>
+                    <AttendeeStatus>0</AttendeeStatus>
+                    <AttendeeType>1</AttendeeType>
+                  </Attendee>
+                  <Attendee>
+                    <Email>steves@nachocove.com</Email>
+                    <Name>steves@nachocove.com</Name>
+                    <AttendeeStatus>0</AttendeeStatus>
+                    <AttendeeType>1</AttendeeType>
+                  </Attendee>
+                </Attendees>
+                <Location xmlns=""Calendar"">Online Meeting</Location>
+                <EndTime xmlns=""Calendar"">20140110T203000Z</EndTime>
+                <Body xmlns=""AirSyncBase"">
+                  <Type>3</Type>
+                  <EstimatedDataSize>271</EstimatedDataSize>
+                  <Truncated>1</Truncated>
+                </Body>
+                <Categories xmlns=""Calendar"">
+                  <Category>Green category</Category>
+                </Categories>
+                <Sensitivity xmlns=""Calendar"">0</Sensitivity>
+                <BusyStatus xmlns=""Calendar"">2</BusyStatus>
+                <AllDayEvent xmlns=""Calendar"">0</AllDayEvent>
+                <Reminder xmlns=""Calendar"">15</Reminder>
+                <MeetingStatus xmlns=""Calendar"">1</MeetingStatus>
+                <NativeBodyType xmlns=""AirSyncBase"">3</NativeBodyType>
+                <ResponseRequested xmlns=""Calendar"">1</ResponseRequested>
+                <ResponseType xmlns=""Calendar"">1</ResponseType>
+                <OnlineMeetingConfLink xmlns=""Calendar"">sip:steves@nac01.com;gruu;opaque=app:conf:focus:id:VI98EBFU</OnlineMeetingConfLink>
+                <OnlineMeetingExternalLink xmlns=""Calendar"">https://meet.lync.com/nac01-com/steves/VI98EBFU</OnlineMeetingExternalLink>
+              </ApplicationData>
+            </Add>
+        ";
     }
 }
 
