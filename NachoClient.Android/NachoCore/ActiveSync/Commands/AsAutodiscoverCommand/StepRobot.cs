@@ -489,14 +489,18 @@ namespace NachoCore.ActiveSync
                         await client.GetAsync (ReDirUri);
                     } catch {
                         StepSm.PostEvent ((uint)SmEvt.E.TempFail);
+                        return;
                     }
                     ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
                     if (null == ServerCertificate) {
                         StepSm.PostEvent ((uint)SmEvt.E.TempFail);
+                        return;
                     }
                     StepSm.PostEvent ((uint)SmEvt.E.Success);
+                    return;
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail);
+                    return;
                 }
             }
 
