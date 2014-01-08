@@ -144,12 +144,13 @@ namespace NachoClient.iOS
           
             credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
                 var parent = (UIAlertView)sender;
-                // FIXME - collect login credentials, also try to display the login id they used
-                var tmplog = parent.GetTextField(0); // login id
-                var tmppwd = parent.GetTextField(1); // password
-                if ((tmplog != null) && (tmppwd != null)) {
-                    tmpCred.Username = (string) tmplog.Text;
-                    tmpCred.Password = (string) tmppwd.Text;
+                    // FIXME - need  to display the login id they used in first login attempt
+                var tmplog = parent.GetTextField(0).Text; // login id
+                var tmppwd = parent.GetTextField(1).Text; // password
+               if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
+                    
+                    tmpCred.Username = (string) tmplog;
+                    tmpCred.Password = (string) tmppwd;
                         Be.Db.Update(BackEnd.DbActors.Ui, tmpCred); //  update with new username/password
                     
                     Be.CredResp(account);
@@ -157,9 +158,10 @@ namespace NachoClient.iOS
                 } else {
                     var DoitYadummy = new UIAlertView();
                     DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                    DoitYadummy.AddButton("OK - Enter Login Data");
-                    DoitYadummy.AddButton("Cancel");
+                    DoitYadummy.AddButton("Go Back");
+                    DoitYadummy.AddButton("Exit - Do Not Care");
                     DoitYadummy.CancelButtonIndex = 1;
+                    DoitYadummy.Show();
                     DoitYadummy.Clicked+= delegate(object silly, UIButtonEventArgs e) {
 
                         if (e.ButtonIndex == 0) { // I want to actually enter login data
@@ -214,7 +216,7 @@ namespace NachoClient.iOS
                     gonnaquit.Title = "Are You Sure? \n No account information will be updated";
 
                     gonnaquit.AddButton ("Ok"); // continue exiting
-                    gonnaquit.AddButton ("CANCEL"); // enter info
+                    gonnaquit.AddButton ("Go Back"); // enter info
                     gonnaquit.CancelButtonIndex = 1;
                     gonnaquit.Show ();
                     gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
