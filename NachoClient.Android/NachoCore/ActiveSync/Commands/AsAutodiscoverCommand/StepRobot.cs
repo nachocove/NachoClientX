@@ -427,7 +427,7 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 8),
+                        Timeout = new TimeSpan (0, 0, 15),
                         Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
@@ -453,7 +453,7 @@ namespace NachoCore.ActiveSync
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 8),
+                        Timeout = new TimeSpan (0, 0, 15),
                         Allow451Follow = false
                     };
                     HttpOp.Execute (StepSm);
