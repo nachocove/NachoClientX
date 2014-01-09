@@ -43,11 +43,11 @@ namespace NachoCore.ActiveSync
                     if (Xml.AirSync.ClassCode.Email.Equals (classCode)) {
                         // <Options>
                         //   <MIMESupport>2</MIMESupport> -- Send MIME data for all messages
-                        //   <FilterType>3</FilterType>  -- One week time window
+                        //   <FilterType>5</FilterType>  -- One month time window
                         // </Options>
                         collection.Add (new XElement (m_ns + Xml.AirSync.Options,
                             new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime),
-                            new XElement (m_ns + Xml.AirSync.FilterType, "3")));
+                            new XElement (m_ns + Xml.AirSync.FilterType, "5")));
                     }
                     // If there are email deletes, then push them up to the server.
                     var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
