@@ -9,14 +9,14 @@ namespace NachoCore.Utils
 {
     public class NcCommStatus
     {
-        private class ServerAccess
+        public class ServerAccess
         {
             public bool DidSucceed { get; set; }
 
             public DateTime When { get; set; }
         }
 
-        private class ServerTracker
+        public class ServerTracker
         {
             public int ServerId { get; set; }
 
@@ -53,13 +53,16 @@ namespace NachoCore.Utils
                 var pos = Convert.ToDouble (Accesses.Where (x => true == x.DidSucceed).Count ());
                 var neg = Convert.ToDouble (Accesses.Where (x => false == x.DidSucceed).Count ());
                 var total = pos + neg;
-                if (0.0 == pos || 0.3 > (pos / total)) {
+                if (0.0 == total) {
+                    Quality = CommQualityEnum.OK;
+                } else if (0.0 == pos || 0.3 > (pos / total)) {
                     Quality = CommQualityEnum.Unusable;
                 } else if (0.8 > (pos / total)) {
                     Quality = CommQualityEnum.Degraded;
                 } else {
                     Quality = CommQualityEnum.OK;
                 }
+                Console.WriteLine ("COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
                 return Quality;
             }
 
@@ -127,7 +130,7 @@ namespace NachoCore.Utils
 
         public event EventHandler CommStatusServerEvent;
         // NOTE - this could be enhanced by tracking RTT and timeouts, folding back into setting the timeout value.
-        public void ReportResult (int serverId, bool didSucceed)
+        public void ReportCommResult (int serverId, bool didSucceed)
         {
             var tracker = GetTracker (serverId);
             var oldQ = tracker.Quality;
@@ -138,6 +141,17 @@ namespace NachoCore.Utils
             }
         }
 
+        private int GetServerId (string host)
+        {
+            var server = BackEnd.Instance.Db.Table<McServer> ().FirstOrDefault (x => x.Fqdn == host);
+            // Allow 0 to track conditions when we don't yet have a McServer record in DB.
+            return (null == server) ? 0 : server.Id;
+        }
+        public void ReportCommResult (string host, bool didSucceed)
+        {
+            ReportCommResult (GetServerId (host), didSucceed);
+        }
+
         public void Reset (int serverId)
         {
             var tracker = GetTracker (serverId);
@@ -146,6 +160,11 @@ namespace NachoCore.Utils
                 CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality,
                     tracker.Status, tracker.Speed));
             }
+        }
+
+        public ServerTracker Tracker (string host)
+        {
+            return GetTracker (GetServerId (host));
         }
     }
 }

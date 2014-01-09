@@ -50,7 +50,7 @@ namespace NachoCore.ActiveSync
         private const string KResponse = "response";
         private const uint KDefaultDelaySeconds = 10;
         private const int KDefaultTimeoutSeconds = 10;
-        private const uint KDefaultRetries = 2;
+        private const uint KDefaultRetries = 15;
         private static XmlSchemaSet commonXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
         private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
@@ -142,29 +142,6 @@ namespace NachoCore.ActiveSync
             };
 
             HttpOpSm.Validate ();
-
-            if (null == commonXmlSchemas) {
-                commonXmlSchemas = new XmlSchemaSet ();
-                foreach (var xsdFile in assetMgr.List (Path.Combine(KXsd, KCommon))) {
-                    commonXmlSchemas.Add (null, new XmlTextReader (assetMgr.Open (xsdFile)));
-                }
-            }
-            if (null == requestXmlSchemas) {
-                requestXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
-                foreach (var xsdRequest in assetMgr.List (Path.Combine(KXsd, KRequest))) {
-                    var requestSchema = new XmlSchemaSet ();
-                    requestSchema.Add (null, new XmlTextReader (assetMgr.Open (xsdRequest)));
-                    requestXmlSchemas [Path.GetFileNameWithoutExtension (xsdRequest)] = requestSchema;
-                }
-            }
-            if (null == responseXmlSchemas) {
-                responseXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
-                foreach (var xsdResponse in assetMgr.List (Path.Combine(KXsd, KResponse))) {
-                    var requestSchema = new XmlSchemaSet ();
-                    requestSchema.Add (null, new XmlTextReader (assetMgr.Open (xsdResponse)));
-                    responseXmlSchemas [Path.GetFileNameWithoutExtension (xsdResponse)] = requestSchema;
-                }
-            }
         }
         // Public Methods.
         public virtual void Execute (StateMachine sm)
