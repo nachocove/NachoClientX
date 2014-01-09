@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -82,6 +83,20 @@ namespace NachoCore
             Be.Db.Insert(BackEnd.DbActors.Ui, email);
         }
         // Methods for IBackEndDelegate:
+        public void StatusInd (NcResult status)
+        {
+            // FIXME.
+        }
+
+        public void StatusInd (McAccount account, NcResult status)
+        {
+            // FIXME.
+        }
+
+        public void StatusInd (McAccount account, NcResult status, string[] tokens)
+        {
+            // FIXME.
+        }
         public void CredReq(McAccount account) {
         }
         public void ServConfReq (McAccount account) {
@@ -100,19 +115,7 @@ namespace NachoCore
         public void CertAskReq (McAccount account)
         {
         }
-        public void HardFailInd (McAccount account)
-        {
-        }
-        public void SoftFailInd (McAccount account)
-        {
-        }
-        public bool RetryPermissionReq (McAccount account, uint delaySeconds)
-        {
-            return true;
-        }
-        public void ServerOOSpaceInd (McAccount account)
-        {
-        }
+
         public void SearchContactsResp (McAccount account, string prefix, string token)
         {
             // FIXME.

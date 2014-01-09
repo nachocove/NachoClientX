@@ -1,4 +1,4 @@
-// # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+// # Copyright (C) 2013, 2014 Nacho Cove, Inc. All rights reserved.
 //
 using DnDns.Enums;
 using DnDns.Query;
@@ -79,6 +79,9 @@ namespace NachoCore.ActiveSync
         public uint TriesLeft { set; get; }
 
         public bool Allow451Follow { set; get; }
+
+        public string Token { set; get; }
+
         // Initializers.
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource)
         {
@@ -423,6 +426,7 @@ namespace NachoCore.ActiveSync
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, DataSource);
                     IndicateUriIfChanged ();
+                    // FIXME - not ReSync event, rather set the sync-key to 0 and recover post auto-d.
                     return Final ((uint)AsProtoControl.AsEvt.E.ReSync);
                 }
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
@@ -473,20 +477,28 @@ namespace NachoCore.ActiveSync
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                         return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Could not parse Retry-After value.");
                     }
-                    if (DataSource.Owner.RetryPermissionReq (DataSource.Control, seconds)) {
-                        return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Retry-After");
-                    }
+                    return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Retry-After");
                 }
                 return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)507:
                 IndicateUriIfChanged ();
-                DataSource.Owner.ServerOOSpaceInd (DataSource.Control);
+                ReportError ("Exchange server is out of space.");
                 return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode 507 - Out of space on server.");
 
             default:
                 return Final ((uint)SmEvt.E.HardFail, null, 
                     string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
+            }
+        }
+
+        private void ReportError (string message)
+        {
+            var result = NcResult.Error (message);
+            if (null != Token && string.Empty != Token) {
+                DataSource.Owner.StatusInd (DataSource.Control, result, new string[] { Token });
+            } else {
+                DataSource.Owner.StatusInd (DataSource.Control, result);
             }
         }
     }

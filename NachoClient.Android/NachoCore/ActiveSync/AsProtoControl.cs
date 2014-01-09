@@ -625,8 +625,7 @@ namespace NachoCore.ActiveSync
 
         private void DoUiHardFailInd ()
         {
-            // Send the indication toward the UI.
-            Owner.HardFailInd (this);
+            // FIXME Send the indication toward the UI.
         }
 
         private void DoDisc ()

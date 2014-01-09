@@ -1,13 +1,27 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
-    // The owner is a delegate in the Cocoa sense of the word. This API must be implemented by
+    // The owner is a delegate in the Cocoa sense. This API must be implemented by
     // the owner of a BackEnd object.
     public interface IBackEndOwner
     {
+        /* StatusInd: Indicates a status change applicable to all accounts.
+         */
+        void StatusInd (NcResult status);
+
+        /* StatusInd: Indicates a status change for a specific account.
+         */
+        void StatusInd (McAccount account, NcResult status);
+
+        /* StatusInd: Indicates a status change for a specific account, with one or more
+         * affected operation tokens.
+         */
+        void StatusInd (McAccount account, NcResult status, string[] tokens);
+
         /* CredRequest: When called, the callee must gather the credential for the specified 
          * account and add/update it to/in the DB. The callee must then update
          * the account record. The BE will act based on the update event for the
@@ -26,22 +40,6 @@ namespace NachoCore
          * be trusted for the specified account. 
          */
         void CertAskReq (McAccount account, X509Certificate2 certificate);
-
-        /* HardFailureIndication: Called to indicate to the callee that there is a failure
-         * that will require some sort of intervention. The callee must call the BE method
-         * Start(account) to get the BE going again (post intervention).
-         */
-        void HardFailInd (McAccount account);
-
-        /* SoftFailureIndication: Called to indicate that "it aint workin' right now." The
-         * callee must call the BE method Start(account) to get the BE going again. We will
-         * want to add some autorecovery here in the future.
-         */
-        void SoftFailInd (McAccount account);
-
-        bool RetryPermissionReq (McAccount account, uint delaySeconds);
-
-        void ServerOOSpaceInd (McAccount account);
 
         void SearchContactsResp (McAccount account, string prefix, string token);
     }

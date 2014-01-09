@@ -9,12 +9,11 @@ namespace NachoCore
         SQLiteConnectionWithEvents Db { set; get; }
         string AttachmentsDir { set; get; }
 
+        void StatusInd (ProtoControl sender, NcResult status);
+        void StatusInd (ProtoControl sender, NcResult status, string[] tokens);
         void CredReq (ProtoControl sender);
         void ServConfReq (ProtoControl sender);
         void CertAskReq (ProtoControl sender, X509Certificate2 certificate);
-        void HardFailInd (ProtoControl sender);
-        void TempFailInd (ProtoControl sender);
-        bool RetryPermissionReq (ProtoControl sender, uint delaySeconds);
-        void ServerOOSpaceInd (ProtoControl sender);
+        void SearchContactsResp (ProtoControl sender, string prefix, string token);
     }
 }

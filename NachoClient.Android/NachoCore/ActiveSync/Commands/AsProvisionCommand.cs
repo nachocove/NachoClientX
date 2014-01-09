@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
                 }
                 if (AckOp == Sender) {
                     policy.Add (new XElement (m_ns + Xml.Provision.Status,
-                        ((uint)Enforcer.Instance.Compliance (DataSource.Account)).ToString ()));
+                        ((uint)NcEnforcer.Instance.Compliance (DataSource.Account)).ToString ()));
                 }
                 provision.Add (new XElement (m_ns + Xml.Provision.Policies, policy));
             }
@@ -169,7 +169,7 @@ namespace NachoCore.ActiveSync
                 }
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
-                    WipeSucceeded = Enforcer.Instance.Wipe (DataSource.Account);
+                    WipeSucceeded = NcEnforcer.Instance.Wipe (DataSource.Account);
                     if (!MustWipe) {
                         MustWipe = true;
                         return Event.Create ((uint)ProvEvt.E.Wipe, null, "RemoteWipe element in Provision.");

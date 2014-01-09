@@ -137,6 +137,7 @@
     <Folder Include="NachoCore\ActiveSync\Commands\" />
     <Folder Include="NachoUI.iOS\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
+    <Folder Include="NachoCore\NcCommStatus\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -303,14 +304,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Log.cs">
-      <Link>NachoCore\Extensions\Log.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NcResult.cs">
       <Link>NachoCore\Extensions\NcResult.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Enforcer.cs">
-      <Link>NachoCore\Enforcer.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
@@ -419,6 +414,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Log.cs">
+      <Link>NachoCore\Extensions\Log.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
+      <Link>NachoCore\NcEnforcer.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoTimer.cs">
       <Link>NachoCore\Extensions\NachoTimer.cs</Link>
     </Compile>
@@ -428,6 +429,12 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoAssert.cs">
       <Link>NachoCore\Extensions\NachoAssert.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\NcCommStatus\NcCommStatus.cs">
+      <Link>NachoCore\NcCommStatus\NcCommStatus.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs">
+      <Link>NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

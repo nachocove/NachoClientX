@@ -18,8 +18,6 @@ namespace NachoCore.Utils
     // Hard - there is something about the interaction that just won't work.
     // Temp - the cause of the failure is expected to clear with time (i.e. network failure).
     // If we can't communicate with the server - we assume that's a TempFail.
-    // If we can communicate with the server, and we can't tell that the problem is transient,
-    // then we have a HardFail.
     // Precise events are used to indicate value-based failures (e.g. credential, server config, etc).
     public class SmEvt
     {

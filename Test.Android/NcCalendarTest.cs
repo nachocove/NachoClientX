@@ -115,20 +115,15 @@ namespace Test.iOS
         {
         }
 
-        public void HardFailInd (ProtoControl sender)
+        public void StatusInd (ProtoControl sender, NcResult status)
         {
         }
 
-        public void TempFailInd (ProtoControl sender)
+        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
         }
 
-        public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds)
-        {
-            return true;
-        }
-
-        public void ServerOOSpaceInd (ProtoControl sender)
+        public void SearchContactsResp (ProtoControl sender, string prefix, string token)
         {
         }
     }

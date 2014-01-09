@@ -99,8 +99,6 @@
     <Compile Include="NachoUI.Android\MainActivity.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
-    <Compile Include="NachoCore\Enforcer.cs" />
-    <Compile Include="NachoCore\Extensions\Log.cs" />
     <Compile Include="NachoCore\Extensions\NcResult.cs" />
     <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
     <Compile Include="NachoCore\ActiveSync\AsHelpers.cs" />
@@ -126,6 +124,10 @@
     <Compile Include="NachoCore\Extensions\NachoTimer.cs" />
     <Compile Include="NachoCore\ActiveSync\AsContact.cs" />
     <Compile Include="NachoCore\Extensions\NachoAssert.cs" />
+    <Compile Include="NachoCore\NcEnforcer.cs" />
+    <Compile Include="NachoCore\Extensions\Log.cs" />
+    <Compile Include="NachoCore\NcCommStatus\NcCommStatus.cs" />
+    <Compile Include="NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -156,6 +158,7 @@
     <Folder Include="NachoCore\ActiveSync\Commands\AsAutodiscoverCommand\" />
     <Folder Include="NachoUI.Android\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
+    <Folder Include="NachoCore\NcCommStatus\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

@@ -28,10 +28,20 @@ namespace NachoCore
 {
     public class BackEnd : IBackEnd, IProtoControlOwner
     {
-        public enum DbActors {Ui, Proto};
-        public enum DbEvents {DidWrite, WillDelete};
+        public enum DbActors
+        {
+            Ui,
+            Proto}
+        ;
+
+        public enum DbEvents
+        {
+            DidWrite,
+            WillDelete}
+        ;
 
         public SQLiteConnectionWithEvents Db { set; get; }
+
         public string AttachmentsDir { set; get; }
 
         private List<ProtoControl> Services;
@@ -41,20 +51,19 @@ namespace NachoCore
         private ProtoControl ServiceFromAccount (McAccount account)
         {
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (account.Id));
-            if (! Services.Any ()) {
+            if (!Services.Any ()) {
                 return null;
             }
             return query.Single ();
         }
-
         // For IBackEnd.
-
-        public BackEnd (IBackEndOwner owner) {
+        public BackEnd (IBackEndOwner owner)
+        {
             var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             AttachmentsDir = Path.Combine (documents, "attachments");
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
             DbFileName = Path.Combine (documents, "db");
-            Db = new SQLiteConnectionWithEvents(DbFileName, storeDateTimeAsTicks: true);
+            Db = new SQLiteConnectionWithEvents (DbFileName, storeDateTimeAsTicks: true);
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
             Db.CreateTable<McFolder> ();
@@ -82,14 +91,16 @@ namespace NachoCore
             ServicePointManager.DefaultConnectionLimit = 8;
         }
 
-        public void Start () {
+        public void Start ()
+        {
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Start (account);
             }
         }
 
-        public void Start (McAccount account) {
+        public void Start (McAccount account)
+        {
             var service = ServiceFromAccount (account);
             if (null == service) {
                 /* NOTE: This code needs to be able to detect the account type and start the 
@@ -98,6 +109,7 @@ namespace NachoCore
                 service = new AsProtoControl (this, account);
                 Services.Add (service);
             }
+            NcCommStatus.Instance.Reset (account.ServerId);
             service.Execute ();
         }
 
@@ -130,35 +142,37 @@ namespace NachoCore
         {
             ServiceFromAccount (account).CancelSearchContactsReq (token);
         }
-
+        //
         // For IProtoControlOwner.
+        //
+        public void StatusInd (ProtoControl sender, NcResult status)
+        {
+            Owner.StatusInd (sender.Account, status);
+        }
 
-        public void CredReq (ProtoControl sender) {
+        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+        {
+            Owner.StatusInd (sender.Account, status, tokens);
+        }
+
+        public void CredReq (ProtoControl sender)
+        {
             Owner.CredReq (sender.Account);
         }
 
-        public void ServConfReq (ProtoControl sender) {
+        public void ServConfReq (ProtoControl sender)
+        {
             Owner.ServConfReq (sender.Account);
         }
 
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {
+        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+        {
             Owner.CertAskReq (sender.Account, certificate);
         }
 
-        public void HardFailInd (ProtoControl sender) {
-            Owner.HardFailInd (sender.Account);
-        }
-
-        public void TempFailInd (ProtoControl sender) {
-            Owner.HardFailInd (sender.Account);
-        }
-
-        public bool RetryPermissionReq (ProtoControl sender, uint delaySeconds) {
-            return Owner.RetryPermissionReq (sender.Account, delaySeconds);
-        }
-
-        public void ServerOOSpaceInd (ProtoControl sender) {
-            Owner.ServerOOSpaceInd (sender.Account);
+        public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+        {
+            Owner.SearchContactsResp (sender.Account, prefix, token);
         }
     }
 }

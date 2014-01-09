@@ -130,6 +130,21 @@ namespace NachoClient.iOS
 
         // Methods for IBackEndOwner
 
+        public void StatusInd (NcResult status)
+        {
+            // FIXME.
+        }
+
+        public void StatusInd (McAccount account, NcResult status)
+        {
+            // FIXME.
+        }
+
+        public void StatusInd (McAccount account, NcResult status, string[] tokens)
+        {
+            // FIXME.
+        }
+
         public void CredReq(McAccount account) {
             Console.WriteLine ("Asking for Credentials");
             InvokeOnMainThread (delegate {
@@ -234,15 +249,6 @@ namespace NachoClient.iOS
             }); // end invoke MainThread
         }
 
-        public void HardFailInd (McAccount account) {
-        }
-        public void SoftFailInd (McAccount account) {
-        }
-        public bool RetryPermissionReq (McAccount account, uint delaySeconds) {
-            return true;
-        }
-        public void ServerOOSpaceInd (McAccount account) {
-        }
         public void CertAskReq (McAccount account, X509Certificate2 certificate) {
             // UI FIXME - ask user and call CertAskResp async'ly.
             Be.CertAskResp (account, true);

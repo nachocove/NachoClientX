@@ -5,15 +5,17 @@ namespace NachoCore.Utils
 {
     public class NcResult
     {
-        enum Kind { Uninitialized, OK, Info, Warning, Error };
+        // Eventually match up with Syslog severity levels for non-OK results.
+        // https://en.wikipedia.org/wiki/Syslog.
+        public enum Kind { OK, Info, Warning, Error };
 
         Kind kind;
         Object value;
         String message;
 
-        NcResult ()
+        private NcResult ()
         {
-            kind = Kind.Uninitialized;
+            kind = Kind.Error;
             value = null;
             message = null;
         }
@@ -42,25 +44,21 @@ namespace NachoCore.Utils
 
         public bool isOK()
         {
-            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return (Kind.OK == kind);
         }
 
         public bool isError()
         {
-            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return (Kind.Error == kind);
         }
 
         public T GetValue<T>()
         {
-            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return (T) value;
         }
 
         public String GetMessage()
         {
-            NachoCore.NachoAssert.True (Kind.Uninitialized != kind);
             return message;
         }
 

@@ -6,14 +6,14 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class Enforcer
+    public class NcEnforcer
     {
-        private static volatile Enforcer instance;
+        private static volatile NcEnforcer instance;
         private static object syncRoot = new Object();
 
-        private Enforcer () {}
+        private NcEnforcer () {}
 
-        public static Enforcer Instance
+        public static NcEnforcer Instance
         {
             get 
             {
@@ -22,7 +22,7 @@ namespace NachoCore
                     lock (syncRoot)
                     {
                         if (instance == null) 
-                            instance = new Enforcer ();
+                            instance = new NcEnforcer ();
                     }
                 }
                 return instance;
