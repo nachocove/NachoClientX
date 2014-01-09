@@ -15,6 +15,7 @@ namespace NachoCore.ActiveSync
 
         public AsSyncCommand (IAsDataSource dataSource) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource)
         {
+            Timeout = new TimeSpan (0, 0, 20);
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
@@ -69,6 +70,7 @@ namespace NachoCore.ActiveSync
                 collections.Add (collection);
             }
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
+            sync.Add (new XElement (m_ns + Xml.AirSync.WindowSize, "25"));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sync);
             Log.Info (Log.LOG_SYNC, "AsSyncCommand:\n{0}", doc);

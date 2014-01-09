@@ -51,9 +51,6 @@ namespace NachoCore.ActiveSync
         private const uint KDefaultDelaySeconds = 10;
         private const int KDefaultTimeoutSeconds = 10;
         private const uint KDefaultRetries = 15;
-        private static XmlSchemaSet commonXmlSchemas;
-        private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
-        private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
         // IVars. FIXME - make m_commandName private when referenced.
         public string m_commandName;
         private IAsDataSource DataSource;
@@ -91,7 +88,6 @@ namespace NachoCore.ActiveSync
             m_commandName = commandName;
             Owner = owner;
             DataSource = dataSource;
-            var assetMgr = new NachoPlatform.Assets ();
 
             HttpOpSm = new StateMachine () {
                 Name = "as:http_op",
@@ -178,9 +174,10 @@ namespace NachoCore.ActiveSync
         {
             if (0 < TriesLeft) {
                 --TriesLeft;
+                Console.WriteLine ("ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
             } else {
-                OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, "ASHTTPDOH", null, "Too many retries.");
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "ASHTTPDOH", null, "Too many retries."));
             }
         }
 

@@ -31,9 +31,6 @@ namespace NachoCore.ActiveSync
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
-        private static XmlSchemaSet commonXmlSchemas;
-        private static Dictionary<string,XmlSchemaSet> requestXmlSchemas;
-        private static Dictionary<string,XmlSchemaSet> responseXmlSchemas;
         // Properties & IVars.
         protected string CommandName;
         public XNamespace m_ns;
@@ -55,29 +52,6 @@ namespace NachoCore.ActiveSync
             Timeout = TimeSpan.Zero;
             CommandName = commandName;
             DataSource = dataSource;
-            var assetMgr = new NachoPlatform.Assets ();
-            if (null == commonXmlSchemas) {
-                commonXmlSchemas = new XmlSchemaSet ();
-                foreach (var xsdFile in assetMgr.List (Path.Combine(KXsd, KCommon))) {
-                    commonXmlSchemas.Add (null, new XmlTextReader (assetMgr.Open (xsdFile)));
-                }
-            }
-            if (null == requestXmlSchemas) {
-                requestXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
-                foreach (var xsdRequest in assetMgr.List (Path.Combine(KXsd, KRequest))) {
-                    var requestSchema = new XmlSchemaSet ();
-                    requestSchema.Add (null, new XmlTextReader (assetMgr.Open (xsdRequest)));
-                    requestXmlSchemas [Path.GetFileNameWithoutExtension (xsdRequest)] = requestSchema;
-                }
-            }
-            if (null == responseXmlSchemas) {
-                responseXmlSchemas = new Dictionary<string, XmlSchemaSet> ();
-                foreach (var xsdResponse in assetMgr.List (Path.Combine(KXsd, KResponse))) {
-                    var requestSchema = new XmlSchemaSet ();
-                    requestSchema.Add (null, new XmlTextReader (assetMgr.Open (xsdResponse)));
-                    responseXmlSchemas [Path.GetFileNameWithoutExtension (xsdResponse)] = requestSchema;
-                }
-            }
         }
         // Virtual Methods.
         protected virtual void Execute (StateMachine sm, ref AsHttpOperation opRef)
