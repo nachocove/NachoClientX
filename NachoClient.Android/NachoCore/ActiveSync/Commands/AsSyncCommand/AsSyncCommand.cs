@@ -174,7 +174,11 @@ namespace NachoCore.ActiveSync
 
                 DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
             }
-            return Event.Create ((FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.AsEvt.E.ReSync : (uint)SmEvt.E.Success);
+            if (FoldersNeedingSync ().Any ()) {
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC0");
+            } else {
+                return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
+            }
         }
         // Called when we get an empty Sync response body. Need to clear AsSyncRequired for all folders in the request.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
@@ -183,7 +187,11 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncRequired = false;
                 DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
             }
-            return Event.Create ((FoldersNeedingSync ().Any ()) ? (uint)AsProtoControl.AsEvt.E.ReSync : (uint)SmEvt.E.Success);
+            if (FoldersNeedingSync ().Any ()) {
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC1");
+            } else {
+                return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS1");
+            }
         }
 
         private SQLite.TableQuery<McFolder> FoldersNeedingSync ()

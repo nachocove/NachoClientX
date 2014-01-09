@@ -70,11 +70,11 @@ namespace NachoCore.ActiveSync
                         }
                     }
                 }
-                return Event.Create ((uint)SmEvt.E.Success);
+                return Event.Create ((uint)SmEvt.E.Success, "FSYNCSUCCESS");
             default:
                 // FIXME - case-specific behavior.
                 Log.Error ("ASFoldersyncCommand: UNHANDLED status {0}", status);
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "FSYNCHARD");
             }
         }
     }

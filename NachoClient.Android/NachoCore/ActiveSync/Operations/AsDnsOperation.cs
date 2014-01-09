@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
                 if (ex is ObjectDisposedException || ex is SocketException) {
                     if (wasKilledByTimer ||
                         (ex is SocketException && !wasCancelled)) {
-                        sm.PostEvent ((uint)SmEvt.E.TempFail);
+                        sm.PostEvent ((uint)SmEvt.E.TempFail, "DNSOPTEMP0");
                     }
                 } else {
                     throw;

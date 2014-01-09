@@ -489,7 +489,7 @@ namespace NachoCore.ActiveSync
             Sm.Name = OwnerSm.Name + ":AUTOD";
             Domain = DomainFromEmailAddr (DataSource.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
-            Sm.PostEvent ((uint)SmEvt.E.Launch);
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "AUTODEXE");
         }
         // UTILITY METHODS.
         private uint WaitStateFromStep (StepRobot.Steps Step)
@@ -592,50 +592,50 @@ namespace NachoCore.ActiveSync
             DoSx (StepRobot.Steps.S4);
         }
 
-        private void DoSxServerCertX (StepRobot.Steps step, uint eventCode)
+        private void DoSxServerCertX (StepRobot.Steps step, uint eventCode, string mnemonic)
         {
             var robot = FindRobot (step);
-            robot.StepSm.PostEvent (eventCode);
+            robot.StepSm.PostEvent (eventCode, mnemonic);
         }
 
         private void DoS1ServerCertYes ()
         {
-            DoSxServerCertX (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertYes);
+            DoSxServerCertX (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertYes, "AUTODS1CY");
         }
 
         private void DoS1ServerCertNo ()
         {
-            DoSxServerCertX (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertNo);
+            DoSxServerCertX (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertNo, "AUTODS1CN");
         }
 
         private void DoS2ServerCertYes ()
         {
-            DoSxServerCertX (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertYes);
+            DoSxServerCertX (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertYes, "AUTODS2CY");
         }
 
         private void DoS2ServerCertNo ()
         {
-            DoSxServerCertX (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertNo);
+            DoSxServerCertX (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertNo, "AUTODS2CN");
         }
 
         private void DoS3ServerCertYes ()
         {
-            DoSxServerCertX (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertYes);
+            DoSxServerCertX (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertYes, "AUTODS3CY");
         }
 
         private void DoS3ServerCertNo ()
         {
-            DoSxServerCertX (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertNo);
+            DoSxServerCertX (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertNo, "AUTODS3CN");
         }
 
         private void DoS4ServerCertYes ()
         {
-            DoSxServerCertX (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertYes);
+            DoSxServerCertX (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertYes, "AUTODS4CY");
         }
 
         private void DoS4ServerCertNo ()
         {
-            DoSxServerCertX (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertNo);
+            DoSxServerCertX (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertNo, "AUTODS4CN");
         }
 
         private void DoBaseMaybe ()
@@ -644,9 +644,9 @@ namespace NachoCore.ActiveSync
             // If yes, Success, else HardFail.
             if (BaseDomain != Domain && !IsTryingBaseDomain) {
                 IsTryingBaseDomain = true;
-                Sm.PostEvent ((uint)SmEvt.E.Success);
+                Sm.PostEvent ((uint)SmEvt.E.Success, "AUTODDBMS");
             } else {
-                Sm.PostEvent ((uint)SmEvt.E.HardFail);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODDBMF");
             }
         }
 
@@ -672,12 +672,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
         }
 
         private void DoUiServerCertAsk ()
         {
-            OwnerSm.PostEvent (Event.Create ((uint)AsProtoControl.CtlEvt.E.GetCertOk, ((StepRobot)Sm.Arg).ServerCertificate));
+            OwnerSm.PostEvent (Event.Create ((uint)AsProtoControl.CtlEvt.E.GetCertOk, "AUTODCERTASK", ((StepRobot)Sm.Arg).ServerCertificate));
         }
 
         private void DoAcceptServerConf ()
@@ -688,7 +688,7 @@ namespace NachoCore.ActiveSync
             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, serverRecord);
             // Signal that we are done and that we have a server config.
             // Success is the only way we finish - either by UI setting or autodiscovery.
-            OwnerSm.PostEvent ((uint)SmEvt.E.Success);
+            OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");
         }
         // IAsDataSource proxying.
         public IProtoControlOwner Owner {

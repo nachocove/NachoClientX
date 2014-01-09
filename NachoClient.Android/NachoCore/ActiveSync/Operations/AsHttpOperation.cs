@@ -172,12 +172,12 @@ namespace NachoCore.ActiveSync
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             ServerUri = Owner.ServerUri (this);
-            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
+            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "HTTPOPEXE");
         }
 
         public void Cancel ()
         {
-            var cancelEvent = Event.Create ((uint)HttpOpEvt.E.Cancel);
+            var cancelEvent = Event.Create ((uint)HttpOpEvt.E.Cancel, "HTTPOPCANCEL");
             cancelEvent.DropIfStopped = true;
             HttpOpSm.PostEvent (cancelEvent);
         }
@@ -203,7 +203,7 @@ namespace NachoCore.ActiveSync
                 --TriesLeft;
                 AttemptHttp ();
             } else {
-                OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, null, "Too many retries.");
+                OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, "ASHTTPDOH", null, "Too many retries.");
             }
         }
 
@@ -233,7 +233,7 @@ namespace NachoCore.ActiveSync
         private void DelayTimerCallback (object State)
         {
             DoCancelDelayTimer ();
-            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch);
+            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "ASHTTPDTC");
         }
 
         private void CancelTimeoutTimer ()
@@ -248,7 +248,7 @@ namespace NachoCore.ActiveSync
         private void TimeoutTimerCallback (object State)
         {
             if ((HttpClient)State == Client) {
-                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, null, string.Format ("Uri: {0}", ServerUri));
+                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
             }
         }
         // This method should only be called if the response indicates that the new server is a legit AS server.
@@ -260,19 +260,19 @@ namespace NachoCore.ActiveSync
             }
         }
         // Final is how to pass the ultimate Event back to OwnerSm.
-        private Event Final (uint eventCode)
+        private Event Final (uint eventCode, string mnemonic)
         {
-            return Final (eventCode, null, null);
+            return Final (eventCode, mnemonic, null, null);
         }
 
-        private Event Final (uint eventCode, object arg, string message)
+        private Event Final (uint eventCode, string mnemonic, object arg, string message)
         {
-            return Final (Event.Create (eventCode, arg, message));
+            return Final (Event.Create (eventCode, mnemonic, arg, message));
         }
 
         private Event Final (Event endEvent)
         {
-            return Event.Create ((uint)HttpOpEvt.E.Final, endEvent, null);
+            return Event.Create ((uint)HttpOpEvt.E.Final, "HTTPOPFIN", endEvent, null);
         }
 
         private async void AttemptHttp ()
@@ -331,7 +331,7 @@ namespace NachoCore.ActiveSync
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     if (!token.IsCancellationRequested) {
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                 }
                 return;
@@ -340,7 +340,7 @@ namespace NachoCore.ActiveSync
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
                 }
                 return;
             } catch (NullReferenceException ex) {
@@ -348,7 +348,7 @@ namespace NachoCore.ActiveSync
                 // As best I can tell, this may be driven by bug(s) in the Mono stack.
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, null, string.Format ("NullReferenceException: {0}, Uri: {1}", ex.Message, ServerUri));
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNRE", null, string.Format ("NullReferenceException: {0}, Uri: {1}", ex.Message, ServerUri));
                 }
                 return;
             }
@@ -363,7 +363,7 @@ namespace NachoCore.ActiveSync
                     HttpOpSm.PostEvent (ProcessHttpResponse (response));
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
+                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
                  }
             }
         }
@@ -414,10 +414,10 @@ namespace NachoCore.ActiveSync
 
             case HttpStatusCode.BadRequest:
             case HttpStatusCode.NotFound:
-                return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode.BadRequest or NotFound");
+                return Final ((uint)SmEvt.E.HardFail, "HTTPOP400404", null, "HttpStatusCode.BadRequest or NotFound");
 
             case HttpStatusCode.Unauthorized:
-                return Final ((uint)AsProtoControl.AsEvt.E.AuthFail);
+                return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
 
             case HttpStatusCode.Forbidden:
             case HttpStatusCode.InternalServerError:
@@ -427,18 +427,17 @@ namespace NachoCore.ActiveSync
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, DataSource);
                     IndicateUriIfChanged ();
                     // FIXME - not ReSync event, rather set the sync-key to 0 and recover post auto-d.
-                    return Final ((uint)AsProtoControl.AsEvt.E.ReSync);
+                    return Final ((uint)AsProtoControl.AsEvt.E.ReSync, "HTTPOPRESYNC");
                 }
-                return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
+                return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOPREDISC0");
 
             case (HttpStatusCode)449:
                 IndicateUriIfChanged ();
-
-                return Final ((uint)AsProtoControl.AsEvt.E.ReProv);
+                return Final ((uint)AsProtoControl.AsEvt.E.ReProv, "HTTPOP449");
 
             case (HttpStatusCode)451:
                 if (!Allow451Follow) {
-                    return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.451 follow not allowed.");
+                    return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPNO451", null, "HttpStatusCode.451 follow not allowed.");
                 }
                 if (response.Headers.Contains ("X-MS-Location")) {
                     try {
@@ -446,7 +445,7 @@ namespace NachoCore.ActiveSync
                         var redirUri = new Uri (response.Headers.GetValues ("X-MS-Location").First ());
                         if (!redirUri.IsHttps ()) {
                             // Don't be duped into accepting a non-HTTPS URI.
-                            return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
+                            return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOPREDISC1");
                         }
                         ServerUriBeingTested = true;
                         McServer dummy = new McServer () {
@@ -456,17 +455,17 @@ namespace NachoCore.ActiveSync
                             Path = redirUri.AbsolutePath
                         };
                         ServerUri = new Uri (AsCommand.BaseUri (dummy), redirUri.Query);
-                        return Event.Create ((uint)SmEvt.E.Launch);
+                        return Event.Create ((uint)SmEvt.E.Launch, "HTTPOPOK451");
                     } catch(Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                        return Final ((uint)AsProtoControl.AsEvt.E.ReDisc);
+                        return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOPREDISC2");
                     }
                 }
                 // If no X-MS-Location, just treat it as a transient and hope for the best.
-                return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.451 with no X-MS-Location.");
+                return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP451NOX", null, "HttpStatusCode.451 with no X-MS-Location.");
 
             case HttpStatusCode.BadGateway:
-                return Event.Create ((uint)SmEvt.E.TempFail, null, "HttpStatusCode.BadGateway");
+                return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP502", null, "HttpStatusCode.BadGateway");
 
             case HttpStatusCode.ServiceUnavailable:
                 uint seconds = KDefaultDelaySeconds;
@@ -475,19 +474,19 @@ namespace NachoCore.ActiveSync
                         seconds = uint.Parse (response.Headers.GetValues ("Retry-After").First ());
                     } catch(Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                        return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Could not parse Retry-After value.");
+                        return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOPSURAEX", seconds, "Could not parse Retry-After value.");
                     }
-                    return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "Retry-After");
+                    return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOPSURA", seconds, "Retry-After");
                 }
-                return Event.Create ((uint)HttpOpEvt.E.Delay, seconds, "HttpStatusCode.ServiceUnavailable");
+                return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOPSU", seconds, "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)507:
                 IndicateUriIfChanged ();
                 ReportError ("Exchange server is out of space.");
-                return Final ((uint)SmEvt.E.HardFail, null, "HttpStatusCode 507 - Out of space on server.");
+                return Final ((uint)SmEvt.E.HardFail, "HTTPOP507", null, "HttpStatusCode 507 - Out of space on server.");
 
             default:
-                return Final ((uint)SmEvt.E.HardFail, null, 
+                return Final ((uint)SmEvt.E.HardFail, "HTTPOPHARD0", null, 
                     string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
             }
         }

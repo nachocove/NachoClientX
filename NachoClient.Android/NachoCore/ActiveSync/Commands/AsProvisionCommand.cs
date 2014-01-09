@@ -172,7 +172,7 @@ namespace NachoCore.ActiveSync
                     WipeSucceeded = NcEnforcer.Instance.Wipe (DataSource.Account);
                     if (!MustWipe) {
                         MustWipe = true;
-                        return Event.Create ((uint)ProvEvt.E.Wipe, null, "RemoteWipe element in Provision.");
+                        return Event.Create ((uint)ProvEvt.E.Wipe, "PROVWIPE", null, "RemoteWipe element in Provision.");
                     }
                 }
                 var xmlPolicies = doc.Root.Element (m_ns + Xml.Provision.Policies);
@@ -200,7 +200,7 @@ namespace NachoCore.ActiveSync
                     case Xml.Provision.PolicyRespStatusCode.UnknownPolicyType:
                     case Xml.Provision.PolicyRespStatusCode.ServerCorrupt:
                     case Xml.Provision.PolicyRespStatusCode.WrongPolicyKey:
-                        return Event.Create ((uint)SmEvt.E.HardFail);
+                        return Event.Create ((uint)SmEvt.E.HardFail, "PROVHARD0");
                     }
 
                     // Data only required element of Policy in get, not ack.
@@ -219,17 +219,17 @@ namespace NachoCore.ActiveSync
                         DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, policy);
                     }
                 }
-                return Event.Create ((uint)SmEvt.E.Success);
+                return Event.Create ((uint)SmEvt.E.Success, "PROVSUCCESS");
 
             case Xml.Provision.ProvisionStatusCode.ProtocolError:
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "PROVPE");
 
             case Xml.Provision.ProvisionStatusCode.ServerError:
-                return Event.Create ((uint)SmEvt.E.TempFail);
+                return Event.Create ((uint)SmEvt.E.TempFail, "PROVSE");
 
             default:
                     // Unknown Provision Status code.
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "PROVHARD1");
             }
         }
 

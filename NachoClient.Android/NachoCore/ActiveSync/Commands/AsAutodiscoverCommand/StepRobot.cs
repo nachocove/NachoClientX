@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
                 IsBaseDomain = isBaseDomain;
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                ResultingEvent = Event.Create ((uint)RobotEvt.E.NullCode);
+                ResultingEvent = Event.Create ((uint)RobotEvt.E.NullCode, "SRNULL");
 
                 StepSm = new StateMachine () {
                     /* NOTE: There are three start states:
@@ -432,7 +432,7 @@ namespace NachoCore.ActiveSync
                     };
                     HttpOp.Execute (StepSm);
                 } else {
-                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRHHARD");
                 }
             }
 
@@ -442,7 +442,7 @@ namespace NachoCore.ActiveSync
                     DnsOp = new AsDnsOperation (this);
                     DnsOp.Execute (StepSm);
                 } else {
-                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRDHARD");
                 }
             }
 
@@ -458,7 +458,7 @@ namespace NachoCore.ActiveSync
                     };
                     HttpOp.Execute (StepSm);
                 } else {
-                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDR302HARD");
                 }
             }
 
@@ -488,45 +488,45 @@ namespace NachoCore.ActiveSync
                     try {
                         await client.GetAsync (ReDirUri);
                     } catch {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail);
+                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0");
                         return;
                     }
                     ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
                     if (null == ServerCertificate) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail);
+                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC1");
                         return;
                     }
-                    StepSm.PostEvent ((uint)SmEvt.E.Success);
+                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSC2");
                     return;
                 } else {
-                    StepSm.PostEvent ((uint)SmEvt.E.HardFail);
+                    StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRGSC3");
                     return;
                 }
             }
 
             private void DoRobotUiCertAsk ()
             {
-                ForTopLevel (Event.Create ((uint)TlEvt.E.ServerCertAsk, this));
+                ForTopLevel (Event.Create ((uint)TlEvt.E.ServerCertAsk, "SRCERTASK", this));
             }
 
             private void DoRobotReStart ()
             {
-                ForTopLevel (Event.Create ((uint)SharedEvt.E.ReStart, this));
+                ForTopLevel (Event.Create ((uint)SharedEvt.E.ReStart, "SRRESTART", this));
             }
 
             private void DoRobotAuthFail ()
             {
-                ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, this));
+                ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 
             private void DoRobotSuccess ()
             {
-                ForTopLevel (Event.Create ((uint)SmEvt.E.Success, this));
+                ForTopLevel (Event.Create ((uint)SmEvt.E.Success, "SRSUCCESS", this));
             }
 
             private void DoRobotHardFail ()
             {
-                ForTopLevel (Event.Create ((uint)SmEvt.E.HardFail, this));
+                ForTopLevel (Event.Create ((uint)SmEvt.E.HardFail, "SRHARDFAIL", this));
             }
             // *********************************************************************************
             // AsHttpOperationOwner callbacks.
@@ -604,9 +604,9 @@ namespace NachoCore.ActiveSync
                         Console.WriteLine("REDIRURI: {0}", ReDirUri);
                         IsReDir = true;
                     } catch {
-                        return Event.Create ((uint)SmEvt.E.HardFail);
+                        return Event.Create ((uint)SmEvt.E.HardFail, "SRPPPHARD");
                     }
-                    return Event.Create ((uint)RobotEvt.E.ReDir);
+                    return Event.Create ((uint)RobotEvt.E.ReDir, "SRPPPREDIR");
 
                 case HttpStatusCode.OK:
                 case HttpStatusCode.Unauthorized:
@@ -615,14 +615,14 @@ namespace NachoCore.ActiveSync
 
                 default:
                     // The only acceptable status codes are 200, 302 & 401.
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPPPDEFHARD");
                 }
             }
 
             public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
             {
                 // We should never get back content that isn't XML.
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "SRPR0HARD");
             }
 
             public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
@@ -662,7 +662,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // We should never get here. The XML response is missing both Error and Action.
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "SRPR1HARD");
             }
 
             private Event ProcessXmlError (AsHttpOperation Sender, XElement xmlError)
@@ -689,14 +689,14 @@ namespace NachoCore.ActiveSync
                 if (null != xmlErrorCode) {
                     ; // FIXME: log this along with request.
                 }
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
             }
 
             private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect)
             {
                 SrEmailAddr = xmlRedirect.Value;
                 SrDomain = DomainFromEmailAddr (SrEmailAddr);
-                return Event.Create ((uint)SharedEvt.E.ReStart);
+                return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
             }
 
             private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings)
@@ -719,10 +719,10 @@ namespace NachoCore.ActiveSync
                             serverUri = new Uri (xmlUrl.Value);
                         } catch (ArgumentNullException) {
                             // FIXME - log it.
-                            return Event.Create ((uint)SmEvt.E.HardFail);
+                            return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD0");
                         } catch (UriFormatException) {
                             // FIXME - log it.
-                            return Event.Create ((uint)SmEvt.E.HardFail);
+                            return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
                             SrServerUri = serverUri;
@@ -740,7 +740,11 @@ namespace NachoCore.ActiveSync
                         // FIXME - add support for CertEnroll.
                     }
                 }
-                return Event.Create ((haveServerSettings) ? (uint)SmEvt.E.Success : (uint)SmEvt.E.HardFail);
+                if (haveServerSettings) {
+                    return Event.Create ((uint)SmEvt.E.Success, "SRPXRSUCCESS");
+                } else {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
+                }
             }
             // *********************************************************************************
             // AsDnsOperationOwner callbacks.
@@ -778,9 +782,9 @@ namespace NachoCore.ActiveSync
                     var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
                     var chosen = (SrvRecord)bestRecs [index];
                     SrDomain = chosen.HostName;
-                    return Event.Create ((uint)SmEvt.E.Success);
+                    return Event.Create ((uint)SmEvt.E.Success, "SRPR2SUCCESS");
                 } else {
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2HARD");
                 }
             }
         }

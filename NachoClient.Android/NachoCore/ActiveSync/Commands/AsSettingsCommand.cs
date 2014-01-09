@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             // FIXME - evaluate response.
-            return Event.Create ((uint)SmEvt.E.Success);
+            return Event.Create ((uint)SmEvt.E.Success, "SETTSUCCESS");
         }
 
         public static XElement DeviceInformation ()

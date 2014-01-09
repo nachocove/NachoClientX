@@ -545,23 +545,27 @@ namespace NachoCore.ActiveSync
         // Methods callable by the owner.
         public override void Execute ()
         {
-            Sm.PostAtMostOneEvent ((uint)SmEvt.E.Launch);
+            Sm.PostAtMostOneEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
         }
 
         public override void CredResp ()
         {
-            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetCred);
+            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetCred, "ASPCUSC");
         }
 
         public override void ServerConfResp ()
         {
             Server = Owner.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
-            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetServConf);
+            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
         }
 
         public override void CertAskResp (bool isOkay)
         {
-            Sm.PostEvent ((uint)((isOkay) ? CtlEvt.E.UiCertOkYes : CtlEvt.E.UiCertOkNo));
+            if (isOkay) {
+                Sm.PostEvent ((uint)CtlEvt.E.UiCertOkYes, "ASPCUCOY");
+            } else {
+                Sm.PostEvent ((uint)CtlEvt.E.UiCertOkNo, "ASPCUCON");
+            }
         }
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
@@ -581,7 +585,7 @@ namespace NachoCore.ActiveSync
         {
             if (CmdIs (typeof(AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet);
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet, "ASPCDSSC");
             }
         }
 
@@ -598,7 +602,7 @@ namespace NachoCore.ActiveSync
         {
             if (CmdIs (typeof(AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet);
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet, "ASPCDSC");
             }
         }
 
@@ -611,7 +615,7 @@ namespace NachoCore.ActiveSync
         {
             if (CmdIs (typeof(AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertNo);
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertNo, "ASPCDCON");
             }
         }
 
@@ -619,7 +623,7 @@ namespace NachoCore.ActiveSync
         {
             if (CmdIs (typeof(AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertYes);
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertYes, "ASPCDCOY");
             }
         }
 
@@ -692,19 +696,19 @@ namespace NachoCore.ActiveSync
             if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                 rec.DataType == McPendingUpdate.DataTypes.Contact &&
                 rec.Operation == McPendingUpdate.Operations.Search).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch);
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
             } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.Send).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail);
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
             } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.Attachment &&
                        rec.Operation == McPendingUpdate.Operations.Download).Count ()) {
-                Sm.PostEvent ((uint)CtlEvt.E.DnldAtt);
+                Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
             } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.Delete).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync);
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
             } else {
                 Cmd = new AsPingCommand (this);
                 Cmd.Execute (Sm);
@@ -755,7 +759,7 @@ namespace NachoCore.ActiveSync
                             ServerId = emailMessage.ServerId
                         };
                         Owner.Db.Insert (BackEnd.DbActors.Proto, deleUpdate);
-                        Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync);
+                        Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
                     }
                     break;
                 case BackEnd.DbEvents.DidWrite:
@@ -767,7 +771,7 @@ namespace NachoCore.ActiveSync
                             EmailMessageId = emailMessage.Id
                         };
                         Owner.Db.Insert (BackEnd.DbActors.Proto, sendUpdate);
-                        Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail);
+                        Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
                     }
                     break;
                 }
@@ -807,7 +811,7 @@ namespace NachoCore.ActiveSync
                 Token = token
             };
             Owner.Db.Insert (BackEnd.DbActors.Proto, newSearch);
-            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch);
+            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
         public override void CancelSearchContactsReq (string token)

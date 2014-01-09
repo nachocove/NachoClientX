@@ -194,20 +194,20 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.InvalidContent:
             case Xml.StatusCode.InvalidWBXML:
             case Xml.StatusCode.InvalidXML:
-                return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
+                return Event.Create ((uint)SmEvt.E.HardFail, "TLSHARD0", null, string.Format ("Xml.StatusCode {0}", status));
 
             case Xml.StatusCode.InvalidDateTime: // Maybe the next time generated may parse okay.
-                return Event.Create ((uint)SmEvt.E.TempFail, null, "Xml.StatusCode.InvalidDateTime");
+                return Event.Create ((uint)SmEvt.E.TempFail, "TLSTEMP0", null, "Xml.StatusCode.InvalidDateTime");
 
             case Xml.StatusCode.InvalidCombinationOfIDs: // NOTE(A).
             case Xml.StatusCode.InvalidMIME: // NOTE(B).
             case Xml.StatusCode.DeviceIdMissingOrInvalid:
             case Xml.StatusCode.DeviceTypeMissingOrInvalid:
             case Xml.StatusCode.ServerError:
-                return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
+                return Event.Create ((uint)SmEvt.E.HardFail, "TLSHARD1", null, string.Format ("Xml.StatusCode {0}", status));
 
             case Xml.StatusCode.ServerErrorRetryLater:
-                return Event.Create ((uint)SmEvt.E.TempFail, null, "Xml.StatusCode.ServerErrorRetryLater");
+                return Event.Create ((uint)SmEvt.E.TempFail, "TLSTEMP1", null, "Xml.StatusCode.ServerErrorRetryLater");
 
             case Xml.StatusCode.ActiveDirectoryAccessDenied: // FIXME(A).
             case Xml.StatusCode.MailboxQuotaExceeded: // FIXME(A).
@@ -222,38 +222,38 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.UserHasNoMailbox: // FIXME(A).
             case Xml.StatusCode.UserCannotBeAnonymous: // FIXME(A).
             case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
-                return Event.Create ((uint)SmEvt.E.HardFail, null, string.Format ("Xml.StatusCode {0}", status));
+                return Event.Create ((uint)SmEvt.E.HardFail, "TLSHARD2", null, string.Format ("Xml.StatusCode {0}", status));
             // Meh. do some cases end-to-end, with user messaging (before all this typing).
 
             case Xml.StatusCode.DeviceNotProvisioned:
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, null, "Global DeviceNotProvisioned");
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLSREPROV0", null, "Global DeviceNotProvisioned");
             }
             return null;
         }
 
         protected void DoSucceed ()
         {
-            OwnerSm.PostEvent ((uint)SmEvt.E.Success);
+            OwnerSm.PostEvent ((uint)SmEvt.E.Success, "ASCDSUCCESS");
         }
 
         protected void DoHardFail ()
         {
-            OwnerSm.PostEvent ((uint)SmEvt.E.HardFail);
+            OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, "ASCDHARD0");
         }
 
         protected void DoReSync ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync);
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync, "ASCDRESYNC");
         }
 
         protected void DoReDisc ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc);
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc, "ASCDRESYNC");
         }
 
         protected void DoUiGetCred ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.AuthFail);
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.AuthFail, "ASCDAUTH");
         }
 
         // Static internal helper methods.

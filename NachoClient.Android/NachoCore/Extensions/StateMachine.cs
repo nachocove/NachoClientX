@@ -64,25 +64,27 @@ namespace NachoCore.Utils
     {
         public uint EventCode { get; set; }
 
+        public string Mnemonic { get; set; }
+
         public object Arg { get; set; }
 
         public string Message { get; set; }
 
         public bool DropIfStopped { get; set; }
 
-        public static Event Create (uint eventCode)
+        public static Event Create (uint eventCode, string mnemonic)
         {
-            return new Event () { EventCode = eventCode };
+            return new Event () { EventCode = eventCode, Mnemonic = mnemonic };
         }
 
-        public static Event Create (uint eventCode, object arg)
+        public static Event Create (uint eventCode, string mnemonic, object arg)
         {
-            return new Event () { EventCode = eventCode, Arg = arg };
+            return new Event () { EventCode = eventCode, Mnemonic = mnemonic, Arg = arg };
         }
 
-        public static Event Create (uint eventCode, object arg, string message)
+        public static Event Create (uint eventCode, string mnemonic, object arg, string message)
         {
-            return new Event () { EventCode = eventCode, Arg = arg, Message = message };
+            return new Event () { EventCode = eventCode, Mnemonic = mnemonic, Arg = arg, Message = message };
         }
     }
 
@@ -130,10 +132,10 @@ namespace NachoCore.Utils
         {
             Log.Info (Log.LOG_STATE, "State Machine start {0}", StartState);
             State = StartState;
-            PostEvent ((uint)SmEvt.E.Launch);
+            PostEvent ((uint)SmEvt.E.Launch, "SMSTART");
         }
 
-        public void PostAtMostOneEvent (uint eventCode)
+        public void PostAtMostOneEvent (uint eventCode, string mnemonic)
         {
             foreach (var elem in EventQ) {
                 var inQEvent = (Event)elem;
@@ -142,17 +144,17 @@ namespace NachoCore.Utils
                     return;
                 }
             }
-            PostEvent (eventCode);
+            PostEvent (eventCode, mnemonic);
         }
 
-        public void PostEvent (uint eventCode)
+        public void PostEvent (uint eventCode, string mnemonic)
         {
-            PostEvent (eventCode, null, null);
+            PostEvent (eventCode, mnemonic, null, null);
         }
 
-        public void PostEvent (uint eventCode, object arg, string message)
+        public void PostEvent (uint eventCode, string mnemonic, object arg, string message)
         {
-            PostEvent (Event.Create (eventCode, arg, message));
+            PostEvent (Event.Create (eventCode, mnemonic, arg, message));
         }
 
         public void PostEvent (Event smEvent)
@@ -175,29 +177,29 @@ namespace NachoCore.Utils
                 Message = fireEvent.Message;
                 if ((uint)St.Stop == State) {
                     if (fireEvent.DropIfStopped) {
-                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => DROPPED IN St.Stop",
-                            Name, StateName (State), EventName [FireEventCode]), Message));
+                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                            Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         continue;
                     } else {
-                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => EVENT WHILE IN St.Stop",
-                            Name, StateName (State), EventName [FireEventCode]), Message));
+                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
+                            Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         throw new Exception ();
                     }
                 }
                 var hotNode = TransTable.Where (x => State == x.State).Single ();
                 if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => DROPPED EVENT",
-                        Name, StateName (State), EventName [FireEventCode]), Message));
+                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED EVENT",
+                        Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                     continue;
                 }
                 if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => INVALID EVENT",
-                        Name, StateName (State), EventName [FireEventCode]), Message));
+                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => INVALID EVENT",
+                        Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                     throw new Exception ();
                 }
                 var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2} => S={3}",
-                    Name, StateName (State), EventName [FireEventCode], StateName (hotTrans.State)), Message));
+                Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => S={4}",
+                    Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
                 Action = hotTrans.Act;
                 NextState = hotTrans.State;
                 Action ();

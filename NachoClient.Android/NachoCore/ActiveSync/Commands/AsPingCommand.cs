@@ -60,9 +60,9 @@ namespace NachoCore.ActiveSync
 
             case Xml.Ping.StatusCode.NoChanges:
                 if (m_hitMaxFolders) {
-                    return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync);
+                    return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGNOCHGMAX");
                 }
-                return Event.Create ((uint)SmEvt.E.Success);
+                return Event.Create ((uint)SmEvt.E.Success, "PINGNOCHG");
             
             case Xml.Ping.StatusCode.Changes:
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
@@ -72,34 +72,34 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncRequired = true;
                     DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                 }
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync);
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGRESYNC");
             
             case Xml.Ping.StatusCode.MissingParams:
             case Xml.Ping.StatusCode.SyntaxError:
-                return Event.Create ((uint)SmEvt.E.HardFail, null, "Xml.Ping.StatusCode.MissingParams/SyntaxError");
+                return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD0", null, "Xml.Ping.StatusCode.MissingParams/SyntaxError");
 
             case Xml.Ping.StatusCode.BadHeartbeat:
                 update = DataSource.ProtocolState;
                 update.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
                 DataSource.ProtocolState = update;
-                return Event.Create ((uint)SmEvt.E.Success);
+                return Event.Create ((uint)SmEvt.E.Success, "PINGBADH");
 
             case Xml.Ping.StatusCode.TooManyFolders:
                 update = DataSource.ProtocolState;
                 update.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
                 DataSource.ProtocolState = update;
-                return Event.Create ((uint)SmEvt.E.Success);
+                return Event.Create ((uint)SmEvt.E.Success, "PINGTMF");
 
             case Xml.Ping.StatusCode.NeedFolderSync:
-                return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync);
+                return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "PINGNFS");
             
             case Xml.Ping.StatusCode.ServerError:
-                return Event.Create ((uint)SmEvt.E.TempFail, null, "Xml.Ping.StatusCode.ServerError");
+                return Event.Create ((uint)SmEvt.E.TempFail, "PINGSE", null, "Xml.Ping.StatusCode.ServerError");
 
             default:
                 // FIXME - how do we want to handle unknown status codes?
                 Log.Error ("AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD1");
             }
         }
     }

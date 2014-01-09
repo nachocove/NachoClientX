@@ -14,9 +14,9 @@ namespace NachoCore.ActiveSync {
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             if(ProcessOptionsHeaders (response.Headers, DataSource)) {
-                return Event.Create ((uint)SmEvt.E.Success);
+                return Event.Create ((uint)SmEvt.E.Success, "OPTSUCCESS");
             }
-            return Event.Create ((uint)SmEvt.E.HardFail);
+            return Event.Create ((uint)SmEvt.E.HardFail, "OPTHARD");
         }
 
         public override HttpMethod Method (AsHttpOperation Sender)

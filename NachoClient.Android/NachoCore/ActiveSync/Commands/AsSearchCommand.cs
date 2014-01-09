@@ -53,7 +53,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.NotFound:
                     // FIXME - save result (if any) into GAL cache.
                     DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, Update);
-                    return Event.Create ((uint)SmEvt.E.Success);
+                    return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");
 
                 case Xml.Search.StoreStatusCode.InvalidRequest:
                 case Xml.Search.StoreStatusCode.BadLink:
@@ -62,36 +62,36 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.AccessBlocked:
                 case Xml.Search.StoreStatusCode.CredRequired:
                     // FIXME - We should never get this, because we are implementing only contact search.
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD0");
 
                 case Xml.Search.StoreStatusCode.ServerError:
                 case Xml.Search.StoreStatusCode.ConnectionFailed:
                 case Xml.Search.StoreStatusCode.TimedOut:
                     // FIXME - retry later, catch a loop. Possibly drop rebuild ask on timeout.
-                    return Event.Create ((uint)SmEvt.E.TempFail);
+                    return Event.Create ((uint)SmEvt.E.TempFail, "SRCHTEMP0");
 
                 case Xml.Search.StoreStatusCode.FSyncRequired:
                     Update.IsDispatched = false;
                     DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, Update);
-                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync);
+                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SRCHREFSYNC");
 
                 case Xml.Search.StoreStatusCode.EndOfRRange:
                     // FIXME - need to say whoa to UI.
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRCHEORR");
 
                 default:
                     // FIXME - protocol error.
-                    return Event.Create ((uint)SmEvt.E.HardFail);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD1");
                 }
 
             case Xml.Search.SearchStatusCode.ServerError:
                 // It isn't specified in MS-ASCMD, but we're going to assume that this is a transient condition.
                 // FIXME - catch loop.
-                return Event.Create ((uint)SmEvt.E.TempFail);
+                return Event.Create ((uint)SmEvt.E.TempFail, "SRCHSE");
 
             default:
                 // FIXME - protocol error.
-                return Event.Create ((uint)SmEvt.E.HardFail);
+                return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD2");
             }
         }
 
