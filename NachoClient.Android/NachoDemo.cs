@@ -11,7 +11,6 @@ namespace NachoCore
 {
     public class NachoDemo : IBackEndOwner
     {
-        private BackEnd Be { get; set;}
         private McAccount Account { get; set; }
 
         public NachoDemo ()
@@ -25,7 +24,8 @@ namespace NachoCore
 
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
-            Be = new BackEnd (this);
+            BackEnd.Instance.Owner = this;
+            var Be = BackEnd.Instance;
             if (0 == Be.Db.Table<McAccount> ().Count ()) {
                 EnterFullConfiguration ();
             } else {
@@ -38,6 +38,7 @@ namespace NachoCore
         }
 
         private void EnterFullConfiguration () {
+            var Be = BackEnd.Instance;
             // You will always need to supply user credentials (until certs, for sure).
             var cred = new McCred () { Username = "jeffe@nachocove.com", Password = "D0ggie789" };
             Be.Db.Insert (BackEnd.DbActors.Ui, cred);
@@ -60,6 +61,7 @@ namespace NachoCore
             Be.Db.Update (BackEnd.DbActors.Ui, Account); 
         }
         public void TryDelete () {
+            var Be = BackEnd.Instance;
             if (0 != Be.Db.Table<McEmailMessage> ().Count ()) {
                 var dead = Be.Db.Table<McEmailMessage> ().First ();
                 Be.Db.Delete (BackEnd.DbActors.Ui, dead);
@@ -68,6 +70,7 @@ namespace NachoCore
 
         public void TrySearch ()
         {
+            var Be = BackEnd.Instance;
             Be.SearchContactsReq (Account, "c", null, "dogbreath");
         }
 
@@ -80,6 +83,7 @@ namespace NachoCore
                 Body = "this is a simple test.",
                 IsAwatingSend = true
             };
+            var Be = BackEnd.Instance;
             Be.Db.Insert(BackEnd.DbActors.Ui, email);
         }
         // Methods for IBackEndDelegate:
@@ -100,6 +104,7 @@ namespace NachoCore
         public void CredReq(McAccount account) {
         }
         public void ServConfReq (McAccount account) {
+            var Be = BackEnd.Instance;
             // Will change - needed for current autodiscover flow.
             /*var server = new NcServer () { Fqdn = "nco9.com" };
             Be.Db.Insert (BackEnd.DbActors.Ui, server);
@@ -109,6 +114,7 @@ namespace NachoCore
         }
         public void CertAskReq (McAccount account, X509Certificate2 certificate)
         {
+            var Be = BackEnd.Instance;
             Be.CertAskResp (account, true);
         }
 

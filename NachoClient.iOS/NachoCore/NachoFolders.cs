@@ -50,18 +50,14 @@ namespace NachoClient
             Xml.FolderHierarchy.TypeCode.UserCreatedContacts,
         };
 
-        AppDelegate appDelegate { get; set; }
-
         List<McFolder> list;
 
         // TODO: Should use Nacho type
         public NachoFolders (Xml.FolderHierarchy.TypeCode[] types)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-
             // TODO: Fix this
             list = new List<McFolder> ();
-            var temp = appDelegate.Be.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
+            var temp = BackEnd.Instance.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
                 // TODO: Need a matching enumeration
                 var match = (Xml.FolderHierarchy.TypeCode)l.Type;

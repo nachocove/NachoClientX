@@ -28,6 +28,17 @@ namespace NachoCore
 {
     public class BackEnd : IBackEnd, IProtoControlOwner
     {
+
+        private static readonly BackEnd instance = new BackEnd();
+
+        public static BackEnd Instance
+        {
+            get 
+            {
+                return instance; 
+            }
+        }
+
         public enum DbActors
         {
             Ui,
@@ -45,8 +56,9 @@ namespace NachoCore
         public string AttachmentsDir { set; get; }
 
         private List<ProtoControl> Services;
-        private IBackEndOwner Owner;
         private string DbFileName;
+
+        public IBackEndOwner Owner { set; private get; }
 
         private ProtoControl ServiceFromAccount (McAccount account)
         {
@@ -57,7 +69,7 @@ namespace NachoCore
             return query.Single ();
         }
         // For IBackEnd.
-        public BackEnd (IBackEndOwner owner)
+        private BackEnd ()
         {
             var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             AttachmentsDir = Path.Combine (documents, "attachments");
@@ -85,8 +97,6 @@ namespace NachoCore
             Db.CreateTable<McTimeZone> ();
  
             Services = new List<ProtoControl> ();
-
-            Owner = owner;
 
             ServicePointManager.DefaultConnectionLimit = 8;
         }

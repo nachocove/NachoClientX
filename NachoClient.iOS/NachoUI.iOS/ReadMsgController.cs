@@ -131,7 +131,7 @@ void RenderEntity (MimeEntity entity, UIWebView webview)
             NSData data;
 
 
-            var MyPath = appDelegate.Be.AttachmentsDir;
+            var MyPath = BackEnd.Instance.AttachmentsDir;
             var filename = part.FileName;
             var contentDirectoryPath = Path.Combine (MyPath, filename);
             var memory = new MemoryBlockStream ();
@@ -224,7 +224,7 @@ void RenderEntity (MimeEntity entity, UIWebView webview)
 
 
         void DisplayPart ( MimePart part, UIWebView webview) {
-            string contentDirectoryPath = appDelegate.Be.AttachmentsDir;
+            string contentDirectoryPath = BackEnd.Instance.AttachmentsDir;
 
             if (part.ContentType.Matches ("html", "*")) {
                 Console.WriteLine (" Displaying a  HTML Part");

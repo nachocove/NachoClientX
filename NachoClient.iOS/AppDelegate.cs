@@ -24,7 +24,6 @@ namespace NachoClient.iOS
         public override UIWindow Window { get; set; }
 
         private NachoDemo Demo { get; set; }
-        public BackEnd Be { get; set;}
         public McAccount Account { get; set; }
 
         public EKEventStore EventStore {
@@ -32,7 +31,8 @@ namespace NachoClient.iOS
         }
         protected EKEventStore eventStore;
 
-        private bool launchBe(){
+        private bool launchBe()
+        {
             // Register to receive DB update indications.
             McEventable.DbEvent += (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, McEventable target, EventArgs e) => {
                 if (BackEnd.DbActors.Ui != dbActor) {
@@ -41,7 +41,8 @@ namespace NachoClient.iOS
             };
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
-            Be = new BackEnd (this);
+            var Be = BackEnd.Instance;
+            Be.Owner = this;
             if (0 == Be.Db.Table<McAccount> ().Count ()) {
                 Log.Info(Log.LOG_UI, "empty Table");
             } else {
@@ -61,48 +62,6 @@ namespace NachoClient.iOS
 
             return true;
 
-//            if (0 == Be.Db.Table<NcAccount> ().Count ()) {
-//                // we will enter the "login schema"
-//                // FIXME - need to address ipad/iphone in future release
-//
-//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("Login_Storyboard");
-//                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-//                this.Window.RootViewController = rootControllerView;
-//                this.Window.MakeKeyAndVisible();
-//
-//                return true;
-//            } else {
-//                UIStoryboard storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-//                var rootControllerView = (UIViewController)storyboard.InstantiateViewController ("LaunchAccount_Storyboard");
-//                this.Window = new UIWindow (UIScreen.MainScreen.Bounds);
-//                this.Window.RootViewController = rootControllerView;
-//                this.Window.MakeKeyAndVisible();
-//
-//                return true;
-//            }
-//            // Override point for customization after application launch.
-//            if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Pad) {
-//                var splitViewController = (UISplitViewController)Window.RootViewController;
-//
-//                // Get the UINavigationControllers containing our master & detail view controllers
-//                var masterNavigationController = (UINavigationController)splitViewController.ViewControllers [0];
-//                var detailNavigationController = (UINavigationController)splitViewController.ViewControllers [1];
-//
-//                var masterViewController = (RootViewController)masterNavigationController.TopViewController;
-//                var detailViewController = (DetailViewController)detailNavigationController.TopViewController;
-//
-//                masterViewController.DetailViewController = detailViewController;
-//
-//                // Set the DetailViewController as the UISplitViewController Delegate.
-//                splitViewController.WeakDelegate = detailViewController;
-//            }
-//
-//            // FOR DEBUGGING BE ONLY. Demo = new NachoDemo ();
-//            // We launch the DB, or grab a handle on the instance
-//            // launchBe ();
-//            //Demo = new NachoDemo ();
-//            return true;
         }
 
         //
@@ -146,110 +105,107 @@ namespace NachoClient.iOS
         }
 
         public void CredReq(McAccount account) {
+            var Be = BackEnd.Instance;
+
             Console.WriteLine ("Asking for Credentials");
             InvokeOnMainThread (delegate {
-            var credView = new UIAlertView ();
-           
-            var tmpCred =Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
+                var credView = new UIAlertView ();
+                var tmpCred = Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
-            credView.Title = "Need to update Login Credentials";
-            credView.AddButton ("Update");
-            credView.AlertViewStyle= UIAlertViewStyle.LoginAndPasswordInput;
-            credView.Show ();
+                credView.Title = "Need to update Login Credentials";
+                credView.AddButton ("Update");
+                credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
+                credView.Show ();
           
-            credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                var parent = (UIAlertView)sender;
+                credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                    var parent = (UIAlertView)sender;
                     // FIXME - need  to display the login id they used in first login attempt
-                var tmplog = parent.GetTextField(0).Text; // login id
-                var tmppwd = parent.GetTextField(1).Text; // password
-               if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
-                    
-                    tmpCred.Username = (string) tmplog;
-                    tmpCred.Password = (string) tmppwd;
+                    var tmplog = parent.GetTextField(0).Text; // login id
+                    var tmppwd = parent.GetTextField(1).Text; // password
+                    if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
+                        tmpCred.Username = (string) tmplog;
+                        tmpCred.Password = (string) tmppwd;
                         Be.Db.Update(BackEnd.DbActors.Ui, tmpCred); //  update with new username/password
-                    
-                    Be.CredResp(account);
-                    credView.ResignFirstResponder();
-                } else {
-                    var DoitYadummy = new UIAlertView();
-                    DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                    DoitYadummy.AddButton("Go Back");
-                    DoitYadummy.AddButton("Exit - Do Not Care");
-                    DoitYadummy.CancelButtonIndex = 1;
-                    DoitYadummy.Show();
-                    DoitYadummy.Clicked+= delegate(object silly, UIButtonEventArgs e) {
 
-                        if (e.ButtonIndex == 0) { // I want to actually enter login data
-                            CredReq(account);    // call to get credentials
+                        Be.CredResp(account);
+                        credView.ResignFirstResponder();
+                    } else {
+                            var DoitYadummy = new UIAlertView();
+                            DoitYadummy.Title = "You need to enter fields for Login ID and Password";
+                            DoitYadummy.AddButton("Go Back");
+                            DoitYadummy.AddButton("Exit - Do Not Care");
+                            DoitYadummy.CancelButtonIndex = 1;
+                            DoitYadummy.Show();
+                            DoitYadummy.Clicked+= delegate(object silly, UIButtonEventArgs e) {
+
+                            if (e.ButtonIndex == 0) { // I want to actually enter login data
+                                CredReq(account);    // call to get credentials
+                            };
+
+                            DoitYadummy.ResignFirstResponder();
+                           
                         };
-
-                        DoitYadummy.ResignFirstResponder();
-                       
                     };
-                   };
-                credView.ResignFirstResponder(); // might want this moved
-            };
+                    credView.ResignFirstResponder(); // might want this moved
+                };
             }); // end invokeonMain
         }
-           
 
-           
-
-
-        public void ServConfReq (McAccount account) {
+        public void ServConfReq (McAccount account)
+        {
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
+            var Be = BackEnd.Instance;
 
             Console.WriteLine ("Asking for Config Info");
             InvokeOnMainThread (delegate {  // lock on main thread
             var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
 
-            var credView = new UIAlertView ();
+                var credView = new UIAlertView ();
 
-            credView.Title = "Need Correct Server Name";
-            credView.AddButton ("Update");
-            credView.AddButton ("Cancel");
-            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-            credView.Show ();
-            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                var parent = (UIAlertView)a;
-                if (b.ButtonIndex == 0) {
-                    var txt = parent.GetTextField (0).Text;
-                    // FIXME need to scan string to make sure it is of right format
-                    if (txt != null) {
-                        Console.WriteLine(" New Server Name = " + txt);
-                        tmpServer.Fqdn = txt;
-                        Be.Db.Update(BackEnd.DbActors.Ui, tmpServer);
-                        Be.ServerConfResp (account); 
-                        credView.ResignFirstResponder();
+                credView.Title = "Need Correct Server Name";
+                credView.AddButton ("Update");
+                credView.AddButton ("Cancel");
+                credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
+                credView.Show ();
+                credView.Clicked += delegate(object a, UIButtonEventArgs b) {
+                    var parent = (UIAlertView)a;
+                    if (b.ButtonIndex == 0) {
+                        var txt = parent.GetTextField (0).Text;
+                        // FIXME need to scan string to make sure it is of right format
+                        if (txt != null) {
+                            Console.WriteLine(" New Server Name = " + txt);
+                            tmpServer.Fqdn = txt;
+                            Be.Db.Update(BackEnd.DbActors.Ui, tmpServer);
+                            Be.ServerConfResp (account); 
+                            credView.ResignFirstResponder();
+                        };
+
                     };
+                  
+                    if (b.ButtonIndex == 1) {
+                        var gonnaquit = new UIAlertView ();
+                        gonnaquit.Title = "Are You Sure? \n No account information will be updated";
 
-                };
-              
-                if (b.ButtonIndex == 1) {
-                    var gonnaquit = new UIAlertView ();
-                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
-
-                    gonnaquit.AddButton ("Ok"); // continue exiting
-                    gonnaquit.AddButton ("Go Back"); // enter info
-                    gonnaquit.CancelButtonIndex = 1;
-                    gonnaquit.Show ();
-                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                        if (e.ButtonIndex== 1){
-                            ServConfReq (account); // go again
-                        }
-                        gonnaquit.ResignFirstResponder();
-                    
+                        gonnaquit.AddButton ("Ok"); // continue exiting
+                        gonnaquit.AddButton ("Go Back"); // enter info
+                        gonnaquit.CancelButtonIndex = 1;
+                        gonnaquit.Show ();
+                        gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
+                            if (e.ButtonIndex== 1){
+                                ServConfReq (account); // go again
+                            }
+                            gonnaquit.ResignFirstResponder();
+                        };
                     };
                 };
-             
-
-            };
-
             }); // end invoke MainThread
         }
 
-        public void CertAskReq (McAccount account, X509Certificate2 certificate) {
+        public void CertAskReq (McAccount account, X509Certificate2 certificate)
+        {
+            var Be = BackEnd.Instance;
+
             // UI FIXME - ask user and call CertAskResp async'ly.
             Be.CertAskResp (account, true);
         }

@@ -20,14 +20,14 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return appDelegate.Be.Db.Table<McEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder.Id).Count ();
+            return BackEnd.Instance.Db.Table<McEmailMessage> ().Where (rec => rec.FolderId == this.currentFolder.Id).Count ();
         }
 
         public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
             UITableViewCell cell = tableView.DequeueReusableCell ("msgheader");
 
-            var msgHeader = appDelegate.Be.Db.Table<McEmailMessage> ().OrderByDescending (rec => rec.DateReceived).Where (rec => rec.FolderId == this.currentFolder.Id).ElementAt (indexPath.Row);
+            var msgHeader = BackEnd.Instance.Db.Table<McEmailMessage> ().OrderByDescending (rec => rec.DateReceived).Where (rec => rec.FolderId == this.currentFolder.Id).ElementAt (indexPath.Row);
             cell.TextLabel.Text = msgHeader.Subject;
             cell.DetailTextLabel.Text = msgHeader.From;
         
@@ -39,7 +39,7 @@ namespace NachoClient.iOS
             // force this to happen. Might be smarter to just pass the index, then, since the appDelegate
             // is common for all objects, the indexID in the selected row should be the NcFolder (or other type)
             // had to fox to make sure that all references are in sunc. see "GetCell" above
-            return appDelegate.Be.Db.Table<McEmailMessage> ().OrderByDescending (rec => rec.DateReceived).Where (rec => rec.FolderId == this.currentFolder.Id).ElementAt (id.Row);
+            return BackEnd.Instance.Db.Table<McEmailMessage> ().OrderByDescending (rec => rec.DateReceived).Where (rec => rec.FolderId == this.currentFolder.Id).ElementAt (id.Row);
            
         }
     }

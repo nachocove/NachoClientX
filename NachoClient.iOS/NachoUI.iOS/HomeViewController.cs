@@ -4,6 +4,7 @@ using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Model;
+using NachoCore;
 using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
@@ -35,7 +36,7 @@ namespace NachoClient.iOS
             InitializePageViewController ();
 
             // Initial view
-            if (0 == appDelegate.Be.Db.Table<McAccount> ().Count ()) {
+            if (0 == BackEnd.Instance.Db.Table<McAccount> ().Count ()) {
                 PerformSegue ("HomeToLaunch", this); // modal
             } else {
                 PerformSegue ("HomeToFolders", this); // push

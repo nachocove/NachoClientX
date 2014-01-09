@@ -17,15 +17,15 @@ namespace NachoClient.iOS
         private void EnterFullConfiguration () {
             // You will always need to supply user credentials (until certs, for sure).
             var cred = new McCred () { Username = txtUserName.Text, Password = txtPassword.Text };
-            appDelegate.Be.Db.Insert (BackEnd.DbActors.Ui, cred);
+            BackEnd.Instance.Db.Insert (BackEnd.DbActors.Ui, cred);
             // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
             var server = new McServer () { Fqdn = txtServerName.Text };
-            appDelegate.Be.Db.Insert (BackEnd.DbActors.Ui, server);
+            BackEnd.Instance.Db.Insert (BackEnd.DbActors.Ui, server);
             // In the near future, you won't need to create this protocol state object.
             var protocolState = new McProtocolState ();
-            appDelegate.Be.Db.Insert (BackEnd.DbActors.Ui, protocolState);
+            BackEnd.Instance.Db.Insert (BackEnd.DbActors.Ui, protocolState);
             var policy = new McPolicy ();
-            appDelegate.Be.Db.Insert (BackEnd.DbActors.Ui, policy);
+            BackEnd.Instance.Db.Insert (BackEnd.DbActors.Ui, policy);
             // You will always need to supply the user's email address.
             appDelegate.Account = new McAccount () { EmailAddr = txtUserName.Text };
             // The account object is the "top", pointing to credential, server, and opaque protocol state.
@@ -33,7 +33,7 @@ namespace NachoClient.iOS
             appDelegate.Account.ServerId = server.Id;
             appDelegate.Account.ProtocolStateId = protocolState.Id;
             appDelegate.Account.PolicyId = policy.Id;
-            appDelegate.Be.Db.Insert (BackEnd.DbActors.Ui, appDelegate.Account);
+            BackEnd.Instance.Db.Insert (BackEnd.DbActors.Ui, appDelegate.Account);
         }
 
         public override void ViewDidLoad()
@@ -62,7 +62,7 @@ namespace NachoClient.iOS
         }
         partial void btnLaunchAcct (MonoTouch.Foundation.NSObject sender){
             EnterFullConfiguration();
-            appDelegate.Be.Start ();
+            BackEnd.Instance.Start ();
         
             //[self dismissViewControllerAnimated:TRUE completion:nil];
             DismissViewController(true, null);
