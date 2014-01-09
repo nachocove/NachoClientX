@@ -322,7 +322,6 @@ namespace Test.iOS
 
             var c10 = db.Table<McCalendarCategory> ().Where (x => x.ParentId == 5);
             Assert.AreEqual (2, c10.Count ());
-            NachoCore.Utils.Log.Info ("c10 {0}", c10.ToString ());
             foreach (var c in c10) {
                 Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
             }
@@ -562,6 +561,7 @@ namespace Test.iOS
             NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
+            Assert.IsNotNull (c);
         }
 
         String addString_01 = @"

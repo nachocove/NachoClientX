@@ -71,13 +71,14 @@ namespace NachoCore.ActiveSync
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sync);
-            Log.Info (Log.LOG_SYNC, "AsSyncCommand:\n{0}", doc.ToString ());
+            Log.Info (Log.LOG_SYNC, "AsSyncCommand:\n{0}", doc);
             return doc;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             Log.Info (Log.LOG_SYNC, "AsSyncCommand response:\n{0}", doc);
+
             var collections = doc.Root.Element (m_ns + Xml.AirSync.Collections).Elements (m_ns + Xml.AirSync.Collection);
             foreach (var collection in collections) {
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
@@ -89,7 +90,7 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
                 (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
                 Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
-                Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId.ToString (), oldSyncKey, folder.AsSyncKey);
+                Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId, oldSyncKey, folder.AsSyncKey);
                 var status = collection.Element (m_ns + Xml.AirSync.Status);
                 switch (uint.Parse (status.Value)) {
                 case (uint)Xml.AirSync.StatusCode.Success:
@@ -167,7 +168,7 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 default:
-                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED status " + status.ToString ());
+                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED status: {0}", status);
                     break;
                 }
 

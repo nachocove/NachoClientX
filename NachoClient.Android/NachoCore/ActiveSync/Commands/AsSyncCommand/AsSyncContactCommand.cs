@@ -14,13 +14,13 @@ namespace NachoCore.ActiveSync
     {
         public void ServerSaysAddContact (XElement command, McFolder folder)
         {
-            Log.Info (Log.LOG_CONTACTS, "ServerSaysAddContact\n{0}", command.ToString ());
+            Log.Info (Log.LOG_CONTACTS, "ServerSaysAddContact\n{0}", command);
             ProcessContactItem (command, folder);
         }
 
         public void ServerSaysChangeContact (XElement command, McFolder folder)
         {
-            Log.Info (Log.LOG_CONTACTS, "ServerSaysChangeContact\n{0}", command.ToString ());
+            Log.Info (Log.LOG_CONTACTS, "ServerSaysChangeContact\n{0}", command);
             ProcessContactItem (command, folder);
         }
 

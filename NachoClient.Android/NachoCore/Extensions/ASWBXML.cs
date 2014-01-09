@@ -843,8 +843,10 @@ namespace NachoCore.Wbxml
                     }
                     break;
                 case GlobalTokens.OPAQUE:
-                    int CDATALength = bytes.DequeueMultibyteInt ();
-                    var newOpaqueNode = new XCData (bytes.DequeueString (CDATALength));
+                    int OpaqueLength = bytes.DequeueMultibyteInt ();
+                    var OpaqueString = bytes.DequeueString (OpaqueLength);
+                    var EscapedString = System.Security.SecurityElement.Escape (OpaqueString);
+                    var newOpaqueNode = new XText (EscapedString);
                     currentNode.Add (newOpaqueNode);
      //XmlCDataSection newOpaqueNode = xmlDoc.CreateCDataSection(bytes.DequeueString(CDATALength));
      //currentNode.AppendChild(newOpaqueNode);

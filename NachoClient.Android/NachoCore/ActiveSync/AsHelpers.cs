@@ -39,29 +39,6 @@ namespace NachoCore.ActiveSync
             return uint.Parse (intString);
         }
 
-        public static string ToStringWithoutCharacterChecking(this XDocument xElement)
-        {
-            using (System.IO.StringWriter stringWriter = new System.IO.StringWriter())
-            {
-                using (System.Xml.XmlTextWriter xmlTextWriter = new XmlTextWriter(stringWriter))
-                {
-                    xElement.WriteTo(xmlTextWriter);
-                }
-                return stringWriter.ToString();
-            }
-        }
-
-        public static string ToStringWithoutCharacterChecking(this XElement xElement)
-        {
-            using (System.IO.StringWriter stringWriter = new System.IO.StringWriter())
-            {
-                using (System.Xml.XmlTextWriter xmlTextWriter = new XmlTextWriter(stringWriter))
-                {
-                    xElement.WriteTo(xmlTextWriter);
-                }
-                return stringWriter.ToString();
-            }
-        }
     }
 
     public class AsHelpers
@@ -297,7 +274,7 @@ namespace NachoCore.ActiveSync
 
             var l = new List<McException> ();
 
-            Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions.ToString ());
+            Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions);
             foreach (var exception in exceptions.Elements()) {
                 NachoCore.NachoAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
@@ -408,7 +385,7 @@ namespace NachoCore.ActiveSync
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             NachoCore.NachoAssert.True (null != applicationData);
 
-            Log.Info (Log.LOG_CALENDAR, "ParseCalendar\n{0}", applicationData.ToString ());
+            Log.Info (Log.LOG_CALENDAR, "ParseCalendar\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 // Containers
