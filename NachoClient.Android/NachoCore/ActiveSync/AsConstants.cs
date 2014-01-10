@@ -166,6 +166,7 @@ namespace NachoCore.ActiveSync
             // Alpha order.
             public const string Add = "Add";
             public const string ApplicationData = "ApplicationData";
+            public const string BodyPreference = "BodyPreference";
             public const string Change = "Change";
             public const string Class = "Class";
             public const string Collection = "Collection";
@@ -184,6 +185,8 @@ namespace NachoCore.ActiveSync
             public const string Sync = "Sync";
             public const string SyncKey = "SyncKey";
             public const string SyncKey_Initial = "0";
+            public const string TruncationSize = "TruncationSize";
+            public const string Type = "Type";
             public const string WindowSize = "WindowSize";
 
             public class ClassCode
@@ -200,8 +203,8 @@ namespace NachoCore.ActiveSync
             {
                 NoMime = 0,
                 SMimeOnly = 1,
-                AllMime = 2}
-            ;
+                AllMime = 2,
+            };
 
             public enum StatusCode : uint
             {
@@ -217,8 +220,16 @@ namespace NachoCore.ActiveSync
                 ResendFull = 13,
                 LimitReWait = 14,
                 TooMany = 15,
-                Retry = 16}
-            ;
+                Retry = 16,
+            };
+
+            public enum TypeCode : uint
+            {
+                PlainText = 1,
+                Html = 2,
+                Rtf = 3,
+                Mime = 4,
+            }
         }
 
         public class AirSyncBase
@@ -240,7 +251,7 @@ namespace NachoCore.ActiveSync
             public const string NativeBodyType = "NativeBodyType";
             public const string Truncated = "Truncated";
             public const string TruncationSize = "TruncationSize";
-            public const string Type = "Type";
+            public const string Type = AirSync.Type;
 
             public enum MethodCode : uint
             {
@@ -401,7 +412,7 @@ namespace NachoCore.ActiveSync
                 public const string IsLeapMonth = "IsLeapMonth";
                 public const string MonthOfYear = "MonthOfYear";
                 public const string Occurrences = "Occurrences";
-                public const string Type = "Type";
+                public const string Type = AirSync.Type;
                 public const string Until = "Until";
                 public const string WeekOfMonth = "WeekOfMonth";
             }
@@ -531,7 +542,7 @@ namespace NachoCore.ActiveSync
             public const string ServerId = AirSync.ServerId;
             public const string Status = AirSync.Status;
             public const string SyncKey = AirSync.SyncKey;
-            public const string Type = AirSyncBase.Type;
+            public const string Type = AirSync.Type;
             public const string Update = "Update";
             // FIXME: with Unknown, we need to retry & watch for a loop.
             public enum FolderSyncStatusCode : uint

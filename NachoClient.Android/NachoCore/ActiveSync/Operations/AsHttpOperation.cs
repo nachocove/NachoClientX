@@ -49,7 +49,7 @@ namespace NachoCore.ActiveSync
         private const string KRequest = "request";
         private const string KResponse = "response";
         private const uint KDefaultDelaySeconds = 10;
-        private const int KDefaultTimeoutSeconds = 10;
+        private const int KDefaultTimeoutSeconds = 15;
         private const uint KDefaultRetries = 15;
         // IVars. FIXME - make m_commandName private when referenced.
         public string m_commandName;
@@ -207,7 +207,9 @@ namespace NachoCore.ActiveSync
         private void DelayTimerCallback (object State)
         {
             DoCancelDelayTimer ();
-            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "ASHTTPDTC");
+            var timeoutEvent = Event.Create ((uint)SmEvt.E.Launch, "ASHTTPDTC");
+            timeoutEvent.DropIfStopped = true;
+            HttpOpSm.PostEvent (timeoutEvent);
         }
 
         private void CancelTimeoutTimer ()
@@ -222,7 +224,9 @@ namespace NachoCore.ActiveSync
         private void TimeoutTimerCallback (object State)
         {
             if ((HttpClient)State == Client) {
-                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
+                var timeoutEvent = Event.Create ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
+                timeoutEvent.DropIfStopped = true;
+                HttpOpSm.PostEvent (timeoutEvent);
             }
         }
         // This method should only be called if the response indicates that the new server is a legit AS server.

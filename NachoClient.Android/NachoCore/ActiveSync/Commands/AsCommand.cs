@@ -205,29 +205,33 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        protected void DoSucceed ()
+        protected virtual void DoSucceed ()
         {
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "ASCDSUCCESS");
         }
 
-        protected void DoHardFail ()
+        protected virtual void DoHardFail ()
         {
             OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, "ASCDHARD0");
         }
 
-        protected void DoReSync ()
+        protected virtual void DoReSync ()
         {
             OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync, "ASCDRESYNC");
         }
 
-        protected void DoReDisc ()
+        protected virtual void DoReDisc ()
         {
             OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc, "ASCDRESYNC");
         }
 
-        protected void DoUiGetCred ()
+        protected virtual void DoUiGetCred ()
         {
             OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.AuthFail, "ASCDAUTH");
+        }
+
+        protected void DoNop ()
+        {
         }
 
         // Static internal helper methods.

@@ -615,7 +615,7 @@ namespace NachoCore.ActiveSync
         {
             if (CmdIs (typeof(AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertNo, "ASPCDCON");
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertN, "ASPCDCON");
             }
         }
 
@@ -623,7 +623,7 @@ namespace NachoCore.ActiveSync
         {
             if (CmdIs (typeof(AsAutodiscoverCommand))) {
                 var autoDiscoCmd = (AsAutodiscoverCommand)Cmd;
-                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.ServerCertYes, "ASPCDCOY");
+                autoDiscoCmd.Sm.PostEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "ASPCDCOY");
             }
         }
 

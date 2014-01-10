@@ -38,18 +38,12 @@ namespace NachoCore.ActiveSync
     {
         public enum Lst : uint
         {
-            S1Wait = (St.Last + 1),
-            S1AskWait,
-            S2Wait,
-            S2AskWait,
-            S3Wait,
-            S3AskWait,
-            S4Wait,
-            S4AskWait,
-            BaseWait,
-            CredWait,
-            ServerWait,
-            TestWait}
+            RobotW = (St.Last + 1),
+            AskW,
+            CredW1,
+            CredW2,
+            SrvConfW,
+            TestW}
         ;
         // Event codes shared between TL and Robot SMs.
         public class SharedEvt : AsProtoControl.AsEvt
@@ -57,9 +51,9 @@ namespace NachoCore.ActiveSync
             new public enum E : uint
             {
                 // UI response on server cert.
-                ServerCertYes = (AsProtoControl.AsEvt.E.Last + 1),
+                SrvCertY = (AsProtoControl.AsEvt.E.Last + 1),
                 // UI response on server cert.
-                ServerCertNo,
+                SrvCertN,
                 // Protocol indicates that search must be restarted from step-1 (Robot or Top-Level).
                 ReStart,
                 Last = ReStart}
@@ -70,22 +64,26 @@ namespace NachoCore.ActiveSync
         {
             new public enum E : uint
             {
-                CredSet = (SharedEvt.E.Last + 1),
                 // UI has updated the credentials for this account (Top-Level only).
-                ServerSet,
+                CredSet = (SharedEvt.E.Last + 1),
                 // UI has updated the server information for this account (Top-Level only).
-                ServerCertAsk,
+                ServerSet,
                 // Robot says UI has to ask user if server cert is okay (Top-Level only).
+                ServerCertAsk,
+                // Pool of to-dos (asking about certs, waiting for robots, etc) is empty.
+                Empty,
             };
         };
 
         public const string RequestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
         private List<StepRobot> Robots;
+        private Queue<StepRobot> AskingRobotQ;
+        private Queue<StepRobot> SuccessfulRobotQ;
         private AsOptionsCommand OptCmd;
+        private List<object> DisposedJunk;
         private string Domain;
         private string BaseDomain;
-        private bool IsTryingBaseDomain;
         private McServer ServerCandidate;
         public uint ReDirsLeft;
 
@@ -96,386 +94,218 @@ namespace NachoCore.ActiveSync
                                                                         dataSource)
         {
             ReDirsLeft = 10;
+            DisposedJunk = new List<object> ();
             Sm = new StateMachine () {
                 LocalEventType = typeof(TlEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
-                    new Node {State = (uint)St.Start, 
+                    // Robots ARE NOT running in this state.
+                    new Node {State = (uint)St.Start,
+                        Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
+                            (uint)TlEvt.E.CredSet
+                        },
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)TlEvt.E.ServerCertAsk
-                        },
-                        Drop = new [] { (uint)TlEvt.E.CredSet },
-                        On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S1Wait,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes
-                        },
-                        On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)SmEvt.E.Success,
-                                Act = DoTestFromRobot,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoS2, State = (uint)Lst.S2Wait },
-                            new Trans {
-                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
-                                Act = DoUiGetCred,
-                                State = (uint)Lst.CredWait
-                            },
-                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerCertAsk,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S1AskWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S1AskWait,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.ServerCertAsk
-                        },
-                        On = new[] {
-                            new Trans {
-                                Event = (uint)SmEvt.E.Launch,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S1AskWait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertYes,
-                                Act = DoS1ServerCertYes,
-                                State = (uint)Lst.S1Wait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertNo,
-                                Act = DoS1ServerCertNo,
-                                State = (uint)Lst.S1Wait
-                            },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S2Wait,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes
-                        },
-                        On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoS2, State = (uint)Lst.S2Wait },
-                            new Trans {
-                                Event = (uint)SmEvt.E.Success,
-                                Act = DoTestFromRobot,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoS3, State = (uint)Lst.S3Wait },
-                            new Trans {
-                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
-                                Act = DoUiGetCred,
-                                State = (uint)Lst.CredWait
-                            },
-                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerCertAsk,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S2AskWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S2AskWait,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty,
                         },
                         On = new[] {
-                            new Trans {
-                                Event = (uint)SmEvt.E.Launch,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S2AskWait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertYes,
-                                Act = DoS2ServerCertYes,
-                                State = (uint)Lst.S2Wait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertNo,
-                                Act = DoS2ServerCertNo,
-                                State = (uint)Lst.S2Wait
-                            },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
+                            // Start robots and wait.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // App just set the server so, go test it (skip robots).
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
                         }
                     },
 
-                    new Node {State = (uint)Lst.S3Wait,
+                    // Robots ARE running in this state.
+                    new Node {State = (uint)Lst.RobotW,
                         Invalid = new [] {(uint)SmEvt.E.TempFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes
+                            (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY
                         },
                         On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoS3, State = (uint)Lst.S3Wait },
-                            new Trans {
-                                Event = (uint)SmEvt.E.Success,
-                                Act = DoTestFromRobot,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoS4, State = (uint)Lst.S4Wait },
+                            // Start robots and wait.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // Stop robots, test, and wait for test results.
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, State = (uint)Lst.TestW },
+                            // Remove robot, post "Empty" if none left running.
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoReapRobot, State = (uint)Lst.RobotW },
+                            // Stop robots and ask for creds, then wait.
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
-                                State = (uint)Lst.CredWait
+                                State = (uint)Lst.CredW1
                             },
-                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
+                            // Stop robots and start over.
+                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // Stop and re-start robots, then wait.
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // Stop robots, test, and wait for test results.
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerSet,
                                 Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
+                                State = (uint)Lst.TestW
                             },
+                            // Keeping robots running, ask app if server cert is okay.
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerCertAsk,
                                 Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S3AskWait
+                                State = (uint)Lst.AskW
                             },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S3AskWait,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk
-                        },
-                        On = new[] {
+                            // The last robot failed. Ask app for server conf.
                             new Trans {
-                                Event = (uint)SmEvt.E.Launch,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S3AskWait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertYes,
-                                Act = DoS3ServerCertYes,
-                                State = (uint)Lst.S3Wait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertNo,
-                                Act = DoS3ServerCertNo,
-                                State = (uint)Lst.S3Wait
-                            },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S4Wait,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes
-                        },
-                        On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoS4, State = (uint)Lst.S4Wait },
-                            new Trans {
-                                Event = (uint)SmEvt.E.Success,
-                                Act = DoTestFromRobot,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoBaseMaybe, State = (uint)Lst.BaseWait },
-                            new Trans {
-                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
-                                Act = DoUiGetCred,
-                                State = (uint)Lst.CredWait
-                            },
-                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerCertAsk,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S4AskWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.S4AskWait,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk
-                        },
-                        On = new[] {
-                            new Trans {
-                                Event = (uint)SmEvt.E.Launch,
-                                Act = DoUiServerCertAsk,
-                                State = (uint)Lst.S4AskWait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertYes,
-                                Act = DoS4ServerCertYes,
-                                State = (uint)Lst.S4Wait
-                            },
-                            new Trans {
-                                Event = (uint)SharedEvt.E.ServerCertNo,
-                                Act = DoS4ServerCertNo,
-                                State = (uint)Lst.S4Wait
-                            },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
-                        }
-                    },
-
-                    new Node {State = (uint)Lst.BaseWait,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)TlEvt.E.ServerCertAsk
-                        },
-                        Drop = new [] { (uint)TlEvt.E.CredSet },
-                        On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoBaseMaybe, State = (uint)Lst.BaseWait },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)SmEvt.E.HardFail,
+                                Event = (uint)TlEvt.E.Empty,
                                 Act = DoUiGetServer,
-                                State = (uint)Lst.ServerWait
-                            },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
+                                State = (uint)Lst.SrvConfW
                             },
                         }
                     },
 
-                    new Node {State = (uint)Lst.TestWait,
-                        Invalid = new [] {(uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)TlEvt.E.ServerCertAsk
+                    new Node {State = (uint)Lst.AskW,
+                        Invalid = new [] {(uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
                         },
                         On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, State = (uint)Lst.TestWait },
+                            // Start robots and wait.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // A robot succeeded. Queue it for after we're answered.
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoQueueSuccess, State = (uint)Lst.AskW },
+                            // A robot failed. Discard it.
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoReapRobot, State = (uint)Lst.AskW },
+                            // App said "yes". Post "Empty" if no queued asks.
+                            new Trans {
+                                Event = (uint)SharedEvt.E.SrvCertY,
+                                Act = DoSxSrvCertY,
+                                State = (uint)Lst.AskW
+                            },
+                            // App said "no". Post "Empty" if no queued asks.
+                            new Trans {
+                                Event = (uint)SharedEvt.E.SrvCertN,
+                                Act = DoSxSrvCertN,
+                                State = (uint)Lst.AskW
+                            },
+                            // Stop and re-start robots, then wait.
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // Stop robots, test, and wait for test results.
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            // We're already asking, so queue this ask.
+                            new Trans {
+                                Event = (uint)TlEvt.E.ServerCertAsk,
+                                Act = DoEnqAsk,
+                                State = (uint)Lst.AskW
+                            },
+                            // No more asks queued, apply 1st queued success if any, and go back to waiting on robots.
+                            new Trans { Event = (uint)TlEvt.E.Empty, Act = DoNop, State = (uint)Lst.RobotW },
+                        }
+                    },
+
+                    new Node {State = (uint)Lst.TestW,
+                        Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
+                        Invalid = new [] {(uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                        },
+                        On = new[] {
+                            // Test the new server config.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, State = (uint)Lst.TestW },
+                            // It worked! We're done.
                             new Trans {
                                 Event = (uint)SmEvt.E.Success,
                                 Act = DoAcceptServerConf,
                                 State = (uint)St.Stop
                             },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoTest, State = (uint)Lst.TestWait },
+                            // It failed. Try again (FIXME - do we need this? TempFail now handled by AsHttpOp).
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoTest, State = (uint)Lst.TestW },
+                            // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = DoUiGetServer,
-                                State = (uint)Lst.ServerWait
+                                State = (uint)Lst.SrvConfW
                             },
+                            // We got told to re-do auto-d. But that won't work!
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
                                 Act = DoUiGetServer,
-                                State = (uint)Lst.ServerWait
+                                State = (uint)Lst.SrvConfW
                             },
+                            // We got told to re-prov. Should not happen.
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReProv,
                                 Act = DoUiGetServer,
-                                State = (uint)Lst.ServerWait
+                                State = (uint)Lst.SrvConfW
                             },
+                            // We got told to re-sync. Should not happen.
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReSync,
                                 Act = DoUiGetServer,
-                                State = (uint)Lst.ServerWait
+                                State = (uint)Lst.SrvConfW
                             },
+                            // Ask for creds again before re-test.
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = DoUiGetCred,
-                                State = (uint)Lst.CredWait
+                                State = (uint)Lst.CredW2
                             },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestWait },
+                            // Re-try test because app set creds.
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
+                            // Re-try test because app set server config.
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerSet,
                                 Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
+                                State = (uint)Lst.TestW
                             },
                         }
                     },
 
-                    new Node {State = (uint)Lst.CredWait,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
+                    // Waiting for new creds before server config set or robot success.
+                    new Node {State = (uint)Lst.CredW1,
+                        Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
+                        Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)TlEvt.E.ServerCertAsk
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
                         },
                         On = new[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetCred, State = (uint)Lst.CredWait },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoS14Pll, State = (uint)Lst.S1Wait },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
+                            // Ask app for creds.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetCred, State = (uint)Lst.CredW1 },
+                            // Got creds, re-start all robots and try again.
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            // Got new server value. run-with it and test it.
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
                         }
                     },
 
-                    new Node {State = (uint)Lst.ServerWait, 
+                    // Waiting for new creds during server config testing.
+                    new Node {State = (uint)Lst.CredW2,
+                        Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
+                        Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                        },
+                        On = new [] {
+                            // Ask app for creds.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetCred, State = (uint)Lst.CredW1 },
+                            // Got creds, re-test & wait.
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
+                            // Got new server value. run-with it and test it.
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                        }
+                    },
+
+                    // Asked the app for a server config, waiting now...
+                    new Node {State = (uint)Lst.SrvConfW, 
+                        Drop = new [] { (uint)TlEvt.E.CredSet, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
                         Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
-                            (uint)TlEvt.E.ServerCertAsk
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
                         },
-                        Drop = new [] { (uint)TlEvt.E.CredSet },
                         On = new[] {
-                            new Trans {
-                                Event = (uint)SmEvt.E.Launch,
-                                Act = DoUiGetServer,
-                                State = (uint)Lst.ServerWait
-                            },
-                            new Trans {
-                                Event = (uint)TlEvt.E.ServerSet,
-                                Act = DoTestFromUi,
-                                State = (uint)Lst.TestWait
-                            },
+                            // Ask again and wait.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetServer, State = (uint)Lst.SrvConfW },
+                            // Got server config, now test & wait.
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
                         }
                     },
                 }
@@ -489,42 +319,18 @@ namespace NachoCore.ActiveSync
             Sm.Name = OwnerSm.Name + ":AUTOD";
             Domain = DomainFromEmailAddr (DataSource.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "AUTODEXE");
+            if (null == DataSource.Server || true == DataSource.Server.UsedBefore ||
+                string.Empty == DataSource.Server.Fqdn) {
+                Sm.Start ();
+            } else {
+                ServerCandidate = DataSource.Server;
+                Sm.Start ((uint)Lst.TestW);
+            }
         }
         // UTILITY METHODS.
-        private uint WaitStateFromStep (StepRobot.Steps Step)
+        private void AddAndStartRobot (StepRobot.Steps step, string domain)
         {
-            switch (Step) {
-            case StepRobot.Steps.S1:
-                return (uint)Lst.S1Wait;
-            case StepRobot.Steps.S2:
-                return (uint)Lst.S2Wait;
-            case StepRobot.Steps.S3:
-                return (uint)Lst.S3Wait;
-            case StepRobot.Steps.S4:
-                return (uint)Lst.S4Wait;
-            default:
-                throw new Exception ("Unknown Step value");
-            }
-        }
-
-        private bool MatchesState (StepRobot.Steps Step, bool IsBaseDomain)
-        {
-            if (IsBaseDomain != IsTryingBaseDomain) {
-                return false;
-            }
-            uint waitState = WaitStateFromStep (Step);
-            return waitState == Sm.State;
-        }
-
-        private StepRobot RobotFromOp (AsHttpOperation Op)
-        {
-            return Robots.Where (elem => Op == elem.HttpOp).Single ();
-        }
-
-        private void AddStartRobot (StepRobot.Steps step, bool isBaseDomain, string domain)
-        {
-            var robot = new StepRobot (this, step, DataSource.Account.EmailAddr, isBaseDomain, domain);
+            var robot = new StepRobot (this, step, DataSource.Account.EmailAddr, domain);
             Robots.Add (robot);
             robot.Execute ();
         }
@@ -534,7 +340,16 @@ namespace NachoCore.ActiveSync
             if (null != Robots) {
                 foreach (var robot in Robots) {
                     robot.Cancel ();
+                    DisposedJunk.Add (robot);
                 }
+            }
+            Robots = null;
+            AskingRobotQ = null;
+            SuccessfulRobotQ = null;
+            if (null != OptCmd) {
+                OptCmd.Cancel ();
+                DisposedJunk.Add (OptCmd);
+                OptCmd = null;
             }
         }
 
@@ -543,111 +358,85 @@ namespace NachoCore.ActiveSync
             return EmailAddr.Split ('@').Last ();
         }
 
-        private StepRobot FindRobot (StepRobot.Steps step)
+        private StepRobot EnqAskAndGimmieRobot ()
         {
-            return Robots.Where (x => x.Step == step &&
-            x.IsBaseDomain == IsTryingBaseDomain).Single ();
+            StepRobot robot = (StepRobot)Sm.Arg;
+            AskingRobotQ.Enqueue (robot);
+            return robot;
         }
-        // IMPLEMENTATION OF TOP-LEVEL STATE MACHINE.
-        private void DoS14Pll ()
+
+        private void SxServerCertX (uint eventCode, string mnemonic)
         {
-            Cancel ();
-            Robots = new List<StepRobot> ();
-            // Try to perform steps 1-4 in parallel.
-            if (IsTryingBaseDomain) {
-                // We could run these in parallel, but we'd need to 2x the SM size.
-                // Maybe do that in the future.
-                AddStartRobot (StepRobot.Steps.S1, true, BaseDomain);
-                AddStartRobot (StepRobot.Steps.S2, true, BaseDomain);
-                AddStartRobot (StepRobot.Steps.S3, true, BaseDomain);
-                AddStartRobot (StepRobot.Steps.S4, true, BaseDomain);
+            var robot = AskingRobotQ.Dequeue ();
+            if (0 == AskingRobotQ.Count) {
+                Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODECQ");
             } else {
-                AddStartRobot (StepRobot.Steps.S1, false, Domain);
-                AddStartRobot (StepRobot.Steps.S2, false, Domain);
-                AddStartRobot (StepRobot.Steps.S3, false, Domain);
-                AddStartRobot (StepRobot.Steps.S4, false, Domain);
+                OwnerSm.PostEvent (Event.Create ((uint)AsProtoControl.CtlEvt.E.GetCertOk, "AUTODCERTASK1", robot.ServerCertificate));
             }
-        }
-
-        private void DoSx (StepRobot.Steps step)
-        {
-            var robot = FindRobot (step);
-            if ((uint)StepRobot.RobotEvt.E.NullCode != robot.ResultingEvent.EventCode) {
-                Sm.PostEvent (robot.ResultingEvent);
-            }
-        }
-
-        private void DoS2 ()
-        {
-            DoSx (StepRobot.Steps.S2);
-        }
-
-        private void DoS3 ()
-        {
-            DoSx (StepRobot.Steps.S3);
-        }
-
-        private void DoS4 ()
-        {
-            DoSx (StepRobot.Steps.S4);
-        }
-
-        private void DoSxServerCertX (StepRobot.Steps step, uint eventCode, string mnemonic)
-        {
-            var robot = FindRobot (step);
             robot.StepSm.PostEvent (eventCode, mnemonic);
         }
-
-        private void DoS1ServerCertYes ()
+        // IMPLEMENTATION OF TOP-LEVEL STATE MACHINE.
+        protected override void DoUiGetCred ()
         {
-            DoSxServerCertX (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertYes, "AUTODS1CY");
+            Cancel ();
+            base.DoUiGetCred ();
         }
 
-        private void DoS1ServerCertNo ()
+        private void DoStepsPll ()
         {
-            DoSxServerCertX (StepRobot.Steps.S1, (uint)SharedEvt.E.ServerCertNo, "AUTODS1CN");
-        }
-
-        private void DoS2ServerCertYes ()
-        {
-            DoSxServerCertX (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertYes, "AUTODS2CY");
-        }
-
-        private void DoS2ServerCertNo ()
-        {
-            DoSxServerCertX (StepRobot.Steps.S2, (uint)SharedEvt.E.ServerCertNo, "AUTODS2CN");
-        }
-
-        private void DoS3ServerCertYes ()
-        {
-            DoSxServerCertX (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertYes, "AUTODS3CY");
-        }
-
-        private void DoS3ServerCertNo ()
-        {
-            DoSxServerCertX (StepRobot.Steps.S3, (uint)SharedEvt.E.ServerCertNo, "AUTODS3CN");
-        }
-
-        private void DoS4ServerCertYes ()
-        {
-            DoSxServerCertX (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertYes, "AUTODS4CY");
-        }
-
-        private void DoS4ServerCertNo ()
-        {
-            DoSxServerCertX (StepRobot.Steps.S4, (uint)SharedEvt.E.ServerCertNo, "AUTODS4CN");
-        }
-
-        private void DoBaseMaybe ()
-        {
-            // Check to see if there is still a base domain to search.
-            // If yes, Success, else HardFail.
-            if (BaseDomain != Domain && !IsTryingBaseDomain) {
-                IsTryingBaseDomain = true;
-                Sm.PostEvent ((uint)SmEvt.E.Success, "AUTODDBMS");
-            } else {
-                Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODDBMF");
+            // If we have a queued success, just try testing that 1st!
+            if (null != SuccessfulRobotQ && 0 != SuccessfulRobotQ.Count) {
+                var winner = SuccessfulRobotQ.Dequeue ();
+                Sm.PostEvent ((uint)SmEvt.E.Success, "AUTODSREQ", winner, null);
+                return;
             }
+            Cancel ();
+            Robots = new List<StepRobot> ();
+            AskingRobotQ = new Queue<StepRobot> ();
+            SuccessfulRobotQ = new Queue<StepRobot> ();
+            AddAndStartRobot (StepRobot.Steps.S1, Domain);
+            AddAndStartRobot (StepRobot.Steps.S2, Domain);
+            AddAndStartRobot (StepRobot.Steps.S3, Domain);
+            AddAndStartRobot (StepRobot.Steps.S4, Domain);
+            if (BaseDomain != Domain) {
+                AddAndStartRobot (StepRobot.Steps.S1, BaseDomain);
+                AddAndStartRobot (StepRobot.Steps.S2, BaseDomain);
+                AddAndStartRobot (StepRobot.Steps.S3, BaseDomain);
+                AddAndStartRobot (StepRobot.Steps.S4, BaseDomain);
+            }
+        }
+
+        private void DoReapRobot ()
+        {
+            StepRobot robot = (StepRobot)Sm.Arg;
+            // Robot can't be on either ask or success queue, or it would not be reporting failure.
+            Robots.Remove (robot);
+            if (0 == Robots.Count) {
+                // This can never happen in AskW - there is still the asking robot in the list.
+                Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
+            }
+        }
+
+        private void DoQueueSuccess ()
+        {
+            // We really should preserve the mnemonic here.
+            StepRobot robot = (StepRobot)Sm.Arg;
+            SuccessfulRobotQ.Enqueue (robot);
+        }
+
+        private void DoEnqAsk ()
+        {
+            EnqAskAndGimmieRobot ();
+        }
+
+        private void DoSxSrvCertY ()
+        {
+            SxServerCertX ((uint)SharedEvt.E.SrvCertY, "AUTODS1CY");
+        }
+
+        private void DoSxSrvCertN ()
+        {
+            SxServerCertX ((uint)SharedEvt.E.SrvCertN, "AUTODS1CN");
         }
 
         private void DoTest ()
@@ -677,7 +466,8 @@ namespace NachoCore.ActiveSync
 
         private void DoUiServerCertAsk ()
         {
-            OwnerSm.PostEvent (Event.Create ((uint)AsProtoControl.CtlEvt.E.GetCertOk, "AUTODCERTASK", ((StepRobot)Sm.Arg).ServerCertificate));
+            var robot = EnqAskAndGimmieRobot ();
+            OwnerSm.PostEvent (Event.Create ((uint)AsProtoControl.CtlEvt.E.GetCertOk, "AUTODCERTASK", robot.ServerCertificate));
         }
 
         private void DoAcceptServerConf ()
@@ -685,6 +475,7 @@ namespace NachoCore.ActiveSync
             // Save validated server config in DB.
             var serverRecord = DataSource.Server;
             serverRecord.Update (ServerCandidate);
+            serverRecord.UsedBefore = true;
             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, serverRecord);
             // Signal that we are done and that we have a server config.
             // Success is the only way we finish - either by UI setting or autodiscovery.
@@ -720,4 +511,3 @@ namespace NachoCore.ActiveSync
         }
     }
 }
-

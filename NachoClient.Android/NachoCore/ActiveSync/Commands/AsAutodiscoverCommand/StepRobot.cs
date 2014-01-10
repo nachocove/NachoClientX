@@ -57,7 +57,6 @@ namespace NachoCore.ActiveSync
 
             public Steps Step;
             public HttpMethod MethodToUse;
-            public bool IsBaseDomain;
             // Stored results. These will be copied back to the configuration upon top-level success.
             // EmailAddr and Domain are pre-loaded at the start.
             public string SrEmailAddr;
@@ -65,7 +64,6 @@ namespace NachoCore.ActiveSync
             public string SrDisplayName;
             public string SrCulture;
             public Uri SrServerUri;
-            public Event ResultingEvent;
             public X509Certificate2 ServerCertificate;
             // Owned operations and execution values.
             public StateMachine StepSm;
@@ -74,9 +72,12 @@ namespace NachoCore.ActiveSync
             public uint RetriesLeft;
             public bool IsReDir;
             public Uri ReDirUri;
+            private List<object> DisposedJunk;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, bool isBaseDomain, string domain)
+
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
             {
+                DisposedJunk = new List<object> ();
                 RefreshRetries ();
 
                 Command = command;
@@ -96,10 +97,8 @@ namespace NachoCore.ActiveSync
                     throw new Exception ("Invalid step value.");
                 }
 
-                IsBaseDomain = isBaseDomain;
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
-                ResultingEvent = Event.Create ((uint)RobotEvt.E.NullCode, "SRNULL");
 
                 StepSm = new StateMachine () {
                     /* NOTE: There are three start states:
@@ -112,7 +111,7 @@ namespace NachoCore.ActiveSync
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
                         new Node {State = (uint)RobotLst.PostWait, 
-                            Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            Invalid = new [] {(uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                                 (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -170,7 +169,7 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.GetWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                                 (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -181,9 +180,9 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.Success,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotHardFail, // Only 302 is okay w/a GET.
                                     State = (uint)St.Stop
-                                }, // Only 302 is okay.
+                                }, 
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
                                     Act = DoRobotHttp,
@@ -219,7 +218,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.DnsWait,
                             Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -248,7 +247,7 @@ namespace NachoCore.ActiveSync
 
                         new Node {State = (uint)RobotLst.CertWait,
                             Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -288,12 +287,12 @@ namespace NachoCore.ActiveSync
                                     State = (uint)RobotLst.OkWait
                                 },
                                 new Trans {
-                                    Event = (uint)SharedEvt.E.ServerCertYes,
+                                    Event = (uint)SharedEvt.E.SrvCertY,
                                     Act = DoRobot302,
                                     State = (uint)RobotLst.ReDirWait
                                 },
                                 new Trans {
-                                    Event = (uint)SharedEvt.E.ServerCertNo,
+                                    Event = (uint)SharedEvt.E.SrvCertN,
                                     Act = DoRobotHardFail,
                                     State = (uint)St.Stop
                                 },
@@ -301,7 +300,7 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                            Invalid = new [] {(uint)SharedEvt.E.ServerCertNo, (uint)SharedEvt.E.ServerCertYes,
+                            Invalid = new [] {(uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                                 (uint)RobotEvt.E.NullCode
                             },
                             On = new[] {
@@ -385,10 +384,12 @@ namespace NachoCore.ActiveSync
             {
                 if (null != HttpOp) {
                     HttpOp.Cancel ();
+                    DisposedJunk.Add (HttpOp);
                     HttpOp = null;
                 }
                 if (null != DnsOp) {
                     DnsOp.Cancel ();
+                    DisposedJunk.Add (HttpOp);
                     DnsOp = null;
                 }
             }
@@ -400,13 +401,7 @@ namespace NachoCore.ActiveSync
 
             private void ForTopLevel (Event Event)
             {
-                // If Top-Level SM is waiting on us, then report directly. Otherwise record the result
-                // So that the Top-Level SM can find it when it is ready.
-                if (Command.MatchesState (Step, IsBaseDomain)) {
-                    Command.Sm.PostEvent (Event);
-                } else {
-                    ResultingEvent = Event;
-                }
+                Command.Sm.PostEvent (Event);
             }
 
             public void ServerCertificateEventHandler (HttpWebRequest sender,
@@ -427,7 +422,6 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 9),
                         Allow451Follow = false,
                         TriesLeft = 3,
                     };
@@ -454,7 +448,6 @@ namespace NachoCore.ActiveSync
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
-                        Timeout = new TimeSpan (0, 0, 9),
                         Allow451Follow = false,
                         TriesLeft = 3,
                     };
@@ -603,7 +596,7 @@ namespace NachoCore.ActiveSync
                 case HttpStatusCode.Found:
                     try {
                         ReDirUri = new Uri (response.Headers.GetValues ("Location").First ());
-                        Console.WriteLine("REDIRURI: {0}", ReDirUri);
+                        Console.WriteLine ("REDIRURI: {0}", ReDirUri);
                         IsReDir = true;
                     } catch {
                         return Event.Create ((uint)SmEvt.E.HardFail, "SRPPPHARD");

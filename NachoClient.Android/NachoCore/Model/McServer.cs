@@ -21,6 +21,8 @@ namespace NachoCore.Model
 
         public int Port { get; set; }
 
+        public bool UsedBefore { get; set; }
+
         public static McServer Create (Uri uri)
         {
             return new McServer () {
