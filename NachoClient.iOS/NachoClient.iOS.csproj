@@ -436,6 +436,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs">
       <Link>NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
+    <Compile Include="NachoUI.iOS\Util.cs" />
+    <Compile Include="NachoUI.iOS\Locale.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -493,6 +496,11 @@
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS.hmap" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SWReveal\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
