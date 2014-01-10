@@ -7,59 +7,77 @@ namespace NachoCore.Utils
     {
         // Eventually match up with Syslog severity levels for non-OK results.
         // https://en.wikipedia.org/wiki/Syslog.
-        public enum Kind { OK, Info, Warning, Error };
+        public enum KindEnum { OK, Info, Warning, Error };
 
-        Kind kind;
-        Object value;
-        String message;
+        public enum SubKindEnum {
+            // OK.
+            // Info.
+            Info_FolderSetChanged,
+            Info_EmailMessageSetChanged,
+            Info_ContactSetChanged,
+            Info_CalendarSetChanged,
+            Info_NewUnreadEmailMessageInInbox,
+            // Warning.
+            // Error.
+        };
+
+        public KindEnum Kind { get; set; }
+        public SubKindEnum SubKind { get; set; }
+        public object Value { get; set; }
+        public string Message { get; set; }
 
         private NcResult ()
         {
-            kind = Kind.Error;
-            value = null;
-            message = null;
         }
      
         public static NcResult OK()
         {
-            NcResult r = new NcResult ();
-            r.kind = Kind.OK;
-            return r;
+            return new NcResult () { Kind = KindEnum.OK };
         }
 
-        public static NcResult OK(Object o)
+        public static NcResult OK(object o)
         {
-            NcResult r = OK ();
-            r.value = o;
-            return r;
+            return new NcResult () { Kind = KindEnum.OK, Value = o };
         }
 
-        public static NcResult Error(String message)
+        public static NcResult Info (string message)
         {
-            NcResult r = new NcResult ();
-            r.kind = Kind.Error;
-            r.message = message;
-            return r;
+            return new NcResult () { Kind = KindEnum.Info, Message = message };
+        }
+
+        public static NcResult Info (SubKindEnum subKind)
+        {
+            return new NcResult () { Kind = KindEnum.Info, SubKind = subKind };
+        }
+
+        public static NcResult Error(string message)
+        {
+            return new NcResult () { Kind = KindEnum.Error, Message = message };
         }
 
         public bool isOK()
         {
-            return (Kind.OK == kind);
+            return (KindEnum.OK == Kind);
         }
 
         public bool isError()
         {
-            return (Kind.Error == kind);
+            return (KindEnum.Error == Kind);
+        }
+
+        public bool isInfo ()
+        {
+            return (KindEnum.Info == Kind);
         }
 
         public T GetValue<T>()
         {
-            return (T) value;
+            return (T) Value;
         }
 
-        public String GetMessage()
+        public string GetMessage()
         {
-            return message;
+            return Message;
         }
 
     }

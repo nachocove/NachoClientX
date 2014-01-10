@@ -821,6 +821,16 @@ namespace NachoCore.ActiveSync
                 Cmd.Cancel ();
             }
         }
+
+        public override void StatusInd (NcResult status)
+        {
+            Owner.StatusInd (this, status);
+        }
+
+        public override void StatusInd (NcResult status, string[] tokens)
+        {
+            Owner.StatusInd (this, status, tokens);
+        }
     }
 }
 

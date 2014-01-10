@@ -12,6 +12,10 @@ namespace NachoCore.ActiveSync
     public partial class AsSyncCommand : AsCommand
     {
         private List<McFolder> FoldersInRequest;
+        private bool HadEmailMessageChanges;
+        private bool HadContactChanges;
+        private bool HadCalendarChanges;
+        private bool HadNewUnreadEmailMessageInInbox;
 
         public AsSyncCommand (IAsDataSource dataSource) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource)
         {
@@ -128,12 +132,19 @@ namespace NachoCore.ActiveSync
                                 }
                                 switch (classCode) {
                                 case Xml.AirSync.ClassCode.Contacts:
+                                    HadContactChanges = true;
                                     ServerSaysAddContact (command, folder);
                                     break;
                                 case Xml.AirSync.ClassCode.Email:
-                                    AddEmail (command, folder);
+                                    HadEmailMessageChanges = true;
+                                    var emailMessage = AddEmail (command, folder);
+                                    if ((uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == folder.Type &&
+                                        false == emailMessage.Read) {
+                                        HadNewUnreadEmailMessageInInbox = true;
+                                    }
                                     break;
                                 case Xml.AirSync.ClassCode.Calendar:
+                                    HadCalendarChanges = true;
                                     ServerSaysAddCalendarItem (command, folder);
                                     break;
                                 default:
@@ -176,6 +187,18 @@ namespace NachoCore.ActiveSync
 
                 DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
             }
+            if (HadEmailMessageChanges) {
+                DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            }
+            if (HadNewUnreadEmailMessageInInbox) {
+                DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox));
+            }
+            if (HadContactChanges) {
+                DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
+            }
+            if (HadCalendarChanges) {
+                DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
+            }
             if (FoldersNeedingSync ().Any ()) {
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC0");
             } else {
@@ -204,7 +227,7 @@ namespace NachoCore.ActiveSync
             return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id && true == x.AsSyncRequired);
         }
         // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
-        private void AddEmail (XElement command, McFolder folder)
+        private McEmailMessage AddEmail (XElement command, McFolder folder)
         {
             IEnumerable<XElement> xmlAttachments = null;
             var emailMessage = new McEmailMessage {
@@ -306,6 +329,7 @@ namespace NachoCore.ActiveSync
                     */
                 }
             }
+            return emailMessage;
         }
         // FIXME - make this a generic extension.
         private bool ParseXmlBoolean (XElement bit)

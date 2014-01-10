@@ -57,5 +57,8 @@ namespace NachoCore
         public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
         public abstract void SearchContactsReq (string prefix, uint? maxResults, string token);
         public abstract void CancelSearchContactsReq (string token);
+        public abstract void StatusInd (NcResult status);
+        public abstract void StatusInd (NcResult status, string[] tokens);
+
     }
 }

@@ -8,6 +8,8 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderSyncCommand : AsCommand
     {
+        private bool HadFolderChanges;
+
         public AsFolderSyncCommand (IAsDataSource dataSource) :
             base (Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource)
         {
@@ -38,6 +40,7 @@ namespace NachoCore.ActiveSync
                 DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
+                    HadFolderChanges = true;
                     foreach (var change in changes) {
                         switch (change.Name.LocalName) {
                         case Xml.FolderHierarchy.Add:
@@ -50,7 +53,7 @@ namespace NachoCore.ActiveSync
                                 AsSyncKey = Xml.AirSync.SyncKey_Initial,
                                 AsSyncRequired = true
                             };
-                            Log.Info("foldersync - add - " + folder);
+                            Log.Info ("foldersync - add - " + folder);
                             DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, folder);
                             break;
                         case Xml.FolderHierarchy.Update:
@@ -59,7 +62,7 @@ namespace NachoCore.ActiveSync
                             folder.ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             folder.DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value;
                             folder.Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value);
-                            Log.Info("foldersync - update - " + folder);
+                            Log.Info ("foldersync - update - " + folder);
                             DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
                             break;
                         case Xml.FolderHierarchy.Delete:
@@ -69,6 +72,9 @@ namespace NachoCore.ActiveSync
                             break;
                         }
                     }
+                }
+                if (HadFolderChanges) {
+                    DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "FSYNCSUCCESS");
             default:
