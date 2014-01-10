@@ -283,32 +283,38 @@ void RenderEntity (MimeEntity entity, UIWebView webview)
             // if we want to see multiple messages there would be additional "Format" options used
             // creation of parser. 
             //
-            var source = new MemoryStream (Encoding.UTF8.GetBytes (currentMessage.Body));
+
+            if (null == currentMessage.Body) {
+                Console.WriteLine ("Message body is null");
+            } else {
+
+                var source = new MemoryStream (Encoding.UTF8.GetBytes (currentMessage.Body));
         
             
-            var parser = new MimeParser (source, MimeFormat.Default);
+                var parser = new MimeParser (source, MimeFormat.Default);
     
-            var message = parser.ParseMessage ();
+                var message = parser.ParseMessage ();
 
             
-            //var attach = new IList<MimePart>;
+                //var attach = new IList<MimePart>;
 //            var attachments = new IList<MimePart>[0];
 
-            RenderEntity (message.Body, webView); //attachments);
+                RenderEntity (message.Body, webView); //attachments);
 
 
 
 
-            Console.Write ("Display Email :");
-            Console.WriteLine (currentMessage.From);
-            Console.WriteLine (currentMessage.Body);
+                Console.Write ("Display Email :");
+                Console.WriteLine (currentMessage.From);
+                Console.WriteLine (currentMessage.Body);
 
-            //Console.Write (" +++++++++++");
+                //Console.Write (" +++++++++++");
         
-            Console.WriteLine("< EOM >");
+                Console.WriteLine ("< EOM >");
 
 
-            //webView.LoadHtmlString(((TextPart) part).Text, new NSUrl(contentDirectoryPath, false));
+                //webView.LoadHtmlString(((TextPart) part).Text, new NSUrl(contentDirectoryPath, false));
+            }
 
         }
         partial void btnReplyMessage (MonoTouch.Foundation.NSObject sender){
