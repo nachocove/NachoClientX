@@ -24,7 +24,9 @@ namespace NachoCore
 
         public McContact GetContact (int i)
         {
-            return list.ElementAt (i);
+            var c = list.ElementAt (i);
+            c.ReadAncillaryData (BackEnd.Instance.Db);
+            return c;
         }
     }
 }
