@@ -1,7 +1,3 @@
-
-// Highly modified from this starting point
-// https://gist.github.com/akcoder/5723722
-
 using System;
 using MonoTouch.UIKit;
 using System.Drawing;
@@ -12,8 +8,8 @@ namespace NachoClient.iOS
 {
     public class MultilineEntryElement : UIViewElement, IElementSizing
     {
-        public MultilineEntryElement (string placeholder, float height, bool transparentBackground) 
-            : base (null, new MultilineView (placeholder, height, transparentBackground), false)
+        public MultilineEntryElement (string placeholder, string value, float height, bool transparentBackground) 
+            : base (null, new MultilineView (placeholder, value, height, transparentBackground), false)
         {
             Flags = CellFlags.DisableSelection;
             if (transparentBackground) {
@@ -30,10 +26,22 @@ namespace NachoClient.iOS
             get { return EntryKey; }
         }
 
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var c = base.GetCell (tv);
+            foreach (var v in c.ContentView.Subviews) {
+                if (v.GetType () == typeof(MultilineElement)) {
+                    v.RemoveFromSuperview ();
+                }
+            }
+            c.ContentView.AddSubview (View);
+            return c;
+        }
+
         public override void Selected (DialogViewController dvc, UITableView tableView, NSIndexPath path)
         {
             tableView.DeselectRow (path, false);
-            UITextView tv = View.Subviews [0] as UITextView;
+            UITextView tv = View as UITextView;
             if (tv != null) {
                 tv.BecomeFirstResponder ();
             }
@@ -41,13 +49,16 @@ namespace NachoClient.iOS
 
         public override string Summary ()
         {
-            UITextView tv = View.Subviews [0] as UITextView;
-            if (tv != null) {
-                return tv.Text;
+            UITextView tv = View as UITextView;
+            if (tv == null) {
+                return null;
             }
-            return null;
+            if (tv.TextColor == UIColor.LightGray) {
+                return null;
+            }
+            return tv.Text;
         }
-
+       
         private class TextDelgate : UITextViewDelegate
         {
             private string _placeholder;
@@ -80,52 +91,44 @@ namespace NachoClient.iOS
                 NSRange r = textView.SelectedRange;
                 textView.ScrollRangeToVisible (r);
             }
-
-            float GetHeight (UITableView tableView, NSIndexPath indexPath)
-            {
-                return 120f;
-            }
         }
 
-        private class MultilineView : UIView
+        private class MultilineView : UITextView
         {
-            public MultilineView (string placeholder, float height, bool transparentBackground)
+            public MultilineView (string placeholder, string value, float height, bool transparentBackground)
+                : base (new RectangleF (0, 0, 10, height - (transparentBackground ? 0 : 12)))
             {
-                //Temporary width until we can re-layout
-                float containerWidth = 10;
+                base.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
+                base.Text = placeholder;
+                base.TextAlignment = UITextAlignment.Left;
+                base.TextColor = UIColor.LightGray;
+                base.Delegate = new TextDelgate (placeholder);
+                base.ContentInset = new UIEdgeInsets (0f, 0f, 10f, 0f);
+                base.TextContainerInset = new UIEdgeInsets (0f, 0f, 10f, 0f);
 
-                // create actual text view
-                UITextView textView = new UITextView (new RectangleF (0, 0, containerWidth, height - (transparentBackground ? 0 : 12))) {
-                    AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin,
-                    Text = placeholder,
-                    TextAlignment = UITextAlignment.Left,
-                    TextColor = UIColor.LightGray,
-                    Delegate = new TextDelgate (placeholder),
-                    ContentInset = new UIEdgeInsets (0f, 0f, 10f, 0f),
-                    TextContainerInset = new UIEdgeInsets (0f, 0f, 10f, 0f),
-
-                };
-
+                base.ScrollEnabled = true;
 
                 AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin;
 
-                base.Frame = new RectangleF (transparentBackground ? 0 : 3, transparentBackground ? 0 : 2, containerWidth, height);
+                base.Frame = new RectangleF (transparentBackground ? 0 : 3, transparentBackground ? 0 : 2, 10, height);
 
                 if (transparentBackground) {
                     base.BackgroundColor = UIColor.Clear;
-                    textView.Layer.BackgroundColor = UIColor.White.CGColor;
+                    base.Layer.BackgroundColor = UIColor.White.CGColor;
                 }
-                base.AddSubview (textView);
+
+                if (null != value) {
+                    base.Delegate.EditingStarted (this);
+                    base.Text = value;
+                    base.Delegate.EditingEnded (this);
+                }
             }
 
             public override void LayoutSubviews ()
             {
-                var superWidth = Superview.Superview.Frame.Width;
+                var superWidth = Superview.Frame.Width;
                 Frame = new RectangleF (Frame.X, Frame.Y, superWidth - Frame.X, Frame.Height);
-
-                var subFrame = Subviews [0].Frame;
-                Subviews [0].Frame = new RectangleF (subFrame.X, subFrame.Y, superWidth - (Frame.X * 3), subFrame.Height);
-                Subviews [0].LayoutSubviews ();
+                base.LayoutSubviews ();
             }
         }
     }

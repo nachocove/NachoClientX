@@ -13,7 +13,7 @@ namespace NachoClient.iOS
     public partial class ComposeViewController : DialogViewController
     {
         string Subject;
-        string Message;
+        MultilineEntryElement Message;
         List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
 
         public ComposeViewController (IntPtr handle) : base (handle)
@@ -37,6 +37,7 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
+            base.ViewWillAppear (animated);
             ReloadRoot ();
         }
 
@@ -88,7 +89,9 @@ namespace NachoClient.iOS
             };
             section.Add (subjectEntry);
 
-            section.Add (new MultilineEntryElement ("Enter your message....", 300.0f, true));
+            var s = (null == Message) ? null : Message.Summary ();
+            Message = new MultilineEntryElement ("Enter your message....", s, 120.0f, true);
+            section.Add (Message);
 
             root.UnevenRows = true;
             Root = root;
