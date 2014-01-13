@@ -223,10 +223,10 @@ namespace NachoCore.Model
                 if (null != displayName) {
                     return displayName;
                 }
-                if ((null == FirstName) || (null == LastName)) {
-                    return (FirstName ?? "") + (LastName ?? "");
-                } else if ((null != FirstName) && (null != LastName)) {
+                if ((null != FirstName) && (null != LastName)) {
                     return FirstName + " " + LastName;
+                } else if ((null != FirstName) || (null != LastName)) {
+                    return (FirstName ?? "") + (LastName ?? "");
                 } else {
                     return DisplayEmailAddress;
                 }
@@ -319,9 +319,9 @@ namespace NachoCore.Model
             return GetStringAttribute (Relationships, McContactStringType.Relationship, name);
         }
 
-        public List<string> GetRelationshipAttributes(string name)
+        public List<string> GetRelationshipAttributes (string name)
         {
-            var l = new List<string>();
+            var l = new List<string> ();
             foreach (var r in Relationships) {
                 if (r.Name.Equals (name)) {
                     l.Add (r.Value);

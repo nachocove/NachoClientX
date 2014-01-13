@@ -10,6 +10,9 @@ namespace NachoCore
         public class NachoAssertionFailure : Exception
         {
         }
+        public class NachoDefaultCaseFailure : Exception
+        {
+        }
 
         public NachoAssert ()
         {
@@ -20,6 +23,11 @@ namespace NachoCore
             if(!b) {
                 throw new NachoAssertionFailure ();
             }
+        }
+
+        public static void CaseError()
+        {
+            throw new NachoDefaultCaseFailure();
         }
     }
 }
