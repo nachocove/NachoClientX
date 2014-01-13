@@ -289,7 +289,6 @@
     <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs">
       <DependentUpon>ReplyViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\MessageSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs</Link>
     </Compile>
