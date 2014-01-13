@@ -4,10 +4,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
+using System.Xml.Linq;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.EventKit;
 using NachoCore;
+using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using SQLite;
@@ -23,7 +25,6 @@ namespace NachoClient.iOS
         // class-level declarations
         public override UIWindow Window { get; set; }
 
-        private NachoDemo Demo { get; set; }
         public McAccount Account { get; set; }
 
         public EKEventStore EventStore {
@@ -49,9 +50,25 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             eventStore = new EKEventStore ( );
-
             launchBe();
-
+            var outbox = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault(x => "Outbox" == x.DisplayName && x.IsClientOwned == true);
+            if (null == outbox) {
+                outbox = McFolder.CreateClientOwned ();
+                outbox.DisplayName = "Outbox"; // Don't ever search for this - remember localization will change it!
+                outbox.ParentId = "0";
+                outbox.ServerId = "OUTBOX"; // Search for this instead.
+                outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
+                BackEnd.Instance.Db.Insert (outbox);
+            }
+            var galCache = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault(x => "GAL" == x.DisplayName && x.IsClientOwned == true);
+            if (null == galCache) {
+                galCache = McFolder.CreateClientOwned ();
+                galCache.IsHidden = true;
+                galCache.ParentId = "0";
+                galCache.ServerId = "GAL";
+                galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
+                BackEnd.Instance.Db.Insert (galCache);
+            }
             Console.WriteLine ("AppDelegate FinishedLaunching done.");
 
             return true;

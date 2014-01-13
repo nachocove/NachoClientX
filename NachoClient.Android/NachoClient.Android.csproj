@@ -74,7 +74,6 @@
     <Compile Include="NachoCore\ProtoControl.cs" />
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
-    <Compile Include="NachoDemo.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Operations\AsHttpOperation.cs" />

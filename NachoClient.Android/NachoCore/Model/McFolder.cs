@@ -10,7 +10,10 @@ namespace NachoCore.Model
         public int AccountId { get; set; }
 
         [Indexed]
-        public bool IsPseudo { get; set; }
+        public bool IsClientOwned { get; set; }
+
+        [Indexed]
+        public bool IsHidden { get; set; }
 
         [Indexed]
         public string ServerId { get; set; }
@@ -28,12 +31,23 @@ namespace NachoCore.Model
         [Indexed]
         public string DisplayName { get; set; }
 
-        // TODO: Need enumeration
+        // FIXME: Need enumeration
         public uint Type { get; set; }
 
         public override string ToString ()
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString();
+        }
+
+        // "factory" to create client-owned folders.
+        public static McFolder CreateClientOwned ()
+        {
+            var folder = new McFolder () {
+                IsClientOwned = true,
+                AsSyncKey = "0",
+                AsSyncRequired = false,
+            };
+            return folder;
         }
     }
 }

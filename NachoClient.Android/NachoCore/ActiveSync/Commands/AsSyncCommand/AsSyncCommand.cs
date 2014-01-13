@@ -224,7 +224,8 @@ namespace NachoCore.ActiveSync
             // Ping, et al, decide what needs to be checked.  We sync what needs sync'ing.
             // If we don't sync the flagged folders, then the ping command starts right back up.
             // TODO: We need to be smarter about prioritization of sync'ing.
-            return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id && true == x.AsSyncRequired);
+            return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
+                true == x.AsSyncRequired && false == x.IsClientOwned);
         }
         // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
         private McEmailMessage AddEmail (XElement command, McFolder folder)

@@ -179,9 +179,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\IProtoControlOwner.cs">
       <Link>NachoCore\IProtoControlOwner.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoDemo.cs">
-      <Link>NachoDemo.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsConstants.cs">
       <Link>NachoCore\ActiveSync\AsConstants.cs</Link>
     </Compile>
