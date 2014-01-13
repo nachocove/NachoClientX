@@ -540,7 +540,6 @@ namespace NachoCore.ActiveSync
                 update.IsDispatched = false;
                 Owner.Db.Update (BackEnd.DbActors.Proto, update);
             }
-            McEventable.DbEvent += DbEventHandler;
         }
         // Methods callable by the owner.
         public override void Execute ()
@@ -592,7 +591,7 @@ namespace NachoCore.ActiveSync
         private void DoUiCredReq ()
         {
             // Send the request toward the UI.
-            if (null != Cmd && ! CmdIs (typeof(AsAutodiscoverCommand))) {
+            if (null != Cmd && !CmdIs (typeof(AsAutodiscoverCommand))) {
                 Cmd.Cancel ();
             }
             Owner.CredReq (this);
@@ -728,56 +727,6 @@ namespace NachoCore.ActiveSync
         {
             return (null != Cmd && Cmd.GetType () == cmdType);
         }
-        // Methods that inject-into/delete-from the Q.
-        private void DbEventHandler (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, McEventable target, EventArgs e)
-        {
-            if (BackEnd.DbActors.Proto == dbActor || target.AccountId != Account.Id) {
-                return;
-            }
-            switch (target.GetType ().Name) {
-            case McEmailMessage.ClassName:
-                McEmailMessage emailMessage = (McEmailMessage)target;
-                switch (dbEvent) {
-                case BackEnd.DbEvents.WillDelete:
-                    if (emailMessage.IsAwatingSend) {
-                        /* UI is deleting a to-be-sent message. Cancel send by deleting
-                         * The pending update if possible.
-                         */
-                        var existingUpdate = Owner.Db.Table<McPendingUpdate> ().Single (rec => rec.AccountId == Account.Id &&
-                                             rec.EmailMessageId == emailMessage.Id);
-                        if (!existingUpdate.IsDispatched) {
-                            Owner.Db.Delete (BackEnd.DbActors.Proto, existingUpdate);
-                        }
-                        Owner.Db.Delete (BackEnd.DbActors.Proto, existingUpdate);
-                    } else {
-                        // UI is deleting a message. We need to delete it on the server.
-                        var deleUpdate = new McPendingUpdate () {
-                            AccountId = Account.Id,
-                            Operation = McPendingUpdate.Operations.Delete,
-                            DataType = McPendingUpdate.DataTypes.EmailMessage,
-                            FolderId = emailMessage.FolderId,
-                            ServerId = emailMessage.ServerId
-                        };
-                        Owner.Db.Insert (BackEnd.DbActors.Proto, deleUpdate);
-                        Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
-                    }
-                    break;
-                case BackEnd.DbEvents.DidWrite:
-                    if (emailMessage.IsAwatingSend) {
-                        var sendUpdate = new McPendingUpdate () {
-                            AccountId = Account.Id,
-                            Operation = McPendingUpdate.Operations.Send,
-                            DataType = McPendingUpdate.DataTypes.EmailMessage,
-                            EmailMessageId = emailMessage.Id
-                        };
-                        Owner.Db.Insert (BackEnd.DbActors.Proto, sendUpdate);
-                        Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
-                    }
-                    break;
-                }
-                break;
-            }
-        }
 
         private void DeletePendingSearchReqs (string token, bool ignoreDispatched)
         {
@@ -814,12 +763,63 @@ namespace NachoCore.ActiveSync
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
-        public override void CancelSearchContactsReq (string token)
+        public override bool Cancel (string token)
         {
-            DeletePendingSearchReqs (token, false);
-            if (CmdIs (typeof(AsSearchCommand))) {
-                Cmd.Cancel ();
+            var update = Owner.Db.Table<McPendingUpdate> ().SingleOrDefault (rec => rec.AccountId == Account.Id && rec.Token == token);
+            if (null == update) {
+                return false;
             }
+            if (McPendingUpdate.Operations.Send == update.Operation && McPendingUpdate.DataTypes.EmailMessage == update.DataType) {
+                // FIXME.
+                return false;
+            } else if (McPendingUpdate.Operations.Delete == update.Operation && McPendingUpdate.DataTypes.EmailMessage == update.DataType) {
+                // FIXME.
+                return false;
+            } else if (McPendingUpdate.Operations.Search == update.Operation && McPendingUpdate.DataTypes.Contact == update.DataType) {
+                DeletePendingSearchReqs (token, false);
+                if (CmdIs (typeof(AsSearchCommand))) {
+                    Cmd.Cancel ();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public override string SendEmailCmd (int emailMessageId)
+        {
+            var sendUpdate = new McPendingUpdate () {
+                AccountId = Account.Id,
+                Token = DateTime.UtcNow.Ticks.ToString (),
+                Operation = McPendingUpdate.Operations.Send,
+                DataType = McPendingUpdate.DataTypes.EmailMessage,
+                EmailMessageId = emailMessageId
+            };
+            Owner.Db.Insert (BackEnd.DbActors.Proto, sendUpdate);
+            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
+            return sendUpdate.Token;
+        }
+
+        public override string DeleteEmailCmd (int emailMessageId)
+        {
+            var emailMessage = Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            if (null == emailMessage) {
+                return null;
+            }
+            var folder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
+            folder.AsSyncRequired = true;
+            Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+
+            var deleUpdate = new McPendingUpdate () {
+                AccountId = Account.Id,
+                Token = DateTime.UtcNow.Ticks.ToString (),
+                Operation = McPendingUpdate.Operations.Delete,
+                DataType = McPendingUpdate.DataTypes.EmailMessage,
+                FolderId = emailMessage.FolderId,
+                ServerId = emailMessage.ServerId
+            };   
+            Owner.Db.Insert (BackEnd.DbActors.Proto, deleUpdate);
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
+            return deleUpdate.Token;
         }
 
         public override void StatusInd (NcResult status)

@@ -18,12 +18,13 @@ namespace NachoCore.ActiveSync
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             Update = NextToSend ();
+            var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
 
             if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
-                               new XElement (m_ns + Xml.ComposeMail.ClientId, Guid.NewGuid ()),
+                new XElement (m_ns + Xml.ComposeMail.ClientId, emailMessage.ClientId),
                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
             var doc = AsCommand.ToEmptyXDocument ();

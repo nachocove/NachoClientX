@@ -125,9 +125,9 @@ namespace NachoClient.iOS
 
                 Subject = txtSubjectField.Text,
                 Body = txtComposeReply.Text,
-                IsAwatingSend = true
             };
             BackEnd.Instance.Db.Insert(BackEnd.DbActors.Ui, email);
+            BackEnd.Instance.SendEmailCmd(appDelegate.Account, email.Id);
             // close this view and go back
             //
             this.NavigationController.PopViewControllerAnimated(true);

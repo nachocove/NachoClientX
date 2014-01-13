@@ -138,6 +138,11 @@ namespace NachoCore
             ServiceFromAccount (account).CredResp ();
         }
 
+        public bool Cancel (McAccount account, string token)
+        {
+            return ServiceFromAccount (account).Cancel (token);
+        }
+
         public string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults)
         {
             return ServiceFromAccount (account).StartSearchContactsReq (prefix, maxResults);
@@ -148,10 +153,16 @@ namespace NachoCore
             ServiceFromAccount (account).SearchContactsReq (prefix, maxResults, token);
         }
 
-        public void CancelSearchContactsReq (McAccount account, string token)
+        public string SendEmailCmd (McAccount account, int emailMessageId)
         {
-            ServiceFromAccount (account).CancelSearchContactsReq (token);
+            return ServiceFromAccount (account).SendEmailCmd (emailMessageId);
         }
+
+        public string DeleteEmailCmd (McAccount account, int emailMessageId)
+        {
+            return ServiceFromAccount (account).DeleteEmailCmd (emailMessageId);
+        }
+
         //
         // For IProtoControlOwner.
         //

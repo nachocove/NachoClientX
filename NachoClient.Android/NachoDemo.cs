@@ -81,7 +81,6 @@ namespace NachoCore
                 From = "jeffe@nachocove.com",
                 Subject = "test",
                 Body = "this is a simple test.",
-                IsAwatingSend = true
             };
             var Be = BackEnd.Instance;
             Be.Db.Insert(BackEnd.DbActors.Ui, email);

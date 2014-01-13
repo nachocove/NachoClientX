@@ -20,12 +20,16 @@ namespace NachoCore
         void ServerConfResp (McAccount account);
         // let the BE know that the credentials have been updated for this account.
         void CredResp (McAccount account);
+        // cancel command/request associated with this token (if possible).
+        bool Cancel (McAccount account, string token);
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
         string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults);
-        // follow-on contacts search.
+        // follow-on contacts search, using same token.
         void SearchContactsReq (McAccount account, string prefix, uint? maxResults, string token);
-        // cancel contacts search. You don't need to call this if the latest search has completed.
-        void CancelSearchContactsReq (McAccount account, string token);
+        // send specified email (not in a synced folder). returns token that can be used to possibly cancel.
+        string SendEmailCmd (McAccount account, int emailMessageId);
+        // delete an email from a synced folder. returns token that can be used to possibly cancel.
+        string DeleteEmailCmd (McAccount account, int emailMessageId);
     }
 }
 

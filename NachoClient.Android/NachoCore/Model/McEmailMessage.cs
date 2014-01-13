@@ -13,7 +13,6 @@ namespace NachoCore.Model
         public const string ClassName = "NcEmailMessage";
 
         [Indexed]
-        public bool IsAwatingSend { get; set; }
         public string Body { set; get; }
         public string Encoding { set; get; }
         [Indexed]
