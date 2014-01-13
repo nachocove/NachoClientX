@@ -7,6 +7,7 @@ using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using NachoCore.Model;
 using NachoCore;
+using MimeKit;
 
 namespace NachoClient.iOS
 {
@@ -33,6 +34,10 @@ namespace NachoClient.iOS
             });
             tap.CancelsTouchesInView = false;
             this.View.AddGestureRecognizer (tap);
+
+            SendButton.Clicked += (object sender, EventArgs e) => {
+                SendMessage ();
+            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -152,6 +157,58 @@ namespace NachoClient.iOS
             if (AddressList.Count > index) {
                 AddressList.RemoveAt (index);
             }
+        }
+
+        public MailboxAddress GetMailboxAddress (NcEmailAddress address)
+        {
+            NachoAssert.True ((null != address.contact) || (null != address.address));
+
+            string name;
+            string email;
+
+            if (null == address.contact) {
+                name = address.address;
+                email = address.address;
+            } else {
+                name = address.contact.DisplayName;
+                if (null == address.address) {
+                    email = address.contact.DisplayEmailAddress;
+                } else {
+                    email = address.address;
+                }
+            }
+            return new MailboxAddress (name, email);
+        }
+
+        public void SendMessage ()
+        {
+            var message = new MimeMessage ();
+
+            foreach (var a in AddressList) {
+                switch (a.kind) {
+                case NcEmailAddress.Kind.To:
+                    message.To.Add (GetMailboxAddress (a));
+                    break;
+                case NcEmailAddress.Kind.Cc:
+                    message.Cc.Add (GetMailboxAddress (a));
+                    break;
+                case NcEmailAddress.Kind.Bcc:
+                    message.Bcc.Add (GetMailboxAddress (a));
+                    break;
+                default:
+                    NachoAssert.CaseError ();
+                    break;
+                }
+            }
+            if (null != Subject) {
+                message.Subject = Subject;
+            }
+            message.Date = System.DateTime.UtcNow;
+
+            // TODO: Send the message
+
+            // Probably want to defer until BE says message is queued.
+            NavigationController.PopViewControllerAnimated (true);
         }
     }
 }
