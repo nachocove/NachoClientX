@@ -13,32 +13,13 @@ namespace NachoClient.iOS
 	partial class ComposeViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UITextView txtComposeMsg { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UITextField txtSubjectField { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UITextField txtToField { get; set; }
-
-		[Action ("btnSendEmail:")]
-		partial void btnSendEmail (MonoTouch.Foundation.NSObject sender);
+		MonoTouch.UIKit.UIBarButtonItem SendButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (txtComposeMsg != null) {
-				txtComposeMsg.Dispose ();
-				txtComposeMsg = null;
-			}
-
-			if (txtSubjectField != null) {
-				txtSubjectField.Dispose ();
-				txtSubjectField = null;
-			}
-
-			if (txtToField != null) {
-				txtToField.Dispose ();
-				txtToField = null;
+			if (SendButton != null) {
+				SendButton.Dispose ();
+				SendButton = null;
 			}
 		}
 	}

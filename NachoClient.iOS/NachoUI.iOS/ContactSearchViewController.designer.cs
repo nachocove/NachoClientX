@@ -9,12 +9,18 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("composeTextView")]
-	partial class composeTextView
+	[Register ("ContactSearchViewController")]
+	partial class ContactSearchViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem CancelButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (CancelButton != null) {
+				CancelButton.Dispose ();
+				CancelButton = null;
+			}
 		}
 	}
 }

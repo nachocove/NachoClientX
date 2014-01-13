@@ -267,10 +267,6 @@
     <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
       <DependentUpon>AccountViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
-    <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs">
-      <DependentUpon>ComposeViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\FolderTableSource.cs" />
     <Compile Include="NachoUI.iOS\FolderViewController.cs" />
     <Compile Include="NachoUI.iOS\FolderViewController.designer.cs">
@@ -292,10 +288,6 @@
     <Compile Include="NachoUI.iOS\ReplyViewController.cs" />
     <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs">
       <DependentUpon>ReplyViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\composeTextView.cs" />
-    <Compile Include="NachoUI.iOS\composeTextView.designer.cs">
-      <DependentUpon>composeTextView.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\MessageSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
@@ -439,6 +431,22 @@
     <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
     <Compile Include="NachoUI.iOS\Util.cs" />
     <Compile Include="NachoUI.iOS\Locale.cs" />
+    <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
+    <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs">
+      <DependentUpon>ComposeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\MultilineEntryElement.cs" />
+    <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactChooserViewController.designer.cs">
+      <DependentUpon>ContactChooserViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ContactSearchViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactSearchViewController.designer.cs">
+      <DependentUpon>ContactSearchViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\NcEmailAddress.cs">
+      <Link>NachoCore\NcEmailAddress.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
