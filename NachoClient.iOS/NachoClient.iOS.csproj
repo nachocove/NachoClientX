@@ -173,17 +173,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd.cs">
       <Link>NachoCore\BackEnd.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ISQLiteEventable.cs">
-      <Link>NachoCore\Extensions\ISQLiteEventable.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ProtoControl.cs">
       <Link>NachoCore\ProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\IProtoControlOwner.cs">
       <Link>NachoCore\IProtoControlOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\SQLiteConnectionWithEvent.cs">
-      <Link>NachoCore\Extensions\SQLiteConnectionWithEvent.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoDemo.cs">
       <Link>NachoDemo.cs</Link>
@@ -380,9 +374,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage.cs">
       <Link>NachoCore\Model\McEmailMessage.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEventable.cs">
-      <Link>NachoCore\Model\McEventable.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolder.cs">
       <Link>NachoCore\Model\McFolder.cs</Link>

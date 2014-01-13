@@ -16,7 +16,7 @@ namespace Test.Android
         {
         }
 
-        public class TestDb : SQLiteConnectionWithEvents
+        public class TestDb : SQLiteConnection
         {
             public TestDb () : base (System.IO.Path.GetTempFileName (), true)
             {
@@ -40,12 +40,12 @@ namespace Test.Android
             // Create a new db
             db.CreateTable<MyObject> ();
 
-            NcResult r;
+            int r;
             MyObject i = new MyObject ();
             Assert.AreEqual (i.Id, 0);
 
             r = db.Insert (i);
-            Assert.IsTrue (r.isOK ());
+            Assert.IsTrue (0 < r);
             Assert.AreEqual (1, i.Id);
             Assert.AreEqual (1, db.Table<MyObject> ().Count ());
 
@@ -58,12 +58,12 @@ namespace Test.Android
 
             i.Id = 0;
             r = db.Insert (i);
-            Assert.IsTrue (r.isOK ());
+            Assert.IsTrue (0 < r);
             Assert.AreEqual (2, i.Id);
             Assert.AreEqual (2, db.Table<MyObject> ().Count ());
 
             r = db.Update (i);
-            Assert.IsTrue (r.isOK ());
+            Assert.IsTrue (0 < r);
             Assert.AreEqual (2, db.Table<MyObject> ().Count ());
 
             try {

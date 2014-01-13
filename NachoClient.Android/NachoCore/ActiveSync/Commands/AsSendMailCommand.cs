@@ -30,7 +30,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
             Update.IsDispatched = true;
-            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, Update);
+            DataSource.Owner.Db.Update (Update);
             return doc;
         }
 
@@ -45,8 +45,8 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
-            DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, emailMessage);
-            DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, Update);
+            DataSource.Owner.Db.Delete (emailMessage);
+            DataSource.Owner.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
 

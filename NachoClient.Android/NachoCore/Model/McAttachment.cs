@@ -3,8 +3,10 @@ using System;
 
 namespace NachoCore.Model
 {
-    public class McAttachment : McEventable
+    public class McAttachment : McObject
     {
+        [Indexed]
+        public int AccountId { get; set; }
         [Indexed]
         public string FileReference { get; set; }
         [Indexed]

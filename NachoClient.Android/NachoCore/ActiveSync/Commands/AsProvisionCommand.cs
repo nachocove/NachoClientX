@@ -165,7 +165,7 @@ namespace NachoCore.ActiveSync
                         GetOp == Sender) {
                     var protocolState = DataSource.ProtocolState;
                     protocolState.InitialProvisionCompleted = true;
-                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
+                    DataSource.Owner.Db.Update (protocolState);
                 }
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
@@ -183,7 +183,7 @@ namespace NachoCore.ActiveSync
                     // PolicyKey required element of Policy.
                     McProtocolState update = DataSource.ProtocolState;
                     update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
-                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, update);
+                    DataSource.Owner.Db.Update (update);
 
                     // PolicyType required element of Policy, but we don't care much.
                     var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
@@ -216,7 +216,7 @@ namespace NachoCore.ActiveSync
                                 
                             ApplyEasProvisionDocToPolicy (xmlEASProvisionDoc, policy);
                         }
-                        DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, policy);
+                        DataSource.Owner.Db.Update (policy);
                     }
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "PROVSUCCESS");

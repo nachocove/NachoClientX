@@ -1,3 +1,4 @@
+using SQLite;
 using System;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Utils;
@@ -6,7 +7,7 @@ namespace NachoCore
 {
     public interface IProtoControlOwner
     {
-        SQLiteConnectionWithEvents Db { set; get; }
+        SQLiteConnection Db { set; get; }
         string AttachmentsDir { set; get; }
 
         void StatusInd (ProtoControl sender, NcResult status);

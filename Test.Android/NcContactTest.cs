@@ -39,7 +39,7 @@ namespace Test.iOS
 
         public class MockProtoControlOwner : IProtoControlOwner
         {
-            public SQLiteConnectionWithEvents Db { set; get; }
+            public SQLiteConnection Db { set; get; }
 
             public string AttachmentsDir { set; get; }
 

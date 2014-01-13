@@ -70,7 +70,7 @@ namespace NachoCore.ActiveSync
                     var folder = DataSource.Owner.Db.Table<McFolder> ().Single (
                                      rec => DataSource.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
                     folder.AsSyncRequired = true;
-                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+                    DataSource.Owner.Db.Update (folder);
                 }
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGRESYNC");
             

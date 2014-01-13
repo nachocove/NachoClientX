@@ -414,7 +414,7 @@ namespace NachoCore.Model
         /// </summary>
         /// <param name="db">Db.</param>
         /// <param name="pk">Pk.</param>
-        public static NcResult Read (SQLiteConnectionWithEvents db, Int64 pk)
+        public static NcResult Read (SQLiteConnection db, Int64 pk)
         {
             var c = db.Table<McContact> ().Where (x => x.Id == pk).SingleOrDefault ();
             NachoCore.NachoAssert.True (null != c);
@@ -423,7 +423,7 @@ namespace NachoCore.Model
             return NcResult.OK (c);
         }
 
-        public NcResult ReadAncillaryData (SQLiteConnectionWithEvents db)
+        public NcResult ReadAncillaryData (SQLiteConnection db)
         {
             Dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             Addresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
@@ -437,7 +437,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Insert (SQLiteConnectionWithEvents db)
+        public NcResult Insert (SQLiteConnection db)
         {
             db.Insert (this);
             InsertAncillaryData (db);
@@ -445,7 +445,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult InsertAncillaryData (SQLiteConnectionWithEvents db)
+        public NcResult InsertAncillaryData (SQLiteConnection db)
         {
             NachoCore.NachoAssert.True (0 < Id);
 
@@ -485,7 +485,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Delete (SQLiteConnectionWithEvents db)
+        public NcResult Delete (SQLiteConnection db)
         {
             db.Delete (this);
             DeleteAncillaryData (db);
@@ -493,7 +493,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected NcResult DeleteAncillaryData (SQLiteConnectionWithEvents db)
+        protected NcResult DeleteAncillaryData (SQLiteConnection db)
         {
             var dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             foreach (var d in dates) {

@@ -70,8 +70,8 @@ namespace NachoCore.ActiveSync
 
             // If there is no match, insert the new item.
             if (null == oldItem) {
-                NcResult ir = DataSource.Owner.Db.Insert (newItem);
-                NachoCore.NachoAssert.True (ir.isOK ());
+                int ir = DataSource.Owner.Db.Insert (newItem);
+                NachoCore.NachoAssert.True (0 < ir);
                 MergeAttendees (newItem);
                 MergeCategories (newItem);
                 MergeExceptions (newItem);
@@ -89,8 +89,8 @@ namespace NachoCore.ActiveSync
             // Overwrite the old item with the new item
             // to preserve the index, in
             newItem.Id = oldItem.Id;
-            NcResult ur = DataSource.Owner.Db.Update (oldItem);
-            NachoCore.NachoAssert.True (ur.isOK ());
+            int ur = DataSource.Owner.Db.Update (oldItem);
+            NachoCore.NachoAssert.True (0 < ur);
 
             // Update the entries that refer to the updated entry
             MergeAttendees (newItem);
@@ -170,13 +170,13 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var attendee in c.attendees) {
                 if (attendee.Id > 0) {
-                    NcResult r = DataSource.Owner.Db.Update (attendee);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Update (attendee);
+                    NachoCore.NachoAssert.True (0 < r);
                 } else {
                     attendee.ParentId = c.Id;
                     attendee.ParentType = McAttendee.GetParentType (c);
-                    NcResult r = DataSource.Owner.Db.Insert (attendee);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Insert (attendee);
+                    NachoCore.NachoAssert.True (0 < r);
                 }
             }
 
@@ -206,12 +206,12 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var category in c.categories) {
                 if (category.Id > 0) {
-                    NcResult r = DataSource.Owner.Db.Update (category);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Update (category);
+                    NachoCore.NachoAssert.True (0 < r);
                 } else {
                     category.ParentId = McCalendarCategory.GetParentType (c);
-                    NcResult r = DataSource.Owner.Db.Insert (category);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Insert (category);
+                    NachoCore.NachoAssert.True (0 < r);
                 }
             }
         }
@@ -240,11 +240,11 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var exception in c.exceptions) {
                 if (exception.Id > 0) {
-                    NcResult r = DataSource.Owner.Db.Update (exception);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Update (exception);
+                    NachoCore.NachoAssert.True (0 < r);
                 } else {
-                    NcResult r = DataSource.Owner.Db.Insert (exception);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Insert (exception);
+                    NachoCore.NachoAssert.True (0 < r);
                 }
                 MergeAttendees (exception);
                 MergeCategories (exception);
@@ -268,11 +268,11 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var recurrence in c.recurrences) {
                 if (recurrence.Id > 0) {
-                    NcResult r = DataSource.Owner.Db.Update (recurrence);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Update (recurrence);
+                    NachoCore.NachoAssert.True (0 < r);
                 } else {
-                    NcResult r = DataSource.Owner.Db.Insert (recurrence);
-                    NachoCore.NachoAssert.True (r.isOK ());
+                    int r = DataSource.Owner.Db.Insert (recurrence);
+                    NachoCore.NachoAssert.True (0 < r);
                 }
             }
         }

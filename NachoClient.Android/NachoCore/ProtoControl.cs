@@ -32,7 +32,7 @@ namespace NachoCore
             set {
                 var update = value;
                 update.Id = Account.ServerId;
-                Owner.Db.Update (BackEnd.DbActors.Proto, update);
+                Owner.Db.Update (update);
             }
         }
 
@@ -44,7 +44,7 @@ namespace NachoCore
             set {
                 var update = value;
                 update.Id = Account.ProtocolStateId;
-                Owner.Db.Update (BackEnd.DbActors.Proto, update);
+                Owner.Db.Update (update);
             }
         }
 

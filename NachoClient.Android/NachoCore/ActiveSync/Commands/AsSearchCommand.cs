@@ -35,7 +35,7 @@ namespace NachoCore.ActiveSync
 
             doc.Add (search);
             Update.IsDispatched = true;
-            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, Update);
+            DataSource.Owner.Db.Update (Update);
             return doc;
         }
 
@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.Success:
                 case Xml.Search.StoreStatusCode.NotFound:
                     // FIXME - save result (if any) into GAL cache.
-                    DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, Update);
+                    DataSource.Owner.Db.Delete (Update);
                     return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");
 
                 case Xml.Search.StoreStatusCode.InvalidRequest:
@@ -72,7 +72,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.Search.StoreStatusCode.FSyncRequired:
                     Update.IsDispatched = false;
-                    DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, Update);
+                    DataSource.Owner.Db.Update (Update);
                     return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SRCHREFSYNC");
 
                 case Xml.Search.StoreStatusCode.EndOfRRange:

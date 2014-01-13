@@ -51,7 +51,7 @@ namespace NachoCore
             WillDelete}
         ;
 
-        public SQLiteConnectionWithEvents Db { set; get; }
+        public SQLiteConnection Db { set; get; }
 
         public string AttachmentsDir { set; get; }
 
@@ -75,7 +75,7 @@ namespace NachoCore
             AttachmentsDir = Path.Combine (documents, "attachments");
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
             DbFileName = Path.Combine (documents, "db");
-            Db = new SQLiteConnectionWithEvents (DbFileName, storeDateTimeAsTicks: true);
+            Db = new SQLiteConnection (DbFileName, storeDateTimeAsTicks: true);
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
             Db.CreateTable<McFolder> ();

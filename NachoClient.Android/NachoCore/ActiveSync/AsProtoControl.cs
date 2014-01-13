@@ -538,7 +538,7 @@ namespace NachoCore.ActiveSync
                             rec.IsDispatched == true).ToList ();
             foreach (var update in dispached) {
                 update.IsDispatched = false;
-                Owner.Db.Update (BackEnd.DbActors.Proto, update);
+                Owner.Db.Update (update);
             }
         }
         // Methods callable by the owner.
@@ -571,7 +571,7 @@ namespace NachoCore.ActiveSync
         {
             var protocolState = ProtocolState;
             protocolState.State = Sm.State;
-            Owner.Db.Update (BackEnd.DbActors.Proto, protocolState);
+            Owner.Db.Update (protocolState);
         }
         // State-machine action methods.
         private void DoUiServConfReq ()
@@ -737,7 +737,7 @@ namespace NachoCore.ActiveSync
             }
             var killList = query.ToList ();
             foreach (var kill in killList) {
-                Owner.Db.Delete (BackEnd.DbActors.Proto, kill);
+                Owner.Db.Delete (kill);
             }
         }
 
@@ -759,7 +759,7 @@ namespace NachoCore.ActiveSync
                 MaxResults = (null == maxResults) ? 0 : (uint)maxResults,
                 Token = token
             };
-            Owner.Db.Insert (BackEnd.DbActors.Proto, newSearch);
+            Owner.Db.Insert (newSearch);
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
@@ -794,7 +794,7 @@ namespace NachoCore.ActiveSync
                 DataType = McPendingUpdate.DataTypes.EmailMessage,
                 EmailMessageId = emailMessageId
             };
-            Owner.Db.Insert (BackEnd.DbActors.Proto, sendUpdate);
+            Owner.Db.Insert (sendUpdate);
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
             return sendUpdate.Token;
         }
@@ -807,7 +807,7 @@ namespace NachoCore.ActiveSync
             }
             var folder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
             folder.AsSyncRequired = true;
-            Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+            Owner.Db.Update (folder);
 
             var deleUpdate = new McPendingUpdate () {
                 AccountId = Account.Id,
@@ -817,7 +817,7 @@ namespace NachoCore.ActiveSync
                 FolderId = emailMessage.FolderId,
                 ServerId = emailMessage.ServerId
             };   
-            Owner.Db.Insert (BackEnd.DbActors.Proto, deleUpdate);
+            Owner.Db.Insert (deleUpdate);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
             return deleUpdate.Token;
         }

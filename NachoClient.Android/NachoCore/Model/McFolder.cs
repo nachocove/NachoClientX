@@ -4,8 +4,11 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McFolder : McEventable
+    public class McFolder : McObject
     {
+        [Indexed]
+        public int AccountId { get; set; }
+
         [Indexed]
         public bool IsPseudo { get; set; }
 

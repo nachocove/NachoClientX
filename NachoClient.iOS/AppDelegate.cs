@@ -33,12 +33,6 @@ namespace NachoClient.iOS
 
         private bool launchBe()
         {
-            // Register to receive DB update indications.
-            McEventable.DbEvent += (BackEnd.DbActors dbActor, BackEnd.DbEvents dbEvent, McEventable target, EventArgs e) => {
-                if (BackEnd.DbActors.Ui != dbActor) {
-                    Console.WriteLine("DB Event {1} on {0}", target.ToString(), dbEvent.ToString());
-                }
-            };
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
             var Be = BackEnd.Instance;
@@ -125,7 +119,7 @@ namespace NachoClient.iOS
                     if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
                         tmpCred.Username = (string) tmplog;
                         tmpCred.Password = (string) tmppwd;
-                        Be.Db.Update(BackEnd.DbActors.Ui, tmpCred); //  update with new username/password
+                        Be.Db.Update(tmpCred); //  update with new username/password
 
                         Be.CredResp(account);
                         credView.ResignFirstResponder();
@@ -176,7 +170,7 @@ namespace NachoClient.iOS
                         if (txt != null) {
                             Console.WriteLine(" New Server Name = " + txt);
                             tmpServer.Fqdn = txt;
-                            Be.Db.Update(BackEnd.DbActors.Ui, tmpServer);
+                            Be.Db.Update(tmpServer);
                             Be.ServerConfResp (account); 
                             credView.ResignFirstResponder();
                         };

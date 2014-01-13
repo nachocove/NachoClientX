@@ -70,9 +70,7 @@
     <Compile Include="NachoCore\Extensions\StateMachine.cs" />
     <Compile Include="NachoCore\Extensions\Helpers.cs" />
     <Compile Include="NachoCore\BackEnd.cs" />
-    <Compile Include="NachoCore\Extensions\SQLiteConnectionWithEvent.cs" />
     <Compile Include="NachoCore\ActiveSync\AsConstants.cs" />
-    <Compile Include="NachoCore\Extensions\ISQLiteEventable.cs" />
     <Compile Include="NachoCore\ProtoControl.cs" />
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
@@ -113,7 +111,6 @@
     <Compile Include="NachoCore\Model\McContact.cs" />
     <Compile Include="NachoCore\Model\McCred.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage.cs" />
-    <Compile Include="NachoCore\Model\McEventable.cs" />
     <Compile Include="NachoCore\Model\McFolder.cs" />
     <Compile Include="NachoCore\Model\McItem.cs" />
     <Compile Include="NachoCore\Model\McObject.cs" />

@@ -31,7 +31,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument();
             doc.Add (itemOp);
             m_update.IsDispatched = true;
-            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, m_update);
+            DataSource.Owner.Db.Update (m_update);
             return doc;
         }
 
@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
                 break;
                 // FIXME - handle other status values.
             }
-            DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, m_update);
+            DataSource.Owner.Db.Delete (m_update);
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }
 

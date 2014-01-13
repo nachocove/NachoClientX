@@ -3,8 +3,11 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public abstract class McItem : McEventable
+    public abstract class McItem : McObject
     {
+
+        [Indexed]
+        public int AccountId { get; set; }
 
         // The ServerId represents a unique identifier that is assigned by the server
         // to each object that can be synchronized. The client MUST store the server

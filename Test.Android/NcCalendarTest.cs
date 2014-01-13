@@ -10,7 +10,7 @@ using SQLite;
 
 namespace Test.iOS
 {
-    public class TestDb : SQLiteConnectionWithEvents
+    public class TestDb : SQLiteConnection
     {
         public TestDb () : base (System.IO.Path.GetTempFileName (), true)
         {
@@ -99,7 +99,7 @@ namespace Test.iOS
 
     public class MockProtoControlOwner : IProtoControlOwner
     {
-        public SQLiteConnectionWithEvents Db { set; get; }
+        public SQLiteConnection Db { set; get; }
 
         public string AttachmentsDir { set; get; }
 

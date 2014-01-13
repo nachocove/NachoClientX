@@ -66,7 +66,7 @@ namespace NachoCore.ActiveSync
                             commands.Add (new XElement (m_ns + Xml.AirSync.Delete,
                                 new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
                             change.IsDispatched = true;
-                            DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, change);
+                            DataSource.Owner.Db.Update (change);
                         }
                         collection.Add (commands);
                     }
@@ -109,7 +109,7 @@ namespace NachoCore.ActiveSync
                                 x.IsDispatched == true);
                     if (0 != deles.Count ()) {
                         foreach (var change in deles) {
-                            DataSource.Owner.Db.Delete (BackEnd.DbActors.Proto, change);
+                            DataSource.Owner.Db.Delete (change);
                         }
                     }
                     // Perform all commands.
@@ -185,7 +185,7 @@ namespace NachoCore.ActiveSync
                     break;
                 }
 
-                DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+                DataSource.Owner.Db.Update (folder);
             }
             if (HadEmailMessageChanges) {
                 DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
@@ -210,7 +210,7 @@ namespace NachoCore.ActiveSync
         {
             foreach (var folder in FoldersInRequest) {
                 folder.AsSyncRequired = false;
-                DataSource.Owner.Db.Update (BackEnd.DbActors.Proto, folder);
+                DataSource.Owner.Db.Update (folder);
             }
             if (FoldersNeedingSync ().Any ()) {
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC1");
@@ -290,7 +290,7 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
-            DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, emailMessage);
+            DataSource.Owner.Db.Insert (emailMessage);
             if (null != xmlAttachments) {
                 foreach (XElement xmlAttachment in xmlAttachments) {
                     if ((uint)Xml.AirSyncBase.MethodCode.NormalAttachment !=
@@ -314,7 +314,7 @@ namespace NachoCore.ActiveSync
                     if (null != isInline) {
                         attachment.IsInline = ParseXmlBoolean (isInline);
                     }
-                    DataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, attachment);
+                    DataSource.Owner.Db.Insert (attachment);
                     /*
                      * DON'T do this here. Download attachments strategically.
                     // Create & save the pending update record.
