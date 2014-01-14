@@ -311,6 +311,7 @@ namespace NachoCore.ActiveSync
                     var attachment = new McAttachment {
                         AccountId = emailMessage.AccountId,
                         EmailMessageId = emailMessage.Id,
+                        DisplayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName).Value,
                         IsDownloaded = false,
                         IsInline = false,
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
