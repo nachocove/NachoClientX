@@ -14,7 +14,8 @@ namespace NachoCore.Utils
         public const int LOG_TIMER = 16;
         public const int LOG_HTTP = 32;
         public const int LOG_STATE = 64;
-        public static int logLevel = 127;
+        public const int LOG_RENDER = 128;
+        public static int logLevel = 255;
 
         public Log ()
         {
