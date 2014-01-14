@@ -125,6 +125,8 @@
     <Compile Include="NachoCore\NcCommStatus\NcCommStatus.cs" />
     <Compile Include="NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs" />
     <Compile Include="NachoCore\NcEmailAddress.cs" />
+    <Compile Include="NachoCore\INachoEmailMessages.cs" />
+    <Compile Include="NachoCore\NachoEmailMessages.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

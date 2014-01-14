@@ -38,6 +38,8 @@ namespace NachoClient.iOS
             SendButton.Clicked += (object sender, EventArgs e) => {
                 SendMessage ();
             };
+
+            Pushing = true;
         }
 
         public override void ViewWillAppear (bool animated)

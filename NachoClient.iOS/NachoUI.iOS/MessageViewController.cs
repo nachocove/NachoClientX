@@ -32,6 +32,12 @@ namespace NachoClient.iOS
                 thisemailmsg = source.getEmailMessage (rowPath);
                 rdmsg.SetMessage (thisemailmsg);
             }
+
+            if(segue.Identifier == "MessagesToRead") {
+                var vc = (ReadMessageViewController) segue.DestinationViewController;
+                vc.messages = new NachoEmailMessages (currentFolder);
+                vc.messageIndex = TableView.IndexPathForSelectedRow.Row;
+            }
         }
 
         public override void ViewDidLoad ()
