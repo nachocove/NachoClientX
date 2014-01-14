@@ -56,5 +56,37 @@ namespace NachoClient.iOS
         public MessageViewController (IntPtr handle) : base (handle)
         {
         }
+
+        public class MessageTableSource  : UITableViewSource
+        {
+            protected INachoEmailMessages messages;
+
+            public MessageTableSource (McFolder folder)
+            {
+                messages = new NachoEmailMessages(folder);
+            }
+
+            public override int RowsInSection (UITableView tableview, int section)
+            {
+                return messages.Count ();
+            }
+
+            public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+            {
+                UITableViewCell cell = tableView.DequeueReusableCell ("msgheader");
+
+                var message = messages.GetEmailMessage (indexPath.Row);
+
+                cell.TextLabel.Text = message.Subject;
+                cell.DetailTextLabel.Text = message.From;
+
+                return cell;
+            }
+
+            public McEmailMessage getEmailMessage (NSIndexPath id)
+            {
+                return messages.GetEmailMessage (id.Row);
+            }
+        }
     }
 }
