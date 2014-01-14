@@ -25,8 +25,6 @@ namespace NachoClient.Android.Tablet
     {
         int count = 1;
 
-        private NachoDemo Demo { get; set; }
-
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
@@ -43,7 +41,6 @@ namespace NachoClient.Android.Tablet
             };
 
             NachoPlatform.Assets.AndroidAssetManager = Assets;
-            Demo = new NachoDemo ();
         }
     }
 }

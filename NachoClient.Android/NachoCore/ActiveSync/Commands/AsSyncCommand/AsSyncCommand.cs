@@ -45,14 +45,18 @@ namespace NachoCore.ActiveSync
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
                     // Set flags when syncing email
                     var classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
+                    var options = new XElement (m_ns + Xml.AirSync.Options);
                     if (Xml.AirSync.ClassCode.Email.Equals (classCode)) {
-                        // <Options>
-                        //   <MIMESupport>2</MIMESupport> -- Send MIME data for all messages
-                        //   <FilterType>5</FilterType>  -- One month time window
-                        // </Options>
-                        collection.Add (new XElement (m_ns + Xml.AirSync.Options,
-                            new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime),
-                            new XElement (m_ns + Xml.AirSync.FilterType, "5")));
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime));
+                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, "5"));
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime),
+                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
+                    }
+                    // Expect that we will have more complex code that may add to options, and that
+                    // we should only send options if not empty.
+                    if (options.HasElements) {
+                        collection.Add (options);
                     }
                     // If there are email deletes, then push them up to the server.
                     var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
@@ -248,6 +252,8 @@ namespace NachoCore.ActiveSync
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != body) {
                         emailMessage.Body = body.Value;
+                    } else {
+                        Console.WriteLine ("Truncated message from server.");
                     }
                     break;
                 case Xml.Email.To:

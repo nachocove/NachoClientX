@@ -105,7 +105,7 @@ Global
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
+		StartupItem = Test.iOS\Test.iOS.csproj
 		Policies = $0
 		$0.StandardHeader = $1
 		$1.Text = @ Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.\n
