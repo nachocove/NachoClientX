@@ -267,7 +267,6 @@
     <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs">
       <DependentUpon>LaunchViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\MessageTableSource.cs" />
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
       <DependentUpon>MessageViewController.cs</DependentUpon>
