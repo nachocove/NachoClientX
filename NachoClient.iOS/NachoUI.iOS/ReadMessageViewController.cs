@@ -3,10 +3,14 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
 using MimeKit;
 
 namespace NachoClient.iOS
@@ -37,46 +41,58 @@ namespace NachoClient.iOS
         {
             var root = new RootElement ("Message");
 
-            var section = new Section ();
-            root.Add (section);
-
             var m = messages.GetEmailMessage (messageIndex);
 
+            var topSection = new Section ();
+            root.Add (topSection);
+
             if (null != m.From) {
-                section.Add (new StringElement ("From: " + m.From));
+                topSection.Add (new StringElement ("From: " + m.From));
             }
             if (null != m.Subject) {
-                section.Add (new StringElement ("Subject: " + m.Subject));
+                topSection.Add (new StringElement ("Subject: " + m.Subject));
             }
 
             if (null != m.To) {
                 string[] toList = m.To.Split (new Char [] { ',' });
                 foreach (var s in toList) {
-                    section.Add (new StringElement ("To: " + s));
+                    topSection.Add (new StringElement ("To: " + s));
                 }
             }
             if (null != m.DisplayTo) {
                 string[] displayToList = m.DisplayTo.Split (new Char[] { ';' });
                 foreach (var s in displayToList) {
-                    section.Add (new StringElement ("Display To: " + s));
+                    topSection.Add (new StringElement ("Display To: " + s));
                 }
             }
             if (null != m.Cc) {
                 string[] CcList = m.Cc.Split (new Char [] { ',' });
                 foreach (var s in CcList) {
-                    section.Add (new StringElement ("Cc: " + s));
+                    topSection.Add (new StringElement ("Cc: " + s));
                 }
             }
+
+            var attachments = BackEnd.Instance.Db.Table<McAttachment> ().Where (a => a.EmailMessageId == m.Id).ToList ();
+
+            if (0 < attachments.Count) {
+                var attachmentSection = new Section ("Attachments");
+                root.Add (attachmentSection);
+                foreach (var a in attachments) {
+                    attachmentSection.Add (new StringElement (a.DisplayName));
+                }
+            }
+
+            var bodySection = new Section ();
+            root.Add (bodySection);
 
             if (null != m.Body) {
                 var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (m.Body));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var message = bodyParser.ParseMessage ();
-                RenderMessage (message, section);
+                RenderMessage (message, bodySection);
             }
-
+          
             Root = root;
-
 
         }
 
@@ -130,8 +146,16 @@ namespace NachoClient.iOS
                 }
                 return;
             }
+            if (entity.ContentType.Matches ("application", "ics")) {
+                NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
+                return;
+            }
+            if (entity.ContentType.Matches ("application", "octet-stream")) {
+                NachoCore.Utils.Log.Error ("Unhandled octet-stream: {0}\n", part.ContentType);
+                return;
+            }
 
-            NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part);
+            NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
         }
 
         void RenderHtml (string html, Section section)
@@ -139,12 +163,14 @@ namespace NachoClient.iOS
 //            var e = new HtmlStringElement ("", html);
 //            section.Add (e);
 
+            Log.Info(Log.LOG_RENDER, "Html element string:\n{0}", html);
+
             int i = 0;
 
             var web = new UIWebView (UIScreen.MainScreen.Bounds) {
                 BackgroundColor = UIColor.White,
                 ScalesPageToFit = true,
-                AutoresizingMask = UIViewAutoresizing.All
+                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin ,
             };
             web.LoadStarted += delegate {
                 // this is called several times
@@ -156,6 +182,13 @@ namespace NachoClient.iOS
                 if (--i == 0) {
                     // we stopped loading
                     web.StopLoading ();
+
+                    System.Drawing.RectangleF frame = web.Frame;
+                    web.Frame = new System.Drawing.RectangleF(frame.X, frame.Y, frame.Width, 1);
+                    var size = web.SizeThatFits(new System.Drawing.SizeF(0f, 0f));
+                    frame.Size = size;
+                    web.Frame = frame;
+
 //                    web.Dispose ();
                 }
             };
@@ -170,6 +203,7 @@ namespace NachoClient.iOS
                     UIApplication.SharedApplication.OpenUrl (request.Url);
                     return false;
                 }
+                NachoCore.Utils.Log.Info("Html element link: {0}", request.Url);
                 return true;
             };
 
