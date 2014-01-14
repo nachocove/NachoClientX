@@ -42,30 +42,38 @@ namespace NachoClient.iOS
 
             var m = messages.GetEmailMessage (messageIndex);
 
-            section.Add (new StringElement ("From: " + m.From));
-            section.Add (new StringElement ("Subject: " + m.Subject));
-
-
-            string[] toList = m.To.Split (new Char [] { ',' });
-            foreach (var s in toList) {
-                section.Add (new StringElement ("To: " + s));
+            if (null != m.From) {
+                section.Add (new StringElement ("From: " + m.From));
             }
-            string[] displayToList = m.DisplayTo.Split (new Char[] { ';' });
-            foreach (var s in displayToList) {
-                section.Add (new StringElement ("Display To: " + s));
-            }
-            string[] CcList = m.To.Split (new Char [] { ',' });
-            foreach (var s in CcList) {
-                section.Add (new StringElement ("Cc: " + s));
+            if (null != m.Subject) {
+                section.Add (new StringElement ("Subject: " + m.Subject));
             }
 
-            var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (m.Body));
+            if (null != m.To) {
+                string[] toList = m.To.Split (new Char [] { ',' });
+                foreach (var s in toList) {
+                    section.Add (new StringElement ("To: " + s));
+                }
+            }
+            if (null != m.DisplayTo) {
+                string[] displayToList = m.DisplayTo.Split (new Char[] { ';' });
+                foreach (var s in displayToList) {
+                    section.Add (new StringElement ("Display To: " + s));
+                }
+            }
+            if (null != m.Cc) {
+                string[] CcList = m.Cc.Split (new Char [] { ',' });
+                foreach (var s in CcList) {
+                    section.Add (new StringElement ("Cc: " + s));
+                }
+            }
 
-            var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-
-            var message = bodyParser.ParseMessage ();
-
-            RenderMessage (message, section);
+            if (null != m.Body) {
+                var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (m.Body));
+                var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                var message = bodyParser.ParseMessage ();
+                RenderMessage (message, section);
+            }
 
             Root = root;
 
