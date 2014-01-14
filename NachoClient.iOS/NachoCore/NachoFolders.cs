@@ -59,10 +59,12 @@ namespace NachoClient
             list = new List<McFolder> ();
             var temp = BackEnd.Instance.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
-                // TODO: Need a matching enumeration
-                var match = (Xml.FolderHierarchy.TypeCode)l.Type;
-                if (Array.IndexOf (types, match) >= 0) {
-                    list.Add (l);
+                if (!l.IsHidden) {
+                    // TODO: Need a matching enumeration
+                    var match = (Xml.FolderHierarchy.TypeCode)l.Type;
+                    if (Array.IndexOf (types, match) >= 0) {
+                        list.Add (l);
+                    }
                 }
             } 
         }
