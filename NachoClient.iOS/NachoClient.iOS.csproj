@@ -434,6 +434,17 @@
     <Compile Include="..\NachoClient.Android\NachoCore\NcEmailAddress.cs">
       <Link>NachoCore\NcEmailAddress.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\NachoEmailMessages.cs">
+      <Link>NachoCore\NachoEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\INachoEmailMessages.cs">
+      <Link>NachoCore\INachoEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\HtmlStringElement.cs" />
+    <Compile Include="NachoUI.iOS\ReadMessageViewController.cs" />
+    <Compile Include="NachoUI.iOS\ReadMessageViewController.designer.cs">
+      <DependentUpon>ReadMessageViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

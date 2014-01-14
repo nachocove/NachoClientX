@@ -539,7 +539,7 @@
                                     </subviews>
                                 </tableViewCellContentView>
                                 <connections>
-                                    <segue destination="vd4-1f-HSj" kind="push" identifier="readmessagesegue" id="mh3-nw-Qhq"/>
+                                    <segue destination="Bab-sA-Ld3" kind="push" identifier="MessagesToRead" id="91g-V6-H1y"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>
@@ -568,14 +568,14 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0lV-Qi-K87" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-462" y="-257"/>
+            <point key="canvasLocation" x="-466" y="-257"/>
         </scene>
         <!--Reply View Controller-->
         <scene sceneID="4G3-0m-Frg">
             <objects>
                 <viewController id="Ko0-NA-sWD" customClass="ReplyViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="yLC-ul-ctZ">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Reply To: " minimumFontSize="17" id="66D-fh-T3q">
@@ -852,11 +852,11 @@
             <objects>
                 <viewController id="vd4-1f-HSj" customClass="ReadMsgController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Thc-bq-vyd">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <webView contentMode="scaleToFill" id="BJK-6d-RrU">
-                                <rect key="frame" x="0.0" y="113" width="320" height="303"/>
+                                <rect key="frame" x="0.0" y="113" width="320" height="367"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" red="0.26992492709999999" green="0.68042456230000004" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                             </webView>
@@ -878,6 +878,36 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="qGJ-CB-lbf" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="166" y="-257"/>
+        </scene>
+        <!--Read Message View Controller-->
+        <scene sceneID="sfz-09-thi">
+            <objects>
+                <tableViewController storyboardIdentifier="ReadMessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Bab-sA-Ld3" customClass="ReadMessageViewController" sceneMemberID="viewController">
+                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="a0A-S1-Sif">
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <prototypes>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="pMr-lL-UdS">
+                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="pMr-lL-UdS" id="jV0-eK-94w">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="Bab-sA-Ld3" id="EXd-zX-bnR"/>
+                            <outlet property="delegate" destination="Bab-sA-Ld3" id="4fR-lE-cuj"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="heA-7l-c0K"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Uco-jf-3Pp" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="166" y="432"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="qtI-DM-OKG">
