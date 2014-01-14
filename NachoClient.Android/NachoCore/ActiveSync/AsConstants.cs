@@ -509,6 +509,7 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = AirSync.ClassCode.Email;
             // Alpha order.
+            public const string Cc = "Cc";
             public const string DateReceived = "DateReceived";
             public const string DisplayTo = "DisplayTo";
             public const string From = "From";

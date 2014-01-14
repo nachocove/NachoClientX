@@ -259,6 +259,9 @@ namespace NachoCore.ActiveSync
                 case Xml.Email.To:
                     emailMessage.To = child.Value;
                     break;
+                case Xml.Email.Cc:
+                    emailMessage.Cc = child.Value;
+                    break;
                 case Xml.Email.From:
                     emailMessage.From = child.Value;
                     break;

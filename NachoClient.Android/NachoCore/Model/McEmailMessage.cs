@@ -19,6 +19,7 @@ namespace NachoCore.Model
         public string From { set; get; }
         [Indexed]
         public string To { set; get; }
+        public string Cc { set; get; }
         [Indexed]
         public string Subject { set; get; }
         public string ReplyTo { set; get; }
