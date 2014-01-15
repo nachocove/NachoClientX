@@ -40,6 +40,7 @@ namespace NachoClient.iOS
         protected void ReloadRoot ()
         {
             var root = new RootElement ("Message");
+            root.UnevenRows = true;
 
             var m = messages.GetEmailMessage (messageIndex);
 
@@ -160,9 +161,6 @@ namespace NachoClient.iOS
 
         void RenderHtml (string html, Section section)
         {
-//            var e = new HtmlStringElement ("", html);
-//            section.Add (e);
-
             Log.Info(Log.LOG_RENDER, "Html element string:\n{0}", html);
 
             int i = 0;
@@ -170,7 +168,7 @@ namespace NachoClient.iOS
             var web = new UIWebView (UIScreen.MainScreen.Bounds) {
                 BackgroundColor = UIColor.White,
                 ScalesPageToFit = true,
-                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin ,
+                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin,
             };
             web.LoadStarted += delegate {
                 // this is called several times
@@ -184,8 +182,8 @@ namespace NachoClient.iOS
                     web.StopLoading ();
 
                     System.Drawing.RectangleF frame = web.Frame;
-                    web.Frame = new System.Drawing.RectangleF(frame.X, frame.Y, frame.Width, 1);
-                    var size = web.SizeThatFits(new System.Drawing.SizeF(0f, 0f));
+                    web.Frame = new System.Drawing.RectangleF (frame.X, frame.Y, frame.Width, 1);
+                    var size = web.SizeThatFits (new System.Drawing.SizeF (0f, 0f));
                     frame.Size = size;
                     web.Frame = frame;
 
@@ -203,7 +201,7 @@ namespace NachoClient.iOS
                     UIApplication.SharedApplication.OpenUrl (request.Url);
                     return false;
                 }
-                NachoCore.Utils.Log.Info("Html element link: {0}", request.Url);
+                NachoCore.Utils.Log.Info ("Html element link: {0}", request.Url);
                 return true;
             };
 
@@ -221,9 +219,11 @@ namespace NachoClient.iOS
 
         void RenderImage (MemoryStream imageStream, Section section)
         {
+            imageStream.Seek (0, SeekOrigin.Begin);
             var data = NSData.FromStream (imageStream);
             var image = UIImage.LoadFromData (data);
-            var e = new ImageElement (image);
+            var view = new UIImageView (image);
+            var e = new UIViewElement ("", view, true);
             section.Add (e);
         }
     }
