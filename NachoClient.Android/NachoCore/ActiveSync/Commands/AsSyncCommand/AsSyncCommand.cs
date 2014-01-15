@@ -303,10 +303,6 @@ namespace NachoCore.ActiveSync
             DataSource.Owner.Db.Insert (emailMessage);
             if (null != xmlAttachments) {
                 foreach (XElement xmlAttachment in xmlAttachments) {
-                    if ((uint)Xml.AirSyncBase.MethodCode.NormalAttachment !=
-                        uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value)) {
-                        continue;
-                    }
                     // Create & save the attachment record.
                     var attachment = new McAttachment {
                         AccountId = emailMessage.AccountId,
@@ -314,8 +310,9 @@ namespace NachoCore.ActiveSync
                         DisplayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName).Value,
                         IsDownloaded = false,
                         IsInline = false,
+                        EstimatedDataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
-                        DataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value)
+                        Method = uint.Parse(xmlAttachment.Element(m_baseNs + Xml.AirSyncBase.Method).Value),
                     };
                     var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
                     if (null != contentLocation) {
