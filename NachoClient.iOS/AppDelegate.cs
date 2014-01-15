@@ -12,6 +12,7 @@ using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Brain;
 using SQLite;
 
 namespace NachoClient.iOS
@@ -45,30 +46,13 @@ namespace NachoClient.iOS
                 this.Account = Be.Db.Table<McAccount>().ElementAt(0);
             }
             Be.Start ();
+            NcContactGleaner.Start ();
             return true;
         }
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             eventStore = new EKEventStore ( );
             launchBe();
-            var outbox = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault(x => "Outbox" == x.DisplayName && x.IsClientOwned == true);
-            if (null == outbox) {
-                outbox = McFolder.CreateClientOwned ();
-                outbox.DisplayName = "Outbox"; // Don't ever search for this - remember localization will change it!
-                outbox.ParentId = "0";
-                outbox.ServerId = "OUTBOX"; // Search for this instead.
-                outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
-                BackEnd.Instance.Db.Insert (outbox);
-            }
-            var galCache = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault(x => "GAL" == x.DisplayName && x.IsClientOwned == true);
-            if (null == galCache) {
-                galCache = McFolder.CreateClientOwned ();
-                galCache.IsHidden = true;
-                galCache.ParentId = "0";
-                galCache.ServerId = "GAL";
-                galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
-                BackEnd.Instance.Db.Insert (galCache);
-            }
             Console.WriteLine ("AppDelegate FinishedLaunching done.");
 
             return true;

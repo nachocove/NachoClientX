@@ -138,6 +138,8 @@
     <Folder Include="NachoUI.iOS\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
     <Folder Include="NachoCore\NcCommStatus\" />
+    <Folder Include="NachoCore\Brain\" />
+    <Folder Include="NachoCore\Utils\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -160,9 +162,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXMLCodePage.cs">
       <Link>NachoCore\Extensions\ASWBXMLCodePage.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\StateMachine.cs">
-      <Link>NachoCore\Extensions\StateMachine.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
@@ -352,7 +351,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\INachoFolders.cs">
       <Link>NachoCore\INachoFolders.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\NachoFolders.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
       <Link>NachoCore\Model\McAccount.cs</Link>
     </Compile>
@@ -443,6 +441,13 @@
     <Compile Include="NachoUI.iOS\ReadMessageViewController.designer.cs">
       <DependentUpon>ReadMessageViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
+      <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\StateMachine.cs">
+      <Link>NachoCore\Utils\StateMachine.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\NachoFolders.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

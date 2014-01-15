@@ -26,15 +26,24 @@ using NachoCore.Utils;
  * */
 namespace NachoCore
 {
-    public class BackEnd : IBackEnd, IProtoControlOwner
+    public sealed class BackEnd : IBackEnd, IProtoControlOwner
     {
 
-        private static readonly BackEnd instance = new BackEnd();
+        private static volatile BackEnd instance;
+        private static object syncRoot = new Object();
 
         public static BackEnd Instance
         {
             get 
             {
+                if (instance == null) 
+                {
+                    lock (syncRoot) 
+                    {
+                        if (instance == null) 
+                            instance = new BackEnd ();
+                    }
+                }
                 return instance; 
             }
         }
@@ -60,6 +69,10 @@ namespace NachoCore
 
         public IBackEndOwner Owner { set; private get; }
 
+        private const string ClientOwned_Outbox = "Outbox2";
+        private const string ClientOwned_GalCache = "GAL";
+        private const string ClientOwned_Gleaned = "GLEANED";
+
         private ProtoControl ServiceFromAccount (McAccount account)
         {
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (account.Id));
@@ -71,11 +84,14 @@ namespace NachoCore
         // For IBackEnd.
         private BackEnd ()
         {
+            // Make sure DB is setup.
             var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             AttachmentsDir = Path.Combine (documents, "attachments");
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
             DbFileName = Path.Combine (documents, "db");
-            Db = new SQLiteConnection (DbFileName, storeDateTimeAsTicks: true);
+            Db = new SQLiteConnection (DbFileName, 
+                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, 
+                storeDateTimeAsTicks: true);
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
             Db.CreateTable<McFolder> ();
@@ -96,9 +112,10 @@ namespace NachoCore
             Db.CreateTable<McRecurrence> ();
             Db.CreateTable<McTimeZone> ();
  
-            Services = new List<ProtoControl> ();
-
+            // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 8;
+
+            Services = new List<ProtoControl> ();
         }
 
         public void Start ()
@@ -118,6 +135,32 @@ namespace NachoCore
                  */
                 service = new AsProtoControl (this, account);
                 Services.Add (service);
+                // Create client owned objects as needed.
+                if (null == GetOutbox (account.Id)) {
+                    var outbox = McFolder.CreateClientOwned (account);
+                    outbox.IsHidden = false;
+                    outbox.ParentId = "0";
+                    outbox.ServerId = ClientOwned_Outbox;
+                    outbox.DisplayName = ClientOwned_Outbox;
+                    outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
+                    BackEnd.Instance.Db.Insert (outbox);
+                }
+                if (null == GetGalCache (account.Id)) {
+                    var galCache = McFolder.CreateClientOwned (account);
+                    galCache.IsHidden = true;
+                    galCache.ParentId = "0";
+                    galCache.ServerId = ClientOwned_GalCache;
+                    galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
+                    BackEnd.Instance.Db.Insert (galCache);
+                }
+                if (null == GetGleaned (account.Id)) {
+                    var gleaned = McFolder.CreateClientOwned (account);
+                    gleaned.IsHidden = true;
+                    gleaned.ParentId = "0";
+                    gleaned.ServerId = ClientOwned_Gleaned;
+                    gleaned.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
+                    BackEnd.Instance.Db.Insert (gleaned);
+                }
             }
             NcCommStatus.Instance.Reset (account.ServerId);
             service.Execute ();
@@ -161,6 +204,29 @@ namespace NachoCore
         public string DeleteEmailCmd (McAccount account, int emailMessageId)
         {
             return ServiceFromAccount (account).DeleteEmailCmd (emailMessageId);
+        }
+
+        private McFolder GetClientOwned (int accountId, string serverId)
+        {
+            return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+                accountId == x.AccountId &&
+                serverId == x.ServerId &&
+                true == x.IsClientOwned);
+        }
+
+        public McFolder GetOutbox (int accountId)
+        {
+            return GetClientOwned (accountId, ClientOwned_Outbox);
+        }
+
+        public McFolder GetGalCache (int accountId)
+        {
+            return GetClientOwned (accountId, ClientOwned_GalCache);
+        }
+
+        public McFolder GetGleaned (int accountId)
+        {
+            return GetClientOwned (accountId, ClientOwned_Gleaned);
         }
 
         //

@@ -40,12 +40,13 @@ namespace NachoCore.Model
         }
 
         // "factory" to create client-owned folders.
-        public static McFolder CreateClientOwned ()
+        public static McFolder CreateClientOwned (McAccount account)
         {
             var folder = new McFolder () {
                 IsClientOwned = true,
                 AsSyncKey = "0",
                 AsSyncRequired = false,
+                AccountId = account.Id,
             };
             return folder;
         }

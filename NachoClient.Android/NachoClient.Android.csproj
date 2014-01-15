@@ -67,7 +67,6 @@
     <Compile Include="NachoCore\Extensions\ASWBXMLByteQueue.cs" />
     <Compile Include="NachoCore\Extensions\ASWBXMLCodePage.cs" />
     <Compile Include="NachoCore\Extensions\XmlDocument+Wbxml.cs" />
-    <Compile Include="NachoCore\Extensions\StateMachine.cs" />
     <Compile Include="NachoCore\Extensions\Helpers.cs" />
     <Compile Include="NachoCore\BackEnd.cs" />
     <Compile Include="NachoCore\ActiveSync\AsConstants.cs" />
@@ -127,6 +126,8 @@
     <Compile Include="NachoCore\NcEmailAddress.cs" />
     <Compile Include="NachoCore\INachoEmailMessages.cs" />
     <Compile Include="NachoCore\NachoEmailMessages.cs" />
+    <Compile Include="NachoCore\Utils\StateMachine.cs" />
+    <Compile Include="NachoCore\Brain\NcContactGleaner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -158,6 +159,8 @@
     <Folder Include="NachoUI.Android\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
     <Folder Include="NachoCore\NcCommStatus\" />
+    <Folder Include="NachoCore\Brain\" />
+    <Folder Include="NachoCore\Utils\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

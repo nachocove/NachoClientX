@@ -8,8 +8,6 @@ namespace NachoCore.Model
 {
     public partial class McContact : McItem
     {
-        public string ClassName = "McContact";
-
         /// <summary>
         /// Contacts schema
         /// Contacts are associated with folders, real or pseudo.
@@ -22,6 +20,7 @@ namespace NachoCore.Model
             ActiveSync,
             Device,
             User,
+            Internal,
         }
 
         /// ActiveSync or Device
@@ -42,13 +41,19 @@ namespace NachoCore.Model
         /// The collection of user labels assigned to the contact
         public List<McContactStringAttribute> Categories;
 
+        /// Reference count.
+        [Indexed]
+        public uint RefCount { get; set; }
+
         /// First name of the contact
+        [Indexed]
         public string FirstName { get; set; }
 
         /// Middle name of the contact
         public string MiddleName { get; set; }
 
         /// Contact's last name
+        [Indexed]
         public string LastName { get; set; }
 
         /// Suffix for the contact's name
@@ -67,6 +72,7 @@ namespace NachoCore.Model
         public string Department { get; set; }
 
         /// Company name for the contact
+        [Indexed]
         public string CompanyName { get; set; }
 
         /// Account name and/or number of the contact
@@ -165,6 +171,7 @@ namespace NachoCore.Model
         [Indexed]
         public McContactStringType Type { get; set; }
 
+        [Indexed]
         public string Value { get; set; }
     }
 
@@ -509,6 +516,16 @@ namespace NachoCore.Model
             }
             // TODO: Add error processing
             return NcResult.OK ();
+        }
+
+        public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
+        {
+            Console.WriteLine ("EMAIL ADDRESS '{0}'", emailAddress);
+            return BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c JOIN McContactStringAttribute AS s ON c.Id = s.ContactId WHERE " +
+            " c.AccountId = ? AND " +
+            " s.Type = ? AND " +
+            " s.Value = ? ",
+                accountId, McContactStringType.EmailAddress, emailAddress);
         }
     }
 }

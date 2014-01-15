@@ -26,6 +26,9 @@ namespace NachoCore.Model
         [Indexed]
         public string ClientId { get; set; }
 
+        [Indexed]
+        public bool HasBeenGleaned { get; set; }
+
         public McItem ()
         {
             ClientId = DateTime.UtcNow.Ticks.ToString ();
