@@ -439,6 +439,8 @@
     <Compile Include="NachoUI.iOS\ReadMessageViewController.designer.cs">
       <DependentUpon>ReadMessageViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\CidImageProtocol.cs" />
+    <Compile Include="NachoUI.iOS\MimeUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

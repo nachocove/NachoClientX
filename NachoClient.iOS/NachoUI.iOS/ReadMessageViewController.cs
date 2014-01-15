@@ -90,6 +90,7 @@ namespace NachoClient.iOS
                 var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (m.Body));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var message = bodyParser.ParseMessage ();
+                MimeUtilities.motd = message; // for cid handler
                 RenderMessage (message, bodySection);
             }
           
@@ -140,13 +141,10 @@ namespace NachoClient.iOS
                 return;
             }
             if (entity.ContentType.Matches ("image", "*")) {
-                using (var content = new MemoryStream ()) {
-                    // If the content is base64 encoded (which it probably is), decode it.
-                    part.ContentObject.DecodeTo (content);
-                    RenderImage (content, section);
-                }
+                RenderImage (part, section);
                 return;
             }
+
             if (entity.ContentType.Matches ("application", "ics")) {
                 NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
                 return;
@@ -161,7 +159,7 @@ namespace NachoClient.iOS
 
         void RenderHtml (string html, Section section)
         {
-            Log.Info(Log.LOG_RENDER, "Html element string:\n{0}", html);
+            Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
 
             int i = 0;
 
@@ -217,11 +215,9 @@ namespace NachoClient.iOS
             section.Add (e);
         }
 
-        void RenderImage (MemoryStream imageStream, Section section)
+        void RenderImage (MimePart part, Section section)
         {
-            imageStream.Seek (0, SeekOrigin.Begin);
-            var data = NSData.FromStream (imageStream);
-            var image = UIImage.LoadFromData (data);
+            var image = MimeUtilities.Render (part);
             var view = new UIImageView (image);
             var e = new UIViewElement ("", view, true);
             section.Add (e);
