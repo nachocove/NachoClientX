@@ -318,6 +318,10 @@ namespace NachoCore.ActiveSync
                     if (null != contentLocation) {
                         attachment.ContentLocation = contentLocation.Value;
                     }
+                    var contentId = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentId);
+                    if (null != contentId) {
+                        attachment.ContentId = contentId.Value;
+                    }
                     var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
                     if (null != isInline) {
                         attachment.IsInline = ParseXmlBoolean (isInline);
