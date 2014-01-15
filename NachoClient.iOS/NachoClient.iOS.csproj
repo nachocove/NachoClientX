@@ -271,10 +271,6 @@
     <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
       <DependentUpon>MessageViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\ReadMsgController.cs" />
-    <Compile Include="NachoUI.iOS\ReadMsgController.designer.cs">
-      <DependentUpon>ReadMsgController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ReplyViewController.cs" />
     <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs">
       <DependentUpon>ReplyViewController.cs</DependentUpon>

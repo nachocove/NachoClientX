@@ -847,38 +847,6 @@
             </objects>
             <point key="canvasLocation" x="640" y="-955"/>
         </scene>
-        <!--Read Msg Controller-->
-        <scene sceneID="4vP-QZ-DLy">
-            <objects>
-                <viewController id="vd4-1f-HSj" customClass="ReadMsgController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="Thc-bq-vyd">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                        <subviews>
-                            <webView contentMode="scaleToFill" id="BJK-6d-RrU">
-                                <rect key="frame" x="0.0" y="113" width="320" height="367"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <color key="backgroundColor" red="0.26992492709999999" green="0.68042456230000004" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                            </webView>
-                        </subviews>
-                        <color key="backgroundColor" red="0.26992492709999999" green="0.68042456230000004" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                    </view>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="LEJ-7X-qYt">
-                        <barButtonItem key="backBarButtonItem" title="Messages" id="UHN-MX-9Gw"/>
-                        <barButtonItem key="rightBarButtonItem" title="Reply" id="Up0-wy-iyQ">
-                            <connections>
-                                <action selector="btnComposeMessage:" destination="vd4-1f-HSj" id="sTi-OR-Wo7"/>
-                                <segue destination="Ko0-NA-sWD" kind="push" identifier="replymessagesegue" id="f8D-0x-XXW"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
-                    <nil key="simulatedBottomBarMetrics"/>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="qGJ-CB-lbf" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="166" y="-257"/>
-        </scene>
         <!--Read Message View Controller-->
         <scene sceneID="sfz-09-thi">
             <objects>
