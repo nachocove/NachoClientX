@@ -229,7 +229,7 @@ namespace NachoCore.ActiveSync
             // If we don't sync the flagged folders, then the ping command starts right back up.
             // TODO: We need to be smarter about prioritization of sync'ing.
             return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
-                true == x.AsSyncRequired && false == x.IsClientOwned);
+            true == x.AsSyncRequired && false == x.IsClientOwned);
         }
         // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
         private McEmailMessage AddEmail (XElement command, McFolder folder)
@@ -307,13 +307,16 @@ namespace NachoCore.ActiveSync
                     var attachment = new McAttachment {
                         AccountId = emailMessage.AccountId,
                         EmailMessageId = emailMessage.Id,
-                        DisplayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName).Value,
                         IsDownloaded = false,
                         IsInline = false,
                         EstimatedDataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
-                        Method = uint.Parse(xmlAttachment.Element(m_baseNs + Xml.AirSyncBase.Method).Value),
+                        Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
                     };
+                    var displayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName);
+                    if (null != displayName) {
+                        attachment.DisplayName = displayName.Value;
+                    }
                     var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
                     if (null != contentLocation) {
                         attachment.ContentLocation = contentLocation.Value;
