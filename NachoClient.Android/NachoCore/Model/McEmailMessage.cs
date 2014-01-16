@@ -10,8 +10,6 @@ namespace NachoCore.Model
         private const string CrLf = "\r\n";
         private const string ColonSpace = ": ";
 
-        public const string ClassName = "NcEmailMessage";
-
         [Indexed]
         public string Body { set; get; }
         public string Encoding { set; get; }

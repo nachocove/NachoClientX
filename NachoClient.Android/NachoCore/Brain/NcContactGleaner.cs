@@ -14,8 +14,9 @@ namespace NachoCore.Brain
     public class NcContactGleaner
     {
         private const uint MaxSaneAddressLength = 40;
+        #pragma warning disable 414
         private static Timer Invoker;
-
+        #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
             var nextMsg = BackEnd.Instance.Db.Table<McEmailMessage> ().FirstOrDefault (x => x.HasBeenGleaned == false);
@@ -67,6 +68,7 @@ namespace NachoCore.Brain
                         if (0 == contacts.Count &&
                             MaxSaneAddressLength >= mbAddr.Address.Length &&
                             !mbAddr.Address.Contains ("noreply") &&
+                            !mbAddr.Address.Contains ("no-reply") &&
                             !mbAddr.Address.Contains ("donotreply")) {
                             // Create a new gleaned contact.
                             var contact = new McContact () {
@@ -77,6 +79,7 @@ namespace NachoCore.Brain
                             };
                             BackEnd.Instance.Db.Insert (contact);
                             var strattr = new McContactStringAttribute () {
+                                Name = "Email1Address",
                                 Value = mbAddr.Address,
                                 Type = McContactStringType.EmailAddress,
                                 ContactId = contact.Id,

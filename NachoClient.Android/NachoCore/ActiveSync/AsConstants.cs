@@ -240,6 +240,7 @@ namespace NachoCore.ActiveSync
             public const string Attachments = "Attachments";
             public const string Body = "Body";
             public const string BodyPreference = "BodyPreference";
+            public const string ContentId = "ContentId";
             public const string ContentLocation = "ContentLocation";
             public const string ContentType = "ContentType";
             public const string Data = "Data";

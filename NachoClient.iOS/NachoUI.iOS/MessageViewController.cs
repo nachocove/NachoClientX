@@ -22,17 +22,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            McEmailMessage thisemailmsg;
-
-            if (segue.Identifier == "readmessagesegue") {
-                var rdmsg = (ReadMsgController)segue.DestinationViewController; //our destination
-
-                var source = TableView.Source as MessageTableSource;
-                var rowPath = TableView.IndexPathForSelectedRow;
-                thisemailmsg = source.getEmailMessage (rowPath);
-                rdmsg.SetMessage (thisemailmsg);
-            }
-
             if(segue.Identifier == "MessagesToRead") {
                 var vc = (ReadMessageViewController) segue.DestinationViewController;
                 vc.messages = new NachoEmailMessages (currentFolder);

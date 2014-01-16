@@ -520,7 +520,6 @@ namespace NachoCore.Model
 
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
-            Console.WriteLine ("EMAIL ADDRESS '{0}'", emailAddress);
             return BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c JOIN McContactStringAttribute AS s ON c.Id = s.ContactId WHERE " +
             " c.AccountId = ? AND " +
             " s.Type = ? AND " +

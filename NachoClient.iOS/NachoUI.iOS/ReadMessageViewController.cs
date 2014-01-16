@@ -40,6 +40,7 @@ namespace NachoClient.iOS
         protected void ReloadRoot ()
         {
             var root = new RootElement ("Message");
+            root.UnevenRows = true;
 
             var m = messages.GetEmailMessage (messageIndex);
 
@@ -89,6 +90,7 @@ namespace NachoClient.iOS
                 var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (m.Body));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var message = bodyParser.ParseMessage ();
+                MimeUtilities.motd = message; // for cid handler
                 RenderMessage (message, bodySection);
             }
           
@@ -139,13 +141,10 @@ namespace NachoClient.iOS
                 return;
             }
             if (entity.ContentType.Matches ("image", "*")) {
-                using (var content = new MemoryStream ()) {
-                    // If the content is base64 encoded (which it probably is), decode it.
-                    part.ContentObject.DecodeTo (content);
-                    RenderImage (content, section);
-                }
+                RenderImage (part, section);
                 return;
             }
+
             if (entity.ContentType.Matches ("application", "ics")) {
                 NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
                 return;
@@ -160,17 +159,14 @@ namespace NachoClient.iOS
 
         void RenderHtml (string html, Section section)
         {
-//            var e = new HtmlStringElement ("", html);
-//            section.Add (e);
-
-            Log.Info(Log.LOG_RENDER, "Html element string:\n{0}", html);
+            Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
 
             int i = 0;
 
             var web = new UIWebView (UIScreen.MainScreen.Bounds) {
                 BackgroundColor = UIColor.White,
                 ScalesPageToFit = true,
-                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin ,
+                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin,
             };
             web.LoadStarted += delegate {
                 // this is called several times
@@ -184,8 +180,8 @@ namespace NachoClient.iOS
                     web.StopLoading ();
 
                     System.Drawing.RectangleF frame = web.Frame;
-                    web.Frame = new System.Drawing.RectangleF(frame.X, frame.Y, frame.Width, 1);
-                    var size = web.SizeThatFits(new System.Drawing.SizeF(0f, 0f));
+                    web.Frame = new System.Drawing.RectangleF (frame.X, frame.Y, frame.Width, 1);
+                    var size = web.SizeThatFits (new System.Drawing.SizeF (0f, 0f));
                     frame.Size = size;
                     web.Frame = frame;
 
@@ -203,7 +199,7 @@ namespace NachoClient.iOS
                     UIApplication.SharedApplication.OpenUrl (request.Url);
                     return false;
                 }
-                NachoCore.Utils.Log.Info("Html element link: {0}", request.Url);
+                NachoCore.Utils.Log.Info ("Html element link: {0}", request.Url);
                 return true;
             };
 
@@ -219,11 +215,11 @@ namespace NachoClient.iOS
             section.Add (e);
         }
 
-        void RenderImage (MemoryStream imageStream, Section section)
+        void RenderImage (MimePart part, Section section)
         {
-            var data = NSData.FromStream (imageStream);
-            var image = UIImage.LoadFromData (data);
-            var e = new ImageElement (image);
+            var image = MimeUtilities.Render (part);
+            var view = new UIImageView (image);
+            var e = new UIViewElement ("", view, true);
             section.Add (e);
         }
     }

@@ -13,6 +13,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using NachoClient.iOS;
 using SQLite;
 
 namespace NachoClient.iOS
@@ -51,7 +52,11 @@ namespace NachoClient.iOS
         }
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
+            // An instance of the EKEventStore class represents the iOS Calendar database.
             eventStore = new EKEventStore ( );
+            // Set up webview to handle html with embedded custom types (curtesy of Exchange)
+            NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof (CidImageProtocol)));
+
             launchBe();
             Console.WriteLine ("AppDelegate FinishedLaunching done.");
 
