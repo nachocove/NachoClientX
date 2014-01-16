@@ -41,7 +41,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "ReadMessageToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
-                vc.message = messages.GetEmailMessage(messageIndex);
+                vc.message = messages.GetEmailMessage (messageIndex);
             }
         }
 
@@ -87,7 +87,21 @@ namespace NachoClient.iOS
                 var attachmentSection = new Section ("Attachments");
                 root.Add (attachmentSection);
                 foreach (var a in attachments) {
-                    attachmentSection.Add (new StringElement (a.DisplayName));
+                    StyledStringElement s;
+                    if (a.IsInline) {
+                        s = new StyledStringElement (a.DisplayName, "Is inline", UITableViewCellStyle.Subtitle);
+                    } else if (a.IsDownloaded) {
+                        s = new StyledStringElement (a.DisplayName, "Is downloaded", UITableViewCellStyle.Subtitle);
+                        s.Tapped += delegate {
+                            DisplayAttachment (a);
+                        };
+                    } else {
+                        s = new StyledStringElement (a.DisplayName, "Is not downloaded", UITableViewCellStyle.Subtitle);
+                        s.Tapped += delegate {
+                            DownloadAttachment (a);
+                        };
+                    }
+                    attachmentSection.Add (s);
                 }
             }
 
@@ -225,10 +239,20 @@ namespace NachoClient.iOS
 
         void RenderImage (MimePart part, Section section)
         {
-            var image = MimeUtilities.Render (part);
+            var image = MimeUtilities.RenderImage (part);
             var view = new UIImageView (image);
             var e = new UIViewElement ("", view, true);
             section.Add (e);
+        }
+
+        void DisplayAttachment(McAttachment attachment)
+        {
+            // TODO: display attachment
+        }
+
+        void DownloadAttachment(McAttachment attachment)
+        {
+            // TODO: download attachment
         }
     }
 }
