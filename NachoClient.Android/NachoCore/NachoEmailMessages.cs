@@ -14,7 +14,7 @@ namespace NachoCore
 
         public NachoEmailMessages (McFolder folder)
         {
-            list = BackEnd.Instance.Db.Table<McEmailMessage> ().Where(c => c.FolderId == folder.Id).OrderBy (c => c.DateReceived).ToList ();
+            list = BackEnd.Instance.Db.Table<McEmailMessage> ().Where(c => c.FolderId == folder.Id).OrderByDescending (c => c.DateReceived).ToList ();
         }
 
         public int Count ()
