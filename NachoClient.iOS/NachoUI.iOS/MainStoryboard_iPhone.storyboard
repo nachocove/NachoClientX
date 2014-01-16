@@ -870,12 +870,48 @@
                             <outlet property="delegate" destination="Bab-sA-Ld3" id="4fR-lE-cuj"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" id="heA-7l-c0K"/>
+                    <navigationItem key="navigationItem" id="heA-7l-c0K">
+                        <barButtonItem key="rightBarButtonItem" title="Action" id="zz1-ue-F1w">
+                            <connections>
+                                <segue destination="byh-DH-3GC" kind="push" identifier="ReadMessageToMessageAction" id="k4c-kl-plv"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Uco-jf-3Pp" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="166" y="432"/>
+        </scene>
+        <!--Message Action View Controller-->
+        <scene sceneID="nFx-Tf-1CW">
+            <objects>
+                <tableViewController storyboardIdentifier="MessageActionViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="byh-DH-3GC" customClass="MessageActionViewController" sceneMemberID="viewController">
+                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="T44-gd-nja">
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <prototypes>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="sFE-jA-dCS">
+                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="sFE-jA-dCS" id="cDe-Xj-nGv">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="byh-DH-3GC" id="cGn-3l-RH7"/>
+                            <outlet property="delegate" destination="byh-DH-3GC" id="p9o-qC-NLa"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="RAF-OW-H4X"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="cEo-VB-3co" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="707" y="432"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="qtI-DM-OKG">

@@ -37,6 +37,14 @@ namespace NachoClient.iOS
             ReloadRoot ();
         }
 
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "ReadMessageToMessageAction") {
+                var vc = (MessageActionViewController)segue.DestinationViewController;
+                vc.message = messages.GetEmailMessage(messageIndex);
+            }
+        }
+
         protected void ReloadRoot ()
         {
             var root = new RootElement ("Message");

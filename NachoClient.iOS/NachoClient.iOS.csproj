@@ -446,6 +446,10 @@
     <Compile Include="NachoCore\NachoFolders.cs" />
     <Compile Include="NachoUI.iOS\CidImageProtocol.cs" />
     <Compile Include="NachoUI.iOS\MimeUtilities.cs" />
+    <Compile Include="NachoUI.iOS\MessageActionViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageActionViewController.designer.cs">
+      <DependentUpon>MessageActionViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
