@@ -44,6 +44,9 @@ namespace NachoCore.Brain
                 mimeMsg = bodyParser.ParseMessage ();
             } catch(Exception e) {
                 // TODO: Find root cause
+                // Mark the email message as gleaned.
+                emailMessage.HasBeenGleaned = true;
+                BackEnd.Instance.Db.Update (emailMessage);
                 NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
                 return;
             }
