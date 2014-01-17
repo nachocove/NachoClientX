@@ -68,7 +68,9 @@ namespace NachoCore.Brain
                 addrsLists.Add (mimeMsg.ReplyTo);
             }
             if (null != mimeMsg.Sender) {
-                addrsLists.Add (mimeMsg.Sender);
+                var senderAsList = new InternetAddressList ();
+                senderAsList.Add (mimeMsg.Sender);
+                addrsLists.Add (senderAsList);
             }
             foreach (var addrsList in addrsLists) {
                 foreach (var addr in addrsList) {

@@ -47,7 +47,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="MimeKit.Android">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Release\lib\MonoAndroid\MimeKit.Android.dll</HintPath>
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\MimeKit.Android.dll</HintPath>
     </Reference>
     <Reference Include="System.Net" />
     <Reference Include="DnDns.Android">
@@ -55,6 +55,9 @@
     </Reference>
     <Reference Include="NachoPlatform.Android">
       <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.Android\bin\Release\NachoPlatform.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Android">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

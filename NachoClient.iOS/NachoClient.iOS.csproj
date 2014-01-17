@@ -109,9 +109,6 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
-    <Reference Include="MimeKit.iOS">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Release\lib\MonoTouch\MimeKit.iOS.dll</HintPath>
-    </Reference>
     <Reference Include="System.Net" />
     <Reference Include="NachoPlatform.iOS">
       <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.iOS\bin\Release\NachoPlatform.iOS.dll</HintPath>
@@ -123,6 +120,12 @@
       <HintPath>..\..\NachoPlatform\xamarin.mobile-0.7.1\lib\ios\Xamarin.Mobile.dll</HintPath>
     </Reference>
     <Reference Include="MonoTouch.Dialog-1" />
+    <Reference Include="BouncyCastle.iOS">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\BouncyCastle.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="MimeKit.iOS">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.iOS.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
