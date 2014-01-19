@@ -10,6 +10,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MimeKit;
 using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -138,6 +139,37 @@ namespace NachoClient.iOS
             } else {
                 return null;
             }
+        }
+
+        static string Indent (int indent)
+        {
+            return indent.ToString ().PadRight (2 + (indent * 2));
+        }
+
+        static public void DumpMessage (MimeMessage message, int indent)
+        {
+            Log.Info ("{0}MimeMessage: {1}", Indent (indent), message);
+            DumpMimeEntity (message.Body, indent + 1);
+        }
+
+        static void DumpMimeEntity (MimeEntity entity, int indent)
+        {
+            if (entity is MessagePart) {
+                var messagePart = (MessagePart)entity;
+                Log.Info ("{0}MimeEntity: {1} {2}", Indent (indent), messagePart, messagePart.ContentType);
+                DumpMessage (messagePart.Message, indent + 1);
+                return;
+            }
+            if (entity is Multipart) {
+                var multipart = (Multipart)entity;
+                Log.Info ("{0}Multipart: {1} {2}", Indent (indent), multipart, multipart.ContentType);
+                foreach (var subpart in multipart) {
+                    Log.Info ("{0}Subpart: {1} {2}", Indent (indent), subpart, subpart.ContentType);
+                    DumpMimeEntity (subpart, indent + 1);
+                }
+                return;
+            }
+            Log.Info ("{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
         }
     }
 }
