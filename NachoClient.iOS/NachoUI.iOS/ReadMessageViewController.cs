@@ -113,12 +113,15 @@ namespace NachoClient.iOS
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var message = bodyParser.ParseMessage ();
                 MimeUtilities.motd = message; // for cid handler
+                MimeUtilities.DumpMessage (message, 0);
                 RenderMessage (message, bodySection);
             }
           
             Root = root;
 
         }
+
+
 
         void RenderMessage (MimeMessage message, Section section)
         {
@@ -138,6 +141,12 @@ namespace NachoClient.iOS
             if (entity is Multipart) {
                 // This entity is a multipart container.
                 var multipart = (Multipart)entity;
+
+                if (multipart.ContentType.Matches ("multipart", "alternative")) {
+                    RenderBestAlternative (multipart, section);
+                    return;
+                }
+
                 foreach (var subpart in multipart) {
                     RenderMimeEntity (subpart, section);
                 }
@@ -178,6 +187,16 @@ namespace NachoClient.iOS
 
             NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
         }
+        /// <summary>
+        /// Renders the best alternative.
+        /// http://en.wikipedia.org/wiki/MIME#Alternative
+        /// </summary>
+        void RenderBestAlternative(Multipart multipart, Section section)
+        {
+            var e = multipart.Last();
+            RenderMimeEntity(e, section);
+
+        }
 
         void RenderHtml (string html, Section section)
         {
@@ -190,23 +209,27 @@ namespace NachoClient.iOS
                 ScalesPageToFit = true,
                 AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin,
             };
+            web.ScrollView.PagingEnabled = false;
+            web.ScrollView.ScrollEnabled = false;
+            web.ScrollView.MultipleTouchEnabled = true;
+
             web.LoadStarted += delegate {
                 // this is called several times
                 if (i++ == 0) {
                     ;
                 }
             };
+
             web.LoadFinished += delegate {
                 if (--i == 0) {
                     // we stopped loading
                     web.StopLoading ();
-
                     System.Drawing.RectangleF frame = web.Frame;
-                    web.Frame = new System.Drawing.RectangleF (frame.X, frame.Y, frame.Width, 1);
-                    var size = web.SizeThatFits (new System.Drawing.SizeF (0f, 0f));
-                    frame.Size = size;
+                    frame.Height = 1;
                     web.Frame = frame;
-
+                    frame.Size = web.SizeThatFits(new System.Drawing.SizeF(0f, 0f));
+                    web.Frame = frame;
+                    Log.Info("web frame: {0}", web,frame);
 //                    web.Dispose ();
                 }
             };
@@ -227,13 +250,14 @@ namespace NachoClient.iOS
 
             web.LoadHtmlString (html, null);
             var e = new UIViewElement ("", web, true);
+            NachoCore.Utils.Log.Info ("Add webview element: {0}", e);
             section.Add (e);
-
         }
 
         void RenderText (string text, Section section)
         {
             var e = new MultilineElement (text);
+            NachoCore.Utils.Log.Info ("Add multiline element: {0}", e);
             section.Add (e);
         }
 
@@ -242,15 +266,16 @@ namespace NachoClient.iOS
             var image = MimeUtilities.RenderImage (part);
             var view = new UIImageView (image);
             var e = new UIViewElement ("", view, true);
+            NachoCore.Utils.Log.Info ("Add image element: {0}", e);
             section.Add (e);
         }
 
-        void DisplayAttachment(McAttachment attachment)
+        void DisplayAttachment (McAttachment attachment)
         {
             // TODO: display attachment
         }
 
-        void DownloadAttachment(McAttachment attachment)
+        void DownloadAttachment (McAttachment attachment)
         {
             // TODO: download attachment
         }
