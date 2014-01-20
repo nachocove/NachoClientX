@@ -16,26 +16,27 @@ namespace NachoCore.ActiveSync
     // NOTE: right now we just download attachments. ItemOperations is overloaded in the protocol, and we may want to subclass.
     public class AsItemOperationsCommand : AsCommand
     {
-        private McPendingUpdate m_update;
-
-        public AsItemOperationsCommand (IAsDataSource dataSource) : base(Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource) {
-            m_update = NextToDnld ();
+        public AsItemOperationsCommand (IAsDataSource dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
+        {
+            Update = NextToDnld ();
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender) {
+        public override XDocument ToXDocument (AsHttpOperation Sender)
+        {
             var attachment = Attachment ();
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns,
-                                      new XElement (m_ns + Xml.ItemOperations.Fetch,
-                                                   new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
-                                                   new XElement (m_baseNs + Xml.AirSyncBase.FileReference, attachment.FileReference)));
-            var doc = AsCommand.ToEmptyXDocument();
+                             new XElement (m_ns + Xml.ItemOperations.Fetch,
+                                 new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
+                                 new XElement (m_baseNs + Xml.AirSyncBase.FileReference, attachment.FileReference)));
+            var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
-            m_update.IsDispatched = true;
-            DataSource.Owner.Db.Update (m_update);
+            Update.IsDispatched = true;
+            DataSource.Owner.Db.Update (Update);
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc) {
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        {
             var attachment = Attachment ();
             switch ((Xml.ItemOperations.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.ItemOperations.Status).Value)) {
             case Xml.ItemOperations.StatusCode.Success:
@@ -50,29 +51,25 @@ namespace NachoCore.ActiveSync
                 attachment.LocalFileName = attachment.Id.ToString ();
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
                 File.WriteAllBytes (Path.Combine (DataSource.Owner.AttachmentsDir, attachment.LocalFileName),
-                                    Convert.FromBase64String (xmlData.Value));
+                    Convert.FromBase64String (xmlData.Value));
                 attachment.IsDownloaded = true;
                 break;
-                // FIXME - handle other status values.
+            // FIXME - handle other status values.
             }
-            DataSource.Owner.Db.Delete (m_update);
+            DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageDeleteSucceeded), new [] { Update.Token });
+            DataSource.Owner.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }
 
-        private McPendingUpdate NextToDnld () {
-            var query = DataSource.Owner.Db.Table<McPendingUpdate> ()
-                .Where (rec => rec.AccountId == DataSource.Account.Id &&
-                        McPendingUpdate.DataTypes.Attachment == rec.DataType &&
-                        McPendingUpdate.Operations.Download == rec.Operation);
-            if (0 == query.Count ()) {
-                return null;
-            }
-            return query.First ();
+        private McPendingUpdate NextToDnld ()
+        {
+            return NextPendingUpdate (McPendingUpdate.DataTypes.Attachment, McPendingUpdate.Operations.Download);
         }
 
-        private McAttachment Attachment () {
+        private McAttachment Attachment ()
+        {
             return DataSource.Owner.Db.Table<McAttachment> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
-                                                                        rec.Id == m_update.AttachmentId);
+            rec.Id == Update.AttachmentId);
         }
     }
 }

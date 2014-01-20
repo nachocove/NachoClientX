@@ -61,7 +61,7 @@ namespace NachoCore.ActiveSync
                     // If there are email deletes, then push them up to the server.
                     var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                                x.FolderId == folder.Id &&
+                                x.FolderServerId == folder.ServerId &&
                                 x.Operation == McPendingUpdate.Operations.Delete &&
                                 x.DataType == McPendingUpdate.DataTypes.EmailMessage);
                     if (0 != deles.Count ()) {
@@ -85,6 +85,26 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
+        public override Event ProcessTopLevelStatus (AsHttpOperation sender, uint status)
+        {
+            var globEvent = base.ProcessTopLevelStatus (sender, status);
+            if (null != globEvent) {
+                return globEvent;
+            }
+            switch ((Xml.AirSync.StatusCode)status) {
+            case Xml.AirSync.StatusCode.Success:
+                return null;
+            case Xml.AirSync.StatusCode.ProtocolError:
+                return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPPE");
+            case Xml.AirSync.StatusCode.SyncKeyInvalid:
+                DataSource.ProtocolState.AsSyncKey = Xml.AirSync.SyncKey_Initial;
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCKEYINV");
+            default:
+                Log.Error ("AsSyncCommand ProcessResponse UNHANDLED Top Level status: {0}", status);
+                return null;
+            }
+        }
+
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             Log.Info (Log.LOG_SYNC, "AsSyncCommand response:\n{0}", doc);
@@ -102,12 +122,13 @@ namespace NachoCore.ActiveSync
                 Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
                 Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId, oldSyncKey, folder.AsSyncKey);
                 var status = collection.Element (m_ns + Xml.AirSync.Status);
-                switch (uint.Parse (status.Value)) {
-                case (uint)Xml.AirSync.StatusCode.Success:
+                var statusCode = (Xml.AirSync.StatusCode)uint.Parse (status.Value);
+                switch (statusCode) {
+                case Xml.AirSync.StatusCode.Success:
                     // Clear any deletes dispached in the request.
                     var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                                x.FolderId == folder.Id &&
+                                x.FolderServerId == folder.ServerId &&
                                 x.Operation == McPendingUpdate.Operations.Delete &&
                                 x.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                                 x.IsDispatched == true);
@@ -157,7 +178,8 @@ namespace NachoCore.ActiveSync
                                 }
                                 break;
                             case Xml.AirSync.Change:
-                                // TODO: Merge with Add
+                                // TODO: Merge with Add.
+                                // FIXME: Impact on emails?
                                 xmlClass = command.Element (m_ns + Xml.AirSync.Class);
                                 if (null != xmlClass) {
                                     classCode = xmlClass.Value;
@@ -177,6 +199,23 @@ namespace NachoCore.ActiveSync
                                 }
                                 break;
 
+                            case Xml.AirSync.Delete:
+                                xmlClass = command.Element (m_ns + Xml.AirSync.Class);
+                                if (null != xmlClass) {
+                                    classCode = xmlClass.Value;
+                                } else {
+                                    classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
+                                }
+                                switch (classCode) {
+                                // FIXME: support Calendar & Contacts too.
+                                case Xml.AirSync.ClassCode.Email:
+                                    var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                                    var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.ServerId == delServerId);
+                                    DataSource.Owner.Db.Delete (emailMessage);
+                                    break;
+                                }
+                                break;
+
                             default:
                                 Log.Error ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
                                 break;
@@ -184,8 +223,17 @@ namespace NachoCore.ActiveSync
                         }
                     }
                     break;
+
+                case Xml.AirSync.StatusCode.SyncKeyInvalid:
+                case Xml.AirSync.StatusCode.NotFound:
+                    Log.Info ("Need to ReSync because of status {0}.", statusCode);
+                    // NotFound as seen so far (GOOG) isn't making sense. 
+                    folder.AsSyncKey = Xml.AirSync.SyncKey_Initial;
+                    folder.AsSyncRequired = true;
+                    break;
+
                 default:
-                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED status: {0}", status);
+                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED Collection status: {0}", status);
                     break;
                 }
 
@@ -229,7 +277,7 @@ namespace NachoCore.ActiveSync
             // If we don't sync the flagged folders, then the ping command starts right back up.
             // TODO: We need to be smarter about prioritization of sync'ing.
             return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
-                true == x.AsSyncRequired && false == x.IsClientOwned);
+            true == x.AsSyncRequired && false == x.IsClientOwned);
         }
         // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
         private McEmailMessage AddEmail (XElement command, McFolder folder)
@@ -312,7 +360,7 @@ namespace NachoCore.ActiveSync
                         IsInline = false,
                         EstimatedDataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
-                        Method = uint.Parse(xmlAttachment.Element(m_baseNs + Xml.AirSyncBase.Method).Value),
+                        Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
                     };
                     var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
                     if (null != contentLocation) {

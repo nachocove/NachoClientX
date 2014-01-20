@@ -17,8 +17,14 @@ namespace NachoCore.Utils
             Info_ContactSetChanged,
             Info_CalendarSetChanged,
             Info_NewUnreadEmailMessageInInbox,
+            Info_EmailMessageSendSucceeded,
+            Info_EmailMessageDeleteSucceeded,
+            Info_EmailMessageMoveSucceeded,
             // Warning.
             // Error.
+            Error_EmailMessageSendFailed,
+            Error_EmailMessageDeleteFailed,
+            Error_EmailMessageMoveFailed,
         };
 
         public KindEnum Kind { get; set; }
@@ -53,6 +59,11 @@ namespace NachoCore.Utils
         public static NcResult Error(string message)
         {
             return new NcResult () { Kind = KindEnum.Error, Message = message };
+        }
+
+        public static NcResult Error (SubKindEnum subKind)
+        {
+            return new NcResult () { Kind = KindEnum.Error, SubKind = subKind };
         }
 
         public bool isOK()

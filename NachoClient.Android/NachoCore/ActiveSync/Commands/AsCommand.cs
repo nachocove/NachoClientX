@@ -234,6 +234,14 @@ namespace NachoCore.ActiveSync
         {
         }
 
+        protected virtual McPendingUpdate NextPendingUpdate (McPendingUpdate.DataTypes dataType, 
+            McPendingUpdate.Operations operation)
+        {
+            return DataSource.Owner.Db.Table<McPendingUpdate> ()
+                .FirstOrDefault (rec => rec.AccountId == DataSource.Account.Id &&
+                    dataType == rec.DataType && operation == rec.Operation);
+        }
+
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {

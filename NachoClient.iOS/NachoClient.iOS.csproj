@@ -446,6 +446,9 @@
     <Compile Include="NachoCore\NachoFolders.cs" />
     <Compile Include="NachoUI.iOS\CidImageProtocol.cs" />
     <Compile Include="NachoUI.iOS\MimeUtilities.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

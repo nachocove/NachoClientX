@@ -206,6 +206,11 @@ namespace NachoCore
             return ServiceFromAccount (account).DeleteEmailCmd (emailMessageId);
         }
 
+        public string MoveItemCmd (McAccount account, int emailMessageId, int destFolderId)
+        {
+            return ServiceFromAccount (account).MoveItemCmd (emailMessageId, destFolderId);
+        }
+
         private McFolder GetClientOwned (int accountId, string serverId)
         {
             return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 

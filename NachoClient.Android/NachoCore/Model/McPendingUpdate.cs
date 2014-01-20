@@ -17,8 +17,9 @@ namespace NachoCore.Model
             Download,
             // Search for something on the server. Note that pending searches aren't considered relevant across app
             // re-starts, and so they are purged from the pending update queue on app launch.
-            Search}
-        ;
+            Search,
+            Move,
+        };
 
         public enum DataTypes
         {
@@ -27,6 +28,18 @@ namespace NachoCore.Model
             Folder,
             Contact}
         ;
+
+        // Parameterless constructor only here for use w/LINQ.
+        public McPendingUpdate ()
+        {
+        }
+
+        public McPendingUpdate (int accountId)
+        {
+            AccountId = accountId;
+            Token = DateTime.UtcNow.Ticks.ToString ();
+
+        }
 
         public Operations Operation { set; get; }
 
@@ -37,23 +50,31 @@ namespace NachoCore.Model
 
         [Indexed]
         public bool IsDispatched { set; get; }
-        // For EmailMessage Sends:
+
         [Indexed]
+        // For use by SendMail & MoveItem ONLY!
         public int EmailMessageId { set; get; }
-        // For EmailMessage Deletes and Folder Creations:
+
         [Indexed]
-        public int FolderId { set; get; }
-        // For EmailMessage Deletes:
+        // For use by any command.
+        public string EmailMessageServerId { set; get; }
+
+        [Indexed]
+        public string FolderServerId { set; get; }
+
         public string ServerId { set; get; }
-        // For Attachment Downloads:
+
         [Indexed]
         public int AttachmentId { set; get; }
-        // For Contact searches:
+
         public string Prefix { set; get; }
 
         public uint MaxResults { set; get; }
+
         [Indexed]
         public string Token { set; get; }
+
+        public string DestFolderServerId { set; get; }
     }
 }
 

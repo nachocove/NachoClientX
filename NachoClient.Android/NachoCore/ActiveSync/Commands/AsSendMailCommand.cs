@@ -24,7 +24,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
-                new XElement (m_ns + Xml.ComposeMail.ClientId, emailMessage.ClientId),
+                               new XElement (m_ns + Xml.ComposeMail.ClientId, emailMessage.ClientId),
                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
             var doc = AsCommand.ToEmptyXDocument ();
@@ -45,15 +45,16 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
+            DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
             DataSource.Owner.Db.Delete (emailMessage);
             DataSource.Owner.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
-
+        // FIXME - need an OnFail callback for negative indication delivery.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             return Event.Create ((uint)SmEvt.E.HardFail, "SMHARD0", null, 
-                string.Format("Server sent non-empty response to SendMail: {0}", doc.ToString()));
+                string.Format ("Server sent non-empty response to SendMail: {0}", doc.ToString ()));
         }
 
         public override void Cancel ()

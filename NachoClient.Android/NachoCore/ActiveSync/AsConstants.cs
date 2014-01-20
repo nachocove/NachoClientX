@@ -714,6 +714,31 @@ namespace NachoCore.ActiveSync
             ;
         }
 
+        public class Mov
+        {
+            public const string Ns = "Move";
+            // Alpha order.
+            public const string DstFldId = "DstFldId";
+            public const string DstMsgId = "DstMsgId";
+            public const string Move = "Move";
+            public const string MoveItems = "MoveItems";
+            public const string Response = "Response";
+            public const string SrcFldId = "SrcFldId";
+            public const string SrcMsgId = "SrcMsgId";
+            public const string Status = AirSync.Status;
+
+            public enum StatusCode : uint
+            {
+                InvalidSrc = 1,
+                InvalidDest = 2,
+                Success = 3,
+                SrcDestSame = 4,
+                ClobberOrMulti = 5,
+                // 6 omitted.
+                Locked = 7,
+            };
+        }
+
         public class Ping
         {
             public const string Ns = "Ping";
@@ -735,8 +760,8 @@ namespace NachoCore.ActiveSync
                 BadHeartbeat = 5,
                 TooManyFolders = 6,
                 NeedFolderSync = 7,
-                ServerError = 8}
-            ;
+                ServerError = 8,
+            };
         }
 
         public class Provision
