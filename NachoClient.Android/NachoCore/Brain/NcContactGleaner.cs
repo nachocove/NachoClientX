@@ -37,6 +37,12 @@ namespace NachoCore.Brain
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
+            if (null == emailMessage.Body) {
+                // Mark the email message as gleaned.
+                emailMessage.HasBeenGleaned = true;
+                BackEnd.Instance.Db.Update (emailMessage);
+                return;
+            }
             var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.Body));
             var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
             MimeMessage mimeMsg;
