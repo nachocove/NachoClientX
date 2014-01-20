@@ -171,5 +171,44 @@ namespace NachoClient.iOS
             }
             Log.Info ("{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
         }
+
+        static public string FetchSomeText (string body)
+        {
+            if (null == body) {
+                return null;
+            }
+            var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
+            var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+            var message = bodyParser.ParseMessage ();
+            return FetchSomeText (message.Body);
+        }
+
+        static public string FetchSomeText (MimeEntity entity)
+        {
+            if (null == entity) {
+                return null;
+            }
+            if (entity is Multipart) {
+                var multipart = (Multipart)entity;
+                foreach (var subpart in multipart) {
+                    var s = FetchSomeText (subpart);
+                    if (null != s) {
+                        return s;
+                    }
+                }
+                return null;
+            }
+
+            if (entity is MimePart) {
+                var part = (MimePart)entity;
+                if (part is TextPart) {
+                    var text = (TextPart)part;
+                    if (text.ContentType.Matches ("text", "plain")) {
+                        return text.Text;
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

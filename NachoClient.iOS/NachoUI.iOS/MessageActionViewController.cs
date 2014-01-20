@@ -30,6 +30,16 @@ namespace NachoClient.iOS
             ReloadRoot ();
         }
 
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+
+            if (segue.Identifier.Equals ("ActionToCompose")) {
+                ComposeViewController destinationController = (ComposeViewController)segue.DestinationViewController;
+                destinationController.ActionMessage = message;
+                destinationController.Action = (NSString) sender;
+            }
+        }
+
         void ReloadRoot ()
         {
             var root = new RootElement ("Action");
@@ -46,6 +56,16 @@ namespace NachoClient.iOS
             section.Add (new StringElement ("Reply", new NSAction (delegate {
                 Reply (message.AccountId, message.Id);
             })));
+
+
+            section.Add (new StringElement ("Reply All", new NSAction (delegate {
+                ReplyAll (message.AccountId, message.Id);
+            })));
+
+            section.Add (new StringElement ("Forward", new NSAction (delegate {
+                Forward (message.AccountId, message.Id);
+            })));
+
 
             section.Add (new StringElement ("Delete", new NSAction (delegate {
                 Delete (message.AccountId, message.Id);
@@ -67,8 +87,17 @@ namespace NachoClient.iOS
 
         void Reply (int accountId, int messageId)
         {
-            // TODO: Add reply code
-            Log.Info ("TBD: Reply to message");
+            PerformSegue ("ActionToCompose", ComposeViewController.Reply);
+        }
+
+        void ReplyAll (int accountId, int messageId)
+        {
+            PerformSegue ("ActionToCompose", ComposeViewController.ReplyAll);
+        }
+
+        void Forward (int accountId, int messageId)
+        {
+            PerformSegue ("ActionToCompose", ComposeViewController.Forward);
         }
 
         void Delete (int accountId, int messageId)

@@ -570,72 +570,6 @@
             </objects>
             <point key="canvasLocation" x="-466" y="-257"/>
         </scene>
-        <!--Reply View Controller-->
-        <scene sceneID="4G3-0m-Frg">
-            <objects>
-                <viewController id="Ko0-NA-sWD" customClass="ReplyViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="yLC-ul-ctZ">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                        <subviews>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Reply To: " minimumFontSize="17" id="66D-fh-T3q">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="CC:" minimumFontSize="17" id="4ht-ZH-5kg">
-                                <rect key="frame" x="0.0" y="25" width="320" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Subject" minimumFontSize="17" id="3w0-0c-Ga1">
-                                <rect key="frame" x="0.0" y="92" width="320" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="D7P-zR-TVf">
-                                <rect key="frame" x="0.0" y="152" width="320" height="328"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" red="0.33450653296939836" green="0.70496089517492533" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                <fontDescription key="fontDescription" name="Helvetica" family="Helvetica" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                            </textView>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="To:" minimumFontSize="17" id="kJ1-kZ-QP3">
-                                <rect key="frame" x="0.0" y="63" width="320" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="CC:" minimumFontSize="17" id="dnv-86-nsk">
-                                <rect key="frame" x="0.0" y="121" width="291" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="B1g-gg-t0X">
-                        <barButtonItem key="rightBarButtonItem" title="Send" id="043-0b-dqo">
-                            <connections>
-                                <action selector="btnSend:" destination="Ko0-NA-sWD" id="W4v-EW-iJt"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
-                    <connections>
-                        <outlet property="txtComposeReply" destination="D7P-zR-TVf" id="kAO-ad-t6v"/>
-                        <outlet property="txtCopyList" destination="dnv-86-nsk" id="qsd-of-Clu"/>
-                        <outlet property="txtReplyList" destination="kJ1-kZ-QP3" id="plG-JC-X86"/>
-                        <outlet property="txtSubjectField" destination="3w0-0c-Ga1" id="x3a-HD-zAt"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="FaF-7H-bwD" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="714" y="-257"/>
-        </scene>
         <!--Compose View Controller-->
         <scene sceneID="ZXp-r6-B5Z">
             <objects>
@@ -908,6 +842,9 @@
                     </tableView>
                     <navigationItem key="navigationItem" id="RAF-OW-H4X"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <connections>
+                        <segue destination="lOe-mG-VS5" kind="push" identifier="ActionToCompose" id="poR-Qq-5rC"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cEo-VB-3co" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -942,13 +879,13 @@
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="lzp-XD-dor"/>
+        <segue reference="poR-Qq-5rC"/>
+        <segue reference="Mbi-ya-LF9"/>
         <segue reference="GNr-eh-wrb"/>
         <segue reference="wSf-Ax-NJc"/>
-        <segue reference="6IA-LE-E8D"/>
         <segue reference="VrW-k4-eyP"/>
-        <segue reference="Mbi-ya-LF9"/>
-        <segue reference="bHy-yY-CjI"/>
+        <segue reference="lzp-XD-dor"/>
+        <segue reference="6IA-LE-E8D"/>
         <segue reference="Fvv-mz-C9l"/>
         <segue reference="5fj-Ta-mc9"/>
     </inferredMetricsTieBreakers>

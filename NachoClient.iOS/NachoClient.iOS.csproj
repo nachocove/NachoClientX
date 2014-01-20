@@ -251,10 +251,6 @@
     <Compile Include="NachoUI.iOS\DetailViewController.designer.cs">
       <DependentUpon>DetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\RootViewController.cs" />
-    <Compile Include="NachoUI.iOS\RootViewController.designer.cs">
-      <DependentUpon>RootViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountTableSource.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
@@ -272,10 +268,6 @@
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
       <DependentUpon>MessageViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\ReplyViewController.cs" />
-    <Compile Include="NachoUI.iOS\ReplyViewController.designer.cs">
-      <DependentUpon>ReplyViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs</Link>
