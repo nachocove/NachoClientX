@@ -16,6 +16,12 @@ namespace NachoCore
             kind = k;
         }
 
+        public NcEmailAddress(Kind k, string a)
+        {
+            kind = k;
+            address = a;
+        }
+
         public enum Kind
         {
             To,

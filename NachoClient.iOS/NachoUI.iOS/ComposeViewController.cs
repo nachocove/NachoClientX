@@ -14,11 +14,17 @@ namespace NachoClient.iOS
     public partial class ComposeViewController : DialogViewController
     {
         string Subject;
-        MultilineEntryElement Message;
+        MultilineEntryElement Body;
         List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
+        public static readonly NSString Reply = new NSString ("Reply");
+        public static readonly NSString ReplyAll = new NSString ("ReplyAll");
+        public static readonly NSString Forward = new NSString ("Forward");
+        public string Action;
+        public McEmailMessage ActionMessage;
 
         public ComposeViewController (IntPtr handle) : base (handle)
         {
+    
         }
 
         public override void ViewDidLoad ()
@@ -38,6 +44,10 @@ namespace NachoClient.iOS
             SendButton.Clicked += (object sender, EventArgs e) => {
                 SendMessage ();
             };
+
+            if (null != ActionMessage) {
+                InitializeMessageForAction ();
+            }
 
             Pushing = true;
         }
@@ -96,9 +106,9 @@ namespace NachoClient.iOS
             };
             section.Add (subjectEntry);
 
-            var s = (null == Message) ? null : Message.Summary ();
-            Message = new MultilineEntryElement ("Enter your message....", s, 120.0f, true);
-            section.Add (Message);
+            var s = (null == Body) ? null : Body.Summary ();
+            Body = new MultilineEntryElement ("Enter your message...", s, 120.0f, true);
+            section.Add (Body);
 
             root.UnevenRows = true;
             Root = root;
@@ -182,6 +192,10 @@ namespace NachoClient.iOS
             return new MailboxAddress (name, email);
         }
 
+        /// <summary>
+        /// Backend is converting to mime.
+        /// TODO: SendMessage should encode as mime or not.
+        /// </summary>
         public void SendMessage ()
         {
             var message = new MimeMessage ();
@@ -205,12 +219,82 @@ namespace NachoClient.iOS
             if (null != Subject) {
                 message.Subject = Subject;
             }
+            message.To.ToString ();
             message.Date = System.DateTime.UtcNow;
 
-            // TODO: Send the message
+            var msg = new McEmailMessage ();
+            msg.To = CommaSeparatedList (message.To);
+            msg.Cc = CommaSeparatedList (message.Cc);
+            msg.Subject = message.Subject;
+            msg.Body = Body.Summary ();
+
+            BackEnd.Instance.Db.Insert (msg);
+
+            // TODO: Push account in UI
+            // We only have one account, for now.
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+
+            BackEnd.Instance.SendEmailCmd (account, msg.Id);
 
             // Probably want to defer until BE says message is queued.
             NavigationController.PopViewControllerAnimated (true);
+        }
+
+        string CommaSeparatedList (InternetAddressList addresses)
+        {
+            var list = new List<string> ();
+
+            foreach (var a in addresses) {
+                list.Add (a.Name);
+            }
+            return String.Join (",", list);
+        }
+
+        /// <summary>
+        /// Reply, ReplyAll, Forward
+        /// </summary>
+        void InitializeMessageForAction ()
+        {
+            if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
+                Subject = "Re: " + ActionMessage.Subject;
+                AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.To, ActionMessage.From));
+            }
+            if (Action.Equals (Forward)) {
+                Subject = "Fwd: " + ActionMessage.Subject;
+            }
+            if (Action.Equals (ReplyAll)) {
+                if (null != ActionMessage.Cc) {
+                    string[] ccList = ActionMessage.Cc.Split (new Char [] { ',' });
+                    if (null != ccList) {
+                        foreach (var a in ccList) {
+                            AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                        }
+                    }
+                }
+            }
+            // TODO: Setup message id, etc etc.
+            // Handle body
+            if (null == ActionMessage.Body) {
+                return;
+            }
+            if (Action.Equals (Forward)) {
+                // TODO: Compose needs to be smart about MIME messages.
+                Body = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
+                return;
+            }
+            string someText = MimeUtilities.FetchSomeText (ActionMessage.Body);
+            string quotedText = QuoteForReply (someText);
+            Body = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
+        }
+
+        string QuoteForReply (string s)
+        {
+            if (null == s) {
+                return s;
+            }
+            string[] lines = s.Split (new Char[] { '\n' });
+            string quotes = "\n> " + String.Join ("\n> ", lines);
+            return quotes;
         }
     }
 }

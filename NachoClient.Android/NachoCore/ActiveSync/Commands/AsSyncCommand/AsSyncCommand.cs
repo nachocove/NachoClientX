@@ -355,13 +355,16 @@ namespace NachoCore.ActiveSync
                     var attachment = new McAttachment {
                         AccountId = emailMessage.AccountId,
                         EmailMessageId = emailMessage.Id,
-                        DisplayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName).Value,
                         IsDownloaded = false,
                         IsInline = false,
                         EstimatedDataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
                         Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
                     };
+                    var displayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName);
+                    if (null != displayName) {
+                        attachment.DisplayName = displayName.Value;
+                    }
                     var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
                     if (null != contentLocation) {
                         attachment.ContentLocation = contentLocation.Value;

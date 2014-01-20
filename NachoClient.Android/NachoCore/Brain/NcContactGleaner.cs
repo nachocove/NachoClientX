@@ -37,9 +37,25 @@ namespace NachoCore.Brain
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
+            if (null == emailMessage.Body) {
+                // Mark the email message as gleaned.
+                emailMessage.HasBeenGleaned = true;
+                BackEnd.Instance.Db.Update (emailMessage);
+                return;
+            }
             var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.Body));
             var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-            var mimeMsg = bodyParser.ParseMessage ();
+            MimeMessage mimeMsg;
+            try {
+                mimeMsg = bodyParser.ParseMessage ();
+            } catch(Exception e) {
+                // TODO: Find root cause
+                // Mark the email message as gleaned.
+                emailMessage.HasBeenGleaned = true;
+                BackEnd.Instance.Db.Update (emailMessage);
+                NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
+                return;
+            }
             var gleanedFolder = BackEnd.Instance.GetGleaned (accountId);
             List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
             if (null != mimeMsg.To) {
@@ -58,7 +74,9 @@ namespace NachoCore.Brain
                 addrsLists.Add (mimeMsg.ReplyTo);
             }
             if (null != mimeMsg.Sender) {
-                addrsLists.Add (mimeMsg.Sender);
+                var senderAsList = new InternetAddressList ();
+                senderAsList.Add (mimeMsg.Sender);
+                addrsLists.Add (senderAsList);
             }
             foreach (var addrsList in addrsLists) {
                 foreach (var addr in addrsList) {
