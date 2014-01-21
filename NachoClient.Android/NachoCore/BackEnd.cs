@@ -216,6 +216,11 @@ namespace NachoCore
             return ServiceFromAccount (account).DnldAttCmd (attId);
         }
 
+        public string MarkEmailReadCmd (McAccount account, int emailMessageId)
+        {
+            return ServiceFromAccount (account).MarkEmailReadCmd (emailMessageId);
+        }
+
         private McFolder GetClientOwned (int accountId, string serverId)
         {
             return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 

@@ -765,6 +765,10 @@ namespace NachoCore.ActiveSync
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.Delete).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
+            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
+                       rec.Operation == McPendingUpdate.Operations.MarkRead).Count ()) {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP4");
             } else {
                 Cmd = new AsPingCommand (this);
                 Cmd.Execute (Sm);
@@ -902,6 +906,30 @@ namespace NachoCore.ActiveSync
             Owner.Db.Update (emailMessage);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
             return moveUpdate.Token;
+        }
+
+        public override string MarkEmailReadCmd (int emailMessageId)
+        {
+            var emailMessage = Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            if (null == emailMessage) {
+                return null;
+            }
+
+            var folder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
+
+            var markUpdate = new McPendingUpdate (Account.Id) {
+                Operation = McPendingUpdate.Operations.MarkRead,
+                DataType = McPendingUpdate.DataTypes.EmailMessage,
+                ServerId = emailMessage.ServerId,
+                FolderServerId = folder.ServerId,
+            };   
+            Owner.Db.Insert (markUpdate);
+
+            // Mark the actual item.
+            emailMessage.IsRead = true;
+            Owner.Db.Update (emailMessage);
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
+            return markUpdate.Token;
         }
 
         public override string DnldAttCmd (int attId)

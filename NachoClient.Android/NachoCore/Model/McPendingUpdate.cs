@@ -19,6 +19,7 @@ namespace NachoCore.Model
             // re-starts, and so they are purged from the pending update queue on app launch.
             Search,
             Move,
+            MarkRead,
         };
 
         public enum DataTypes

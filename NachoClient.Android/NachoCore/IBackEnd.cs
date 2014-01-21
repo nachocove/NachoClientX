@@ -30,7 +30,11 @@ namespace NachoCore
         string SendEmailCmd (McAccount account, int emailMessageId);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
         string DeleteEmailCmd (McAccount account, int emailMessageId);
+        // move an email from one folder to another. returns token that can be used to possibly cancel.
         string MoveItemCmd (McAccount account, int emailMessageId, int destFolderId);
+        // mark an email as read. returns token that can be used to possibly cancel.
+        string MarkEmailReadCmd (McAccount account, int emailMessageId);
+        // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (McAccount account, int attId);
         //
         // in the BE for now, but moving to middleware/app-land someday:

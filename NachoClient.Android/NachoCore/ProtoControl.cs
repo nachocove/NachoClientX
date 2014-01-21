@@ -60,8 +60,10 @@ namespace NachoCore
         public abstract void SearchContactsReq (string prefix, uint? maxResults, string token);
         public abstract string SendEmailCmd (int emailMessageId);
         public abstract string DeleteEmailCmd (int emailMessageId);
+        public abstract string MarkEmailReadCmd (int emailMessageId);
         public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
         public abstract string DnldAttCmd (int attId);
+
         // Interface to controllers.
         public abstract void StatusInd (NcResult status);
         public abstract void StatusInd (NcResult status, string[] tokens);

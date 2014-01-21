@@ -26,7 +26,7 @@ namespace NachoCore.Model
         [Indexed]
         public uint Importance { set; get; }
         [Indexed]
-        public bool Read { set; get; }
+        public bool IsRead { set; get; }
         public string MessageClass { set; get; }
 
         public string ToMime () {

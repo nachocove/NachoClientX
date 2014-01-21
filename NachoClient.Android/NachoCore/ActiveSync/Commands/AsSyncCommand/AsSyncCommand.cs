@@ -24,6 +24,8 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
+            XNamespace emailNs = Xml.Email.Ns;
+
             // Get the folders needed sync
             var folders = FoldersNeedingSync ();
             // This becomes the folders in the xml <Collections>
@@ -59,19 +61,43 @@ namespace NachoCore.ActiveSync
                         collection.Add (options);
                     }
                     // If there are email deletes, then push them up to the server.
+                    XElement commands = null;
                     var deles = DataSource.Owner.Db.Table<McPendingUpdate> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderServerId == folder.ServerId &&
                                 x.Operation == McPendingUpdate.Operations.Delete &&
                                 x.DataType == McPendingUpdate.DataTypes.EmailMessage);
                     if (0 != deles.Count ()) {
-                        var commands = new XElement (m_ns + Xml.AirSync.Commands);
-                        foreach (var change in deles) {
+                        if (null == commands) {
+                            commands = new XElement (m_ns + Xml.AirSync.Commands);
+                        }
+                        foreach (var dele in deles) {
                             commands.Add (new XElement (m_ns + Xml.AirSync.Delete,
-                                new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId)));
+                                new XElement (m_ns + Xml.AirSync.ServerId, dele.ServerId)));
+                            dele.IsDispatched = true;
+                            DataSource.Owner.Db.Update (dele);
+                        }
+                    }
+                    // If there are make-reads, then push them to the server.
+                    var mRs = DataSource.Owner.Db.Table<McPendingUpdate> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                              x.FolderServerId == folder.ServerId &&
+                              x.Operation == McPendingUpdate.Operations.MarkRead &&
+                              x.DataType == McPendingUpdate.DataTypes.EmailMessage);
+                    if (0 != mRs.Count ()) {
+                        if (null == commands) {
+                            commands = new XElement (m_ns + Xml.AirSync.Commands);
+                        }
+                        foreach (var change in mRs) {
+                            commands.Add (new XElement (m_ns + Xml.AirSync.Change,
+                                new XElement (m_ns + Xml.AirSync.ServerId, change.ServerId),
+                                new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                    new XElement (emailNs + Xml.Email.Read, "1"))));
                             change.IsDispatched = true;
                             DataSource.Owner.Db.Update (change);
                         }
+                    }
+                    if (null != commands) {
                         collection.Add (commands);
                     }
                 }
@@ -137,6 +163,18 @@ namespace NachoCore.ActiveSync
                             DataSource.Owner.Db.Delete (change);
                         }
                     }
+                    // Clear any mark-reads dispatched in the request.
+                    var mRs = DataSource.Owner.Db.Table<McPendingUpdate> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                              x.FolderServerId == folder.ServerId &&
+                              x.Operation == McPendingUpdate.Operations.MarkRead &&
+                              x.DataType == McPendingUpdate.DataTypes.EmailMessage &&
+                              x.IsDispatched == true);
+                    if (0 != mRs.Count ()) {
+                        foreach (var markRead in mRs) {
+                            DataSource.Owner.Db.Delete (markRead);
+                        }
+                    }
                     // Perform all commands.
                     XElement xmlClass;
                     string classCode;
@@ -164,7 +202,7 @@ namespace NachoCore.ActiveSync
                                     HadEmailMessageChanges = true;
                                     var emailMessage = AddEmail (command, folder);
                                     if (null != emailMessage && (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == folder.Type &&
-                                        false == emailMessage.Read) {
+                                        false == emailMessage.IsRead) {
                                         HadNewUnreadEmailMessageInInbox = true;
                                     }
                                     break;
@@ -275,7 +313,7 @@ namespace NachoCore.ActiveSync
 
         private SQLite.TableQuery<McFolder> FoldersNeedingSync ()
         {
-            // Make sure any folders with pending deletes are marked as needing Sync.
+            // Make sure any folders with pending deletes or mark-reads are marked as needing Sync.
             var pendingDels = DataSource.Owner.Db.Table<McPendingUpdate> ().Where (x => 
                 x.Operation == McPendingUpdate.Operations.Delete &&
                               x.DataType == McPendingUpdate.DataTypes.EmailMessage).ToList ();
@@ -285,6 +323,16 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncRequired = true;
                 DataSource.Owner.Db.Update (folder);
             }
+
+            var pendingMRs = DataSource.Owner.Db.Table<McPendingUpdate> ().Where (x => x.Operation == McPendingUpdate.Operations.MarkRead &&
+                             x.DataType == McPendingUpdate.DataTypes.EmailMessage).ToList ();
+
+            foreach (var pendingMR in pendingMRs) {
+                var folder = DataSource.Owner.Db.Table<McFolder> ().SingleOrDefault (x => x.ServerId == pendingMR.FolderServerId);
+                folder.AsSyncRequired = true;
+                DataSource.Owner.Db.Update (folder);
+            }
+
             // Ping, et al, decide what needs to be checked.  We sync what needs sync'ing.
             // If we don't sync the flagged folders, then the ping command starts right back up.
             return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
@@ -362,9 +410,9 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Email.Read:
                     if ("1" == child.Value) {
-                        emailMessage.Read = true;
+                        emailMessage.IsRead = true;
                     } else {
-                        emailMessage.Read = false;
+                        emailMessage.IsRead = false;
                     }
                     break;
                 case Xml.Email.MessageClass:
