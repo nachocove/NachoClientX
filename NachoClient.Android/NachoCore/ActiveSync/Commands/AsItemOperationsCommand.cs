@@ -6,14 +6,8 @@ using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
 
-/* FIXME
- * put metadata int the pending update pool.
- * folders needing sync.
- * email messages waiting on attachment download(s).
- */
 namespace NachoCore.ActiveSync
 {
-    // NOTE: right now we just download attachments. ItemOperations is overloaded in the protocol, and we may want to subclass.
     public class AsItemOperationsCommand : AsCommand
     {
         public AsItemOperationsCommand (IAsDataSource dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
@@ -52,11 +46,15 @@ namespace NachoCore.ActiveSync
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
                 File.WriteAllBytes (Path.Combine (DataSource.Owner.AttachmentsDir, attachment.LocalFileName),
                     Convert.FromBase64String (xmlData.Value));
+                attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
+                DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate), new [] { Update.Token });
                 break;
-            // FIXME - handle other status values.
+            default:
+                // FIXME - handle other status values less bluntly.
+                DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed), new [] { Update.Token });
+                break;
             }
-            DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageDeleteSucceeded), new [] { Update.Token });
             DataSource.Owner.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }

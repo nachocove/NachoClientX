@@ -163,7 +163,7 @@ namespace NachoCore.ActiveSync
                                 case Xml.AirSync.ClassCode.Email:
                                     HadEmailMessageChanges = true;
                                     var emailMessage = AddEmail (command, folder);
-                                    if ((uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == folder.Type &&
+                                    if (null != emailMessage && (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == folder.Type &&
                                         false == emailMessage.Read) {
                                         HadNewUnreadEmailMessageInInbox = true;
                                     }
@@ -211,7 +211,9 @@ namespace NachoCore.ActiveSync
                                 case Xml.AirSync.ClassCode.Email:
                                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                                     var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.ServerId == delServerId);
-                                    DataSource.Owner.Db.Delete (emailMessage);
+                                    if (null != emailMessage) {
+                                        DataSource.Owner.Db.Delete (emailMessage);
+                                    }
                                     break;
                                 }
                                 break;
@@ -273,21 +275,43 @@ namespace NachoCore.ActiveSync
 
         private SQLite.TableQuery<McFolder> FoldersNeedingSync ()
         {
+            // Make sure any folders with pending deletes are marked as needing Sync.
+            var pendingDels = DataSource.Owner.Db.Table<McPendingUpdate> ().Where (x => 
+                x.Operation == McPendingUpdate.Operations.Delete &&
+                              x.DataType == McPendingUpdate.DataTypes.EmailMessage).ToList ();
+
+            foreach (var pendingDel in pendingDels) {
+                var folder = DataSource.Owner.Db.Table<McFolder> ().SingleOrDefault (x => x.ServerId == pendingDel.FolderServerId);
+                folder.AsSyncRequired = true;
+                DataSource.Owner.Db.Update (folder);
+            }
             // Ping, et al, decide what needs to be checked.  We sync what needs sync'ing.
             // If we don't sync the flagged folders, then the ping command starts right back up.
-            // TODO: We need to be smarter about prioritization of sync'ing.
             return DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
             true == x.AsSyncRequired && false == x.IsClientOwned);
         }
-        // FIXME - these XML-to-object coverters suck! Use reflection & naming convention?
+
         private McEmailMessage AddEmail (XElement command, McFolder folder)
         {
+            XNamespace email2Ns = Xml.Email2.Ns;
+
+            var serverId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+            // MoveItems should make the server send an Add/Delete that we want to ignore.
+            // If we see an Add with a pre-existing ServerId in the DB, then we ignore the Add Op.
+            // In 0.2, be more precise about dropping these Add/Deletes.
+            if (DataSource.Owner.Db.Table<McEmailMessage> ().Any (x =>
+                x.AccountId == DataSource.Account.Id &&
+                x.ServerId == serverId)) {
+                return null;
+            }
+
             IEnumerable<XElement> xmlAttachments = null;
             var emailMessage = new McEmailMessage {
                 AccountId = DataSource.Account.Id,
                 FolderId = folder.Id,
-                ServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value
+                ServerId = serverId,
             };
+
             var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
             foreach (var child in appData.Elements()) {
                 switch (child.Name.LocalName) {
@@ -356,6 +380,7 @@ namespace NachoCore.ActiveSync
                         AccountId = emailMessage.AccountId,
                         EmailMessageId = emailMessage.Id,
                         IsDownloaded = false,
+                        PercentDownloaded = 0,
                         IsInline = false,
                         EstimatedDataSize = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                         FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
@@ -377,19 +402,15 @@ namespace NachoCore.ActiveSync
                     if (null != isInline) {
                         attachment.IsInline = ParseXmlBoolean (isInline);
                     }
+                    var xmlUmAttDuration = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttDuration);
+                    if (null != xmlUmAttDuration) {
+                        attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
+                    }
+                    var xmlUmAttOrder = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttOrder);
+                    if (null != xmlUmAttOrder) {
+                        attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
+                    }
                     DataSource.Owner.Db.Insert (attachment);
-                    /*
-                     * DON'T do this here. Download attachments strategically.
-                    // Create & save the pending update record.
-                    var update = new NcPendingUpdate {
-                        Operation = NcPendingUpdate.Operations.Download,
-                        DataType = NcPendingUpdate.DataTypes.Attachment,
-                        AccountId = emailMessage.AccountId,
-                        IsDispatched = false,
-                        AttachmentId = attachment.Id
-                    };
-                    m_dataSource.Owner.Db.Insert (BackEnd.DbActors.Proto, update);
-                    */
                 }
             }
             return emailMessage;

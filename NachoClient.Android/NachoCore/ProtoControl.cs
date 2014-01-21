@@ -61,6 +61,7 @@ namespace NachoCore
         public abstract string SendEmailCmd (int emailMessageId);
         public abstract string DeleteEmailCmd (int emailMessageId);
         public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
+        public abstract string DnldAttCmd (int attId);
         // Interface to controllers.
         public abstract void StatusInd (NcResult status);
         public abstract void StatusInd (NcResult status, string[] tokens);

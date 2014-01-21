@@ -20,11 +20,13 @@ namespace NachoCore.Utils
             Info_EmailMessageSendSucceeded,
             Info_EmailMessageDeleteSucceeded,
             Info_EmailMessageMoveSucceeded,
+            Info_AttDownloadUpdate,
             // Warning.
             // Error.
             Error_EmailMessageSendFailed,
             Error_EmailMessageDeleteFailed,
             Error_EmailMessageMoveFailed,
+            Error_AttDownloadFailed,
         };
 
         public KindEnum Kind { get; set; }

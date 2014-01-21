@@ -11,10 +11,6 @@ namespace NachoCore.Model
         [Indexed]
         public int EmailMessageId { get; set; }
 
-        /// <summary>
-        /// Next section from Body Attachment
-        /// </summary>
-
         [Indexed]
         public string DisplayName { get; set; }
 
@@ -31,15 +27,13 @@ namespace NachoCore.Model
 
         public bool IsInline { get; set; }
 
-        // unhandled:
-        // UmAttDuration
-        // UmAttOrder
+        public uint VoiceSeconds { get; set; }
 
-        /// <summary>
-        /// If IsDownloaded is true, ....
-        /// </summary>
+        public int VoiceOrder { get; set; }
 
         public bool IsDownloaded { get; set; }
+
+        public uint PercentDownloaded { get; set; }
 
         public int DataSize { get; set; }
 

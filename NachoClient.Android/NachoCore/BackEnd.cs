@@ -211,6 +211,11 @@ namespace NachoCore
             return ServiceFromAccount (account).MoveItemCmd (emailMessageId, destFolderId);
         }
 
+        public string DnldAttCmd (McAccount account, int attId)
+        {
+            return ServiceFromAccount (account).DnldAttCmd (attId);
+        }
+
         private McFolder GetClientOwned (int accountId, string serverId)
         {
             return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 

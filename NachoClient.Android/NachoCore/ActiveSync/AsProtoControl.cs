@@ -860,16 +860,17 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var folder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
-            folder.AsSyncRequired = true;
-            Owner.Db.Update (folder);
 
             var deleUpdate = new McPendingUpdate (Account.Id) {
                 Operation = McPendingUpdate.Operations.Delete,
                 DataType = McPendingUpdate.DataTypes.EmailMessage,
-                FolderServerId = emailMessage.ServerId,
+                FolderServerId = folder.ServerId,
                 ServerId = emailMessage.ServerId
             };   
             Owner.Db.Insert (deleUpdate);
+
+            // Delete the actual item.
+            Owner.Db.Delete (emailMessage);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
             return deleUpdate.Token;
         }
@@ -896,8 +897,29 @@ namespace NachoCore.ActiveSync
             };
 
             Owner.Db.Insert (moveUpdate);
+            // Move the actual item.
+            emailMessage.FolderId = destFolder.Id;
+            Owner.Db.Update (emailMessage);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
             return moveUpdate.Token;
+        }
+
+        public override string DnldAttCmd (int attId)
+        {
+            var att = Owner.Db.Table<McAttachment> ().SingleOrDefault (x => x.Id == attId);
+            if (null == att || att.IsDownloaded) {
+                return null;
+            }
+            var update = new McPendingUpdate {
+                Operation = McPendingUpdate.Operations.Download,
+                DataType = McPendingUpdate.DataTypes.Attachment,
+                AccountId = AccountId,
+                IsDispatched = false,
+                AttachmentId = attId,
+            };
+            Owner.Db.Insert (update);
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDNLDATT");
+            return update.Token;
         }
 
         public override void StatusInd (NcResult status)
