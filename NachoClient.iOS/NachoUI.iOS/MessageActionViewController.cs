@@ -6,6 +6,7 @@ using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -102,15 +103,19 @@ namespace NachoClient.iOS
 
         void Delete (int accountId, int messageId)
         {
-            // TODO: Add delete code
-            Log.Info ("TBD: Delete message");
+            // TODO: Push account in UI
+            // We only have one account, for now.
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First();
+            BackEnd.Instance.DeleteEmailCmd(account,  messageId);
             NavigationController.PopViewControllerAnimated (true);
         }
 
         void MoveMessage (int accountId, int messageId, int destinationFolderId)
         {
-            // TODO: Add move code
-            Log.Info ("TBD: Move message");
+            // TODO: Push account in UI
+            // We only have one account, for now.
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            BackEnd.Instance.MoveItemCmd(account, messageId, destinationFolderId);
             NavigationController.PopViewControllerAnimated (true);
         }
     }
