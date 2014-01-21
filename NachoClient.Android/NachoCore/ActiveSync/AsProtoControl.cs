@@ -918,6 +918,8 @@ namespace NachoCore.ActiveSync
                 AttachmentId = attId,
             };
             Owner.Db.Insert (update);
+            att.PercentDownloaded = 1;
+            Owner.Db.Update (att);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDNLDATT");
             return update.Token;
         }
