@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using MonoTouch.Foundation;
@@ -134,8 +135,6 @@ namespace NachoClient.iOS
 
         }
 
-
-
         void RenderMessage (MimeMessage message, Section section)
         {
             RenderMimeEntity (message.Body, section);
@@ -200,14 +199,15 @@ namespace NachoClient.iOS
 
             NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
         }
+
         /// <summary>
         /// Renders the best alternative.
         /// http://en.wikipedia.org/wiki/MIME#Alternative
         /// </summary>
-        void RenderBestAlternative(Multipart multipart, Section section)
+        void RenderBestAlternative (Multipart multipart, Section section)
         {
-            var e = multipart.Last();
-            RenderMimeEntity(e, section);
+            var e = multipart.Last ();
+            RenderMimeEntity (e, section);
 
         }
 
@@ -240,9 +240,9 @@ namespace NachoClient.iOS
                     System.Drawing.RectangleF frame = web.Frame;
                     frame.Height = 1;
                     web.Frame = frame;
-                    frame.Size = web.SizeThatFits(new System.Drawing.SizeF(0f, 0f));
+                    frame.Size = web.SizeThatFits (new System.Drawing.SizeF (0f, 0f));
                     web.Frame = frame;
-                    Log.Info("web frame: {0}", web,frame);
+                    Log.Info ("web frame: {0}", web, frame);
 //                    web.Dispose ();
                 }
             };
@@ -285,7 +285,10 @@ namespace NachoClient.iOS
 
         void DisplayAttachment (McAttachment attachment)
         {
-            // TODO: display attachment
+            var path = Path.Combine(BackEnd.Instance.AttachmentsDir, attachment.LocalFileName);
+            UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
+            Preview.Delegate = new DocumentInteractionControllerDelegate (this);
+            Preview.PresentPreview (true);
         }
 
         void DownloadAttachment (McAttachment attachment)
@@ -296,11 +299,37 @@ namespace NachoClient.iOS
             }
         }
 
-        void MarkAsRead(int index)
+        void MarkAsRead (int index)
         {
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
             var message = messages.GetEmailMessage (index);
             BackEnd.Instance.MarkEmailReadCmd (account, message.Id);
+        }
+
+        public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
+        {
+            UIViewController viewC;
+
+            public DocumentInteractionControllerDelegate (UIViewController controller)
+            {
+                viewC = controller;
+            }
+
+            public override UIViewController ViewControllerForPreview (UIDocumentInteractionController controller)
+            {
+                return viewC;
+            }
+
+            public override UIView ViewForPreview (UIDocumentInteractionController controller)
+            {
+                return viewC.View;
+            }
+
+            public override RectangleF RectangleForPreview (UIDocumentInteractionController controller)
+            {
+                return viewC.View.Frame;
+            }
+
         }
     }
 }
