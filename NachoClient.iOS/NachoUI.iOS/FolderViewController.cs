@@ -11,11 +11,7 @@ namespace NachoClient.iOS
 {
     public partial class FolderViewController : UITableViewController
     {
-        /*
-         *  FIXME - need to make sure that folder table and number of rows gets updated as new events from 
-         *         - from BE come in. Right now fixed length array will cause fault if email comes in.
-         *  FIXME - need to add logic for adding folder, 
-         */
+
         McAccount currentAccount { get; set; }
 
         public void SetAccount (McAccount ncaccount)
@@ -27,9 +23,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Setup our list of folders
-            TableView.Source = new FolderTableSource ();
-
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
@@ -39,6 +32,9 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+
+            // Setup the current list of folders
+            TableView.Source = new FolderTableSource ();
             this.TableView.ReloadData ();
         }
 
