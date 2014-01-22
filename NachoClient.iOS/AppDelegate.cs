@@ -87,6 +87,11 @@ namespace NachoClient.iOS
         {
         }
 
+        public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
+        {
+            new UIAlertView (notification.AlertAction, notification.AlertBody, null, "Close").Show ();
+        }
+
         // Methods for IBackEndOwner
 
         public void StatusInd (NcResult status)
@@ -96,7 +101,13 @@ namespace NachoClient.iOS
 
         public void StatusInd (McAccount account, NcResult status)
         {
-            // FIXME.
+            if (NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox == status.SubKind) {
+                UILocalNotification notification = new UILocalNotification();
+                notification.AlertAction = "Taco Mail";
+                notification.AlertBody = "You have new mail.";
+                UIApplication.SharedApplication.PresentLocationNotificationNow (notification);
+                return;
+            }
         }
 
         public void StatusInd (McAccount account, NcResult status, string[] tokens)
