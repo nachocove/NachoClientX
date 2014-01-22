@@ -97,10 +97,28 @@ namespace NachoCore.Utils
 
     public static class LogHelpers
     {
+        public class TruncatingXmlTextWriter : XmlTextWriter
+        {
+            public TruncatingXmlTextWriter (System.IO.TextWriter textWriter) : base (textWriter)
+            {
+            }
+
+            public override void WriteString (string text)
+            {
+                if (text.Length > 1024) {
+                    base.WriteString (text.Substring (0, 80) + "...");
+                } else {
+                    base.WriteString (text);
+                }
+            }
+
+
+        }
+
         public static string ToStringWithoutCharacterChecking (this XDocument xElement)
         {
             using (System.IO.StringWriter stringWriter = new System.IO.StringWriter ()) {
-                using (System.Xml.XmlTextWriter xmlTextWriter = new XmlTextWriter (stringWriter)) {
+                using (System.Xml.XmlTextWriter xmlTextWriter = new TruncatingXmlTextWriter (stringWriter)) {
                     xmlTextWriter.Formatting = Formatting.Indented;
                     xElement.WriteTo (xmlTextWriter);
                 }
@@ -111,7 +129,7 @@ namespace NachoCore.Utils
         public static string ToStringWithoutCharacterChecking (this XElement xElement)
         {
             using (System.IO.StringWriter stringWriter = new System.IO.StringWriter ()) {
-                using (System.Xml.XmlTextWriter xmlTextWriter = new XmlTextWriter (stringWriter)) {
+                using (System.Xml.XmlTextWriter xmlTextWriter = new TruncatingXmlTextWriter (stringWriter)) {
                     xmlTextWriter.Formatting = Formatting.Indented;
                     xElement.WriteTo (xmlTextWriter);
                 }
