@@ -48,6 +48,7 @@ namespace NachoCore.ActiveSync
                     Convert.FromBase64String (xmlData.Value));
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
+                DataSource.Owner.Db.Update (attachment);
                 DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate), new [] { Update.Token });
                 break;
             default:
