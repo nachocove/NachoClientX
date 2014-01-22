@@ -296,6 +296,7 @@ namespace NachoClient.iOS
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
                 var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
                 BackEnd.Instance.DnldAttCmd (account, attachment.Id);
+                ReloadRoot ();
             }
         }
 
