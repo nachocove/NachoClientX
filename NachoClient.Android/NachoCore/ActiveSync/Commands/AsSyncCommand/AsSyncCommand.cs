@@ -140,11 +140,16 @@ namespace NachoCore.ActiveSync
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
                 var folder = DataSource.Owner.Db.Table<McFolder> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
                              rec.ServerId == serverId);
+                var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
                 var oldSyncKey = folder.AsSyncKey;
-                folder.AsSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey).Value;
-
-                folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
-                (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
+                if (null != xmlSyncKey) {
+                    // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
+                    folder.AsSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey).Value;
+                    folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
+                    (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
+                } else {
+                    Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
+                }
                 Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
                 Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId, oldSyncKey, folder.AsSyncKey);
                 var status = collection.Element (m_ns + Xml.AirSync.Status);
