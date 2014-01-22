@@ -448,6 +448,9 @@
     <Compile Include="NachoUI.iOS\MessageActionViewController.designer.cs">
       <DependentUpon>MessageActionViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\StatusIndEventArgs.cs">
+      <Link>NachoCore\StatusIndEventArgs.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

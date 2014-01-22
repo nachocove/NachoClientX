@@ -132,6 +132,7 @@
     <Compile Include="NachoCore\Utils\StateMachine.cs" />
     <Compile Include="NachoCore\Brain\NcContactGleaner.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs" />
+    <Compile Include="NachoCore\StatusIndEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

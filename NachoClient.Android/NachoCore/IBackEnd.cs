@@ -22,6 +22,8 @@ namespace NachoCore
         void CredResp (McAccount account);
         // cancel command/request associated with this token (if possible).
         bool Cancel (McAccount account, string token);
+        // event can be used to register for status indications.
+        event EventHandler StatusIndEvent;
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
         string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults);
         // follow-on contacts search, using same token.

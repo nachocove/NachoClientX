@@ -8,6 +8,7 @@ using SQLite;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 /* Back-End:
  * The BE manages all protocol interaction with all servers (will be
@@ -28,19 +29,14 @@ namespace NachoCore
 {
     public sealed class BackEnd : IBackEnd, IProtoControlOwner
     {
-
         private static volatile BackEnd instance;
-        private static object syncRoot = new Object();
+        private static object syncRoot = new Object ();
 
-        public static BackEnd Instance
-        {
-            get 
-            {
-                if (instance == null) 
-                {
-                    lock (syncRoot) 
-                    {
-                        if (instance == null) 
+        public static BackEnd Instance {
+            get {
+                if (instance == null) {
+                    lock (syncRoot) {
+                        if (instance == null)
                             instance = new BackEnd ();
                     }
                 }
@@ -59,6 +55,8 @@ namespace NachoCore
             DidWrite,
             WillDelete}
         ;
+
+        public event EventHandler StatusIndEvent;
 
         public SQLiteConnection Db { set; get; }
 
@@ -225,8 +223,8 @@ namespace NachoCore
         {
             return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
                 accountId == x.AccountId &&
-                serverId == x.ServerId &&
-                true == x.IsClientOwned);
+            serverId == x.ServerId &&
+            true == x.IsClientOwned);
         }
 
         public McFolder GetOutbox (int accountId)
@@ -243,18 +241,35 @@ namespace NachoCore
         {
             return GetClientOwned (accountId, ClientOwned_Gleaned);
         }
-
         //
         // For IProtoControlOwner.
         //
+        private void InvokeStatusIndEvent (StatusIndEventArgs e)
+        {
+            if (null != StatusIndEvent) {
+                InvokeOnUIThread.Instance.Invoke (delegate() {
+                    StatusIndEvent.Invoke (this, e);
+                });
+            }
+        }
+
         public void StatusInd (ProtoControl sender, NcResult status)
         {
             Owner.StatusInd (sender.Account, status);
+            InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Account = sender.Account,
+                Status = status,
+            });
         }
 
         public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
             Owner.StatusInd (sender.Account, status, tokens);
+            InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = sender.Account,
+                Status = status,
+                Tokens = tokens,
+            });
         }
 
         public void CredReq (ProtoControl sender)
