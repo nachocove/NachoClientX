@@ -13,6 +13,7 @@ namespace NachoClient.iOS
     public partial class MessageActionViewController : DialogViewController
     {
         public McEmailMessage message;
+        public ReadMessageViewController owner;
 
         public MessageActionViewController (IntPtr handle) : base (handle)
         {
@@ -107,6 +108,9 @@ namespace NachoClient.iOS
             // We only have one account, for now.
             var account = BackEnd.Instance.Db.Table<McAccount> ().First();
             BackEnd.Instance.DeleteEmailCmd(account,  messageId);
+            if (null != owner) {
+                owner.messageDeleted = true;
+            }
             NavigationController.PopViewControllerAnimated (true);
         }
 

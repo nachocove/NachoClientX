@@ -18,10 +18,12 @@ namespace NachoClient.iOS
     public partial class ReadMessageViewController : DialogViewController
     {
         public int messageIndex;
+        public Boolean messageDeleted;
         public INachoEmailMessages messages;
 
         public ReadMessageViewController (IntPtr handle) : base (handle)
         {
+            messageDeleted = false;
         }
 
         public override void ViewDidLoad ()
@@ -34,6 +36,14 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
+//            // This doesn't work
+//            if (messageDeleted) {
+//                NavigationController.PopViewControllerAnimated (true);
+//                return;
+//            }
+
+            MarkAsRead (messageIndex);
+
             ReloadRoot ();
         }
 
@@ -42,6 +52,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "ReadMessageToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
                 vc.message = messages.GetEmailMessage (messageIndex);
+                vc.owner = this;
             }
         }
 
@@ -95,6 +106,8 @@ namespace NachoClient.iOS
                         s.Tapped += delegate {
                             DisplayAttachment (a);
                         };
+                    } else if (a.PercentDownloaded > 0) {
+                        s = new StyledStringElement (a.DisplayName, "Downloading...", UITableViewCellStyle.Subtitle);
                     } else {
                         s = new StyledStringElement (a.DisplayName, "Is not downloaded", UITableViewCellStyle.Subtitle);
                         s.Tapped += delegate {
@@ -277,7 +290,17 @@ namespace NachoClient.iOS
 
         void DownloadAttachment (McAttachment attachment)
         {
-            // TODO: download attachment
+            if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
+                var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+                BackEnd.Instance.DnldAttCmd (account, attachment.Id);
+            }
+        }
+
+        void MarkAsRead(int index)
+        {
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            var message = messages.GetEmailMessage (index);
+            BackEnd.Instance.MarkEmailReadCmd (account, message.Id);
         }
     }
 }
