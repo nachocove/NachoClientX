@@ -14,6 +14,7 @@ namespace NachoCore.Model
             AsSyncKey = "0";
             HeartbeatInterval = 24;
             MaxFolders = 200;
+            KludgeSimulatorIdentity = Guid.NewGuid ().ToString ("N").Substring (0, 20);
             State = (uint)St.Start;
         }
 
@@ -30,6 +31,8 @@ namespace NachoCore.Model
         public uint State { get; set; }
 
         public bool InitialProvisionCompleted { get; set; }
+
+        public string KludgeSimulatorIdentity { get; set; }
     }
 }
 

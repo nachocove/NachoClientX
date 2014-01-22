@@ -96,10 +96,11 @@ namespace NachoCore.ActiveSync
         // Override if the subclass wants total control over the query string.
         public virtual string QueryString (AsHttpOperation Sender)
         {
+            var ident = (Device.Instance.IsSimulator ()) ? DataSource.ProtocolState.KludgeSimulatorIdentity : Device.Instance.Identity ();
             return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
                 CommandName, 
                 DataSource.Cred.Username,
-                Device.Instance.Identity (),
+                ident,
                 Device.Instance.Type ());
         }
 
