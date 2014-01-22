@@ -43,6 +43,13 @@ namespace NachoCore.ActiveSync
                 var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                 attachment.LocalFileName = attachment.Id.ToString ();
+                // Add file extension
+                if(null != attachment.DisplayName) {
+                    var ext = Path.GetExtension (attachment.DisplayName);
+                    if (null != ext) {
+                        attachment.LocalFileName += ext;
+                    }
+                }
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
                 File.WriteAllBytes (Path.Combine (DataSource.Owner.AttachmentsDir, attachment.LocalFileName),
                     Convert.FromBase64String (xmlData.Value));
