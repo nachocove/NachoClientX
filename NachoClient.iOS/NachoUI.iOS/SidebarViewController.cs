@@ -6,6 +6,7 @@ using MonoTouch.UIKit;
 using System.Collections.Generic;
 using SWRevealViewControllerBinding;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -108,7 +109,7 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            Console.WriteLine ("PrepareForSegue: {0}", segue.Identifier);
+            Log.Info (Log.LOG_UI, "PrepareForSegue: {0}", segue.Identifier);
 
             NSIndexPath indexPath = this.TableView.IndexPathForSelectedRow;
             UIViewController destViewController = (UIViewController)segue.DestinationViewController;
@@ -139,7 +140,7 @@ namespace NachoClient.iOS
             }
 
             if (segue.GetType () == typeof(SWRevealViewControllerSegue)) {
-                Console.WriteLine ("PrepareForSqueue: SWRevealViewControllerSegue");
+            Log.Info (Log.LOG_UI, "PrepareForSqueue: SWRevealViewControllerSegue");
                 SWRevealViewControllerSegue swSegue = (SWRevealViewControllerSegue)segue;
                 swSegue.PerformBlock = PerformBlock;
             }
@@ -150,7 +151,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void PerformBlock (SWRevealViewControllerSegue s, UIViewController svc, UIViewController dvc)
         {
-            Console.WriteLine ("PrepareForSegue: PerformBlock");
+            Log.Info (Log.LOG_UI, "PrepareForSegue: PerformBlock");
             UINavigationController navController = (UINavigationController)this.RevealViewController ().FrontViewController;
             navController.SetViewControllers (new UIViewController[] { dvc }, true);
             this.RevealViewController ().SetFrontViewPosition (FrontViewPosition.Left, true);

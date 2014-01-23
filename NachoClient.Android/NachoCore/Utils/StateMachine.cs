@@ -140,7 +140,7 @@ namespace NachoCore.Utils
             foreach (var elem in EventQ) {
                 var inQEvent = (Event)elem;
                 if (eventCode == inQEvent.EventCode) {
-                    Console.WriteLine ("SM({0}): E={1} already in queue.", Name, EventName [eventCode]);
+                    Log.Info (Log.LOG_STATE, "SM({0}): E={1} already in queue.", Name, EventName [eventCode]);
                     return;
                 }
             }
@@ -177,28 +177,28 @@ namespace NachoCore.Utils
                 Message = fireEvent.Message;
                 if ((uint)St.Stop == State) {
                     if (fireEvent.DropIfStopped) {
-                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED IN St.Stop",
                             Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         continue;
                     } else {
-                        Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
                             Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         throw new Exception ();
                     }
                 }
                 var hotNode = TransTable.Where (x => State == x.State).Single ();
                 if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED EVENT",
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED EVENT",
                         Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                     continue;
                 }
                 if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                    Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => INVALID EVENT",
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => INVALID EVENT",
                         Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                     throw new Exception ();
                 }
                 var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                Console.WriteLine (LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => S={4}",
+                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => S={4}",
                     Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
                 Action = hotTrans.Act;
                 NextState = hotTrans.State;
@@ -263,7 +263,7 @@ namespace NachoCore.Utils
                 }
             }
             foreach (var error in errors) {
-                Console.WriteLine (error);
+                Log.Error (Log.LOG_STATE, error);
             }
             if (0 != errors.Count) {
                 throw new Exception (string.Format ("State machine {0} needs to be rectified.", Name));

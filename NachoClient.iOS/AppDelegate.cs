@@ -58,7 +58,7 @@ namespace NachoClient.iOS
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof (CidImageProtocol)));
 
             launchBe();
-            Console.WriteLine ("AppDelegate FinishedLaunching done.");
+            Log.Info (Log.LOG_UI, "AppDelegate FinishedLaunching done.");
 
             return true;
 
@@ -118,7 +118,7 @@ namespace NachoClient.iOS
         public void CredReq(McAccount account) {
             var Be = BackEnd.Instance;
 
-            Console.WriteLine ("Asking for Credentials");
+            Log.Info (Log.LOG_UI, "Asking for Credentials");
             InvokeOnMainThread (delegate {
                 var credView = new UIAlertView ();
                 var tmpCred = Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
@@ -168,7 +168,7 @@ namespace NachoClient.iOS
             // cancel should call "exit program, enter new server name should be updated server
             var Be = BackEnd.Instance;
 
-            Console.WriteLine ("Asking for Config Info");
+            Log.Info (Log.LOG_UI, "Asking for Config Info");
             InvokeOnMainThread (delegate {  // lock on main thread
             var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
 
@@ -185,7 +185,7 @@ namespace NachoClient.iOS
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format
                         if (txt != null) {
-                            Console.WriteLine(" New Server Name = " + txt);
+                            Log.Info (Log.LOG_UI, " New Server Name = " + txt);
                             tmpServer.Fqdn = txt;
                             Be.Db.Update(tmpServer);
                             Be.ServerConfResp (account); 

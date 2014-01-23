@@ -4,6 +4,7 @@ using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Model;
+using NachoCore.Utils;
 using NachoCore;
 using SWRevealViewControllerBinding;
 
@@ -16,7 +17,7 @@ namespace NachoClient.iOS
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
-            Console.WriteLine ("HomeViewController initialized");
+            Log.Info (Log.LOG_UI, "HomeViewController initialized");
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 

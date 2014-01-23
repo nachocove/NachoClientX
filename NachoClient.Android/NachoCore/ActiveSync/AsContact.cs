@@ -329,7 +329,7 @@ namespace NachoCore.ActiveSync
                     h.TrySetStringFromXml (c, child.Name.LocalName, child.Value);
                     break;
                 default:
-                    Console.WriteLine ("ParseContact UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                    Log.Warn (Log.LOG_AS, "ParseContact UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                     break;
                 }
             }

@@ -5,6 +5,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using SWRevealViewControllerBinding;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -52,20 +53,20 @@ namespace NachoClient.iOS
 
         void EditAccount ()
         {
-            Console.WriteLine ("Edit account");
+            Log.Info (Log.LOG_UI, "Edit account");
             var editViewController = new EditAccountViewController (null);
             NavigationController.PushViewController (editViewController, true);
         }
 
         void Kickstart ()
         {
-            Console.WriteLine ("Kickstart pressed");
+            Log.Info (Log.LOG_UI, "Kickstart pressed");
             // TODO: Kickstart
         }
 
         void Reset ()
         {
-            Console.WriteLine ("Reset pressed");
+            Log.Info (Log.LOG_UI, "Reset pressed");
             // TODO: Reset
         }
     }

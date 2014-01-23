@@ -62,7 +62,7 @@ namespace NachoCore.Utils
                 } else {
                     Quality = CommQualityEnum.OK;
                 }
-                Console.WriteLine ("COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
+                Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
                 return Quality;
             }
 

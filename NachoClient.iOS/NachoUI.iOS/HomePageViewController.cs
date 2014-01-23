@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
 using System.Drawing;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -34,8 +35,8 @@ namespace NachoClient.iOS
             this.contentLabel.Text = string.Format("Page {0}", this.PageIndex + 1);
             this.View.AddSubview(this.contentLabel);
 
-            Console.WriteLine("Book page #{0} loaded!", this.PageIndex + 1);
-            Console.WriteLine(this.View.Frame);
+            Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
+            Log.Info (Log.LOG_UI, this.View.Frame.ToString());
         }
     }
 

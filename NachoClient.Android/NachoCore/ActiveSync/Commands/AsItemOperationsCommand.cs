@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
                 var xmlFetch = doc.Root.Element (m_ns + Xml.ItemOperations.Response).Element (m_ns + Xml.ItemOperations.Fetch);
                 var xmlFileReference = xmlFetch.Element (m_ns + Xml.AirSyncBase.FileReference);
                 if (null != xmlFileReference && xmlFileReference.Value != attachment.FileReference) {
-                    Console.WriteLine ("as:itemoperations: FileReference mismatch.");
+                    Log.Error (Log.LOG_AS, "as:itemoperations: FileReference mismatch.");
                     throw new Exception ();
                 }
                 var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);

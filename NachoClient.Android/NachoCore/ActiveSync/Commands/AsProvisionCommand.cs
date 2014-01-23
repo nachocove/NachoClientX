@@ -188,7 +188,7 @@ namespace NachoCore.ActiveSync
                     // PolicyType required element of Policy, but we don't care much.
                     var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
                     if (null != xmlPolicyType && !Xml.Provision.PolicyTypeValue.Equals (xmlPolicyType.Value)) {
-                        Console.WriteLine ("AsProvisionCommand: unexpected value for PolicyType: {0}", xmlPolicyType.Value);
+                        Log.Warn (Log.LOG_AS, "AsProvisionCommand: unexpected value for PolicyType: {0}", xmlPolicyType.Value);
                     }
 
                     // Status required element of Policy.
@@ -347,7 +347,7 @@ namespace NachoCore.ActiveSync
                             }
                         }                                  
                     } catch {
-                        Console.WriteLine ("ApplyEasProvisionDocToPolicy: Bad value {0} or property {1}.", elem, elem.Name.LocalName);
+                        Log.Warn (Log.LOG_AS, "ApplyEasProvisionDocToPolicy: Bad value {0} or property {1}.", elem, elem.Name.LocalName);
                     }
 
                     break;
@@ -358,7 +358,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 default:
-                    Console.WriteLine ("ApplyEasProvisionDocToPolicy: Unknown child of EASProvisionDoc {0}.", elem);
+                    Log.Warn (Log.LOG_AS, "ApplyEasProvisionDocToPolicy: Unknown child of EASProvisionDoc {0}.", elem);
                     break;
                 }
             }
@@ -369,7 +369,7 @@ namespace NachoCore.ActiveSync
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
                 if (typeof(bool) != prop.PropertyType) {
-                    Console.WriteLine ("TrySetBoolFromXml: Property {0} is not bool.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetBoolFromXml: Property {0} is not bool.", targetProp);
                     return;
                 }
                 var numValue = uint.Parse (value);
@@ -381,11 +381,11 @@ namespace NachoCore.ActiveSync
                     prop.SetValue (targetObj, true);
                     break;
                 default:
-                    Console.WriteLine ("TrySetBoolFromXml: Bad value {0} for property {1}.", value, targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetBoolFromXml: Bad value {0} for property {1}.", value, targetProp);
                     break;
                 }
             } catch {
-                Console.WriteLine ("TrySetBoolFromXml: Bad value {0} or property {1}.", value, targetProp);
+                Log.Warn (Log.LOG_AS, "TrySetBoolFromXml: Bad value {0} or property {1}.", value, targetProp);
             }
         }
 
@@ -395,7 +395,7 @@ namespace NachoCore.ActiveSync
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
                 if (typeof(uint) != prop.PropertyType) {
-                    Console.WriteLine ("TrySetUintFromXml: Property {0} is not uint.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetUintFromXml: Property {0} is not uint.", targetProp);
                     return;
                 }
                 var numValue = uint.Parse (value);
@@ -404,11 +404,11 @@ namespace NachoCore.ActiveSync
                 if (numValue >= (uint)min && numValue <= (uint)max) {
                     prop.SetValue (targetObj, numValue);
                 } else {
-                    Console.WriteLine ("TrySetUintFromXml Property {0} value {1} is out of range [{2}, {3}].",
+                    Log.Warn (Log.LOG_AS, "TrySetUintFromXml Property {0} value {1} is out of range [{2}, {3}].",
                         targetProp, value, min, max);
                 }
             } catch {
-                Console.WriteLine ("TrySetUintFromXml: Bad value {0} or property {1}.", value, targetProp);
+                Log.Warn (Log.LOG_AS, "TrySetUintFromXml: Bad value {0} or property {1}.", value, targetProp);
             }
         }
 
@@ -425,12 +425,12 @@ namespace NachoCore.ActiveSync
             try {
                 var propBool = targetObj.GetType ().GetProperty (targetBoolProp);
                 if (typeof(bool) != propBool.PropertyType) {
-                    Console.WriteLine ("TrySetBoolUintFromXml: Property {0} is not bool.", targetBoolProp);
+                    Log.Warn (Log.LOG_AS, "TrySetBoolUintFromXml: Property {0} is not bool.", targetBoolProp);
                     return;
                 }
                 var propUint = targetObj.GetType ().GetProperty (targetUintProp);
                 if (typeof(uint) != propUint.PropertyType) {
-                    Console.WriteLine ("TrySetBoolUintFromXml: Property {0} is not uint.", targetUintProp);
+                    Log.Warn (Log.LOG_AS, "TrySetBoolUintFromXml: Property {0} is not uint.", targetUintProp);
                     return;
                 }
                 if (elem.IsEmpty || 0 == elem.Value.Length) {
@@ -449,12 +449,12 @@ namespace NachoCore.ActiveSync
                         propBool.SetValue (targetObj, true);
                         propUint.SetValue (targetObj, numValue);
                     } else {
-                        Console.WriteLine ("TrySetBoolUintFromXml Property {0} value {1} is out of range [{2}, {3}].",
+                        Log.Warn (Log.LOG_AS, "TrySetBoolUintFromXml Property {0} value {1} is out of range [{2}, {3}].",
                             targetUintProp, numValue, min, max);
                     }
                 }
             } catch (Exception ex) {
-                Console.WriteLine ("TrySetBoolUintFromXml: Bad element {0} or property {1}/{2}: {3}.", 
+                Log.Warn (Log.LOG_AS, "TrySetBoolUintFromXml: Bad element {0} or property {1}/{2}: {3}.", 
                     elem, targetBoolProp, targetUintProp, ex.ToString ());
             }
         }
@@ -465,13 +465,13 @@ namespace NachoCore.ActiveSync
                 var numValue = int.Parse (value);
                 var propEnum = targetObj.GetType ().GetProperty (targetProp);
                 if (typeof(uint) != propEnum.PropertyType) {
-                    Console.WriteLine ("TrySetTruncFromXml: Property {0} is not uint.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Property {0} is not uint.", targetProp);
                     return;
                 }
                 var targetPropUint = targetProp + "Bytes";
                 var propUint = targetObj.GetType ().GetProperty (targetPropUint);
                 if (typeof(uint) != propUint.PropertyType) {
-                    Console.WriteLine ("TrySetTruncFromXml: Property {0} is not uint.", targetPropUint);
+                    Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Property {0} is not uint.", targetPropUint);
                     return;
                 }
                 if (0 > numValue) {
@@ -485,7 +485,7 @@ namespace NachoCore.ActiveSync
                     propUint.SetValue (targetObj, numValue);
                 }
             } catch (Exception ex) {
-                Console.WriteLine ("TrySetTruncFromXml: Bad value {0} or property {1}: {3}.", value, targetProp, 
+                Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Bad value {0} or property {1}: {3}.", value, targetProp, 
                     ex.ToString ());
             }
         }
@@ -501,13 +501,13 @@ namespace NachoCore.ActiveSync
                     var pickled = string.Join (string.Empty, toPickle.ToArray ());
                     var propString = targetObj.GetType ().GetProperty (targetProp);
                     if (typeof(string) != propString.PropertyType) {
-                        Console.WriteLine ("TrySetStringFromChildren: Property {0} is not uint.", targetProp);
+                        Log.Warn (Log.LOG_AS, "TrySetStringFromChildren: Property {0} is not uint.", targetProp);
                         return;
                     }
                     propString.SetValue (targetObj, pickled);
                 }
             } catch {
-                Console.WriteLine ("TrySetStringFromChildren: Bad value {0} or property {1}.", container, targetProp);
+                Log.Warn (Log.LOG_AS, "TrySetStringFromChildren: Bad value {0} or property {1}.", container, targetProp);
             }
         }
     }

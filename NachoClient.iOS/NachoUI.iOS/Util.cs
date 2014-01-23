@@ -33,6 +33,7 @@ using MonoTouch.CoreLocation;
 using System.Globalization;
 using System.Drawing;
 using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -275,7 +276,7 @@ namespace NachoClient.iOS
             using (var s = System.IO.File.AppendText (Util.BaseDir + "/Documents/crash.log")){
                 var msg = String.Format ("On {0}, message: {1}\nException:\n{2}", DateTime.Now, text, e.ToString());
                 s.WriteLine (msg);
-                Console.WriteLine (msg);
+                NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_UI, msg);
             }
         }
 

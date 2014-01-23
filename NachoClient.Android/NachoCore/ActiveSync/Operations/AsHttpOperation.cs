@@ -174,7 +174,7 @@ namespace NachoCore.ActiveSync
         {
             if (0 < TriesLeft) {
                 --TriesLeft;
-                Console.WriteLine ("ASHTTPOP: TriesLeft: {0}", TriesLeft);
+                Log.Info (Log.LOG_AS, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
             } else {
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "ASHTTPDOH", null, "Too many retries."));
@@ -302,7 +302,7 @@ namespace NachoCore.ActiveSync
             TimeoutTimer = new NachoTimer (TimeoutTimerCallback, myClient, Timeout, 
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
-                Console.WriteLine("HTTPOP:URL:{0}", request.RequestUri.ToString());
+                Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString());
                 response = await myClient.SendAsync (request, HttpCompletionOption.ResponseContentRead, token);
             } catch (OperationCanceledException ex) {
                 Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
@@ -353,7 +353,7 @@ namespace NachoCore.ActiveSync
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
                 var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
-                Console.WriteLine ("HTML response: {0}", possibleMessage);
+                Log.Info (Log.LOG_AS, "HTML response: {0}", possibleMessage);
             }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
             if (null != preProcessEvent) {
@@ -371,7 +371,7 @@ namespace NachoCore.ActiveSync
                         if (null != xmlStatus) {
                             var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
                             if (null != statusEvent) {
-                                Console.WriteLine ("Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
+                                Log.Info (Log.LOG_AS, "Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
                                 return Final (statusEvent);
                             }
                         }
@@ -383,7 +383,7 @@ namespace NachoCore.ActiveSync
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:
                         if (null == ContentType) {
-                            Console.WriteLine ("ProcessHttpResponse: received HTTP response with content but no Content-Type.");
+                            Log.Warn (Log.LOG_AS, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
                         }
                         return Final (Owner.ProcessResponse (this, response));
                     }

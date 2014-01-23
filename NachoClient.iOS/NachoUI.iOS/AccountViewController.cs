@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Collections.Generic;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
@@ -24,7 +25,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             TableView.Source = new AccountTableSource ();
 
-            Console.WriteLine ("Account Tables shown");
+            Log.Info (Log.LOG_UI, "Account Tables shown");
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -38,12 +39,12 @@ namespace NachoClient.iOS
             // folders here.
             McAccount thisaccount;
 
-            Console.WriteLine ("In accountviewController PrepareforSegue");
+            Log.Info (Log.LOG_UI, "In accountviewController PrepareforSegue");
 
             if (segue.Identifier == "dorkknob") {
                 var fldrview = (FolderViewController)segue.DestinationViewController; //our destination
                 if (fldrview != null) {
-                    Console.Write (" Calling Folder View in dorkknob segue");
+                    Log.Info (Log.LOG_UI, " Calling Folder View in dorkknob segue");
                     //fldrview.curAccountId = TableView.IndexPathForSelectedRow;
                     var source = TableView.Source as AccountTableSource;
                     var rowPath = TableView.IndexPathForSelectedRow;

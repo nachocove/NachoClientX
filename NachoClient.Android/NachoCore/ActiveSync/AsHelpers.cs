@@ -109,14 +109,14 @@ namespace NachoCore.ActiveSync
             try {
                 binaryData = System.Convert.FromBase64String (encodedTimeZone);
             } catch (System.ArgumentNullException) {
-                System.Console.WriteLine ("Encoded TimeZone string is null.");
+                Log.Warn (Log.LOG_AS, "Encoded TimeZone string is null.");
                 return null;
             } catch (System.FormatException) {
-                System.Console.WriteLine ("Encoded TimeZone string length is not 4 or is not an even multiple of 4.");
+                Log.Warn (Log.LOG_AS, "Encoded TimeZone string length is not 4 or is not an even multiple of 4.");
                 return null;
             }
             if (binaryData.Length != (4 + 64 + 16 + 4 + 64 + 16 + 4)) {
-                System.Console.WriteLine ("Decoded TimeZone string length is wrong: " + binaryData.Length.ToString ());
+                Log.Warn (Log.LOG_AS, "Decoded TimeZone string length is wrong: " + binaryData.Length.ToString ());
                 return null;
             }
             string StandardName = ExtractStringFromAsTimeZone (binaryData, 4, 64);
@@ -260,7 +260,7 @@ namespace NachoCore.ActiveSync
                     r.WeekOfMonth = child.Value.ToInt ();
                     break;
                 default:
-                    Console.WriteLine ("ParseRecurrence UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                    Log.Warn (Log.LOG_AS, "ParseRecurrence UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                     break;
                 }
             }
@@ -337,7 +337,7 @@ namespace NachoCore.ActiveSync
 //                  case Xml.Calendar.airsyncbase:Body:
 //                      break
                     default:
-                        Console.WriteLine ("CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                        Log.Warn (Log.LOG_AS, "CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                         break;
                     }
                 }
@@ -454,7 +454,7 @@ namespace NachoCore.ActiveSync
                     TrySetStringFromXml (c, child.Name.LocalName, child.Value);
                     break;
                 default:
-                    Console.WriteLine ("ParseCalendar UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                    Log.Warn (Log.LOG_AS, "ParseCalendar UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                     break;
                 }
             }
@@ -473,12 +473,12 @@ namespace NachoCore.ActiveSync
                 var prop = targetObj.GetType ().GetProperty (targetProp);
                 NachoCore.NachoAssert.True (null != prop);
                 if (typeof(string) != prop.PropertyType) {
-                    Console.WriteLine ("TrySetStringFromXml: Property {0} is not string.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetStringFromXml: Property {0} is not string.", targetProp);
                     return;
                 }
                 prop.SetValue (targetObj, value);
             } catch (Exception e) {
-                Console.WriteLine ("TrySetStringFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
+                Log.Warn (Log.LOG_AS, "TrySetStringFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
             }
         }
 
@@ -494,13 +494,13 @@ namespace NachoCore.ActiveSync
                 var prop = targetObj.GetType ().GetProperty (targetProp);
                 NachoCore.NachoAssert.True (null != prop);
                 if (typeof(int) != prop.PropertyType) {
-                    Console.WriteLine ("TrySetIntFromXml: Property {0} is not int.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetIntFromXml: Property {0} is not int.", targetProp);
                     return;
                 }
                 var numValue = int.Parse (value);
                 prop.SetValue (targetObj, numValue);
             } catch (Exception e) {
-                Console.WriteLine ("TrySetIntFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
+                Log.Warn (Log.LOG_AS, "TrySetIntFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
             }
         }
 
@@ -516,13 +516,13 @@ namespace NachoCore.ActiveSync
                 var prop = targetObj.GetType ().GetProperty (targetProp);
                 NachoCore.NachoAssert.True (null != prop);
                 if (typeof(DateTime) != prop.PropertyType) {
-                    Console.WriteLine ("TrySetDateTimeFromXml: Property {0} is not int.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetDateTimeFromXml: Property {0} is not int.", targetProp);
                     return;
                 }
                 var dt = ParseAsDateTime (value);
                 prop.SetValue (targetObj, dt);
             } catch (Exception e) {
-                Console.WriteLine ("TrySetDateTimeFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
+                Log.Warn (Log.LOG_AS, "TrySetDateTimeFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
             }
         }
 
@@ -532,13 +532,13 @@ namespace NachoCore.ActiveSync
                 var prop = targetObj.GetType ().GetProperty (targetProp);
                 NachoCore.NachoAssert.True (null != prop);
                 if (typeof(DateTime) != prop.PropertyType) {
-                    Console.WriteLine ("TrySetCompactDateTimeFromXml: Property {0} is not int.", targetProp);
+                    Log.Warn (Log.LOG_AS, "TrySetCompactDateTimeFromXml: Property {0} is not int.", targetProp);
                     return;
                 }
                 var dt = ParseAsCompactDateTime (value);
                 prop.SetValue (targetObj, dt);
             } catch (Exception e) {
-                Console.WriteLine ("TrySetCompactDateTimeFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
+                Log.Warn (Log.LOG_AS, "TrySetCompactDateTimeFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
             }
         }
     }

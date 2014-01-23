@@ -1,4 +1,5 @@
 using System;
+using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
@@ -612,7 +613,7 @@ namespace NachoCore.ActiveSync
                 case (uint)TypeCode.Unknown:
                 case (uint)TypeCode.Ric:
                     //FIXME - we don't know what to do with these yet.
-                    Console.WriteLine ("TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
+                    Log.Error (Log.LOG_AS, "TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
                     return AirSync.ClassCode.Notes;
 
                 case (uint)TypeCode.DefaultInbox:

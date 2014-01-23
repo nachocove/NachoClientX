@@ -596,7 +596,7 @@ namespace NachoCore.ActiveSync
                 case HttpStatusCode.Found:
                     try {
                         ReDirUri = new Uri (response.Headers.GetValues ("Location").First ());
-                        Console.WriteLine ("REDIRURI: {0}", ReDirUri);
+                        Log.Info (Log.LOG_AS, "REDIRURI: {0}", ReDirUri);
                         IsReDir = true;
                     } catch {
                         return Event.Create ((uint)SmEvt.E.HardFail, "SRPPPHARD");

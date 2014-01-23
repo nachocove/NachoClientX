@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -72,7 +73,7 @@ namespace NachoClient.iOS
             // add all logic to ensure that any change in the field is updated .. unless cancel hit
             this.txtServerName.ShouldReturn += (textField) => { 
                 if (txtServerName.Text.Contains("Hello")){
-                    Console.WriteLine("Hello"); 
+                    Log.Info (Log.LOG_UI, "Hello"); 
                 }
                 //ncServername = txtServerName.Text;
                 //Console.WriteLine(ncServername);
@@ -84,7 +85,7 @@ namespace NachoClient.iOS
         void getUserName(){
             this.txtUserName.ShouldReturn += (textField) => { 
                 if (txtUserName.Text.Contains("Hello")){
-                    Console.WriteLine("Hello"); 
+                    Log.Info (Log.LOG_UI, "Hello"); 
                 }
                 //ncUserName = txtUserName.Text;
                 //Console.WriteLine(ncPassword);
@@ -96,7 +97,7 @@ namespace NachoClient.iOS
         void getPassword(){
             this.txtPassword.ShouldReturn += (textField) => { 
                 if (txtPassword.Text.Contains("Hello")){
-                    Console.WriteLine("Hello"); 
+                    Log.Info (Log.LOG_UI, "Hello"); 
                 }
                 //ncPassword = txtPassword.Text;
                 //Console.WriteLine(ncPassword);
