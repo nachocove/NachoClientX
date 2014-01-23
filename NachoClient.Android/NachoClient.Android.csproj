@@ -123,16 +123,17 @@
     <Compile Include="NachoCore\ActiveSync\AsContact.cs" />
     <Compile Include="NachoCore\Extensions\NachoAssert.cs" />
     <Compile Include="NachoCore\NcEnforcer.cs" />
-    <Compile Include="NachoCore\Extensions\Log.cs" />
     <Compile Include="NachoCore\NcCommStatus\NcCommStatus.cs" />
     <Compile Include="NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs" />
     <Compile Include="NachoCore\NcEmailAddress.cs" />
     <Compile Include="NachoCore\INachoEmailMessages.cs" />
     <Compile Include="NachoCore\NachoEmailMessages.cs" />
-    <Compile Include="NachoCore\Utils\StateMachine.cs" />
     <Compile Include="NachoCore\Brain\NcContactGleaner.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs" />
     <Compile Include="NachoCore\StatusIndEventArgs.cs" />
+    <Compile Include="NachoCore\Utils\NcCapture.cs" />
+    <Compile Include="NachoCore\Utils\NcStateMachine.cs" />
+    <Compile Include="NachoCore\Utils\Log.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -7,7 +7,7 @@ namespace NachoCore.ActiveSync
 {
     public interface IAsOperation
     {
-        void Execute (StateMachine sm);
+        void Execute (NcStateMachine sm);
         void Cancel ();
     }
 }

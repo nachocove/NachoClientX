@@ -51,6 +51,8 @@ namespace NachoCore.ActiveSync
         private const uint KDefaultDelaySeconds = 10;
         private const int KDefaultTimeoutSeconds = 15;
         private const uint KDefaultRetries = 15;
+        private const string KToXML = "ToXML";
+
         // IVars. FIXME - make m_commandName private when referenced.
         public string m_commandName;
         private IAsDataSource DataSource;
@@ -63,8 +65,8 @@ namespace NachoCore.ActiveSync
         private NachoTimer DisposedDelayTimer;
         private NachoTimer DisposedTimeoutTimer;
         #pragma warning restore 414
-        private StateMachine HttpOpSm;
-        private StateMachine OwnerSm;
+        private NcStateMachine HttpOpSm;
+        private NcStateMachine OwnerSm;
         private HttpClient Client;
         private Uri ServerUri;
         private bool ServerUriBeingTested;
@@ -82,6 +84,7 @@ namespace NachoCore.ActiveSync
         // Initializers.
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IAsDataSource dataSource)
         {
+            NcCapture.AddKind (KToXML);
             Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
             TriesLeft = KDefaultRetries + 1;
             Allow451Follow = true;
@@ -89,7 +92,7 @@ namespace NachoCore.ActiveSync
             Owner = owner;
             DataSource = dataSource;
 
-            HttpOpSm = new StateMachine () {
+            HttpOpSm = new NcStateMachine () {
                 Name = "as:http_op",
                 LocalEventType = typeof(HttpOpEvt),
                 LocalStateType = typeof(HttpOpLst),
@@ -140,7 +143,7 @@ namespace NachoCore.ActiveSync
             HttpOpSm.Validate ();
         }
         // Public Methods.
-        public virtual void Execute (StateMachine sm)
+        public virtual void Execute (NcStateMachine sm)
         {
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
@@ -366,7 +369,9 @@ namespace NachoCore.ActiveSync
                 if (0 != ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
+                        var cap = NcCapture.CreateAndStart (KToXML);
                         responseDoc = ContentData.LoadWbxml ();
+                        cap.Stop ();
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
                             var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));

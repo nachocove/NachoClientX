@@ -381,9 +381,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Log.cs">
-      <Link>NachoCore\Extensions\Log.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
     </Compile>
@@ -435,9 +432,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
       <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\StateMachine.cs">
-      <Link>NachoCore\Utils\StateMachine.cs</Link>
-    </Compile>
     <Compile Include="NachoCore\NachoFolders.cs" />
     <Compile Include="NachoUI.iOS\CidImageProtocol.cs" />
     <Compile Include="NachoUI.iOS\MimeUtilities.cs" />
@@ -450,6 +444,15 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\StatusIndEventArgs.cs">
       <Link>NachoCore\StatusIndEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcStateMachine.cs">
+      <Link>NachoCore\Utils\NcStateMachine.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCapture.cs">
+      <Link>NachoCore\Utils\NcCapture.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Log.cs">
+      <Link>NachoCore\Utils\Log.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

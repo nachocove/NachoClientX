@@ -26,7 +26,7 @@ namespace NachoCore.ActiveSync
             m_owner = owner;
         }
 
-        public async void Execute (StateMachine sm) {
+        public async void Execute (NcStateMachine sm) {
             Request = new DnsQueryRequest ();
             TimeoutTimer = new NachoTimer (TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
                 System.Threading.Timeout.Infinite);

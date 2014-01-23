@@ -87,7 +87,7 @@ namespace NachoCore.ActiveSync
         private McServer ServerCandidate;
         public uint ReDirsLeft;
 
-        public StateMachine Sm { get; set; }
+        public NcStateMachine Sm { get; set; }
         // CALLABLE BY THE OWNER.
         public AsAutodiscoverCommand (IAsDataSource dataSource) : base ("Autodiscover", 
                                                                         RequestSchema,
@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
         {
             ReDirsLeft = 10;
             DisposedJunk = new List<object> ();
-            Sm = new StateMachine () {
+            Sm = new NcStateMachine () {
                 LocalEventType = typeof(TlEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
@@ -313,7 +313,7 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
         }
 
-        public override void Execute (StateMachine ownerSm)
+        public override void Execute (NcStateMachine ownerSm)
         {
             OwnerSm = ownerSm;
             Sm.Name = OwnerSm.Name + ":AUTOD";
