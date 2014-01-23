@@ -226,7 +226,11 @@ namespace NachoClient.iOS
             msg.To = CommaSeparatedList (message.To);
             msg.Cc = CommaSeparatedList (message.Cc);
             msg.Subject = message.Subject;
-            msg.Body = Body.Summary ();
+
+            var body = new McBody ();
+            body.Body = Body.Summary ();
+            BackEnd.Instance.Db.Insert (body);
+            msg.BodyId = body.Id;
 
             BackEnd.Instance.Db.Insert (msg);
 
@@ -284,7 +288,8 @@ namespace NachoClient.iOS
             }
             // TODO: Setup message id, etc etc.
             // Handle body
-            if (null == ActionMessage.Body) {
+            var body = ActionMessage.GetBody (BackEnd.Instance.Db);
+            if (null == body) {
                 return;
             }
             if (Action.Equals (Forward)) {
@@ -292,7 +297,7 @@ namespace NachoClient.iOS
                 Body = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
                 return;
             }
-            string someText = MimeUtilities.FetchSomeText (ActionMessage.Body);
+            string someText = MimeUtilities.FetchSomeText (body);
             string quotedText = QuoteForReply (someText);
             Body = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
         }

@@ -37,18 +37,18 @@ namespace NachoCore.Brain
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
-            if (null == emailMessage.Body) {
+            if (0 == emailMessage.BodyId) {
                 // Mark the email message as gleaned.
                 emailMessage.HasBeenGleaned = true;
                 BackEnd.Instance.Db.Update (emailMessage);
                 return;
             }
-            var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.Body));
+            var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.GetBody (BackEnd.Instance.Db)));
             var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
             MimeMessage mimeMsg;
             try {
                 mimeMsg = bodyParser.ParseMessage ();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 // TODO: Find root cause
                 // Mark the email message as gleaned.
                 emailMessage.HasBeenGleaned = true;
@@ -111,12 +111,13 @@ namespace NachoCore.Brain
                                 BackEnd.Instance.Db.Update (contact);
                             }
                         }
-                        // Mark the email message as gleaned.
-                        emailMessage.HasBeenGleaned = true;
-                        BackEnd.Instance.Db.Update (emailMessage);
+
                     }
                 }
             }
+            // Mark the email message as gleaned.
+            emailMessage.HasBeenGleaned = true;
+            BackEnd.Instance.Db.Update (emailMessage);
         }
     }
 }

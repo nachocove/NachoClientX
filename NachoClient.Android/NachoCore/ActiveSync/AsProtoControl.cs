@@ -867,6 +867,7 @@ namespace NachoCore.ActiveSync
             Owner.Db.Insert (deleUpdate);
 
             // Delete the actual item.
+            emailMessage.DeleteBody (Owner.Db);
             Owner.Db.Delete (emailMessage);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
             return deleUpdate.Token;

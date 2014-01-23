@@ -109,6 +109,7 @@ namespace NachoCore
             Db.CreateTable<McCalendarCategory> ();
             Db.CreateTable<McRecurrence> ();
             Db.CreateTable<McTimeZone> ();
+            Db.CreateTable<McBody> ();
  
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 8;

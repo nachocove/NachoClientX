@@ -11,7 +11,7 @@ namespace NachoCore.Model
         private const string ColonSpace = ": ";
 
         [Indexed]
-        public string Body { set; get; }
+        public int BodyId { set; get; }
         public string Encoding { set; get; }
         [Indexed]
         public string From { set; get; }
@@ -29,14 +29,14 @@ namespace NachoCore.Model
         public bool IsRead { set; get; }
         public string MessageClass { set; get; }
 
-        public string ToMime () {
+        public string ToMime (SQLiteConnection db) {
             string message = "";
             foreach (var propertyName in new [] {"From", "To", "Subject", "ReplyTo", "DisplayTo"}) {
                 message = Append (message, propertyName);
             }
             string date = DateTime.UtcNow.ToString ("ddd, dd MMM yyyy HH:mm:ss K", DateTimeFormatInfo.InvariantInfo);
             message = message + CrLf + "Date" + ColonSpace + date;
-            message = message + CrLf + CrLf + Body;
+            message = message + CrLf + CrLf + GetBody(db);
             return message;
         }
 
@@ -50,6 +50,33 @@ namespace NachoCore.Model
             }
             return message + CrLf + propertyName + ColonSpace + propertyValue;
         }
+
+        public string GetBody(SQLiteConnection db)
+        {
+            var body = db.Get<McBody> (BodyId);
+            if (null == body) {
+                return null;
+            } else {
+                return body.Body;
+            }
+        }
+
+        public void DeleteBody(SQLiteConnection db)
+        {
+            if (0 != BodyId) {
+                var body = new McBody ();
+                body.Id = BodyId;
+                db.Delete (body);
+                BodyId = 0;
+                db.Update (this);
+            }
+        }
     }
+
+    public class McBody : McObject
+    {
+        public string Body { get; set; }
+    }
+
 }
 

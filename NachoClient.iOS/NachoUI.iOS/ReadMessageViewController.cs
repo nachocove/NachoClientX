@@ -59,6 +59,11 @@ namespace NachoClient.iOS
 
         protected void ReloadRoot ()
         {
+            if (messageDeleted) {
+                Root = new RootElement ("Message Deleted");
+                return;
+            }
+
             var root = new RootElement ("Message");
             root.UnevenRows = true;
 
@@ -122,8 +127,9 @@ namespace NachoClient.iOS
             var bodySection = new Section ();
             root.Add (bodySection);
 
-            if (null != m.Body) {
-                var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (m.Body));
+            var body = m.GetBody (BackEnd.Instance.Db);
+            if (null != body) {
+                var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var message = bodyParser.ParseMessage ();
                 MimeUtilities.motd = message; // for cid handler
