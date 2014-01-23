@@ -34,12 +34,12 @@ namespace NachoCore.ActiveSync
 
         public bool MustWipe;
         public bool WipeSucceeded;
-        private StateMachine Sm;
+        private NcStateMachine Sm;
         private AsHttpOperation GetOp, AckOp;
 
         public AsProvisionCommand (IAsDataSource dataSource) : base (Xml.Provision.Ns, Xml.Provision.Ns, dataSource)
         {
-            Sm = new StateMachine () { 
+            Sm = new NcStateMachine () { 
                 LocalStateType = typeof(Lst),
                 LocalEventType = typeof(AsProtoControl.AsEvt),
                 TransTable = new[] {
@@ -118,7 +118,7 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
         }
 
-        public override void Execute (StateMachine sm)
+        public override void Execute (NcStateMachine sm)
         {
             OwnerSm = sm;
             Sm.Name = OwnerSm.Name + ":PROV";

@@ -48,7 +48,7 @@ namespace NachoCore
             }
         }
 
-        public StateMachine Sm { set; get; }
+        public NcStateMachine Sm { set; get; }
 
         // Interface to owner.
         public abstract void Execute ();

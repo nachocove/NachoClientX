@@ -88,7 +88,7 @@ namespace NachoCore.Utils
         }
     }
 
-    public sealed class StateMachine
+    public sealed class NcStateMachine
     {
         public string Name { set; get; }
 
@@ -117,7 +117,7 @@ namespace NachoCore.Utils
         private Queue EventQ;
         private bool IsFiring;
 
-        public StateMachine ()
+        public NcStateMachine ()
         {
             EventQ = new Queue ();
             State = (uint)St.Start;

@@ -35,7 +35,7 @@ namespace NachoCore.ActiveSync
         protected string CommandName;
         public XNamespace m_ns;
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
-        protected StateMachine OwnerSm;
+        protected NcStateMachine OwnerSm;
         protected IAsDataSource DataSource;
         protected AsHttpOperation Op;
         protected McPendingUpdate Update;
@@ -54,7 +54,7 @@ namespace NachoCore.ActiveSync
             DataSource = dataSource;
         }
         // Virtual Methods.
-        protected virtual void Execute (StateMachine sm, ref AsHttpOperation opRef)
+        protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
         {
             Op = new AsHttpOperation (CommandName, this, DataSource);
             if (TimeSpan.Zero != Timeout) {
@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
             Op.Execute (sm);
         }
 
-        public virtual void Execute (StateMachine sm)
+        public virtual void Execute (NcStateMachine sm)
         {
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);

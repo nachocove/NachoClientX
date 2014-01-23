@@ -66,7 +66,7 @@ namespace NachoCore.ActiveSync
             public Uri SrServerUri;
             public X509Certificate2 ServerCertificate;
             // Owned operations and execution values.
-            public StateMachine StepSm;
+            public NcStateMachine StepSm;
             public AsHttpOperation HttpOp;
             public AsDnsOperation DnsOp;
             public uint RetriesLeft;
@@ -100,7 +100,7 @@ namespace NachoCore.ActiveSync
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
 
-                StepSm = new StateMachine () {
+                StepSm = new NcStateMachine () {
                     /* NOTE: There are three start states:
                      * PostWait - used for S1/S2,
                      * GetWait - used for S3,
