@@ -263,6 +263,16 @@ namespace NachoClient.iOS
                 Subject = "Fwd: " + ActionMessage.Subject;
             }
             if (Action.Equals (ReplyAll)) {
+                // Add the To list to the CC list
+                if (null != ActionMessage.To) {
+                    string[] ToList = ActionMessage.To.Split (new Char [] { ',' });
+                    if (null != ToList) {
+                        foreach (var a in ToList) {
+                            AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                        }
+                    }
+                }
+                // And keep the existing CC list
                 if (null != ActionMessage.Cc) {
                     string[] ccList = ActionMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
