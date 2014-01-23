@@ -81,7 +81,7 @@
     <CodesignKey>iPhone Distribution</CodesignKey>
     <BuildIpa>true</BuildIpa>
     <ConsolePause>false</ConsolePause>
-    <CodesignProvision>D6A85903-B414-466F-90CD-412977856942</CodesignProvision>
+    <CodesignProvision>CE96CC2C-5032-40FD-96F3-96A3A7633BAE</CodesignProvision>
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
