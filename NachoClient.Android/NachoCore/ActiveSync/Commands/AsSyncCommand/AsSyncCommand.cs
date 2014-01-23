@@ -255,6 +255,7 @@ namespace NachoCore.ActiveSync
                                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                                     var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.ServerId == delServerId);
                                     if (null != emailMessage) {
+                                        emailMessage.DeleteBody (DataSource.Owner.Db);
                                         DataSource.Owner.Db.Delete (emailMessage);
                                     }
                                     break;
@@ -373,11 +374,15 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.AirSyncBase.Body:
                     emailMessage.Encoding = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value;
-                    var body = child.Element (m_baseNs + Xml.AirSyncBase.Data);
+                    var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
-                    if (null != body) {
-                        emailMessage.Body = body.Value;
+                    if (null != bodyElement) {
+                        var body = new McBody();
+                        body.Body = bodyElement.Value; 
+                        DataSource.Owner.Db.Insert (body);
+                        emailMessage.BodyId = body.Id;
                     } else {
+                        emailMessage.BodyId = 0;
                         Console.WriteLine ("Truncated message from server.");
                     }
                     break;

@@ -46,6 +46,7 @@ namespace NachoCore.ActiveSync
         {
             var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
+            emailMessage.DeleteBody (DataSource.Owner.Db);
             DataSource.Owner.Db.Delete (emailMessage);
             DataSource.Owner.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
@@ -66,7 +67,7 @@ namespace NachoCore.ActiveSync
         private string GenerateMime ()
         {
             var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
-            return emailMessage.ToMime ();
+            return emailMessage.ToMime (DataSource.Owner.Db);
         }
 
         private McPendingUpdate NextToSend ()

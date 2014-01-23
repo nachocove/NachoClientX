@@ -226,7 +226,11 @@ namespace NachoClient.iOS
             msg.To = CommaSeparatedList (message.To);
             msg.Cc = CommaSeparatedList (message.Cc);
             msg.Subject = message.Subject;
-            msg.Body = Body.Summary ();
+
+            var body = new McBody ();
+            body.Body = Body.Summary ();
+            BackEnd.Instance.Db.Insert (body);
+            msg.BodyId = body.Id;
 
             BackEnd.Instance.Db.Insert (msg);
 
@@ -263,6 +267,16 @@ namespace NachoClient.iOS
                 Subject = "Fwd: " + ActionMessage.Subject;
             }
             if (Action.Equals (ReplyAll)) {
+                // Add the To list to the CC list
+                if (null != ActionMessage.To) {
+                    string[] ToList = ActionMessage.To.Split (new Char [] { ',' });
+                    if (null != ToList) {
+                        foreach (var a in ToList) {
+                            AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                        }
+                    }
+                }
+                // And keep the existing CC list
                 if (null != ActionMessage.Cc) {
                     string[] ccList = ActionMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
@@ -274,7 +288,8 @@ namespace NachoClient.iOS
             }
             // TODO: Setup message id, etc etc.
             // Handle body
-            if (null == ActionMessage.Body) {
+            var body = ActionMessage.GetBody (BackEnd.Instance.Db);
+            if (null == body) {
                 return;
             }
             if (Action.Equals (Forward)) {
@@ -282,7 +297,7 @@ namespace NachoClient.iOS
                 Body = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
                 return;
             }
-            string someText = MimeUtilities.FetchSomeText (ActionMessage.Body);
+            string someText = MimeUtilities.FetchSomeText (body);
             string quotedText = QuoteForReply (someText);
             Body = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
         }
