@@ -40,8 +40,8 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "mailview") {
-                var msgview = (MessageViewController)segue.DestinationViewController; //our destination
+            if (segue.Identifier == "FolderToMessageList") {
+                var msgview = (MessageListViewController)segue.DestinationViewController; //our destination
                 var source = TableView.Source as FolderTableSource;
                 var rowPath = TableView.IndexPathForSelectedRow;
                 var folder = source.getFolder (rowPath);

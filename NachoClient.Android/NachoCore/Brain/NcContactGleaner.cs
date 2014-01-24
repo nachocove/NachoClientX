@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Linq;
 using MimeKit;
+using NachoCore.Utils;
 using NachoCore.Model;
 
 namespace NachoCore.Brain
@@ -111,9 +112,12 @@ namespace NachoCore.Brain
                                 BackEnd.Instance.Db.Update (contact);
                             }
                         }
-
                     }
                 }
+            }
+            // As long as we have the data in memory (sorry!)
+            if (null == emailMessage.Summary) {
+                emailMessage.Summary = MimeHelpers.CreateSummary (mimeMsg);
             }
             // Mark the email message as gleaned.
             emailMessage.HasBeenGleaned = true;

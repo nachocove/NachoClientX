@@ -132,8 +132,8 @@ namespace NachoClient.iOS
                 var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var message = bodyParser.ParseMessage ();
-                MimeUtilities.motd = message; // for cid handler
-                MimeUtilities.DumpMessage (message, 0);
+                PlatformHelpers.motd = message; // for cid handler
+                MimeHelpers.DumpMessage (message, 0);
                 RenderMessage (message, bodySection);
             }
           
@@ -282,7 +282,7 @@ namespace NachoClient.iOS
 
         void RenderImage (MimePart part, Section section)
         {
-            var image = MimeUtilities.RenderImage (part);
+            var image = PlatformHelpers.RenderImage (part);
             var view = new UIImageView (image);
             var e = new UIViewElement ("", view, true);
             NachoCore.Utils.Log.Info ("Add image element: {0}", e);

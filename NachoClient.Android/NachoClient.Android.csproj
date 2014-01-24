@@ -134,6 +134,7 @@
     <Compile Include="NachoCore\Utils\NcCapture.cs" />
     <Compile Include="NachoCore\Utils\NcStateMachine.cs" />
     <Compile Include="NachoCore\Utils\Log.cs" />
+    <Compile Include="NachoCore\Utils\MimeHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

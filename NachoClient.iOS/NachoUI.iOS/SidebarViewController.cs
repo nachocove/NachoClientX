@@ -133,7 +133,7 @@ namespace NachoClient.iOS
                 break;
             case SidebarToMessagesSegueId:
                 {
-                    MessageViewController vc = (MessageViewController)destViewController;
+                    MessageListViewController vc = (MessageListViewController)destViewController;
                     vc.SetFolder (m.Folder);
                 }
                 break;

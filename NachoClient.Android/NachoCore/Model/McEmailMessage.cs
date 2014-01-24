@@ -12,6 +12,7 @@ namespace NachoCore.Model
 
         [Indexed]
         public int BodyId { set; get; }
+        public string Summary {set; get; }
         public string Encoding { set; get; }
         [Indexed]
         public string From { set; get; }

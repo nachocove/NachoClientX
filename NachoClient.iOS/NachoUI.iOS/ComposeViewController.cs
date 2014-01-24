@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using NachoCore.Model;
+using NachoCore.Utils;
 using NachoCore;
 using MimeKit;
 
@@ -297,7 +298,7 @@ namespace NachoClient.iOS
                 Body = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
                 return;
             }
-            string someText = MimeUtilities.FetchSomeText (body);
+            string someText = MimeHelpers.FetchSomeText (body);
             string quotedText = QuoteForReply (someText);
             Body = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
         }
