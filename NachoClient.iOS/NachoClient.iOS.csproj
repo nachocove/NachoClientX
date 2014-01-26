@@ -453,11 +453,11 @@
     <Compile Include="NachoUI.iOS\MessageListViewController.designer.cs">
       <DependentUpon>MessageListViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoSwipeTableViewCell.cs" />
     <Compile Include="NachoUI.iOS\PlatformHelpers.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\MimeHelpers.cs">
       <Link>NachoCore\Utils\MimeHelpers.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\NachoSwipeTableViewCell.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

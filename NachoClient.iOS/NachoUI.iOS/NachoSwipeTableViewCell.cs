@@ -10,6 +10,14 @@ using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
 {
+
+    public enum NachoMessageIcon {
+        None,
+        Read,
+        Clock,
+        Checked,
+    };
+
     class NachoSwipeTableViewCell : MCSwipeTableViewCell
     {
         private bool _disposed;
@@ -23,9 +31,9 @@ namespace NachoClient.iOS
             ContentView.Add (view);
         }
 
-        public void Update (string sender, string body, string subject, DateTime date, bool newFlag, bool checkedFlag, int messageCount)
+        public void Update (string sender, string body, string subject, DateTime date, NachoMessageIcon icon, int messageCount)
         {
-            view.Update (sender, body, subject, date, newFlag, checkedFlag, messageCount);
+            view.Update (sender, body, subject, date, icon, messageCount);
         }
 
         public override void LayoutSubviews ()
@@ -124,9 +132,7 @@ namespace NachoClient.iOS
 
         public DateTime Date { get; private set; }
 
-        public bool NewFlag  { get; private set; }
-
-        public bool CheckedFlag { get; private set; }
+        public NachoMessageIcon Icon  { get; private set; }
 
         public int MessageCount  { get; private set; }
 
@@ -149,14 +155,13 @@ namespace NachoClient.iOS
             BackgroundColor = UIColor.White;
         }
 
-        public void Update (string sender, string summary, string subject, DateTime date, bool newFlag, bool checkedFlag, int messageCount)
+        public void Update (string sender, string summary, string subject, DateTime date, NachoMessageIcon icon, int messageCount)
         {
             Sender = sender;
             Subject = subject;
             Summary = summary;
             Date = date;
-            NewFlag = newFlag;
-            CheckedFlag = checkedFlag;
+            Icon = icon;
             MessageCount = messageCount;
             SetNeedsDisplay ();
         }
@@ -203,9 +208,11 @@ namespace NachoClient.iOS
                 UIColor.Gray.SetColor ();
                 DrawString (Summary, new RectangleF (offset, 40, bw - boxWidth, 34), TextFont, UILineBreakMode.TailTruncation, UITextAlignment.Left);
 
-                if (CheckedFlag) {
+                if (NachoMessageIcon.Checked == Icon) {
                     drawRectChecked (new RectangleF (5, 27, 22, 22));
-                } else if (NewFlag) {
+                } else if (NachoMessageIcon.Clock == Icon) {
+                    drawRectClock (new RectangleF (5, 27, 22, 22));
+                } else if(NachoMessageIcon.Read == Icon) {
                     ctx.SaveState ();
                     ctx.AddEllipseInRect (new RectangleF (10, 32, 12, 12));
                     ctx.Clip ();
@@ -262,6 +269,51 @@ namespace NachoClient.iOS
                 bezierPath.LineCapStyle = CGLineCap.Square;
                 UIColor.White.SetStroke ();
                 bezierPath.LineWidth = 1.3f;
+                bezierPath.Stroke ();
+            }
+        }
+
+
+        void drawRectClock (RectangleF rect)
+        {
+            //// General Declarations
+
+            //// Color Declarations
+            var clockColor2 = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
+
+
+            //// Shadow Declarations
+            var shadow2 = UIColor.Black;
+            var shadow2Offset = new SizeF (0.1f, -0.1f);
+            var shadow2ColorRadius = 2.5f;
+
+            var checkedOvalPath = UIBezierPath.FromOval (
+                new RectangleF (
+                    rect.GetMinX (),
+                    rect.GetMinY (),
+                    (float)Math.Floor (rect.Width * 1.00000f + 0.5f),
+                    (float)Math.Floor (rect.Height * 1.00000f + 0.5f)));
+
+            using (var context = UIGraphics.GetCurrentContext ()) {
+                context.SaveState ();
+                context.SetShadowWithColor (shadow2Offset, shadow2ColorRadius, shadow2.CGColor);
+                clockColor2.SetFill ();
+                checkedOvalPath.Fill ();
+                context.RestoreState ();
+            }
+
+            UIColor.White.SetStroke ();
+            checkedOvalPath.LineWidth = 1;
+            checkedOvalPath.Stroke ();
+
+            // Bezier Drawing
+            using (var bezierPath = UIBezierPath.Create ()) {
+                bezierPath.MoveTo (new PointF (rect.GetMinX () + 0.45f * rect.Width, rect.GetMinY () + 0.25f * rect.Height));
+                bezierPath.AddLineTo (new PointF (rect.GetMinX () + 0.45f * rect.Width, rect.GetMinY () + 0.55f * rect.Height));
+                bezierPath.AddLineTo (new PointF (rect.GetMinX () + 0.70f * rect.Width, rect.GetMinY () + 0.55f * rect.Height));
+                bezierPath.LineCapStyle = CGLineCap.Square;
+                UIColor.White.SetStroke ();
+                bezierPath.LineWidth = 2.7f;
                 bezierPath.Stroke ();
             }
         }
