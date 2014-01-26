@@ -37,9 +37,28 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
+            // Refreshing
+            RefreshControl.ValueChanged += delegate {
+                // iOS 7 BUGS
+                // Setting Title in ViewDidLoad hides the SearchBar
+                // Title is misaligned the first time a refresh controller is displayed
+                // RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing");
+                // TODO: Sleeping is a placeholder until we implement the refresh code.
+                System.Threading.ThreadPool.QueueUserWorkItem (delegate {
+                    System.Threading.Thread.Sleep (5000);
+                    InvokeOnMainThread (() => {
+                        RefreshControl.EndRefreshing ();
+                    });
+                });
+            };
+
             UIView backgroundView = new UIView (new RectangleF (0, 0, 320, 480));
             backgroundView.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
-            this.TableView.BackgroundView = backgroundView;  
+            TableView.BackgroundView = backgroundView;
+
+            // iOS 7 BUG Workaround
+            // iOS 7 puts the  background view over the refresh view, hiding it.
+            RefreshControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -66,7 +85,11 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return messages.Count ();
+            if (null == messages) {
+                return 0;
+            } else {
+                return messages.Count ();
+            }
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
