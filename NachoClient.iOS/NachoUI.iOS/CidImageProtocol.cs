@@ -57,7 +57,7 @@ namespace NachoClient.iOS
         public override void StartLoading ()
         {
             var value = Request.Url.ResourceSpecifier;
-            using (var image = MimeUtilities.RenderContentId (value)) {
+            using (var image = PlatformHelpers.RenderContentId (value)) {
                 using (var response = new NSUrlResponse (Request.Url, "image/jpeg", -1, null)) {
                     Client.ReceivedResponse (this, response, NSUrlCacheStoragePolicy.NotAllowed);
                     this.InvokeOnMainThread (delegate {

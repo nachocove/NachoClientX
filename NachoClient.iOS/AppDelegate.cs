@@ -89,7 +89,7 @@ namespace NachoClient.iOS
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
-            new UIAlertView (notification.AlertAction, notification.AlertBody, null, "Close").Show ();
+            new UIAlertView (notification.AlertAction, notification.AlertBody, null, "Cool!").Show ();
         }
 
         // Methods for IBackEndOwner

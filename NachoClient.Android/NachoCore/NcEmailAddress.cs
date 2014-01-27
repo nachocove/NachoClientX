@@ -16,7 +16,7 @@ namespace NachoCore
             kind = k;
         }
 
-        public NcEmailAddress(Kind k, string a)
+        public NcEmailAddress (Kind k, string a)
         {
             kind = k;
             address = a;
@@ -35,7 +35,6 @@ namespace NachoCore
         public string address;
         /// Matching contact; maybe null
         public McContact contact;
-
         // TODO: Localize!
         public static Kind ToKind (string prefix)
         {
@@ -51,7 +50,7 @@ namespace NachoCore
             throw new System.BadImageFormatException ();
         }
 
-        public static string ToPrefix(Kind kind)
+        public static string ToPrefix (Kind kind)
         {
             switch (kind) {
             case Kind.To:
