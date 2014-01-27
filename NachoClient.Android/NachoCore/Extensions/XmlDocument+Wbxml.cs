@@ -13,13 +13,6 @@ namespace NachoCore.Utils
             encoder.XmlDoc = doc;
             return encoder.GetBytes ();
         }
-
-        public static XDocument LoadWbxml (this Stream wbxml)
-        {
-            ASWBXML decoder = new ASWBXML ();
-            decoder.LoadBytes (wbxml);
-            return decoder.XmlDoc;
-        }
     }
 }
 

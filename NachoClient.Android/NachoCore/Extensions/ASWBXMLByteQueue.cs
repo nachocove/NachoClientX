@@ -8,23 +8,36 @@ namespace NachoCore.Wbxml
 {
     class ASWBXMLByteQueue
     {
-        public long Count { set; get; }
-
         private Stream ByteStream;
+        private int? PeekHolder;
 
         public ASWBXMLByteQueue (Stream bytes)
         {
+            PeekHolder = null;
             ByteStream = bytes;
-            Count = ByteStream.Length;
+        }
+
+        public int Peek ()
+        {
+            if (null == PeekHolder) {
+                var value = ByteStream.ReadByte ();
+                PeekHolder = value;
+            }
+            return (int)PeekHolder;
         }
 
         public byte Dequeue ()
         {
-            var value = ByteStream.ReadByte ();
+            int value;
+            if (null == PeekHolder) {
+                value = ByteStream.ReadByte ();
+            } else {
+                value = (int)PeekHolder;
+                PeekHolder = null;
+            }
             if (-1 == value) {
                 throw new Exception ("ASWBXMLByteQueue: attempted read past end.");
             }
-            --Count;
             return Convert.ToByte (value);
         }
 

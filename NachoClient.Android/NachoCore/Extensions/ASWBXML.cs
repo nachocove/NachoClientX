@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using NachoCore;
+using NachoCore.Model;
 
 namespace NachoCore.Wbxml
 {
@@ -552,7 +554,7 @@ namespace NachoCore.Wbxml
             codePages [15].AddToken (0x1B, "GreaterThan");
             codePages [15].AddToken (0x1E, "UserName");
             codePages [15].AddToken (0x1F, "Password");
-            codePages [15].AddToken (0x20, "ConversationId", true);
+            codePages [15].AddOpaqueToken (0x20, "ConversationId");
             codePages [15].AddToken (0x21, "Picture");
             codePages [15].AddToken (0x22, "MaxSize");
             codePages [15].AddToken (0x23, "MaxPictures");
@@ -591,7 +593,7 @@ namespace NachoCore.Wbxml
             codePages [17].AddToken (0x07, "TruncationSize");
             codePages [17].AddToken (0x08, "AllOrNone");
             codePages [17].AddToken (0x0A, "Body");
-            codePages [17].AddToken (0x0B, "Data");
+            codePages [17].AddPeelOffToken (0x0B, "Data");
             codePages [17].AddToken (0x0C, "EstimatedDataSize");
             codePages [17].AddToken (0x0D, "Truncated");
             codePages [17].AddToken (0x0E, "Attachments");
@@ -697,7 +699,7 @@ namespace NachoCore.Wbxml
             codePages [20].AddToken (0x15, "Password");
             codePages [20].AddToken (0x16, "Move");
             codePages [20].AddToken (0x17, "DstFldId");
-            codePages [20].AddToken (0x18, "ConversationId", true);
+            codePages [20].AddOpaqueToken (0x18, "ConversationId");
             codePages [20].AddToken (0x19, "MoveAlways");
             #endregion
 
@@ -717,7 +719,7 @@ namespace NachoCore.Wbxml
             codePages [21].AddToken (0x0D, "ItemId");
             codePages [21].AddToken (0x0E, "LongId");
             codePages [21].AddToken (0x0F, "InstanceId");
-            codePages [21].AddToken (0x10, "Mime", true);
+            codePages [21].AddOpaqueToken (0x10, "Mime");
             codePages [21].AddToken (0x11, "ClientId");
             codePages [21].AddToken (0x12, "Status");
             codePages [21].AddToken (0x13, "AccountId");
@@ -733,8 +735,8 @@ namespace NachoCore.Wbxml
             codePages [22].AddToken (0x06, "UmUserNotes");
             codePages [22].AddToken (0x07, "UmAttDuration");
             codePages [22].AddToken (0x08, "UmAttOrder");
-            codePages [22].AddToken (0x09, "ConversationId", true);
-            codePages [22].AddToken (0x0A, "ConversationIndex", true);
+            codePages [22].AddOpaqueToken (0x09, "ConversationId");
+            codePages [22].AddOpaqueToken (0x0A, "ConversationIndex");
             codePages [22].AddToken (0x0B, "LastVerbExecuted");
             codePages [22].AddToken (0x0C, "LastVerbExecutionTime");
             codePages [22].AddToken (0x0D, "ReceivedAsBcc");
@@ -822,7 +824,7 @@ namespace NachoCore.Wbxml
             // Add the declaration
             XElement currentNode = null;
 
-            while (bytes.Count > 0) {
+            while (bytes.Peek() >= 0) {
                 byte currentByte = bytes.Dequeue ();
 
                 switch ((GlobalTokens)currentByte) {
@@ -852,7 +854,16 @@ namespace NachoCore.Wbxml
      //currentNode.AppendChild(newOpaqueNode);
                     break;
                 case GlobalTokens.STR_I:
-                    var newTextNode = new XText (bytes.DequeueString ());
+                    XText newTextNode;
+                    if (codePages [currentCodePage].GetIsPeelOff (currentNode.Name.LocalName)) {
+                        newTextNode = new XText ("");
+                        var data = new McBody ();
+                        data.Body = bytes.DequeueString ();
+                        BackEnd.Instance.Db.Insert (data);
+                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString()));
+                    } else {
+                        newTextNode = new XText (bytes.DequeueString ());
+                    }
                     currentNode.Add (newTextNode);
                     break;
                 // According to MS-ASWBXML, these features aren't used

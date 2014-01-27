@@ -306,7 +306,7 @@ namespace NachoCore.ActiveSync
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
                 Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString());
-                response = await myClient.SendAsync (request, HttpCompletionOption.ResponseContentRead, token).ConfigureAwait (false);
+                response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait (false);
             } catch (OperationCanceledException ex) {
                 Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
                 if (myClient == Client) {
@@ -338,7 +338,7 @@ namespace NachoCore.ActiveSync
                 CancelTimeoutTimer ();
                 var contentType = response.Content.Headers.ContentType;
                 ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
-                ContentData = await response.Content.ReadAsStreamAsync ().ConfigureAwait (false);
+                ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
 
                 try {
                     HttpOpSm.PostEvent (ProcessHttpResponse (response));
@@ -369,8 +369,10 @@ namespace NachoCore.ActiveSync
                 if (0 != ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
+                        var decoder = new ASWBXML ();
                         var cap = NcCapture.CreateAndStart (KToXML);
-                        responseDoc = ContentData.LoadWbxml ();
+                        decoder.LoadBytes (ContentData);
+                        responseDoc = decoder.XmlDoc;
                         cap.Stop ();
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {

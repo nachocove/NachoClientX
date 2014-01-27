@@ -12,6 +12,7 @@ namespace NachoCore.Wbxml
         private Dictionary<byte, string> tokenLookup = new Dictionary<byte,string> ();
         private Dictionary<string, byte> tagLookup = new Dictionary<string, byte> ();
         private Dictionary<string, bool> isOpaqueLookup = new Dictionary<string, bool> ();
+        private Dictionary<string, bool> isPeelOff = new Dictionary<string, bool> ();
 
         public string Namespace {
             get {
@@ -31,9 +32,15 @@ namespace NachoCore.Wbxml
             }
         }
 
-        public void AddToken (byte token, string tag, bool isOpaque)
+        public void AddOpaqueToken (byte token, string tag)
         {
-            isOpaqueLookup.Add (tag, isOpaque);
+            isOpaqueLookup.Add (tag, true);
+            AddToken (token, tag);
+        }
+
+        public void AddPeelOffToken (byte token, string tag)
+        {
+            isPeelOff.Add (tag, true);
             AddToken (token, tag);
         }
 
@@ -55,6 +62,14 @@ namespace NachoCore.Wbxml
         {
             if (isOpaqueLookup.ContainsKey (tag)) {
                 return isOpaqueLookup [tag];
+            }
+            return false;
+        }
+
+        public bool GetIsPeelOff (string tag)
+        {
+            if (isPeelOff.ContainsKey (tag)) {
+                return isPeelOff [tag];
             }
             return false;
         }

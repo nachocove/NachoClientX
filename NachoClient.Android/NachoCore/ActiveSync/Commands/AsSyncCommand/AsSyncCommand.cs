@@ -377,10 +377,15 @@ namespace NachoCore.ActiveSync
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != bodyElement) {
-                        var body = new McBody();
-                        body.Body = bodyElement.Value; 
-                        DataSource.Owner.Db.Insert (body);
-                        emailMessage.BodyId = body.Id;
+                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                        if (null != saveAttr) {
+                            emailMessage.BodyId = int.Parse (saveAttr.Value);
+                        } else {
+                            var body = new McBody ();
+                            body.Body = bodyElement.Value; 
+                            DataSource.Owner.Db.Insert (body);
+                            emailMessage.BodyId = body.Id;
+                        }
                     } else {
                         emailMessage.BodyId = 0;
                         Console.WriteLine ("Truncated message from server.");
