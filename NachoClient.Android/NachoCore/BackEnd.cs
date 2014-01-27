@@ -275,22 +275,30 @@ namespace NachoCore
 
         public void CredReq (ProtoControl sender)
         {
-            Owner.CredReq (sender.Account);
+            InvokeOnUIThread.Instance.Invoke (delegate () {
+                Owner.CredReq (sender.Account);
+            });
         }
 
         public void ServConfReq (ProtoControl sender)
         {
-            Owner.ServConfReq (sender.Account);
+            InvokeOnUIThread.Instance.Invoke (delegate () {
+                Owner.ServConfReq (sender.Account);
+            });
         }
 
         public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
         {
-            Owner.CertAskReq (sender.Account, certificate);
+            InvokeOnUIThread.Instance.Invoke (delegate () {
+                Owner.CertAskReq (sender.Account, certificate);
+            });
         }
 
         public void SearchContactsResp (ProtoControl sender, string prefix, string token)
         {
-            Owner.SearchContactsResp (sender.Account, prefix, token);
+            InvokeOnUIThread.Instance.Invoke (delegate () {
+                Owner.SearchContactsResp (sender.Account, prefix, token);
+            });
         }
     }
 }
