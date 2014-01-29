@@ -13,13 +13,29 @@ namespace NachoClient.iOS
 	partial class MessageListViewController
 	{
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem composeButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem searchButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
 			if (revealButton != null) {
 				revealButton.Dispose ();
 				revealButton = null;
+			}
+
+			if (searchButton != null) {
+				searchButton.Dispose ();
+				searchButton = null;
+			}
+
+			if (composeButton != null) {
+				composeButton.Dispose ();
+				composeButton = null;
 			}
 		}
 	}
