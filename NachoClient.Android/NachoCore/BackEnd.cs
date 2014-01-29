@@ -165,6 +165,14 @@ namespace NachoCore
             service.Execute ();
         }
 
+        public void ForceSync ()
+        {
+            var accounts = Db.Table<McAccount> ();
+            foreach (var account in accounts) {
+                ServiceFromAccount (account).ForceSync ();
+            }
+        }
+
         public void CertAskResp (McAccount account, bool isOkay)
         {
             ServiceFromAccount (account).CertAskResp (isOkay);

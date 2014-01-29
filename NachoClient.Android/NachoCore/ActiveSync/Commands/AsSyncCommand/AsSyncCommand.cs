@@ -20,6 +20,8 @@ namespace NachoCore.ActiveSync
         public AsSyncCommand (IAsDataSource dataSource) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource)
         {
             Timeout = new TimeSpan (0, 0, 20);
+            SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
+            FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)

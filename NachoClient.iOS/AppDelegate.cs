@@ -63,7 +63,47 @@ namespace NachoClient.iOS
             return true;
 
         }
+        /* 
+         * Code to implement iOS-7 background-fetch.
+         */
+        private Action<UIBackgroundFetchResult> CompletionHandler;
+        private UIBackgroundFetchResult FetchResult;
+        private void StatusHandler (object sender, EventArgs e)
+        {
+            // FIXME - need to wait for ALL accounts to complete, not just 1st!
+            StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
+            switch (statusEvent.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
+                Console.WriteLine ("StatusHandler:Info_NewUnreadEmailMessageInInbox");
+                FetchResult = UIBackgroundFetchResult.NewData;
+                break;
 
+            case NcResult.SubKindEnum.Info_SyncSucceeded:
+                Console.WriteLine ("StatusHandler:Info_SyncSucceeded");
+                if (UIBackgroundFetchResult.Failed == FetchResult) {
+                    FetchResult = UIBackgroundFetchResult.NoData;
+                }
+                // We rely on the fact that Info_NewUnreadEmailMessageInInbox will
+                // preceed Info_SyncSucceeded.
+                BackEnd.Instance.StatusIndEvent -= StatusHandler;
+                CompletionHandler (FetchResult);
+                break;
+
+            case NcResult.SubKindEnum.Error_SyncFailed:
+                Console.WriteLine ("StatusHandler:Error_SyncFailed");
+                BackEnd.Instance.StatusIndEvent -= StatusHandler;
+                CompletionHandler (FetchResult);
+                break;
+            }
+        }
+
+        public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
+        {
+            Console.WriteLine ("PerformFetch Called");
+            FetchResult = UIBackgroundFetchResult.Failed;
+            BackEnd.Instance.StatusIndEvent += StatusHandler;
+            BackEnd.Instance.ForceSync ();
+        }
         //
         // This method is invoked when the application is about to move from active to inactive state.
         //

@@ -17,16 +17,19 @@ namespace NachoCore.Utils
             Info_ContactSetChanged,
             Info_CalendarSetChanged,
             Info_NewUnreadEmailMessageInInbox,
+            Info_EmailMessageMarkedRead,
             Info_EmailMessageSendSucceeded,
             Info_EmailMessageDeleteSucceeded,
             Info_EmailMessageMoveSucceeded,
             Info_AttDownloadUpdate,
+            Info_SyncSucceeded,
             // Warning.
             // Error.
             Error_EmailMessageSendFailed,
             Error_EmailMessageDeleteFailed,
             Error_EmailMessageMoveFailed,
             Error_AttDownloadFailed,
+            Error_SyncFailed,
         };
 
         public KindEnum Kind { get; set; }

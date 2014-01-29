@@ -204,7 +204,13 @@ namespace NachoCore.ActiveSync
         private void DoFinal ()
         {
             // The Arg is the Event we need to post to the Owner.
-            OwnerSm.PostEvent ((Event)HttpOpSm.Arg);
+            var ultimate = (Event)HttpOpSm.Arg;
+            if ((uint)SmEvt.E.Success == ultimate.EventCode) {
+                Owner.StatusInd (true);
+            } else {
+                Owner.StatusInd (false);
+            }
+            OwnerSm.PostEvent (ultimate);
         }
 
         private void DelayTimerCallback (object State)

@@ -35,5 +35,9 @@
 	<string>taco mail</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.monkeylicense.taco-mail</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

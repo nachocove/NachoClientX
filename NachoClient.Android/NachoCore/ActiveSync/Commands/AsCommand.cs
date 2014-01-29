@@ -39,6 +39,8 @@ namespace NachoCore.ActiveSync
         protected IAsDataSource DataSource;
         protected AsHttpOperation Op;
         protected McPendingUpdate Update;
+        protected NcResult SuccessInd;
+        protected NcResult FailureInd;
 
         public TimeSpan Timeout { set; get; }
         // Initializers.
@@ -138,6 +140,19 @@ namespace NachoCore.ActiveSync
         public virtual string ToMime (AsHttpOperation Sender)
         {
             return null;
+        }
+
+        public virtual void StatusInd (bool didSucceed)
+        {
+            if (didSucceed) {
+                if (null != SuccessInd) {
+                    DataSource.Owner.StatusInd (DataSource.Control, SuccessInd);
+                }
+            } else {
+                if (null != FailureInd) {
+                    DataSource.Owner.StatusInd (DataSource.Control, FailureInd);
+                }
+            }
         }
 
         public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)

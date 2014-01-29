@@ -21,6 +21,7 @@ namespace NachoCore.ActiveSync
         void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender);
         HttpMethod Method (AsHttpOperation Sender);
         bool UseWbxml (AsHttpOperation Sender);
+        void StatusInd (bool didSucceed);
     }
 }
 

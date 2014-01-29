@@ -571,6 +571,10 @@ namespace NachoCore.ActiveSync
                 return MethodToUse;
             }
 
+            public void StatusInd (bool didSucceed)
+            {
+            }
+
             public bool UseWbxml (AsHttpOperation Sender)
             {
                 // Autodiscovery is XML only.

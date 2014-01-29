@@ -79,7 +79,9 @@ namespace NachoCore.ActiveSync
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
-                        Drop = new [] {(uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.UiSetCred, (uint)CtlEvt.E.UiSetServConf, (uint)CtlEvt.E.UiCertOkNo, 
+                        Drop = new [] {
+                            (uint)AsEvt.E.ReSync,
+                            (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.UiSetCred, (uint)CtlEvt.E.UiSetServConf, (uint)CtlEvt.E.UiCertOkNo, 
                             (uint)CtlEvt.E.UiCertOkYes, (uint)CtlEvt.E.UiSearch
                         },
                         Invalid = new [] {
@@ -88,7 +90,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.HardFail,
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
-                            (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
@@ -105,6 +106,7 @@ namespace NachoCore.ActiveSync
                         // NOTE: There is no HardFail. Can't pass DiscW w/out a working server - period.
                         State = (uint)Lst.DiscW, 
                         Drop = new [] {
+                            (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
@@ -112,7 +114,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.Move,
                         },
                         Invalid = new [] {(uint)SmEvt.E.HardFail,
-                            (uint)AsEvt.E.ReDisc, (uint)AsEvt.E.ReProv, (uint)AsEvt.E.ReSync,
+                            (uint)AsEvt.E.ReDisc, (uint)AsEvt.E.ReProv,
                             (uint)CtlEvt.E.ReFSync, (uint)CtlEvt.E.DnldAtt
                         },
                         On = new [] {
@@ -146,6 +148,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiDCrdW,
                         Drop = new [] {
+                            (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
@@ -158,7 +161,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.TempFail,
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
-                            (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
@@ -181,6 +183,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiPCrdW,
                         Drop = new [] {
+                            (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
@@ -193,7 +196,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.TempFail,
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
-                            (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
@@ -213,6 +215,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiServConfW,
                         Drop = new [] {
+                            (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -226,7 +229,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.TempFail,
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
-                            (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.DnldAtt,
@@ -246,6 +248,7 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.UiCertOkW,
                         Drop = new [] {
+                            (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
                             (uint)CtlEvt.E.UiSearch,
                             (uint)CtlEvt.E.Move,
@@ -256,7 +259,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.TempFail,
                             (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
-                            (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.ReFSync,
@@ -816,6 +818,16 @@ namespace NachoCore.ActiveSync
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
+        public override void ForceSync ()
+        {
+            if (! CmdIs (typeof(AsSyncCommand))) {
+                if (null != Cmd) {
+                    Cmd.Cancel ();
+                }
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
+            }
+        }
+
         public override bool Cancel (string token)
         {
             var update = Owner.Db.Table<McPendingUpdate> ().SingleOrDefault (rec => rec.AccountId == Account.Id && rec.Token == token);
@@ -922,6 +934,7 @@ namespace NachoCore.ActiveSync
             // Mark the actual item.
             emailMessage.IsRead = true;
             Owner.Db.Update (emailMessage);
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedRead));
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
             return markUpdate.Token;
         }
