@@ -265,7 +265,9 @@ namespace NachoCore
         public void StatusInd (ProtoControl sender, NcResult status)
         {
             try {
-                Owner.StatusInd (sender.Account, status);
+                InvokeOnUIThread.Instance.Invoke (delegate() {
+                    Owner.StatusInd (sender.Account, status);
+                });
                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Account = sender.Account,
                     Status = status,
@@ -278,7 +280,9 @@ namespace NachoCore
         public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
             try {
-                Owner.StatusInd (sender.Account, status, tokens);
+                InvokeOnUIThread.Instance.Invoke (delegate() {
+                    Owner.StatusInd (sender.Account, status, tokens);
+                });
                 InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = sender.Account,
                     Status = status,
