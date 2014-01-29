@@ -14,10 +14,14 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate
+    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate
     {
         McFolder folder;
         INachoEmailMessages messages;
+        // iOS Bug Workaround
+        // The cancel button on the search bar breaks
+        // if the searchbar is hidden by a scrolled tableview.
+        PointF savedContentOffset;
 
         public void SetFolder (McFolder f)
         {
@@ -36,6 +40,45 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+
+            // Multiple buttons on the right side
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, searchButton };
+
+            // Initially let's hide the search controller
+            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+
+
+            // Search button brings up the search controller
+            searchButton.Clicked += (object sender, EventArgs e) => {
+                if (SearchDisplayController.Active) {
+                    return;
+                }
+                // Cleans up the UI
+                if (RefreshControl.Refreshing) {
+                    RefreshControl.EndRefreshing ();
+                }
+                // Save the tableview location, then scroll
+                // searchbar into view.  This searchbar is
+                // not used; it works around an iOS bug.
+                savedContentOffset = TableView.ContentOffset;
+                TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
+                if (44.0f >= savedContentOffset.Y) {
+                    SearchDisplayController.SetActive (true, true);
+                } else {
+                    SearchDisplayController.SetActive (true, false);
+                }
+            };
+
+            // Search cancel handler needed as workaround for 'inactive button' bug
+            SearchDisplayController.SearchBar.CancelButtonClicked += (object sender, EventArgs e) => {
+                // Disable search & reset the tableview
+                if (44.0f >= savedContentOffset.Y) {
+                    SearchDisplayController.SetActive (false, true);
+                } else {
+                    SearchDisplayController.SetActive (false, false);
+                }
+                TableView.SetContentOffset (savedContentOffset, false);
+            };
 
             // Refreshing
             RefreshControl.ValueChanged += delegate {
@@ -71,6 +114,11 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            var blurry = segue.DestinationViewController as BlurryViewController;
+            if (null != blurry) {
+                blurry.CaptureView (this.View);
+            }
+
             if (segue.Identifier == "MessagesToRead") {
                 var vc = (ReadMessageViewController)segue.DestinationViewController;
                 vc.messages = new NachoEmailMessages (folder);
@@ -80,11 +128,18 @@ namespace NachoClient.iOS
 
         public override int NumberOfSections (UITableView tableView)
         {
-            return 1;
+            if (tableView == SearchDisplayController.SearchResultsTableView) {
+                return 1;
+            } else {
+                return 1;
+            }
         }
 
         public override int RowsInSection (UITableView tableview, int section)
         {
+            if (tableview == SearchDisplayController.SearchResultsTableView) {
+                return 0;
+            }
             if (null == messages) {
                 return 0;
             } else {
@@ -176,6 +231,7 @@ namespace NachoClient.iOS
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe Clock cell");
+                    PerformSegue("MessageToMessagePriority", cell);
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);

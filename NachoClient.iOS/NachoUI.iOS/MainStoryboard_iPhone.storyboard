@@ -739,20 +739,18 @@
                     </tableView>
                     <navigationItem key="navigationItem" title="Messages" id="ted-eg-Hzc">
                         <barButtonItem key="leftBarButtonItem" title="Item" image="Menu.png" id="2XU-yE-OMg"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="Vi1-Uk-f2F">
-                            <connections>
-                                <segue destination="lOe-mG-VS5" kind="push" identifier="MessageListToCompose" id="Epe-58-xbl"/>
-                            </connections>
-                        </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <refreshControl key="refreshControl" opaque="NO" multipleTouchEnabled="YES" contentMode="center" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" id="3jE-aJ-4sz">
                         <autoresizingMask key="autoresizingMask"/>
                     </refreshControl>
                     <connections>
+                        <outlet property="composeButton" destination="A97-xe-h8f" id="ik2-qX-BDT"/>
                         <outlet property="revealButton" destination="2XU-yE-OMg" id="j7H-HA-a1S"/>
+                        <outlet property="searchButton" destination="zTu-79-4b2" id="EGO-9q-D24"/>
                         <outlet property="searchDisplayController" destination="Ug7-2K-mbR" id="1qh-sO-pLj"/>
                         <segue destination="Bab-sA-Ld3" kind="push" identifier="MessagesToRead" id="Xn1-hQ-Sqh"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -765,6 +763,12 @@
                         <outlet property="searchResultsDelegate" destination="kq1-eO-X0p" id="GkP-4R-goG"/>
                     </connections>
                 </searchDisplayController>
+                <barButtonItem systemItem="search" id="zTu-79-4b2"/>
+                <barButtonItem systemItem="compose" id="A97-xe-h8f">
+                    <connections>
+                        <segue destination="lOe-mG-VS5" kind="push" identifier="MessageListToCompose" id="6LT-Zj-XeH"/>
+                    </connections>
+                </barButtonItem>
             </objects>
             <point key="canvasLocation" x="-477" y="397"/>
         </scene>
@@ -802,7 +806,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Uco-jf-3Pp" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="166" y="432"/>
+            <point key="canvasLocation" x="82" y="397"/>
         </scene>
         <!--Message Action View Controller-->
         <scene sceneID="nFx-Tf-1CW">
@@ -835,7 +839,35 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cEo-VB-3co" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="707" y="432"/>
+            <point key="canvasLocation" x="619" y="397"/>
+        </scene>
+        <!--Message Priority View Controller-->
+        <scene sceneID="qaB-g2-0kE">
+            <objects>
+                <viewController storyboardIdentifier="MessagePriorityViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MCC-ND-pIu" customClass="MessagePriorityViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ojE-Gm-ggk">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="nEg-9W-R1b">
+                                <rect key="frame" x="113" y="138" width="95" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="19"/>
+                                <state key="normal" title="Defer">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                            </button>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <connections>
+                        <outlet property="deferButton" destination="nEg-9W-R1b" id="Esp-m1-A1y"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="nk4-3A-FSs" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="619" y="1044"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="qtI-DM-OKG">
@@ -866,14 +898,14 @@
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="wSf-Ax-NJc"/>
         <segue reference="dvB-9f-OAg"/>
-        <segue reference="VrW-k4-eyP"/>
-        <segue reference="GNr-eh-wrb"/>
         <segue reference="6IA-LE-E8D"/>
         <segue reference="lzp-XD-dor"/>
-        <segue reference="Fvv-mz-C9l"/>
-        <segue reference="Epe-58-xbl"/>
+        <segue reference="wSf-Ax-NJc"/>
+        <segue reference="GNr-eh-wrb"/>
+        <segue reference="VrW-k4-eyP"/>
         <segue reference="5fj-Ta-mc9"/>
+        <segue reference="Fvv-mz-C9l"/>
+        <segue reference="6LT-Zj-XeH"/>
     </inferredMetricsTieBreakers>
 </document>
