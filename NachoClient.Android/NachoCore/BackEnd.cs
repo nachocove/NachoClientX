@@ -256,21 +256,29 @@ namespace NachoCore
 
         public void StatusInd (ProtoControl sender, NcResult status)
         {
-            Owner.StatusInd (sender.Account, status);
-            InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Account = sender.Account,
-                Status = status,
-            });
+            try {
+                Owner.StatusInd (sender.Account, status);
+                InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Account = sender.Account,
+                    Status = status,
+                });
+            } catch (Exception e) {
+                Log.Error (Log.LOG_AS, "Exception in status recipient: {0}", e.ToString ());
+            }
         }
 
         public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
-            Owner.StatusInd (sender.Account, status, tokens);
-            InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Account = sender.Account,
-                Status = status,
-                Tokens = tokens,
-            });
+            try {
+                Owner.StatusInd (sender.Account, status, tokens);
+                InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Account = sender.Account,
+                    Status = status,
+                    Tokens = tokens,
+                });
+            } catch (Exception e) {
+                Log.Error (Log.LOG_AS, "Exception in status recipient: {0}", e.ToString ());
+            }
         }
 
         public void CredReq (ProtoControl sender)
