@@ -458,6 +458,11 @@
       <Link>NachoCore\Utils\MimeHelpers.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\NachoSwipeTableViewCell.cs" />
+    <Compile Include="NachoUI.iOS\MessagePriorityViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessagePriorityViewController.designer.cs">
+      <DependentUpon>MessagePriorityViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\BlurryViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -537,6 +542,10 @@
     <ProjectReference Include="..\..\MCSwipeTableViewCell\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
       <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
       <Name>MCSwipeTableViewCellBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
+      <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
+      <Name>UIImageEffectsBinding</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

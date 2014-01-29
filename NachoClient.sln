@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWRevealViewControllerBindi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCSwipeTableViewCellBinding", "..\MCSwipeTableViewCell\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj", "{E301B932-D165-4A65-8916-3E80C000B6AC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIImageEffectsBinding", "..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj", "{85087C0F-D924-46BE-B466-9D66F853472C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,22 @@ Global
 		{7B5D1554-2619-4B46-BE91-585C896047AC}.Release|iPhone.Build.0 = Release|iPhone
 		{7B5D1554-2619-4B46-BE91-585C896047AC}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
 		{7B5D1554-2619-4B46-BE91-585C896047AC}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.AppStore|iPhone.ActiveCfg = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.AppStore|iPhone.Build.0 = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Release|iPhone.Build.0 = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{85087C0F-D924-46BE-B466-9D66F853472C}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{867AF543-B319-4267-8BBE-4854D99E67F0}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
 		{867AF543-B319-4267-8BBE-4854D99E67F0}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
 		{867AF543-B319-4267-8BBE-4854D99E67F0}.AppStore|iPhone.ActiveCfg = Release|Any CPU

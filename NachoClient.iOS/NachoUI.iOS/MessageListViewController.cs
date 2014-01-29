@@ -22,7 +22,6 @@ namespace NachoClient.iOS
         // The cancel button on the search bar breaks
         // if the searchbar is hidden by a scrolled tableview.
         PointF savedContentOffset;
-        Boolean SearchButtonPressed = false;
 
         public void SetFolder (McFolder f)
         {
@@ -46,7 +45,7 @@ namespace NachoClient.iOS
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, searchButton };
 
             // Initially let's hide the search controller
-            TableView.SetContentOffset (new PointF(0.0f, 44.0f), false);
+            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
 
 
             // Search button brings up the search controller
@@ -61,7 +60,6 @@ namespace NachoClient.iOS
                 // Save the tableview location, then scroll
                 // searchbar into view.  This searchbar is
                 // not used; it works around an iOS bug.
-                SearchButtonPressed = true;
                 savedContentOffset = TableView.ContentOffset;
                 TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
                 if (44.0f >= savedContentOffset.Y) {
@@ -116,6 +114,11 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            var blurry = segue.DestinationViewController as BlurryViewController;
+            if (null != blurry) {
+                blurry.CaptureView (this.View);
+            }
+
             if (segue.Identifier == "MessagesToRead") {
                 var vc = (ReadMessageViewController)segue.DestinationViewController;
                 vc.messages = new NachoEmailMessages (folder);
@@ -228,6 +231,7 @@ namespace NachoClient.iOS
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe Clock cell");
+                    PerformSegue("MessageToMessagePriority", cell);
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
