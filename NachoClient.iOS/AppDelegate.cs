@@ -129,7 +129,13 @@ namespace NachoClient.iOS
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
-            new UIAlertView (notification.AlertAction, notification.AlertBody, null, "Cool!").Show ();
+            // theory here is that we "Show" the alerts we want to hit UI, other alerts can generate sound
+            // or modifiy badge number as they need to. Will need to have a class of alerts to "show"
+            var alert = new UIAlertView (notification.AlertAction, notification.AlertBody, null, "Cool");
+            if (notification.AlertBody.Equals ("321")) {
+            } else {
+                alert.Show ();
+            }
         }
 
         // Methods for IBackEndOwner
@@ -141,12 +147,35 @@ namespace NachoClient.iOS
 
         public void StatusInd (McAccount account, NcResult status)
         {
-            if (NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox == status.SubKind) {
-                UILocalNotification notification = new UILocalNotification();
-                notification.AlertAction = "Taco Mail";
-                notification.AlertBody = "You have new mail.";
-                UIApplication.SharedApplication.PresentLocationNotificationNow (notification);
-                return;
+            {
+           
+
+                UILocalNotification badgeNotification;
+                switch (status.SubKind) {
+                case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
+                    UILocalNotification notification = new UILocalNotification ();
+                    notification.AlertAction = "Taco Mail";
+                    notification.AlertBody = "You have new mail.";
+                    var countunread = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+                    notification.ApplicationIconBadgeNumber = countunread;
+                    UIApplication.SharedApplication.PresentLocationNotificationNow (notification);
+                    //badgeNotification = new UILocalNotification ();
+                    //badgeNotification.FireDate = DateTime.Now;
+                    //badgeNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+                    //UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
+                    break;
+                case NcResult.SubKindEnum.Info_EmailMessageMarkedRead:
+                    // need to find way to pop badge number without alert on app popping up
+                    badgeNotification = new UILocalNotification ();
+                    badgeNotification.AlertAction = "Taco Mail";
+                    badgeNotification.AlertBody = "321";
+                    badgeNotification.FireDate = DateTime.Now;
+                    var count2 = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+                    badgeNotification.ApplicationIconBadgeNumber = count2;
+                  
+                    UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
+                    break;
+                }
             }
         }
 

@@ -178,7 +178,7 @@ namespace NachoClient.iOS
             NachoAssert.True (null != message.Summary);
             var summary = message.Summary;
             var date = message.DateReceived;
-            var icon = (message.IsRead ? NachoMessageIcon.Read : NachoMessageIcon.None);
+            var icon = (message.IsRead ? NachoMessageIcon.None : NachoMessageIcon.Read);
             var isRead = message.IsRead;
 
             cell.Update (sender, summary, subject, date, icon, 0);
