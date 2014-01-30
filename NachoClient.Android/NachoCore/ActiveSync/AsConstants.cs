@@ -1,5 +1,6 @@
 using System;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
@@ -200,6 +201,26 @@ namespace NachoCore.ActiveSync
                 public const string Sms = "SMS";
             }
 
+            public McItem.ClassCodeEnum ClassCode2Enum (string classCode)
+            {
+                switch (classCode) {
+                case ClassCode.Tasks:
+                    return McItem.ClassCodeEnum.Tasks;
+                case ClassCode.Email:
+                    return McItem.ClassCodeEnum.Email;
+                case ClassCode.Calendar:
+                    return McItem.ClassCodeEnum.Calendar;
+                case ClassCode.Contacts:
+                    return McItem.ClassCodeEnum.Contact;
+                case ClassCode.Notes:
+                    return McItem.ClassCodeEnum.Notes;
+                case ClassCode.Sms:
+                    return McItem.ClassCodeEnum.Sms;
+                default:
+                    throw new Exception (string.Format ("Unknown ClassCode {0}", classCode));
+                }
+            }
+
             public enum MimeSupportCode : uint
             {
                 NoMime = 0,
@@ -260,8 +281,8 @@ namespace NachoCore.ActiveSync
                 NormalAttachment = 1,
                 /* [2, 4] Reserved. */
                 EmbeddedEml = 5,
-                AttachOle = 6}
-            ;
+                AttachOle = 6,
+            };
             // NOTE that TypeCode is for both Type and NativeBodyType.
             public enum TypeCode : uint
             {
@@ -269,8 +290,8 @@ namespace NachoCore.ActiveSync
                 Html = 2,
                 Rtf = 3,
                 /* Data element will be base64-encoded. */
-                Mime = 4}
-            ;
+                Mime = 4,
+            };
         }
 
         public class Autodisco

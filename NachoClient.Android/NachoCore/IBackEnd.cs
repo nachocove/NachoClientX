@@ -16,6 +16,8 @@ namespace NachoCore
         void Start (McAccount account);
         // ask all accounts to sync immediately.
         void ForceSync ();
+        // for a single account to sync immediately.
+        void ForceSync (McAccount account);
         // let the BE know that the asked-about server cert is/not okay to trust.
         void CertAskResp (McAccount account, bool isOkay);
         // let the BE know that the server info has been updated for this account.

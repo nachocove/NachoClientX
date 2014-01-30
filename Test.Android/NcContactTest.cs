@@ -148,10 +148,6 @@ namespace Test.iOS
         {
             var ds = new MockDataSource ();
             // Set up folder
-            var f = new McFolder ();
-            f.ServerId = "Contact:DEFAULT";
-            f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
-            ds.Owner.Db.Insert (f);
             var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);  
 
             var x05 = System.Xml.Linq.XElement.Parse (string_05);
@@ -160,7 +156,7 @@ namespace Test.iOS
             Assert.True (cr05.isOK ());
             Assert.NotNull (c05);
 
-            var mr05 = c05.ToMcContact (f);
+            var mr05 = c05.ToMcContact ();
             var m05 = mr05.GetValue<McContact> ();
             Assert.True (mr05.isOK ());
             Assert.IsNotNull (m05);

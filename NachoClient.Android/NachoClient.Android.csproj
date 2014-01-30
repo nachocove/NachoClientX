@@ -135,6 +135,8 @@
     <Compile Include="NachoCore\Utils\NcStateMachine.cs" />
     <Compile Include="NachoCore\Utils\Log.cs" />
     <Compile Include="NachoCore\Utils\MimeHelpers.cs" />
+    <Compile Include="NachoCore\Model\McObjectPerAccount.cs" />
+    <Compile Include="NachoCore\Model\McMapFolderItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

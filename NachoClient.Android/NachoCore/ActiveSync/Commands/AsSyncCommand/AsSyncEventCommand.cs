@@ -51,7 +51,7 @@ namespace NachoCore.ActiveSync
         {
             // Convert the event to an NcCalendar
             var h = new AsHelpers ();
-            var r = h.ParseCalendar (m_ns, command, folder);
+            var r = h.ParseCalendar (m_ns, command);
             McCalendar newItem = r.GetValue<McCalendar> ();
 
             NachoCore.NachoAssert.True (r.isOK ());
@@ -75,6 +75,12 @@ namespace NachoCore.ActiveSync
                 MergeAttendees (newItem);
                 MergeCategories (newItem);
                 MergeExceptions (newItem);
+                var map = new McMapFolderItem (newItem.AccountId) {
+                    FolderId = folder.Id,
+                    ItemId = newItem.Id,
+                    ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
+                };
+                DataSource.Owner.Db.Insert (map);
                 return;
             }
 

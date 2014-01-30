@@ -3,11 +3,8 @@ using System;
 
 namespace NachoCore.Model
 {
-    public class McAttachment : McObject
+    public class McAttachment : McObjectPerAccount
     {
-        [Indexed]
-        public int AccountId { get; set; }
-
         [Indexed]
         public int EmailMessageId { get; set; }
 

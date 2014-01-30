@@ -93,10 +93,17 @@ namespace NachoCore.Brain
                             var contact = new McContact () {
                                 AccountId = accountId,
                                 Source = McContact.McContactSource.Internal,
-                                FolderId = gleanedFolder.Id,
                                 RefCount = 1,
                             };
                             BackEnd.Instance.Db.Insert (contact);
+
+                            var map = new McMapFolderItem (contact.AccountId) {
+                                FolderId = gleanedFolder.Id,
+                                ItemId = contact.Id,
+                                ClassCode = (uint)McItem.ClassCodeEnum.Contact,
+                            };
+                            BackEnd.Instance.Db.Insert (map);
+
                             var strattr = new McContactStringAttribute () {
                                 Name = "Email1Address",
                                 Value = mbAddr.Address,

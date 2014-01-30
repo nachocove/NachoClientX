@@ -361,19 +361,14 @@ namespace NachoCore.ActiveSync
         // <TimeZone xmlns="Calendar:"> LAEAAEUAUw...P///w== </TimeZone>
         // <Organizer_Email xmlns="Calendar:"> steves@nachocove.com </Organizer_Email>
         // <Organizer_Name xmlns="Calendar:"> Steve Scalpone </Organizer_Name>
-        public NcResult ParseCalendar (XNamespace ns, XElement command, McFolder folder)
+        public NcResult ParseCalendar (XNamespace ns, XElement command)
         {
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
             NachoCore.NachoAssert.True (null != serverId);
 
-            // Folder must exist & have a key
-            NachoCore.NachoAssert.True (null != folder);
-            NachoCore.NachoAssert.True (folder.Id > 0);
-
             McCalendar c = new McCalendar ();
             c.ServerId = serverId.Value;
-            c.FolderId = folder.Id;
 
             c.attendees = new List<McAttendee> ();
             c.categories = new List<McCalendarCategory> ();

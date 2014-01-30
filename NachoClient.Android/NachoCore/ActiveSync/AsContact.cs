@@ -435,17 +435,11 @@ namespace NachoCore.ActiveSync
         /// Convert an AsContact to an McContact
         /// </summary>
         /// <returns>An NcResult with an embeded AsContact object.</returns>
-        /// <param name="folder">Folder.</param>
-        public NcResult ToMcContact (McFolder folder)
+        public NcResult ToMcContact ()
         {
-            // Folder must exist & have a key
-            NachoCore.NachoAssert.True (null != folder);
-            NachoCore.NachoAssert.True (folder.Id > 0);
-
             var c = new McContact ();
 
             c.Source = McContact.McContactSource.ActiveSync;
-            c.FolderId = folder.Id;
             c.ServerId = ServerId;
 
             c.Alias = Alias;

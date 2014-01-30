@@ -1,14 +1,12 @@
 using System;
+using System.Collections.Generic;
 using SQLite;
 using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McFolder : McObject
+    public class McFolder : McObjectPerAccount
     {
-        [Indexed]
-        public int AccountId { get; set; }
-
         [Indexed]
         public bool IsClientOwned { get; set; }
 
@@ -49,6 +47,14 @@ namespace NachoCore.Model
                 AccountId = account.Id,
             };
             return folder;
+        }
+
+        public static List<McFolder> QueryByItemId (int accountId, int itemId)
+        {
+            return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderItem AS m ON f.Id = m.FolderId WHERE " +
+                " m.AccountId = ? AND " +
+                " m.ItemId = ? ",
+                accountId, itemId);
         }
     }
 }

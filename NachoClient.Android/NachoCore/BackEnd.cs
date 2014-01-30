@@ -92,6 +92,7 @@ namespace NachoCore
                 storeDateTimeAsTicks: true);
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
+            Db.CreateTable<McMapFolderItem> ();
             Db.CreateTable<McFolder> ();
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McAttachment> ();
@@ -169,8 +170,13 @@ namespace NachoCore
         {
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
-                ServiceFromAccount (account).ForceSync ();
+                ForceSync (account);
             }
+        }
+
+        public void ForceSync (McAccount account)
+        {
+            ServiceFromAccount (account).ForceSync ();
         }
 
         public void CertAskResp (McAccount account, bool isOkay)

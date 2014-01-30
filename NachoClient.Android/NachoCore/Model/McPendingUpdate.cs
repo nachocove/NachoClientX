@@ -3,7 +3,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class McPendingUpdate : McObject
+    public class McPendingUpdate : McObjectPerAccount
     {
         public enum Operations
         {
@@ -45,9 +45,6 @@ namespace NachoCore.Model
         public Operations Operation { set; get; }
 
         public DataTypes DataType { set; get; }
-
-        [Indexed]
-        public int AccountId { set; get; }
 
         [Indexed]
         public bool IsDispatched { set; get; }

@@ -101,6 +101,7 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Console.WriteLine ("PerformFetch Called");
+            CompletionHandler = completionHandler;
             FetchResult = UIBackgroundFetchResult.Failed;
             BackEnd.Instance.StatusIndEvent += StatusHandler;
             BackEnd.Instance.ForceSync ();

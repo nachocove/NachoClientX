@@ -64,10 +64,15 @@ namespace Test.iOS
             DropTable<McContactAddressAttribute> ();
             CreateTable<McContactAddressAttribute> ();
 
-            // NcFolder
+            // McFolder
             CreateTable<McFolder> ();
             DropTable<McFolder> ();
             CreateTable<McFolder> ();
+
+            // McMapFolderItem
+            CreateTable<McMapFolderItem> ();
+            DropTable<McMapFolderItem> ();
+            CreateTable<McMapFolderItem> ();
 
             // NcPendingUpdate
             CreateTable<McPendingUpdate> ();
@@ -478,14 +483,13 @@ namespace Test.iOS
         public void CreateNcCalendarFromXML ()
         {
             var ds = new MockDataSource ();
-            var ncFolder = new MockNcFolder ();
 
             var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
-            NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
+            NcResult r = h.ParseCalendar (asSync.m_ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);
@@ -513,14 +517,13 @@ namespace Test.iOS
         public void CreateNcCalendarFromXML2 ()
         {
             var ds = new MockDataSource ();
-            var ncFolder = new MockNcFolder ();
 
             var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
             var command = System.Xml.Linq.XElement.Parse (addString_02);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
-            NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
+            NcResult r = h.ParseCalendar (asSync.m_ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNull (c.Location);
@@ -546,14 +549,13 @@ namespace Test.iOS
         public void CreateNcCalendarFromXML3 ()
         {
             var ds = new MockDataSource ();
-            var ncFolder = new MockNcFolder ();
 
             var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
             var command = System.Xml.Linq.XElement.Parse (addString_03);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
-            NcResult r = h.ParseCalendar (asSync.m_ns, command, ncFolder);
+            NcResult r = h.ParseCalendar (asSync.m_ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);

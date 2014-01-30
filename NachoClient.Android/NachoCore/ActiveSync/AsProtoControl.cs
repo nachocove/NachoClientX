@@ -820,12 +820,15 @@ namespace NachoCore.ActiveSync
 
         public override void ForceSync ()
         {
-            if (! CmdIs (typeof(AsSyncCommand))) {
-                if (null != Cmd) {
-                    Cmd.Cancel ();
-                }
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
+            if (null != Cmd) {
+                Cmd.Cancel ();
             }
+            var defaultInbox = Owner.Db.Table<McFolder> ().SingleOrDefault (x => x.Type == (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox);
+            if (null != defaultInbox) {
+                defaultInbox.AsSyncRequired = true;
+                Owner.Db.Update (defaultInbox);
+            }
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
         public override bool Cancel (string token)
@@ -868,7 +871,13 @@ namespace NachoCore.ActiveSync
             if (null == emailMessage) {
                 return null;
             }
-            var folder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
+
+            var folders = McFolder.QueryByItemId (Account.Id, emailMessageId);
+            if (null == folders || 0 == folders.Count) {
+                return null;
+            }
+
+            var folder = folders.First ();
 
             var deleUpdate = new McPendingUpdate (Account.Id) {
                 Operation = McPendingUpdate.Operations.Delete,
@@ -879,6 +888,14 @@ namespace NachoCore.ActiveSync
             Owner.Db.Insert (deleUpdate);
 
             // Delete the actual item.
+            var maps = Owner.Db.Table<McMapFolderItem> ().Where (x =>
+                x.AccountId == Account.Id &&
+                x.ItemId == emailMessageId &&
+                x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
+
+            foreach (var map in maps) {
+                Owner.Db.Delete (map);
+            }
             emailMessage.DeleteBody (Owner.Db);
             Owner.Db.Delete (emailMessage);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
@@ -895,8 +912,11 @@ namespace NachoCore.ActiveSync
             if (null == destFolder) {
                 return null;
             }
-            var srcFolder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
-
+            var srcFolders = McFolder.QueryByItemId (Account.Id, emailMessageId);
+            if (null == srcFolders || 0 == srcFolders.Count) {
+                return null;
+            }
+            var srcFolder = srcFolders.First ();
             var moveUpdate = new McPendingUpdate (Account.Id) {
                 Operation = McPendingUpdate.Operations.Move,
                 DataType = McPendingUpdate.DataTypes.EmailMessage,
@@ -908,8 +928,20 @@ namespace NachoCore.ActiveSync
 
             Owner.Db.Insert (moveUpdate);
             // Move the actual item.
-            emailMessage.FolderId = destFolder.Id;
-            Owner.Db.Update (emailMessage);
+            var newMapEntry = new McMapFolderItem (Account.Id) {
+                FolderId = destFolderId,
+                ItemId = emailMessageId,
+                ClassCode = (uint)McItem.ClassCodeEnum.Email,
+            };
+            Owner.Db.Insert (newMapEntry);
+
+            var oldMapEntry = Owner.Db.Table<McMapFolderItem> ().Single (x =>
+                x.AccountId == Account.Id &&
+                x.ItemId == emailMessageId &&
+                x.FolderId == srcFolder.Id &&
+                x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
+            Owner.Db.Delete (oldMapEntry);
+
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
             return moveUpdate.Token;
         }
@@ -921,7 +953,12 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var folder = Owner.Db.Table<McFolder> ().Single (x => emailMessage.FolderId == x.Id);
+            var folders = McFolder.QueryByItemId (Account.Id, emailMessageId);
+            if (null == folders || 0 == folders.Count) {
+                return null;
+            }
+
+            var folder = folders.First ();
 
             var markUpdate = new McPendingUpdate (Account.Id) {
                 Operation = McPendingUpdate.Operations.MarkRead,

@@ -463,6 +463,12 @@
       <DependentUpon>MessagePriorityViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\BlurryViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderItem.cs">
+      <Link>NachoCore\Model\McMapFolderItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McObjectPerAccount.cs">
+      <Link>NachoCore\Model\McObjectPerAccount.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

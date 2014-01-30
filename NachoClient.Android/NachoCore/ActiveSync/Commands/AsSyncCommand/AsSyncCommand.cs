@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -364,7 +365,6 @@ namespace NachoCore.ActiveSync
             IEnumerable<XElement> xmlAttachments = null;
             var emailMessage = new McEmailMessage {
                 AccountId = DataSource.Account.Id,
-                FolderId = folder.Id,
                 ServerId = serverId,
             };
 
@@ -438,6 +438,12 @@ namespace NachoCore.ActiveSync
                 }
             }
             DataSource.Owner.Db.Insert (emailMessage);
+            var map = new McMapFolderItem (DataSource.Account.Id) {
+                ItemId = emailMessage.Id,
+                FolderId = folder.Id,
+                ClassCode = (uint)McItem.ClassCodeEnum.Email,
+            };
+            DataSource.Owner.Db.Insert (map);
             if (null != xmlAttachments) {
                 foreach (XElement xmlAttachment in xmlAttachments) {
                     // Create & save the attachment record.

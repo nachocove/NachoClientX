@@ -33,7 +33,7 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (null != asContact);
 
             // Convert the AsContact to an McContact
-            var mcResult = asContact.ToMcContact (folder);
+            var mcResult = asContact.ToMcContact ();
             var mcContact = mcResult.GetValue<McContact> ();
             NachoCore.NachoAssert.True (mcResult.isOK ());
             NachoCore.NachoAssert.True (null != mcContact);
@@ -41,6 +41,12 @@ namespace NachoCore.ActiveSync
             // TODO: Do we have to ghost or merge here?
 
             var ur = mcContact.Insert (DataSource.Owner.Db);
+            var map = new McMapFolderItem (mcContact.AccountId) {
+                FolderId = folder.Id,
+                ItemId = mcContact.Id,
+                ClassCode = (uint)McItem.ClassCodeEnum.Contact,
+            };
+            DataSource.Owner.Db.Insert (map);
             NachoCore.NachoAssert.True (ur.isOK ());
         }
     }

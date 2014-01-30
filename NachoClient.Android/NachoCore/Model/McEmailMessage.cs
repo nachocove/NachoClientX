@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using SQLite;
 using NachoCore.Utils;
@@ -71,6 +72,15 @@ namespace NachoCore.Model
                 BodyId = 0;
                 db.Update (this);
             }
+        }
+
+        // Note need to paramtrize <T> and move to McItem.
+        public static List<McEmailMessage> QueryByFolderId (int accountId, int folderId)
+        {
+            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
+                " m.AccountId = ? AND " +
+                " m.FolderId = ? ",
+                accountId, folderId);
         }
     }
 
