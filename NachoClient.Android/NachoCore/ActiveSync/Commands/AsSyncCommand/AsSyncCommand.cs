@@ -437,13 +437,29 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
-            DataSource.Owner.Db.Insert (emailMessage);
+
+            // Need to handle the illegal case (GOOG "All" folder) where the ServerId is used twice
+            // on the 2nd insert of the same message.
+            var existingEmailMessage = DataSource.Owner.Db.Table<McEmailMessage> ()
+                .SingleOrDefault (x => 
+                    x.AccountId == emailMessage.AccountId &&
+                    x.ServerId == emailMessage.ServerId);
+            int emailMessageId;
+            if (null == existingEmailMessage) {
+                DataSource.Owner.Db.Insert (emailMessage);
+                emailMessageId = emailMessage.Id;
+            } else {
+                emailMessageId = existingEmailMessage.Id;
+            }
             var map = new McMapFolderItem (DataSource.Account.Id) {
-                ItemId = emailMessage.Id,
+                ItemId = emailMessageId,
                 FolderId = folder.Id,
                 ClassCode = (uint)McItem.ClassCodeEnum.Email,
             };
             DataSource.Owner.Db.Insert (map);
+            if (null != existingEmailMessage) {
+                return null;
+            }
             if (null != xmlAttachments) {
                 foreach (XElement xmlAttachment in xmlAttachments) {
                     // Create & save the attachment record.
