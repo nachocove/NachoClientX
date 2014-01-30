@@ -52,6 +52,7 @@ namespace NachoClient.iOS
         }
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
+            UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // An instance of the EKEventStore class represents the iOS Calendar database.
             eventStore = new EKEventStore ( );
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)

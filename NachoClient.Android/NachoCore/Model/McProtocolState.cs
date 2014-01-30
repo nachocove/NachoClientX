@@ -12,7 +12,7 @@ namespace NachoCore.Model
             AsProtocolVersion = "12.0";
             AsPolicyKey = "0";
             AsSyncKey = "0";
-            HeartbeatInterval = 24;
+            HeartbeatInterval = 600;
             MaxFolders = 200;
             KludgeSimulatorIdentity = Guid.NewGuid ().ToString ("N").Substring (0, 20);
             State = (uint)St.Start;
