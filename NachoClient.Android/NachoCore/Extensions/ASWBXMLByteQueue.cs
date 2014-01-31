@@ -79,20 +79,19 @@ namespace NachoCore.Wbxml
             return strReturn.ToString ();
         }
 
-        public string DequeueString (int length)
+        public byte[] DequeueOpaque (int length)
         {
-            StringBuilder strReturn = new StringBuilder ();
+            MemoryStream bStream = new MemoryStream();
 
-            byte currentByte = 0x00;
+            byte currentByte;
             for (int i = 0; i < length; i++) {
                 // TODO: Improve this handling. We are technically UTF-8, meaning
                 // that characters could be more than one byte long. This will fail if we have
                 // characters outside of the US-ASCII range
                 currentByte = this.Dequeue ();
-                strReturn.Append ((char)currentByte);
+                bStream.WriteByte (currentByte);
             }
-
-            return strReturn.ToString ();
+            return bStream.ToArray ();
         }
     }
 }

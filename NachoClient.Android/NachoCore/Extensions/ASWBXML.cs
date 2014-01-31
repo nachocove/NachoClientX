@@ -554,7 +554,7 @@ namespace NachoCore.Wbxml
             codePages [15].AddToken (0x1B, "GreaterThan");
             codePages [15].AddToken (0x1E, "UserName");
             codePages [15].AddToken (0x1F, "Password");
-            codePages [15].AddOpaqueToken (0x20, "ConversationId");
+            codePages [15].AddOpaqueBase64Token (0x20, "ConversationId");
             codePages [15].AddToken (0x21, "Picture");
             codePages [15].AddToken (0x22, "MaxSize");
             codePages [15].AddToken (0x23, "MaxPictures");
@@ -699,7 +699,7 @@ namespace NachoCore.Wbxml
             codePages [20].AddToken (0x15, "Password");
             codePages [20].AddToken (0x16, "Move");
             codePages [20].AddToken (0x17, "DstFldId");
-            codePages [20].AddOpaqueToken (0x18, "ConversationId");
+            codePages [20].AddOpaqueBase64Token (0x18, "ConversationId");
             codePages [20].AddToken (0x19, "MoveAlways");
             #endregion
 
@@ -735,8 +735,8 @@ namespace NachoCore.Wbxml
             codePages [22].AddToken (0x06, "UmUserNotes");
             codePages [22].AddToken (0x07, "UmAttDuration");
             codePages [22].AddToken (0x08, "UmAttOrder");
-            codePages [22].AddOpaqueToken (0x09, "ConversationId");
-            codePages [22].AddOpaqueToken (0x0A, "ConversationIndex");
+            codePages [22].AddOpaqueBase64Token (0x09, "ConversationId");
+            codePages [22].AddOpaqueBase64Token (0x0A, "ConversationIndex");
             codePages [22].AddToken (0x0B, "LastVerbExecuted");
             codePages [22].AddToken (0x0C, "LastVerbExecutionTime");
             codePages [22].AddToken (0x0D, "ReceivedAsBcc");
@@ -824,7 +824,7 @@ namespace NachoCore.Wbxml
             // Add the declaration
             XElement currentNode = null;
 
-            while (bytes.Peek() >= 0) {
+            while (bytes.Peek () >= 0) {
                 byte currentByte = bytes.Dequeue ();
 
                 switch ((GlobalTokens)currentByte) {
@@ -846,9 +846,13 @@ namespace NachoCore.Wbxml
                     break;
                 case GlobalTokens.OPAQUE:
                     int OpaqueLength = bytes.DequeueMultibyteInt ();
-                    var OpaqueString = bytes.DequeueString (OpaqueLength);
-                    var EscapedString = System.Security.SecurityElement.Escape (OpaqueString);
-                    var newOpaqueNode = new XText (EscapedString);
+                    var OpaqueBytes = bytes.DequeueOpaque (OpaqueLength);
+                    XText newOpaqueNode;
+                    if (codePages [currentCodePage].GetIsOpaqueBase64 (currentNode.Name.LocalName)) {
+                        newOpaqueNode = new XText (Convert.ToBase64String (OpaqueBytes));
+                    } else {
+                        newOpaqueNode = new XText (System.Text.Encoding.UTF8.GetString(OpaqueBytes));
+                    }
                     currentNode.Add (newOpaqueNode);
      //XmlCDataSection newOpaqueNode = xmlDoc.CreateCDataSection(bytes.DequeueString(CDATALength));
      //currentNode.AppendChild(newOpaqueNode);
@@ -860,7 +864,7 @@ namespace NachoCore.Wbxml
                         var data = new McBody ();
                         data.Body = bytes.DequeueString ();
                         BackEnd.Instance.Db.Insert (data);
-                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString()));
+                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
                     } else {
                         newTextNode = new XText (bytes.DequeueString ());
                     }
@@ -970,6 +974,10 @@ namespace NachoCore.Wbxml
                 if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
                     byteList.AddRange (EncodeOpaque (text.Value));
+                } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
+                    byteList.Add ((byte)GlobalTokens.OPAQUE);
+                    byteList.AddRange (EncodeOpaque (Convert.ToBase64String 
+                        (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value))));
                 } else {
                     byteList.Add ((byte)GlobalTokens.STR_I);
                     byteList.AddRange (EncodeString (text.Value));
