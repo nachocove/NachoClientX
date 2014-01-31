@@ -11,25 +11,71 @@ namespace NachoCore.Model
         private const string CrLf = "\r\n";
         private const string ColonSpace = ": ";
 
-        [Indexed]
-        public int BodyId { set; get; }
-        public string Summary {set; get; }
-        public string Encoding { set; get; }
-        [Indexed]
-        public string From { set; get; }
-        [Indexed]
+        /// All To addresses, comma separated (optional)
         public string To { set; get; }
+
+        /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
-        [Indexed]
+
+        /// Email address of the sender (optional)
+        public string From { set; get; }
+
+        /// Subject of the message (optional)
         public string Subject { set; get; }
+
+        /// Email addresses for replies, semi-colon separated (optional)
         public string ReplyTo { set; get; }
+
+        /// When the message was received by the current recipient (optional)
         public DateTime DateReceived { set; get; }
+
+        /// List of display names, semi-colon separated (optional)
         public string DisplayTo { set; get; }
+
         [Indexed]
+        /// The topic is used for conversation threading (optional)
+        public string ThreadTopic { set; get; }
+
+        /// 0..2, increasing priority (optional)
         public uint Importance { set; get; }
+
         [Indexed]
+        /// Has the message been read? (optional)
         public bool IsRead { set; get; }
+
+        /// A hint from the server (optional)
         public string MessageClass { set; get; }
+
+        /// Sender, maybe not the same as From (optional)
+        public string Sender { set; get; }
+
+        /// The user is on the bcc list (optional)
+        public bool ReceivedAsBcc { set; get; }
+
+        /// Conversation id, from Exchange
+        public string ConversationId { set; get; }
+
+        /// MIME header Message-ID: unique message identifier (optional)
+        public string MessageID { set; get; }
+
+        /// MIME header In-Reply-To: message ids, crlf separated (optional)
+        public string InReplyTo { set; get; }
+
+        /// MIME header References: message ids, crlf separated (optional)
+        public string References { set; get; }
+
+
+        /// Attachments are separate
+
+        [Indexed]
+        /// Body data is in McBody
+        public int BodyId { set; get; }
+
+        /// Summary is extracted in gleaner
+        public string Summary {set; get; }
+
+        /// Integer -- plain test, html, rtf, mime
+        public string BodyType { set; get; }
 
         public string ToMime (SQLiteConnection db) {
             string message = "";

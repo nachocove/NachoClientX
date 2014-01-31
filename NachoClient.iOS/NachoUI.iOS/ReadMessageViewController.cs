@@ -18,7 +18,7 @@ namespace NachoClient.iOS
 {
     public partial class ReadMessageViewController : DialogViewController
     {
-        public int messageIndex;
+        public int ThreadIndex;
         public Boolean messageDeleted;
         public INachoEmailMessages messages;
 
@@ -43,7 +43,7 @@ namespace NachoClient.iOS
 //                return;
 //            }
 
-            MarkAsRead (messageIndex);
+            MarkAsRead (ThreadIndex);
 
             ReloadRoot ();
         }
@@ -52,7 +52,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "ReadMessageToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
-                vc.message = messages.GetEmailMessage (messageIndex);
+                vc.messageThread = messages.GetEmailThread (ThreadIndex);
                 vc.owner = this;
             }
         }
@@ -67,7 +67,8 @@ namespace NachoClient.iOS
             var root = new RootElement ("Message");
             root.UnevenRows = true;
 
-            var m = messages.GetEmailMessage (messageIndex);
+            var t = messages.GetEmailThread (ThreadIndex);
+            var m = t.First ();
 
             var topSection = new Section ();
             root.Add (topSection);
@@ -309,7 +310,8 @@ namespace NachoClient.iOS
         void MarkAsRead (int index)
         {
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
-            var message = messages.GetEmailMessage (index);
+            var thread = messages.GetEmailThread (index);
+            var message = thread.First ();
             BackEnd.Instance.MarkEmailReadCmd (account, message.Id);
         }
 

@@ -10,22 +10,105 @@ namespace NachoCore
 {
     public class NachoEmailMessages : INachoEmailMessages
     {
-        List<McEmailMessage> list;
+        List<List<McEmailMessage>> threadList;
 
-        public NachoEmailMessages (McFolder folder)
+        public NachoEmailMessages(McFolder folder)
         {
-            list = McEmailMessage.QueryByFolderId (folder.AccountId, folder.Id).OrderByDescending (c => c.DateReceived).ToList();
+            List<McEmailMessage> list = McEmailMessage.QueryByFolderId (folder.AccountId, folder.Id).OrderByDescending (c => c.DateReceived).ToList ();
+
+            if (true) {
+                threadList = new List<List<McEmailMessage>> ();
+                for (int i = 0; i < list.Count; i++) {
+                    var singleMessageList = new List<McEmailMessage> ();
+                    singleMessageList.Add (list [i]);
+                    threadList.Add (singleMessageList);
+                }
+                return;
+            }
+#if FINISHED
+            var map = new Dictionary <string, List<McEmailMessage>>();
+
+            for (int i = 0; i < list.Count; i++) {
+                var message = list [i];
+                if (null == message.MessageID) {
+                    continue;
+                }
+                List<McEmailMessage> messageList = null;
+                if (map.TryGetValue (message.MessageID, out messageList)) {
+                    // Duplicate!
+                    messageList.Add (message);
+                    list [i] = null;
+                    continue;
+                }
+                map [message.MessageID] = new List<McEmailMessage> ();
+            }
+
+            // No duplicates left in the list.
+
+            for (int i = 0; i < list.Count; i++) {
+                var message = list [i];
+                if (null != message.InReplyTo) {
+                    if (RedirectMap (map, message, message.InReplyTo)) {
+                        list [i] = null;
+                        goto done;
+                    }
+                }
+                if (null != message.References) {
+                    string[] references = message.References.Split (new char[] { '\n' });
+                    foreach (var reference in references) {
+                        if (RedirectMap (map, message, reference)) {
+                            list [i] = null;
+                            goto done;
+                        }
+                    }
+                }
+                done:
+                continue;
+            }
+            threadList = new List<List<McEmailMessage>> ();
+            for (int i = 0; i < list.Count; i++) {
+                if (null == list [i]) {
+                    continue;
+                }
+                var message = list [i];
+                if (null == message.MessageID) {
+                    var singleMessageList = new List<McEmailMessage> ();
+                    singleMessageList.Add (message);
+                    threadList.Add (singleMessageList);
+                    continue;
+                } else {
+                    var l = map [message.MessageID];
+                    l.Add (message);
+                    threadList.Add (l);
+                }
+            }
         }
+
+        bool RedirectMap(Dictionary <string, List<McEmailMessage>> map, McEmailMessage message, string messageID)
+        {
+            List<McEmailMessage> messageList;
+            if (map.TryGetValue (messageID, out messageList)) {
+                if (null != message.MessageID) {
+                    messageList.AddRange (map [message.MessageID]);
+                    map [message.MessageID] = messageList;
+                }
+                messageList.Add (message);
+                return true;
+            }
+            return false;
+#endif
+        }
+
 
         public int Count ()
         {
-            return list.Count;
+            return threadList.Count;
         }
 
-        public McEmailMessage GetEmailMessage (int i)
+        public List<McEmailMessage> GetEmailThread (int i)
         {
-            var m = list.ElementAt (i);
-            return m;
+            var t = threadList.ElementAt (i);
+            return t;
         }
     }
 }
