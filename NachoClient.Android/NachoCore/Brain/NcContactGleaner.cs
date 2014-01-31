@@ -79,6 +79,15 @@ namespace NachoCore.Brain
                 senderAsList.Add (mimeMsg.Sender);
                 addrsLists.Add (senderAsList);
             }
+            if (null != mimeMsg.MessageId) {
+                emailMessage.MessageID = mimeMsg.MessageId;
+            }
+            if (null != mimeMsg.InReplyTo) {
+                emailMessage.InReplyTo = mimeMsg.InReplyTo;
+            }
+            if (null != mimeMsg.References) {
+                emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
+            }
             foreach (var addrsList in addrsLists) {
                 foreach (var addr in addrsList) {
                     if (addr is MailboxAddress) {
@@ -122,7 +131,7 @@ namespace NachoCore.Brain
                     }
                 }
             }
-            // As long as we have the data in memory (sorry!)
+            // Create summary if needed
             if (null == emailMessage.Summary) {
                 emailMessage.Summary = MimeHelpers.CreateSummary (mimeMsg);
             }

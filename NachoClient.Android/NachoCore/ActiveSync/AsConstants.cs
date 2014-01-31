@@ -265,6 +265,7 @@ namespace NachoCore.ActiveSync
             public const string ContentId = "ContentId";
             public const string ContentLocation = "ContentLocation";
             public const string ContentType = "ContentType";
+            public const string ConversationId = "ConversationId";
             public const string Data = "Data";
             public const string DisplayName = "DisplayName";
             public const string EstimatedDataSize = "EstimatedDataSize";
@@ -540,7 +541,9 @@ namespace NachoCore.ActiveSync
             public const string MessageClass = "MessageClass";
             public const string Read = "Read";
             public const string ReplyTo = "ReplyTo";
+            public const string Sender = "Sender";
             public const string Subject = "Subject";
+            public const string ThreadTopic = "ThreadTopic";
             public const string To = "To";
         }
 
@@ -548,6 +551,8 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Email2";
             // Alpha order.
+            public const string ConversationId = "ConversationId";
+            public const string ReceivedAsBcc = "ReceivedAsBcc";
             public const string UmAttDuration = "UmAttDuration";
             public const string UmAttOrder = "UmAttOrder";
         }

@@ -375,7 +375,7 @@ namespace NachoCore.ActiveSync
                     xmlAttachments = child.Elements (m_baseNs + Xml.AirSyncBase.Attachment);
                     break;
                 case Xml.AirSyncBase.Body:
-                    emailMessage.Encoding = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value;
+                    emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value;
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != bodyElement) {
@@ -394,9 +394,11 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 case Xml.Email.To:
+                    // TODO: Append
                     emailMessage.To = child.Value;
                     break;
                 case Xml.Email.Cc:
+                    // TODO: Append
                     emailMessage.Cc = child.Value;
                     break;
                 case Xml.Email.From:
@@ -434,6 +436,23 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Email.MessageClass:
                     emailMessage.MessageClass = child.Value;
+                    break;
+                case Xml.Email.ThreadTopic:
+                    emailMessage.ThreadTopic = child.Value;
+                    break;
+                case Xml.Email.Sender:
+                    emailMessage.Sender = child.Value;
+                    break;
+                case Xml.Email2.ReceivedAsBcc:
+                    if ("1" == child.Value) {
+                        emailMessage.ReceivedAsBcc = true;
+                    } else {
+                        emailMessage.ReceivedAsBcc = false;
+                    }
+                    break;
+                case Xml.Email2.ConversationId:
+                    // FIXME: Will be base64 string soon
+//                    emailMessage.ConversationId = child.Value;
                     break;
                 }
             }
