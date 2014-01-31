@@ -178,13 +178,16 @@ namespace NachoClient.iOS
                     ssize = StringSize (ms, CountFont);
                     boxWidth = Math.Min (22 + ssize.Width, 18);
                     var crect = new RectangleF (Bounds.Width - 20 - boxWidth, 32, boxWidth, 16);
-
-                    UIColor.Gray.SetFill ();
-                    MonoTouch.Dialog.GraphicsUtil.FillRoundedRect (ctx, crect, 3);
+                    var rectPath = UIBezierPath.FromRoundedRect (crect, 3.0f);
+                    using (var context = UIGraphics.GetCurrentContext ()) {
+                        context.SaveState ();
+                        UIColor.LightGray.SetFill ();
+                        rectPath.Fill ();
+                        context.RestoreState ();
+                    }
                     UIColor.White.SetColor ();
                     crect.X += 5;
                     DrawString (ms, crect, CountFont);
-
                     boxWidth += padright;
                 } else {
                     boxWidth = 0;
