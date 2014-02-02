@@ -739,32 +739,7 @@ namespace NachoCore.ActiveSync
 
         private void DoPing ()
         {
-            // Handle the pending updates in priority order, or if none then Ping & wait.
-            if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                rec.DataType == McPendingUpdate.DataTypes.Contact &&
-                rec.Operation == McPendingUpdate.Operations.Search).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
-            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
-                       rec.Operation == McPendingUpdate.Operations.Send).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
-            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
-                       rec.Operation == McPendingUpdate.Operations.Move).Count ()) {
-                Sm.PostEvent ((uint)CtlEvt.E.Move, "ASPCDPM");
-            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == McPendingUpdate.DataTypes.Attachment &&
-                       rec.Operation == McPendingUpdate.Operations.Download).Count ()) {
-                Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
-            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
-                       rec.Operation == McPendingUpdate.Operations.Delete).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
-            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
-                       rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
-                       rec.Operation == McPendingUpdate.Operations.MarkRead).Count ()) {
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP4");
-            } else {
+            if (!FirePendingInstead ()) {
                 Cmd = new AsPingCommand (this);
                 Cmd.Execute (Sm);
             }
@@ -777,6 +752,46 @@ namespace NachoCore.ActiveSync
             }
             Cmd = new AsSearchCommand (this);
             Cmd.Execute (Sm);
+        }
+
+        private bool FirePendingInstead ()
+        {
+            var pending = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id).OrderBy (x => x.Id);
+            if (0 < pending.Count ()) {
+                var next = pending.First ();
+                switch (next.Operation) {
+                case McPendingUpdate.Operations.Search:
+                    NachoAssert.True (McPendingUpdate.DataTypes.Contact == next.DataType);
+                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
+                    return true;
+
+                case McPendingUpdate.Operations.Send:
+                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
+                    return true;
+
+                case McPendingUpdate.Operations.Move:
+                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                    Sm.PostEvent ((uint)CtlEvt.E.Move, "ASPCDPM");
+                    return true;
+
+                case McPendingUpdate.Operations.Download:
+                    NachoAssert.True (McPendingUpdate.DataTypes.Attachment == next.DataType);
+                    Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
+                    return true;
+
+                case McPendingUpdate.Operations.Delete:
+                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                    Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
+                    return true;
+
+                case McPendingUpdate.Operations.MarkRead:
+                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                    Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP4");
+                    return true;
+                }
+            }
+            return false;
         }
 
         private bool CmdIs (Type cmdType)
@@ -890,8 +905,8 @@ namespace NachoCore.ActiveSync
             // Delete the actual item.
             var maps = BackEnd.Instance.Db.Table<McMapFolderItem> ().Where (x =>
                 x.AccountId == Account.Id &&
-                x.ItemId == emailMessageId &&
-                x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
+                       x.ItemId == emailMessageId &&
+                       x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
 
             foreach (var map in maps) {
                 BackEnd.Instance.Db.Delete (map);
@@ -937,9 +952,9 @@ namespace NachoCore.ActiveSync
 
             var oldMapEntry = BackEnd.Instance.Db.Table<McMapFolderItem> ().Single (x =>
                 x.AccountId == Account.Id &&
-                x.ItemId == emailMessageId &&
-                x.FolderId == srcFolder.Id &&
-                x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
+                              x.ItemId == emailMessageId &&
+                              x.FolderId == srcFolder.Id &&
+                              x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
             BackEnd.Instance.Db.Delete (oldMapEntry);
 
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
