@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (move);
             Update.IsDispatched = true;
-            DataSource.Owner.Db.Update (Update);
+            BackEnd.Instance.Db.Update (Update);
             return doc;
         }
 
@@ -42,35 +42,35 @@ namespace NachoCore.ActiveSync
                 var xmlDstMsgId = xmlResponse.Element (m_ns + Xml.Mov.DstMsgId);
                 if (null != xmlDstMsgId) {
                     var SrcMsgId = xmlResponse.Element (m_ns + Xml.Mov.SrcMsgId).Value;
-                    var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.Id == Update.EmailMessageId);
+                    var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.Id == Update.EmailMessageId);
                     if (null != emailMessage) {
                         emailMessage.ServerId = xmlDstMsgId.Value;
-                        DataSource.Owner.Db.Update (emailMessage);
+                        BackEnd.Instance.Db.Update (emailMessage);
                     }
                 }
                 DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded),
                     new [] { Update.Token });
-                DataSource.Owner.Db.Delete (Update);
+                BackEnd.Instance.Db.Delete (Update);
                 return Event.Create ((uint)SmEvt.E.Success, "MVSUCCESS");
 
             case Xml.Mov.StatusCode.InvalidSrc:
             case Xml.Mov.StatusCode.InvalidDest:
                 DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed),
                     new [] { Update.Token });
-                DataSource.Owner.Db.Delete (Update);
+                BackEnd.Instance.Db.Delete (Update);
                 return Event.Create ((uint)(uint)AsProtoControl.CtlEvt.E.ReFSync, "MVFSYNC");
 
             case Xml.Mov.StatusCode.SrcDestSame:
             case Xml.Mov.StatusCode.ClobberOrMulti:
                 DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed),
                     new [] { Update.Token });
-                DataSource.Owner.Db.Delete (Update);
+                BackEnd.Instance.Db.Delete (Update);
                 return Event.Create ((uint)SmEvt.E.Success, "MVGRINF");
 
             case Xml.Mov.StatusCode.Locked:
                 // We don't delete the update, no indication - we will retry.
                 Update.IsDispatched = true;
-                DataSource.Owner.Db.Update (Update);
+                BackEnd.Instance.Db.Update (Update);
                 return Event.Create ((uint)(uint)AsProtoControl.AsEvt.E.ReSync, "MVSYNC");
             
             default:

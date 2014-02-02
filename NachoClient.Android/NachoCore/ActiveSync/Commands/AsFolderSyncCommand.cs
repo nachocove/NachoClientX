@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
                 Log.Info ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
                 Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand response:\n{0}", doc);
                 protocolState.AsSyncKey = syncKey;
-                DataSource.Owner.Db.Update (protocolState);
+                BackEnd.Instance.Db.Update (protocolState);
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     HadFolderChanges = true;
@@ -54,21 +54,21 @@ namespace NachoCore.ActiveSync
                                 AsSyncRequired = true
                             };
                             Log.Info ("foldersync - add - " + folder);
-                            DataSource.Owner.Db.Insert (folder);
+                            BackEnd.Instance.Db.Insert (folder);
                             break;
                         case Xml.FolderHierarchy.Update:
                             var serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            folder = DataSource.Owner.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
+                            folder = BackEnd.Instance.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
                             folder.ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             folder.DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value;
                             folder.Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value);
                             Log.Info ("foldersync - update - " + folder);
-                            DataSource.Owner.Db.Update (folder);
+                            BackEnd.Instance.Db.Update (folder);
                             break;
                         case Xml.FolderHierarchy.Delete:
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            folder = DataSource.Owner.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
-                            DataSource.Owner.Db.Delete (folder);
+                            folder = BackEnd.Instance.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
+                            BackEnd.Instance.Db.Delete (folder);
                             break;
                         }
                     }

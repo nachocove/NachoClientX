@@ -12,7 +12,7 @@ namespace NachoCore
 
         public McAccount Account {
             get {
-                return Owner.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
+                return BackEnd.Instance.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
             }
         }
 
@@ -20,31 +20,31 @@ namespace NachoCore
             get {
                 // Note the lack of join :-(.
                 var account = Account;
-                return Owner.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).Single ();
+                return BackEnd.Instance.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).Single ();
             }
         }
 
         public McServer Server { 
             get {
                 var account = Account;
-                return Owner.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
+                return BackEnd.Instance.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
             }
             set {
                 var update = value;
                 update.Id = Account.ServerId;
-                Owner.Db.Update (update);
+                BackEnd.Instance.Db.Update (update);
             }
         }
 
         public McProtocolState ProtocolState { 
             get {
                 var account = Account;
-                return Owner.Db.Table<McProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
+                return BackEnd.Instance.Db.Table<McProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
             }
             set {
                 var update = value;
                 update.Id = Account.ProtocolStateId;
-                Owner.Db.Update (update);
+                BackEnd.Instance.Db.Update (update);
             }
         }
 

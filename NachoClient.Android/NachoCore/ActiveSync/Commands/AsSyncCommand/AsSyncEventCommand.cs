@@ -61,7 +61,7 @@ namespace NachoCore.ActiveSync
             McCalendar oldItem = null;
 
             try {
-                oldItem = DataSource.Owner.Db.Get<McCalendar> (x => x.ServerId == newItem.ServerId);
+                oldItem = BackEnd.Instance.Db.Get<McCalendar> (x => x.ServerId == newItem.ServerId);
             } catch (System.InvalidOperationException) {
                 Log.Info (Log.LOG_CALENDAR, "ProcessCalendarItem: System.InvalidOperationException handled");
             } catch (Exception e) {
@@ -70,7 +70,7 @@ namespace NachoCore.ActiveSync
 
             // If there is no match, insert the new item.
             if (null == oldItem) {
-                int ir = DataSource.Owner.Db.Insert (newItem);
+                int ir = BackEnd.Instance.Db.Insert (newItem);
                 NachoCore.NachoAssert.True (0 < ir);
                 MergeAttendees (newItem);
                 MergeCategories (newItem);
@@ -80,7 +80,7 @@ namespace NachoCore.ActiveSync
                     ItemId = newItem.Id,
                     ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
                 };
-                DataSource.Owner.Db.Insert (map);
+                BackEnd.Instance.Db.Insert (map);
                 return;
             }
 
@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
             // Overwrite the old item with the new item
             // to preserve the index, in
             newItem.Id = oldItem.Id;
-            int ur = DataSource.Owner.Db.Update (oldItem);
+            int ur = BackEnd.Instance.Db.Update (oldItem);
             NachoCore.NachoAssert.True (0 < ur);
 
             // Update the entries that refer to the updated entry
@@ -111,7 +111,7 @@ namespace NachoCore.ActiveSync
         {
             NachoCore.NachoAssert.True (r.Id > 0);
             string query = "select * from McAttendee where parentType = ? and parentId = ?";
-            var l = DataSource.Owner.Db.Query<McAttendee> (query, McAttendee.GetParentType (r), r.Id);
+            var l = BackEnd.Instance.Db.Query<McAttendee> (query, McAttendee.GetParentType (r), r.Id);
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -122,7 +122,7 @@ namespace NachoCore.ActiveSync
         {
             NachoCore.NachoAssert.True (r.Id > 0);
             string query = "select * from McCalendarCategory where parentType = ? and parentId = ?";
-            var l = DataSource.Owner.Db.Query<McCalendarCategory> (query, McCalendarCategory.GetParentType (r), r.Id);
+            var l = BackEnd.Instance.Db.Query<McCalendarCategory> (query, McCalendarCategory.GetParentType (r), r.Id);
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -135,7 +135,7 @@ namespace NachoCore.ActiveSync
         public List<McException> GetExceptions (McCalendar calendar)
         {
             NachoCore.NachoAssert.True (calendar.Id > 0);
-            var l = DataSource.Owner.Db.Table<McException> ().Where (x => x.CalendarId == calendar.Id).ToList ();
+            var l = BackEnd.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendar.Id).ToList ();
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -148,7 +148,7 @@ namespace NachoCore.ActiveSync
         public List<McRecurrence> GetRecurrences (McCalendar calendar)
         {
             NachoCore.NachoAssert.True (calendar.Id > 0);
-            var l = DataSource.Owner.Db.Table<McRecurrence> ().Where (x => x.CalendarId == calendar.Id).ToList ();
+            var l = BackEnd.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == calendar.Id).ToList ();
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -167,7 +167,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var attendee in attendees) {
-                DataSource.Owner.Db.Delete (attendee);
+                BackEnd.Instance.Db.Delete (attendee);
             }
 
             // Add the new, if any
@@ -176,12 +176,12 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var attendee in c.attendees) {
                 if (attendee.Id > 0) {
-                    int r = DataSource.Owner.Db.Update (attendee);
+                    int r = BackEnd.Instance.Db.Update (attendee);
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
                     attendee.ParentId = c.Id;
                     attendee.ParentType = McAttendee.GetParentType (c);
-                    int r = DataSource.Owner.Db.Insert (attendee);
+                    int r = BackEnd.Instance.Db.Insert (attendee);
                     NachoCore.NachoAssert.True (0 < r);
                 }
             }
@@ -203,7 +203,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var category in categories) {
-                DataSource.Owner.Db.Delete (category);
+                BackEnd.Instance.Db.Delete (category);
             }
 
             // Add the new, if any
@@ -212,11 +212,11 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var category in c.categories) {
                 if (category.Id > 0) {
-                    int r = DataSource.Owner.Db.Update (category);
+                    int r = BackEnd.Instance.Db.Update (category);
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
                     category.ParentId = McCalendarCategory.GetParentType (c);
-                    int r = DataSource.Owner.Db.Insert (category);
+                    int r = BackEnd.Instance.Db.Insert (category);
                     NachoCore.NachoAssert.True (0 < r);
                 }
             }
@@ -237,7 +237,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var exception in exceptions) {
-                DataSource.Owner.Db.Delete (exception);
+                BackEnd.Instance.Db.Delete (exception);
             }
 
             // Add the new, if any
@@ -246,10 +246,10 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var exception in c.exceptions) {
                 if (exception.Id > 0) {
-                    int r = DataSource.Owner.Db.Update (exception);
+                    int r = BackEnd.Instance.Db.Update (exception);
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
-                    int r = DataSource.Owner.Db.Insert (exception);
+                    int r = BackEnd.Instance.Db.Insert (exception);
                     NachoCore.NachoAssert.True (0 < r);
                 }
                 MergeAttendees (exception);
@@ -265,7 +265,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var recurrence in recurrences) {
-                DataSource.Owner.Db.Delete (recurrence);
+                BackEnd.Instance.Db.Delete (recurrence);
             }
 
             // Add the new, if any
@@ -274,10 +274,10 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var recurrence in c.recurrences) {
                 if (recurrence.Id > 0) {
-                    int r = DataSource.Owner.Db.Update (recurrence);
+                    int r = BackEnd.Instance.Db.Update (recurrence);
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
-                    int r = DataSource.Owner.Db.Insert (recurrence);
+                    int r = BackEnd.Instance.Db.Insert (recurrence);
                     NachoCore.NachoAssert.True (0 < r);
                 }
             }
@@ -296,18 +296,17 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (null != attendees);
 
             foreach (var attendee in attendees) {
-                DataSource.Owner.Db.Delete (attendee);
+                BackEnd.Instance.Db.Delete (attendee);
             }
 
             var categories = GetCategories (exception);
             NachoCore.NachoAssert.True (null != categories);
 
             foreach (var category in categories) {
-                DataSource.Owner.Db.Delete (category);
+                BackEnd.Instance.Db.Delete (category);
             }
 
-            DataSource.Owner.Db.Delete (exception);
-
+            BackEnd.Instance.Db.Delete (exception);
         }
     }
 }

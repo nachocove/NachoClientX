@@ -162,10 +162,10 @@ namespace NachoCore.ActiveSync
             switch ((Xml.Provision.ProvisionStatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
             case Xml.Provision.ProvisionStatusCode.Success:
                 if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
-                        GetOp == Sender) {
+                    GetOp == Sender) {
                     var protocolState = DataSource.ProtocolState;
                     protocolState.InitialProvisionCompleted = true;
-                    DataSource.Owner.Db.Update (protocolState);
+                    BackEnd.Instance.Db.Update (protocolState);
                 }
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
@@ -183,7 +183,7 @@ namespace NachoCore.ActiveSync
                     // PolicyKey required element of Policy.
                     McProtocolState update = DataSource.ProtocolState;
                     update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
-                    DataSource.Owner.Db.Update (update);
+                    BackEnd.Instance.Db.Update (update);
 
                     // PolicyType required element of Policy, but we don't care much.
                     var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
@@ -208,7 +208,7 @@ namespace NachoCore.ActiveSync
                     var xmlData = xmlPolicy.Element (m_ns + Xml.Provision.Data);
                     if (null != xmlData) {
                         var policyId = DataSource.Account.PolicyId;
-                        var policy = DataSource.Owner.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
+                        var policy = BackEnd.Instance.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
                         foreach (var xmlEASProvisionDoc in xmlData.Elements(m_ns+Xml.Provision.EASProvisionDoc)) {
                             // Right now, we serially apply EASProvisionDoc elements against the policy. It is not clear
                             // that there is ever really more than one EASProvisionDoc. Maybe someday we are required to
@@ -216,7 +216,7 @@ namespace NachoCore.ActiveSync
                                 
                             ApplyEasProvisionDocToPolicy (xmlEASProvisionDoc, policy);
                         }
-                        DataSource.Owner.Db.Update (policy);
+                        BackEnd.Instance.Db.Update (policy);
                     }
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "PROVSUCCESS");

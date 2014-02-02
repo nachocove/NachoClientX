@@ -581,11 +581,11 @@ namespace NachoCore.ActiveSync
 
             Log.Info (Log.LOG_STATE, "Initial state: {0}", Sm.State);
 
-            var dispached = Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            var dispached = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                             rec.IsDispatched == true).ToList ();
             foreach (var update in dispached) {
                 update.IsDispatched = false;
-                Owner.Db.Update (update);
+                BackEnd.Instance.Db.Update (update);
             }
         }
         // Methods callable by the owner.
@@ -601,7 +601,7 @@ namespace NachoCore.ActiveSync
 
         public override void ServerConfResp ()
         {
-            Server = Owner.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
+            Server = BackEnd.Instance.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
         }
 
@@ -618,7 +618,7 @@ namespace NachoCore.ActiveSync
         {
             var protocolState = ProtocolState;
             protocolState.State = Sm.State;
-            Owner.Db.Update (protocolState);
+            BackEnd.Instance.Db.Update (protocolState);
         }
         // State-machine action methods.
         private void DoUiServConfReq ()
@@ -740,27 +740,27 @@ namespace NachoCore.ActiveSync
         private void DoPing ()
         {
             // Handle the pending updates in priority order, or if none then Ping & wait.
-            if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                 rec.DataType == McPendingUpdate.DataTypes.Contact &&
                 rec.Operation == McPendingUpdate.Operations.Search).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
-            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.Send).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
-            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.Move).Count ()) {
                 Sm.PostEvent ((uint)CtlEvt.E.Move, "ASPCDPM");
-            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.Attachment &&
                        rec.Operation == McPendingUpdate.Operations.Download).Count ()) {
                 Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
-            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.Delete).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
-            } else if (0 < Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            } else if (0 < BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                        rec.DataType == McPendingUpdate.DataTypes.EmailMessage &&
                        rec.Operation == McPendingUpdate.Operations.MarkRead).Count ()) {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP4");
@@ -786,14 +786,14 @@ namespace NachoCore.ActiveSync
 
         private void DeletePendingSearchReqs (string token, bool ignoreDispatched)
         {
-            var query = Owner.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            var query = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
                         rec.Token == token);
             if (ignoreDispatched) {
                 query = query.Where (rec => false == rec.IsDispatched);
             }
             var killList = query.ToList ();
             foreach (var kill in killList) {
-                Owner.Db.Delete (kill);
+                BackEnd.Instance.Db.Delete (kill);
             }
         }
 
@@ -814,7 +814,7 @@ namespace NachoCore.ActiveSync
                 MaxResults = (null == maxResults) ? 0 : (uint)maxResults,
                 Token = token
             };
-            Owner.Db.Insert (newSearch);
+            BackEnd.Instance.Db.Insert (newSearch);
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
@@ -823,17 +823,17 @@ namespace NachoCore.ActiveSync
             if (null != Cmd) {
                 Cmd.Cancel ();
             }
-            var defaultInbox = Owner.Db.Table<McFolder> ().SingleOrDefault (x => x.Type == (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox);
+            var defaultInbox = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.Type == (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox);
             if (null != defaultInbox) {
                 defaultInbox.AsSyncRequired = true;
-                Owner.Db.Update (defaultInbox);
+                BackEnd.Instance.Db.Update (defaultInbox);
             }
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
         public override bool Cancel (string token)
         {
-            var update = Owner.Db.Table<McPendingUpdate> ().SingleOrDefault (rec => rec.AccountId == Account.Id && rec.Token == token);
+            var update = BackEnd.Instance.Db.Table<McPendingUpdate> ().SingleOrDefault (rec => rec.AccountId == Account.Id && rec.Token == token);
             if (null == update) {
                 return false;
             }
@@ -860,14 +860,14 @@ namespace NachoCore.ActiveSync
                 DataType = McPendingUpdate.DataTypes.EmailMessage,
                 EmailMessageId = emailMessageId
             };
-            Owner.Db.Insert (sendUpdate);
+            BackEnd.Instance.Db.Insert (sendUpdate);
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
             return sendUpdate.Token;
         }
 
         public override string DeleteEmailCmd (int emailMessageId)
         {
-            var emailMessage = Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
             if (null == emailMessage) {
                 return null;
             }
@@ -885,30 +885,30 @@ namespace NachoCore.ActiveSync
                 FolderServerId = folder.ServerId,
                 ServerId = emailMessage.ServerId
             };   
-            Owner.Db.Insert (deleUpdate);
+            BackEnd.Instance.Db.Insert (deleUpdate);
 
             // Delete the actual item.
-            var maps = Owner.Db.Table<McMapFolderItem> ().Where (x =>
+            var maps = BackEnd.Instance.Db.Table<McMapFolderItem> ().Where (x =>
                 x.AccountId == Account.Id &&
                 x.ItemId == emailMessageId &&
                 x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
 
             foreach (var map in maps) {
-                Owner.Db.Delete (map);
+                BackEnd.Instance.Db.Delete (map);
             }
-            emailMessage.DeleteBody (Owner.Db);
-            Owner.Db.Delete (emailMessage);
+            emailMessage.DeleteBody (BackEnd.Instance.Db);
+            BackEnd.Instance.Db.Delete (emailMessage);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
             return deleUpdate.Token;
         }
 
         public override string MoveItemCmd (int emailMessageId, int destFolderId)
         {
-            var emailMessage = Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
             if (null == emailMessage) {
                 return null;
             }
-            var destFolder = Owner.Db.Table<McFolder> ().SingleOrDefault (x => destFolderId == x.Id);
+            var destFolder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => destFolderId == x.Id);
             if (null == destFolder) {
                 return null;
             }
@@ -926,21 +926,21 @@ namespace NachoCore.ActiveSync
                 DestFolderServerId = destFolder.ServerId,
             };
 
-            Owner.Db.Insert (moveUpdate);
+            BackEnd.Instance.Db.Insert (moveUpdate);
             // Move the actual item.
             var newMapEntry = new McMapFolderItem (Account.Id) {
                 FolderId = destFolderId,
                 ItemId = emailMessageId,
                 ClassCode = (uint)McItem.ClassCodeEnum.Email,
             };
-            Owner.Db.Insert (newMapEntry);
+            BackEnd.Instance.Db.Insert (newMapEntry);
 
-            var oldMapEntry = Owner.Db.Table<McMapFolderItem> ().Single (x =>
+            var oldMapEntry = BackEnd.Instance.Db.Table<McMapFolderItem> ().Single (x =>
                 x.AccountId == Account.Id &&
                 x.ItemId == emailMessageId &&
                 x.FolderId == srcFolder.Id &&
                 x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
-            Owner.Db.Delete (oldMapEntry);
+            BackEnd.Instance.Db.Delete (oldMapEntry);
 
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
             return moveUpdate.Token;
@@ -948,7 +948,7 @@ namespace NachoCore.ActiveSync
 
         public override string MarkEmailReadCmd (int emailMessageId)
         {
-            var emailMessage = Owner.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
             if (null == emailMessage) {
                 return null;
             }
@@ -966,11 +966,11 @@ namespace NachoCore.ActiveSync
                 ServerId = emailMessage.ServerId,
                 FolderServerId = folder.ServerId,
             };   
-            Owner.Db.Insert (markUpdate);
+            BackEnd.Instance.Db.Insert (markUpdate);
 
             // Mark the actual item.
             emailMessage.IsRead = true;
-            Owner.Db.Update (emailMessage);
+            BackEnd.Instance.Db.Update (emailMessage);
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedRead));
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
             return markUpdate.Token;
@@ -978,7 +978,7 @@ namespace NachoCore.ActiveSync
 
         public override string DnldAttCmd (int attId)
         {
-            var att = Owner.Db.Table<McAttachment> ().SingleOrDefault (x => x.Id == attId);
+            var att = BackEnd.Instance.Db.Table<McAttachment> ().SingleOrDefault (x => x.Id == attId);
             if (null == att || att.IsDownloaded) {
                 return null;
             }
@@ -989,9 +989,9 @@ namespace NachoCore.ActiveSync
                 IsDispatched = false,
                 AttachmentId = attId,
             };
-            Owner.Db.Insert (update);
+            BackEnd.Instance.Db.Insert (update);
             att.PercentDownloaded = 1;
-            Owner.Db.Update (att);
+            BackEnd.Instance.Db.Update (att);
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDNLDATT");
             return update.Token;
         }

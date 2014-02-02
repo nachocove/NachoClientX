@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
             Update.IsDispatched = true;
-            DataSource.Owner.Db.Update (Update);
+            BackEnd.Instance.Db.Update (Update);
             return doc;
         }
 
@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
                     Convert.FromBase64String (xmlData.Value));
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
-                DataSource.Owner.Db.Update (attachment);
+                BackEnd.Instance.Db.Update (attachment);
                 DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate), new [] { Update.Token });
                 break;
             default:
@@ -63,7 +63,7 @@ namespace NachoCore.ActiveSync
                 DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed), new [] { Update.Token });
                 break;
             }
-            DataSource.Owner.Db.Delete (Update);
+            BackEnd.Instance.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }
 
@@ -74,7 +74,7 @@ namespace NachoCore.ActiveSync
 
         private McAttachment Attachment ()
         {
-            return DataSource.Owner.Db.Table<McAttachment> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
+            return BackEnd.Instance.Db.Table<McAttachment> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
             rec.Id == Update.AttachmentId);
         }
     }

@@ -7,7 +7,6 @@ namespace NachoCore
 {
     public interface IProtoControlOwner
     {
-        SQLiteConnection Db { set; get; }
         string AttachmentsDir { set; get; }
 
         void StatusInd (ProtoControl sender, NcResult status);

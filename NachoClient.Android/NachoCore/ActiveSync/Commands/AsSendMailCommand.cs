@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             Update = NextToSend ();
-            var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
+            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
 
             if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
                 return null;
@@ -30,7 +30,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
             Update.IsDispatched = true;
-            DataSource.Owner.Db.Update (Update);
+            BackEnd.Instance.Db.Update (Update);
             return doc;
         }
 
@@ -44,11 +44,11 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
+            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
-            emailMessage.DeleteBody (DataSource.Owner.Db);
-            DataSource.Owner.Db.Delete (emailMessage);
-            DataSource.Owner.Db.Delete (Update);
+            emailMessage.DeleteBody (BackEnd.Instance.Db);
+            BackEnd.Instance.Db.Delete (emailMessage);
+            BackEnd.Instance.Db.Delete (Update);
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
         // FIXME - need an OnFail callback for negative indication delivery.
@@ -66,13 +66,13 @@ namespace NachoCore.ActiveSync
 
         private string GenerateMime ()
         {
-            var emailMessage = DataSource.Owner.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
-            return emailMessage.ToMime (DataSource.Owner.Db);
+            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
+            return emailMessage.ToMime (BackEnd.Instance.Db);
         }
 
         private McPendingUpdate NextToSend ()
         {
-            var query = DataSource.Owner.Db.Table<McPendingUpdate> ()
+            var query = BackEnd.Instance.Db.Table<McPendingUpdate> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
                         McPendingUpdate.DataTypes.EmailMessage == rec.DataType &&
                         McPendingUpdate.Operations.Send == rec.Operation);

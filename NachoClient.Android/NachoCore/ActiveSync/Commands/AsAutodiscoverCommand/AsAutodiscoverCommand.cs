@@ -476,7 +476,7 @@ namespace NachoCore.ActiveSync
             var serverRecord = DataSource.Server;
             serverRecord.Update (ServerCandidate);
             serverRecord.UsedBefore = true;
-            DataSource.Owner.Db.Update (serverRecord);
+            BackEnd.Instance.Db.Update (serverRecord);
             // Signal that we are done and that we have a server config.
             // Success is the only way we finish - either by UI setting or autodiscovery.
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");

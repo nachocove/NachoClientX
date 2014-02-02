@@ -253,7 +253,7 @@ namespace NachoCore.ActiveSync
         protected virtual McPendingUpdate NextPendingUpdate (McPendingUpdate.DataTypes dataType, 
             McPendingUpdate.Operations operation)
         {
-            return DataSource.Owner.Db.Table<McPendingUpdate> ()
+            return BackEnd.Instance.Db.Table<McPendingUpdate> ()
                 .FirstOrDefault (rec => rec.AccountId == DataSource.Account.Id &&
                     dataType == rec.DataType && operation == rec.Operation);
         }

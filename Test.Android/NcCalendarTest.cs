@@ -81,6 +81,32 @@ namespace Test.iOS
         }
     }
 
+    public class MockBackEnd
+    {
+        private static volatile MockBackEnd instance;
+        private static object syncRoot = new Object ();
+
+        public static MockBackEnd Instance {
+            get {
+                if (instance == null) {
+                    lock (syncRoot) {
+                        if (instance == null)
+                            instance = new MockBackEnd ();
+                    }
+                }
+                return instance; 
+            }
+        }
+
+        public SQLiteConnection Db { set; get; }
+
+
+        private MockBackEnd ()
+        {
+            Db = new TestDb ();
+        }
+    }
+
     public class MockDataSource : IAsDataSource
     {
         public IProtoControlOwner Owner { set; get; }
@@ -98,14 +124,12 @@ namespace Test.iOS
         public MockDataSource ()
         {
             Owner = new MockProtoControlOwner ();
-            Owner.Db = new TestDb ();
+            BackEnd.Instance.Db = new TestDb ();
         }
     }
 
     public class MockProtoControlOwner : IProtoControlOwner
     {
-        public SQLiteConnection Db { set; get; }
-
         public string AttachmentsDir { set; get; }
 
         public void CredReq (ProtoControl sender)

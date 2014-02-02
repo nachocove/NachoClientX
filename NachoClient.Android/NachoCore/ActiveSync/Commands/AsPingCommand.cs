@@ -21,7 +21,7 @@ namespace NachoCore.ActiveSync
         {
             uint foldersLeft = DataSource.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
-            var folders = DataSource.Owner.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
+            var folders = BackEnd.Instance.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
                           ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type ||
                           (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type ||
                           (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type ||
@@ -67,10 +67,10 @@ namespace NachoCore.ActiveSync
             case Xml.Ping.StatusCode.Changes:
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
-                    var folder = DataSource.Owner.Db.Table<McFolder> ().Single (
+                    var folder = BackEnd.Instance.Db.Table<McFolder> ().Single (
                                      rec => DataSource.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
                     folder.AsSyncRequired = true;
-                    DataSource.Owner.Db.Update (folder);
+                    BackEnd.Instance.Db.Update (folder);
                 }
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGRESYNC");
             

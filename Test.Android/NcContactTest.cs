@@ -32,15 +32,13 @@ namespace Test.iOS
             public MockDataSource ()
             {
                 Owner = new MockProtoControlOwner ();
-                Owner.Db = new TestDb ();
+                BackEnd.Instance.Db = new TestDb ();
                 Account = new McAccount ();
             }
         }
 
         public class MockProtoControlOwner : IProtoControlOwner
         {
-            public SQLiteConnection Db { set; get; }
-
             public string AttachmentsDir { set; get; }
 
             public void CredReq (ProtoControl sender)
@@ -84,7 +82,7 @@ namespace Test.iOS
             Assert.AreEqual (command02a.Name.LocalName, Xml.AirSync.Add);
             asSync.ServerSaysAddContact (command02a, new MockNcFolder ());
 
-            var c02a = ds.Owner.Db.Get<McContact> (x => x.LastName == "Steve");
+            var c02a = BackEnd.Instance.Db.Get<McContact> (x => x.LastName == "Steve");
             Assert.IsNotNull (c02a);
             Assert.AreEqual ("Steve", c02a.LastName);
 
@@ -108,7 +106,7 @@ namespace Test.iOS
                 var f = new McFolder ();
                 f.ServerId = "Contact:DEFAULT";
                 f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
-                ds.Owner.Db.Insert (f);
+                BackEnd.Instance.Db.Insert (f);
                 // Process sync command
                 var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
                 var c04 = System.Xml.Linq.XDocument.Parse (string_04);
@@ -129,7 +127,7 @@ namespace Test.iOS
                 var f = new McFolder ();
                 f.ServerId = "Contact:DEFAULT";
                 f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
-                ds.Owner.Db.Insert (f);
+                BackEnd.Instance.Db.Insert (f);
                 // Process sync command
                 var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
                 var c04 = System.Xml.Linq.XDocument.Parse (string_04);

@@ -35,7 +35,7 @@ namespace NachoCore.ActiveSync
 
             doc.Add (search);
             Update.IsDispatched = true;
-            DataSource.Owner.Db.Update (Update);
+            BackEnd.Instance.Db.Update (Update);
             return doc;
         }
 
@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.Success:
                 case Xml.Search.StoreStatusCode.NotFound:
                     // FIXME - save result (if any) into GAL cache.
-                    DataSource.Owner.Db.Delete (Update);
+                    BackEnd.Instance.Db.Delete (Update);
                     return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");
 
                 case Xml.Search.StoreStatusCode.InvalidRequest:
@@ -72,7 +72,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.Search.StoreStatusCode.FSyncRequired:
                     Update.IsDispatched = false;
-                    DataSource.Owner.Db.Update (Update);
+                    BackEnd.Instance.Db.Update (Update);
                     return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SRCHREFSYNC");
 
                 case Xml.Search.StoreStatusCode.EndOfRRange:
@@ -97,7 +97,7 @@ namespace NachoCore.ActiveSync
 
         private McPendingUpdate NextToSearch ()
         {
-            var query = DataSource.Owner.Db.Table<McPendingUpdate> ()
+            var query = BackEnd.Instance.Db.Table<McPendingUpdate> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
                         McPendingUpdate.DataTypes.Contact == rec.DataType &&
                         McPendingUpdate.Operations.Search == rec.Operation);
