@@ -9,11 +9,8 @@ namespace NachoClient.iOS
 {
     public class AccountTableSource : UITableViewSource
     {
-        AppDelegate appDelegate { get; set; }
-
         public AccountTableSource ()
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
         }
         public override int RowsInSection (UITableView tableview, int section)
