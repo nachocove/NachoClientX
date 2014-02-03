@@ -22,6 +22,49 @@
             </objects>
             <point key="canvasLocation" x="-3096" y="-431"/>
         </scene>
+        <!--Nacho Now View Controller - Now!-->
+        <scene sceneID="w1N-3O-jJd">
+            <objects>
+                <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="background.png" id="NUL-if-4nh">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                            </imageView>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="2Mt-ji-WuY">
+                                <rect key="frame" x="20" y="284" width="280" height="176"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <color key="sectionIndexTrackingBackgroundColor" red="1" green="0.18481115949999999" blue="0.20839327639999999" alpha="1" colorSpace="calibratedRGB"/>
+                            </tableView>
+                            <view contentMode="scaleToFill" id="izC-5B-BPD" customClass="iCarousel">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="276"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <toolbarItems/>
+                    <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="3Av-eh-eab"/>
+                    </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                    <connections>
+                        <outlet property="Carousel" destination="izC-5B-BPD" id="WCw-8d-jAg"/>
+                        <outlet property="folderDataTableview" destination="2Mt-ji-WuY" id="lHo-yz-23R"/>
+                        <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
+                        <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
+                        <segue destination="Bab-sA-Ld3" kind="push" identifier="NachoNowToMessage" id="7H5-MT-Qxr"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2205" y="-1910"/>
+        </scene>
         <!--Sidebar View Controller-->
         <scene sceneID="Gid-MG-Ux4">
             <objects>
@@ -95,6 +138,28 @@
                                 </tableViewCellContentView>
                                 <connections>
                                     <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="dvB-9f-OAg"/>
+                                </connections>
+                            </tableViewCell>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToNachoNow" id="Pyt-vw-rTy">
+                                <rect key="frame" x="0.0" y="286" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Pyt-vw-rTy" id="2EW-2O-wPa">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                                <connections>
+                                    <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="hCT-pP-PUu"/>
+                                </connections>
+                            </tableViewCell>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToHome" id="2is-hh-WGb">
+                                <rect key="frame" x="0.0" y="330" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="2is-hh-WGb" id="Bg1-8g-b9L">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                                <connections>
+                                    <segue destination="OQ8-xH-iKh" kind="custom" identifier="SidebarToHome" customClass="SWRevealViewControllerSegue" id="ULW-ai-y2x"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>
@@ -291,7 +356,7 @@
             </objects>
             <point key="canvasLocation" x="-902" y="-983"/>
         </scene>
-        <!--Settings View Controller - Title-->
+        <!--Settings View Controller - Settings-->
         <scene sceneID="Jbb-0l-SOs">
             <objects>
                 <tableViewController restorationIdentifier="SettingsViewController" storyboardIdentifier="SettingsViewController" id="n4d-09-jTS" customClass="SettingsViewController" sceneMemberID="viewController">
@@ -323,7 +388,7 @@
                             <outlet property="delegate" destination="n4d-09-jTS" id="RVB-Ew-54W"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="Title" id="adw-HC-FaJ">
+                    <navigationItem key="navigationItem" title="Settings" id="adw-HC-FaJ">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="iWE-UD-FOg"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
@@ -381,26 +446,21 @@
             </objects>
             <point key="canvasLocation" x="-1435" y="-2263"/>
         </scene>
-        <!--Home View Controller-->
+        <!--Home View Controller - Home-->
         <scene sceneID="HqZ-cG-lfO">
             <objects>
                 <pageViewController storyboardIdentifier="HomeViewController" autoresizesArchivedViewToFullSize="NO" useStoryboardIdentifierAsRestorationIdentifier="YES" transitionStyle="pageCurl" navigationOrientation="horizontal" spineLocation="min" id="OQ8-xH-iKh" customClass="HomeViewController" sceneMemberID="viewController">
-                    <navigationItem key="navigationItem" id="CJe-bJ-vOa">
+                    <navigationItem key="navigationItem" title="Home" id="CJe-bJ-vOa">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="5xM-Np-yHN"/>
                     </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="revealButton" destination="5xM-Np-yHN" id="4Xf-uv-Ic1"/>
-                        <segue destination="6rF-Ad-StO" kind="modal" identifier="HomeToLaunch" id="Jne-vC-BWI"/>
-                        <segue destination="jTc-Vg-SXZ" kind="custom" identifier="HomeToContacts" id="La0-6B-K9W"/>
-                        <segue destination="n4d-09-jTS" kind="custom" identifier="HomeToSettings" id="huJ-1R-03E"/>
-                        <segue destination="KvB-j8-wfn" kind="custom" identifier="HomeToAccounts" id="vqJ-JJ-lWw"/>
-                        <segue destination="ef5-Td-j3Y" kind="custom" identifier="HomeToCalendar" id="94n-oi-d18"/>
-                        <segue destination="UKd-1I-ARy" kind="custom" identifier="HomeToFolders" id="HWi-cR-6dy"/>
                     </connections>
                 </pageViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1uw-1F-jlg" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2203" y="-431"/>
+            <point key="canvasLocation" x="-1945" y="397"/>
         </scene>
         <!--Launch View Controller-->
         <scene sceneID="dIN-Oe-u79">
@@ -448,6 +508,7 @@
                         </subviews>
                     </view>
                     <toolbarItems/>
+                    <navigationItem key="navigationItem" id="HOS-MK-Nfc"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="txtPassword" destination="WPa-HS-ZhK" id="FN7-rp-R5m"/>
@@ -457,7 +518,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="B4U-5i-lJV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2213" y="241"/>
+            <point key="canvasLocation" x="-2589" y="397"/>
         </scene>
         <!--Folder View Controller - Folder View-->
         <scene sceneID="jpU-Xb-jWm">
@@ -881,16 +942,41 @@
                     </navigationBar>
                     <nil name="viewControllers"/>
                     <connections>
-                        <segue destination="OQ8-xH-iKh" kind="relationship" relationship="rootViewController" id="OiA-ED-2ll"/>
+                        <segue destination="WSh-aW-ysu" kind="relationship" relationship="rootViewController" id="6HM-Xq-2nU"/>
                     </connections>
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bo4-Q4-hrA" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-2661" y="-431"/>
         </scene>
+        <!--Startup View Controller - Startup-->
+        <scene sceneID="Zmz-eo-l65">
+            <objects>
+                <viewController storyboardIdentifier="StartupViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="WSh-aW-ysu" customClass="StartupViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="mRF-eE-vkG">
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Startup" id="kho-Lu-JgG">
+                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="ARB-Ca-gEw"/>
+                    </navigationItem>
+                    <connections>
+                        <outlet property="revealButton" destination="ARB-Ca-gEw" id="ZYb-Tk-CeU"/>
+                        <segue destination="6rF-Ad-StO" kind="modal" identifier="StartupToLaunch" modalTransitionStyle="crossDissolve" id="A0a-NV-skH"/>
+                        <segue destination="OQ8-xH-iKh" kind="push" identifier="StartupToHome" id="g4G-tD-G9H"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="StartupToNachoNow" id="emO-35-rbd"/>
+                        <segue destination="UKd-1I-ARy" kind="push" identifier="StartupToFolders" id="Mvu-uQ-8cr"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="0IS-Oz-vYd" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2203" y="-422"/>
+        </scene>
     </scenes>
     <resources>
         <image name="Menu.png" width="20" height="20"/>
+        <image name="background.png" width="50" height="468"/>
     </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
@@ -898,14 +984,13 @@
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="dvB-9f-OAg"/>
-        <segue reference="6IA-LE-E8D"/>
-        <segue reference="lzp-XD-dor"/>
-        <segue reference="wSf-Ax-NJc"/>
-        <segue reference="GNr-eh-wrb"/>
-        <segue reference="VrW-k4-eyP"/>
         <segue reference="5fj-Ta-mc9"/>
         <segue reference="Fvv-mz-C9l"/>
-        <segue reference="6LT-Zj-XeH"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="emO-35-rbd"/>
+        <segue reference="ueb-Jn-ag7"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="7H5-MT-Qxr"/>
     </inferredMetricsTieBreakers>
 </document>

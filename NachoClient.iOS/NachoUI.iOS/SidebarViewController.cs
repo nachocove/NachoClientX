@@ -19,6 +19,8 @@ namespace NachoClient.iOS
         ///      "SidebarToFolders"
         ///      "SidebarToSettings"
         ///      "SidebarToMessages"
+        ///      "SidebarToNachoNow"
+        ///      "SidebarToHome"
      
         class SidebarMenu
         {
@@ -50,6 +52,8 @@ namespace NachoClient.iOS
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
         const string SidebarToMessagesSegueId = "SidebarToMessages";
+        const string SidebarToNachoNowSegueId = "SidebarToNachoNow";
+        const string SidebarToHomeSegueId = "SidebarToHome";
 
 
         public SidebarViewController (IntPtr handle) : base (handle)
@@ -69,6 +73,8 @@ namespace NachoClient.iOS
             email = new NachoFolders (NachoFolders.FilterForEmail);
             contacts = new NachoFolders (NachoFolders.FilterForContacts);
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+
+            menu.Add (new SidebarMenu (null, "Now", SidebarToNachoNowSegueId));
 
             menu.Add (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId));
 
@@ -101,6 +107,7 @@ namespace NachoClient.iOS
             deviceCalendar.isDeviceCalendarKludge = true;
             menu.Add (deviceCalendar);
 
+            menu.Add (new SidebarMenu (null, "Home", SidebarToHomeSegueId));
             menu.Add (new SidebarMenu (null, "Accounts", "SidebarToAccounts"));
             menu.Add (new SidebarMenu (null, "Settings", "SidebarToSettings"));
 
@@ -136,6 +143,9 @@ namespace NachoClient.iOS
                     MessageListViewController vc = (MessageListViewController)destViewController;
                     vc.SetFolder (m.Folder);
                 }
+                break;
+            default:
+                // No worries; nothing to send to destination view controller
                 break;
             }
 

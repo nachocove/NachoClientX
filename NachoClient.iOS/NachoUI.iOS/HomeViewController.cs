@@ -12,13 +12,10 @@ namespace NachoClient.iOS
 {
     public partial class HomeViewController : UIViewController
     {
-        AppDelegate appDelegate { get; set; }
         UIPageViewController pageController;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
-            Log.Info (Log.LOG_UI, "HomeViewController initialized");
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 
         /// <summary>
@@ -35,30 +32,24 @@ namespace NachoClient.iOS
 
             // Help & demo pages
             InitializePageViewController ();
-
-            // Initial view
-            if (0 == BackEnd.Instance.Db.Table<McAccount> ().Count ()) {
-                PerformSegue ("HomeToLaunch", this); // modal
-            } else {
-                PerformSegue ("HomeToFolders", this); // push
-            }
         }
 
-        public void InitializePageViewController()
+        public void InitializePageViewController ()
         {
             // Initialize the first page
-            HomePageController firstPageController = new HomePageController(0);
+            HomePageController firstPageController = new HomePageController (0);
 
-            this.pageController = new UIPageViewController(UIPageViewControllerTransitionStyle.PageCurl, 
+            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.PageCurl, 
                 UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.Min);
 
-            this.pageController.SetViewControllers(new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
-                false, s => { });
+            this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
+                false, s => {
+            });
 
-            this.pageController.DataSource = new PageDataSource(this);
+            this.pageController.DataSource = new PageDataSource (this);
 
             this.pageController.View.Frame = this.View.Bounds;
-            this.View.AddSubview(this.pageController.View);
+            this.View.AddSubview (this.pageController.View);
         }
 
         /// <summary>
@@ -67,8 +58,7 @@ namespace NachoClient.iOS
         /// <value>
         /// The total pages in the "Book".
         /// </value>
-        public int TotalPages
-        {
+        public int TotalPages {
             get {
                 return 3;
             }
