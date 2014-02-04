@@ -111,7 +111,7 @@ namespace NachoClient.iOS
             // TODO: Push account in UI
             // We only have one account, for now.
             var account = BackEnd.Instance.Db.Table<McAccount> ().First();
-            BackEnd.Instance.DeleteEmailCmd(account,  messageId);
+            BackEnd.Instance.DeleteEmailCmd(account.Id,  messageId);
             if (null != owner) {
                 owner.messageDeleted = true;
             }
@@ -123,7 +123,7 @@ namespace NachoClient.iOS
             // TODO: Push account in UI
             // We only have one account, for now.
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
-            BackEnd.Instance.MoveItemCmd(account, messageId, destinationFolderId);
+            BackEnd.Instance.MoveItemCmd(account.Id, messageId, destinationFolderId);
             NavigationController.PopViewControllerAnimated (true);
         }
     }

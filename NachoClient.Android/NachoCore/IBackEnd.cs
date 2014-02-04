@@ -13,35 +13,35 @@ namespace NachoCore
         // (if it isn't already running).
         void Start ();
         // attempt to (re)start a specific account.
-        void Start (McAccount account);
+        void Start (int accountId);
         // ask all accounts to sync immediately.
         void ForceSync ();
         // for a single account to sync immediately.
-        void ForceSync (McAccount account);
+        void ForceSync (int accountId);
         // let the BE know that the asked-about server cert is/not okay to trust.
-        void CertAskResp (McAccount account, bool isOkay);
+        void CertAskResp (int accountId, bool isOkay);
         // let the BE know that the server info has been updated for this account.
-        void ServerConfResp (McAccount account);
+        void ServerConfResp (int accountId);
         // let the BE know that the credentials have been updated for this account.
-        void CredResp (McAccount account);
+        void CredResp (int accountId);
         // cancel command/request associated with this token (if possible).
-        bool Cancel (McAccount account, string token);
+        bool Cancel (int accountId, string token);
         // event can be used to register for status indications.
         event EventHandler StatusIndEvent;
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
-        string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults);
+        string StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
         // follow-on contacts search, using same token.
-        void SearchContactsReq (McAccount account, string prefix, uint? maxResults, string token);
+        void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
         // send specified email (not in a synced folder). returns token that can be used to possibly cancel.
-        string SendEmailCmd (McAccount account, int emailMessageId);
+        string SendEmailCmd (int accountId, int emailMessageId);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
-        string DeleteEmailCmd (McAccount account, int emailMessageId);
+        string DeleteEmailCmd (int accountId, int emailMessageId);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
-        string MoveItemCmd (McAccount account, int emailMessageId, int destFolderId);
+        string MoveItemCmd (int accountId, int emailMessageId, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
-        string MarkEmailReadCmd (McAccount account, int emailMessageId);
+        string MarkEmailReadCmd (int accountId, int emailMessageId);
         // download an attachment. returns token that can be used to possibly cancel.
-        string DnldAttCmd (McAccount account, int attId);
+        string DnldAttCmd (int accountId, int attId);
         //
         // in the BE for now, but moving to middleware/app-land someday:
         //

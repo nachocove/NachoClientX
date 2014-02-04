@@ -147,7 +147,7 @@ namespace NachoClient.iOS
             // FIXME.
         }
 
-        public void StatusInd (McAccount account, NcResult status)
+        public void StatusInd (int accountId, NcResult status)
         {
             {
            
@@ -181,17 +181,18 @@ namespace NachoClient.iOS
             }
         }
 
-        public void StatusInd (McAccount account, NcResult status, string[] tokens)
+        public void StatusInd (int accountId, NcResult status, string[] tokens)
         {
             // FIXME.
         }
 
-        public void CredReq(McAccount account) {
+        public void CredReq(int accountId) {
             var Be = BackEnd.Instance;
 
             Log.Info (Log.LOG_UI, "Asking for Credentials");
             InvokeOnMainThread (delegate {
                 var credView = new UIAlertView ();
+                var account = Be.Db.Table<McAccount> ().Single (rec=>rec.Id == accountId);
                 var tmpCred = Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
                 credView.Title = "Need to update Login Credentials";
@@ -209,7 +210,7 @@ namespace NachoClient.iOS
                         tmpCred.Password = (string) tmppwd;
                         Be.Db.Update(tmpCred); //  update with new username/password
 
-                        Be.CredResp(account);
+                        Be.CredResp(accountId);
                         credView.ResignFirstResponder();
                     } else {
                             var DoitYadummy = new UIAlertView();
@@ -221,7 +222,7 @@ namespace NachoClient.iOS
                             DoitYadummy.Clicked+= delegate(object silly, UIButtonEventArgs e) {
 
                             if (e.ButtonIndex == 0) { // I want to actually enter login data
-                                CredReq(account);    // call to get credentials
+                                CredReq(accountId);    // call to get credentials
                             };
 
                             DoitYadummy.ResignFirstResponder();
@@ -233,7 +234,7 @@ namespace NachoClient.iOS
             }); // end invokeonMain
         }
 
-        public void ServConfReq (McAccount account)
+        public void ServConfReq (int accountId)
         {
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
@@ -241,6 +242,7 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI, "Asking for Config Info");
             InvokeOnMainThread (delegate {  // lock on main thread
+                var account = Be.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
             var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
 
                 var credView = new UIAlertView ();
@@ -259,7 +261,7 @@ namespace NachoClient.iOS
                             Log.Info (Log.LOG_UI, " New Server Name = " + txt);
                             tmpServer.Fqdn = txt;
                             Be.Db.Update(tmpServer);
-                            Be.ServerConfResp (account); 
+                            Be.ServerConfResp (accountId); 
                             credView.ResignFirstResponder();
                         };
 
@@ -275,7 +277,7 @@ namespace NachoClient.iOS
                         gonnaquit.Show ();
                         gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
                             if (e.ButtonIndex== 1){
-                                ServConfReq (account); // go again
+                                ServConfReq (accountId); // go again
                             }
                             gonnaquit.ResignFirstResponder();
                         };
@@ -284,14 +286,14 @@ namespace NachoClient.iOS
             }); // end invoke MainThread
         }
 
-        public void CertAskReq (McAccount account, X509Certificate2 certificate)
+        public void CertAskReq (int accountId, X509Certificate2 certificate)
         {
             var Be = BackEnd.Instance;
 
             // UI FIXME - ask user and call CertAskResp async'ly.
-            Be.CertAskResp (account, true);
+            Be.CertAskResp (accountId, true);
         }
-        public void SearchContactsResp (McAccount account, string prefix, string token)
+        public void SearchContactsResp (int accountId, string prefix, string token)
         {
             // FIXME.
         }

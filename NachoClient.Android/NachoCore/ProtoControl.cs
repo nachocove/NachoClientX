@@ -7,7 +7,7 @@ namespace NachoCore
 {
     public abstract class ProtoControl
     {
-        protected int AccountId;
+        public int AccountId;
         public IProtoControlOwner Owner { get; set; }
 
         public McAccount Account {

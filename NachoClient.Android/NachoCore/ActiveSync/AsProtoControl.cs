@@ -65,11 +65,11 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl Control { set; get; }
 
-        public AsProtoControl (IProtoControlOwner owner, McAccount account)
+        public AsProtoControl (IProtoControlOwner owner, int accountId)
         {
             Control = this;
             Owner = owner;
-            AccountId = account.Id;
+            AccountId = accountId;
 
             Sm = new NcStateMachine () { 
                 Name = string.Format ("ASPC({0})", AccountId),

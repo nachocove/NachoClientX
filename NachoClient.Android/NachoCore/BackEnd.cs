@@ -71,9 +71,9 @@ namespace NachoCore
         private const string ClientOwned_GalCache = "GAL";
         private const string ClientOwned_Gleaned = "GLEANED";
 
-        private ProtoControl ServiceFromAccount (McAccount account)
+        private ProtoControl ServiceFromAccount (int accountId)
         {
-            var query = Services.Where (ctrl => ctrl.Account.Id.Equals (account.Id));
+            var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
             if (!Services.Any ()) {
                 return null;
             }
@@ -122,22 +122,22 @@ namespace NachoCore
         {
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
-                Start (account);
+                Start (account.Id);
             }
         }
 
-        public void Start (McAccount account)
+        public void Start (int accountId)
         {
-            var service = ServiceFromAccount (account);
+            var service = ServiceFromAccount (accountId);
             if (null == service) {
                 /* NOTE: This code needs to be able to detect the account type and start the 
                  * appropriate control (not just AS).
                  */
-                service = new AsProtoControl (this, account);
+                service = new AsProtoControl (this, accountId);
                 Services.Add (service);
                 // Create client owned objects as needed.
-                if (null == GetOutbox (account.Id)) {
-                    var outbox = McFolder.CreateClientOwned (account);
+                if (null == GetOutbox (accountId)) {
+                    var outbox = McFolder.CreateClientOwned (accountId);
                     outbox.IsHidden = false;
                     outbox.ParentId = "0";
                     outbox.ServerId = ClientOwned_Outbox;
@@ -145,16 +145,16 @@ namespace NachoCore
                     outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
                     BackEnd.Instance.Db.Insert (outbox);
                 }
-                if (null == GetGalCache (account.Id)) {
-                    var galCache = McFolder.CreateClientOwned (account);
+                if (null == GetGalCache (accountId)) {
+                    var galCache = McFolder.CreateClientOwned (accountId);
                     galCache.IsHidden = true;
                     galCache.ParentId = "0";
                     galCache.ServerId = ClientOwned_GalCache;
                     galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
                     BackEnd.Instance.Db.Insert (galCache);
                 }
-                if (null == GetGleaned (account.Id)) {
-                    var gleaned = McFolder.CreateClientOwned (account);
+                if (null == GetGleaned (accountId)) {
+                    var gleaned = McFolder.CreateClientOwned (accountId);
                     gleaned.IsHidden = true;
                     gleaned.ParentId = "0";
                     gleaned.ServerId = ClientOwned_Gleaned;
@@ -162,7 +162,6 @@ namespace NachoCore
                     BackEnd.Instance.Db.Insert (gleaned);
                 }
             }
-            NcCommStatus.Instance.Reset (account.ServerId);
             service.Execute ();
         }
 
@@ -170,68 +169,68 @@ namespace NachoCore
         {
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
-                ForceSync (account);
+                ForceSync (account.Id);
             }
         }
 
-        public void ForceSync (McAccount account)
+        public void ForceSync (int accountId)
         {
-            ServiceFromAccount (account).ForceSync ();
+            ServiceFromAccount (accountId).ForceSync ();
         }
 
-        public void CertAskResp (McAccount account, bool isOkay)
+        public void CertAskResp (int accountId, bool isOkay)
         {
-            ServiceFromAccount (account).CertAskResp (isOkay);
+            ServiceFromAccount (accountId).CertAskResp (isOkay);
         }
 
-        public void ServerConfResp (McAccount account)
+        public void ServerConfResp (int accountId)
         {
-            ServiceFromAccount (account).ServerConfResp ();
+            ServiceFromAccount (accountId).ServerConfResp ();
         }
 
-        public void CredResp (McAccount account)
+        public void CredResp (int accountId)
         {
-            ServiceFromAccount (account).CredResp ();
+            ServiceFromAccount (accountId).CredResp ();
         }
 
-        public bool Cancel (McAccount account, string token)
+        public bool Cancel (int accountId, string token)
         {
-            return ServiceFromAccount (account).Cancel (token);
+            return ServiceFromAccount (accountId).Cancel (token);
         }
 
-        public string StartSearchContactsReq (McAccount account, string prefix, uint? maxResults)
+        public string StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
-            return ServiceFromAccount (account).StartSearchContactsReq (prefix, maxResults);
+            return ServiceFromAccount (accountId).StartSearchContactsReq (prefix, maxResults);
         }
 
-        public void SearchContactsReq (McAccount account, string prefix, uint? maxResults, string token)
+        public void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token)
         {
-            ServiceFromAccount (account).SearchContactsReq (prefix, maxResults, token);
+            ServiceFromAccount (accountId).SearchContactsReq (prefix, maxResults, token);
         }
 
-        public string SendEmailCmd (McAccount account, int emailMessageId)
+        public string SendEmailCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccount (account).SendEmailCmd (emailMessageId);
+            return ServiceFromAccount (accountId).SendEmailCmd (emailMessageId);
         }
 
-        public string DeleteEmailCmd (McAccount account, int emailMessageId)
+        public string DeleteEmailCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccount (account).DeleteEmailCmd (emailMessageId);
+            return ServiceFromAccount (accountId).DeleteEmailCmd (emailMessageId);
         }
 
-        public string MoveItemCmd (McAccount account, int emailMessageId, int destFolderId)
+        public string MoveItemCmd (int accountId, int emailMessageId, int destFolderId)
         {
-            return ServiceFromAccount (account).MoveItemCmd (emailMessageId, destFolderId);
+            return ServiceFromAccount (accountId).MoveItemCmd (emailMessageId, destFolderId);
         }
 
-        public string DnldAttCmd (McAccount account, int attId)
+        public string DnldAttCmd (int accountId, int attId)
         {
-            return ServiceFromAccount (account).DnldAttCmd (attId);
+            return ServiceFromAccount (accountId).DnldAttCmd (attId);
         }
 
-        public string MarkEmailReadCmd (McAccount account, int emailMessageId)
+        public string MarkEmailReadCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccount (account).MarkEmailReadCmd (emailMessageId);
+            return ServiceFromAccount (accountId).MarkEmailReadCmd (emailMessageId);
         }
 
         private McFolder GetClientOwned (int accountId, string serverId)
@@ -272,7 +271,7 @@ namespace NachoCore
         {
             try {
                 InvokeOnUIThread.Instance.Invoke (delegate() {
-                    Owner.StatusInd (sender.Account, status);
+                    Owner.StatusInd (sender.AccountId, status);
                 });
                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Account = sender.Account,
@@ -287,7 +286,7 @@ namespace NachoCore
         {
             try {
                 InvokeOnUIThread.Instance.Invoke (delegate() {
-                    Owner.StatusInd (sender.Account, status, tokens);
+                    Owner.StatusInd (sender.AccountId, status, tokens);
                 });
                 InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = sender.Account,
@@ -302,28 +301,28 @@ namespace NachoCore
         public void CredReq (ProtoControl sender)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.CredReq (sender.Account);
+                Owner.CredReq (sender.AccountId);
             });
         }
 
         public void ServConfReq (ProtoControl sender)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.ServConfReq (sender.Account);
+                Owner.ServConfReq (sender.AccountId);
             });
         }
 
         public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.CertAskReq (sender.Account, certificate);
+                Owner.CertAskReq (sender.AccountId, certificate);
             });
         }
 
         public void SearchContactsResp (ProtoControl sender, string prefix, string token)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.SearchContactsResp (sender.Account, prefix, token);
+                Owner.SearchContactsResp (sender.AccountId, prefix, token);
             });
         }
     }

@@ -240,7 +240,7 @@ namespace NachoClient.iOS
             // We only have one account, for now.
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
 
-            BackEnd.Instance.SendEmailCmd (account, msg.Id);
+            BackEnd.Instance.SendEmailCmd (account.Id, msg.Id);
 
             // Probably want to defer until BE says message is queued.
             NavigationController.PopViewControllerAnimated (true);

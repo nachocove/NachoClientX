@@ -302,7 +302,7 @@ namespace NachoClient.iOS
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
                 var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
-                BackEnd.Instance.DnldAttCmd (account, attachment.Id);
+                BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
                 ReloadRoot ();
             }
         }
@@ -312,7 +312,7 @@ namespace NachoClient.iOS
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
             var thread = messages.GetEmailThread (index);
             var message = thread.First ();
-            BackEnd.Instance.MarkEmailReadCmd (account, message.Id);
+            BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
         }
 
         public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
