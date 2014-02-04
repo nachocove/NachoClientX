@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 
@@ -47,6 +48,29 @@ namespace NachoCore.Model
                 AccountId = account.Id,
             };
             return folder;
+        }
+
+        public void Insert ()
+        {
+            BackEnd.Instance.Db.Insert (this);
+        }
+
+        public void Delete ()
+        {
+            // FIXME - delete everything subordinate to this folder.
+            BackEnd.Instance.Db.Delete (this);
+        }
+
+        public void Update ()
+        {
+            BackEnd.Instance.Db.Update (this);
+        }
+
+        public static McFolder QueryByServerId (int accountId, string serverId)
+        {
+            return BackEnd.Instance.Db.Table<McFolder> ().Single (fld => 
+                fld.AccountId == accountId &&
+            fld.ServerId == serverId);
         }
 
         public static List<McFolder> QueryByItemId (int accountId, int itemId)

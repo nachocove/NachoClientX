@@ -67,9 +67,9 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }
 
-        private McPendingUpdate NextToDnld ()
+        private McPending NextToDnld ()
         {
-            return NextPendingUpdate (McPendingUpdate.DataTypes.Attachment, McPendingUpdate.Operations.Download);
+            return NextPendingUpdate (McPending.Operations.AttachmentDownload);
         }
 
         private McAttachment Attachment ()

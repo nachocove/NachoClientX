@@ -581,7 +581,7 @@ namespace NachoCore.ActiveSync
 
             Log.Info (Log.LOG_STATE, "Initial state: {0}", Sm.State);
 
-            var dispached = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            var dispached = BackEnd.Instance.Db.Table<McPending> ().Where (rec => rec.AccountId == Account.Id &&
                             rec.IsDispatched == true).ToList ();
             foreach (var update in dispached) {
                 update.IsDispatched = false;
@@ -756,37 +756,31 @@ namespace NachoCore.ActiveSync
 
         private bool FirePendingInstead ()
         {
-            var pending = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id).OrderBy (x => x.Id);
+            var pending = BackEnd.Instance.Db.Table<McPending> ().Where (rec => rec.AccountId == Account.Id).OrderBy (x => x.Id);
             if (0 < pending.Count ()) {
                 var next = pending.First ();
                 switch (next.Operation) {
-                case McPendingUpdate.Operations.Search:
-                    NachoAssert.True (McPendingUpdate.DataTypes.Contact == next.DataType);
+                case McPending.Operations.ContactSearch:
                     Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
                     return true;
 
-                case McPendingUpdate.Operations.Send:
-                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                case McPending.Operations.EmailSend:
                     Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
                     return true;
 
-                case McPendingUpdate.Operations.Move:
-                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                case McPending.Operations.EmailMove:
                     Sm.PostEvent ((uint)CtlEvt.E.Move, "ASPCDPM");
                     return true;
 
-                case McPendingUpdate.Operations.Download:
-                    NachoAssert.True (McPendingUpdate.DataTypes.Attachment == next.DataType);
+                case McPending.Operations.AttachmentDownload:
                     Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
                     return true;
 
-                case McPendingUpdate.Operations.Delete:
-                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                case McPending.Operations.EmailDelete:
                     Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
                     return true;
 
-                case McPendingUpdate.Operations.MarkRead:
-                    NachoAssert.True (McPendingUpdate.DataTypes.EmailMessage == next.DataType);
+                case McPending.Operations.EmailMarkRead:
                     Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP4");
                     return true;
                 }
@@ -801,7 +795,7 @@ namespace NachoCore.ActiveSync
 
         private void DeletePendingSearchReqs (string token, bool ignoreDispatched)
         {
-            var query = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (rec => rec.AccountId == Account.Id &&
+            var query = BackEnd.Instance.Db.Table<McPending> ().Where (rec => rec.AccountId == Account.Id &&
                         rec.Token == token);
             if (ignoreDispatched) {
                 query = query.Where (rec => false == rec.IsDispatched);
@@ -822,9 +816,8 @@ namespace NachoCore.ActiveSync
         public override void SearchContactsReq (string prefix, uint? maxResults, string token)
         {
             DeletePendingSearchReqs (token, true);
-            var newSearch = new McPendingUpdate (Account.Id) {
-                Operation = McPendingUpdate.Operations.Search,
-                DataType = McPendingUpdate.DataTypes.Contact,
+            var newSearch = new McPending (Account.Id) {
+                Operation = McPending.Operations.ContactSearch,
                 Prefix = prefix,
                 MaxResults = (null == maxResults) ? 0 : (uint)maxResults,
                 Token = token
@@ -848,17 +841,17 @@ namespace NachoCore.ActiveSync
 
         public override bool Cancel (string token)
         {
-            var update = BackEnd.Instance.Db.Table<McPendingUpdate> ().SingleOrDefault (rec => rec.AccountId == Account.Id && rec.Token == token);
+            var update = BackEnd.Instance.Db.Table<McPending> ().SingleOrDefault (rec => rec.AccountId == Account.Id && rec.Token == token);
             if (null == update) {
                 return false;
             }
-            if (McPendingUpdate.Operations.Send == update.Operation && McPendingUpdate.DataTypes.EmailMessage == update.DataType) {
+            if (McPending.Operations.EmailSend == update.Operation) {
                 // FIXME.
                 return false;
-            } else if (McPendingUpdate.Operations.Delete == update.Operation && McPendingUpdate.DataTypes.EmailMessage == update.DataType) {
+            } else if (McPending.Operations.EmailDelete == update.Operation) {
                 // FIXME.
                 return false;
-            } else if (McPendingUpdate.Operations.Search == update.Operation && McPendingUpdate.DataTypes.Contact == update.DataType) {
+            } else if (McPending.Operations.ContactSearch == update.Operation) {
                 DeletePendingSearchReqs (token, false);
                 if (CmdIs (typeof(AsSearchCommand))) {
                     Cmd.Cancel ();
@@ -870,9 +863,8 @@ namespace NachoCore.ActiveSync
 
         public override string SendEmailCmd (int emailMessageId)
         {
-            var sendUpdate = new McPendingUpdate (Account.Id) {
-                Operation = McPendingUpdate.Operations.Send,
-                DataType = McPendingUpdate.DataTypes.EmailMessage,
+            var sendUpdate = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailSend,
                 EmailMessageId = emailMessageId
             };
             BackEnd.Instance.Db.Insert (sendUpdate);
@@ -894,9 +886,8 @@ namespace NachoCore.ActiveSync
 
             var folder = folders.First ();
 
-            var deleUpdate = new McPendingUpdate (Account.Id) {
-                Operation = McPendingUpdate.Operations.Delete,
-                DataType = McPendingUpdate.DataTypes.EmailMessage,
+            var deleUpdate = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailDelete,
                 FolderServerId = folder.ServerId,
                 ServerId = emailMessage.ServerId
             };   
@@ -932,9 +923,8 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var srcFolder = srcFolders.First ();
-            var moveUpdate = new McPendingUpdate (Account.Id) {
-                Operation = McPendingUpdate.Operations.Move,
-                DataType = McPendingUpdate.DataTypes.EmailMessage,
+            var moveUpdate = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailMove,
                 EmailMessageServerId = emailMessage.ServerId,
                 EmailMessageId = emailMessageId,
                 FolderServerId = srcFolder.ServerId,
@@ -975,9 +965,8 @@ namespace NachoCore.ActiveSync
 
             var folder = folders.First ();
 
-            var markUpdate = new McPendingUpdate (Account.Id) {
-                Operation = McPendingUpdate.Operations.MarkRead,
-                DataType = McPendingUpdate.DataTypes.EmailMessage,
+            var markUpdate = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailMarkRead,
                 ServerId = emailMessage.ServerId,
                 FolderServerId = folder.ServerId,
             };   
@@ -997,9 +986,8 @@ namespace NachoCore.ActiveSync
             if (null == att || att.IsDownloaded) {
                 return null;
             }
-            var update = new McPendingUpdate {
-                Operation = McPendingUpdate.Operations.Download,
-                DataType = McPendingUpdate.DataTypes.Attachment,
+            var update = new McPending {
+                Operation = McPending.Operations.AttachmentDownload,
                 AccountId = AccountId,
                 IsDispatched = false,
                 AttachmentId = attId,

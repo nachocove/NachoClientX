@@ -75,9 +75,9 @@ namespace Test.iOS
             CreateTable<McMapFolderItem> ();
 
             // NcPendingUpdate
-            CreateTable<McPendingUpdate> ();
-            DropTable<McPendingUpdate> ();
-            CreateTable<McPendingUpdate> ();
+            CreateTable<McPending> ();
+            DropTable<McPending> ();
+            CreateTable<McPending> ();
         }
     }
 

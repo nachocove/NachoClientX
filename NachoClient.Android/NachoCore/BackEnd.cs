@@ -103,7 +103,7 @@ namespace NachoCore
             Db.CreateTable<McPolicy> ();
             Db.CreateTable<McProtocolState> ();
             Db.CreateTable<McServer> ();
-            Db.CreateTable<McPendingUpdate> ();
+            Db.CreateTable<McPending> ();
             Db.CreateTable<McCalendar> ();
             Db.CreateTable<McException> ();
             Db.CreateTable<McAttendee> ();

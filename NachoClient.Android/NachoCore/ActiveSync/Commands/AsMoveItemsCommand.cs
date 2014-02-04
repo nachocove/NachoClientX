@@ -80,9 +80,9 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private McPendingUpdate NextToMove ()
+        private McPending NextToMove ()
         {
-            return NextPendingUpdate (McPendingUpdate.DataTypes.EmailMessage, McPendingUpdate.Operations.Move);
+            return NextPendingUpdate (McPending.Operations.EmailMove);
         }
     }
 }
