@@ -137,6 +137,9 @@
     <Compile Include="NachoCore\Utils\MimeHelpers.cs" />
     <Compile Include="NachoCore\Model\McObjectPerAccount.cs" />
     <Compile Include="NachoCore\Model\McMapFolderItem.cs" />
+    <Compile Include="NachoCore\Brain\NcMessageThreads.cs" />
+    <Compile Include="NachoCore\NachoDeferredEmailMessages.cs" />
+    <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

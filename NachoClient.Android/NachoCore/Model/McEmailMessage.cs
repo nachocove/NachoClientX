@@ -6,6 +6,20 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
+    public enum MessageDeferralType
+    {
+        None,
+        Later,
+        Tonight,
+        Tomorrow,
+        NextWeek,
+        MonthEnd,
+        NextMonth,
+        Forever,
+        Meeting,
+        Custom,
+    };
+
     public class McEmailMessage : McItem
     {
         private const string CrLf = "\r\n";
@@ -64,6 +78,11 @@ namespace NachoCore.Model
         /// MIME header References: message ids, crlf separated (optional)
         public string References { set; get; }
 
+        /// Kind of delay being applied
+        public MessageDeferralType DeferralType { set; get; }
+
+        /// User has asked to hide the message for a while
+        public DateTime DeferUntil { set; get; }
 
         /// Attachments are separate
 
@@ -72,23 +91,25 @@ namespace NachoCore.Model
         public int BodyId { set; get; }
 
         /// Summary is extracted in gleaner
-        public string Summary {set; get; }
+        public string Summary { set; get; }
 
         /// Integer -- plain test, html, rtf, mime
         public string BodyType { set; get; }
 
-        public string ToMime (SQLiteConnection db) {
+        public string ToMime (SQLiteConnection db)
+        {
             string message = "";
             foreach (var propertyName in new [] {"From", "To", "Subject", "ReplyTo", "DisplayTo"}) {
                 message = Append (message, propertyName);
             }
             string date = DateTime.UtcNow.ToString ("ddd, dd MMM yyyy HH:mm:ss K", DateTimeFormatInfo.InvariantInfo);
             message = message + CrLf + "Date" + ColonSpace + date;
-            message = message + CrLf + CrLf + GetBody(db);
+            message = message + CrLf + CrLf + GetBody (db);
             return message;
         }
 
-        private string Append(string message, string propertyName) {
+        private string Append (string message, string propertyName)
+        {
             string propertyValue = (string)typeof(McEmailMessage).GetProperty (propertyName).GetValue (this);
             if (null == propertyValue) {
                 return message;
@@ -99,7 +120,7 @@ namespace NachoCore.Model
             return message + CrLf + propertyName + ColonSpace + propertyValue;
         }
 
-        public string GetBody(SQLiteConnection db)
+        public string GetBody (SQLiteConnection db)
         {
             var body = db.Get<McBody> (BodyId);
             if (null == body) {
@@ -109,7 +130,7 @@ namespace NachoCore.Model
             }
         }
 
-        public void DeleteBody(SQLiteConnection db)
+        public void DeleteBody (SQLiteConnection db)
         {
             if (0 != BodyId) {
                 var body = new McBody ();
@@ -119,14 +140,22 @@ namespace NachoCore.Model
                 db.Update (this);
             }
         }
-
         // Note need to paramtrize <T> and move to McItem.
-        public static List<McEmailMessage> QueryByFolderId (int accountId, int folderId)
+        public static List<McEmailMessage> ActiveMessages (int accountId, int folderId)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
-                " m.AccountId = ? AND " +
-                " m.FolderId = ? ",
-                accountId, folderId);
+            " m.AccountId = ? AND " +
+            " m.FolderId = ? AND " +
+            "e.DeferUntil < ?",
+                accountId, folderId, DateTime.UtcNow);
+        }
+        // TODO: Need account id
+        // TODO: Delete needs to clean up deferred
+        public static List<McEmailMessage> DeferredMessages ()
+        {
+            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
+            "e.DeferUntil > ?",
+                DateTime.UtcNow);
         }
     }
 
@@ -134,6 +163,5 @@ namespace NachoCore.Model
     {
         public string Body { get; set; }
     }
-
 }
 

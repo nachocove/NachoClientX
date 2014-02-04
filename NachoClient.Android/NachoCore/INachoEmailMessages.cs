@@ -9,6 +9,7 @@ namespace NachoCore
     public interface INachoEmailMessages
     {
         int Count();
+        void Refresh();
         List<McEmailMessage> GetEmailThread (int i);
     }
 }

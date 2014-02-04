@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using SWRevealViewControllerBinding;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -19,6 +20,7 @@ namespace NachoClient.iOS
         ///      "SidebarToFolders"
         ///      "SidebarToSettings"
         ///      "SidebarToMessages"
+        ///      "SidebarToDeferredMessages"
         ///      "SidebarToNachoNow"
         ///      "SidebarToHome"
      
@@ -52,6 +54,7 @@ namespace NachoClient.iOS
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
         const string SidebarToMessagesSegueId = "SidebarToMessages";
+        const string SidebarToDeferredMessagesSegueId = "SidebarToDeferredMessages";
         const string SidebarToNachoNowSegueId = "SidebarToNachoNow";
         const string SidebarToHomeSegueId = "SidebarToHome";
 
@@ -84,6 +87,8 @@ namespace NachoClient.iOS
                 m.Indent = 1;
                 menu.Add (m);
             }
+            menu.Add (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId));
+
 
             menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
             for (int i = 0; i < contacts.Count (); i++) {
@@ -141,7 +146,15 @@ namespace NachoClient.iOS
             case SidebarToMessagesSegueId:
                 {
                     MessageListViewController vc = (MessageListViewController)destViewController;
-                    vc.SetFolder (m.Folder);
+                    var messageList = new NachoEmailMessages (m.Folder);
+                    vc.SetEmailMessages (messageList);
+                }
+                break;
+            case SidebarToDeferredMessagesSegueId:
+                {
+                    MessageListViewController vc = (MessageListViewController)destViewController;
+                    var messageList = new NachoDeferredEmailMessages ();
+                    vc.SetEmailMessages (messageList);
                 }
                 break;
             default:

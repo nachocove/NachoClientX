@@ -9,20 +9,18 @@ using NachoCore.Brain;
 
 namespace NachoCore
 {
-    public class NachoEmailMessages : INachoEmailMessages
+    public class NachoDeferredEmailMessages : INachoEmailMessages
     {
         List<List<McEmailMessage>> threadList;
-        McFolder folder;
 
-        public NachoEmailMessages (McFolder f)
+        public NachoDeferredEmailMessages ()
         {
-            folder = f;
             Refresh ();
         }
 
         public void Refresh ()
         {
-            List<McEmailMessage> list = McEmailMessage.ActiveMessages (folder.AccountId, folder.Id).OrderByDescending (c => c.DateReceived).ToList ();
+            List<McEmailMessage> list = McEmailMessage.DeferredMessages ().OrderByDescending (c => c.DateReceived).ToList ();
             threadList = NcMessageThreads.ThreadByConversation (list);
         }
 

@@ -86,7 +86,8 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToMessageList") {
                 var folderHolder = (FolderHolder)sender;
                 var messageListViewController = (MessageListViewController)segue.DestinationViewController;
-                messageListViewController.SetFolder (folderHolder.folder);
+                var messageList = new NachoEmailMessages (folderHolder.folder);
+                messageListViewController.SetEmailMessages (messageList);
             }
 
             if (segue.Identifier == "NachoNowToMessage") {

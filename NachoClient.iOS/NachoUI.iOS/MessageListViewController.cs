@@ -17,16 +17,15 @@ namespace NachoClient.iOS
 {
     public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate
     {
-        McFolder folder;
         INachoEmailMessages messageThreads;
         // iOS Bug Workaround
         // The cancel button on the search bar breaks
         // if the searchbar is hidden by a scrolled tableview.
         PointF savedContentOffset;
 
-        public void SetFolder (McFolder f)
+        public void SetEmailMessages (INachoEmailMessages l)
         {
-            folder = f;
+            messageThreads = l;
         }
 
         public MessageListViewController (IntPtr handle) : base (handle)
@@ -109,20 +108,20 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            messageThreads = new NachoEmailMessages (folder);
+            messageThreads.Refresh ();
             TableView.ReloadData ();
 
-            for (int i = 0; i < messageThreads.Count(); i++) {
-                Console.WriteLine ("Thread {0}", i); 
-                var messageThread = messageThreads.GetEmailThread (i);
-                foreach(var msg in messageThread) {
-                Console.WriteLine ("    SBJ: {0}", msg.Subject);
-                Console.WriteLine ("    MID: {0}", msg.MessageID);
-                Console.WriteLine ("    RPL: {0}", msg.InReplyTo);
-                Console.WriteLine ("    REF: {0}", msg.References);
-                Console.WriteLine ("    CID: {0}", msg.ConversationId);
-                }
-            }
+//            for (int i = 0; i < messageThreads.Count (); i++) {
+//                Console.WriteLine ("Thread {0}", i); 
+//                var messageThread = messageThreads.GetEmailThread (i);
+//                foreach (var msg in messageThread) {
+//                    Console.WriteLine ("    SBJ: {0}", msg.Subject);
+//                    Console.WriteLine ("    MID: {0}", msg.MessageID);
+//                    Console.WriteLine ("    RPL: {0}", msg.InReplyTo);
+//                    Console.WriteLine ("    REF: {0}", msg.References);
+//                    Console.WriteLine ("    CID: {0}", msg.ConversationId);
+//                }
+//            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -134,9 +133,23 @@ namespace NachoClient.iOS
 
             if (segue.Identifier == "MessagesToRead") {
                 var vc = (ReadMessageViewController)segue.DestinationViewController;
-                vc.messages = new NachoEmailMessages (folder);
+                vc.messages = messageThreads;
                 vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
             }
+            if (segue.Identifier == "MessageToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                var indexPath = (NSIndexPath)sender;
+                vc.thread = messageThreads.GetEmailThread (indexPath.Row);
+                vc.owner = this;
+            }
+        }
+
+        public void DismissMessagePriorityViewController (MessagePriorityViewController vc)
+        {
+            vc.owner = null;
+            vc.DismissViewController (false, new NSAction (delegate {
+                this.DismissViewController (true, null);
+            }));
         }
 
         public override int NumberOfSections (UITableView tableView)
@@ -193,6 +206,9 @@ namespace NachoClient.iOS
             var summary = message.Summary;
             var date = message.DateReceived;
             var icon = (message.IsRead ? NachoMessageIcon.None : NachoMessageIcon.Read);
+            if (DateTime.UtcNow < message.DeferUntil) {
+                icon = NachoMessageIcon.Clock;
+            }
             var count = (messageThread.Count > 1 ? messageThread.Count : 0);
 
             cell.Update (sender, summary, subject, date, icon, count);
@@ -245,7 +261,7 @@ namespace NachoClient.iOS
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe Clock cell");
-                    PerformSegue("MessageToMessagePriority", cell);
+                    PerformSegue ("MessageToMessagePriority", indexPath);
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);

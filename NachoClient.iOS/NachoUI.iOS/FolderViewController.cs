@@ -45,7 +45,8 @@ namespace NachoClient.iOS
                 var source = TableView.Source as FolderTableSource;
                 var rowPath = TableView.IndexPathForSelectedRow;
                 var folder = source.getFolder (rowPath);
-                msgview.SetFolder (folder);
+                var messageList = new NachoEmailMessages (folder);
+                msgview.SetEmailMessages (messageList);
             }
         }
 

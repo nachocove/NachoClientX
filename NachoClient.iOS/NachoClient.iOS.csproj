@@ -477,6 +477,20 @@
     <Compile Include="NachoUI.iOS\StartupViewController.designer.cs">
       <DependentUpon>StartupViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\LabeledIconButton.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageThreads.cs">
+      <Link>NachoCore\Brain\NcMessageThreads.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageDeferral.cs">
+      <Link>NachoCore\Brain\NcMessageDeferral.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\NachoDeferredEmailMessages.cs">
+      <Link>NachoCore\NachoDeferredEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\DatePickerViewController.cs" />
+    <Compile Include="NachoUI.iOS\DatePickerViewController.designer.cs">
+      <DependentUpon>DatePickerViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -547,9 +561,13 @@
     <BundleResource Include="Resources\cross%402x.png" />
     <BundleResource Include="Resources\list.png" />
     <BundleResource Include="Resources\list%402x.png" />
-    <BundleResource Include="Resources\.DS_Store" />
     <BundleResource Include="Resources\background.png" />
     <BundleResource Include="Resources\page.png" />
+    <BundleResource Include="Resources\clock-3-48.png" />
+    <BundleResource Include="Resources\calendar-3-48.png" />
+    <BundleResource Include="Resources\cup-48.png" />
+    <BundleResource Include="Resources\mute-48.png" />
+    <BundleResource Include="Resources\phone-48.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SWReveal\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
