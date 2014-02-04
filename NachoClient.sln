@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCSwipeTableViewCellBinding
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIImageEffectsBinding", "..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj", "{85087C0F-D924-46BE-B466-9D66F853472C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iCarouselBinding", "..\iCarousel\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj", "{E8EDAA21-69C1-4866-9037-28D83F0D4359}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,9 +141,25 @@ Global
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhone.Build.0 = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.AppStore|iPhone.ActiveCfg = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.AppStore|iPhone.Build.0 = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Release|iPhone.Build.0 = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Test.iOS\Test.iOS.csproj
+		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
 		Policies = $0
 		$0.StandardHeader = $1
 		$1.Text = @ Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.\n

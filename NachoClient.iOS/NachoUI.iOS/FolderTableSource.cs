@@ -8,8 +8,6 @@ namespace NachoClient.iOS
 {
     public class FolderTableSource  : UITableViewSource
     {
-        AppDelegate appDelegate { get; set; }
-
         NachoFolders folders;
 
         public FolderTableSource ()

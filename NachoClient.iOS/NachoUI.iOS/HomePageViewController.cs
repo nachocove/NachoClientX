@@ -36,7 +36,7 @@ namespace NachoClient.iOS
             this.View.AddSubview(this.contentLabel);
 
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
-            Log.Info (Log.LOG_UI, this.View.Frame.ToString());
+            Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString());
         }
     }
 

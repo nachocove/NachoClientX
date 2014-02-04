@@ -482,6 +482,14 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsApplyServerDelta.cs">
       <Link>NachoCore\ActiveSync\AsApplyServerDelta.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\NachoNowViewController.cs" />
+    <Compile Include="NachoUI.iOS\NachoNowViewController.designer.cs">
+      <DependentUpon>NachoNowViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\StartupViewController.cs" />
+    <Compile Include="NachoUI.iOS\StartupViewController.designer.cs">
+      <DependentUpon>StartupViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -552,6 +560,8 @@
     <BundleResource Include="Resources\cross%402x.png" />
     <BundleResource Include="Resources\list.png" />
     <BundleResource Include="Resources\list%402x.png" />
+    <BundleResource Include="Resources\background.png" />
+    <BundleResource Include="Resources\page.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SWReveal\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
@@ -565,6 +575,10 @@
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
       <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
       <Name>UIImageEffectsBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\iCarousel\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj">
+      <Project>{E8EDAA21-69C1-4866-9037-28D83F0D4359}</Project>
+      <Name>iCarouselBinding</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
