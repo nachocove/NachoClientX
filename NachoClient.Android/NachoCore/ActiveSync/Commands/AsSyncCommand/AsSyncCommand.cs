@@ -65,11 +65,10 @@ namespace NachoCore.ActiveSync
                     }
                     // If there are email deletes, then push them up to the server.
                     XElement commands = null;
-                    var deles = BackEnd.Instance.Db.Table<McPendingUpdate> ()
+                    var deles = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderServerId == folder.ServerId &&
-                                x.Operation == McPendingUpdate.Operations.Delete &&
-                                x.DataType == McPendingUpdate.DataTypes.EmailMessage);
+                            x.Operation == McPending.Operations.EmailDelete);
                     if (0 != deles.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
@@ -82,11 +81,10 @@ namespace NachoCore.ActiveSync
                         }
                     }
                     // If there are make-reads, then push them to the server.
-                    var mRs = BackEnd.Instance.Db.Table<McPendingUpdate> ()
+                    var mRs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                               x.FolderServerId == folder.ServerId &&
-                              x.Operation == McPendingUpdate.Operations.MarkRead &&
-                              x.DataType == McPendingUpdate.DataTypes.EmailMessage);
+                            x.Operation == McPending.Operations.EmailMarkRead);
                     if (0 != mRs.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
@@ -160,11 +158,10 @@ namespace NachoCore.ActiveSync
                 switch (statusCode) {
                 case Xml.AirSync.StatusCode.Success:
                     // Clear any deletes dispached in the request.
-                    var deles = BackEnd.Instance.Db.Table<McPendingUpdate> ()
+                    var deles = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderServerId == folder.ServerId &&
-                                x.Operation == McPendingUpdate.Operations.Delete &&
-                                x.DataType == McPendingUpdate.DataTypes.EmailMessage &&
+                            x.Operation == McPending.Operations.EmailDelete &&
                                 x.IsDispatched == true);
                     if (0 != deles.Count ()) {
                         foreach (var change in deles) {
@@ -172,11 +169,10 @@ namespace NachoCore.ActiveSync
                         }
                     }
                     // Clear any mark-reads dispatched in the request.
-                    var mRs = BackEnd.Instance.Db.Table<McPendingUpdate> ()
+                    var mRs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                               x.FolderServerId == folder.ServerId &&
-                              x.Operation == McPendingUpdate.Operations.MarkRead &&
-                              x.DataType == McPendingUpdate.DataTypes.EmailMessage &&
+                            x.Operation == McPending.Operations.EmailMarkRead &&
                               x.IsDispatched == true);
                     if (0 != mRs.Count ()) {
                         foreach (var markRead in mRs) {
@@ -323,18 +319,18 @@ namespace NachoCore.ActiveSync
         private SQLite.TableQuery<McFolder> FoldersNeedingSync ()
         {
             // Make sure any folders with pending deletes or mark-reads are marked as needing Sync.
-            var pendingDels = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (x => 
-                x.Operation == McPendingUpdate.Operations.Delete &&
-                              x.DataType == McPendingUpdate.DataTypes.EmailMessage).ToList ();
+            var pendingDels = BackEnd.Instance.Db.Table<McPending> ().Where (x => 
+                x.Operation == McPending.Operations.EmailDelete).ToList ();
 
             foreach (var pendingDel in pendingDels) {
-                var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.ServerId == pendingDel.FolderServerId);
+                var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+                    x.ServerId == pendingDel.FolderServerId);
                 folder.AsSyncRequired = true;
                 BackEnd.Instance.Db.Update (folder);
             }
 
-            var pendingMRs = BackEnd.Instance.Db.Table<McPendingUpdate> ().Where (x => x.Operation == McPendingUpdate.Operations.MarkRead &&
-                             x.DataType == McPendingUpdate.DataTypes.EmailMessage).ToList ();
+            var pendingMRs = BackEnd.Instance.Db.Table<McPending> ().Where (x => 
+                x.Operation == McPending.Operations.EmailMarkRead).ToList ();
 
             foreach (var pendingMR in pendingMRs) {
                 var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.ServerId == pendingMR.FolderServerId);

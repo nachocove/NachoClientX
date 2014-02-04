@@ -77,7 +77,6 @@
     <Compile Include="NachoCore\IProtoControlOwner.cs" />
     <Compile Include="NachoCore\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsCommand.cs" />
-    <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Operations\AsHttpOperation.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsItemOperationsCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsOptionsCommand.cs" />
@@ -115,7 +114,6 @@
     <Compile Include="NachoCore\Model\McFolder.cs" />
     <Compile Include="NachoCore\Model\McItem.cs" />
     <Compile Include="NachoCore\Model\McObject.cs" />
-    <Compile Include="NachoCore\Model\McPendingUpdate.cs" />
     <Compile Include="NachoCore\Model\McPolicy.cs" />
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
     <Compile Include="NachoCore\Model\McServer.cs" />
@@ -140,6 +138,12 @@
     <Compile Include="NachoCore\Brain\NcMessageThreads.cs" />
     <Compile Include="NachoCore\NachoDeferredEmailMessages.cs" />
     <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\FolderDelete.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\FolderUpdate.cs" />
+    <Compile Include="NachoCore\Model\McPending.cs" />
+    <Compile Include="NachoCore\ActiveSync\AsApplyServerDelta.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -173,6 +177,7 @@
     <Folder Include="NachoCore\NcCommStatus\" />
     <Folder Include="NachoCore\Brain\" />
     <Folder Include="NachoCore\Utils\" />
+    <Folder Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

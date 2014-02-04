@@ -70,12 +70,11 @@ namespace NachoCore.ActiveSync
             return emailMessage.ToMime (BackEnd.Instance.Db);
         }
 
-        private McPendingUpdate NextToSend ()
+        private McPending NextToSend ()
         {
-            var query = BackEnd.Instance.Db.Table<McPendingUpdate> ()
+            var query = BackEnd.Instance.Db.Table<McPending> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
-                        McPendingUpdate.DataTypes.EmailMessage == rec.DataType &&
-                        McPendingUpdate.Operations.Send == rec.Operation);
+                    McPending.Operations.EmailSend == rec.Operation);
             if (0 == query.Count ()) {
                 return null;
             }

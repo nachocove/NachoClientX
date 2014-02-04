@@ -95,12 +95,11 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private McPendingUpdate NextToSearch ()
+        private McPending NextToSearch ()
         {
-            var query = BackEnd.Instance.Db.Table<McPendingUpdate> ()
+            var query = BackEnd.Instance.Db.Table<McPending> ()
                 .Where (rec => rec.AccountId == DataSource.Account.Id &&
-                        McPendingUpdate.DataTypes.Contact == rec.DataType &&
-                        McPendingUpdate.Operations.Search == rec.Operation);
+                    McPending.Operations.ContactSearch == rec.Operation);
             if (0 == query.Count ()) {
                 return null;
             }

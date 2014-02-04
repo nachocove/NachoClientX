@@ -38,7 +38,7 @@ namespace NachoCore.ActiveSync
         protected NcStateMachine OwnerSm;
         protected IAsDataSource DataSource;
         protected AsHttpOperation Op;
-        protected McPendingUpdate Update;
+        protected McPending Update;
         protected NcResult SuccessInd;
         protected NcResult FailureInd;
 
@@ -250,12 +250,12 @@ namespace NachoCore.ActiveSync
         {
         }
 
-        protected virtual McPendingUpdate NextPendingUpdate (McPendingUpdate.DataTypes dataType, 
-            McPendingUpdate.Operations operation)
+        protected virtual McPending NextPendingUpdate (McPending.Operations operation)
         {
-            return BackEnd.Instance.Db.Table<McPendingUpdate> ()
-                .FirstOrDefault (rec => rec.AccountId == DataSource.Account.Id &&
-                    dataType == rec.DataType && operation == rec.Operation);
+            return BackEnd.Instance.Db.Table<McPending> ()
+                .FirstOrDefault (rec => 
+                        rec.AccountId == DataSource.Account.Id &&
+                        rec.Operation == operation);
         }
 
         // Static internal helper methods.

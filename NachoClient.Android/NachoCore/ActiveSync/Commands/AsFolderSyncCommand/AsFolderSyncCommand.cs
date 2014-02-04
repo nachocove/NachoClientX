@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -6,7 +8,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
-    public class AsFolderSyncCommand : AsCommand
+    public partial class AsFolderSyncCommand : AsCommand
     {
         private bool HadFolderChanges;
 
@@ -20,7 +22,7 @@ namespace NachoCore.ActiveSync
             var syncKey = DataSource.ProtocolState.AsSyncKey;
             Log.Info ("AsFolderSyncCommand: AsSyncKey=" + syncKey);
             var folderSync = new XElement (m_ns + Xml.FolderHierarchy.FolderSync, new XElement (m_ns + Xml.FolderHierarchy.SyncKey, syncKey));
-            var doc = AsCommand.ToEmptyXDocument();
+            var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderSync);
             Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand:\n{0}", doc);
             return doc;
@@ -44,35 +46,33 @@ namespace NachoCore.ActiveSync
                     foreach (var change in changes) {
                         switch (change.Name.LocalName) {
                         case Xml.FolderHierarchy.Add:
-                            var folder = new McFolder () {
-                                AccountId = DataSource.Account.Id,
+                            var applyAdd = new ApplyFolderAdd (DataSource.Account.Id) {
+                                ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value, 
+                                ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value,
+                                DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
+                                FolderType = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
+                            };
+                            applyAdd.ProcessDelta ();
+                            break;
+                        case Xml.FolderHierarchy.Update:
+                            var applyUpdate = new ApplyFolderUpdate (DataSource.Account.Id) {
                                 ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value,
                                 ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
-                                Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
-                                AsSyncKey = Xml.AirSync.SyncKey_Initial,
-                                AsSyncRequired = true
+                                FolderType = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
-                            Log.Info ("foldersync - add - " + folder);
-                            BackEnd.Instance.Db.Insert (folder);
-                            break;
-                        case Xml.FolderHierarchy.Update:
-                            var serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            folder = BackEnd.Instance.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
-                            folder.ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
-                            folder.DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value;
-                            folder.Type = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value);
-                            Log.Info ("foldersync - update - " + folder);
-                            BackEnd.Instance.Db.Update (folder);
+                            applyUpdate.ProcessDelta ();
                             break;
                         case Xml.FolderHierarchy.Delete:
-                            serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            folder = BackEnd.Instance.Db.Table<McFolder> ().Where (rec => rec.ServerId == serverId).First ();
-                            BackEnd.Instance.Db.Delete (folder);
+                            var applyDelete = new ApplyFolderDelete (DataSource.Account.Id) {
+                                ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value,
+                            };
+                            applyDelete.ProcessDelta ();
                             break;
                         }
                     }
                 }
+                // FIXME we may need to indicate that a Sync is needed.
                 if (HadFolderChanges) {
                     DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 }
@@ -85,4 +85,3 @@ namespace NachoCore.ActiveSync
         }
     }
 }
-
