@@ -71,7 +71,7 @@ namespace NachoCore
         private const string ClientOwned_GalCache = "GAL";
         private const string ClientOwned_Gleaned = "GLEANED";
 
-        private ProtoControl ServiceFromAccount (int accountId)
+        private ProtoControl ServiceFromAccountId (int accountId)
         {
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
             if (!Services.Any ()) {
@@ -128,7 +128,7 @@ namespace NachoCore
 
         public void Start (int accountId)
         {
-            var service = ServiceFromAccount (accountId);
+            var service = ServiceFromAccountId (accountId);
             if (null == service) {
                 /* NOTE: This code needs to be able to detect the account type and start the 
                  * appropriate control (not just AS).
@@ -175,62 +175,77 @@ namespace NachoCore
 
         public void ForceSync (int accountId)
         {
-            ServiceFromAccount (accountId).ForceSync ();
+            ServiceFromAccountId (accountId).ForceSync ();
         }
 
         public void CertAskResp (int accountId, bool isOkay)
         {
-            ServiceFromAccount (accountId).CertAskResp (isOkay);
+            ServiceFromAccountId (accountId).CertAskResp (isOkay);
         }
 
         public void ServerConfResp (int accountId)
         {
-            ServiceFromAccount (accountId).ServerConfResp ();
+            ServiceFromAccountId (accountId).ServerConfResp ();
         }
 
         public void CredResp (int accountId)
         {
-            ServiceFromAccount (accountId).CredResp ();
+            ServiceFromAccountId (accountId).CredResp ();
         }
 
         public bool Cancel (int accountId, string token)
         {
-            return ServiceFromAccount (accountId).Cancel (token);
+            return ServiceFromAccountId (accountId).Cancel (token);
         }
 
         public string StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
-            return ServiceFromAccount (accountId).StartSearchContactsReq (prefix, maxResults);
+            return ServiceFromAccountId (accountId).StartSearchContactsReq (prefix, maxResults);
         }
 
         public void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token)
         {
-            ServiceFromAccount (accountId).SearchContactsReq (prefix, maxResults, token);
+            ServiceFromAccountId (accountId).SearchContactsReq (prefix, maxResults, token);
         }
 
         public string SendEmailCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccount (accountId).SendEmailCmd (emailMessageId);
+            return ServiceFromAccountId (accountId).SendEmailCmd (emailMessageId);
         }
 
         public string DeleteEmailCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccount (accountId).DeleteEmailCmd (emailMessageId);
+            return ServiceFromAccountId (accountId).DeleteEmailCmd (emailMessageId);
         }
 
         public string MoveItemCmd (int accountId, int emailMessageId, int destFolderId)
         {
-            return ServiceFromAccount (accountId).MoveItemCmd (emailMessageId, destFolderId);
+            return ServiceFromAccountId (accountId).MoveItemCmd (emailMessageId, destFolderId);
         }
 
         public string DnldAttCmd (int accountId, int attId)
         {
-            return ServiceFromAccount (accountId).DnldAttCmd (attId);
+            return ServiceFromAccountId (accountId).DnldAttCmd (attId);
         }
 
         public string MarkEmailReadCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccount (accountId).MarkEmailReadCmd (emailMessageId);
+            return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
+        }
+
+        public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagMessage, DateTime utcStart, DateTime utcDue)
+        {
+            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagMessage, utcStart, utcDue);
+        }
+
+        public string ClearEmailFlagCmd (int accountId, int emailMessageId)
+        {
+            return ServiceFromAccountId (accountId).ClearEmailFlagCmd (emailMessageId);
+        }
+
+        public string MarkEmailFlagDone (int accountId, int emailMessageId)
+        {
+            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId);
         }
 
         private McFolder GetClientOwned (int accountId, string serverId)

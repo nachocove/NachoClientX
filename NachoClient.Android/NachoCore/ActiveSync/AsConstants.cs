@@ -323,14 +323,14 @@ namespace NachoCore.ActiveSync
             public enum ErrorCodeCode : uint
             {
                 InvalidRequest = 600,
-                NoProviderForSchema = 601}
-            ;
+                NoProviderForSchema = 601,
+            };
 
             public enum StatusCode : uint
             {
                 Success = 1,
-                ProtocolError = 2}
-            ;
+                ProtocolError = 2,
+            };
 
             public class TypeCode
             {
@@ -418,7 +418,7 @@ namespace NachoCore.ActiveSync
                 public const string ResponseType = "ResponseType";
                 public const string Sensitivity = "Sensitivity";
                 public const string StartTime = "StartTime";
-                public const string Subject = "Subject";
+                public const string Subject = Calendar.Subject;
                 // public const string airsyncbase:Body = "airsyncbase:Body";
                 // Containers in alpha order
                 public const string Exception_Attendees = "Attendees";
@@ -534,17 +534,28 @@ namespace NachoCore.ActiveSync
             public const string Ns = AirSync.ClassCode.Email;
             // Alpha order.
             public const string Cc = "Cc";
+            public const string CompleteTime = "CompleteTime";
             public const string DateReceived = "DateReceived";
             public const string DisplayTo = "DisplayTo";
+            public const string Flag = "Flag";
+            public const string FlagType = "FlagType";
             public const string From = "From";
             public const string Importance = "Importance";
             public const string MessageClass = "MessageClass";
             public const string Read = "Read";
             public const string ReplyTo = "ReplyTo";
             public const string Sender = "Sender";
-            public const string Subject = "Subject";
+            public const string Status = AirSync.Status;
+            public const string Subject = Calendar.Subject;
             public const string ThreadTopic = "ThreadTopic";
             public const string To = "To";
+
+            public enum FlagStatusCode : uint
+            {
+                Clear = 0,
+                MarkDone = 1,
+                Set = 2,
+            };
         }
 
         public class Email2
@@ -969,6 +980,20 @@ namespace NachoCore.ActiveSync
                 ConflictingArgs = 6,
                 PolicyDeny = 7
             }
+        }
+
+        public class Tasks
+        {
+            public const string Ns = "Tasks";
+            // Alpha order.
+            public const string DateCompleted = "DateCompleted";
+            public const string DueDate = "DueDate";
+            public const string ReminderSet = "ReminderSet";
+            public const string ReminderTime = "ReminderTime";
+            public const string StartDate = "StartDate";
+            public const string Subject = Calendar.Subject;
+            public const string UtcDueDate = "UtcDueDate";
+            public const string UtcStartDate = "UtcStartDate";
         }
     }
 }

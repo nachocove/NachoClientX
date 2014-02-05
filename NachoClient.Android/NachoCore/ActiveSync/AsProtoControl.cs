@@ -712,6 +712,9 @@ namespace NachoCore.ActiveSync
 
         private void DoSync ()
         {
+            if (null != Cmd) {
+                Cmd.Cancel ();
+            }
             Cmd = new AsSyncCommand (this);
             Cmd.Execute (Sm);
         }
@@ -777,11 +780,11 @@ namespace NachoCore.ActiveSync
                     return true;
 
                 case McPending.Operations.EmailDelete:
-                    Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP3");
-                    return true;
-
                 case McPending.Operations.EmailMarkRead:
-                    Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDP4");
+                case McPending.Operations.EmailSetFlag:
+                case McPending.Operations.EmailClearFlag:
+                case McPending.Operations.EmailMarkFlagDone:
+                    Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCPDIRS");
                     return true;
                 }
             }
@@ -951,19 +954,32 @@ namespace NachoCore.ActiveSync
             return moveUpdate.Token;
         }
 
-        public override string MarkEmailReadCmd (int emailMessageId)
+        private bool GetEmailMessageAndFolder (int emailMessageId, 
+            out McEmailMessage emailMessage,
+            out McFolder folder)
         {
-            var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            folder = null;
+            emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
             if (null == emailMessage) {
-                return null;
+                return false;
             }
 
             var folders = McFolder.QueryByItemId (Account.Id, emailMessageId);
             if (null == folders || 0 == folders.Count) {
-                return null;
+                return false;
             }
 
-            var folder = folders.First ();
+            folder = folders.First ();
+            return true;
+        }
+
+        public override string MarkEmailReadCmd (int emailMessageId)
+        {
+            McEmailMessage emailMessage;
+            McFolder folder;
+            if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+                return null;
+            }
 
             var markUpdate = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailMarkRead,
@@ -978,6 +994,78 @@ namespace NachoCore.ActiveSync
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedRead));
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
             return markUpdate.Token;
+        }
+
+        public override string SetEmailFlagCmd (int emailMessageId, string flagMessage, DateTime utcStart, DateTime utcDue)
+        {
+            McEmailMessage emailMessage;
+            McFolder folder;
+            if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+                return null;
+            }
+
+            var setFlag = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailSetFlag,
+                ServerId = emailMessage.ServerId,
+                FolderServerId = folder.ServerId,
+                Message = flagMessage,
+                UtcStart = utcStart,
+                UtcDue = utcDue,
+            };
+            setFlag.Insert ();
+
+            // Set the Flag info in the DB item.
+            emailMessage.UtcDeferUntil = utcStart;
+            emailMessage.UtcDue = utcDue;
+            emailMessage.Update ();
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCSF");
+            return setFlag.Token;
+        }
+
+        public override string ClearEmailFlagCmd (int emailMessageId)
+        {
+            McEmailMessage emailMessage;
+            McFolder folder;
+            if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+                return null;
+            }
+
+            var clearFlag = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailClearFlag,
+                ServerId = emailMessage.ServerId,
+                FolderServerId = folder.ServerId,
+            };
+            clearFlag.Insert ();
+
+            // Clear the Flag info in the DB item.
+            emailMessage.UtcDeferUntil = DateTime.MinValue;
+            emailMessage.UtcDue = DateTime.MinValue;
+            emailMessage.Update ();
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
+            return clearFlag.Token;
+        }
+
+        public override string MarkEmailFlagDone (int emailMessageId)
+        {
+            McEmailMessage emailMessage;
+            McFolder folder;
+            if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+                return null;
+            }
+
+            var markFlagDone = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailMarkFlagDone,
+                ServerId = emailMessage.ServerId,
+                FolderServerId = folder.ServerId,
+            };
+            markFlagDone.Insert ();
+
+            // Clear the Flag info in the DB item.
+            emailMessage.UtcDeferUntil = DateTime.MinValue;
+            emailMessage.UtcDue = DateTime.MinValue;
+            emailMessage.Update ();
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
+            return markFlagDone.Token;
         }
 
         public override string DnldAttCmd (int attId)

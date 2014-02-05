@@ -504,6 +504,9 @@
     <Compile Include="NachoUI.iOS\DatePickerViewController.designer.cs">
       <DependentUpon>DatePickerViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\DateTime+ToString.cs">
+      <Link>NachoCore\Extensions\DateTime+ToString.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

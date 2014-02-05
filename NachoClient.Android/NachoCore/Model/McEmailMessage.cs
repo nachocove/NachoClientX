@@ -82,8 +82,10 @@ namespace NachoCore.Model
         public MessageDeferralType DeferralType { set; get; }
 
         /// User has asked to hide the message for a while
-        public DateTime DeferUntil { set; get; }
+        public DateTime UtcDeferUntil { set; get; }
 
+        // User must complete task by.
+        public DateTime UtcDue { set; get; }
         /// Attachments are separate
 
         [Indexed]
@@ -140,13 +142,19 @@ namespace NachoCore.Model
                 db.Update (this);
             }
         }
+
+        public void Update ()
+        {
+            BackEnd.Instance.Db.Update (this);
+        }
+
         // Note need to paramtrize <T> and move to McItem.
         public static List<McEmailMessage> ActiveMessages (int accountId, int folderId)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
             " m.AccountId = ? AND " +
             " m.FolderId = ? AND " +
-            "e.DeferUntil < ?",
+                "e.UtcDeferUntil < ?",
                 accountId, folderId, DateTime.UtcNow);
         }
         // TODO: Need account id
@@ -154,7 +162,7 @@ namespace NachoCore.Model
         public static List<McEmailMessage> DeferredMessages ()
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
-            "e.DeferUntil > ?",
+                "e.UtcDeferUntil > ?",
                 DateTime.UtcNow);
         }
     }

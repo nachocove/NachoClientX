@@ -1,5 +1,4 @@
-
-using System;
+    using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -28,6 +27,7 @@ namespace NachoCore.ActiveSync
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             XNamespace emailNs = Xml.Email.Ns;
+            XNamespace tasksNs = Xml.Tasks.Ns;
 
             // Get the folders needed sync
             var folders = FoldersNeedingSync ();
@@ -68,7 +68,7 @@ namespace NachoCore.ActiveSync
                     var deles = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderServerId == folder.ServerId &&
-                            x.Operation == McPending.Operations.EmailDelete);
+                                x.Operation == McPending.Operations.EmailDelete);
                     if (0 != deles.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
@@ -84,7 +84,7 @@ namespace NachoCore.ActiveSync
                     var mRs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                               x.FolderServerId == folder.ServerId &&
-                            x.Operation == McPending.Operations.EmailMarkRead);
+                              x.Operation == McPending.Operations.EmailMarkRead);
                     if (0 != mRs.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
@@ -98,6 +98,64 @@ namespace NachoCore.ActiveSync
                             BackEnd.Instance.Db.Update (change);
                         }
                     }
+                    // If there are set/clear/mark-dones, then push them to the server.
+                    var setFs = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                x.FolderServerId == folder.ServerId &&
+                                x.Operation == McPending.Operations.EmailSetFlag);
+
+                    var clearFs = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                  x.FolderServerId == folder.ServerId &&
+                                  x.Operation == McPending.Operations.EmailClearFlag);
+
+                    var markFs = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                 x.FolderServerId == folder.ServerId &&
+                                 x.Operation == McPending.Operations.EmailMarkFlagDone);
+
+                    if (0 != setFs.Count () || 0 != clearFs.Count () || 0 != markFs.Count ()) {
+                        if (null == commands) {
+                            commands = new XElement (m_ns + Xml.AirSync.Commands);
+                        }
+                    }
+
+                    foreach (var setF in setFs) {
+                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
+                            new XElement (m_ns + Xml.AirSync.ServerId, setF.ServerId),
+                            new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                new XElement (emailNs + Xml.Email.Flag,
+                                    new XElement (emailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set),
+                                    new XElement (emailNs + Xml.Email.FlagType, setF.Message),
+                                    new XElement (tasksNs + Xml.Tasks.StartDate, setF.UtcStart.ToLocalTime ().ToAsUtcString ()),
+                                    new XElement (tasksNs + Xml.Tasks.UtcStartDate, setF.UtcStart.ToAsUtcString ()),
+                                    new XElement (tasksNs + Xml.Tasks.DueDate, setF.UtcDue.ToLocalTime ().ToAsUtcString ()),
+                                    new XElement (tasksNs + Xml.Tasks.UtcDueDate, setF.UtcDue.ToAsUtcString ())))));
+                        setF.IsDispatched = true;
+                        setF.Update ();
+                    }
+
+                    foreach (var clearF in clearFs) {
+                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
+                            new XElement (m_ns + Xml.AirSync.ServerId, clearF.ServerId),
+                            new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                new XElement (emailNs + Xml.Email.Flag))));
+                        clearF.IsDispatched = true;
+                        clearF.Update ();
+                    }
+
+                    foreach (var markF in markFs) {
+                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
+                            new XElement (m_ns + Xml.AirSync.ServerId, markF.ServerId),
+                            new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                new XElement (emailNs + Xml.Email.Flag,
+                                    new XElement (emailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone),
+                                    new XElement (emailNs + Xml.Email.CompleteTime, DateTime.UtcNow.ToLocalTime ().ToAsUtcString ()),
+                                    new XElement (tasksNs + Xml.Tasks.DateCompleted, DateTime.UtcNow.ToLocalTime ().ToAsUtcString ())))));
+                        markF.IsDispatched = true;
+                        markF.Update ();
+                    }
+
                     if (null != commands) {
                         collection.Add (commands);
                     }
@@ -161,7 +219,7 @@ namespace NachoCore.ActiveSync
                     var deles = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                                 x.FolderServerId == folder.ServerId &&
-                            x.Operation == McPending.Operations.EmailDelete &&
+                                x.Operation == McPending.Operations.EmailDelete &&
                                 x.IsDispatched == true);
                     if (0 != deles.Count ()) {
                         foreach (var change in deles) {
@@ -172,13 +230,42 @@ namespace NachoCore.ActiveSync
                     var mRs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
                               x.FolderServerId == folder.ServerId &&
-                            x.Operation == McPending.Operations.EmailMarkRead &&
+                              x.Operation == McPending.Operations.EmailMarkRead &&
                               x.IsDispatched == true);
                     if (0 != mRs.Count ()) {
                         foreach (var markRead in mRs) {
                             BackEnd.Instance.Db.Delete (markRead);
                         }
                     }
+                    // Clear any set/clear/mark-dones dispatched in the request.
+                    var setFs = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                x.FolderServerId == folder.ServerId &&
+                                x.Operation == McPending.Operations.EmailSetFlag &&
+                                x.IsDispatched == true);
+                    foreach (var setF in setFs) {
+                        setF.Delete ();
+                    }
+
+                    var clearFs = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                  x.FolderServerId == folder.ServerId &&
+                                  x.Operation == McPending.Operations.EmailClearFlag &&
+                                  x.IsDispatched == true);
+                    foreach (var clearF in clearFs) {
+                        clearF.Delete ();
+                    }
+
+                    var markFs = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                 x.FolderServerId == folder.ServerId &&
+                                 x.Operation == McPending.Operations.EmailMarkFlagDone &&
+                                 x.IsDispatched == true);
+                    foreach (var markF in markFs) {
+                        markF.Delete ();
+                    }
+                    // FIXME - this is a DUMB way to cleanup dispatched!
+
                     // Perform all commands.
                     XElement xmlClass;
                     string classCode;
@@ -302,13 +389,16 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
             }
         }
-        // Called when we get an empty Sync response body. Need to clear AsSyncRequired for all folders in the request.
+        // Called when we get an empty Sync response body.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             foreach (var folder in FoldersInRequest) {
                 folder.AsSyncRequired = false;
                 BackEnd.Instance.Db.Update (folder);
             }
+
+            DeleteAllDispatchedPending ();
+
             if (FoldersNeedingSync ().Any ()) {
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC1");
             } else {
@@ -316,26 +406,30 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private void DeleteAllDispatchedPending ()
+        {
+            var pendings = BackEnd.Instance.Db.Table<McPending> ()
+                .Where (x => x.AccountId == DataSource.Account.Id && x.IsDispatched == true);
+            foreach (var pending in pendings) {
+                pending.Delete ();
+            }
+        }
+
         private SQLite.TableQuery<McFolder> FoldersNeedingSync ()
         {
-            // Make sure any folders with pending deletes or mark-reads are marked as needing Sync.
-            var pendingDels = BackEnd.Instance.Db.Table<McPending> ().Where (x => 
-                x.Operation == McPending.Operations.EmailDelete).ToList ();
+            // Make sure any folders with pending are marked as needing Sync.
+            var pendings = BackEnd.Instance.Db.Table<McPending> ().Where (x => 
+                x.AccountId == DataSource.Account.Id).ToList ();
 
-            foreach (var pendingDel in pendingDels) {
-                var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
-                    x.ServerId == pendingDel.FolderServerId);
-                folder.AsSyncRequired = true;
-                BackEnd.Instance.Db.Update (folder);
-            }
-
-            var pendingMRs = BackEnd.Instance.Db.Table<McPending> ().Where (x => 
-                x.Operation == McPending.Operations.EmailMarkRead).ToList ();
-
-            foreach (var pendingMR in pendingMRs) {
-                var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.ServerId == pendingMR.FolderServerId);
-                folder.AsSyncRequired = true;
-                BackEnd.Instance.Db.Update (folder);
+            foreach (var pending in pendings) {
+                if (null != pending.FolderServerId && string.Empty != pending.FolderServerId) {
+                    var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+                    x.ServerId == pending.FolderServerId);
+                    if (false == folder.IsClientOwned && !folder.AsSyncRequired) {
+                        folder.AsSyncRequired = true;
+                        folder.Update ();
+                    }
+                }
             }
 
             // Ping, et al, decide what needs to be checked.  We sync what needs sync'ing.
@@ -458,7 +552,7 @@ namespace NachoCore.ActiveSync
             var existingEmailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ()
                 .SingleOrDefault (x => 
                     x.AccountId == emailMessage.AccountId &&
-                    x.ServerId == emailMessage.ServerId);
+                                       x.ServerId == emailMessage.ServerId);
             int emailMessageId;
             if (null == existingEmailMessage) {
                 BackEnd.Instance.Db.Insert (emailMessage);

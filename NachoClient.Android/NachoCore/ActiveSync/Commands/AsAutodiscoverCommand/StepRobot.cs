@@ -581,6 +581,11 @@ namespace NachoCore.ActiveSync
                 return false;
             }
 
+            public bool DoSendPolicyKey (AsHttpOperation Sender)
+            {
+                return false;
+            }
+
             public XDocument ToXDocument (AsHttpOperation Sender)
             {
                 if (HttpMethod.Post != MethodToUse) {

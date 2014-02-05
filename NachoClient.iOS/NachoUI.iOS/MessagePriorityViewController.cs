@@ -25,8 +25,8 @@ namespace NachoClient.iOS
 
             DateTime earliestDelay = DateTime.MaxValue;
             foreach (var message in thread) {
-                if (earliestDelay > message.DeferUntil) {
-                    earliestDelay = message.DeferUntil;
+                if (earliestDelay > message.UtcDeferUntil) {
+                    earliestDelay = message.UtcDeferUntil;
                 }
             }
 

@@ -45,6 +45,9 @@ namespace NachoCore.Model
             EmailDelete,
             EmailMove,
             EmailMarkRead,
+            EmailSetFlag,
+            EmailClearFlag,
+            EmailMarkFlagDone,
         };
         // Parameterless constructor only here for use w/LINQ.
         public McPending ()
@@ -75,6 +78,9 @@ namespace NachoCore.Model
             BackEnd.Instance.Db.Delete (this);
         }
 
+        [Indexed]
+        public bool IsDispatched { set; get; }
+
         public Operations Operation { set; get; }
         // For FolderCreate, the value of ServerId is a provisional GUID.
         // The BE uses the GUID until the FolderCreate can be executed by the
@@ -86,8 +92,11 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { set; get; }
 
-        [Indexed]
-        public bool IsDispatched { set; get; }
+        public string Message { set; get; }
+
+        public DateTime UtcStart { set; get; }
+
+        public DateTime UtcDue { get; set; }
 
         [Indexed]
         public string DisplayName { set; get; }
@@ -115,11 +124,17 @@ namespace NachoCore.Model
 
         public string DestFolderServerId { set; get; }
 
-        public enum ActionEnum {
+        public enum ActionEnum
+        {
             DoNothing,
             Update,
             Delete,
         };
+
+        public void Insert ()
+        {
+            BackEnd.Instance.Db.Insert (this);
+        }
 
         public ActionEnum ApplyReWrites (List<ReWrite> reWrites)
         {

@@ -206,7 +206,7 @@ namespace NachoClient.iOS
             var summary = message.Summary;
             var date = message.DateReceived;
             var icon = (message.IsRead ? NachoMessageIcon.None : NachoMessageIcon.Read);
-            if (DateTime.UtcNow < message.DeferUntil) {
+            if (DateTime.UtcNow < message.UtcDeferUntil) {
                 icon = NachoMessageIcon.Clock;
             }
             var count = (messageThread.Count > 1 ? messageThread.Count : 0);

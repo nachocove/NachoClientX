@@ -296,7 +296,7 @@ namespace NachoCore.ActiveSync
                 request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
             }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
-            if (DataSource.ProtocolState.InitialProvisionCompleted) {
+            if (DataSource.ProtocolState.InitialProvisionCompleted && Owner.DoSendPolicyKey (this)) {
                 request.Headers.Add ("X-MS-PolicyKey", DataSource.ProtocolState.AsPolicyKey);
             }
             request.Headers.Add ("MS-ASProtocolVersion", DataSource.ProtocolState.AsProtocolVersion);

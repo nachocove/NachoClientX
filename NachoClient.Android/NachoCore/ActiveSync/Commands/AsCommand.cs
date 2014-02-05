@@ -85,6 +85,12 @@ namespace NachoCore.ActiveSync
         {
             return true;
         }
+
+        public virtual bool DoSendPolicyKey (AsHttpOperation Sender)
+        {
+            return true;
+        }
+
         // Override if the subclass wants to add more parameters to the query string.
         public virtual HttpMethod Method (AsHttpOperation Sender)
         {

@@ -1,0 +1,2538 @@
+Starting iOS simulator 7.0
+Launching application
+Application launched. PID = 29026
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/monotouch.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Core.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.dll [External]
+Thread started:  #2
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/NachoClientiOS.exe
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/SWRevealViewControllerBinding.dll
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/MonoTouch.Dialog-1.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Xml.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/MCSwipeTableViewCellBinding.dll
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/iCarouselBinding.dll
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/MimeKit.iOS.dll [External]
+Symbol file /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/DnDns.iOS.dll.mdb doesn't match image /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/DnDns.iOS.dll
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Xml.Linq.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/DnDns.iOS.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Net.Http.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/Xamarin.Mobile.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/BouncyCastle.iOS.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/Mono.Data.Sqlite.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Data.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Transactions.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/Mono.Data.Tds.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/Mono.Security.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/NachoPlatform.iOS.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/System.Json.dll [External]
+Loaded assembly: /Users/tje/Library/Application Support/iPhone Simulator/7.0.3/Applications/25B76D89-292A-4E7A-8B60-92A6EC164D28/NachoClientiOS.app/UIImageEffectsBinding.dll
+Thread started:  #3
+Thread started: <Thread Pool> #4
+Thread started: <Thread Pool> #5
+2014-02-04 13:45:12.409 NachoClientiOS[29026:80b] Unbalanced calls to begin/end appearance transitions for <MainViewController: 0x7b4992c0>.
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/AsProtoControl.cs:1047,12' to string NachoCore.ActiveSync.AsProtoControl.MarkEmailFlagDone (int emailMessageId) [0x00001].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/AsProtoControl.cs:1024,12' to string NachoCore.ActiveSync.AsProtoControl.ClearEmailFlagCmd (int emailMessageId) [0x00001].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/AsProtoControl.cs:998,12' to string NachoCore.ActiveSync.AsProtoControl.SetEmailFlagCmd (int emailMessageId, string flagMessage, System.DateTime utcStart, System.DateTime utcDue) [0x00001].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/AsProtoControl.cs:784,19' to bool NachoCore.ActiveSync.AsProtoControl.FirePendingInstead () [0x00176].
+2014-02-04 13:45:22.906 NachoClientiOS[29026:80b] Info: Initial state: 0
+2014-02-04 13:45:22.932 NachoClientiOS[29026:80b] Info: SM(ASPC(1)): S=Start & E=Launch/ASPCEXE => S=DiscW
+2014-02-04 13:45:22.943 NachoClientiOS[29026:80b] Info: State Machine start 0
+2014-02-04 13:45:22.943 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD): S=Start & E=Launch/SMSTART => S=RobotW
+2014-02-04 13:45:22.955 NachoClientiOS[29026:80b] Info: State Machine start 2
+2014-02-04 13:45:22.956 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S1)): S=PostWait & E=Launch/SMSTART => S=PostWait
+2014-02-04 13:45:22.971 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:22.971 NachoClientiOS[29026:80b] Info: ASHTTPOP: TriesLeft: 2
+2014-02-04 13:45:23.031 NachoClientiOS[29026:80b] Info: NachoTimer 1 created
+2014-02-04 13:45:23.034 NachoClientiOS[29026:80b] Info: HTTPOP:URL:https://nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:23.089 NachoClientiOS[29026:80b] Info: State Machine start 2
+2014-02-04 13:45:23.089 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S2)): S=PostWait & E=Launch/SMSTART => S=PostWait
+2014-02-04 13:45:23.090 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S2):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:23.091 NachoClientiOS[29026:80b] Info: ASHTTPOP: TriesLeft: 2
+2014-02-04 13:45:23.094 NachoClientiOS[29026:80b] Info: NachoTimer 2 created
+2014-02-04 13:45:23.094 NachoClientiOS[29026:80b] Info: HTTPOP:URL:https://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:23.097 NachoClientiOS[29026:80b] Info: State Machine start 3
+2014-02-04 13:45:23.097 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S3)): S=GetWait & E=Launch/SMSTART => S=GetWait
+2014-02-04 13:45:23.098 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:23.099 NachoClientiOS[29026:80b] Info: ASHTTPOP: TriesLeft: 2
+2014-02-04 13:45:23.100 NachoClientiOS[29026:80b] Info: NachoTimer 3 created
+2014-02-04 13:45:23.101 NachoClientiOS[29026:80b] Info: HTTPOP:URL:http://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:23.105 NachoClientiOS[29026:80b] Info: State Machine start 4
+2014-02-04 13:45:23.105 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S4)): S=DnsWait & E=Launch/SMSTART => S=DnsWait
+2014-02-04 13:45:23.109 NachoClientiOS[29026:80b] Info: NachoTimer 4 created
+Thread started: <Thread Pool> #6
+Thread started: <Thread Pool> #7
+Thread started: <Thread Pool> #8
+Thread started: <Thread Pool> #9
+2014-02-04 13:45:23.909 NachoClientiOS[29026:8403] Info: NachoTimer 4 disposed
+2014-02-04 13:45:24.161 NachoClientiOS[29026:7d07] Info: NachoTimer 4 disposed
+2014-02-04 13:45:24.162 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):AUTOD:SR(S2):HTTPOP): S=HttpWait & E=TempFail/HTTPOPWEBEX => S=HttpWait: WebException: Error: ConnectFailure (Connection refused), Uri: https://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:24.162 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 1
+2014-02-04 13:45:24.164 NachoClientiOS[29026:7d07] Info: NachoTimer 5 created
+2014-02-04 13:45:24.165 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:24.194 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S4)): S=DnsWait & E=TempFail/DNSOPTEMP0 => S=DnsWait
+2014-02-04 13:45:24.194 NachoClientiOS[29026:80b] Info: NachoTimer 6 created
+2014-02-04 13:45:24.205 NachoClientiOS[29026:8403] Info: NachoTimer 6 disposed
+2014-02-04 13:45:24.210 NachoClientiOS[29026:8403] Info: REDIRURI: https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:24.211 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:24.211 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:SR(S3)): S=GetWait & E=ReDir/SRPPPREDIR => S=CertWait
+Thread started: <Thread Pool> #10
+2014-02-04 13:45:24.353 NachoClientiOS[29026:9903] Info: NachoTimer 6 disposed
+2014-02-04 13:45:24.353 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S4)): S=DnsWait & E=TempFail/DNSOPTEMP0 => S=DnsWait
+2014-02-04 13:45:24.354 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S4)): S=DnsWait & E=HardFail/SRDRDHARD => S=Stop
+2014-02-04 13:45:24.355 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD): S=RobotW & E=HardFail/SRHARDFAIL => S=RobotW
+2014-02-04 13:45:24.441 NachoClientiOS[29026:7d07] Info: NachoTimer 6 disposed
+2014-02-04 13:45:24.441 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):AUTOD:SR(S2):HTTPOP): S=HttpWait & E=TempFail/HTTPOPWEBEX => S=HttpWait: WebException: Error: ConnectFailure (Connection refused), Uri: https://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:24.442 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 0
+2014-02-04 13:45:24.444 NachoClientiOS[29026:7d07] Info: NachoTimer 7 created
+2014-02-04 13:45:24.445 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:24.701 NachoClientiOS[29026:9903] Info: NachoTimer 7 disposed
+2014-02-04 13:45:24.702 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S2):HTTPOP): S=HttpWait & E=TempFail/HTTPOPWEBEX => S=HttpWait: WebException: Error: ConnectFailure (Connection refused), Uri: https://autodiscover.nac01.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:24.702 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S2):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:24.703 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S2)): S=PostWait & E=HardFail/ASHTTPDOH => S=Stop: Too many retries.
+2014-02-04 13:45:24.704 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD): S=RobotW & E=HardFail/SRHARDFAIL => S=RobotW
+2014-02-04 13:45:25.230 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S3)): S=CertWait & E=Success/SRDRGSC2 => S=OkWait
+2014-02-04 13:45:25.231 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD): S=RobotW & E=ServerCertAsk/SRCERTASK => S=AskW
+2014-02-04 13:45:25.232 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=DiscW & E=GetCertOk/AUTODCERTASK => S=UiCertOkW
+2014-02-04 13:45:25.237 NachoClientiOS[29026:80b] Info: SM(ASPC(1)): S=UiCertOkW & E=UiCertOkYes/ASPCUCOY => S=DiscW
+2014-02-04 13:45:25.237 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD): S=AskW & E=SrvCertY/ASPCDCOY => S=AskW
+2014-02-04 13:45:25.238 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S3)): S=OkWait & E=SrvCertY/AUTODS1CY => S=ReDirWait
+2014-02-04 13:45:25.239 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:25.240 NachoClientiOS[29026:80b] Info: ASHTTPOP: TriesLeft: 2
+2014-02-04 13:45:25.242 NachoClientiOS[29026:80b] Info: NachoTimer 8 created
+2014-02-04 13:45:25.243 NachoClientiOS[29026:80b] Info: HTTPOP:URL:https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:25.243 NachoClientiOS[29026:80b] Info: SM(ASPC(1):AUTOD): S=AskW & E=Empty/AUTODECQ => S=RobotW
+2014-02-04 13:45:26.009 NachoClientiOS[29026:9903] Info: NachoTimer 8 disposed
+2014-02-04 13:45:26.010 NachoClientiOS[29026:9903] Info: REDIRURI: https://pod51034.outlook.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:26.010 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:26.010 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S3)): S=ReDirWait & E=ReDir/SRPPPREDIR => S=ReDirWait
+2014-02-04 13:45:26.011 NachoClientiOS[29026:9903] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:26.011 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 2
+2014-02-04 13:45:26.013 NachoClientiOS[29026:9903] Info: NachoTimer 9 created
+2014-02-04 13:45:26.014 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://pod51034.outlook.com/autodiscover/autodiscover.xml
+2014-02-04 13:45:27.894 NachoClientiOS[29026:8403] Info: NachoTimer 9 disposed
+2014-02-04 13:45:27.920 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:27.921 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:SR(S3)): S=ReDirWait & E=Success/SRPXRSUCCESS => S=Stop
+2014-02-04 13:45:27.921 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD): S=RobotW & E=Success/SRSUCCESS => S=TestW
+2014-02-04 13:45:27.922 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:SR(S1):HTTPOP): S=HttpWait & E=Cancel/HTTPOPCANCEL => S=Stop
+2014-02-04 13:45:27.922 NachoClientiOS[29026:8403] Info: NachoTimer 9 disposed
+2014-02-04 13:45:27.926 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:27.926 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:27.928 NachoClientiOS[29026:8403] Info: NachoTimer 10 created
+2014-02-04 13:45:27.929 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync
+2014-02-04 13:45:27.929 NachoClientiOS[29026:8403] Info: SM(ASPC(1):AUTOD:SR(S3):HTTPOP): S=Stop & E=Cancel/HTTPOPCANCEL => DROPPED IN St.Stop
+2014-02-04 13:45:30.259 NachoClientiOS[29026:7d07] Info: NachoTimer 10 disposed
+2014-02-04 13:45:30.272 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):AUTOD:HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:30.273 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):AUTOD): S=TestW & E=Success/OPTSUCCESS => S=Stop
+2014-02-04 13:45:30.275 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=DiscW & E=Success/AUTODDASC => S=OptW
+2014-02-04 13:45:30.276 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:30.276 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:30.278 NachoClientiOS[29026:7d07] Info: NachoTimer 11 created
+2014-02-04 13:45:30.278 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync
+2014-02-04 13:45:30.658 NachoClientiOS[29026:8403] Info: NachoTimer 11 disposed
+2014-02-04 13:45:30.662 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:30.663 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=OptW & E=Success/OPTSUCCESS => S=ProvW
+2014-02-04 13:45:30.665 NachoClientiOS[29026:8403] Info: State Machine start 0
+2014-02-04 13:45:30.666 NachoClientiOS[29026:8403] Info: SM(ASPC(1):PROV): S=Start & E=Launch/SMSTART => S=GetWait
+2014-02-04 13:45:30.668 NachoClientiOS[29026:8403] Info: SM(ASPC(1):PROV:HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:30.668 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:30.689 NachoClientiOS[29026:8403] Info: NachoTimer 12 created
+2014-02-04 13:45:30.689 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Provision&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:32.543 NachoClientiOS[29026:8403] Info: NachoTimer 12 disposed
+2014-02-04 13:45:32.566 NachoClientiOS[29026:8403] Info: SM(ASPC(1):PROV:HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:32.566 NachoClientiOS[29026:8403] Info: SM(ASPC(1):PROV): S=GetWait & E=Success/PROVSUCCESS => S=AckWait
+2014-02-04 13:45:32.568 NachoClientiOS[29026:8403] Info: SM(ASPC(1):PROV:HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:32.569 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:32.573 NachoClientiOS[29026:8403] Info: NachoTimer 13 created
+2014-02-04 13:45:32.573 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Provision&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:33.742 NachoClientiOS[29026:7d07] Info: NachoTimer 13 disposed
+2014-02-04 13:45:33.746 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):PROV:HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:33.747 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):PROV): S=AckWait & E=Success/PROVSUCCESS => S=Stop
+2014-02-04 13:45:33.749 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=ProvW & E=Success/ASCDSUCCESS => S=SettingsW
+2014-02-04 13:45:33.752 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:33.753 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:33.758 NachoClientiOS[29026:7d07] Info: NachoTimer 14 created
+2014-02-04 13:45:33.758 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Settings&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:48.758 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Timeout/ASHTTPTTC => S=HttpWait: Uri: https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Settings&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:48.760 NachoClientiOS[29026:8403] Info: NachoTimer 14 disposed
+2014-02-04 13:45:48.760 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 14
+2014-02-04 13:45:48.767 NachoClientiOS[29026:8403] Info: NachoTimer 15 created
+2014-02-04 13:45:48.767 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Settings&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:52.429 NachoClientiOS[29026:8403] Info: NachoTimer 15 disposed
+2014-02-04 13:45:52.430 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:52.431 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=SettingsW & E=Success/SETTSUCCESS => S=FSyncW
+2014-02-04 13:45:52.433 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:52.433 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:52.436 NachoClientiOS[29026:8403] Info: AsFolderSyncCommand: AsSyncKey=0
+2014-02-04 13:45:52.437 NachoClientiOS[29026:8403] Info: AsFolderSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<FolderSync xmlns="FolderHierarchy">
+  <SyncKey>0</SyncKey>
+</FolderSync>
+2014-02-04 13:45:52.440 NachoClientiOS[29026:8403] Info: NachoTimer 16 created
+2014-02-04 13:45:52.441 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=FolderSync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:54.207 NachoClientiOS[29026:7d07] Info: NachoTimer 16 disposed
+2014-02-04 13:45:54.210 NachoClientiOS[29026:7d07] Info: AsFolderSyncCommand process response: SyncKey=1
+2014-02-04 13:45:54.210 NachoClientiOS[29026:7d07] Info: AsFolderSyncCommand response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<FolderSync xmlns="FolderHierarchy">
+  <Status>1</Status>
+  <SyncKey>1</SyncKey>
+  <Changes>
+    <Count>17</Count>
+    <Add>
+      <ServerId>1</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Calendar</DisplayName>
+      <Type>8</Type>
+    </Add>
+    <Add>
+      <ServerId>2</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Contacts</DisplayName>
+      <Type>9</Type>
+    </Add>
+    <Add>
+      <ServerId>3</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Deleted Items</DisplayName>
+      <Type>4</Type>
+    </Add>
+    <Add>
+      <ServerId>4</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Drafts</DisplayName>
+      <Type>3</Type>
+    </Add>
+    <Add>
+      <ServerId>5</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Inbox</DisplayName>
+      <Type>2</Type>
+    </Add>
+    <Add>
+      <ServerId>6</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Journal</DisplayName>
+      <Type>11</Type>
+    </Add>
+    <Add>
+      <ServerId>7</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Junk Email</DisplayName>
+      <Type>12</Type>
+    </Add>
+    <Add>
+      <ServerId>8</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Notes</DisplayName>
+      <Type>10</Type>
+    </Add>
+    <Add>
+      <ServerId>9</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Outbox</DisplayName>
+      <Type>6</Type>
+    </Add>
+    <Add>
+      <ServerId>10</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>RSS Feeds</DisplayName>
+      <Type>12</Type>
+    </Add>
+    <Add>
+      <ServerId>11</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Sent Items</DisplayName>
+      <Type>5</Type>
+    </Add>
+    <Add>
+      <ServerId>12</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Sync Issues</DisplayName>
+      <Type>12</Type>
+    </Add>
+    <Add>
+      <ServerId>13</ServerId>
+      <ParentId>12</ParentId>
+      <DisplayName>Conflicts</DisplayName>
+      <Type>12</Type>
+    </Add>
+    <Add>
+      <ServerId>14</ServerId>
+      <ParentId>12</ParentId>
+      <DisplayName>Local Failures</DisplayName>
+      <Type>12</Type>
+    </Add>
+    <Add>
+      <ServerId>15</ServerId>
+      <ParentId>12</ParentId>
+      <DisplayName>Server Failures</DisplayName>
+      <Type>12</Type>
+    </Add>
+    <Add>
+      <ServerId>16</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>Tasks</DisplayName>
+      <Type>7</Type>
+    </Add>
+    <Add>
+      <ServerId>RI</ServerId>
+      <ParentId>0</ParentId>
+      <DisplayName>RecipientInfo</DisplayName>
+      <Type>19</Type>
+    </Add>
+  </Changes>
+</FolderSync>
+2014-02-04 13:45:54.626 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:45:54.626 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=FSyncW & E=Success/FSYNCSUCCESS => S=SyncW
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:124,20' to System.Xml.Linq.XDocument NachoCore.ActiveSync.AsSyncCommand.ToXDocument (NachoCore.ActiveSync.AsHttpOperation Sender) [0x00a17].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:139,22' to System.Xml.Linq.XDocument NachoCore.ActiveSync.AsSyncCommand.ToXDocument (NachoCore.ActiveSync.AsHttpOperation Sender) [0x00b90].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:148,22' to System.Xml.Linq.XDocument NachoCore.ActiveSync.AsSyncCommand.ToXDocument (NachoCore.ActiveSync.AsHttpOperation Sender) [0x00c42].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:241,22' to NachoCore.Utils.Event NachoCore.ActiveSync.AsSyncCommand.ProcessResponse (NachoCore.ActiveSync.AsHttpOperation Sender, System.Net.Http.HttpResponseMessage response, System.Xml.Linq.XDocument doc) [0x00712].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:250,23' to NachoCore.Utils.Event NachoCore.ActiveSync.AsSyncCommand.ProcessResponse (NachoCore.ActiveSync.AsHttpOperation Sender, System.Net.Http.HttpResponseMessage response, System.Xml.Linq.XDocument doc) [0x008a4].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:259,24' to NachoCore.Utils.Event NachoCore.ActiveSync.AsSyncCommand.ProcessResponse (NachoCore.ActiveSync.AsHttpOperation Sender, System.Net.Http.HttpResponseMessage response, System.Xml.Linq.XDocument doc) [0x00a36].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:246,23' to NachoCore.Utils.Event NachoCore.ActiveSync.AsSyncCommand.ProcessResponse (NachoCore.ActiveSync.AsHttpOperation Sender, System.Net.Http.HttpResponseMessage response, System.Xml.Linq.XDocument doc) [0x00732].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:255,24' to NachoCore.Utils.Event NachoCore.ActiveSync.AsSyncCommand.ProcessResponse (NachoCore.ActiveSync.AsHttpOperation Sender, System.Net.Http.HttpResponseMessage response, System.Xml.Linq.XDocument doc) [0x008c4].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.Android/NachoCore/ActiveSync/Commands/AsSyncCommand/AsSyncCommand.cs:264,24' to NachoCore.Utils.Event NachoCore.ActiveSync.AsSyncCommand.ProcessResponse (NachoCore.ActiveSync.AsHttpOperation Sender, System.Net.Http.HttpResponseMessage response, System.Xml.Linq.XDocument doc) [0x00a56].
+2014-02-04 13:45:54.658 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:45:54.668 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:45:54.682 NachoClientiOS[29026:7d07] Info: AsSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>1</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>2</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>3</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>4</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>5</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>6</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>7</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>8</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>9</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>10</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>11</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>12</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>13</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>14</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>15</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>16</CollectionId>
+    </Collection>
+    <Collection>
+      <SyncKey>0</SyncKey>
+      <CollectionId>RI</CollectionId>
+    </Collection>
+  </Collections>
+  <WindowSize>25</WindowSize>
+</Sync>
+2014-02-04 13:45:54.685 NachoClientiOS[29026:7d07] Info: NachoTimer 17 created
+2014-02-04 13:45:54.685 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:45:56.316 NachoClientiOS[29026:7d07] Info: NachoTimer 17 disposed
+2014-02-04 13:45:56.322 NachoClientiOS[29026:7d07] Info: AsSyncCommand response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>328124531</SyncKey>
+      <CollectionId>1</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>458358380</SyncKey>
+      <CollectionId>2</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>414101618</SyncKey>
+      <CollectionId>3</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>581238503</SyncKey>
+      <CollectionId>4</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>462588347</SyncKey>
+      <CollectionId>5</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>717568731</SyncKey>
+      <CollectionId>6</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>2037237825</SyncKey>
+      <CollectionId>7</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>996087565</SyncKey>
+      <CollectionId>8</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>97412497</SyncKey>
+      <CollectionId>9</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>880961874</SyncKey>
+      <CollectionId>10</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>685559353</SyncKey>
+      <CollectionId>11</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>1094130436</SyncKey>
+      <CollectionId>12</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>1614847084</SyncKey>
+      <CollectionId>13</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>1527806078</SyncKey>
+      <CollectionId>14</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>578913032</SyncKey>
+      <CollectionId>15</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>1541202798</SyncKey>
+      <CollectionId>16</CollectionId>
+      <Status>1</Status>
+    </Collection>
+    <Collection>
+      <SyncKey>370725683</SyncKey>
+      <CollectionId>RI</CollectionId>
+      <Status>1</Status>
+    </Collection>
+  </Collections>
+</Sync>
+2014-02-04 13:45:56.336 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:45:56.336 NachoClientiOS[29026:7d07] Info: Folder:1, Old SyncKey:0, New SyncKey:328124531
+2014-02-04 13:46:14.757 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:14.780 NachoClientiOS[29026:7d07] Info: Folder:2, Old SyncKey:0, New SyncKey:458358380
+2014-02-04 13:46:14.817 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:14.817 NachoClientiOS[29026:7d07] Info: Folder:3, Old SyncKey:0, New SyncKey:414101618
+2014-02-04 13:46:14.885 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:14.885 NachoClientiOS[29026:7d07] Info: Folder:4, Old SyncKey:0, New SyncKey:581238503
+2014-02-04 13:46:14.914 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:14.915 NachoClientiOS[29026:7d07] Info: Folder:5, Old SyncKey:0, New SyncKey:462588347
+2014-02-04 13:46:14.949 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:14.949 NachoClientiOS[29026:7d07] Info: Folder:6, Old SyncKey:0, New SyncKey:717568731
+2014-02-04 13:46:14.992 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:14.992 NachoClientiOS[29026:7d07] Info: Folder:7, Old SyncKey:0, New SyncKey:2037237825
+2014-02-04 13:46:15.019 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.019 NachoClientiOS[29026:7d07] Info: Folder:8, Old SyncKey:0, New SyncKey:996087565
+2014-02-04 13:46:15.052 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.053 NachoClientiOS[29026:7d07] Info: Folder:9, Old SyncKey:0, New SyncKey:97412497
+2014-02-04 13:46:15.074 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.075 NachoClientiOS[29026:7d07] Info: Folder:10, Old SyncKey:0, New SyncKey:880961874
+2014-02-04 13:46:15.084 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.085 NachoClientiOS[29026:7d07] Info: Folder:11, Old SyncKey:0, New SyncKey:685559353
+2014-02-04 13:46:15.155 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.156 NachoClientiOS[29026:7d07] Info: Folder:12, Old SyncKey:0, New SyncKey:1094130436
+2014-02-04 13:46:15.191 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.192 NachoClientiOS[29026:7d07] Info: Folder:13, Old SyncKey:0, New SyncKey:1614847084
+2014-02-04 13:46:15.230 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.230 NachoClientiOS[29026:7d07] Info: Folder:14, Old SyncKey:0, New SyncKey:1527806078
+2014-02-04 13:46:15.253 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.254 NachoClientiOS[29026:7d07] Info: Folder:15, Old SyncKey:0, New SyncKey:578913032
+2014-02-04 13:46:15.273 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.273 NachoClientiOS[29026:7d07] Info: Folder:16, Old SyncKey:0, New SyncKey:1541202798
+2014-02-04 13:46:15.310 NachoClientiOS[29026:7d07] Info: MoreAvailable presence False
+2014-02-04 13:46:15.311 NachoClientiOS[29026:7d07] Info: Folder:RI, Old SyncKey:0, New SyncKey:370725683
+2014-02-04 13:46:15.354 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:46:15.355 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=SyncW & E=ReSync/SYNCRESYNC0 => S=SyncW
+2014-02-04 13:46:15.358 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:46:15.358 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:46:15.388 NachoClientiOS[29026:7d07] Error: TypeCodeToAirSyncClassCode: got unhandled code: 11. Pretending Notes.
+2014-02-04 13:46:15.458 NachoClientiOS[29026:7d07] Error: TypeCodeToAirSyncClassCode: got unhandled code: 19. Pretending Notes.
+2014-02-04 13:46:15.463 NachoClientiOS[29026:7d07] Info: AsSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>328124531</SyncKey>
+      <CollectionId>1</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>458358380</SyncKey>
+      <CollectionId>2</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>414101618</SyncKey>
+      <CollectionId>3</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>581238503</SyncKey>
+      <CollectionId>4</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>462588347</SyncKey>
+      <CollectionId>5</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>717568731</SyncKey>
+      <CollectionId>6</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>2037237825</SyncKey>
+      <CollectionId>7</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>996087565</SyncKey>
+      <CollectionId>8</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>97412497</SyncKey>
+      <CollectionId>9</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>880961874</SyncKey>
+      <CollectionId>10</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>685559353</SyncKey>
+      <CollectionId>11</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1094130436</SyncKey>
+      <CollectionId>12</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1614847084</SyncKey>
+      <CollectionId>13</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1527806078</SyncKey>
+      <CollectionId>14</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>578913032</SyncKey>
+      <CollectionId>15</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1541202798</SyncKey>
+      <CollectionId>16</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>370725683</SyncKey>
+      <CollectionId>RI</CollectionId>
+      <GetChanges />
+    </Collection>
+  </Collections>
+  <WindowSize>25</WindowSize>
+</Sync>
+2014-02-04 13:46:15.472 NachoClientiOS[29026:7d07] Info: NachoTimer 18 created
+2014-02-04 13:46:15.473 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:46:18.077 NachoClientiOS[29026:8403] Info: NachoTimer 18 disposed
+2014-02-04 13:46:18.217 NachoClientiOS[29026:8403] Info: AsSyncCommand response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>1929453451</SyncKey>
+      <CollectionId>1</CollectionId>
+      <Status>1</Status>
+      <Commands>
+        <Add>
+          <ServerId>1:1</ServerId>
+          <ApplicationData>
+            <TimeZone xmlns="Calendar">4AEAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAsAAAABAAIAAAAAAAAAAAAAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAMAAAACAAIAAAAAAAAAxP///w==</TimeZone>
+            <DtStamp xmlns="Calendar">20140107T193959Z</DtStamp>
+            <StartTime xmlns="Calendar">20140110T200000Z</StartTime>
+            <Subject xmlns="Calendar">Test event #2</Subject>
+            <UID xmlns="Calendar">040000008200E00074C5B7101A82E00800000000743B700EE00BCF010000000000000000100000007FB086F7F2E23E4889D76035FFF1CE41</UID>
+            <OrganizerName xmlns="Calendar">steve scalpone</OrganizerName>
+            <OrganizerEmail xmlns="Calendar">steves@nac01.com</OrganizerEmail>
+            <Attendees xmlns="Calendar">
+              <Attendee>
+                <Email>jeffe@nac01.com</Email>
+                <Name>jeff enderwick</Name>
+                <AttendeeType>1</AttendeeType>
+              </Attendee>
+              <Attendee>
+                <Email>steves@nachocove.com</Email>
+                <Name>steves@nachocove.com</Name>
+                <AttendeeType>1</AttendeeType>
+              </Attendee>
+            </Attendees>
+            <Location xmlns="Calendar">Online Meeting</Location>
+            <EndTime xmlns="Calendar">20140110T203000Z</EndTime>
+            <Body xmlns="AirSyncBase">
+              <Type>3</Type>
+              <EstimatedDataSize>271</EstimatedDataSize>
+              <Truncated>1</Truncated>
+            </Body>
+            <Sensitivity xmlns="Calendar">0</Sensitivity>
+            <BusyStatus xmlns="Calendar">1</BusyStatus>
+            <AllDayEvent xmlns="Calendar">0</AllDayEvent>
+            <Reminder xmlns="Calendar">15</Reminder>
+            <MeetingStatus xmlns="Calendar">3</MeetingStatus>
+            <NativeBodyType xmlns="AirSyncBase">3</NativeBodyType>
+            <ResponseRequested xmlns="Calendar">1</ResponseRequested>
+            <ResponseType xmlns="Calendar">5</ResponseType>
+            <OnlineMeetingConfLink xmlns="Calendar">sip:steves@nac01.com;gruu;opaque=app:conf:focus:id:VI98EBFU</OnlineMeetingConfLink>
+            <OnlineMeetingExternalLink xmlns="Calendar">https://meet.lync.com/nac01-com/steves/VI98EBFU</OnlineMeetingExternalLink>
+          </ApplicationData>
+        </Add>
+      </Commands>
+    </Collection>
+    <Collection>
+      <SyncKey>1980019824</SyncKey>
+      <CollectionId>3</CollectionId>
+      <Status>1</Status>
+      <Commands>
+        <Add>
+          <ServerId>3:1</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;, "steves@nachocove.com" &lt;steves@nachocove.com&gt;</To>
+            <From xmlns="Email">"steve scalpone" &lt;steves@nac01.com&gt;</From>
+            <Subject xmlns="Email">Test event #2</Subject>
+            <DateReceived xmlns="Email">2014-01-07T19:40:03.285Z</DateReceived>
+            <DisplayTo xmlns="Email">jeff enderwick; steves@nachocove.com</DisplayTo>
+            <ThreadTopic xmlns="Email">Test event #2</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>4750</EstimatedDataSize>
+              <Data nacho-body-id="1" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Schedule.Meeting.Request</MessageClass>
+            <MeetingRequest xmlns="Email">
+              <AllDayEvent>0</AllDayEvent>
+              <StartTime>2014-01-10T20:00:00.000Z</StartTime>
+              <DtStamp>2014-01-07T19:39:59.359Z</DtStamp>
+              <EndTime>2014-01-10T20:30:00.000Z</EndTime>
+              <InstanceType>0</InstanceType>
+              <Location>Online Meeting</Location>
+              <Organizer>"steve scalpone" &lt;steves@nac01.com&gt;</Organizer>
+              <Reminder>900</Reminder>
+              <ResponseRequested>1</ResponseRequested>
+              <Sensitivity>0</Sensitivity>
+              <BusyStatus>2</BusyStatus>
+              <TimeZone>4AEAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAsAAAABAAIAAAAAAAAAAAAAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAMAAAACAAIAAAAAAAAAxP///w==</TimeZone>
+              <GlobalObjId>BAAAAIIA4AB0xbcQGoLgCAAAAAB0O3AO4AvPAQAAAAAAAAAAEAAAAH+whvfy4j5IiddgNf/xzkE=</GlobalObjId>
+              <MeetingMessageType xmlns="Email2">1</MeetingMessageType>
+            </MeetingRequest>
+            <InternetCPID xmlns="Email">20127</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:calendarmessage</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">3</NativeBodyType>
+            <ConversationId xmlns="Email2">V0YsRVMMJUWDlXe/L6EJFg==</ConversationId>
+            <ConversationIndex xmlns="Email2">zwvgDnA=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+        <Add>
+          <ServerId>3:2</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"Jeff Enderwick" &lt;jeffe@nachocove.com&gt;, "jeff enderwick" &lt;jeffe@nac01.com&gt;</To>
+            <From xmlns="Email">"Jeff Enderwick" &lt;jeff.enderwick@gmail.com&gt;</From>
+            <Subject xmlns="Email">test badge</Subject>
+            <DateReceived xmlns="Email">2014-01-30T18:55:13.386Z</DateReceived>
+            <DisplayTo xmlns="Email">Jeff Enderwick; jeff enderwick</DisplayTo>
+            <ThreadTopic xmlns="Email">test badge</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>4021</EstimatedDataSize>
+              <Data nacho-body-id="2" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">28591</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">2</NativeBodyType>
+            <ConversationId xmlns="Email2">TEl5VSSXtkCWwL28iPlGcg==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8d7M4=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+        <Add>
+          <ServerId>3:3</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</To>
+            <From xmlns="Email">"Jeff Enderwick" &lt;jeff.enderwick@gmail.com&gt;</From>
+            <Subject xmlns="Email">unread</Subject>
+            <DateReceived xmlns="Email">2014-01-10T23:20:33.595Z</DateReceived>
+            <DisplayTo xmlns="Email">jeff enderwick</DisplayTo>
+            <ThreadTopic xmlns="Email">unread</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>3990</EstimatedDataSize>
+              <Data nacho-body-id="3" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">28591</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">2</NativeBodyType>
+            <ConversationId xmlns="Email2">mvpGZkfg+k+xyL6He1cGfw==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8OWo8=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+      </Commands>
+    </Collection>
+    <Collection>
+      <SyncKey>404064839</SyncKey>
+      <CollectionId>5</CollectionId>
+      <Status>1</Status>
+      <Commands>
+        <Add>
+          <ServerId>5:1</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</To>
+            <From xmlns="Email">"Jeff Enderwick" &lt;jeff.enderwick@gmail.com&gt;</From>
+            <Subject xmlns="Email">foo</Subject>
+            <DateReceived xmlns="Email">2014-01-30T18:42:48.870Z</DateReceived>
+            <DisplayTo xmlns="Email">jeff enderwick</DisplayTo>
+            <ThreadTopic xmlns="Email">foo</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>4004</EstimatedDataSize>
+              <Data nacho-body-id="4" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">28591</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">2</NativeBodyType>
+            <ConversationId xmlns="Email2">LXyVxWzgpEeRni+bcd4RPQ==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8d6xI=</ConversationIndex>
+            <Categories xmlns="Email">
+              <Category>Foo Blue</Category>
+            </Categories>
+          </ApplicationData>
+        </Add>
+      </Commands>
+    </Collection>
+    <Collection>
+      <SyncKey>989034734</SyncKey>
+      <CollectionId>11</CollectionId>
+      <Status>1</Status>
+      <Commands>
+        <Add>
+          <ServerId>11:1</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"jeff.enderwick@gmail.com" &lt;jeff.enderwick@gmail.com&gt;</To>
+            <From xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</From>
+            <Subject xmlns="Email">fgdfgf</Subject>
+            <DateReceived xmlns="Email">2014-01-13T18:12:37.369Z</DateReceived>
+            <DisplayTo xmlns="Email">jeff.enderwick@gmail.com</DisplayTo>
+            <ThreadTopic xmlns="Email">fgdfgf</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>170</EstimatedDataSize>
+              <Data nacho-body-id="5" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">28591</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">1</NativeBodyType>
+            <ConversationId xmlns="Email2">TVgR+YXnxUifhBCxHPsRWA==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8Qiwg=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+        <Add>
+          <ServerId>11:2</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"Jeff Enderwick" &lt;jeff.enderwick@gmail.com&gt;</To>
+            <From xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</From>
+            <Subject xmlns="Email">Test1</Subject>
+            <DateReceived xmlns="Email">2014-01-16T20:02:07.415Z</DateReceived>
+            <DisplayTo xmlns="Email">Jeff Enderwick</DisplayTo>
+            <ThreadTopic xmlns="Email">Test1</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>314</EstimatedDataSize>
+              <Data nacho-body-id="6" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">20127</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">1</NativeBodyType>
+            <ConversationId xmlns="Email2">Z/+/yXLrnUKA9L55IjE9Vg==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8S9dM=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+        <Add>
+          <ServerId>11:3</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"Jeff.enderwick" &lt;jeff.enderwick@gmail.com&gt;</To>
+            <From xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</From>
+            <Subject xmlns="Email">Test4</Subject>
+            <DateReceived xmlns="Email">2014-01-16T20:22:56.548Z</DateReceived>
+            <DisplayTo xmlns="Email">Jeff.enderwick</DisplayTo>
+            <ThreadTopic xmlns="Email">Test4</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>926</EstimatedDataSize>
+              <Data nacho-body-id="7" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">65001</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">2</NativeBodyType>
+            <ConversationId xmlns="Email2">Qw8c47BebU2T3MLoAds1Cg==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8S+Lw=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+        <Add>
+          <ServerId>11:4</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"jeff.enderwick@gmail.com" &lt;jeff.enderwick@gmail.com&gt;</To>
+            <From xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</From>
+            <Subject xmlns="Email">Hey</Subject>
+            <DateReceived xmlns="Email">2014-01-31T17:07:11.423Z</DateReceived>
+            <DisplayTo xmlns="Email">jeff.enderwick@gmail.com</DisplayTo>
+            <ThreadTopic xmlns="Email">Hey</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">1</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>132</EstimatedDataSize>
+              <Data nacho-body-id="8" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">28591</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">1</NativeBodyType>
+            <ConversationId xmlns="Email2">Z8NL/1qwsEK5u98HT+mWpg==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8epuA=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+      </Commands>
+    </Collection>
+    <Collection>
+      <SyncKey>37833764</SyncKey>
+      <CollectionId>RI</CollectionId>
+      <Status>1</Status>
+      <Commands>
+        <Add>
+          <ServerId>RI:1</ServerId>
+          <ApplicationData>
+            <Email1Address xmlns="Contacts">jeff.enderwick@gmail.com</Email1Address>
+            <FileAs xmlns="Contacts">Jeff Enderwick</FileAs>
+            <WeightedRank xmlns="Contacts">567901189</WeightedRank>
+          </ApplicationData>
+        </Add>
+      </Commands>
+    </Collection>
+  </Collections>
+</Sync>
+2014-02-04 13:46:18.227 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:46:18.227 NachoClientiOS[29026:8403] Info: Folder:1, Old SyncKey:328124531, New SyncKey:1929453451
+2014-02-04 13:46:18.266 NachoClientiOS[29026:8403] Warn: ParseCalendar UNHANDLED: TimeZone value=4AEAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAsAAAABAAIAAAAAAAAAAAAAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAMAAAACAAIAAAAAAAAAxP///w==
+2014-02-04 13:46:18.270 NachoClientiOS[29026:8403] Warn: ParseCalendar UNHANDLED: Body value=32711
+2014-02-04 13:46:18.272 NachoClientiOS[29026:8403] Warn: ParseCalendar UNHANDLED: NativeBodyType value=3
+2014-02-04 13:46:18.435 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:46:18.435 NachoClientiOS[29026:8403] Info: Folder:3, Old SyncKey:414101618, New SyncKey:1980019824
+2014-02-04 13:46:18.628 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:46:18.628 NachoClientiOS[29026:8403] Info: Folder:5, Old SyncKey:462588347, New SyncKey:404064839
+2014-02-04 13:46:18.658 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:46:18.658 NachoClientiOS[29026:8403] Info: Folder:11, Old SyncKey:685559353, New SyncKey:989034734
+2014-02-04 13:46:18.743 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:46:18.744 NachoClientiOS[29026:8403] Info: Folder:RI, Old SyncKey:370725683, New SyncKey:37833764
+2014-02-04 13:46:18.747 NachoClientiOS[29026:8403] Error: TypeCodeToAirSyncClassCode: got unhandled code: 19. Pretending Notes.
+2014-02-04 13:46:18.756 NachoClientiOS[29026:8403] Error: AsSyncCommand ProcessResponse UNHANDLED class Notes
+2014-02-04 13:46:18.791 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:46:18.792 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=SyncW & E=ReSync/SYNCRESYNC0 => S=SyncW
+2014-02-04 13:46:18.794 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:46:18.794 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:46:18.811 NachoClientiOS[29026:8403] Error: TypeCodeToAirSyncClassCode: got unhandled code: 11. Pretending Notes.
+2014-02-04 13:46:18.839 NachoClientiOS[29026:8403] Info: AsSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>458358380</SyncKey>
+      <CollectionId>2</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>581238503</SyncKey>
+      <CollectionId>4</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>717568731</SyncKey>
+      <CollectionId>6</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>2037237825</SyncKey>
+      <CollectionId>7</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>996087565</SyncKey>
+      <CollectionId>8</CollectionId>
+      <GetChanges />
+    </Collection>
+    <Collection>
+      <SyncKey>97412497</SyncKey>
+      <CollectionId>9</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>880961874</SyncKey>
+      <CollectionId>10</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1094130436</SyncKey>
+      <CollectionId>12</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1614847084</SyncKey>
+      <CollectionId>13</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1527806078</SyncKey>
+      <CollectionId>14</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>578913032</SyncKey>
+      <CollectionId>15</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+    <Collection>
+      <SyncKey>1541202798</SyncKey>
+      <CollectionId>16</CollectionId>
+      <GetChanges />
+    </Collection>
+  </Collections>
+  <WindowSize>25</WindowSize>
+</Sync>
+2014-02-04 13:46:18.842 NachoClientiOS[29026:8403] Info: NachoTimer 19 created
+2014-02-04 13:46:18.842 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:46:20.292 NachoClientiOS[29026:9903] Info: NachoTimer 19 disposed
+2014-02-04 13:46:20.388 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:46:20.389 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=SyncW & E=Success/SYNCSUCCESS1 => S=PingW
+2014-02-04 13:46:20.394 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:46:20.395 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:46:20.402 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:46:20.405 NachoClientiOS[29026:9903] Info: NachoTimer 20 created
+2014-02-04 13:46:20.405 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:46:32.622 NachoClientiOS[29026:7d07] Info: NachoTimer 20 disposed
+2014-02-04 13:46:32.624 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>2</Status>
+  <Folders>
+    <Folder>5</Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:46:32.653 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:46:32.654 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=ReSync/PINGRESYNC => S=SyncW
+2014-02-04 13:46:32.656 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:46:32.657 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:46:32.662 NachoClientiOS[29026:7d07] Info: AsSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>404064839</SyncKey>
+      <CollectionId>5</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+    </Collection>
+  </Collections>
+  <WindowSize>25</WindowSize>
+</Sync>
+2014-02-04 13:46:32.666 NachoClientiOS[29026:7d07] Info: NachoTimer 21 created
+2014-02-04 13:46:32.666 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:46:33.679 NachoClientiOS[29026:8403] Info: NachoTimer 21 disposed
+2014-02-04 13:46:33.719 NachoClientiOS[29026:8403] Info: AsSyncCommand response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>1890027816</SyncKey>
+      <CollectionId>5</CollectionId>
+      <Status>1</Status>
+      <Commands>
+        <Add>
+          <ServerId>5:2</ServerId>
+          <ApplicationData>
+            <To xmlns="Email">"jeff enderwick" &lt;jeffe@nac01.com&gt;</To>
+            <From xmlns="Email">"Jeff Enderwick" &lt;jeff.enderwick@gmail.com&gt;</From>
+            <Subject xmlns="Email">testy</Subject>
+            <DateReceived xmlns="Email">2014-02-04T21:46:30.606Z</DateReceived>
+            <DisplayTo xmlns="Email">jeff enderwick</DisplayTo>
+            <ThreadTopic xmlns="Email">testy</ThreadTopic>
+            <Importance xmlns="Email">1</Importance>
+            <Read xmlns="Email">0</Read>
+            <Body xmlns="AirSyncBase">
+              <Type>4</Type>
+              <EstimatedDataSize>3979</EstimatedDataSize>
+              <Data nacho-body-id="9" />
+            </Body>
+            <MessageClass xmlns="Email">IPM.Note</MessageClass>
+            <InternetCPID xmlns="Email">28591</InternetCPID>
+            <Flag xmlns="Email" />
+            <ContentClass xmlns="Email">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns="AirSyncBase">2</NativeBodyType>
+            <ConversationId xmlns="Email2">gGCA35QaR0WcdYgRgTOwEg==</ConversationId>
+            <ConversationIndex xmlns="Email2">Ac8h8pA=</ConversationIndex>
+            <Categories xmlns="Email" />
+          </ApplicationData>
+        </Add>
+      </Commands>
+    </Collection>
+  </Collections>
+</Sync>
+2014-02-04 13:46:33.727 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:46:33.727 NachoClientiOS[29026:8403] Info: Folder:5, Old SyncKey:404064839, New SyncKey:1890027816
+2014-02-04 13:46:33.806 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:46:33.807 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=SyncW & E=Success/SYNCSUCCESS0 => S=PingW
+2014-02-04 13:46:33.811 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:46:33.811 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:46:33.815 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:46:33.818 NachoClientiOS[29026:8403] Info: NachoTimer 22 created
+2014-02-04 13:46:33.818 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:47:44.777 NachoClientiOS[29026:80b] New NachoSwipeTableCell
+2014-02-04 13:47:44.801 NachoClientiOS[29026:80b] New NachoSwipeTableCell
+2014-02-04 13:47:50.285 NachoClientiOS[29026:80b] Info: SM(ASPC(1)): S=PingW & E=ReSync/ASPCMRMSG => S=SyncW
+2014-02-04 13:47:50.287 NachoClientiOS[29026:80b] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:47:50.287 NachoClientiOS[29026:80b] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:47:50.299 NachoClientiOS[29026:80b] Info: AsSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>1890027816</SyncKey>
+      <CollectionId>5</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+      <Commands>
+        <Change>
+          <ServerId>5:2</ServerId>
+          <ApplicationData>
+            <Read xmlns="Email">1</Read>
+          </ApplicationData>
+        </Change>
+      </Commands>
+    </Collection>
+  </Collections>
+  <WindowSize>25</WindowSize>
+</Sync>
+2014-02-04 13:47:50.301 NachoClientiOS[29026:80b] Info: NachoTimer 23 created
+2014-02-04 13:47:50.301 NachoClientiOS[29026:80b] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:47:50.310 NachoClientiOS[29026:80b] Info: 0 MimeMessage: MimeKit.MimeMessage
+2014-02-04 13:47:50.311 NachoClientiOS[29026:80b] Info: 1   Multipart: MimeKit.Multipart Content-Type: multipart/alternative; boundary="089e01538a7a6b3b9c04f19b921e"
+2014-02-04 13:47:50.312 NachoClientiOS[29026:80b] Info: 1   Subpart: MimeKit.TextPart Content-Type: text/plain; charset="ISO-8859-1"
+2014-02-04 13:47:50.312 NachoClientiOS[29026:80b] Info: 2     MimeEntity: MimeKit.TextPart Content-Type: text/plain; charset="ISO-8859-1"
+2014-02-04 13:47:50.312 NachoClientiOS[29026:80b] Info: 1   Subpart: MimeKit.TextPart Content-Type: text/html; charset="ISO-8859-1"
+2014-02-04 13:47:50.312 NachoClientiOS[29026:80b] Info: 2     MimeEntity: MimeKit.TextPart Content-Type: text/html; charset="ISO-8859-1"
+2014-02-04 13:47:50.549 NachoClientiOS[29026:80b] Info: Add webview element: MonoTouch.Dialog.UIViewElement
+2014-02-04 13:47:50.669 NachoClientiOS[29026:80b] Info: Html element link: about:blank
+2014-02-04 13:47:50.793 NachoClientiOS[29026:80b] Info: web frame: <UIWebView: 0x7df6b650; frame = (0 0; 320 11); autoresize = W+RM; layer = <CALayer: 0x7df6b5b0>>
+2014-02-04 13:48:04.077 NachoClientiOS[29026:6403] Info: NachoTimer 23 disposed
+2014-02-04 13:48:04.078 NachoClientiOS[29026:6403] Info: AsSyncCommand response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>602436658</SyncKey>
+      <CollectionId>5</CollectionId>
+      <Status>1</Status>
+    </Collection>
+  </Collections>
+</Sync>
+2014-02-04 13:48:04.081 NachoClientiOS[29026:6403] Info: MoreAvailable presence False
+2014-02-04 13:48:04.081 NachoClientiOS[29026:6403] Info: Folder:5, Old SyncKey:1890027816, New SyncKey:602436658
+2014-02-04 13:48:04.089 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:48:04.090 NachoClientiOS[29026:6403] Info: SM(ASPC(1)): S=SyncW & E=Success/SYNCSUCCESS0 => S=PingW
+2014-02-04 13:48:04.094 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:48:04.094 NachoClientiOS[29026:6403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:48:04.099 NachoClientiOS[29026:6403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:48:04.103 NachoClientiOS[29026:6403] Info: NachoTimer 24 created
+2014-02-04 13:48:04.103 NachoClientiOS[29026:6403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:48:05.232 NachoClientiOS[29026:9903] Info: NachoTimer 24 disposed
+2014-02-04 13:48:05.233 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:48:05.233 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=Success/ => S=PingW
+2014-02-04 13:48:05.236 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:48:05.236 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:48:05.240 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:48:05.243 NachoClientiOS[29026:9903] Info: NachoTimer 25 created
+2014-02-04 13:48:05.243 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.iOS/NachoUI.iOS/MessageActionViewController.cs:81,16' to void NachoClient.iOS.MessageActionViewController.<ReloadRoot>c__AnonStorey4C.<>m__85 () [0x00001].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.iOS/NachoUI.iOS/MessageActionViewController.cs:87,14' to void NachoClient.iOS.MessageActionViewController.<ReloadRoot>c__AnonStorey4C.<>m__86 () [0x00001].
+Resolved pending breakpoint at '/Users/tje/Projects/NachoClientX/NachoClient.iOS/NachoUI.iOS/MessageActionViewController.cs:91,15' to void NachoClient.iOS.MessageActionViewController.<ReloadRoot>c__AnonStorey4C.<>m__87 () [0x00001].
+2014-02-04 13:48:08.797 NachoClientiOS[29026:9903] Info: NachoTimer 25 disposed
+2014-02-04 13:48:08.799 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:48:08.799 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:48:08.799 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:48:08.802 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:48:08.802 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:48:08.805 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:48:08.807 NachoClientiOS[29026:9903] Info: NachoTimer 26 created
+2014-02-04 13:48:08.808 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:48:26.294 NachoClientiOS[29026:7d07] Info: NachoTimer 26 disposed
+2014-02-04 13:48:26.300 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:48:26.300 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:48:26.301 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:23.728 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:23.729 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:23.769 NachoClientiOS[29026:7d07] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:23.783 NachoClientiOS[29026:7d07] Info: NachoTimer 27 created
+2014-02-04 13:49:23.783 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:23.787 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=ReSync/ASPCSF => S=SyncW
+2014-02-04 13:49:23.789 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:23.789 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:23.808 NachoClientiOS[29026:7d07] Info: AsSyncCommand:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>602436658</SyncKey>
+      <CollectionId>5</CollectionId>
+      <GetChanges />
+      <Options>
+        <MIMESupport>2</MIMESupport>
+        <FilterType>5</FilterType>
+        <BodyPreference xmlns="AirSyncBase">
+          <Type>4</Type>
+          <TruncationSize>100000000</TruncationSize>
+        </BodyPreference>
+      </Options>
+      <Commands>
+        <Change>
+          <ServerId>5:2</ServerId>
+          <ApplicationData>
+            <Read xmlns="Email">1</Read>
+          </ApplicationData>
+        </Change>
+      </Commands>
+    </Collection>
+  </Collections>
+  <WindowSize>25</WindowSize>
+</Sync>
+2014-02-04 13:49:23.812 NachoClientiOS[29026:7d07] Info: NachoTimer 28 created
+2014-02-04 13:49:23.812 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Sync&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:24.885 NachoClientiOS[29026:8403] Info: NachoTimer 28 disposed
+2014-02-04 13:49:24.886 NachoClientiOS[29026:8403] Info: AsSyncCommand response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Sync xmlns="AirSync">
+  <Collections>
+    <Collection>
+      <SyncKey>616891430</SyncKey>
+      <CollectionId>5</CollectionId>
+      <Status>1</Status>
+    </Collection>
+  </Collections>
+</Sync>
+2014-02-04 13:49:24.891 NachoClientiOS[29026:8403] Info: MoreAvailable presence False
+2014-02-04 13:49:24.891 NachoClientiOS[29026:8403] Info: Folder:5, Old SyncKey:602436658, New SyncKey:616891430
+2014-02-04 13:49:24.903 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:24.904 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=SyncW & E=Success/SYNCSUCCESS0 => S=PingW
+2014-02-04 13:49:24.907 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:24.907 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:24.914 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:24.919 NachoClientiOS[29026:8403] Info: NachoTimer 29 created
+2014-02-04 13:49:24.919 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:25.168 NachoClientiOS[29026:6403] Info: NachoTimer 29 disposed
+2014-02-04 13:49:25.169 NachoClientiOS[29026:6403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:25.169 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:25.169 NachoClientiOS[29026:6403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:25.172 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:25.172 NachoClientiOS[29026:6403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:25.176 NachoClientiOS[29026:6403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:25.182 NachoClientiOS[29026:6403] Info: NachoTimer 30 created
+2014-02-04 13:49:25.183 NachoClientiOS[29026:6403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:25.387 NachoClientiOS[29026:7d07] Info: NachoTimer 30 disposed
+2014-02-04 13:49:25.388 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:25.389 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:25.389 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:25.391 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:25.392 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:25.396 NachoClientiOS[29026:7d07] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:25.400 NachoClientiOS[29026:7d07] Info: NachoTimer 31 created
+2014-02-04 13:49:25.401 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:25.639 NachoClientiOS[29026:9903] Info: NachoTimer 31 disposed
+2014-02-04 13:49:25.640 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:25.640 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:25.641 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:25.643 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:25.643 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:25.647 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:25.651 NachoClientiOS[29026:9903] Info: NachoTimer 32 created
+2014-02-04 13:49:25.652 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:25.927 NachoClientiOS[29026:7d07] Info: NachoTimer 32 disposed
+2014-02-04 13:49:25.927 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:25.928 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:25.928 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:25.931 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:25.932 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:25.935 NachoClientiOS[29026:7d07] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:25.938 NachoClientiOS[29026:7d07] Info: NachoTimer 33 created
+2014-02-04 13:49:25.939 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:26.243 NachoClientiOS[29026:8403] Info: NachoTimer 33 disposed
+2014-02-04 13:49:26.244 NachoClientiOS[29026:8403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:26.245 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:26.245 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:26.248 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:26.248 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:26.253 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:26.256 NachoClientiOS[29026:8403] Info: NachoTimer 34 created
+2014-02-04 13:49:26.256 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:26.389 NachoClientiOS[29026:6403] Info: NachoTimer 34 disposed
+2014-02-04 13:49:26.390 NachoClientiOS[29026:6403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:26.391 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:26.392 NachoClientiOS[29026:6403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:26.395 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:26.395 NachoClientiOS[29026:6403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:26.398 NachoClientiOS[29026:6403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:26.402 NachoClientiOS[29026:6403] Info: NachoTimer 35 created
+2014-02-04 13:49:26.402 NachoClientiOS[29026:6403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:26.679 NachoClientiOS[29026:9903] Info: NachoTimer 35 disposed
+2014-02-04 13:49:26.680 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:26.681 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:26.681 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:26.685 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:26.685 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:26.689 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:26.692 NachoClientiOS[29026:9903] Info: NachoTimer 36 created
+2014-02-04 13:49:26.692 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:26.940 NachoClientiOS[29026:6403] Info: NachoTimer 36 disposed
+2014-02-04 13:49:26.941 NachoClientiOS[29026:6403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:26.942 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:26.942 NachoClientiOS[29026:6403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:26.945 NachoClientiOS[29026:6403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:26.945 NachoClientiOS[29026:6403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:26.947 NachoClientiOS[29026:6403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:26.950 NachoClientiOS[29026:6403] Info: NachoTimer 37 created
+2014-02-04 13:49:26.951 NachoClientiOS[29026:6403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:27.333 NachoClientiOS[29026:9903] Info: NachoTimer 37 disposed
+2014-02-04 13:49:27.334 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:27.335 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:27.335 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:27.339 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:27.340 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:27.345 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:27.349 NachoClientiOS[29026:9903] Info: NachoTimer 38 created
+2014-02-04 13:49:27.349 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:27.545 NachoClientiOS[29026:8403] Info: NachoTimer 38 disposed
+2014-02-04 13:49:27.546 NachoClientiOS[29026:8403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:27.546 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:27.547 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:27.550 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:27.550 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:27.555 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:27.560 NachoClientiOS[29026:8403] Info: NachoTimer 39 created
+2014-02-04 13:49:27.561 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:27.864 NachoClientiOS[29026:9903] Info: NachoTimer 39 disposed
+2014-02-04 13:49:27.865 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:27.865 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:27.865 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:27.868 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:27.868 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:27.873 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:27.877 NachoClientiOS[29026:9903] Info: NachoTimer 40 created
+2014-02-04 13:49:27.878 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:28.240 NachoClientiOS[29026:7d07] Info: NachoTimer 40 disposed
+2014-02-04 13:49:28.241 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:28.241 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:28.242 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:28.247 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:28.248 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:28.251 NachoClientiOS[29026:7d07] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:28.255 NachoClientiOS[29026:7d07] Info: NachoTimer 41 created
+2014-02-04 13:49:28.255 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:28.525 NachoClientiOS[29026:8403] Info: NachoTimer 41 disposed
+2014-02-04 13:49:28.526 NachoClientiOS[29026:8403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:28.527 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:28.527 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:28.533 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:28.533 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:28.538 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:28.543 NachoClientiOS[29026:8403] Info: NachoTimer 42 created
+2014-02-04 13:49:28.543 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:28.725 NachoClientiOS[29026:7d07] Info: NachoTimer 42 disposed
+2014-02-04 13:49:28.726 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:28.727 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:28.728 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:28.731 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:28.732 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:28.734 NachoClientiOS[29026:7d07] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:28.737 NachoClientiOS[29026:7d07] Info: NachoTimer 43 created
+2014-02-04 13:49:28.737 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:29.181 NachoClientiOS[29026:8403] Info: NachoTimer 43 disposed
+2014-02-04 13:49:29.182 NachoClientiOS[29026:8403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:29.183 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:29.183 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:29.186 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:29.187 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:29.190 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:29.192 NachoClientiOS[29026:8403] Info: NachoTimer 44 created
+2014-02-04 13:49:29.192 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:29.669 NachoClientiOS[29026:9903] Info: NachoTimer 44 disposed
+2014-02-04 13:49:29.671 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:29.671 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:29.671 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:29.676 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:29.676 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:29.680 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:29.682 NachoClientiOS[29026:9903] Info: NachoTimer 45 created
+2014-02-04 13:49:29.683 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:30.122 NachoClientiOS[29026:8403] Info: NachoTimer 45 disposed
+2014-02-04 13:49:30.123 NachoClientiOS[29026:8403] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:30.123 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:30.123 NachoClientiOS[29026:8403] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:30.126 NachoClientiOS[29026:8403] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:30.127 NachoClientiOS[29026:8403] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:30.132 NachoClientiOS[29026:8403] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:30.137 NachoClientiOS[29026:8403] Info: NachoTimer 46 created
+2014-02-04 13:49:30.138 NachoClientiOS[29026:8403] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:30.567 NachoClientiOS[29026:9903] Info: NachoTimer 46 disposed
+2014-02-04 13:49:30.568 NachoClientiOS[29026:9903] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:30.568 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:30.568 NachoClientiOS[29026:9903] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:30.571 NachoClientiOS[29026:9903] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:30.571 NachoClientiOS[29026:9903] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:30.574 NachoClientiOS[29026:9903] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:30.576 NachoClientiOS[29026:9903] Info: NachoTimer 47 created
+2014-02-04 13:49:30.576 NachoClientiOS[29026:9903] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
+2014-02-04 13:49:30.582 NachoClientiOS[29026:7d07] Info: NachoTimer 47 disposed
+2014-02-04 13:49:30.583 NachoClientiOS[29026:7d07] Info: Sync response:
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<Ping xmlns="Ping">
+  <Status>3</Status>
+</Ping>
+2014-02-04 13:49:30.583 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=HttpWait & E=Final/HTTPOPFIN => S=Stop
+2014-02-04 13:49:30.583 NachoClientiOS[29026:7d07] Info: SM(ASPC(1)): S=PingW & E=HardFail/PINGHARD0 => S=PingW: Xml.Ping.StatusCode.MissingParams/SyntaxError
+2014-02-04 13:49:30.587 NachoClientiOS[29026:7d07] Info: SM(ASPC(1):HTTPOP): S=Start & E=Launch/HTTPOPEXE => S=HttpWait
+2014-02-04 13:49:30.587 NachoClientiOS[29026:7d07] Info: ASHTTPOP: TriesLeft: 15
+2014-02-04 13:49:30.592 NachoClientiOS[29026:7d07] Info: Sync:
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
+<Ping xmlns="Ping">
+  <HeartbeatInterval>600</HeartbeatInterval>
+  <Folders>
+    <Folder>
+      <Id>1</Id>
+      <Class>Calendar</Class>
+    </Folder>
+    <Folder>
+      <Id>2</Id>
+      <Class>Contacts</Class>
+    </Folder>
+    <Folder>
+      <Id>3</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>4</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>5</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>9</Id>
+      <Class>Email</Class>
+    </Folder>
+    <Folder>
+      <Id>11</Id>
+      <Class>Email</Class>
+    </Folder>
+  </Folders>
+</Ping>
+2014-02-04 13:49:30.595 NachoClientiOS[29026:7d07] Info: NachoTimer 48 created
+2014-02-04 13:49:30.595 NachoClientiOS[29026:7d07] Info: HTTPOP:URL:https://outlook.office365.com/Microsoft-Server-ActiveSync?Cmd=Ping&User=jeffe@nac01.com&DeviceId=a4be9c47591d4778a255&DeviceType=iPhone5C2
