@@ -12,9 +12,23 @@ namespace NachoClient.iOS
 	[Register ("MessageActionViewController")]
 	partial class MessageActionViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIButton dismissButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UITableView folderTableView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (folderTableView != null) {
+				folderTableView.Dispose ();
+				folderTableView = null;
+			}
+
+			if (dismissButton != null) {
+				dismissButton.Dispose ();
+				dismissButton = null;
+			}
 		}
 	}
 }

@@ -34,7 +34,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
 
             // Setup the current list of folders
-            TableView.Source = new FolderTableSource ();
+            TableView.DataSource = new FolderTableSource ();
             this.TableView.ReloadData ();
         }
 
@@ -42,7 +42,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "FolderToMessageList") {
                 var msgview = (MessageListViewController)segue.DestinationViewController; //our destination
-                var source = TableView.Source as FolderTableSource;
+                var source = TableView.DataSource as FolderTableSource;
                 var rowPath = TableView.IndexPathForSelectedRow;
                 var folder = source.getFolder (rowPath);
                 var messageList = new NachoEmailMessages (folder);

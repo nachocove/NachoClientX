@@ -428,10 +428,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\MessageActionViewController.cs" />
-    <Compile Include="NachoUI.iOS\MessageActionViewController.designer.cs">
-      <DependentUpon>MessageActionViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\StatusIndEventArgs.cs">
       <Link>NachoCore\StatusIndEventArgs.cs</Link>
     </Compile>
@@ -507,6 +503,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\DateTime+ToString.cs">
       <Link>NachoCore\Extensions\DateTime+ToString.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\MessageActionViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageActionViewController.designer.cs">
+      <DependentUpon>MessageActionViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\INachoMessageController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

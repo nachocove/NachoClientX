@@ -6,9 +6,11 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public class FolderTableSource  : UITableViewSource
+    public class FolderTableSource  : UITableViewDataSource
     {
         NachoFolders folders;
+
+        public UIColor cellTextColor = UIColor.Black;
 
         public FolderTableSource ()
         {
@@ -25,6 +27,7 @@ namespace NachoClient.iOS
             UITableViewCell cell = tableView.DequeueReusableCell ("mailview");
             var folder = folders.GetFolder (indexPath.Row);
             cell.TextLabel.Text = folder.DisplayName;
+            cell.TextLabel.TextColor = cellTextColor;
             return cell;
         }
 
