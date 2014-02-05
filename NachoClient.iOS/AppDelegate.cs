@@ -41,7 +41,7 @@ namespace NachoClient.iOS
             var Be = BackEnd.Instance;
             Be.Owner = this;
             if (0 == Be.Db.Table<McAccount> ().Count ()) {
-                Log.Info(Log.LOG_UI, "empty Table");
+                Log.Info(Log.LOG_UI, "Empty Table");
             } else {
                 // FIXME - this is wrong. Need to handle multiple accounts in future
                 this.Account = Be.Db.Table<McAccount>().ElementAt(0);
@@ -57,6 +57,19 @@ namespace NachoClient.iOS
             eventStore = new EKEventStore ( );
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof (CidImageProtocol)));
+            if (launcOptions != null) {
+                // we got some launch options from the OS, probably launched from a localNotification
+                if (launcOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
+                    var localNotification = launcOptions[UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
+                    if (localNotification.HasAction) {
+                        // something supposed to happen
+                        //FIXME - for now we'll pop up an alert saying we got new mail
+                        // what we will do in future is show the email or calendar invite body
+                        new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null).Show ();
+                        localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+                    }
+                }
+            }
 
             launchBe();
             Log.Info (Log.LOG_UI, "AppDelegate FinishedLaunching done.");
@@ -75,12 +88,12 @@ namespace NachoClient.iOS
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Console.WriteLine ("StatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info(Log.LOG_UI,"StatusHandler:Info_NewUnreadEmailMessageInInbox");
                 FetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Console.WriteLine ("StatusHandler:Info_SyncSucceeded");
+                Log.Info (Log.LOG_UI , "StatusHandler:Info_SyncSucceeded");
                 if (UIBackgroundFetchResult.Failed == FetchResult) {
                     FetchResult = UIBackgroundFetchResult.NoData;
                 }
@@ -91,7 +104,7 @@ namespace NachoClient.iOS
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
-                Console.WriteLine ("StatusHandler:Error_SyncFailed");
+                Log.Info (Log.LOG_UI, "StatusHandler:Error_SyncFailed");
                 BackEnd.Instance.StatusIndEvent -= StatusHandler;
                 CompletionHandler (FetchResult);
                 break;
@@ -100,7 +113,7 @@ namespace NachoClient.iOS
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
-            Console.WriteLine ("PerformFetch Called");
+            Log.Info (Log.LOG_UI, "PerformFetch Called");
             CompletionHandler = completionHandler;
             FetchResult = UIBackgroundFetchResult.Failed;
             BackEnd.Instance.StatusIndEvent += StatusHandler;
@@ -131,13 +144,7 @@ namespace NachoClient.iOS
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
-            // theory here is that we "Show" the alerts we want to hit UI, other alerts can generate sound
-            // or modifiy badge number as they need to. Will need to have a class of alerts to "show"
-            var alert = new UIAlertView (notification.AlertAction, notification.AlertBody, null, "Cool");
-            if (notification.AlertBody.Equals ("321")) {
-            } else {
-                alert.Show ();
-            }
+            // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
         }
 
         // Methods for IBackEndOwner
@@ -150,38 +157,67 @@ namespace NachoClient.iOS
         public void StatusInd (int accountId, NcResult status)
         {
             {
-           
 
+                //Assert MCAccount != null;
                 UILocalNotification badgeNotification;
+                UILocalNotification notification = new UILocalNotification ();
+                var countunread = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+
+
                 switch (status.SubKind) {
                 case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                    UILocalNotification notification = new UILocalNotification ();
+
                     notification.AlertAction = "Taco Mail";
                     notification.AlertBody = "You have new mail.";
-                    var countunread = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+
                     notification.ApplicationIconBadgeNumber = countunread;
-                    UIApplication.SharedApplication.PresentLocationNotificationNow (notification);
+                    notification.SoundName = UILocalNotification.DefaultSoundName;
+                    notification.FireDate = DateTime.Now;
+
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notification);
+
                     //badgeNotification = new UILocalNotification ();
                     //badgeNotification.FireDate = DateTime.Now;
                     //badgeNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
                     //UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
                     break;
+                case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+
+                    notification.AlertAction = "Taco Mail"; 
+                    // no AlertBody should prevent message form being shown            
+                    notification.HasAction = false;  // no alert to show on screen
+                    notification.SoundName = UILocalNotification.DefaultSoundName;
+                    notification.ApplicationIconBadgeNumber = countunread;
+                    notification.FireDate = DateTime.Now;
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notification);
+                    break;
+                case NcResult.SubKindEnum.Info_CalendarSetChanged:
+                    //UILocalNotification notification = new UILocalNotification ();
+                    notification.AlertAction = "Taco Mail";
+                    notification.AlertBody = "Your Calendar has Changed";
+                    notification.FireDate = DateTime.Now;
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notification);
+
+                    break;
                 case NcResult.SubKindEnum.Info_EmailMessageMarkedRead:
                     // need to find way to pop badge number without alert on app popping up
                     badgeNotification = new UILocalNotification ();
                     badgeNotification.AlertAction = "Taco Mail";
-                    badgeNotification.AlertBody = "321";
+                    //badgeNotification.AlertBody = "Message Read"; // null body means don't show
+                    badgeNotification.HasAction = false;  // no alert to show on screen
                     badgeNotification.FireDate = DateTime.Now;
                     var count2 = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
                     badgeNotification.ApplicationIconBadgeNumber = count2;
-                  
+
                     UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
                     break;
                 }
             }
         }
 
+  
         public void StatusInd (int accountId, NcResult status, string[] tokens)
+
         {
             // FIXME.
         }
