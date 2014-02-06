@@ -46,7 +46,7 @@ namespace NachoCore.ActiveSync
                 ItemId = mcContact.Id,
                 ClassCode = (uint)McItem.ClassCodeEnum.Contact,
             };
-            BackEnd.Instance.Db.Insert (map);
+            map.Insert ();
             NachoCore.NachoAssert.True (ur.isOK ());
         }
     }

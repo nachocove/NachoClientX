@@ -143,7 +143,7 @@ namespace NachoCore
                     outbox.ServerId = ClientOwned_Outbox;
                     outbox.DisplayName = ClientOwned_Outbox;
                     outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
-                    BackEnd.Instance.Db.Insert (outbox);
+                    outbox.Insert ();
                 }
                 if (null == GetGalCache (accountId)) {
                     var galCache = McFolder.CreateClientOwned (accountId);
@@ -151,7 +151,7 @@ namespace NachoCore
                     galCache.ParentId = "0";
                     galCache.ServerId = ClientOwned_GalCache;
                     galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
-                    BackEnd.Instance.Db.Insert (galCache);
+                    galCache.Insert ();
                 }
                 if (null == GetGleaned (accountId)) {
                     var gleaned = McFolder.CreateClientOwned (accountId);
@@ -159,7 +159,7 @@ namespace NachoCore
                     gleaned.ParentId = "0";
                     gleaned.ServerId = ClientOwned_Gleaned;
                     gleaned.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
-                    BackEnd.Instance.Db.Insert (gleaned);
+                    gleaned.Insert ();
                 }
             }
             service.Execute ();

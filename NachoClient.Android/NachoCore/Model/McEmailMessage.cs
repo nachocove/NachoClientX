@@ -143,11 +143,6 @@ namespace NachoCore.Model
             }
         }
 
-        public void Update ()
-        {
-            BackEnd.Instance.Db.Update (this);
-        }
-
         // Note need to paramtrize <T> and move to McItem.
         public static List<McEmailMessage> ActiveMessages (int accountId, int folderId)
         {

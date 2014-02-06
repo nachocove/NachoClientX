@@ -863,7 +863,7 @@ namespace NachoCore.Wbxml
                         newTextNode = new XText ("");
                         var data = new McBody ();
                         data.Body = bytes.DequeueString ();
-                        BackEnd.Instance.Db.Insert (data);
+                        data.Insert ();
                         currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
                     } else {
                         newTextNode = new XText (bytes.DequeueString ());

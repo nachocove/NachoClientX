@@ -507,6 +507,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\DateTime+ToString.cs">
       <Link>NachoCore\Extensions\DateTime+ToString.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs">
+      <Link>NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

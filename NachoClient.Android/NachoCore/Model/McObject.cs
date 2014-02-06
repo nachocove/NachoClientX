@@ -20,6 +20,21 @@ namespace NachoCore.Model
         {
             return GetType ().Name;
         }
+
+        public virtual int Insert ()
+        {
+            return BackEnd.Instance.Db.Insert (this);
+        }
+
+        public virtual int Delete ()
+        {
+            return BackEnd.Instance.Db.Delete (this);
+        }
+
+        public virtual int Update ()
+        {
+            return BackEnd.Instance.Db.Update (this);
+        }
     }
 }
 

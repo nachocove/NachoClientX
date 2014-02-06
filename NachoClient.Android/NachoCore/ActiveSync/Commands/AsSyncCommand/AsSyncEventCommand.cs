@@ -70,7 +70,7 @@ namespace NachoCore.ActiveSync
 
             // If there is no match, insert the new item.
             if (null == oldItem) {
-                int ir = BackEnd.Instance.Db.Insert (newItem);
+                int ir = newItem.Insert ();
                 NachoCore.NachoAssert.True (0 < ir);
                 MergeAttendees (newItem);
                 MergeCategories (newItem);
@@ -80,7 +80,7 @@ namespace NachoCore.ActiveSync
                     ItemId = newItem.Id,
                     ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
                 };
-                BackEnd.Instance.Db.Insert (map);
+                map.Insert ();
                 return;
             }
 
@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
             // Overwrite the old item with the new item
             // to preserve the index, in
             newItem.Id = oldItem.Id;
-            int ur = BackEnd.Instance.Db.Update (oldItem);
+            int ur = oldItem.Update ();
             NachoCore.NachoAssert.True (0 < ur);
 
             // Update the entries that refer to the updated entry
@@ -167,7 +167,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var attendee in attendees) {
-                BackEnd.Instance.Db.Delete (attendee);
+                attendee.Delete ();
             }
 
             // Add the new, if any
@@ -176,12 +176,12 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var attendee in c.attendees) {
                 if (attendee.Id > 0) {
-                    int r = BackEnd.Instance.Db.Update (attendee);
+                    int r = attendee.Update ();
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
                     attendee.ParentId = c.Id;
                     attendee.ParentType = McAttendee.GetParentType (c);
-                    int r = BackEnd.Instance.Db.Insert (attendee);
+                    int r = attendee.Insert ();
                     NachoCore.NachoAssert.True (0 < r);
                 }
             }
@@ -203,7 +203,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var category in categories) {
-                BackEnd.Instance.Db.Delete (category);
+                category.Delete ();
             }
 
             // Add the new, if any
@@ -212,11 +212,11 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var category in c.categories) {
                 if (category.Id > 0) {
-                    int r = BackEnd.Instance.Db.Update (category);
+                    int r = category.Update ();
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
                     category.ParentId = McCalendarCategory.GetParentType (c);
-                    int r = BackEnd.Instance.Db.Insert (category);
+                    int r = category.Insert ();
                     NachoCore.NachoAssert.True (0 < r);
                 }
             }
@@ -237,7 +237,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var exception in exceptions) {
-                BackEnd.Instance.Db.Delete (exception);
+                exception.Delete ();
             }
 
             // Add the new, if any
@@ -246,10 +246,10 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var exception in c.exceptions) {
                 if (exception.Id > 0) {
-                    int r = BackEnd.Instance.Db.Update (exception);
+                    int r = exception.Update ();
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
-                    int r = BackEnd.Instance.Db.Insert (exception);
+                    int r = exception.Insert ();
                     NachoCore.NachoAssert.True (0 < r);
                 }
                 MergeAttendees (exception);
@@ -265,7 +265,7 @@ namespace NachoCore.ActiveSync
 
             // Delete the old
             foreach (var recurrence in recurrences) {
-                BackEnd.Instance.Db.Delete (recurrence);
+                recurrence.Delete ();
             }
 
             // Add the new, if any
@@ -274,10 +274,10 @@ namespace NachoCore.ActiveSync
             // Add the new
             foreach (var recurrence in c.recurrences) {
                 if (recurrence.Id > 0) {
-                    int r = BackEnd.Instance.Db.Update (recurrence);
+                    int r = recurrence.Update ();
                     NachoCore.NachoAssert.True (0 < r);
                 } else {
-                    int r = BackEnd.Instance.Db.Insert (recurrence);
+                    int r = recurrence.Insert ();
                     NachoCore.NachoAssert.True (0 < r);
                 }
             }
@@ -296,17 +296,17 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (null != attendees);
 
             foreach (var attendee in attendees) {
-                BackEnd.Instance.Db.Delete (attendee);
+                attendee.Delete ();
             }
 
             var categories = GetCategories (exception);
             NachoCore.NachoAssert.True (null != categories);
 
             foreach (var category in categories) {
-                BackEnd.Instance.Db.Delete (category);
+                category.Delete ();
             }
 
-            BackEnd.Instance.Db.Delete (exception);
+            exception.Delete ();
         }
     }
 }

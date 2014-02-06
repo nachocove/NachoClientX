@@ -585,7 +585,7 @@ namespace NachoCore.ActiveSync
                             rec.IsDispatched == true).ToList ();
             foreach (var update in dispached) {
                 update.IsDispatched = false;
-                BackEnd.Instance.Db.Update (update);
+                update.Update ();
             }
         }
         // Methods callable by the owner.
@@ -618,7 +618,7 @@ namespace NachoCore.ActiveSync
         {
             var protocolState = ProtocolState;
             protocolState.State = Sm.State;
-            BackEnd.Instance.Db.Update (protocolState);
+            protocolState.Update ();
         }
         // State-machine action methods.
         private void DoUiServConfReq ()
@@ -805,7 +805,7 @@ namespace NachoCore.ActiveSync
             }
             var killList = query.ToList ();
             foreach (var kill in killList) {
-                BackEnd.Instance.Db.Delete (kill);
+                kill.Delete ();
             }
         }
 
@@ -825,7 +825,7 @@ namespace NachoCore.ActiveSync
                 MaxResults = (null == maxResults) ? 0 : (uint)maxResults,
                 Token = token
             };
-            BackEnd.Instance.Db.Insert (newSearch);
+            newSearch.Insert ();
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
@@ -837,7 +837,7 @@ namespace NachoCore.ActiveSync
             var defaultInbox = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.Type == (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox);
             if (null != defaultInbox) {
                 defaultInbox.AsSyncRequired = true;
-                BackEnd.Instance.Db.Update (defaultInbox);
+                defaultInbox.Update ();
             }
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
@@ -870,7 +870,7 @@ namespace NachoCore.ActiveSync
                 Operation = McPending.Operations.EmailSend,
                 EmailMessageId = emailMessageId
             };
-            BackEnd.Instance.Db.Insert (sendUpdate);
+            sendUpdate.Insert ();
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
             return sendUpdate.Token;
         }
@@ -894,7 +894,7 @@ namespace NachoCore.ActiveSync
                 FolderServerId = folder.ServerId,
                 ServerId = emailMessage.ServerId
             };   
-            BackEnd.Instance.Db.Insert (deleUpdate);
+            deleUpdate.Insert ();
 
             // Delete the actual item.
             var maps = BackEnd.Instance.Db.Table<McMapFolderItem> ().Where (x =>
@@ -903,10 +903,10 @@ namespace NachoCore.ActiveSync
                        x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
 
             foreach (var map in maps) {
-                BackEnd.Instance.Db.Delete (map);
+                map.Delete ();
             }
             emailMessage.DeleteBody (BackEnd.Instance.Db);
-            BackEnd.Instance.Db.Delete (emailMessage);
+            emailMessage.Delete ();
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
             return deleUpdate.Token;
         }
@@ -934,21 +934,21 @@ namespace NachoCore.ActiveSync
                 DestFolderServerId = destFolder.ServerId,
             };
 
-            BackEnd.Instance.Db.Insert (moveUpdate);
+            moveUpdate.Insert ();
             // Move the actual item.
             var newMapEntry = new McMapFolderItem (Account.Id) {
                 FolderId = destFolderId,
                 ItemId = emailMessageId,
                 ClassCode = (uint)McItem.ClassCodeEnum.Email,
             };
-            BackEnd.Instance.Db.Insert (newMapEntry);
+            newMapEntry.Insert ();
 
             var oldMapEntry = BackEnd.Instance.Db.Table<McMapFolderItem> ().Single (x =>
                 x.AccountId == Account.Id &&
                               x.ItemId == emailMessageId &&
                               x.FolderId == srcFolder.Id &&
                               x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
-            BackEnd.Instance.Db.Delete (oldMapEntry);
+            oldMapEntry.Delete ();
 
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
             return moveUpdate.Token;
@@ -986,11 +986,11 @@ namespace NachoCore.ActiveSync
                 ServerId = emailMessage.ServerId,
                 FolderServerId = folder.ServerId,
             };   
-            BackEnd.Instance.Db.Insert (markUpdate);
+            markUpdate.Insert ();
 
             // Mark the actual item.
             emailMessage.IsRead = true;
-            BackEnd.Instance.Db.Update (emailMessage);
+            emailMessage.Update ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedRead));
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
             return markUpdate.Token;
@@ -1080,9 +1080,9 @@ namespace NachoCore.ActiveSync
                 IsDispatched = false,
                 AttachmentId = attId,
             };
-            BackEnd.Instance.Db.Insert (update);
+            update.Insert ();
             att.PercentDownloaded = 1;
-            BackEnd.Instance.Db.Update (att);
+            att.Update ();
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDNLDATT");
             return update.Token;
         }

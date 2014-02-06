@@ -145,6 +145,7 @@
     <Compile Include="NachoCore\Model\McPending.cs" />
     <Compile Include="NachoCore\ActiveSync\AsApplyServerDelta.cs" />
     <Compile Include="NachoCore\Extensions\DateTime+ToString.cs" />
+    <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
             Update.IsDispatched = true;
-            BackEnd.Instance.Db.Update (Update);
+            Update.Update ();
             return doc;
         }
 
@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
                     Convert.FromBase64String (xmlData.Value));
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
-                BackEnd.Instance.Db.Update (attachment);
+                attachment.Update ();
                 DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate), new [] { Update.Token });
                 break;
             default:
@@ -63,7 +63,7 @@ namespace NachoCore.ActiveSync
                 DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed), new [] { Update.Token });
                 break;
             }
-            BackEnd.Instance.Db.Delete (Update);
+            Update.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }
 

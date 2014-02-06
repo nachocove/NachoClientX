@@ -30,7 +30,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
             Update.IsDispatched = true;
-            BackEnd.Instance.Db.Update (Update);
+            Update.Update ();
             return doc;
         }
 
@@ -47,8 +47,8 @@ namespace NachoCore.ActiveSync
             var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().Single (rec => rec.Id == Update.EmailMessageId);
             DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
             emailMessage.DeleteBody (BackEnd.Instance.Db);
-            BackEnd.Instance.Db.Delete (emailMessage);
-            BackEnd.Instance.Db.Delete (Update);
+            emailMessage.Delete ();
+            Update.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
         // FIXME - need an OnFail callback for negative indication delivery.

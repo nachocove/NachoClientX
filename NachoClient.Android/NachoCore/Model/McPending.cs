@@ -68,16 +68,6 @@ namespace NachoCore.Model
                     .OrderBy (x => x.Id).ToList ();
         }
 
-        public void Update ()
-        {
-            BackEnd.Instance.Db.Update (this);
-        }
-
-        public void Delete ()
-        {
-            BackEnd.Instance.Db.Delete (this);
-        }
-
         [Indexed]
         public bool IsDispatched { set; get; }
 
@@ -130,11 +120,6 @@ namespace NachoCore.Model
             Update,
             Delete,
         };
-
-        public void Insert ()
-        {
-            BackEnd.Instance.Db.Insert (this);
-        }
 
         public ActionEnum ApplyReWrites (List<ReWrite> reWrites)
         {

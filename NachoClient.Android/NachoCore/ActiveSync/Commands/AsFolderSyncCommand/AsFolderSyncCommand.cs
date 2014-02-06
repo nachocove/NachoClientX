@@ -39,7 +39,7 @@ namespace NachoCore.ActiveSync
                 Log.Info ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
                 Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand response:\n{0}", doc);
                 protocolState.AsSyncKey = syncKey;
-                BackEnd.Instance.Db.Update (protocolState);
+                protocolState.Update ();
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     HadFolderChanges = true;

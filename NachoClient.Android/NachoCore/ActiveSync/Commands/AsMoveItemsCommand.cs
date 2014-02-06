@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (move);
             Update.IsDispatched = true;
-            BackEnd.Instance.Db.Update (Update);
+            Update.Update ();
             return doc;
         }
 
@@ -45,32 +45,32 @@ namespace NachoCore.ActiveSync
                     var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.Id == Update.EmailMessageId);
                     if (null != emailMessage) {
                         emailMessage.ServerId = xmlDstMsgId.Value;
-                        BackEnd.Instance.Db.Update (emailMessage);
+                        emailMessage.Update ();
                     }
                 }
                 DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded),
                     new [] { Update.Token });
-                BackEnd.Instance.Db.Delete (Update);
+                Update.Delete ();
                 return Event.Create ((uint)SmEvt.E.Success, "MVSUCCESS");
 
             case Xml.Mov.StatusCode.InvalidSrc:
             case Xml.Mov.StatusCode.InvalidDest:
                 DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed),
                     new [] { Update.Token });
-                BackEnd.Instance.Db.Delete (Update);
+                Update.Delete ();
                 return Event.Create ((uint)(uint)AsProtoControl.CtlEvt.E.ReFSync, "MVFSYNC");
 
             case Xml.Mov.StatusCode.SrcDestSame:
             case Xml.Mov.StatusCode.ClobberOrMulti:
                 DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed),
                     new [] { Update.Token });
-                BackEnd.Instance.Db.Delete (Update);
+                Update.Delete ();
                 return Event.Create ((uint)SmEvt.E.Success, "MVGRINF");
 
             case Xml.Mov.StatusCode.Locked:
                 // We don't delete the update, no indication - we will retry.
                 Update.IsDispatched = true;
-                BackEnd.Instance.Db.Update (Update);
+                Update.Update ();
                 return Event.Create ((uint)(uint)AsProtoControl.AsEvt.E.ReSync, "MVSYNC");
             
             default:

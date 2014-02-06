@@ -50,22 +50,6 @@ namespace NachoCore.Model
             return folder;
         }
 
-        public void Insert ()
-        {
-            BackEnd.Instance.Db.Insert (this);
-        }
-
-        public void Delete ()
-        {
-            // FIXME - delete everything subordinate to this folder.
-            BackEnd.Instance.Db.Delete (this);
-        }
-
-        public void Update ()
-        {
-            BackEnd.Instance.Db.Update (this);
-        }
-
         public static McFolder QueryByServerId (int accountId, string serverId)
         {
             return BackEnd.Instance.Db.Table<McFolder> ().Single (fld => 
