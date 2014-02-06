@@ -10,13 +10,18 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessagePriorityViewController : BlurryViewController
+    public partial class MessagePriorityViewController : BlurryViewController, INachoMessageController
     {
         public List<McEmailMessage> thread;
-        public MessageListViewController owner;
+        protected INachoMessageControllerDelegate owner;
 
         public MessagePriorityViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        public void SetOwner(INachoMessageControllerDelegate o)
+        {
+            owner = o;
         }
 
         public override void ViewDidLoad ()
@@ -42,11 +47,11 @@ namespace NachoClient.iOS
             }
 
             dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                owner.DismissMessagePriorityViewController (this);
+                owner.DismissMessageViewController (this);
             };
             nowButton.TouchUpInside += (object sender, EventArgs e) => {
                 NcMessageDeferral.UndeferThread (thread);
-                owner.DismissMessagePriorityViewController (this);
+                owner.DismissMessageViewController (this);
             };
 
             customDateButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -107,7 +112,7 @@ namespace NachoClient.iOS
             NcMessageDeferral.DeferThread (thread, deferUntil);
             vc.owner = null;
             vc.DismissViewController (false, new NSAction (delegate {
-                owner.DismissMessagePriorityViewController (this);
+                owner.DismissMessageViewController (this);
             }));
         }
 
@@ -124,7 +129,7 @@ namespace NachoClient.iOS
             case MessageDeferralType.NextMonth:
             case MessageDeferralType.Forever:
                 NcMessageDeferral.DeferThread (thread, request);
-                owner.DismissMessagePriorityViewController (this);
+                owner.DismissMessageViewController (this);
                 return;
             case MessageDeferralType.Meeting:
                 new UIAlertView ("Meeting Scheduler", "Calendar is not yet implemented.", null, "Bummer").Show ();

@@ -12,9 +12,71 @@ namespace NachoClient.iOS
 	[Register ("ReadMessageViewController")]
 	partial class ReadMessageViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem checkButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem clockButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem flexibleSpaceButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem listButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem replyAllButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem replyButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (checkButton != null) {
+				checkButton.Dispose ();
+				checkButton = null;
+			}
+
+			if (clockButton != null) {
+				clockButton.Dispose ();
+				clockButton = null;
+			}
+
+			if (deleteButton != null) {
+				deleteButton.Dispose ();
+				deleteButton = null;
+			}
+
+			if (forwardButton != null) {
+				forwardButton.Dispose ();
+				forwardButton = null;
+			}
+
+			if (listButton != null) {
+				listButton.Dispose ();
+				listButton = null;
+			}
+
+			if (replyAllButton != null) {
+				replyAllButton.Dispose ();
+				replyAllButton = null;
+			}
+
+			if (replyButton != null) {
+				replyButton.Dispose ();
+				replyButton = null;
+			}
+
+			if (flexibleSpaceButton != null) {
+				flexibleSpaceButton.Dispose ();
+				flexibleSpaceButton = null;
+			}
 		}
 	}
 }

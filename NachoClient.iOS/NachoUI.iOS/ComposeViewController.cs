@@ -13,7 +13,7 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class ComposeViewController : DialogViewController
+    public partial class ComposeViewController : DialogViewController, INachoMessageController
     {
         string Subject;
         MultilineEntryElement Body;
@@ -23,10 +23,16 @@ namespace NachoClient.iOS
         public static readonly NSString Forward = new NSString ("Forward");
         public string Action;
         public List<McEmailMessage> ActionThread;
+        public INachoMessageControllerDelegate owner;
 
         public ComposeViewController (IntPtr handle) : base (handle)
         {
     
+        }
+
+        public void SetOwner(INachoMessageControllerDelegate o)
+        {
+            owner = o;
         }
 
         public override void ViewDidLoad ()
@@ -242,7 +248,8 @@ namespace NachoClient.iOS
 
             BackEnd.Instance.SendEmailCmd (account.Id, msg.Id);
 
-            // Probably want to defer until BE says message is queued.
+            // Might want to defer until BE says message is queued.
+            owner = null;
             NavigationController.PopViewControllerAnimated (true);
         }
 

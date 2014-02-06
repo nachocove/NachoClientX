@@ -16,55 +16,119 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class ReadMessageViewController : DialogViewController
+    public partial class ReadMessageViewController : DialogViewController, INachoMessageControllerDelegate
     {
         public int ThreadIndex;
-        public Boolean messageDeleted;
         public INachoEmailMessages messages;
 
         public ReadMessageViewController (IntPtr handle) : base (handle)
         {
-            messageDeleted = false;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
             Pushing = true;
+
+            // Multiple buttons spaced evently
+            ToolbarItems = new UIBarButtonItem[] {
+                flexibleSpaceButton,
+                forwardButton,
+                flexibleSpaceButton,
+                replyAllButton,
+                flexibleSpaceButton,
+                replyButton,
+                flexibleSpaceButton,
+            };
+
+            // Multiple buttons on the right side
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                deleteButton,
+                checkButton,
+                clockButton,
+                listButton
+            };
+
+            clockButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("MessageToMessagePriority", this);
+            };
+            listButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("MessageToMessageAction", this);
+            };
+            replyButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("MessageToCompose", ComposeViewController.Reply);
+            };
+            replyAllButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("MessageToCompose", ComposeViewController.ReplyAll);
+            };
+            forwardButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("MessageToCompose", ComposeViewController.Forward);
+            };
+            deleteButton.Clicked += (object sender, EventArgs e) => {
+                DeleteThisMessage();
+            };
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-
-//            // This doesn't work
-//            if (messageDeleted) {
-//                NavigationController.PopViewControllerAnimated (true);
-//                return;
-//            }
+            NavigationController.ToolbarHidden = false;
 
             MarkAsRead (ThreadIndex);
 
             ReloadRoot ();
         }
 
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NavigationController.ToolbarHidden = true;
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "ReadMessageToMessageAction") {
-                var vc = (MessageActionViewController)segue.DestinationViewController;
-                vc.messageThread = messages.GetEmailThread (ThreadIndex);
-                vc.owner = this;
+            var blurry = segue.DestinationViewController as BlurryViewController;
+            if (null != blurry) {
+                blurry.CaptureView (this.View);
             }
+
+            if (segue.Identifier == "MessageToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                vc.thread = messages.GetEmailThread (ThreadIndex);
+                vc.SetOwner (this);
+            }
+            if (segue.Identifier == "MessageToMessageAction") {
+                var vc = (MessageActionViewController)segue.DestinationViewController;
+                vc.thread = messages.GetEmailThread (ThreadIndex);
+                vc.SetOwner (this);
+            }
+            if (segue.Identifier == "MessageToCompose") {
+                var vc = (ComposeViewController)segue.DestinationViewController;
+                vc.Action = (NSString)sender;
+                vc.ActionThread = messages.GetEmailThread (ThreadIndex);
+                vc.SetOwner (this);
+            }
+        }
+
+        public void DismissMessageViewController (INachoMessageController vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissViewController (false, new NSAction (delegate {
+                NavigationController.PopViewControllerAnimated (true);
+            }));
+        }
+
+        public void DeleteThisMessage()
+        {
+            var t = messages.GetEmailThread (ThreadIndex);
+            var m = t.First ();
+            BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
+            NavigationController.PopViewControllerAnimated (true);
         }
 
         protected void ReloadRoot ()
         {
-            if (messageDeleted) {
-                Root = new RootElement ("Message Deleted");
-                return;
-            }
-
-            var root = new RootElement ("Message");
+            var root = new RootElement (null);
             root.UnevenRows = true;
 
             var t = messages.GetEmailThread (ThreadIndex);
@@ -292,7 +356,7 @@ namespace NachoClient.iOS
 
         void DisplayAttachment (McAttachment attachment)
         {
-            var path = Path.Combine(BackEnd.Instance.AttachmentsDir, attachment.LocalFileName);
+            var path = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName);
             UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
             Preview.Delegate = new DocumentInteractionControllerDelegate (this);
             Preview.PresentPreview (true);
@@ -312,7 +376,9 @@ namespace NachoClient.iOS
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
             var thread = messages.GetEmailThread (index);
             var message = thread.First ();
-            BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
+            if (false == message.IsRead) {
+                BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
+            }
         }
 
         public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
@@ -338,7 +404,6 @@ namespace NachoClient.iOS
             {
                 return viewC.View.Frame;
             }
-
         }
     }
 }

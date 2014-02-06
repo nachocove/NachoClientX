@@ -44,11 +44,12 @@ namespace NachoCore.Brain
                 BackEnd.Instance.Db.Update (emailMessage);
                 return;
             }
-            var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.GetBody (BackEnd.Instance.Db)));
-            var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
             MimeMessage mimeMsg;
             try {
-                mimeMsg = bodyParser.ParseMessage ();
+                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.GetBody (BackEnd.Instance.Db)))) {
+                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                    mimeMsg = bodyParser.ParseMessage ();
+                }
             } catch (Exception e) {
                 // TODO: Find root cause
                 // Mark the email message as gleaned.

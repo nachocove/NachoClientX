@@ -15,7 +15,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate
+    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate, INachoMessageControllerDelegate
     {
         INachoEmailMessages messageThreads;
         // iOS Bug Workaround
@@ -88,8 +88,9 @@ namespace NachoClient.iOS
                 // RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing");
                 // TODO: Sleeping is a placeholder until we implement the refresh code.
                 System.Threading.ThreadPool.QueueUserWorkItem (delegate {
-                    System.Threading.Thread.Sleep (5000);
+                    messageThreads.Refresh ();
                     InvokeOnMainThread (() => {
+                        TableView.ReloadData ();
                         RefreshControl.EndRefreshing ();
                     });
                 });
@@ -140,13 +141,19 @@ namespace NachoClient.iOS
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 var indexPath = (NSIndexPath)sender;
                 vc.thread = messageThreads.GetEmailThread (indexPath.Row);
-                vc.owner = this;
+                vc.SetOwner (this);
+            }
+            if (segue.Identifier == "MessageToMessageAction") {
+                var vc = (MessageActionViewController)segue.DestinationViewController;
+                var indexPath = (NSIndexPath)sender;
+                vc.thread = messageThreads.GetEmailThread (indexPath.Row);
+                vc.SetOwner (this);
             }
         }
 
-        public void DismissMessagePriorityViewController (MessagePriorityViewController vc)
+        public void DismissMessageViewController (INachoMessageController vc)
         {
-            vc.owner = null;
+            vc.SetOwner (null);
             vc.DismissViewController (false, new NSAction (delegate {
                 this.DismissViewController (true, null);
             }));
@@ -267,6 +274,7 @@ namespace NachoClient.iOS
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe List cell");
+                    PerformSegue ("MessageToMessageAction", indexPath);
                 });
             } finally {
                 if (null != checkView) {
