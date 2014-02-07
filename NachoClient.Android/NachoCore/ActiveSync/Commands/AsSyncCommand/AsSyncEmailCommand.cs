@@ -123,7 +123,7 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            // Need to handle the illegal case (GOOG "All" folder) where the ServerId is used twice
+            // We handle the illegal case (GOOG "All" folder) where the ServerId is used twice
             // on the 2nd insert of the same message.
             var existingEmailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ()
                 .SingleOrDefault (x => 

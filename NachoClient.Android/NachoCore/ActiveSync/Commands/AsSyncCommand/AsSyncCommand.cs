@@ -340,12 +340,21 @@ namespace NachoCore.ActiveSync
                                 switch (classCode) {
                                 // FIXME: support Calendar & Contacts too.
                                 case Xml.AirSync.ClassCode.Email:
+                                    HadEmailMessageChanges = true;
                                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                                     var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.ServerId == delServerId);
                                     if (null != emailMessage) {
                                         emailMessage.DeleteBody (BackEnd.Instance.Db);
                                         emailMessage.Delete ();
                                     }
+                                    break;
+                                case Xml.AirSync.ClassCode.Calendar:
+                                    HadCalendarChanges = true;
+                                    // FIXME - do the delete.
+                                    break;
+                                case Xml.AirSync.ClassCode.Contacts:
+                                    HadContactChanges = true;
+                                    // FIXME - do the delete.
                                     break;
                                 }
                                 break;
