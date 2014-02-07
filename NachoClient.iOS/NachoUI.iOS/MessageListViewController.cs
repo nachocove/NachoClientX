@@ -87,13 +87,15 @@ namespace NachoClient.iOS
                 // Title is misaligned the first time a refresh controller is displayed
                 // RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing");
                 // TODO: Sleeping is a placeholder until we implement the refresh code.
-                System.Threading.ThreadPool.QueueUserWorkItem (delegate {
-                    messageThreads.Refresh ();
-                    InvokeOnMainThread (() => {
-                        TableView.ReloadData ();
-                        RefreshControl.EndRefreshing ();
-                    });
-                });
+                ReloadDataMaintainingPosition (true);
+            };
+
+            // Watch for changes from the back end
+            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                    ReloadDataMaintainingPosition (false);
+                }
             };
 
             UIView backgroundView = new UIView (new RectangleF (0, 0, 320, 480));
@@ -103,6 +105,53 @@ namespace NachoClient.iOS
             // iOS 7 BUG Workaround
             // iOS 7 puts the  background view over the refresh view, hiding it.
             RefreshControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
+        }
+
+        public int GetFirstVisibleRow ()
+        {       
+            var paths = TableView.IndexPathsForVisibleRows; // Must be on UI thread
+            if (null == paths) {
+                return -1;
+            }
+            var path = paths.FirstOrDefault ();
+            if (null == path) {
+                return -1;
+            }
+            return path.Row;
+        }
+
+        public void ReloadDataMaintainingPosition (bool endRefreshing)
+        {            
+            // Refresh in background    
+            System.Threading.ThreadPool.QueueUserWorkItem (delegate {
+                var idList = new int[messageThreads.Count ()];
+                for (var i = 0; i < messageThreads.Count (); i++) {
+                    var m = messageThreads.GetEmailThread (i);
+                    idList [i] = m.First ().Id;
+                }
+                messageThreads.Refresh ();
+                InvokeOnMainThread (() => {
+                    var row = GetFirstVisibleRow ();
+                    NSIndexPath p = null;
+                    if (-1 != row) {
+                        var targetId = idList [row];
+                        for (int i = 0; i < messageThreads.Count (); i++) {
+                            var m = messageThreads.GetEmailThread (i);
+                            if (m.First ().Id == targetId) {
+                                p = NSIndexPath.FromItemSection (i, 0);
+                                break;
+                            }
+                        }
+                    }
+                    TableView.ReloadData ();
+                    if (null != p) {
+                        TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
+                    }
+                    if (endRefreshing) {
+                        RefreshControl.EndRefreshing ();
+                    }
+                });
+            });
         }
 
         public override void ViewWillAppear (bool animated)
