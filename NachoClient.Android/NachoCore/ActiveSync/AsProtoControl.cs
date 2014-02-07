@@ -12,7 +12,9 @@ namespace NachoCore.ActiveSync
     public class AsProtoControl : ProtoControl, IAsDataSource
     {
         private IAsCommand Cmd;
+        #pragma warning disable 414
         private IAsCommand DisposedCmd;
+        #pragma warning restore 414
 
         public enum Lst : uint
         {

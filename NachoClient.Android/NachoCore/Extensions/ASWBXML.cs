@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using NachoCore;
@@ -47,9 +49,11 @@ namespace NachoCore.Wbxml
         private ASWBXMLCodePage[] codePages;
         private int currentCodePage = 0;
         private int defaultCodePage = -1;
+        private CancellationToken CToken;
 
-        public ASWBXML ()
+        public ASWBXML (CancellationToken cToken)
         {
+            CToken = cToken;
             // Load up code pages
             // Currently there are 25 code pages as per MS-ASWBXML
             codePages = new ASWBXMLCodePage[25];
@@ -825,6 +829,9 @@ namespace NachoCore.Wbxml
             XElement currentNode = null;
 
             while (bytes.Peek () >= 0) {
+                if (CToken.IsCancellationRequested) {
+                    throw new TaskCanceledException ();
+                }
                 byte currentByte = bytes.Dequeue ();
 
                 switch ((GlobalTokens)currentByte) {

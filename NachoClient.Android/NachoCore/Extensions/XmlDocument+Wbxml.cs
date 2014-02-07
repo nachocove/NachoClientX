@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using NachoCore.Wbxml;
 
@@ -9,7 +11,7 @@ namespace NachoCore.Utils
     {
         public static byte[] ToWbxml (this XDocument doc)
         {
-            ASWBXML encoder = new ASWBXML ();
+            ASWBXML encoder = new ASWBXML (new CancellationToken (false));
             encoder.XmlDoc = doc;
             return encoder.GetBytes ();
         }

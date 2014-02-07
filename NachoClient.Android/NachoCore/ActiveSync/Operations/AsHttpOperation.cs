@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
@@ -25,8 +26,8 @@ namespace NachoCore.ActiveSync
         public enum HttpOpLst : uint
         {
             HttpWait = (St.Last + 1),
-            DelayWait}
-        ;
+            DelayWait,
+        };
 
         public class HttpOpEvt : SmEvt
         {
@@ -35,8 +36,8 @@ namespace NachoCore.ActiveSync
                 Cancel = (SmEvt.E.Last + 1),
                 Delay,
                 Timeout,
-                Final}
-            ;
+                Final,
+            };
         }
         // Constants.
         private const string ContentTypeHtml = "text/html";
@@ -301,7 +302,7 @@ namespace NachoCore.ActiveSync
             }
             request.Headers.Add ("MS-ASProtocolVersion", DataSource.ProtocolState.AsProtocolVersion);
             Cts = new CancellationTokenSource ();
-            CancellationToken token = Cts.Token;
+            CancellationToken cToken = Cts.Token;
             HttpResponseMessage response = null;
 
             // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
@@ -312,12 +313,12 @@ namespace NachoCore.ActiveSync
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
                 Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString());
-                response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait (false);
+                response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
             } catch (OperationCanceledException ex) {
                 Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
-                    if (!token.IsCancellationRequested) {
+                    if (!cToken.IsCancellationRequested) {
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                 }
@@ -347,7 +348,7 @@ namespace NachoCore.ActiveSync
                 ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
 
                 try {
-                    HttpOpSm.PostEvent (ProcessHttpResponse (response));
+                    HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
                 } catch (Exception ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                     HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
@@ -355,7 +356,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private Event ProcessHttpResponse (HttpResponseMessage response)
+        private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
             if (HttpStatusCode.OK != response.StatusCode &&
                 ContentTypeHtml == ContentType) {
@@ -375,9 +376,14 @@ namespace NachoCore.ActiveSync
                 if (0 != ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
-                        var decoder = new ASWBXML ();
+                        var decoder = new ASWBXML (cToken);
                         var cap = NcCapture.CreateAndStart (KToXML);
-                        decoder.LoadBytes (ContentData);
+                        try {
+                            decoder.LoadBytes (ContentData);
+                        } catch (TaskCanceledException) {
+                            // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
+                            return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
+                        }
                         responseDoc = decoder.XmlDoc;
                         cap.Stop ();
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
