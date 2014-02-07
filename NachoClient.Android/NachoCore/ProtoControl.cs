@@ -53,6 +53,7 @@ namespace NachoCore
         // Interface to owner.
         public abstract void Execute ();
         public abstract void ForceSync ();
+        public abstract void ForceStop ();
         public abstract void CertAskResp (bool isOkay);
         public abstract void ServerConfResp ();
         public abstract void CredResp ();

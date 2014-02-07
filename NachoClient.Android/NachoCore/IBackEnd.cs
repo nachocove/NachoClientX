@@ -14,7 +14,11 @@ namespace NachoCore
         void Start ();
         // attempt to (re)start a specific account.
         void Start (int accountId);
-        // ask all accounts to sync immediately.
+        // stop all activity in the BE.
+        void Stop ();
+        // ... for a specific account.
+        void Stop (int accountId);
+        // ask all accounts to sync immediately (does a Start if needed).
         void ForceSync ();
         // for a single account to sync immediately.
         void ForceSync (int accountId);

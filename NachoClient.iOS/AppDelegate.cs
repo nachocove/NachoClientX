@@ -126,6 +126,7 @@ namespace NachoClient.iOS
         //
         public override void OnResignActivation (UIApplication application)
         {
+            BackEnd.Instance.Stop ();
         }
         // This method should be used to release shared resources and it should store the application state.
         // If your application supports background exection this method is called instead of WillTerminate

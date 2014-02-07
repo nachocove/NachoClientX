@@ -12,6 +12,7 @@ namespace NachoCore.ActiveSync
     public class AsProtoControl : ProtoControl, IAsDataSource
     {
         private IAsCommand Cmd;
+        private IAsCommand DisposedCmd;
 
         public enum Lst : uint
         {
@@ -675,19 +676,19 @@ namespace NachoCore.ActiveSync
 
         private void DoDisc ()
         {
-            Cmd = new AsAutodiscoverCommand (this);
+            SetCmd (new AsAutodiscoverCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoOpt ()
         {
-            Cmd = new AsOptionsCommand (this);
+            SetCmd (new AsOptionsCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoProv ()
         {
-            Cmd = new AsProvisionCommand (this);
+            SetCmd (new AsProvisionCommand (this));
             Cmd.Execute (Sm);
         }
 
@@ -700,60 +701,54 @@ namespace NachoCore.ActiveSync
 
         private void DoSettings ()
         {
-            Cmd = new AsSettingsCommand (this);
+            SetCmd (new AsSettingsCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoFSync ()
         {
-            Cmd = new AsFolderSyncCommand (this);
+            SetCmd (new AsFolderSyncCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoSync ()
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
-            Cmd = new AsSyncCommand (this);
+            ForceStop ();
+            SetCmd (new AsSyncCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoSend ()
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
-            Cmd = new AsSendMailCommand (this);
+            ForceStop ();
+            SetCmd (new AsSendMailCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoDnldAtt ()
         {
-            Cmd = new AsItemOperationsCommand (this);
+            SetCmd (new AsItemOperationsCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoMove ()
         {
-            Cmd = new AsMoveItemsCommand (this);
+            SetCmd (new AsMoveItemsCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoPing ()
         {
             if (!FirePendingInstead ()) {
-                Cmd = new AsPingCommand (this);
+                SetCmd (new AsPingCommand (this));
                 Cmd.Execute (Sm);
             }
         }
 
         private void DoSearch ()
         {
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
-            Cmd = new AsSearchCommand (this);
+            ForceStop ();
+            SetCmd (new AsSearchCommand (this));
             Cmd.Execute (Sm);
         }
 
@@ -796,6 +791,12 @@ namespace NachoCore.ActiveSync
             return (null != Cmd && Cmd.GetType () == cmdType);
         }
 
+        private void SetCmd (IAsCommand nextCmd)
+        {
+            DisposedCmd = Cmd;
+            Cmd = nextCmd;
+        }
+
         private void DeletePendingSearchReqs (string token, bool ignoreDispatched)
         {
             var query = BackEnd.Instance.Db.Table<McPending> ().Where (rec => rec.AccountId == Account.Id &&
@@ -829,11 +830,16 @@ namespace NachoCore.ActiveSync
             Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
         }
 
-        public override void ForceSync ()
+        public override void ForceStop ()
         {
             if (null != Cmd) {
                 Cmd.Cancel ();
             }
+        }
+
+        public override void ForceSync ()
+        {
+            ForceStop ();
             var defaultInbox = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.Type == (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox);
             if (null != defaultInbox) {
                 defaultInbox.AsSyncRequired = true;

@@ -126,6 +126,20 @@ namespace NachoCore
             }
         }
 
+        public void Stop ()
+        {
+            var accounts = Db.Table<McAccount> ();
+            foreach (var account in accounts) {
+                Stop (account.Id);
+            }
+        }
+
+        public void Stop (int accountId)
+        {
+            var service = ServiceFromAccountId (accountId);
+            service.ForceStop ();
+        }
+
         public void Start (int accountId)
         {
             var service = ServiceFromAccountId (accountId);
