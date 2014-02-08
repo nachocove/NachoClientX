@@ -99,12 +99,14 @@ namespace NachoClient.iOS
                 }
                 // We rely on the fact that Info_NewUnreadEmailMessageInInbox will
                 // preceed Info_SyncSucceeded.
+                BackEnd.Instance.Stop ();
                 BackEnd.Instance.StatusIndEvent -= StatusHandler;
                 CompletionHandler (FetchResult);
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
                 Log.Info (Log.LOG_UI, "StatusHandler:Error_SyncFailed");
+                BackEnd.Instance.Stop ();
                 BackEnd.Instance.StatusIndEvent -= StatusHandler;
                 CompletionHandler (FetchResult);
                 break;
