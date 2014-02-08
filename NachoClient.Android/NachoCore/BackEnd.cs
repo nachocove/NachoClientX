@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using SQLite;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -120,6 +121,7 @@ namespace NachoCore
 
         public void Start ()
         {
+            // The callee does Task.Run.
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Start (account.Id);
@@ -128,6 +130,7 @@ namespace NachoCore
 
         public void Stop ()
         {
+            // Don't Task.Run.
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Stop (account.Id);
@@ -136,51 +139,55 @@ namespace NachoCore
 
         public void Stop (int accountId)
         {
+            // Don't Task.Run.
             var service = ServiceFromAccountId (accountId);
             service.ForceStop ();
         }
 
         public void Start (int accountId)
         {
-            var service = ServiceFromAccountId (accountId);
-            if (null == service) {
-                /* NOTE: This code needs to be able to detect the account type and start the 
+            Task.Run (delegate {
+                var service = ServiceFromAccountId (accountId);
+                if (null == service) {
+                    /* NOTE: This code needs to be able to detect the account type and start the 
                  * appropriate control (not just AS).
                  */
-                service = new AsProtoControl (this, accountId);
-                Services.Add (service);
-                // Create client owned objects as needed.
-                if (null == GetOutbox (accountId)) {
-                    var outbox = McFolder.CreateClientOwned (accountId);
-                    outbox.IsHidden = false;
-                    outbox.ParentId = "0";
-                    outbox.ServerId = ClientOwned_Outbox;
-                    outbox.DisplayName = ClientOwned_Outbox;
-                    outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
-                    outbox.Insert ();
+                    service = new AsProtoControl (this, accountId);
+                    Services.Add (service);
+                    // Create client owned objects as needed.
+                    if (null == GetOutbox (accountId)) {
+                        var outbox = McFolder.CreateClientOwned (accountId);
+                        outbox.IsHidden = false;
+                        outbox.ParentId = "0";
+                        outbox.ServerId = ClientOwned_Outbox;
+                        outbox.DisplayName = ClientOwned_Outbox;
+                        outbox.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail;
+                        outbox.Insert ();
+                    }
+                    if (null == GetGalCache (accountId)) {
+                        var galCache = McFolder.CreateClientOwned (accountId);
+                        galCache.IsHidden = true;
+                        galCache.ParentId = "0";
+                        galCache.ServerId = ClientOwned_GalCache;
+                        galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
+                        galCache.Insert ();
+                    }
+                    if (null == GetGleaned (accountId)) {
+                        var gleaned = McFolder.CreateClientOwned (accountId);
+                        gleaned.IsHidden = true;
+                        gleaned.ParentId = "0";
+                        gleaned.ServerId = ClientOwned_Gleaned;
+                        gleaned.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
+                        gleaned.Insert ();
+                    }
                 }
-                if (null == GetGalCache (accountId)) {
-                    var galCache = McFolder.CreateClientOwned (accountId);
-                    galCache.IsHidden = true;
-                    galCache.ParentId = "0";
-                    galCache.ServerId = ClientOwned_GalCache;
-                    galCache.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
-                    galCache.Insert ();
-                }
-                if (null == GetGleaned (accountId)) {
-                    var gleaned = McFolder.CreateClientOwned (accountId);
-                    gleaned.IsHidden = true;
-                    gleaned.ParentId = "0";
-                    gleaned.ServerId = ClientOwned_Gleaned;
-                    gleaned.Type = (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts;
-                    gleaned.Insert ();
-                }
-            }
-            service.Execute ();
+                service.Execute ();
+            });
         }
 
         public void ForceSync ()
         {
+            // The callee does Task.Run.
             var accounts = Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 ForceSync (account.Id);
@@ -189,29 +196,39 @@ namespace NachoCore
 
         public void ForceSync (int accountId)
         {
-            ServiceFromAccountId (accountId).ForceSync ();
+            Task.Run (delegate {
+                ServiceFromAccountId (accountId).ForceSync ();
+            });
         }
 
         public void CertAskResp (int accountId, bool isOkay)
         {
-            ServiceFromAccountId (accountId).CertAskResp (isOkay);
+            Task.Run (delegate {
+                ServiceFromAccountId (accountId).CertAskResp (isOkay);
+            });
         }
 
         public void ServerConfResp (int accountId)
         {
-            ServiceFromAccountId (accountId).ServerConfResp ();
+            Task.Run (delegate {
+                ServiceFromAccountId (accountId).ServerConfResp ();
+            });
         }
 
         public void CredResp (int accountId)
         {
-            ServiceFromAccountId (accountId).CredResp ();
+            Task.Run (delegate {
+                ServiceFromAccountId (accountId).CredResp ();
+            });
         }
 
         public bool Cancel (int accountId, string token)
         {
+            // Don't Task.Run.
             return ServiceFromAccountId (accountId).Cancel (token);
         }
 
+        // Commands need to do Task.Run as appropriate in protocol controller.
         public string StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
             return ServiceFromAccountId (accountId).StartSearchContactsReq (prefix, maxResults);

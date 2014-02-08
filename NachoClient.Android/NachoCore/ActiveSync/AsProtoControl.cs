@@ -4,6 +4,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
+using System.Threading.Tasks;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -879,7 +881,9 @@ namespace NachoCore.ActiveSync
                 EmailMessageId = emailMessageId
             };
             sendUpdate.Insert ();
-            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSEND");
+            });
             return sendUpdate.Token;
         }
 
@@ -915,7 +919,9 @@ namespace NachoCore.ActiveSync
             }
             emailMessage.DeleteBody (BackEnd.Instance.Db);
             emailMessage.Delete ();
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
+            });
             return deleUpdate.Token;
         }
 
@@ -958,13 +964,15 @@ namespace NachoCore.ActiveSync
                               x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
             oldMapEntry.Delete ();
 
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
+            });
             return moveUpdate.Token;
         }
 
         private bool GetEmailMessageAndFolder (int emailMessageId, 
-            out McEmailMessage emailMessage,
-            out McFolder folder)
+                                               out McEmailMessage emailMessage,
+                                               out McFolder folder)
         {
             folder = null;
             emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
@@ -1000,7 +1008,9 @@ namespace NachoCore.ActiveSync
             emailMessage.IsRead = true;
             emailMessage.Update ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedRead));
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMRMSG");
+            });
             return markUpdate.Token;
         }
 
@@ -1026,7 +1036,9 @@ namespace NachoCore.ActiveSync
             emailMessage.UtcDeferUntil = utcStart;
             emailMessage.UtcDue = utcDue;
             emailMessage.Update ();
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCSF");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCSF");
+            });
             return setFlag.Token;
         }
 
@@ -1049,7 +1061,9 @@ namespace NachoCore.ActiveSync
             emailMessage.UtcDeferUntil = DateTime.MinValue;
             emailMessage.UtcDue = DateTime.MinValue;
             emailMessage.Update ();
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
+            });
             return clearFlag.Token;
         }
 
@@ -1072,7 +1086,9 @@ namespace NachoCore.ActiveSync
             emailMessage.UtcDeferUntil = DateTime.MinValue;
             emailMessage.UtcDue = DateTime.MinValue;
             emailMessage.Update ();
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
+            });
             return markFlagDone.Token;
         }
 
@@ -1091,7 +1107,9 @@ namespace NachoCore.ActiveSync
             update.Insert ();
             att.PercentDownloaded = 1;
             att.Update ();
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDNLDATT");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDNLDATT");
+            });
             return update.Token;
         }
 
