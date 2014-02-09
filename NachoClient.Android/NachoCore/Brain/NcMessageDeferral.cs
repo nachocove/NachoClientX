@@ -39,7 +39,7 @@ namespace NachoCore.Brain
             }
             foreach (var message in thread) {
                 message.DeferralType = deferralType;
-                message.UtcDeferUntil = r.GetValue<DateTime> ();
+                message.FlagUtcDeferUntil = r.GetValue<DateTime> ();
                 BackEnd.Instance.Db.Update (message);
             }
             return NcResult.OK ();
@@ -49,7 +49,7 @@ namespace NachoCore.Brain
         {
             foreach (var message in thread) {
                 message.DeferralType = MessageDeferralType.Custom;
-                message.UtcDeferUntil = deferUntil;
+                message.FlagUtcDeferUntil = deferUntil;
                 BackEnd.Instance.Db.Update (message);
             }
             return NcResult.OK ();
@@ -59,7 +59,7 @@ namespace NachoCore.Brain
         {
             foreach (var message in thread) {
                 message.DeferralType = MessageDeferralType.None;
-                message.UtcDeferUntil = DateTime.MinValue;
+                message.FlagUtcDeferUntil = DateTime.MinValue;
                 BackEnd.Instance.Db.Update (message);
             }
             return NcResult.OK ();

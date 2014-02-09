@@ -1,4 +1,4 @@
-    using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -126,10 +126,10 @@ namespace NachoCore.ActiveSync
                             new XElement (m_ns + Xml.AirSync.ApplicationData,
                                 new XElement (emailNs + Xml.Email.Flag,
                                     new XElement (emailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set),
-                                    new XElement (emailNs + Xml.Email.FlagType, setF.Message),
-                                    new XElement (tasksNs + Xml.Tasks.StartDate, setF.UtcStart.ToLocalTime ().ToAsUtcString ()),
+                                    new XElement (emailNs + Xml.Email.FlagType, setF.FlagType),
+                                    new XElement (tasksNs + Xml.Tasks.StartDate, setF.Start.ToLocalTime ().ToAsUtcString ()),
                                     new XElement (tasksNs + Xml.Tasks.UtcStartDate, setF.UtcStart.ToAsUtcString ()),
-                                    new XElement (tasksNs + Xml.Tasks.DueDate, setF.UtcDue.ToLocalTime ().ToAsUtcString ()),
+                                    new XElement (tasksNs + Xml.Tasks.DueDate, setF.Due.ToLocalTime ().ToAsUtcString ()),
                                     new XElement (tasksNs + Xml.Tasks.UtcDueDate, setF.UtcDue.ToAsUtcString ())))));
                         setF.IsDispatched = true;
                         setF.Update ();
@@ -150,8 +150,8 @@ namespace NachoCore.ActiveSync
                             new XElement (m_ns + Xml.AirSync.ApplicationData,
                                 new XElement (emailNs + Xml.Email.Flag,
                                     new XElement (emailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone),
-                                    new XElement (emailNs + Xml.Email.CompleteTime, DateTime.UtcNow.ToLocalTime ().ToAsUtcString ()),
-                                    new XElement (tasksNs + Xml.Tasks.DateCompleted, DateTime.UtcNow.ToLocalTime ().ToAsUtcString ())))));
+                                    new XElement (emailNs + Xml.Email.CompleteTime, markF.CompleteTime.ToAsUtcString ()),
+                                    new XElement (tasksNs + Xml.Tasks.DateCompleted, markF.DateCompleted.ToAsUtcString ())))));
                         markF.IsDispatched = true;
                         markF.Update ();
                     }
@@ -277,7 +277,6 @@ namespace NachoCore.ActiveSync
                             case Xml.AirSync.Add:
                                 // If the Class element is present, respect it. Otherwise key off
                                 // the type of the folder.
-                                // FIXME - 12.1-isms.
                                 xmlClass = command.Element (m_ns + Xml.AirSync.Class);
                                 if (null != xmlClass) {
                                     classCode = xmlClass.Value;
@@ -316,7 +315,7 @@ namespace NachoCore.ActiveSync
                                 }
                                 switch (classCode) {
                                 case Xml.AirSync.ClassCode.Email:
-                                    ServerSaysChangeEmailItem (command, folder);
+                                    ServerSaysChangeEmail (command, folder);
                                     break;
                                 case Xml.AirSync.ClassCode.Calendar:
                                     ServerSaysChangeCalendarItem (command, folder);

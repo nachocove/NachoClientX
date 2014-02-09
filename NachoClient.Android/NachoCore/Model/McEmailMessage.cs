@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 
@@ -78,14 +79,53 @@ namespace NachoCore.Model
         /// MIME header References: message ids, crlf separated (optional)
         public string References { set; get; }
 
+        ///
+        /// <Flag> STUFF.
+        ///
+
         /// Kind of delay being applied
+        /// FIXME - this should go away and be a function of the Sync-ed
+        /// data in the model. Otherwise, it won't work right in another 
+        /// NachoClient.
         public MessageDeferralType DeferralType { set; get; }
 
-        /// User has asked to hide the message for a while
-        public DateTime UtcDeferUntil { set; get; }
+        // NOTE: These values ARE the AS values.
+        public enum FlagStatusValue : uint
+        {
+            Cleared = 0,
+            Complete = 1,
+            Active = 2,
+        };
 
+        public uint FlagStatus { set; get; }
+        // This is the string associated with the flag.
+        public string FlagType { set; get; }
+
+        /// User has asked to hide the message for a while
+        public DateTime FlagUtcDeferUntil { set; get; }
+
+        public DateTime FlagDeferUntil { set; get; }
         // User must complete task by.
-        public DateTime UtcDue { set; get; }
+        public DateTime FlagUtcDue { set; get; }
+
+        public DateTime FlagDue { set; get; }
+
+        public DateTime FlagDateCompleted { set; get; }
+
+        public DateTime FlagCompleteTime { set; get; }
+
+        public bool FlagReminderSet { set; get; }
+
+        public DateTime FlagReminderTime { set; get; }
+
+        public DateTime FlagOrdinalDate { set; get; }
+
+        public DateTime FlagSubOrdinalDate { set; get; }
+
+        ///
+        /// </Flag> STUFF.
+        ///
+
         /// Attachments are separate
 
         [Indexed]
@@ -143,13 +183,19 @@ namespace NachoCore.Model
             }
         }
 
+        public static McEmailMessage QueryByServerId (int accountId, string serverId)
+        {
+            return BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (fld => 
+                fld.AccountId == accountId &&
+            fld.ServerId == serverId);
+        }
         // Note need to paramtrize <T> and move to McItem.
         public static List<McEmailMessage> ActiveMessages (int accountId, int folderId)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
             " m.AccountId = ? AND " +
             " m.FolderId = ? AND " +
-                "e.UtcDeferUntil < ?",
+            " e.FlagUtcDeferUntil < ?",
                 accountId, folderId, DateTime.UtcNow);
         }
         // TODO: Need account id
@@ -157,7 +203,7 @@ namespace NachoCore.Model
         public static List<McEmailMessage> DeferredMessages ()
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
-                "e.UtcDeferUntil > ?",
+                " e.FlagUtcDeferUntil > ?",
                 DateTime.UtcNow);
         }
     }

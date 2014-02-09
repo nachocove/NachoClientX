@@ -64,9 +64,11 @@ namespace NachoCore
         public abstract string DeleteEmailCmd (int emailMessageId);
         public abstract string MarkEmailReadCmd (int emailMessageId);
         public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
-        public abstract string SetEmailFlagCmd (int emailMessageId, string flagMessage, DateTime utcStart, DateTime utcDue);
+        public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
+            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
         public abstract string ClearEmailFlagCmd (int emailMessageId);
-        public abstract string MarkEmailFlagDone (int emailMessageId);
+        public abstract string MarkEmailFlagDone (int emailMessageId,
+            DateTime completeTime, DateTime dateCompleted);
         public abstract string DnldAttCmd (int attId);
 
         // Interface to controllers.

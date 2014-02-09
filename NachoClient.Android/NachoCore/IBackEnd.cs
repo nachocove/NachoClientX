@@ -45,11 +45,13 @@ namespace NachoCore
         // mark an email as read. returns token that can be used to possibly cancel.
         string MarkEmailReadCmd (int accountId, int emailMessageId);
         // set the flag value on the email.
-        string SetEmailFlagCmd (int accountId, int emailMessageId, string flagMessage, DateTime utcStart, DateTime utcDue);
+        string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
         // clear the flag value on the email.
         string ClearEmailFlagCmd (int accountId, int emailMessageId);
         // mark the flag as "done" for the server, and clear the values in the DB.
-        string MarkEmailFlagDone (int accountId, int emailMessageId);
+        string MarkEmailFlagDone (int accountId, int emailMessageId,
+            DateTime completeTime, DateTime dateCompleted);
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
         //

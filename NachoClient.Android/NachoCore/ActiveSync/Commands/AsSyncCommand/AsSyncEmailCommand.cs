@@ -10,29 +10,35 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        public void ServerSaysChangeEmailItem (XElement command, McFolder folder)
+        public void ServerSaysChangeEmail (XElement command, McFolder folder)
         {
+            ProcessEmailItem (command, folder, false);
         }
 
         private McEmailMessage ServerSaysAddEmail (XElement command, McFolder folder)
         {
+            return ProcessEmailItem (command, folder, true);
+        }
+
+        public McEmailMessage ProcessEmailItem (XElement command, McFolder folder, bool isAdd)
+        {
+            bool justCreated = false;
             XNamespace email2Ns = Xml.Email2.Ns;
 
             var serverId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
             // MoveItems should make the server send an Add/Delete that we want to ignore.
             // If we see an Add with a pre-existing ServerId in the DB, then we ignore the Add Op.
-            // In 0.2, be more precise about dropping these Add/Deletes.
-            if (BackEnd.Instance.Db.Table<McEmailMessage> ().Any (x =>
-                x.AccountId == DataSource.Account.Id &&
-                x.ServerId == serverId)) {
-                return null;
+            // FIXME be more precise about dropping these Add/Deletes.
+            var emailMessage = McEmailMessage.QueryByServerId (folder.AccountId, serverId);
+            if (null == emailMessage) {
+                justCreated = true;
+                emailMessage = new McEmailMessage {
+                    AccountId = DataSource.Account.Id,
+                    ServerId = serverId,
+                };
             }
 
             IEnumerable<XElement> xmlAttachments = null;
-            var emailMessage = new McEmailMessage {
-                AccountId = DataSource.Account.Id,
-                ServerId = serverId,
-            };
 
             var appData = command.Element (m_ns + Xml.AirSync.ApplicationData);
             foreach (var child in appData.Elements()) {
@@ -59,23 +65,132 @@ namespace NachoCore.ActiveSync
                         Console.WriteLine ("Truncated message from server.");
                     }
                     break;
+
+                case Xml.Email.Flag:
+                    if (!child.HasElements) {
+                        // This is the clearing of the Flag.
+                        emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                    } else {
+                        foreach (var flagPart in child.Elements()) {
+                            switch (flagPart.Name.LocalName) {
+                            case Xml.Email.Status:
+                                try {
+                                    uint statusValue = uint.Parse (flagPart.Value);
+                                    if (2 < statusValue) {
+                                        // FIXME log.
+                                    } else {
+                                        emailMessage.FlagStatus = statusValue;
+                                    }
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Email.FlagType:
+                                emailMessage.FlagType = flagPart.Value;
+                                break;
+
+                            case Xml.Tasks.StartDate:
+                                try {
+                                    emailMessage.FlagDeferUntil = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Tasks.UtcStartDate:
+                                try {
+                                    emailMessage.FlagUtcDeferUntil = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Tasks.DueDate:
+                                try {
+                                    emailMessage.FlagDue = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Tasks.UtcDueDate:
+                                try {
+                                    emailMessage.FlagUtcDue = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Tasks.ReminderSet:
+                                try {
+                                    int boolInt = int.Parse (flagPart.Value);
+                                    if (0 == boolInt) {
+                                        emailMessage.FlagReminderSet = false;
+                                    } else if (1 == boolInt) {
+                                        emailMessage.FlagReminderSet = true;
+                                    } else {
+                                        // FIXME log.
+                                    }
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+                               
+                            case Xml.Tasks.Subject:
+                            // Ignore. This SHOULD be the same as the message Subject.
+                                break;
+
+                            case Xml.Tasks.ReminderTime:
+                                try {
+                                    emailMessage.FlagReminderTime = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Email.CompleteTime:
+                                try {
+                                    emailMessage.FlagCompleteTime = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+
+                            case Xml.Tasks.DateCompleted:
+                                try {
+                                    emailMessage.FlagDateCompleted = DateTime.Parse (flagPart.Value);
+                                } catch {
+                                    // FIXME log.
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    break;
+
                 case Xml.Email.To:
                     // TODO: Append
                     emailMessage.To = child.Value;
                     break;
+
                 case Xml.Email.Cc:
                     // TODO: Append
                     emailMessage.Cc = child.Value;
                     break;
+
                 case Xml.Email.From:
                     emailMessage.From = child.Value;
                     break;
+
                 case Xml.Email.ReplyTo:
                     emailMessage.ReplyTo = child.Value;
                     break;
+
                 case Xml.Email.Subject:
                     emailMessage.Subject = child.Value;
                     break;
+
                 case Xml.Email.DateReceived:
                     try {
                         emailMessage.DateReceived = DateTime.Parse (child.Value);
@@ -117,32 +232,31 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 case Xml.Email2.ConversationId:
-                    // FIXME: Will be base64 string soon
-//                    emailMessage.ConversationId = child.Value;
+                    emailMessage.ConversationId = child.Value;
                     break;
                 }
             }
 
+            if (justCreated) {
+                emailMessage.Insert ();
+            } else {
+                emailMessage.Update ();
+            }
+
             // We handle the illegal case (GOOG "All" folder) where the ServerId is used twice
             // on the 2nd insert of the same message.
-            var existingEmailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ()
-                .SingleOrDefault (x => 
-                    x.AccountId == emailMessage.AccountId &&
-                    x.ServerId == emailMessage.ServerId);
-            int emailMessageId;
-            if (null == existingEmailMessage) {
-                emailMessage.Insert ();
-                emailMessageId = emailMessage.Id;
-            } else {
-                emailMessageId = existingEmailMessage.Id;
+            var map = McMapFolderItem.QueryByFolderIdItemIdClassCode (DataSource.Account.Id, 
+                folder.Id, emailMessage.Id, (uint)McItem.ClassCodeEnum.Email);
+            if (null == map) {
+                map = new McMapFolderItem (DataSource.Account.Id) {
+                    ItemId = emailMessage.Id,
+                    FolderId = folder.Id,
+                    ClassCode = (uint)McItem.ClassCodeEnum.Email,
+                };
+                map.Insert ();
             }
-            var map = new McMapFolderItem (DataSource.Account.Id) {
-                ItemId = emailMessageId,
-                FolderId = folder.Id,
-                ClassCode = (uint)McItem.ClassCodeEnum.Email,
-            };
-            map.Insert ();
-            if (null != existingEmailMessage) {
+            if (!justCreated) {
+                // We're done. Attachments are process on Add, not Change.
                 return null;
             }
             if (null != xmlAttachments) {

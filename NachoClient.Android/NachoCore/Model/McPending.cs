@@ -82,11 +82,19 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { set; get; }
 
-        public string Message { set; get; }
+        public string FlagType { set; get; }
+
+        public DateTime Start { set; get; }
 
         public DateTime UtcStart { set; get; }
 
+        public DateTime Due { set; get; }
+
         public DateTime UtcDue { get; set; }
+
+        public DateTime CompleteTime { get; set; }
+
+        public DateTime DateCompleted { get; set; }
 
         [Indexed]
         public string DisplayName { set; get; }

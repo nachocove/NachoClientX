@@ -264,9 +264,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
         }
 
-        public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagMessage, DateTime utcStart, DateTime utcDue)
+        public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
-            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagMessage, utcStart, utcDue);
+            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagType, 
+                start, utcStart, due, utcDue);
         }
 
         public string ClearEmailFlagCmd (int accountId, int emailMessageId)
@@ -274,9 +276,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).ClearEmailFlagCmd (emailMessageId);
         }
 
-        public string MarkEmailFlagDone (int accountId, int emailMessageId)
+        public string MarkEmailFlagDone (int accountId, int emailMessageId,
+            DateTime completeTime, DateTime dateCompleted)
         {
-            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId);
+            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId,
+                completeTime, dateCompleted);
         }
 
         private McFolder GetClientOwned (int accountId, string serverId)

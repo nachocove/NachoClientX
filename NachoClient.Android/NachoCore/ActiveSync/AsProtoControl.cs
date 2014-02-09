@@ -1014,7 +1014,8 @@ namespace NachoCore.ActiveSync
             return markUpdate.Token;
         }
 
-        public override string SetEmailFlagCmd (int emailMessageId, string flagMessage, DateTime utcStart, DateTime utcDue)
+        public override string SetEmailFlagCmd (int emailMessageId, string flagType, 
+            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             McEmailMessage emailMessage;
             McFolder folder;
@@ -1026,15 +1027,21 @@ namespace NachoCore.ActiveSync
                 Operation = McPending.Operations.EmailSetFlag,
                 ServerId = emailMessage.ServerId,
                 FolderServerId = folder.ServerId,
-                Message = flagMessage,
+                FlagType = flagType,
+                Start = start,
                 UtcStart = utcStart,
+                Due = due,
                 UtcDue = utcDue,
             };
             setFlag.Insert ();
 
             // Set the Flag info in the DB item.
-            emailMessage.UtcDeferUntil = utcStart;
-            emailMessage.UtcDue = utcDue;
+            emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
+            emailMessage.FlagType = flagType;
+            emailMessage.FlagDeferUntil = start;
+            emailMessage.FlagUtcDeferUntil = utcStart;
+            emailMessage.FlagDue = due;
+            emailMessage.FlagUtcDue = utcDue;
             emailMessage.Update ();
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCSF");
@@ -1057,9 +1064,7 @@ namespace NachoCore.ActiveSync
             };
             clearFlag.Insert ();
 
-            // Clear the Flag info in the DB item.
-            emailMessage.UtcDeferUntil = DateTime.MinValue;
-            emailMessage.UtcDue = DateTime.MinValue;
+            emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
             emailMessage.Update ();
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
@@ -1067,7 +1072,8 @@ namespace NachoCore.ActiveSync
             return clearFlag.Token;
         }
 
-        public override string MarkEmailFlagDone (int emailMessageId)
+        public override string MarkEmailFlagDone (int emailMessageId,
+            DateTime completeTime, DateTime dateCompleted)
         {
             McEmailMessage emailMessage;
             McFolder folder;
@@ -1079,12 +1085,14 @@ namespace NachoCore.ActiveSync
                 Operation = McPending.Operations.EmailMarkFlagDone,
                 ServerId = emailMessage.ServerId,
                 FolderServerId = folder.ServerId,
+                CompleteTime = completeTime,
+                DateCompleted = dateCompleted,
             };
             markFlagDone.Insert ();
 
-            // Clear the Flag info in the DB item.
-            emailMessage.UtcDeferUntil = DateTime.MinValue;
-            emailMessage.UtcDue = DateTime.MinValue;
+            emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
+            emailMessage.FlagCompleteTime = completeTime;
+            emailMessage.FlagDateCompleted = dateCompleted;
             emailMessage.Update ();
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCF");
