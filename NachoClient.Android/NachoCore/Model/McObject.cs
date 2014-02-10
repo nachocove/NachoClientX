@@ -1,5 +1,6 @@
 using SQLite;
 using System;
+using System.Linq;
 
 namespace NachoCore.Model
 {

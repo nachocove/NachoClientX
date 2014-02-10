@@ -300,8 +300,8 @@ namespace NachoClient.iOS
                         if (txt != null) {
                             Log.Info (Log.LOG_UI, " New Server Name = " + txt);
                             tmpServer.Fqdn = txt;
-                            Be.Db.Update(tmpServer);
-                            Be.ServerConfResp (accountId); 
+                            tmpServer.Update ();
+                            Be.ServerConfResp (accountId, false); 
                             credView.ResignFirstResponder();
                         };
 

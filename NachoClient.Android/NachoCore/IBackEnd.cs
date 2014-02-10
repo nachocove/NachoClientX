@@ -25,7 +25,7 @@ namespace NachoCore
         // let the BE know that the asked-about server cert is/not okay to trust.
         void CertAskResp (int accountId, bool isOkay);
         // let the BE know that the server info has been updated for this account.
-        void ServerConfResp (int accountId);
+        void ServerConfResp (int accountId, bool forceAutodiscovery);
         // let the BE know that the credentials have been updated for this account.
         void CredResp (int accountId);
         // cancel command/request associated with this token (if possible).

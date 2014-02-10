@@ -208,10 +208,10 @@ namespace NachoCore
             });
         }
 
-        public void ServerConfResp (int accountId)
+        public void ServerConfResp (int accountId, bool forceAutodiscovery)
         {
             Task.Run (delegate {
-                ServiceFromAccountId (accountId).ServerConfResp ();
+                ServiceFromAccountId (accountId).ServerConfResp (forceAutodiscovery);
             });
         }
 

@@ -55,7 +55,7 @@ namespace NachoCore
         public abstract void ForceSync ();
         public abstract void ForceStop ();
         public abstract void CertAskResp (bool isOkay);
-        public abstract void ServerConfResp ();
+        public abstract void ServerConfResp (bool forceAutodiscovery);
         public abstract void CredResp ();
         public abstract bool Cancel (string token);
         public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
