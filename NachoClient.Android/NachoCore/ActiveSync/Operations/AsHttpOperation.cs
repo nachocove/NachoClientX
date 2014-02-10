@@ -319,6 +319,7 @@ namespace NachoCore.ActiveSync
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     if (!cToken.IsCancellationRequested) {
+                        NcCommStatus.Instance.ReportCommResult (ServerUri.Host, true);
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                 }
@@ -327,6 +328,7 @@ namespace NachoCore.ActiveSync
                 Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
+                    NcCommStatus.Instance.ReportCommResult (ServerUri.Host, true);
                     // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                     HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
                 }
@@ -372,6 +374,7 @@ namespace NachoCore.ActiveSync
             XDocument responseDoc;
             switch (response.StatusCode) {
             case HttpStatusCode.OK:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
                 if (0 != ContentData.Length) {
                     switch (ContentType) {
@@ -411,14 +414,18 @@ namespace NachoCore.ActiveSync
 
             case HttpStatusCode.BadRequest:
             case HttpStatusCode.NotFound:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOP400404", null, "HttpStatusCode.BadRequest or NotFound");
 
             case HttpStatusCode.Unauthorized:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
 
             case HttpStatusCode.Forbidden:
             case HttpStatusCode.InternalServerError:
             case HttpStatusCode.Found:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, 
+                    HttpStatusCode.InternalServerError == response.StatusCode);
                 if (response.Headers.Contains ("X-MS-RP")) {
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, DataSource);
@@ -429,10 +436,12 @@ namespace NachoCore.ActiveSync
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOPREDISC0");
 
             case (HttpStatusCode)449:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
                 return Final ((uint)AsProtoControl.AsEvt.E.ReProv, "HTTPOP449");
 
             case (HttpStatusCode)451:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false);
                 if (!Allow451Follow) {
                     return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPNO451", null, "HttpStatusCode.451 follow not allowed.");
                 }
@@ -462,9 +471,11 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP451NOX", null, "HttpStatusCode.451 with no X-MS-Location.");
 
             case HttpStatusCode.BadGateway:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, true);
                 return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP502", null, "HttpStatusCode.BadGateway");
 
             case HttpStatusCode.ServiceUnavailable:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, true);
                 uint seconds = KDefaultDelaySeconds;
                 if (response.Headers.Contains ("Retry-After")) {
                     try {
@@ -478,11 +489,13 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOPSU", seconds, "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)507:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
                 ReportError ("Exchange server is out of space.");
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOP507", null, "HttpStatusCode 507 - Out of space on server.");
 
             default:
+                NcCommStatus.Instance.ReportCommResult (ServerUri.Host, true);
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOPHARD0", null, 
                     string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
             }

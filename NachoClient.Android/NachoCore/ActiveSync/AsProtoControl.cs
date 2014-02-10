@@ -838,7 +838,9 @@ namespace NachoCore.ActiveSync
                 Token = token
             };
             newSearch.Insert ();
-            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCSRCH");
+            });
         }
 
         public override void ForceStop ()
@@ -854,7 +856,9 @@ namespace NachoCore.ActiveSync
                 defaultInbox.AsSyncRequired = true;
                 defaultInbox.Update ();
             }
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
+            });
         }
 
         public override bool Cancel (string token)
@@ -924,6 +928,7 @@ namespace NachoCore.ActiveSync
             }
             emailMessage.DeleteBody (BackEnd.Instance.Db);
             emailMessage.Delete ();
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCDELMSG");
             });

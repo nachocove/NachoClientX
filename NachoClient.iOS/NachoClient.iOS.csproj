@@ -140,7 +140,7 @@
     <Folder Include="NachoCore\ActiveSync\Commands\" />
     <Folder Include="NachoUI.iOS\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsSyncCommand\" />
-    <Folder Include="NachoCore\NcCommStatus\" />
+    <Folder Include="NachoCore\Brain\NcCommStatus\" />
     <Folder Include="NachoCore\Brain\" />
     <Folder Include="NachoCore\Utils\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\" />
@@ -385,12 +385,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoAssert.cs">
       <Link>NachoCore\Extensions\NachoAssert.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NcCommStatus\NcCommStatus.cs">
-      <Link>NachoCore\NcCommStatus\NcCommStatus.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs">
-      <Link>NachoCore\NcCommStatus\NcCommStatusServerEventArgs.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
     <Compile Include="NachoUI.iOS\Util.cs" />
     <Compile Include="NachoUI.iOS\Locale.cs" />
@@ -511,6 +505,12 @@
       <DependentUpon>MessageActionViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\INachoMessageController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcCommStatus\NcCommStatus.cs">
+      <Link>NachoCore\Brain\NcCommStatus\NcCommStatus.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcCommStatus\NcCommStatusServerEventArgs.cs">
+      <Link>NachoCore\Brain\NcCommStatus\NcCommStatusServerEventArgs.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

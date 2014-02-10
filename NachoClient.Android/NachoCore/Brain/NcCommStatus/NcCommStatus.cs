@@ -11,7 +11,7 @@ namespace NachoCore.Utils
     {
         public class ServerAccess
         {
-            public bool DidSucceed { get; set; }
+            public bool DidFailGenerally { get; set; }
 
             public DateTime When { get; set; }
         }
@@ -34,28 +34,26 @@ namespace NachoCore.Utils
                 Reset ();
             }
 
-            public CommQualityEnum UpdateQuality (bool didSucceed)
+            public CommQualityEnum UpdateQuality (bool didFailGenerally)
             {
-                Accesses.Add (new ServerAccess () { DidSucceed = didSucceed, When = DateTime.UtcNow });
+                Accesses.Add (new ServerAccess () { DidFailGenerally = didFailGenerally, When = DateTime.UtcNow });
 
                 // Remove stale entries.
                 var trailing = DateTime.UtcNow;
                 trailing.AddMinutes (-3.0);
                 Accesses.RemoveAll (x => x.When < trailing);
 
-                // Say "OK" unless we have enough failure.
+                // Say "OK" unless we have enough to judge failure.
                 if (4 < Accesses.Count) {
                     Quality = CommQualityEnum.OK;
                     return Quality;
                 }
 
                 // Compute quality.
-                var pos = Convert.ToDouble (Accesses.Where (x => true == x.DidSucceed).Count ());
-                var neg = Convert.ToDouble (Accesses.Where (x => false == x.DidSucceed).Count ());
+                var neg = Convert.ToDouble (Accesses.Where (x => true == x.DidFailGenerally).Count ());
+                var pos = Convert.ToDouble (Accesses.Where (x => false == x.DidFailGenerally).Count ());
                 var total = pos + neg;
-                if (0.0 == total) {
-                    Quality = CommQualityEnum.OK;
-                } else if (0.0 == pos || 0.3 > (pos / total)) {
+                if (0.0 == pos || 0.3 > (pos / total)) {
                     Quality = CommQualityEnum.Unusable;
                 } else if (0.8 > (pos / total)) {
                     Quality = CommQualityEnum.Degraded;
@@ -129,12 +127,13 @@ namespace NachoCore.Utils
         };
 
         public event EventHandler CommStatusServerEvent;
+
         // NOTE - this could be enhanced by tracking RTT and timeouts, folding back into setting the timeout value.
-        public void ReportCommResult (int serverId, bool didSucceed)
+        public void ReportCommResult (int serverId, bool didFailGenerally)
         {
             var tracker = GetTracker (serverId);
             var oldQ = tracker.Quality;
-            var newQ = tracker.UpdateQuality (didSucceed);
+            var newQ = tracker.UpdateQuality (didFailGenerally);
             if (oldQ != newQ && null != CommStatusServerEvent) {
                 CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality, 
                     tracker.Status, tracker.Speed));
@@ -147,9 +146,10 @@ namespace NachoCore.Utils
             // Allow 0 to track conditions when we don't yet have a McServer record in DB.
             return (null == server) ? 0 : server.Id;
         }
-        public void ReportCommResult (string host, bool didSucceed)
+
+        public void ReportCommResult (string host, bool didFailGenerally)
         {
-            ReportCommResult (GetServerId (host), didSucceed);
+            ReportCommResult (GetServerId (host), didFailGenerally);
         }
 
         public void Reset (int serverId)
