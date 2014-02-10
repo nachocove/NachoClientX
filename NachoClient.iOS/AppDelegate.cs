@@ -24,6 +24,8 @@ namespace NachoClient.iOS
     [Register ("AppDelegate")]
     public partial class AppDelegate : UIApplicationDelegate, IBackEndOwner
     {
+       
+
         // class-level declarations
         public override UIWindow Window { get; set; }
 
@@ -33,6 +35,25 @@ namespace NachoClient.iOS
             get { return eventStore; }
         }
         protected EKEventStore eventStore;
+
+        // constants for managing timers
+
+        private const uint KDefaultDelaySeconds = 10;
+        private const int KDefaultTimeoutSeconds = 25;  
+        // iOS kills us after 30, so make sure we dont get there
+        private TimeSpan Timeout= new TimeSpan (0, 0, KDefaultTimeoutSeconds);
+    
+
+        private NachoTimer DelayTimer;
+        private NachoTimer TimeoutTimer;
+        // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
+        #pragma warning disable 414
+        private NachoTimer DisposedDelayTimer;
+        private NachoTimer DisposedTimeoutTimer;
+        #pragma warning restore 414
+        // end timer constants
+
+
 
         private bool launchBe()
         {
@@ -54,20 +75,23 @@ namespace NachoClient.iOS
         {
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // An instance of the EKEventStore class represents the iOS Calendar database.
+
             eventStore = new EKEventStore ( );
+           
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof (CidImageProtocol)));
             if (launcOptions != null) {
                 // we got some launch options from the OS, probably launched from a localNotification
                 if (launcOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                     var localNotification = launcOptions[UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                    if (localNotification.HasAction) {
+                    Log.Info (Log.LOG_UI, "Launched from local notification");
+                        //  if (localNotification.HasAction) {
                         // something supposed to happen
                         //FIXME - for now we'll pop up an alert saying we got new mail
                         // what we will do in future is show the email or calendar invite body
-                        new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null).Show ();
-                        localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
-                    }
+                    //  new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null).Show ();
+                    //  localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == AccountID);
+                    // }
                 }
             }
 
@@ -113,14 +137,59 @@ namespace NachoClient.iOS
             }
         }
 
+        private void CancelFetch (){
+            //FIXME
+            // set up timer to cancel BG fetch if its not success before System kills us off
+        }
+
+        private void CancelFetchCallback (object State)
+        {
+            // here's where we check to see if any status
+            // * kill backgroundfetch
+            Log.Info (Log.LOG_UI, "Cancel BackgroundFetch");
+           
+            BackEnd.Instance.StatusIndEvent -= StatusHandler;
+            CompletionHandler (UIBackgroundFetchResult.Failed); // should stop fetch occuring
+            CancelTimeoutTimer ();
+        }
+
+        private void CancelTimeoutTimer ()
+        {
+            if (null != TimeoutTimer) {
+                TimeoutTimer.Dispose ();
+                DisposedTimeoutTimer = TimeoutTimer;
+                TimeoutTimer = null;
+            }
+        }
+
+
+
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
+
+
+
             Log.Info (Log.LOG_UI, "PerformFetch Called");
+
+            TimeoutTimer = new NachoTimer (CancelFetchCallback, null, Timeout, System.Threading.Timeout.InfiniteTimeSpan);
+            // set timeout timer => start 
+
+
+
             CompletionHandler = completionHandler;
+            // Uncomment this if you want to just return
+            // CompletionHandler (UIBackgroundFetchResult.NewData);
+            // completion handler call to just immediately return from BG perform fetch call
+
+            //
             FetchResult = UIBackgroundFetchResult.Failed;
             BackEnd.Instance.StatusIndEvent += StatusHandler;
             BackEnd.Instance.ForceSync ();
+           
+
         }
+    
+
         //
         // This method is invoked when the application is about to move from active to inactive state.
         //
@@ -128,27 +197,46 @@ namespace NachoClient.iOS
         //
         public override void OnResignActivation (UIApplication application)
         {
+
+            Log.Info (Log.LOG_UI, "App Resign Activation: time remaining: " + application.BackgroundTimeRemaining);
             BackEnd.Instance.Stop ();
         }
+
         // This method should be used to release shared resources and it should store the application state.
         // If your application supports background exection this method is called instead of WillTerminate
         // when the user quits.
         public override void DidEnterBackground (UIApplication application)
         {
+            Log.Info (Log.LOG_UI, "App Did Enter Background");
         }
+
         // This method is called as part of the transiton from background to active state.
         public override void WillEnterForeground (UIApplication application)
         {
+            Log.Info (Log.LOG_UI, "App Will Enter Foreground");
             BackEnd.Instance.ForceSync ();
         }
+
+        // Equivalent to applicationDidBecomeActive
+        public override void OnActivated(UIApplication application)
+        {
+            Log.Info (Log.LOG_UI, "App Did Become Active");
+        }
+       
         // This method is called when the application is about to terminate. Save data, if needed. 
         public override void WillTerminate (UIApplication application)
         {
+            Log.Info (Log.LOG_UI, "App Will Terminate");
         }
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
+            Log.Info (Log.LOG_UI, "Recieved Local Notification");
+            if (notification.UserInfo != null) {
+                Log.Info (Log.LOG_UI, "User Info from localnotifocation");
+                // in future, we'll use this to open to right screen if we got launched from a notification
+            }
         }
 
         // Methods for IBackEndOwner
@@ -163,9 +251,10 @@ namespace NachoClient.iOS
             {
 
                 //Assert MCAccount != null;
+                // with code change - what is  corect access to DB?
                 UILocalNotification badgeNotification;
                 UILocalNotification notification = new UILocalNotification ();
-                var countunread = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+                var countunread = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
 
 
                 switch (status.SubKind) {
@@ -180,10 +269,6 @@ namespace NachoClient.iOS
 
                     UIApplication.SharedApplication.ScheduleLocalNotification (notification);
 
-                    //badgeNotification = new UILocalNotification ();
-                    //badgeNotification.FireDate = DateTime.Now;
-                    //badgeNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
-                    //UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
 
@@ -210,7 +295,7 @@ namespace NachoClient.iOS
                     //badgeNotification.AlertBody = "Message Read"; // null body means don't show
                     badgeNotification.HasAction = false;  // no alert to show on screen
                     badgeNotification.FireDate = DateTime.Now;
-                    var count2 = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);
+                    var count2 = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
                     badgeNotification.ApplicationIconBadgeNumber = count2;
 
                     UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
