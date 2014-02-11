@@ -144,6 +144,7 @@
     <Folder Include="NachoCore\Brain\" />
     <Folder Include="NachoCore\Utils\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\" />
+    <Folder Include="NachoCore\Adapters\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -316,25 +317,13 @@
     <Compile Include="NachoUI.iOS\HomePageViewController.designer.cs">
       <DependentUpon>HomePageViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\INachoContacts.cs">
-      <Link>NachoCore\INachoContacts.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
       <DependentUpon>ContactViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\INachoCalendar.cs">
-      <Link>NachoCore\INachoCalendar.cs</Link>
-    </Compile>
-    <Compile Include="NachoCore\DeviceContacts.cs" />
-    <Compile Include="NachoCore\NachoCalendar.cs" />
-    <Compile Include="NachoCore\NachoContacts.cs" />
     <Compile Include="NachoUI.iOS\CalendarItemViewController.cs" />
     <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
       <DependentUpon>CalendarItemViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\INachoFolders.cs">
-      <Link>NachoCore\INachoFolders.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
       <Link>NachoCore\Model\McAccount.cs</Link>
@@ -378,7 +367,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoTimer.cs">
       <Link>NachoCore\Extensions\NachoTimer.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\DeviceCalendar.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\AsContact.cs">
       <Link>NachoCore\ActiveSync\AsContact.cs</Link>
     </Compile>
@@ -404,12 +392,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\NcEmailAddress.cs">
       <Link>NachoCore\NcEmailAddress.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NachoEmailMessages.cs">
-      <Link>NachoCore\NachoEmailMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\INachoEmailMessages.cs">
-      <Link>NachoCore\INachoEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\ReadMessageViewController.cs" />
     <Compile Include="NachoUI.iOS\ReadMessageViewController.designer.cs">
       <DependentUpon>ReadMessageViewController.cs</DependentUpon>
@@ -417,7 +399,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
       <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\NachoFolders.cs" />
     <Compile Include="NachoUI.iOS\CidImageProtocol.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs">
       <Link>NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs</Link>
@@ -487,9 +468,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageDeferral.cs">
       <Link>NachoCore\Brain\NcMessageDeferral.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NachoDeferredEmailMessages.cs">
-      <Link>NachoCore\NachoDeferredEmailMessages.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\DatePickerViewController.cs" />
     <Compile Include="NachoUI.iOS\DatePickerViewController.designer.cs">
       <DependentUpon>DatePickerViewController.cs</DependentUpon>
@@ -511,6 +489,36 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcCommStatus\NcCommStatusServerEventArgs.cs">
       <Link>NachoCore\Brain\NcCommStatus\NcCommStatusServerEventArgs.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
+      <Link>NachoCore\Adapters\NachoFolders.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDeferredEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoDeferredEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoEmailMessages.cs">
+      <Link>NachoCore\Adapters\INachoEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoFolders.cs">
+      <Link>NachoCore\Adapters\INachoFolders.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoContacts.cs">
+      <Link>NachoCore\Adapters\NachoContacts.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoCalendar.cs">
+      <Link>NachoCore\Adapters\NachoCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoCalendar.cs">
+      <Link>NachoCore\Adapters\INachoCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
+      <Link>NachoCore\Adapters\INachoContacts.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\Adapters\DeviceCalendar.cs" />
+    <Compile Include="NachoCore\Adapters\DeviceContacts.cs" />
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

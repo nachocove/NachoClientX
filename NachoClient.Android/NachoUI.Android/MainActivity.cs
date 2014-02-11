@@ -1,46 +1,247 @@
-using System;
 using Android.App;
 using Android.Content;
+using Android.Content.Res;
+using Android.OS;
 using Android.Runtime;
+using Android.Support.V4.App;
+using Android.Support.V4.Content;
+using Android.Support.V4.View;
+using Android.Support.V4.Widget;
+using Android.Support.V7.App;
 using Android.Views;
 using Android.Widget;
-using Android.OS;
 using NachoCore;
-using NachoCore.Utils;
-using NachoPlatform;
-using DnDns.Enums;
-using DnDns.Query;
-using DnDns.Records;
-using System.Net;
-using System.Net.Http;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
+using NachoCore.Model;
+using System.Collections.Generic;
 
-namespace NachoClient.Android.Tablet
+namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NachoClient.Android", MainLauncher = true)]
-    public class MainActivity : Activity
+    [Activity (Label = "NachoClient.AndroidClient", Theme = "@style/Theme.AppCompat.Light", MainLauncher = true)]
+    public class MainActivity : ActionBarActivity
     {
-        int count = 1;
+        private DrawerLayout drawer;
+        private MyActionBarDrawerToggle drawerToggle;
+        private ListView drawerList;
+        private string drawerTitle;
+        private string title;
 
-        protected override void OnCreate (Bundle bundle)
+        public class SidebarMenu
         {
-            base.OnCreate (bundle);
+            public int Indent;
+            public string SegueName;
+            public string DisplayName;
+            public McFolder Folder;
+            public bool isDeviceContactsKludge;
+            public bool isDeviceCalendarKludge;
+
+            public SidebarMenu (McFolder folder, string displayName, string segueName)
+            {
+                Indent = 0;
+                SegueName = segueName;
+                DisplayName = displayName;
+                Folder = folder;
+                isDeviceContactsKludge = false;
+                isDeviceCalendarKludge = false;
+            }
+        };
+
+        public List<SidebarMenu> menu;
+        NachoFolders email;
+        NachoFolders contacts;
+        NachoFolders calendars;
+        const string SidebarToFolderSegueId = "SidebarToFolder";
+        const string SidebarToFoldersSegueId = "SidebarToFolders";
+        const string SidebarToContactsSegueId = "SidebarToContacts";
+        const string SidebarToCalendarSegueId = "SidebarToCalendar";
+        const string SidebarToMessagesSegueId = "SidebarToMessages";
+        const string SidebarToDeferredMessagesSegueId = "SidebarToDeferredMessages";
+        const string SidebarToNachoNowSegueId = "SidebarToNachoNow";
+        const string SidebarToHomeSegueId = "SidebarToHome";
+
+        protected override void OnCreate (Bundle savedInstanceState)
+        {
+            base.OnCreate (savedInstanceState);
 
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
 
-            // Get our button from the layout resource,
-            // and attach an event to it
-            Button button = FindViewById<Button> (Resource.Id.myButton);
-            
-            button.Click += delegate {
-                button.Text = string.Format ("{0} clicks!", count++);
+            PopulateSidebarMenu ();
+
+            title = drawerTitle = Title;
+            drawer = FindViewById<Android.Support.V4.Widget.DrawerLayout> (Resource.Id.drawer_layout);
+            drawerList = FindViewById<ListView> (Resource.Id.left_drawer);
+
+            drawer.SetDrawerShadow (Resource.Drawable.drawer_shadow_dark, (int)GravityCompat.Start);
+
+            drawerList.Adapter = new SidebarMenuAdapter (this);
+            drawerList.ItemClick += (sender, args) => ItemSelected (args.Position);
+
+            //DrawerToggle is the animation that happens with the indicator next to the
+            //ActionBar icon. You can choose not to use this.
+            drawerToggle = new MyActionBarDrawerToggle (this, drawer,
+                Resource.Drawable.ic_drawer_light,
+                Resource.String.DrawerOpen,
+                Resource.String.DrawerClose);
+
+            //You can alternatively use _drawer.DrawerClosed here
+            drawerToggle.DrawerClosed += delegate {
+                ActionBar.Title = title;
+                InvalidateOptionsMenu ();
             };
 
-            NachoPlatform.Assets.AndroidAssetManager = Assets;
+            //You can alternatively use _drawer.DrawerOpened here
+            drawerToggle.DrawerOpened += delegate {
+                ActionBar.Title = drawerTitle;
+                InvalidateOptionsMenu ();
+            };
+
+            drawer.SetDrawerListener (drawerToggle);
+
+            if (0 == BackEnd.Instance.Db.Table<McAccount> ().Count ()) {
+                var fragment = new CredentialsFragment ();
+                this.SupportFragmentManager.BeginTransaction ()
+                    .Replace (Resource.Id.content_frame, fragment)
+                    .Commit ();
+            } else {
+                NcBackendOwner.Instance.Account = BackEnd.Instance.Db.Table<McAccount>().ElementAt(0);
+                if (null == savedInstanceState) {
+                    ItemSelected (0);
+                }
+                NcBackendOwner.Instance.LaunchBackEnd ();
+            }
+
+            SupportActionBar.SetDisplayHomeAsUpEnabled (true);
+            SupportActionBar.SetHomeButtonEnabled (true);
+        }
+
+        public void PopulateSidebarMenu ()
+        {
+            menu = new List<SidebarMenu> ();
+
+            email = new NachoFolders (NachoFolders.FilterForEmail);
+            contacts = new NachoFolders (NachoFolders.FilterForContacts);
+            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+
+            menu.Add (new SidebarMenu (null, "Now", SidebarToNachoNowSegueId));
+
+            menu.Add (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId));
+
+            for (int i = 0; i < email.Count (); i++) {
+                McFolder f = email.GetFolder (i);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId);
+                m.Indent = 1;
+                menu.Add (m);
+            }
+            menu.Add (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId));
+
+
+            menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
+            for (int i = 0; i < contacts.Count (); i++) {
+                McFolder f = contacts.GetFolder (i);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId);
+                m.Indent = 1;
+                menu.Add (m);
+            }
+            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
+            deviceContacts.isDeviceContactsKludge = true;
+            menu.Add (deviceContacts);
+
+            menu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId));
+            for (int i = 0; i < calendars.Count (); i++) {
+                McFolder f = calendars.GetFolder (i);
+                var m = new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId);
+                m.Indent = 1;
+                menu.Add (m);
+            }
+            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
+            deviceCalendar.isDeviceCalendarKludge = true;
+            menu.Add (deviceCalendar);
+
+            menu.Add (new SidebarMenu (null, "Home", SidebarToHomeSegueId));
+            menu.Add (new SidebarMenu (null, "Accounts", "SidebarToAccounts"));
+            menu.Add (new SidebarMenu (null, "Settings", "SidebarToSettings"));
+
+        }
+        // Pass the event to ActionBarDrawerToggle, if it returns
+        // true, then it has handled the app icon touch event
+        public override bool OnOptionsItemSelected (IMenuItem item)
+        {
+            if (drawerToggle.OnOptionsItemSelected (item)) {
+                return true;
+            }
+            return base.OnOptionsItemSelected (item);
+        }
+
+        private void ItemSelected (int position)
+        {
+            var fragment = new FolderListFragment ();
+            var arguments = new Bundle ();
+            arguments.PutInt (FolderListFragment.ArgFolderNumber, position);
+            fragment.Arguments = arguments;
+
+            this.SupportFragmentManager.BeginTransaction ()
+                .Replace (Resource.Id.content_frame, fragment)
+                .Commit ();
+
+            drawerList.SetItemChecked (position, true);
+            ActionBar.Title = title = menu [position].DisplayName;
+            drawer.CloseDrawer (drawerList);
+        }
+
+        protected override void OnPostCreate (Bundle savedInstanceState)
+        {
+            base.OnPostCreate (savedInstanceState);
+            drawerToggle.SyncState ();
+        }
+
+        public override bool OnPrepareOptionsMenu (IMenu menu)
+        {
+            var drawerOpen = this.drawer.IsDrawerOpen (this.drawerList);
+            // When open don't show anything
+            for (int i = 0; i < menu.Size (); i++) {
+                menu.GetItem (i).SetVisible (!drawerOpen);
+            }
+            return base.OnPrepareOptionsMenu (menu);
+        }
+
+        public override void OnConfigurationChanged (Configuration newConfig)
+        {
+            base.OnConfigurationChanged (newConfig);
+            drawerToggle.OnConfigurationChanged (newConfig);
+        }
+
+        public class SidebarMenuAdapter : BaseAdapter<SidebarMenu>
+        {
+            MainActivity context;
+
+            public SidebarMenuAdapter (MainActivity context) : base ()
+            {
+                this.context = context;
+            }
+
+            public override long GetItemId (int position)
+            {
+                return position;
+            }
+
+            public override SidebarMenu this [int position] {  
+                get { return context.menu [position]; }
+            }
+
+            public override int Count {
+                get { return context.menu.Count; }
+            }
+
+            public override View GetView (int position, View convertView, ViewGroup parent)
+            {
+                View view = convertView; // re-use an existing view, if one is available
+                if (view == null) {
+                    // otherwise create a new one
+                    view = context.LayoutInflater.Inflate (Resource.Layout.DrawerListItem, null);
+                }
+                view.FindViewById<TextView> (Android.Resource.Id.Text1).Text = context.menu [position].DisplayName;
+                return view;
+            }
         }
     }
 }

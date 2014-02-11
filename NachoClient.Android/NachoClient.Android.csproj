@@ -8,14 +8,14 @@
     <ProjectGuid>{D1408661-612A-4362-B534-5BF16C7A8BE0}</ProjectGuid>
     <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
-    <RootNamespace>NachoClient.Android</RootNamespace>
+    <RootNamespace>NachoClient.AndroidClient</RootNamespace>
     <AndroidApplication>True</AndroidApplication>
     <AndroidResgenFile>Resources\Resource.designer.cs</AndroidResgenFile>
     <AndroidResgenClass>Resource</AndroidResgenClass>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v2.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -58,6 +58,12 @@
     </Reference>
     <Reference Include="BouncyCastle.Android">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v4">
+      <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v4.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -102,9 +108,6 @@
     <Compile Include="NachoCore\ActiveSync\AsHelpers.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsSearchCommand.cs" />
-    <Compile Include="NachoCore\INachoContacts.cs" />
-    <Compile Include="NachoCore\INachoCalendar.cs" />
-    <Compile Include="NachoCore\INachoFolders.cs" />
     <Compile Include="NachoCore\Model\McAccount.cs" />
     <Compile Include="NachoCore\Model\McAttachment.cs" />
     <Compile Include="NachoCore\Model\McCalendar.cs" />
@@ -122,8 +125,6 @@
     <Compile Include="NachoCore\Extensions\NachoAssert.cs" />
     <Compile Include="NachoCore\NcEnforcer.cs" />
     <Compile Include="NachoCore\NcEmailAddress.cs" />
-    <Compile Include="NachoCore\INachoEmailMessages.cs" />
-    <Compile Include="NachoCore\NachoEmailMessages.cs" />
     <Compile Include="NachoCore\Brain\NcContactGleaner.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsMoveItemsCommand.cs" />
     <Compile Include="NachoCore\StatusIndEventArgs.cs" />
@@ -134,7 +135,6 @@
     <Compile Include="NachoCore\Model\McObjectPerAccount.cs" />
     <Compile Include="NachoCore\Model\McMapFolderItem.cs" />
     <Compile Include="NachoCore\Brain\NcMessageThreads.cs" />
-    <Compile Include="NachoCore\NachoDeferredEmailMessages.cs" />
     <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs" />
     <Compile Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs" />
@@ -146,6 +146,20 @@
     <Compile Include="NachoCore\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs" />
     <Compile Include="NachoCore\Brain\NcCommStatus\NcCommStatus.cs" />
     <Compile Include="NachoCore\Brain\NcCommStatus\NcCommStatusServerEventArgs.cs" />
+    <Compile Include="NachoUI.Android\MyActionBarDrawerToggle.cs" />
+    <Compile Include="NachoUI.Android\FolderListFragment.cs" />
+    <Compile Include="NachoUI.Android\CredentialsFragment.cs" />
+    <Compile Include="NachoCore\Adapters\INachoCalendar.cs" />
+    <Compile Include="NachoCore\Adapters\INachoContacts.cs" />
+    <Compile Include="NachoCore\Adapters\INachoFolders.cs" />
+    <Compile Include="NachoCore\Adapters\INachoEmailMessages.cs" />
+    <Compile Include="NachoCore\Adapters\NachoEmailMessages.cs" />
+    <Compile Include="NachoCore\Adapters\NachoDeferredEmailMessages.cs" />
+    <Compile Include="NachoCore\Adapters\NachoCalendar.cs" />
+    <Compile Include="NachoCore\Adapters\NachoContacts.cs" />
+    <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
+    <Compile Include="NachoUI.Android\MainApplication.cs" />
+    <Compile Include="NachoCore\NcBackendOwner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -157,6 +171,27 @@
     <AndroidResource Include="Resources\layout\Main.axml" />
     <AndroidResource Include="Resources\values\Strings.xml" />
     <AndroidResource Include="Resources\drawable\Icon.png" />
+    <AndroidResource Include="Resources\layout\DrawerListItem.axml" />
+    <AndroidResource Include="Resources\Drawable-hdpi\action_other.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\action_search.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\drawer_shadow_dark.9.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\drawer_shadow_light.9.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_drawer_dark.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_drawer_light.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\action_other.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\action_search.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\drawer_shadow_dark.9.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\drawer_shadow_light.9.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_drawer_dark.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_drawer_light.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\action_other.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\action_search.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\drawer_shadow_dark.9.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\drawer_shadow_light.9.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_drawer_dark.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_drawer_light.png" />
+    <AndroidResource Include="Resources\layout\FolderListFragment.axml" />
+    <AndroidResource Include="Resources\layout\CredentialsFragment.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
@@ -179,6 +214,10 @@
     <Folder Include="NachoCore\Brain\" />
     <Folder Include="NachoCore\Utils\" />
     <Folder Include="NachoCore\ActiveSync\Commands\AsFolderSyncCommand\" />
+    <Folder Include="Resources\Drawable-hdpi\" />
+    <Folder Include="Resources\Drawable-mdpi\" />
+    <Folder Include="Resources\Drawable-xhdpi\" />
+    <Folder Include="NachoCore\Adapters\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -199,5 +238,11 @@
     <AndroidNativeLibrary Include="lib\armeabi\libnachoplatform.so" />
     <AndroidNativeLibrary Include="lib\armeabi-v7a\libnachoplatform.so" />
     <AndroidNativeLibrary Include="lib\x86\libnachoplatform.so" />
+  </ItemGroup>
+  <ItemGroup>
+    <XamarinComponentReference Include="xamandroidsupportv7appcompat">
+      <Version>7.18.0</Version>
+      <Visible>False</Visible>
+    </XamarinComponentReference>
   </ItemGroup>
 </Project>

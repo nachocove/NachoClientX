@@ -4,7 +4,7 @@ using System;
 
 namespace NachoClient.Android
 {
-    public class AsFolderDelete
+    public class AsXFolderDelete
     {
         public AsFolderDelete ()
         {
