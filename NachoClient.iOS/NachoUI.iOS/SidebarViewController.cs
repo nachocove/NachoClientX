@@ -49,7 +49,6 @@ namespace NachoClient.iOS
         NachoFolders contacts;
         NachoFolders calendars;
 
-        const string SidebarToFolderSegueId = "SidebarToFolder";
         const string SidebarToFoldersSegueId = "SidebarToFolders";
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
@@ -61,6 +60,13 @@ namespace NachoClient.iOS
 
         public SidebarViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+
+            this.RevealViewController ().Delegate = new SWRevealDelegate ();
         }
 
         /// <summary>
@@ -208,5 +214,34 @@ namespace NachoClient.iOS
             cell.TextLabel.Text = m.DisplayName;
             return cell;
         }
+
+
+        public class SWRevealDelegate : SWRevealViewControllerDelegate
+        {
+            public override void WillMoveToPosition (SWRevealViewController revealController, FrontViewPosition position)
+            {
+                if (SWRevealViewControllerBinding.FrontViewPosition.Left == revealController.FrontViewPosition) {
+                    var lockingView = new UIView ();
+                    lockingView.Alpha = 0.5f;
+                    lockingView.BackgroundColor = UIColor.Black;
+                    lockingView.TranslatesAutoresizingMaskIntoConstraints = false;
+                    var tap = new UITapGestureRecognizer (revealController, new MonoTouch.ObjCRuntime.Selector ("revealToggle:"));
+                    lockingView.AddGestureRecognizer (tap);
+                    lockingView.AddGestureRecognizer (revealController.PanGestureRecognizer);
+                    lockingView.Tag = 1000;
+                    revealController.FrontViewController.View.AddSubview (lockingView);
+                    NSDictionary viewsDictionary = new NSDictionary ("lockingView", lockingView);
+                    revealController.FrontViewController.View.AddConstraints (NSLayoutConstraint.FromVisualFormat ("|[lockingView]|", 0, null, viewsDictionary));
+                    revealController.FrontViewController.View.AddConstraints (NSLayoutConstraint.FromVisualFormat ("V:|[lockingView]|", 0, null, viewsDictionary));
+                    lockingView.SizeToFit ();
+                } else {
+                    var lockingView = revealController.FrontViewController.View.ViewWithTag (1000);
+                    if(null != lockingView) {
+                        lockingView.RemoveFromSuperview ();
+                    }
+                }
+            }
+        }
     }
 }
+
