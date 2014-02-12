@@ -49,9 +49,16 @@ namespace NachoClient
         };
 
         List<McFolder> list;
+        Xml.FolderHierarchy.TypeCode[] types;
 
         // TODO: Should use Nacho type
         public NachoFolders (Xml.FolderHierarchy.TypeCode[] types)
+        {
+            this.types = types;
+            Refresh ();
+        }
+
+        public void Refresh()
         {
             // TODO: Fix this
             list = new List<McFolder> ();

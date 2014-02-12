@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Android.App;
 using Android.Content;
 using Android.Content.Res;
@@ -12,7 +14,7 @@ using Android.Views;
 using Android.Widget;
 using NachoCore;
 using NachoCore.Model;
-using System.Collections.Generic;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -49,7 +51,6 @@ namespace NachoClient.AndroidClient
         NachoFolders email;
         NachoFolders contacts;
         NachoFolders calendars;
-        const string SidebarToFolderSegueId = "SidebarToFolder";
         const string SidebarToFoldersSegueId = "SidebarToFolders";
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
@@ -97,13 +98,21 @@ namespace NachoClient.AndroidClient
 
             drawer.SetDrawerListener (drawerToggle);
 
+            // Watch for changes from the back end
+            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
+                    PopulateSidebarMenu ();
+                }
+            };
+
             if (0 == BackEnd.Instance.Db.Table<McAccount> ().Count ()) {
                 var fragment = new CredentialsFragment ();
                 this.SupportFragmentManager.BeginTransaction ()
                     .Replace (Resource.Id.content_frame, fragment)
                     .Commit ();
             } else {
-                NcBackendOwner.Instance.Account = BackEnd.Instance.Db.Table<McAccount>().ElementAt(0);
+                NcBackendOwner.Instance.Account = BackEnd.Instance.Db.Table<McAccount> ().ElementAt (0);
                 if (null == savedInstanceState) {
                     ItemSelected (0);
                 }
@@ -133,7 +142,6 @@ namespace NachoClient.AndroidClient
                 menu.Add (m);
             }
             menu.Add (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId));
-
 
             menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
             for (int i = 0; i < contacts.Count (); i++) {
@@ -174,16 +182,49 @@ namespace NachoClient.AndroidClient
 
         private void ItemSelected (int position)
         {
-            var fragment = new FolderListFragment ();
-            var arguments = new Bundle ();
-            arguments.PutInt (FolderListFragment.ArgFolderNumber, position);
-            fragment.Arguments = arguments;
+            var menuItem = menu [position];
+            var segueName = menuItem.SegueName;
+
+            Android.Support.V4.App.Fragment fragment = null;
+
+            if (segueName.Equals (SidebarToFoldersSegueId)) {
+                fragment = new FolderListFragment ();
+            }
+            if (segueName.Equals (SidebarToContactsSegueId)) {
+                return;
+            }
+            if (segueName.Equals (SidebarToCalendarSegueId)) {
+                return;
+            }
+            if (segueName.Equals (SidebarToMessagesSegueId)) {
+                fragment = new MessageListFragment ();
+                var bundle = new Bundle ();
+                bundle.PutInt ("accountId", menuItem.Folder.AccountId);
+                bundle.PutInt ("folderId", menuItem.Folder.Id);
+                bundle.PutString ("segue", segueName);
+                fragment.Arguments = bundle;
+            }
+            if (segueName.Equals (SidebarToDeferredMessagesSegueId)) {
+                fragment = new MessageListFragment ();
+                var bundle = new Bundle ();
+                bundle.PutInt ("accountId", menuItem.Folder.AccountId);
+                bundle.PutInt ("folderId", menuItem.Folder.Id);
+                bundle.PutString ("segue", segueName);
+                fragment.Arguments = bundle;
+            }
+            if (segueName.Equals (SidebarToNachoNowSegueId)) {
+                return;
+            }
+            if (segueName.Equals (SidebarToHomeSegueId)) {
+                return;
+            }
+
+            NachoAssert.True (null != fragment);
 
             this.SupportFragmentManager.BeginTransaction ()
                 .Replace (Resource.Id.content_frame, fragment)
                 .Commit ();
 
-            drawerList.SetItemChecked (position, true);
             ActionBar.Title = title = menu [position].DisplayName;
             drawer.CloseDrawer (drawerList);
         }

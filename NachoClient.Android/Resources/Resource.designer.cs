@@ -864,8 +864,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f05000d
 			public const int collapseActionView = 2131034125;
 			
-			// aapt resource value: 0x7f050047
-			public const int content_frame = 2131034183;
+			// aapt resource value: 0x7f050048
+			public const int content_frame = 2131034184;
 			
 			// aapt resource value: 0x7f050026
 			public const int default_activity_button = 2131034150;
@@ -876,8 +876,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050008
 			public const int disableHome = 2131034120;
 			
-			// aapt resource value: 0x7f050046
-			public const int drawer_layout = 2131034182;
+			// aapt resource value: 0x7f050047
+			public const int drawer_layout = 2131034183;
 			
 			// aapt resource value: 0x7f05000f
 			public const int dropdown = 2131034127;
@@ -909,8 +909,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050025
 			public const int image = 2131034149;
 			
-			// aapt resource value: 0x7f050048
-			public const int left_drawer = 2131034184;
+			// aapt resource value: 0x7f050049
+			public const int left_drawer = 2131034185;
 			
 			// aapt resource value: 0x7f050031
 			public const int left_icon = 2131034161;
@@ -920,6 +920,9 @@ namespace NachoClient.AndroidClient
 			
 			// aapt resource value: 0x7f050027
 			public const int list_item = 2131034151;
+			
+			// aapt resource value: 0x7f050046
+			public const int listview = 2131034182;
 			
 			// aapt resource value: 0x7f050012
 			public const int middle = 2131034130;
@@ -1140,7 +1143,10 @@ namespace NachoClient.AndroidClient
 			public const int Main = 2130903067;
 			
 			// aapt resource value: 0x7f03001c
-			public const int support_simple_spinner_dropdown_item = 2130903068;
+			public const int MessageListFragment = 2130903068;
+			
+			// aapt resource value: 0x7f03001d
+			public const int support_simple_spinner_dropdown_item = 2130903069;
 			
 			static Layout()
 			{

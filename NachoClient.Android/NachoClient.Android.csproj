@@ -160,6 +160,7 @@
     <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoCore\NcBackendOwner.cs" />
+    <Compile Include="NachoUI.Android\MessageListFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -192,6 +193,7 @@
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_drawer_light.png" />
     <AndroidResource Include="Resources\layout\FolderListFragment.axml" />
     <AndroidResource Include="Resources\layout\CredentialsFragment.axml" />
+    <AndroidResource Include="Resources\layout\MessageListFragment.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
