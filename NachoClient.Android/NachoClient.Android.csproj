@@ -107,8 +107,6 @@
     <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="NachoCore\Model\McPending.cs" />
     <Compile Include="NachoCore\Extensions\DateTime+ToString.cs" />
-    <Compile Include="NachoCore\Brain\NcCommStatus\NcCommStatus.cs" />
-    <Compile Include="NachoCore\Brain\NcCommStatus\NcCommStatusServerEventArgs.cs" />
     <Compile Include="NachoUI.Android\MyActionBarDrawerToggle.cs" />
     <Compile Include="NachoUI.Android\FolderListFragment.cs" />
     <Compile Include="NachoUI.Android\CredentialsFragment.cs" />
@@ -161,6 +159,8 @@
     <Compile Include="NachoCore\BackEnd\IProtoControlOwner.cs" />
     <Compile Include="NachoCore\BackEnd\ProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\StatusIndEventArgs.cs" />
+    <Compile Include="NachoCore\BackEnd\NcCommStatus\NcCommStatus.cs" />
+    <Compile Include="NachoCore\BackEnd\NcCommStatus\NcCommStatusServerEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
