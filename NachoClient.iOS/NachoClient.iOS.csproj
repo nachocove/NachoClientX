@@ -172,10 +172,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ServerCertificatePeek.cs">
       <Link>NachoCore\Extensions\ServerCertificatePeek.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\DetailViewController.cs" />
-    <Compile Include="NachoUI.iOS\DetailViewController.designer.cs">
-      <DependentUpon>DetailViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AccountTableSource.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
