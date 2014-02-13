@@ -22,7 +22,7 @@ namespace NachoCore
 
         public void Refresh ()
         {
-            List<McEmailMessage> list = McEmailMessage.ActiveMessages (folder.AccountId, folder.Id).OrderByDescending (c => c.DateReceived).ToList ();
+            List<McEmailMessage> list = McEmailMessage.QueryActiveMessages (folder.AccountId, folder.Id).OrderByDescending (c => c.DateReceived).ToList ();
             threadList = NcMessageThreads.ThreadByConversation (list);
         }
 

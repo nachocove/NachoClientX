@@ -88,7 +88,6 @@ namespace NachoCore.Model
         /// data in the model. Otherwise, it won't work right in another 
         /// NachoClient.
         public MessageDeferralType DeferralType { set; get; }
-
         // NOTE: These values ARE the AS values.
         public enum FlagStatusValue : uint
         {
@@ -190,20 +189,30 @@ namespace NachoCore.Model
             fld.ServerId == serverId);
         }
         // Note need to paramtrize <T> and move to McItem.
-        public static List<McEmailMessage> ActiveMessages (int accountId, int folderId)
+        public static List<McEmailMessage> QueryByFolderId (int accountId, int folderId)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
+            " e.AccountId = ? AND " +
+            " m.AccountId = ? AND " +
+            " m.FolderId = ? ",
+                accountId, accountId, folderId);
+        }
+
+        public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
+        {
+            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
+            " e.AccountId = ? AND " +
             " m.AccountId = ? AND " +
             " m.FolderId = ? AND " +
             " e.FlagUtcDeferUntil < ?",
-                accountId, folderId, DateTime.UtcNow);
+                accountId, accountId, folderId, DateTime.UtcNow);
         }
         // TODO: Need account id
         // TODO: Delete needs to clean up deferred
-        public static List<McEmailMessage> DeferredMessages ()
+        public static List<McEmailMessage> QueryDeferredMessagesAllAccounts ()
         {
-            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
-                " e.FlagUtcDeferUntil > ?",
+            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
+            " e.FlagUtcDeferUntil > ?",
                 DateTime.UtcNow);
         }
     }

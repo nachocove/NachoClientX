@@ -20,7 +20,7 @@ namespace NachoCore
 
         public void Refresh ()
         {
-            List<McEmailMessage> list = McEmailMessage.DeferredMessages ().OrderByDescending (c => c.DateReceived).ToList ();
+            List<McEmailMessage> list = McEmailMessage.QueryDeferredMessagesAllAccounts ().OrderByDescending (c => c.DateReceived).ToList ();
             threadList = NcMessageThreads.ThreadByConversation (list);
         }
 
