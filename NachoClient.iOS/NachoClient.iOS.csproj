@@ -484,7 +484,7 @@
       <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
       <Name>UIImageEffectsBinding</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\iCarousel\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj">
+    <ProjectReference Include="..\..\iCarouselBinding\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj">
       <Project>{E8EDAA21-69C1-4866-9037-28D83F0D4359}</Project>
       <Name>iCarouselBinding</Name>
     </ProjectReference>
