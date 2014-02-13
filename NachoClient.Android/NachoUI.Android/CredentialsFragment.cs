@@ -10,7 +10,7 @@ using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
-    public class CredentialsFragment : Fragment
+    public class CredentialsFragment : Android.Support.V4.App.Fragment
     {
         public override void OnCreate (Bundle savedInstanceState)
         {

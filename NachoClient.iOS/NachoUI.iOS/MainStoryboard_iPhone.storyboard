@@ -51,6 +51,11 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
                         <barButtonItem key="leftBarButtonItem" image="Menu.png" id="3Av-eh-eab"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="HwW-s6-dM7">
+                            <connections>
+                                <segue destination="lOe-mG-VS5" kind="push" identifier="NachoNowToCompose" id="JWi-mA-RVD"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
@@ -582,7 +587,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -601,6 +606,7 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="JwW-7f-PQA">
+                        <barButtonItem key="backBarButtonItem" title="Cancel" id="twb-2F-1L8"/>
                         <barButtonItem key="rightBarButtonItem" title="Send" id="Mjb-px-NvT"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
@@ -618,7 +624,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -677,12 +683,9 @@
                             <outlet property="delegate" destination="HJp-il-GU9" id="Qlr-7k-Qht"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="Contacts" id="I0n-EO-ORC">
-                        <barButtonItem key="rightBarButtonItem" title="Cancel" id="hpJ-To-iwX"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Contacts" id="I0n-EO-ORC"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="CancelButton" destination="hpJ-To-iwX" id="j3Z-dF-dQa"/>
                         <outlet property="searchDisplayController" destination="d2b-8D-Qih" id="NuX-J9-6Lz"/>
                     </connections>
                 </tableViewController>
@@ -704,7 +707,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -714,7 +717,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="334"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="378"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -770,7 +773,8 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" title="Chooser" id="d4h-6e-NRq">
-                        <barButtonItem key="rightBarButtonItem" title="Contacts" id="PfB-rr-F7z">
+                        <barButtonItem key="backBarButtonItem" title="Cancel" id="JmU-cR-I3t"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="search" id="PfB-rr-F7z">
                             <connections>
                                 <segue destination="HJp-il-GU9" kind="push" identifier="ContactChooserToContactSearch" id="z8t-Er-kGd"/>
                             </connections>
@@ -1211,15 +1215,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="5fj-Ta-mc9"/>
         <segue reference="hCT-pP-PUu"/>
-        <segue reference="GNr-eh-wrb"/>
         <segue reference="ULW-ai-y2x"/>
-        <segue reference="Fvv-mz-C9l"/>
+        <segue reference="GNr-eh-wrb"/>
+        <segue reference="7H5-MT-Qxr"/>
+        <segue reference="JWi-mA-RVD"/>
         <segue reference="Rd3-YY-NMX"/>
-        <segue reference="Xn1-hQ-Sqh"/>
-        <segue reference="dUg-Hc-Q9Y"/>
         <segue reference="S6l-ao-xdW"/>
         <segue reference="1iq-X7-xab"/>
+        <segue reference="Fvv-mz-C9l"/>
+        <segue reference="5fj-Ta-mc9"/>
     </inferredMetricsTieBreakers>
 </document>

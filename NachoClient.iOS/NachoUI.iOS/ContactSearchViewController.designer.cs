@@ -12,15 +12,9 @@ namespace NachoClient.iOS
 	[Register ("ContactSearchViewController")]
 	partial class ContactSearchViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem CancelButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (CancelButton != null) {
-				CancelButton.Dispose ();
-				CancelButton = null;
-			}
 		}
 	}
 }

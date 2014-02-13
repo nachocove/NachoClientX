@@ -77,6 +77,8 @@ namespace NachoClient.iOS
             AutocompleteTextField.Text = c.address;
             UpdateAutocompleteResults (0, c.address);
             SetToButtonLabel (c.kind);
+
+            AutocompleteTextField.BecomeFirstResponder ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -124,6 +126,12 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
+        [Export ("scrollViewWillBeginDragging:")]
+        public void ScrollViewWillBeginDragging ()
+        {
+            AutocompleteTextField.ResignFirstResponder ();
+        }
+
         /// <summary>
         /// DoneSelected mean return the typed-in contact.
         /// </summary>
@@ -154,7 +162,7 @@ namespace NachoClient.iOS
             // TODO: Make this work like EAS
             autocompleteResults = new List<McContact> ();
             if ((null == forSearchString) || (0 == forSearchString.Length)) {
-                return true;
+                forSearchString = "";
             }
             for (int i = 0; i < contacts.Count (); i++) {
                 McContact c = contacts.GetContact (i);
@@ -187,19 +195,12 @@ namespace NachoClient.iOS
             return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public void SetSearchResult(string address, McContact contact)
+        public void SetSearchResult (string address, McContact contact)
         {
             AutocompleteTextField.Text = address;
             autocompleteResults = new List<McContact> ();
             autocompleteResults.Add (contact);
             TableView.ReloadData ();
-        }
-
-        public class ContactChooserDelegate : UITableViewDelegate
-        {
-            public ContactChooserDelegate ()
-            {
-            }
         }
 
         public class ContactChooserDataSource : UITableViewDataSource
