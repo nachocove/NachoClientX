@@ -22,9 +22,31 @@ namespace NachoCore.Utils
 
             public CommQualityEnum Quality { get; set; }
 
-            public CommStatusEnum Status { get; set; }
+            private CommStatusEnum _Status;
+            public CommStatusEnum Status {
+                get { return _Status; }
+                set { 
+                    var oldS = _Status;
+                    _Status = value;
+                    if (oldS != _Status) {
+                        NcCommStatus.Instance.CommStatusServerEvent (this, new NcCommStatusServerEventArgs (ServerId, Quality, 
+                            _Status, _Speed));
+                    }
+                 }
+            }
 
-            public CommSpeedEnum Speed { get; set; }
+            private CommSpeedEnum _Speed;
+            public CommSpeedEnum Speed { 
+                get { return _Speed; }
+                set { 
+                    var oldS = _Speed;
+                    _Speed = value;
+                    if (oldS != _Speed) {
+                        NcCommStatus.Instance.CommStatusServerEvent (this, new NcCommStatusServerEventArgs (ServerId, Quality, 
+                            _Status, _Speed));
+                    }
+                }
+            }
 
             public List<ServerAccess> Accesses { get; set; }
 
@@ -32,9 +54,11 @@ namespace NachoCore.Utils
             {
                 Accesses = new List<ServerAccess> ();
                 Reset ();
+                // FIXME - register for Platform.Reachability.
+                // FIXME - add a Dispose wher we release Platform.Reachability.
             }
 
-            public CommQualityEnum UpdateQuality (bool didFailGenerally)
+            public void UpdateQuality (bool didFailGenerally)
             {
                 Accesses.Add (new ServerAccess () { DidFailGenerally = didFailGenerally, When = DateTime.UtcNow });
 
@@ -46,7 +70,7 @@ namespace NachoCore.Utils
                 // Say "OK" unless we have enough to judge failure.
                 if (4 < Accesses.Count) {
                     Quality = CommQualityEnum.OK;
-                    return Quality;
+                    return;
                 }
 
                 // Compute quality.
@@ -61,14 +85,13 @@ namespace NachoCore.Utils
                     Quality = CommQualityEnum.OK;
                 }
                 Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
-                return Quality;
             }
 
             public void Reset ()
             {
                 Quality = CommQualityEnum.OK;
-                Status = CommStatusEnum.Up;
-                Speed = CommSpeedEnum.WiFi;
+                _Status = CommStatusEnum.Up;
+                _Speed = CommSpeedEnum.WiFi;
                 Accesses.Clear ();
             }
         }
@@ -127,13 +150,14 @@ namespace NachoCore.Utils
         };
 
         public event EventHandler CommStatusServerEvent;
-
+        // FIXME - user intervention.
         // NOTE - this could be enhanced by tracking RTT and timeouts, folding back into setting the timeout value.
         public void ReportCommResult (int serverId, bool didFailGenerally)
         {
             var tracker = GetTracker (serverId);
             var oldQ = tracker.Quality;
-            var newQ = tracker.UpdateQuality (didFailGenerally);
+            tracker.UpdateQuality (didFailGenerally);
+            var newQ = tracker.Quality;
             if (oldQ != newQ && null != CommStatusServerEvent) {
                 CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality, 
                     tracker.Status, tracker.Speed));
