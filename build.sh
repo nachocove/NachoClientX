@@ -36,7 +36,9 @@ function doMake()
 gitUpdate iCarousel
 gitUpdate iCarouselBinding
 gitUpdate UIImageEffects
+gitUpdate SWRevealViewController
+gitUpdate SWRevealViewControllerBinding
 
 doMake iCarouselBinding
 doMake UIImageEffects
-
+doMake SWRevealViewControllerBinding
