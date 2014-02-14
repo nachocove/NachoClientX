@@ -36,25 +36,32 @@ namespace NachoCore.Brain
         {
         }
 
+        protected static void MarkAsGleaned(McEmailMessage emailMessage)
+        {
+            emailMessage.HasBeenGleaned = true;
+            BackEnd.Instance.Db.Update (emailMessage);
+        }
+
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
             if (0 == emailMessage.BodyId) {
-                // Mark the email message as gleaned.
-                emailMessage.HasBeenGleaned = true;
-                BackEnd.Instance.Db.Update (emailMessage);
+                MarkAsGleaned (emailMessage);
                 return;
             }
             MimeMessage mimeMsg;
             try {
-                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.GetBody ()))) {
+                string body = emailMessage.GetBody();
+                if(null == body) {
+                    MarkAsGleaned(emailMessage);
+                    return;
+                }
+                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body))) {
                     var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                     mimeMsg = bodyParser.ParseMessage ();
                 }
             } catch (Exception e) {
                 // TODO: Find root cause
-                // Mark the email message as gleaned.
-                emailMessage.HasBeenGleaned = true;
-                BackEnd.Instance.Db.Update (emailMessage);
+                MarkAsGleaned (emailMessage);
                 NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
                 return;
             }
@@ -136,9 +143,7 @@ namespace NachoCore.Brain
             if (null == emailMessage.Summary) {
                 emailMessage.Summary = MimeHelpers.CreateSummary (mimeMsg);
             }
-            // Mark the email message as gleaned.
-            emailMessage.HasBeenGleaned = true;
-            BackEnd.Instance.Db.Update (emailMessage);
+            MarkAsGleaned (emailMessage);
         }
     }
 }
