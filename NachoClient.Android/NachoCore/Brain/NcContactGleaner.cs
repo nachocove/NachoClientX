@@ -46,7 +46,7 @@ namespace NachoCore.Brain
             }
             MimeMessage mimeMsg;
             try {
-                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.GetBody (BackEnd.Instance.Db)))) {
+                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (emailMessage.GetBody ()))) {
                     var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                     mimeMsg = bodyParser.ParseMessage ();
                 }

@@ -137,7 +137,7 @@ namespace NachoCore.Model
         /// Integer -- plain test, html, rtf, mime
         public string BodyType { set; get; }
 
-        public string ToMime (SQLiteConnection db)
+        public string ToMime ()
         {
             string message = "";
             foreach (var propertyName in new [] {"From", "To", "Subject", "ReplyTo", "DisplayTo"}) {
@@ -145,7 +145,7 @@ namespace NachoCore.Model
             }
             string date = DateTime.UtcNow.ToString ("ddd, dd MMM yyyy HH:mm:ss K", DateTimeFormatInfo.InvariantInfo);
             message = message + CrLf + "Date" + ColonSpace + date;
-            message = message + CrLf + CrLf + GetBody (db);
+            message = message + CrLf + CrLf + GetBody ();
             return message;
         }
 
@@ -161,9 +161,9 @@ namespace NachoCore.Model
             return message + CrLf + propertyName + ColonSpace + propertyValue;
         }
 
-        public string GetBody (SQLiteConnection db)
+        public string GetBody ()
         {
-            var body = db.Get<McBody> (BodyId);
+            var body = BackEnd.Instance.Db.Get<McBody> (BodyId);
             if (null == body) {
                 return null;
             } else {
@@ -171,14 +171,14 @@ namespace NachoCore.Model
             }
         }
 
-        public void DeleteBody (SQLiteConnection db)
+        public void DeleteBody ()
         {
             if (0 != BodyId) {
                 var body = new McBody ();
                 body.Id = BodyId;
-                db.Delete (body);
+                BackEnd.Instance.Db.Delete (body);
                 BodyId = 0;
-                db.Update (this);
+                BackEnd.Instance.Db.Update (this);
             }
         }
 
@@ -188,6 +188,15 @@ namespace NachoCore.Model
                 fld.AccountId == accountId &&
             fld.ServerId == serverId);
         }
+
+        // Note need to paramtrize <T> and move to McItem.
+        public static McEmailMessage QueryById (int id)
+        {
+            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
+            " e.Id = ? ",
+                id).SingleOrDefault();
+        }
+
         // Note need to paramtrize <T> and move to McItem.
         public static List<McEmailMessage> QueryByFolderId (int accountId, int folderId)
         {

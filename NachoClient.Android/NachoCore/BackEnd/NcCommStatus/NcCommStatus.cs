@@ -9,6 +9,7 @@ namespace NachoCore.Utils
 {
     public class NcCommStatus
     {
+        // class for the result of a single access attempt on a server.
         public class ServerAccess
         {
             public bool DidFailGenerally { get; set; }
@@ -16,37 +17,12 @@ namespace NachoCore.Utils
             public DateTime When { get; set; }
         }
 
+        // class for tracking the access health/quality of a server.
         public class ServerTracker
         {
             public int ServerId { get; set; }
 
             public CommQualityEnum Quality { get; set; }
-
-            private CommStatusEnum _Status;
-            public CommStatusEnum Status {
-                get { return _Status; }
-                set { 
-                    var oldS = _Status;
-                    _Status = value;
-                    if (oldS != _Status) {
-                        NcCommStatus.Instance.CommStatusServerEvent (this, new NcCommStatusServerEventArgs (ServerId, Quality, 
-                            _Status, _Speed));
-                    }
-                 }
-            }
-
-            private CommSpeedEnum _Speed;
-            public CommSpeedEnum Speed { 
-                get { return _Speed; }
-                set { 
-                    var oldS = _Speed;
-                    _Speed = value;
-                    if (oldS != _Speed) {
-                        NcCommStatus.Instance.CommStatusServerEvent (this, new NcCommStatusServerEventArgs (ServerId, Quality, 
-                            _Status, _Speed));
-                    }
-                }
-            }
 
             public List<ServerAccess> Accesses { get; set; }
 
@@ -87,15 +63,16 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
             }
 
-            public void Reset ()
+            public bool Reset ()
             {
+                bool noChange = (CommQualityEnum.OK == Quality);
                 Quality = CommQualityEnum.OK;
-                _Status = CommStatusEnum.Up;
-                _Speed = CommSpeedEnum.WiFi;
                 Accesses.Clear ();
+                return noChange;
             }
         }
 
+        // The meat of the NcCommStatus class.
         private List<ServerTracker> Trackers;
 
         private ServerTracker GetTracker (int serverId)
@@ -114,6 +91,10 @@ namespace NachoCore.Utils
         private NcCommStatus ()
         {
             Trackers = new List<ServerTracker> ();
+            Status = CommStatusEnum.Up;
+            Speed = CommSpeedEnum.WiFi;
+            UserInterventionIsRequired = false;
+            // FIXME - kick off status checking here.
         }
 
         public static NcCommStatus Instance {
@@ -149,6 +130,9 @@ namespace NachoCore.Utils
             CellSlow,
         };
 
+        public CommStatusEnum Status { get; set; }
+        public CommSpeedEnum Speed { get; set; }
+        public bool UserInterventionIsRequired { get; set; }
         public event EventHandler CommStatusServerEvent;
         // FIXME - user intervention.
         // NOTE - this could be enhanced by tracking RTT and timeouts, folding back into setting the timeout value.
@@ -159,8 +143,7 @@ namespace NachoCore.Utils
             tracker.UpdateQuality (didFailGenerally);
             var newQ = tracker.Quality;
             if (oldQ != newQ && null != CommStatusServerEvent) {
-                CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality, 
-                    tracker.Status, tracker.Speed));
+                CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality));
             }
         }
 
@@ -179,17 +162,16 @@ namespace NachoCore.Utils
         public void Reset (int serverId)
         {
             var tracker = GetTracker (serverId);
-            tracker.Reset ();
-            if (null != CommStatusServerEvent) {
-                CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality,
-                    tracker.Status, tracker.Speed));
+            var noChange = tracker.Reset ();
+            if (null != CommStatusServerEvent && !noChange) {
+                CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality));
             }
         }
 
-        public ServerTracker Tracker (string host)
-        {
-            return GetTracker (GetServerId (host));
-        }
+        // FIXME - get call back per-host.
+
+        // FIXME - get global status callback. Do we need to check on demand?
+
     }
 }
 

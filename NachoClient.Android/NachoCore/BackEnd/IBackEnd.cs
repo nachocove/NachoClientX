@@ -38,6 +38,12 @@ namespace NachoCore
         void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
         // send specified email (not in a synced folder). returns token that can be used to possibly cancel.
         string SendEmailCmd (int accountId, int emailMessageId);
+
+        string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
+                                int folderId, bool originalEmailIsEmbedded);
+
+        string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
+                              int folderId, bool originalEmailIsEmbedded);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
         string DeleteEmailCmd (int accountId, int emailMessageId);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
@@ -46,19 +52,21 @@ namespace NachoCore
         string MarkEmailReadCmd (int accountId, int emailMessageId);
         // set the flag value on the email.
         string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
-            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
+                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
         // clear the flag value on the email.
         string ClearEmailFlagCmd (int accountId, int emailMessageId);
         // mark the flag as "done" for the server, and clear the values in the DB.
         string MarkEmailFlagDone (int accountId, int emailMessageId,
-            DateTime completeTime, DateTime dateCompleted);
+                                  DateTime completeTime, DateTime dateCompleted);
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
         //
         // in the BE for now, but moving to middleware/app-land someday:
         //
         McFolder GetOutbox (int accountId);
+
         McFolder GetGalCache (int accountId);
+
         McFolder GetGleaned (int accountId);
     }
 }

@@ -192,7 +192,7 @@ namespace NachoClient.iOS
             var bodySection = new Section ();
             root.Add (bodySection);
 
-            var body = m.GetBody (BackEnd.Instance.Db);
+            var body = m.GetBody ();
             if (null != body) {
                 var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);

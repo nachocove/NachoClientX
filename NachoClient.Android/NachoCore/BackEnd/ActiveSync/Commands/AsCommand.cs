@@ -32,7 +32,7 @@ namespace NachoCore.ActiveSync
         private const string KRequest = "request";
         private const string KResponse = "response";
         // Properties & IVars.
-        protected string CommandName;
+        public string CommandName;
         public XNamespace m_ns;
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
         protected NcStateMachine OwnerSm;
@@ -71,7 +71,6 @@ namespace NachoCore.ActiveSync
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
         }
-
         // Cancel() must be safe to call even when the command has already completed.
         public virtual void Cancel ()
         {
@@ -90,7 +89,6 @@ namespace NachoCore.ActiveSync
         {
             return true;
         }
-
         // Override if the subclass wants to add more parameters to the query string.
         public virtual HttpMethod Method (AsHttpOperation Sender)
         {
@@ -117,10 +115,9 @@ namespace NachoCore.ActiveSync
             var requestLine = QueryString (Sender);
             var rlParams = ExtraQueryStringParams (Sender);
             if (null != rlParams) {
-                var pairs = new List<string> ();
                 foreach (KeyValuePair<string,string> pair in rlParams) {
-                    pairs.Add (string.Format ("{0}={1}", pair.Key, pair.Value));
-                    requestLine = requestLine + '&' + string.Join ("&", pair);
+                    requestLine = requestLine + '&' + string.Join (
+                        "&", string.Format ("{0}={1}", pair.Key, pair.Value));
                 }
             }
             return new Uri (AsCommand.BaseUri (DataSource.Server), requestLine);
@@ -136,7 +133,6 @@ namespace NachoCore.ActiveSync
             // Updates the value in the DB.
             DataSource.Server = server;
         }
-
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
         public virtual XDocument ToXDocument (AsHttpOperation Sender)
         {
@@ -256,14 +252,13 @@ namespace NachoCore.ActiveSync
         {
         }
 
-        protected virtual McPending NextPendingUpdate (McPending.Operations operation)
+        protected virtual McPending NextPending (McPending.Operations operation)
         {
             return BackEnd.Instance.Db.Table<McPending> ()
                 .FirstOrDefault (rec => 
                         rec.AccountId == DataSource.Account.Id &&
-                        rec.Operation == operation);
+            rec.Operation == operation);
         }
-
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {
@@ -278,7 +273,6 @@ namespace NachoCore.ActiveSync
                              server.Scheme, server.Fqdn, server.Port, server.Path);
             return new Uri (retval);
         }
-
     }
 }
 

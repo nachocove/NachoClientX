@@ -29,15 +29,13 @@ namespace NachoCore.Model
 
         [Indexed]
         public string DisplayName { get; set; }
-
         // FIXME: Need enumeration
         public uint Type { get; set; }
 
         public override string ToString ()
         {
-            return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString();
+            return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
-
         // "factory" to create client-owned folders.
         public static McFolder CreateClientOwned (int accountId)
         {
@@ -57,11 +55,18 @@ namespace NachoCore.Model
             fld.ServerId == serverId);
         }
 
+        public static McFolder QueryById (int id)
+        {
+            return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            " f.Id = ? ",
+                id).SingleOrDefault();
+        }
+
         public static List<McFolder> QueryByItemId (int accountId, int itemId)
         {
             return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderItem AS m ON f.Id = m.FolderId WHERE " +
-                " m.AccountId = ? AND " +
-                " m.ItemId = ? ",
+            " m.AccountId = ? AND " +
+            " m.ItemId = ? ",
                 accountId, itemId);
         }
     }

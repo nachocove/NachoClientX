@@ -8,6 +8,7 @@ namespace NachoCore
     public abstract class ProtoControl
     {
         public int AccountId;
+
         public IProtoControlOwner Owner { get; set; }
 
         public McAccount Account {
@@ -49,30 +50,51 @@ namespace NachoCore
         }
 
         public NcStateMachine Sm { set; get; }
-
         // Interface to owner.
         public abstract void Execute ();
-        public abstract void ForceSync ();
-        public abstract void ForceStop ();
-        public abstract void CertAskResp (bool isOkay);
-        public abstract void ServerConfResp (bool forceAutodiscovery);
-        public abstract void CredResp ();
-        public abstract bool Cancel (string token);
-        public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
-        public abstract void SearchContactsReq (string prefix, uint? maxResults, string token);
-        public abstract string SendEmailCmd (int emailMessageId);
-        public abstract string DeleteEmailCmd (int emailMessageId);
-        public abstract string MarkEmailReadCmd (int emailMessageId);
-        public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
-        public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
-            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
-        public abstract string ClearEmailFlagCmd (int emailMessageId);
-        public abstract string MarkEmailFlagDone (int emailMessageId,
-            DateTime completeTime, DateTime dateCompleted);
-        public abstract string DnldAttCmd (int attId);
 
+        public abstract void ForceSync ();
+
+        public abstract void ForceStop ();
+
+        public abstract void CertAskResp (bool isOkay);
+
+        public abstract void ServerConfResp (bool forceAutodiscovery);
+
+        public abstract void CredResp ();
+
+        public abstract bool Cancel (string token);
+
+        public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
+
+        public abstract void SearchContactsReq (string prefix, uint? maxResults, string token);
+
+        public abstract string SendEmailCmd (int emailMessageId);
+
+        public abstract string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+                                                int folderId, bool originalEmailIsEmbedded);
+
+        public abstract string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+                                              int folderId, bool originalEmailIsEmbedded);
+
+        public abstract string DeleteEmailCmd (int emailMessageId);
+
+        public abstract string MarkEmailReadCmd (int emailMessageId);
+
+        public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
+
+        public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
+                                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
+
+        public abstract string ClearEmailFlagCmd (int emailMessageId);
+
+        public abstract string MarkEmailFlagDone (int emailMessageId,
+                                                  DateTime completeTime, DateTime dateCompleted);
+
+        public abstract string DnldAttCmd (int attId);
         // Interface to controllers.
         public abstract void StatusInd (NcResult status);
+
         public abstract void StatusInd (NcResult status, string[] tokens);
     }
 }
