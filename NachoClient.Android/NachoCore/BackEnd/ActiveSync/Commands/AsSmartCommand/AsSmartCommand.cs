@@ -1,3 +1,5 @@
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,14 +11,13 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
-    public class AsSendMailCommand : AsCommand
+    public abstract class AsSmartCommand : AsCommand
     {
-        private McEmailMessage EmailMessage;
+        protected McEmailMessage EmailMessage;
 
-        public AsSendMailCommand (IAsDataSource dataSource) : base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
+        public AsSmartCommand (IAsDataSource dataSource) : base (string.Empty, Xml.ComposeMail.Ns, dataSource)
         {
-            Update = NextPending (McPending.Operations.EmailSend);
-            EmailMessage = McEmailMessage.QueryById (Update.EmailMessageId);
+            // Update & EmailMessage set by subclass.
         }
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
@@ -24,7 +25,10 @@ namespace NachoCore.ActiveSync
             if (14.0 <= Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
+
             return new Dictionary<string, string> () {
+                { "ItemId", Update.ServerId },
+                { "CollectionId", Update.FolderServerId },
                 { "SaveInSent", "T" },
             };
         }
@@ -34,12 +38,19 @@ namespace NachoCore.ActiveSync
             if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
-            var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
-                               new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
-                               new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
-                               new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
+
+            var smartMail = new XElement (m_ns + CommandName, 
+                                new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
+                                new XElement (m_ns + Xml.ComposeMail.Source,
+                                    new XElement (m_ns + Xml.ComposeMail.FolderId, Update.FolderServerId),
+                                    new XElement (m_ns + Xml.ComposeMail.ItemId, Update.ServerId)),
+                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
+                                new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
+            if (Update.OriginalEmailIsEmbedded) {
+                smartMail.Add (new XElement (m_ns + Xml.ComposeMail.ReplaceMime));
+            }
             var doc = AsCommand.ToEmptyXDocument ();
-            doc.Add (sendMail);
+            doc.Add (smartMail);
             Update.IsDispatched = true;
             Update.Update ();
             return doc;
@@ -59,12 +70,12 @@ namespace NachoCore.ActiveSync
             EmailMessage.DeleteBody ();
             EmailMessage.Delete ();
             Update.Delete ();
-            return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
+            return Event.Create ((uint)SmEvt.E.Success, "SESUCC");
         }
         // FIXME - need an OnFail callback for negative indication delivery.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            return Event.Create ((uint)SmEvt.E.HardFail, "SMHARD0", null, 
+            return Event.Create ((uint)SmEvt.E.HardFail, "SEFAIL", null, 
                 string.Format ("Server sent non-empty response to SendMail: {0}", doc.ToString ()));
         }
 

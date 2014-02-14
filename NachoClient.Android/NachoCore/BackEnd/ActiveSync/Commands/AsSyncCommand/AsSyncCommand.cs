@@ -343,7 +343,7 @@ namespace NachoCore.ActiveSync
                                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                                     var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.ServerId == delServerId);
                                     if (null != emailMessage) {
-                                        emailMessage.DeleteBody (BackEnd.Instance.Db);
+                                        emailMessage.DeleteBody ();
                                         emailMessage.Delete ();
                                     }
                                     break;

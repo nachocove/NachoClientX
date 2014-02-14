@@ -299,7 +299,7 @@ namespace NachoClient.iOS
             }
             // TODO: Setup message id, etc etc.
             // Handle body
-            var body = ActionMessage.GetBody (BackEnd.Instance.Db);
+            var body = ActionMessage.GetBody ();
             if (null == body) {
                 return;
             }

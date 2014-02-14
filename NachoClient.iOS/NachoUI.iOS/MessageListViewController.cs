@@ -274,7 +274,7 @@ namespace NachoClient.iOS
 
         void UpdateDbWithSummary (McEmailMessage message)
         {
-            var body = message.GetBody (BackEnd.Instance.Db);
+            var body = message.GetBody ();
             var summary = MimeHelpers.CreateSummary (body);
             message.Summary = summary;
             BackEnd.Instance.Db.Update (message);

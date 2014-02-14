@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
     {
         public AsItemOperationsCommand (IAsDataSource dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
         {
-            Update = NextToDnld ();
+            Update = NextPending (McPending.Operations.AttachmentDownload);
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
@@ -65,11 +65,6 @@ namespace NachoCore.ActiveSync
             }
             Update.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
-        }
-
-        private McPending NextToDnld ()
-        {
-            return NextPendingUpdate (McPending.Operations.AttachmentDownload);
         }
 
         private McAttachment Attachment ()

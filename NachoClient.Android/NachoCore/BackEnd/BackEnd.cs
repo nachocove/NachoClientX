@@ -227,7 +227,6 @@ namespace NachoCore
             // Don't Task.Run.
             return ServiceFromAccountId (accountId).Cancel (token);
         }
-
         // Commands need to do Task.Run as appropriate in protocol controller.
         public string StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
@@ -242,6 +241,20 @@ namespace NachoCore
         public string SendEmailCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId).SendEmailCmd (emailMessageId);
+        }
+
+        public string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
+                                       int folderId, bool originalEmailIsEmbedded)
+        {
+            return ServiceFromAccountId (accountId).ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
+                folderId, originalEmailIsEmbedded);
+        }
+
+        public string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
+                                     int folderId, bool originalEmailIsEmbedded)
+        {
+            return ServiceFromAccountId (accountId).ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
+                folderId, originalEmailIsEmbedded);
         }
 
         public string DeleteEmailCmd (int accountId, int emailMessageId)
@@ -265,7 +278,7 @@ namespace NachoCore
         }
 
         public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
-            DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
+                                       DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagType, 
                 start, utcStart, due, utcDue);
@@ -277,7 +290,7 @@ namespace NachoCore
         }
 
         public string MarkEmailFlagDone (int accountId, int emailMessageId,
-            DateTime completeTime, DateTime dateCompleted)
+                                         DateTime completeTime, DateTime dateCompleted)
         {
             return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId,
                 completeTime, dateCompleted);

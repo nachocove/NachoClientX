@@ -161,6 +161,9 @@
     <Compile Include="NachoCore\BackEnd\StatusIndEventArgs.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\NcCommStatus.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\NcCommStatusServerEventArgs.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartForwardCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartReplyCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -215,6 +218,7 @@
     <Folder Include="Resources\Drawable-xhdpi\" />
     <Folder Include="NachoCore\Adapters\" />
     <Folder Include="NachoCore\BackEnd\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

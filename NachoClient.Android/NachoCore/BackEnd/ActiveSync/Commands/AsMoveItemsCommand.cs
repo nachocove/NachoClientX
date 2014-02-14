@@ -14,7 +14,7 @@ namespace NachoCore.ActiveSync
     {
         public AsMoveItemsCommand (IAsDataSource dataSource) : base (Xml.Mov.MoveItems, Xml.Mov.Ns, dataSource)
         {
-            Update = NextToMove ();
+            Update = NextPending (McPending.Operations.EmailMove);
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
@@ -78,11 +78,6 @@ namespace NachoCore.ActiveSync
                     new [] { Update.Token });
                 return Event.Create ((uint)SmEvt.E.Success, "MVUNKSTATUS");
             }
-        }
-
-        private McPending NextToMove ()
-        {
-            return NextPendingUpdate (McPending.Operations.EmailMove);
         }
     }
 }

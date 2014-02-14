@@ -36,6 +36,8 @@ namespace NachoCore.Model
             FolderUpdate,
             FolderDelete,
             // Send means to transmit the record. This only applies to EmailMessage right now.
+            EmailForward,
+            EmailReply,
             EmailSend,
             // Download means to pull down a file associated with the record.
             AttachmentDownload,
@@ -112,6 +114,8 @@ namespace NachoCore.Model
 
         [Indexed]
         public int AttachmentId { set; get; }
+
+        public bool OriginalEmailIsEmbedded { set; get; }
 
         public string Prefix { set; get; }
 

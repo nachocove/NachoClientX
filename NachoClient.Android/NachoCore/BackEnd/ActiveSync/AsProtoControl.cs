@@ -32,6 +32,8 @@ namespace NachoCore.ActiveSync
             SyncW,
             PingW,
             SendMailW,
+            SFwdMailW,
+            SRplyMailW,
             DnldAttW,
             SrchW,
             MoveW,
@@ -62,6 +64,8 @@ namespace NachoCore.ActiveSync
                 UiCertOkNo,
                 ReFSync,
                 SendMail,
+                SFwdMail,
+                SRplyMail,
                 DnldAtt,
                 UiSearch,
                 Move,
@@ -86,7 +90,7 @@ namespace NachoCore.ActiveSync
                         State = (uint)St.Start,
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
-                            (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.UiSetCred, (uint)CtlEvt.E.UiSetServConf, (uint)CtlEvt.E.UiCertOkNo, 
+                            (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.SFwdMail,  (uint)CtlEvt.E.SRplyMail, (uint)CtlEvt.E.UiSetCred, (uint)CtlEvt.E.UiSetServConf, (uint)CtlEvt.E.UiCertOkNo, 
                             (uint)CtlEvt.E.UiCertOkYes, (uint)CtlEvt.E.UiSearch
                         },
                         Invalid = new [] {
@@ -113,6 +117,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSearch,
@@ -157,6 +163,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSearch,
@@ -190,6 +198,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSearch,
@@ -222,6 +232,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
@@ -255,6 +267,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiSearch,
                             (uint)CtlEvt.E.Move,
                         },
@@ -292,6 +306,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -321,6 +337,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -350,6 +368,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -379,6 +399,8 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SRplyMail,
+                            (uint)CtlEvt.E.SFwdMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -407,6 +429,8 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.SyncW,
                         Drop = new [] {
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -455,6 +479,8 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.SendMail, Act = DoSend, State = (uint)Lst.SendMailW },
+                            new Trans { Event = (uint)CtlEvt.E.SFwdMail, Act = DoSFwd, State = (uint)Lst.SFwdMailW },
+                            new Trans { Event = (uint)CtlEvt.E.SRplyMail, Act = DoSRply, State = (uint)Lst.SRplyMailW },
                             new Trans { Event = (uint)CtlEvt.E.DnldAtt, Act = DoDnldAtt, State = (uint)Lst.DnldAttW },
                             new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
                             new Trans { Event = (uint)CtlEvt.E.Move, Act = DoMove, State = (uint)Lst.MoveW },
@@ -465,6 +491,8 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.SendMailW,
                         Drop = new [] {
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -491,9 +519,73 @@ namespace NachoCore.ActiveSync
                     },
 
                     new Node {
+                        State = (uint)Lst.SFwdMailW,
+                        Drop = new [] {
+                            (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.UiSetCred,
+                            (uint)CtlEvt.E.UiSetServConf,
+                            (uint)CtlEvt.E.Move,
+                        },
+                        Invalid = new [] {
+                            (uint)CtlEvt.E.DnldAtt,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.GetServConf,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSFwd, State = (uint)Lst.SFwdMailW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSFwd, State = (uint)Lst.SFwdMailW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSFwd, State = (uint)Lst.SFwdMailW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
+                        }
+                    },
+
+                    new Node {
+                        State = (uint)Lst.SRplyMailW,
+                        Drop = new [] {
+                            (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.UiSetCred,
+                            (uint)CtlEvt.E.UiSetServConf,
+                            (uint)CtlEvt.E.Move,
+                        },
+                        Invalid = new [] {
+                            (uint)CtlEvt.E.DnldAtt,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.GetServConf,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSRply, State = (uint)Lst.SRplyMailW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSRply, State = (uint)Lst.SRplyMailW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSRply, State = (uint)Lst.SRplyMailW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
+                        }
+                    },
+
+                    new Node {
                         State = (uint)Lst.DnldAttW,
                         Drop = new [] {
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -523,6 +615,8 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.SrchW,
                         Drop = new [] {
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -554,6 +648,8 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.MoveW,
                         Drop = new [] {
                             (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -733,6 +829,20 @@ namespace NachoCore.ActiveSync
             Cmd.Execute (Sm);
         }
 
+        private void DoSFwd ()
+        {
+            ForceStop ();
+            SetCmd (new AsSmartForwardCommand (this));
+            Cmd.Execute (Sm);
+        }
+
+        private void DoSRply ()
+        {
+            ForceStop ();
+            SetCmd (new AsSmartReplyCommand (this));
+            Cmd.Execute (Sm);
+        }
+
         private void DoDnldAtt ()
         {
             SetCmd (new AsItemOperationsCommand (this));
@@ -772,6 +882,14 @@ namespace NachoCore.ActiveSync
 
                 case McPending.Operations.EmailSend:
                     Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
+                    return true;
+
+                case McPending.Operations.EmailForward:
+                    Sm.PostEvent ((uint)CtlEvt.E.SFwdMail, "ASPCDSF");
+                    return true;
+
+                case McPending.Operations.EmailReply:
+                    Sm.PostEvent ((uint)CtlEvt.E.SRplyMail, "ASPCDSR");
                     return true;
 
                 case McPending.Operations.EmailMove:
@@ -896,6 +1014,54 @@ namespace NachoCore.ActiveSync
             return sendUpdate.Token;
         }
 
+        private string SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
+                return SendEmailCmd (newEmailMessageId);
+            }
+
+            McEmailMessage refdEmailMessage;
+            McFolder folder;
+
+            refdEmailMessage = McEmailMessage.QueryById (refdEmailMessageId);
+            folder = McFolder.QueryById (folderId);
+            if (null == refdEmailMessage || null == folder) {
+                return null;
+            }
+
+            var smartUpdate = new McPending (Account.Id) {
+                Operation = Op,
+                EmailMessageId = newEmailMessageId,
+                ServerId = refdEmailMessage.ServerId,
+                FolderServerId = folder.ServerId,
+                OriginalEmailIsEmbedded = originalEmailIsEmbedded,
+            };
+            smartUpdate.Insert ();
+            Task.Run (delegate {
+                if (Op == McPending.Operations.EmailForward) {
+                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SFwdMail, "ASPCSMF");
+                } else {
+                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SRplyMail, "ASPCSMR");
+                }
+            });
+            return smartUpdate.Token;
+        }
+
+        public override string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            return SmartEmailCmd (McPending.Operations.EmailReply,
+                newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
+        }
+
+        public override string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            return SmartEmailCmd (McPending.Operations.EmailForward,
+                newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+        }
+
         public override string DeleteEmailCmd (int emailMessageId)
         {
             var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
@@ -926,7 +1092,7 @@ namespace NachoCore.ActiveSync
             foreach (var map in maps) {
                 map.Delete ();
             }
-            emailMessage.DeleteBody (BackEnd.Instance.Db);
+            emailMessage.DeleteBody ();
             emailMessage.Delete ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             Task.Run (delegate {
