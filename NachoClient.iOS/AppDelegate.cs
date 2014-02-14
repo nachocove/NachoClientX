@@ -44,11 +44,11 @@ namespace NachoClient.iOS
         private TimeSpan Timeout= new TimeSpan (0, 0, KDefaultTimeoutSeconds);
     
 
-        private NachoTimer DelayTimer;
+
         private NachoTimer TimeoutTimer;
         // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
         #pragma warning disable 414
-        private NachoTimer DisposedDelayTimer;
+
         private NachoTimer DisposedTimeoutTimer;
         #pragma warning restore 414
         // end timer constants
@@ -77,24 +77,28 @@ namespace NachoClient.iOS
             // An instance of the EKEventStore class represents the iOS Calendar database.
 
             eventStore = new EKEventStore ( );
-           
+            application.ApplicationIconBadgeNumber = 0;
+
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof (CidImageProtocol)));
             if (launcOptions != null) {
                 // we got some launch options from the OS, probably launched from a localNotification
                 if (launcOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
-                    var localNotification = launcOptions[UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
+                    var localNotification = launcOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
                     Log.Info (Log.LOG_UI, "Launched from local notification");
-                        //  if (localNotification.HasAction) {
+                    if (localNotification.HasAction) {
                         // something supposed to happen
                         //FIXME - for now we'll pop up an alert saying we got new mail
                         // what we will do in future is show the email or calendar invite body
-                    //  new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null).Show ();
-                    //  localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == AccountID);
-                    // }
+                        localNotification.ApplicationIconBadgeNumber = 0;
+                        new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null).Show ();
+                   
+                        //localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);// need to find accountID here
+                    }
                 }
             }
 
+            // FIXME - should this get started before AlertView above, to ensure the BE is active?
             launchBe();
             Log.Info (Log.LOG_UI, "AppDelegate FinishedLaunching done.");
 
@@ -137,10 +141,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private void CancelFetch (){
-            //FIXME
-            // set up timer to cancel BG fetch if its not success before System kills us off
-        }
+
 
         private void CancelFetchCallback (object State)
         {
@@ -166,27 +167,17 @@ namespace NachoClient.iOS
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
-
-
-
             Log.Info (Log.LOG_UI, "PerformFetch Called");
-
+            // Set up a Timer to kill BG after 25 Secs
             TimeoutTimer = new NachoTimer (CancelFetchCallback, null, Timeout, System.Threading.Timeout.InfiniteTimeSpan);
-            // set timeout timer => start 
-
-
-
             CompletionHandler = completionHandler;
-            // Uncomment this if you want to just return
-            // CompletionHandler (UIBackgroundFetchResult.NewData);
+            // DEBUG - comment this if you want to just return as soon as we enter BG
             // completion handler call to just immediately return from BG perform fetch call
-
-            //
+            // CompletionHandler (UIBackgroundFetchResult.NewData);
+           
             FetchResult = UIBackgroundFetchResult.Failed;
             BackEnd.Instance.StatusIndEvent += StatusHandler;
             BackEnd.Instance.ForceSync ();
-           
-
         }
     
 

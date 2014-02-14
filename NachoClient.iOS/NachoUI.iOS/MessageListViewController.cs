@@ -291,6 +291,9 @@ namespace NachoClient.iOS
             // Setting the default inactive state color to the tableView background color
             cell.DefaultColor = TableView.BackgroundView.BackgroundColor;
 
+            cell.FirstTrigger = 0.20f;
+            cell.SecondTrigger = 0.50f;
+
 //            cell.Delegate = this;
 
             UIView checkView = null;
@@ -311,18 +314,16 @@ namespace NachoClient.iOS
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    Console.WriteLine ("Did swipe Cross cell");
+                    DeleteThisMessage(indexPath);
                 });
                 clockView = ViewWithImageName ("clock");
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    Console.WriteLine ("Did swipe Clock cell");
                     PerformSegue ("MessageToMessagePriority", indexPath);
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    Console.WriteLine ("Did swipe List cell");
                     PerformSegue ("MessageToMessageAction", indexPath);
                 });
             } finally {
@@ -359,6 +360,13 @@ namespace NachoClient.iOS
             var imageView = new UIImageView (image);
             imageView.ContentMode = UIViewContentMode.Center;
             return imageView;
+        }
+
+        public void DeleteThisMessage(NSIndexPath indexPath)
+        {
+            var t = messageThreads.GetEmailThread (indexPath.Row);
+            var m = t.First ();
+            BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
         }
     }
 }
