@@ -23,7 +23,7 @@ namespace NachoClient.AndroidClient
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var rootView = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
-            var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
+//            var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
             // Watch for changes from the back end
             BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -34,19 +34,19 @@ namespace NachoClient.AndroidClient
                 }
             };
 
-            var folderId = this.Arguments.GetInt ("folderId", 0);
-            var accountId = this.Arguments.GetInt ("accountId", 0);
-
-            var folder = BackEnd.Instance.Db.Table<McFolder> ().Where (x => folderId == x.Id).Single();
-
-            messages = new NachoEmailMessages (folder);
-            adapter = new MessageListAdapter (this.Activity, messages);
-            listview.Adapter = adapter;
-
-            listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
-                var thread = messages.GetEmailThread (e.Position);
-                var message = thread.First ();
-            };
+//            var folderId = this.Arguments.GetInt ("folderId", 0);
+//            var accountId = this.Arguments.GetInt ("accountId", 0);
+//
+//            var folder = BackEnd.Instance.Db.Table<McFolder> ().Where (x => folderId == x.Id).Single();
+//
+//            messages = new NachoEmailMessages (folder);
+//            adapter = new MessageListAdapter (this.Activity, messages);
+//            listview.Adapter = adapter;
+//
+//            listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
+//                var thread = messages.GetEmailThread (e.Position);
+//                var message = thread.First ();
+//            };
 
             Activity.Title = "Messages";
             return rootView;
