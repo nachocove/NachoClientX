@@ -195,12 +195,15 @@ namespace NachoClient.iOS
             return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public void SetSearchResult (string address, McContact contact)
+        public void DoublePop (ContactSearchViewController vc, McContact contact)
         {
-            AutocompleteTextField.Text = address;
-            autocompleteResults = new List<McContact> ();
-            autocompleteResults.Add (contact);
-            TableView.ReloadData ();
+            var e = new NcEmailAddress (NcEmailAddress.ToKind (ToButton.TitleLabel.Text));
+            e.address = contact.DisplayEmailAddress;
+            e.contact = contact;
+            owner.ReplaceEmailAddress (ownerIndex, e);
+            vc.owner = null;
+            vc.NavigationController.PopViewControllerAnimated (false);
+            NavigationController.PopViewControllerAnimated (true);
         }
 
         public class ContactChooserDataSource : UITableViewDataSource

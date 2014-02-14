@@ -60,10 +60,12 @@ namespace NachoClient.iOS
             contacts = new NachoContacts ();
             TableView.ReloadData ();
 
+            // Let's be ready to search!
+            SearchDisplayController.Active = true;
+            SearchDisplayController.SearchBar.BecomeFirstResponder ();
+
             if ((null != initialSearchString) && (0 != initialSearchString.Length)) {
-                SearchDisplayController.Active = true;
                 SearchDisplayController.SearchBar.Text = initialSearchString;
-                SearchDisplayController.SearchBar.BecomeFirstResponder ();
             }
         }
 
@@ -138,11 +140,8 @@ namespace NachoClient.iOS
             } else {
                 contact = contacts.GetContact (indexPath.Row);
             }
-            owner.SetSearchResult ("", contact);
-            NavigationController.PopViewControllerAnimated (true);
+            owner.DoublePop (this, contact);
         }
-
-
 
         /// <summary>
         /// Updates the search results.
