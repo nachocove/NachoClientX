@@ -35,6 +35,11 @@ namespace NachoClient.iOS
         {
             return folders.GetFolder (indexPath.Row);
         }
+
+        public void Refresh()
+        {
+            folders.Refresh ();
+        }
     }
 }
 

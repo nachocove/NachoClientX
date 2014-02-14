@@ -4,6 +4,7 @@ using System;
 using MonoTouch.Foundation;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
 
@@ -19,6 +20,8 @@ namespace NachoClient.iOS
             currentAccount = ncaccount;
         }
 
+        FolderTableSource folders;
+            
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -27,14 +30,26 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+
+            // Setup the current list of folders
+            folders = new FolderTableSource ();
+            TableView.DataSource = folders;
+
+            // Watch for changes from the back end
+            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
+                    folders.Refresh();
+                    this.TableView.ReloadData ();
+                }
+            };
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
 
-            // Setup the current list of folders
-            TableView.DataSource = new FolderTableSource ();
+            folders.Refresh ();
             this.TableView.ReloadData ();
         }
 
