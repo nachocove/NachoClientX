@@ -38,7 +38,11 @@ gitUpdate iCarouselBinding
 gitUpdate UIImageEffects
 gitUpdate SWRevealViewController
 gitUpdate SWRevealViewControllerBinding
+gitUpdate MCSwipeTableViewCell
+gitUpdate MCSwipeTableViewCellBinding
 
 doMake iCarouselBinding
 doMake UIImageEffects
 doMake SWRevealViewControllerBinding
+doMake MCSwipeTableViewCellBinding
+

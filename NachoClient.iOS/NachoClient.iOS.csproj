@@ -472,10 +472,6 @@
     <BundleResource Include="Resources\phone-48.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\MCSwipeTableViewCell\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
-      <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
-      <Name>MCSwipeTableViewCellBinding</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
       <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
       <Name>UIImageEffectsBinding</Name>
@@ -487,6 +483,10 @@
     <ProjectReference Include="..\..\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
       <Project>{867AF543-B319-4267-8BBE-4854D99E67F0}</Project>
       <Name>SWRevealViewControllerBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
+      <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
+      <Name>MCSwipeTableViewCellBinding</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
