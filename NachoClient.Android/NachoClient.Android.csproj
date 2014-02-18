@@ -28,6 +28,7 @@
     <WarningLevel>4</WarningLevel>
     <AndroidLinkMode>None</AndroidLinkMode>
     <ConsolePause>false</ConsolePause>
+    <AndroidSupportedAbis>armeabi;x86</AndroidSupportedAbis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -164,6 +165,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartForwardCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartReplyCommand.cs" />
+    <Compile Include="NachoUI.Android\MessageViewFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -196,6 +198,46 @@
     <AndroidResource Include="Resources\layout\FolderListFragment.axml" />
     <AndroidResource Include="Resources\layout\CredentialsFragment.axml" />
     <AndroidResource Include="Resources\layout\MessageListFragment.axml" />
+    <AndroidResource Include="Resources\layout\MessageListItem.axml" />
+    <AndroidResource Include="Resources\drawable\bluedot.png" />
+    <AndroidResource Include="Resources\layout\MessageViewFragment.axml" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_accept.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_call.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_forward.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_new.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_remove.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_reply_all.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_reply.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_search.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_storage.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_time.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_time.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_storage.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_search.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_reply.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_reply_all.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_remove.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_new.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_forward.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_call.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_accept.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_time.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_storage.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_search.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_reply.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_reply_all.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_remove.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_new.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_forward.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_call.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_accept.png" />
+    <AndroidResource Include="Resources\menu\MessageViewFragment.axml" />
+    <AndroidResource Include="Resources\values\Styles.xml" />
+    <AndroidResource Include="Resources\layout\MessageViewFragmentActionBar.axml" />
+    <AndroidResource Include="Resources\layout\MessageHeaderItem.axml" />
+    <AndroidResource Include="Resources\layout\MimePartImage.axml" />
+    <AndroidResource Include="Resources\layout\MimePartText.axml" />
+    <AndroidResource Include="Resources\layout\MimeHTML.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
@@ -219,6 +261,7 @@
     <Folder Include="NachoCore\Adapters\" />
     <Folder Include="NachoCore\BackEnd\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\" />
+    <Folder Include="Resources\menu\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

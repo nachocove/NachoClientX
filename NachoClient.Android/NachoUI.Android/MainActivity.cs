@@ -18,7 +18,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
-    [Activity (Label = "NachoClient.AndroidClient", Theme = "@style/Theme.AppCompat.Light", MainLauncher = true)]
+    [Activity (Label = "NachoClient.AndroidClient",
+        Theme = "@style/Theme.AppCompat.Light",
+        MainLauncher = true,
+        UiOptions = Android.Content.PM.UiOptions.SplitActionBarWhenNarrow
+    )]
+    [MetaData ("android.support.UI_OPTIONS", Value = "splitActionBarWhenNarrow")]
     public class MainActivity : ActionBarActivity
     {
         private DrawerLayout drawer;
@@ -86,14 +91,14 @@ namespace NachoClient.AndroidClient
 
             //You can alternatively use _drawer.DrawerClosed here
             drawerToggle.DrawerClosed += delegate {
-                ActionBar.Title = title;
-                InvalidateOptionsMenu ();
+                SupportActionBar.Title = title;
+                SupportInvalidateOptionsMenu ();
             };
 
             //You can alternatively use _drawer.DrawerOpened here
             drawerToggle.DrawerOpened += delegate {
-                ActionBar.Title = drawerTitle;
-                InvalidateOptionsMenu ();
+                SupportActionBar.Title = drawerTitle;
+                SupportInvalidateOptionsMenu ();
             };
 
             drawer.SetDrawerListener (drawerToggle);
@@ -225,7 +230,7 @@ namespace NachoClient.AndroidClient
                 .Replace (Resource.Id.content_frame, fragment)
                 .Commit ();
 
-            ActionBar.Title = title = menu [position].DisplayName;
+            SupportActionBar.Title = title = menu [position].DisplayName;
             drawer.CloseDrawer (drawerList);
         }
 

@@ -25,6 +25,10 @@ namespace NachoClient.AndroidClient
             var rootView = inflater.Inflate (Resource.Layout.FolderListFragment, container, false);
             var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
+            folders = new NachoFolders (NachoFolders.FilterForEmail);
+            adapter = new FolderListAdapter (this.Activity, folders);
+            listview.Adapter = adapter;
+
             // Watch for changes from the back end
             BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
@@ -34,9 +38,18 @@ namespace NachoClient.AndroidClient
                 }
             };
 
-            folders = new NachoFolders (NachoFolders.FilterForEmail);
-            adapter = new FolderListAdapter (this.Activity, folders);
-            listview.Adapter = adapter;
+            listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
+                var fragment = new MessageListFragment ();
+                var bundle = new Bundle ();
+                var folder = folders.GetFolder(e.Position);
+                bundle.PutInt ("accountId", folder.AccountId);
+                bundle.PutInt ("folderId", folder.Id);
+                bundle.PutString ("segue", "FolderListToMessageList");
+                fragment.Arguments = bundle;
+                Activity.SupportFragmentManager.BeginTransaction ()
+                    .Replace(Resource.Id.content_frame, fragment)
+                    .Commit ();
+            };
 
             Activity.Title = "Folders";
             return rootView;
