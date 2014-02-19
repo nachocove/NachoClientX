@@ -863,14 +863,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050020
 			public const int action_bar_title = 2131034144;
 			
-			// aapt resource value: 0x7f050059
-			public const int action_call = 2131034201;
+			// aapt resource value: 0x7f05005a
+			public const int action_call = 2131034202;
 			
 			// aapt resource value: 0x7f05001b
 			public const int action_context_bar = 2131034139;
 			
-			// aapt resource value: 0x7f050056
-			public const int action_forward = 2131034198;
+			// aapt resource value: 0x7f050057
+			public const int action_forward = 2131034199;
 			
 			// aapt resource value: 0x7f050016
 			public const int action_menu_divider = 2131034134;
@@ -890,11 +890,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050055
 			public const int action_remove = 2131034197;
 			
-			// aapt resource value: 0x7f050058
-			public const int action_reply = 2131034200;
+			// aapt resource value: 0x7f050059
+			public const int action_reply = 2131034201;
 			
-			// aapt resource value: 0x7f050057
-			public const int action_reply_all = 2131034199;
+			// aapt resource value: 0x7f050058
+			public const int action_reply_all = 2131034200;
 			
 			// aapt resource value: 0x7f050052
 			public const int action_storage = 2131034194;
@@ -911,8 +911,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050011
 			public const int beginning = 2131034129;
 			
-			// aapt resource value: 0x7f050045
-			public const int btnConnect = 2131034181;
+			// aapt resource value: 0x7f050047
+			public const int btnConnect = 2131034183;
 			
 			// aapt resource value: 0x7f05002b
 			public const int checkbox = 2131034155;
@@ -920,8 +920,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f05000d
 			public const int collapseActionView = 2131034125;
 			
-			// aapt resource value: 0x7f050048
-			public const int content_frame = 2131034184;
+			// aapt resource value: 0x7f050049
+			public const int content_frame = 2131034185;
 			
 			// aapt resource value: 0x7f050026
 			public const int default_activity_button = 2131034150;
@@ -932,8 +932,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050008
 			public const int disableHome = 2131034120;
 			
-			// aapt resource value: 0x7f050047
-			public const int drawer_layout = 2131034183;
+			// aapt resource value: 0x7f050048
+			public const int drawer_layout = 2131034184;
 			
 			// aapt resource value: 0x7f05000f
 			public const int dropdown = 2131034127;
@@ -965,8 +965,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050025
 			public const int image = 2131034149;
 			
-			// aapt resource value: 0x7f050049
-			public const int left_drawer = 2131034185;
+			// aapt resource value: 0x7f05004a
+			public const int left_drawer = 2131034186;
 			
 			// aapt resource value: 0x7f050031
 			public const int left_icon = 2131034161;
@@ -977,8 +977,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050027
 			public const int list_item = 2131034151;
 			
-			// aapt resource value: 0x7f050046
-			public const int listview = 2131034182;
+			// aapt resource value: 0x7f050043
+			public const int listview = 2131034179;
 			
 			// aapt resource value: 0x7f050012
 			public const int middle = 2131034130;
@@ -1009,6 +1009,9 @@ namespace NachoClient.AndroidClient
 			
 			// aapt resource value: 0x7f050033
 			public const int right_icon = 2131034163;
+			
+			// aapt resource value: 0x7f050056
+			public const int search = 2131034198;
 			
 			// aapt resource value: 0x7f050038
 			public const int search_badge = 2131034168;
@@ -1076,8 +1079,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050002
 			public const int tabMode = 2131034114;
 			
-			// aapt resource value: 0x7f05004a
-			public const int tag = 2131034186;
+			// aapt resource value: 0x7f05004b
+			public const int tag = 2131034187;
 			
 			// aapt resource value: 0x7f050029
 			public const int title = 2131034153;
@@ -1094,17 +1097,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050003
 			public const int useLogo = 2131034115;
 			
-			// aapt resource value: 0x7f050043
-			public const int user_email = 2131034179;
+			// aapt resource value: 0x7f050045
+			public const int user_email = 2131034181;
+			
+			// aapt resource value: 0x7f050046
+			public const int user_password = 2131034182;
 			
 			// aapt resource value: 0x7f050044
-			public const int user_password = 2131034180;
+			public const int user_server = 2131034180;
 			
 			// aapt resource value: 0x7f050042
-			public const int user_server = 2131034178;
-			
-			// aapt resource value: 0x7f05004b
-			public const int value = 2131034187;
+			public const int value = 2131034178;
 			
 			// aapt resource value: 0x7f05000c
 			public const int withText = 2131034124;
@@ -1211,43 +1214,55 @@ namespace NachoClient.AndroidClient
 			public const int abc_search_view = 2130903063;
 			
 			// aapt resource value: 0x7f030018
-			public const int CredentialsFragment = 2130903064;
+			public const int CalendarItemViewFragment = 2130903064;
 			
 			// aapt resource value: 0x7f030019
-			public const int DrawerListItem = 2130903065;
+			public const int CalendarListFragment = 2130903065;
 			
 			// aapt resource value: 0x7f03001a
-			public const int FolderListFragment = 2130903066;
+			public const int ContactListFragment = 2130903066;
 			
 			// aapt resource value: 0x7f03001b
-			public const int Main = 2130903067;
+			public const int ContactViewFragment = 2130903067;
 			
 			// aapt resource value: 0x7f03001c
-			public const int MessageHeaderItem = 2130903068;
+			public const int CredentialsFragment = 2130903068;
 			
 			// aapt resource value: 0x7f03001d
-			public const int MessageListFragment = 2130903069;
+			public const int DrawerListItem = 2130903069;
 			
 			// aapt resource value: 0x7f03001e
-			public const int MessageListItem = 2130903070;
+			public const int FolderListFragment = 2130903070;
 			
 			// aapt resource value: 0x7f03001f
-			public const int MessageViewFragment = 2130903071;
+			public const int Main = 2130903071;
 			
 			// aapt resource value: 0x7f030020
-			public const int MessageViewFragmentActionBar = 2130903072;
+			public const int MessageHeaderItem = 2130903072;
 			
 			// aapt resource value: 0x7f030021
-			public const int MimeHTML = 2130903073;
+			public const int MessageListFragment = 2130903073;
 			
 			// aapt resource value: 0x7f030022
-			public const int MimePartImage = 2130903074;
+			public const int MessageListItem = 2130903074;
 			
 			// aapt resource value: 0x7f030023
-			public const int MimePartText = 2130903075;
+			public const int MessageViewFragment = 2130903075;
 			
 			// aapt resource value: 0x7f030024
-			public const int support_simple_spinner_dropdown_item = 2130903076;
+			public const int MessageViewFragmentActionBar = 2130903076;
+			
+			// aapt resource value: 0x7f030025
+			public const int MimeHTML = 2130903077;
+			
+			// aapt resource value: 0x7f030026
+			public const int MimePartImage = 2130903078;
+			
+			// aapt resource value: 0x7f030027
+			public const int MimePartText = 2130903079;
+			
+			// aapt resource value: 0x7f030028
+			public const int support_simple_spinner_dropdown_item = 2130903080;
 			
 			static Layout()
 			{
@@ -1263,7 +1278,10 @@ namespace NachoClient.AndroidClient
 		{
 			
 			// aapt resource value: 0x7f0c0000
-			public const int MessageViewFragment = 2131492864;
+			public const int ContactListFragment = 2131492864;
+			
+			// aapt resource value: 0x7f0c0001
+			public const int MessageViewFragment = 2131492865;
 			
 			static Menu()
 			{

@@ -169,6 +169,10 @@
     <Compile Include="NachoPlatform.Android\InvokeOnUIThreadAndroid.cs" />
     <Compile Include="NachoPlatform.Android\ReachabilityAndroid.cs" />
     <Compile Include="NachoPlatform.Android\RegDomAndroid.cs" />
+    <Compile Include="NachoUI.Android\CalendarListFragment.cs" />
+    <Compile Include="NachoUI.Android\ContactListFragment.cs" />
+    <Compile Include="NachoUI.Android\CalendarItemViewFragment.cs" />
+    <Compile Include="NachoUI.Android\ContactViewFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -250,6 +254,11 @@
     <AndroidResource Include="Resources\layout\MimePartImage.axml" />
     <AndroidResource Include="Resources\layout\MimePartText.axml" />
     <AndroidResource Include="Resources\layout\MimeHTML.axml" />
+    <AndroidResource Include="Resources\layout\CalendarListFragment.axml" />
+    <AndroidResource Include="Resources\layout\ContactListFragment.axml" />
+    <AndroidResource Include="Resources\layout\ContactViewFragment.axml" />
+    <AndroidResource Include="Resources\layout\CalendarItemViewFragment.axml" />
+    <AndroidResource Include="Resources\menu\ContactListFragment.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>

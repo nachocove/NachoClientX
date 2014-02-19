@@ -8,6 +8,7 @@ namespace NachoCore
     public interface INachoContacts
     {
         int Count ();
-        McContact GetContact(int i);
+        void Refresh ();
+        McContact GetContact (int i);
     }
 }

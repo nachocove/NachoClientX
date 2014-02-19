@@ -51,6 +51,11 @@ namespace NachoCore
 
         public DeviceCalendar ()
         {
+            Refresh ();
+        }
+
+        public void Refresh()
+        {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
             var calendars = appDelegate.EventStore.GetCalendars (EKEntityType.Event);

@@ -15,7 +15,12 @@ namespace NachoCore
 
         public NachoCalendar ()
         {
-            list = BackEnd.Instance.Db.Table<McCalendar> ().OrderBy (c => c.StartTime).ToList ();
+            Refresh ();
+        }
+
+        public void Refresh()
+        {
+            list = BackEnd.Instance.Db.Table<McCalendar> ().OrderByDescending (c => c.StartTime).ToList ();
             if (null == list) {
                 list = new List<McCalendar> ();
             }
