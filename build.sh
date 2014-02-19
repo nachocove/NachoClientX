@@ -33,6 +33,8 @@ function doMake()
     popd
 }
 
+gitUpdate Reachability
+gitUpdate registered-domain-libs
 gitUpdate iCarousel
 gitUpdate iCarouselBinding
 gitUpdate UIImageEffects
@@ -53,9 +55,13 @@ doMake bc-csharp -f ../NachoClientX/bc-csharp.mk
 doMake MimeKit -f ../NachoClientX/MimeKit.mk
 doMake DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
 
+# Build ebedded native code.
+pushd native.iOS
+make
+popd
+pushd native.Android
+make
+popd
+
 # Build NachoClientX
 make -f Makefile
-
-
-
-

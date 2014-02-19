@@ -54,9 +54,6 @@
     <Reference Include="DnDns.Android">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.Android\bin\Release\DnDns.Android.dll</HintPath>
     </Reference>
-    <Reference Include="NachoPlatform.Android">
-      <HintPath>..\..\NachoPlatform\NachoPlatform\NachoPlatform.Android\bin\Release\NachoPlatform.Android.dll</HintPath>
-    </Reference>
     <Reference Include="BouncyCastle.Android">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
     </Reference>
@@ -166,11 +163,26 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartForwardCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\AsSmartReplyCommand.cs" />
     <Compile Include="NachoUI.Android\MessageViewFragment.cs" />
+    <Compile Include="NachoPlatform\IPlatform.cs" />
+    <Compile Include="NachoPlatform.Android\AssetsAndroid.cs" />
+    <Compile Include="NachoPlatform.Android\DeviceAndroid.cs" />
+    <Compile Include="NachoPlatform.Android\InvokeOnUIThreadAndroid.cs" />
+    <Compile Include="NachoPlatform.Android\ReachabilityAndroid.cs" />
+    <Compile Include="NachoPlatform.Android\RegDomAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
+    <None Include="..\native.Android\libs\armeabi\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\armeabi\libnachoplatform.so</Link>
+    </None>
+    <None Include="..\native.Android\libs\armeabi-v7a\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\armeabi-v7a\libnachoplatform.so</Link>
+    </None>
+    <None Include="..\native.Android\libs\x86\libnachoplatform.so">
+      <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\Main.axml" />
@@ -262,6 +274,9 @@
     <Folder Include="NachoCore\BackEnd\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\" />
     <Folder Include="Resources\menu\" />
+    <Folder Include="NachoPlatform\" />
+    <Folder Include="NachoPlatform.Android\" />
+    <Folder Include="NachoPlatform.Android\libs\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

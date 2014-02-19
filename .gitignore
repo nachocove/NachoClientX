@@ -1,5 +1,6 @@
 *.pidb
 *.userprefs
+!xcuserdata
 *.swp
 *.DS_Store
 *.nib
@@ -8,3 +9,11 @@
 */*/bin/*
 */*/obj/*
 **/*.hmap
+**/*.a
+**/*.so
+native.iOS/src/tld-canon.h
+native.iOS/build
+native.Android/src/tld-canon.h
+native.Android/jni/*.h
+native.Android/jni/*.c
+

@@ -47,7 +47,6 @@ namespace Test.Android
 			global::Xamarin.Android.NUnitLite.Resource.Layout.results = global::Test.Android.Resource.Layout.results;
 			global::Xamarin.Android.NUnitLite.Resource.Layout.test_result = global::Test.Android.Resource.Layout.test_result;
 			global::Xamarin.Android.NUnitLite.Resource.Layout.test_suite = global::Test.Android.Resource.Layout.test_suite;
-			global::NachoPlatform.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
 		}
 		
 		public partial class Animation
@@ -1225,9 +1224,6 @@ namespace Test.Android
 			
 			// aapt resource value: 0x7f0a000b
 			public const int abc_shareactionprovider_share_with_application = 2131361803;
-			
-			// aapt resource value: 0x7f0a000d
-			public const int library_name = 2131361805;
 			
 			static String()
 			{
