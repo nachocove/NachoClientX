@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		22340B6818B5B8D1000BB5AF /* nacho-sysctlbyname.c in Sources */ = {isa = PBXBuildFile; fileRef = 22340B6718B5B8D1000BB5AF /* nacho-sysctlbyname.c */; };
 		224ACEDC18B4125700DA4554 /* regdom.c in Sources */ = {isa = PBXBuildFile; fileRef = 224ACEDA18B4125700DA4554 /* regdom.c */; };
 		22CF3BDC18B3F70100A1083E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22CF3BDB18B3F70100A1083E /* Foundation.framework */; };
 		22CF3BEA18B3F70200A1083E /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22CF3BE918B3F70200A1083E /* XCTest.framework */; };
@@ -16,6 +17,7 @@
 		22CF3BF618B3F70200A1083E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 22CF3BF418B3F70200A1083E /* InfoPlist.strings */; };
 		22CF3BF818B3F70200A1083E /* NachoPlatformTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 22CF3BF718B3F70200A1083E /* NachoPlatformTests.m */; };
 		22CF3C0318B3F72F00A1083E /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 22CF3C0218B3F72F00A1083E /* Reachability.m */; };
+		22D44C2718B6AF7A00B02F84 /* nacho-dkim-regdom.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D44C2618B6AF7A00B02F84 /* nacho-dkim-regdom.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,7 +43,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		224050F218B4141B003DD1FB /* tld-canon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tld-canon.h"; path = "src/tld-canon.h"; sourceTree = SOURCE_ROOT; };
+		22340B6618B5B8D1000BB5AF /* tld-canon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "tld-canon.h"; path = "src/tld-canon.h"; sourceTree = SOURCE_ROOT; };
+		22340B6718B5B8D1000BB5AF /* nacho-sysctlbyname.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "nacho-sysctlbyname.c"; path = "src/nacho-sysctlbyname.c"; sourceTree = SOURCE_ROOT; };
 		224ACEDA18B4125700DA4554 /* regdom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = regdom.c; path = "../../../registered-domain-libs/C/regdom.c"; sourceTree = "<group>"; };
 		224ACEDB18B4125700DA4554 /* regdom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = regdom.h; path = "../../../registered-domain-libs/C/regdom.h"; sourceTree = "<group>"; };
 		22CF3BD818B3F70100A1083E /* libNachoPlatform.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libNachoPlatform.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -55,8 +58,7 @@
 		22CF3BF718B3F70200A1083E /* NachoPlatformTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NachoPlatformTests.m; sourceTree = "<group>"; };
 		22CF3C0118B3F72F00A1083E /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Reachability.h; path = ../../../Reachability/Reachability.h; sourceTree = "<group>"; };
 		22CF3C0218B3F72F00A1083E /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Reachability.m; path = ../../../Reachability/Reachability.m; sourceTree = "<group>"; };
-		22CF3C0818B3F77A00A1083E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../native.common/src; sourceTree = "<group>"; };
-		22CF3C0918B3F80700A1083E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../src; sourceTree = "<group>"; };
+		22D44C2618B6AF7A00B02F84 /* nacho-dkim-regdom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "nacho-dkim-regdom.c"; path = "src/nacho-dkim-regdom.c"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,11 +116,11 @@
 		22CF3BDD18B3F70100A1083E /* NachoPlatform */ = {
 			isa = PBXGroup;
 			children = (
-				224050F218B4141B003DD1FB /* tld-canon.h */,
+				22D44C2618B6AF7A00B02F84 /* nacho-dkim-regdom.c */,
+				22340B6618B5B8D1000BB5AF /* tld-canon.h */,
+				22340B6718B5B8D1000BB5AF /* nacho-sysctlbyname.c */,
 				224ACEDA18B4125700DA4554 /* regdom.c */,
 				224ACEDB18B4125700DA4554 /* regdom.h */,
-				22CF3C0918B3F80700A1083E /* src */,
-				22CF3C0818B3F77A00A1083E /* src */,
 				22CF3C0118B3F72F00A1083E /* Reachability.h */,
 				22CF3C0218B3F72F00A1083E /* Reachability.m */,
 				22CF3BDE18B3F70100A1083E /* Supporting Files */,
@@ -233,7 +235,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22340B6818B5B8D1000BB5AF /* nacho-sysctlbyname.c in Sources */,
 				22CF3C0318B3F72F00A1083E /* Reachability.m in Sources */,
+				22D44C2718B6AF7A00B02F84 /* nacho-dkim-regdom.c in Sources */,
 				224ACEDC18B4125700DA4554 /* regdom.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

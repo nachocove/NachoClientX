@@ -77,12 +77,14 @@ namespace NachoCore.Utils
 
         private ServerTracker GetTracker (int serverId)
         {
-            var tracker = Trackers.Where (x => serverId == x.ServerId).SingleOrDefault ();
-            if (null == tracker) {
-                tracker = new ServerTracker () { ServerId = serverId };
-                Trackers.Add (tracker);
+            lock (syncRoot) {
+                var tracker = Trackers.Where (x => serverId == x.ServerId).SingleOrDefault ();
+                if (null == tracker) {
+                    tracker = new ServerTracker () { ServerId = serverId };
+                    Trackers.Add (tracker);
+                }
+                return tracker;
             }
-            return tracker;
         }
 
         private static volatile NcCommStatus instance;
