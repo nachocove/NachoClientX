@@ -26,7 +26,7 @@ namespace NachoClient.AndroidClient
             var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
             var folderId = this.Arguments.GetInt ("folderId", 0);
-//            var accountId = this.Arguments.GetInt ("accountId", 0);
+            var accountId = this.Arguments.GetInt ("accountId", 0);
             var folder = BackEnd.Instance.Db.Table<McFolder> ().Where (x => folderId == x.Id).Single ();
 
             messages = new NachoEmailMessages (folder);
@@ -58,9 +58,27 @@ namespace NachoClient.AndroidClient
                     .Commit ();
             };
 
+            // When started with a message id, visit that message.
+            var messageId = this.Arguments.GetInt ("messageId", 0);
+            if (0 < messageId) {
+                this.Arguments.Remove ("messageId");
+                var fragment = new MessageViewFragment ();
+                var bundle = new Bundle ();
+                bundle.PutInt ("accountId", accountId);
+                bundle.PutInt ("messageId", messageId);
+                bundle.PutInt ("folderId", folderId);
+                bundle.PutString ("segue", "MessageListToMessageView");
+                fragment.Arguments = bundle;
+                Activity.SupportFragmentManager.BeginTransaction ()
+                    .Add (Resource.Id.content_frame, fragment)
+                    .AddToBackStack (null)
+                    .Commit ();
+            }
+
             Activity.Title = "Messages";
             return rootView;
         }
+            
     }
 
     public class MessageListAdapter : BaseAdapter<McEmailMessage>

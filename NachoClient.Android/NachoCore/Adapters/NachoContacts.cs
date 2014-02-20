@@ -14,7 +14,15 @@ namespace NachoCore
 
         public NachoContacts ()
         {
+            Refresh ();
+        }
+
+        public void Refresh()
+        {
             list = BackEnd.Instance.Db.Table<McContact> ().OrderBy (c => c.LastName).ToList ();
+            if (null == list) {
+                list = new List<McContact> ();
+            }
         }
 
         public int Count ()

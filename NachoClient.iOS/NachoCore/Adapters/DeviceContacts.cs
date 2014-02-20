@@ -15,6 +15,11 @@ namespace NachoCore
 
         public DeviceContacts ()
         {
+            Refresh ();
+        }
+
+        public void Refresh()
+        {
             AddressBook book = new AddressBook ();
             list = book.OrderBy (c => c.LastName).ToList ();
         }

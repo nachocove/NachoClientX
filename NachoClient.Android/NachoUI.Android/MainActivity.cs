@@ -196,10 +196,16 @@ namespace NachoClient.AndroidClient
                 fragment = new FolderListFragment ();
             }
             if (segueName.Equals (SidebarToContactsSegueId)) {
-                return;
+                fragment = new ContactListFragment ();
+                var bundle = new Bundle ();
+                bundle.PutString ("segue", segueName);
+                fragment.Arguments = bundle;
             }
             if (segueName.Equals (SidebarToCalendarSegueId)) {
-                return;
+                fragment = new CalendarListFragment ();
+                var bundle = new Bundle ();
+                bundle.PutString ("segue", segueName);
+                fragment.Arguments = bundle;
             }
             if (segueName.Equals (SidebarToMessagesSegueId)) {
                 fragment = new MessageListFragment ();
@@ -218,10 +224,10 @@ namespace NachoClient.AndroidClient
                 fragment.Arguments = bundle;
             }
             if (segueName.Equals (SidebarToNachoNowSegueId)) {
-                return;
+                fragment = new NachoNowFragment ();
             }
             if (segueName.Equals (SidebarToHomeSegueId)) {
-                return;
+                fragment = new HomeFragment ();
             }
 
             NachoAssert.True (null != fragment);
