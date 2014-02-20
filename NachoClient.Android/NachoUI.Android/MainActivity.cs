@@ -224,10 +224,10 @@ namespace NachoClient.AndroidClient
                 fragment.Arguments = bundle;
             }
             if (segueName.Equals (SidebarToNachoNowSegueId)) {
-                return;
+                fragment = new NachoNowFragment ();
             }
             if (segueName.Equals (SidebarToHomeSegueId)) {
-                return;
+                fragment = new HomeFragment ();
             }
 
             NachoAssert.True (null != fragment);

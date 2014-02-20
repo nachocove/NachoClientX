@@ -173,6 +173,8 @@
     <Compile Include="NachoUI.Android\ContactListFragment.cs" />
     <Compile Include="NachoUI.Android\CalendarItemViewFragment.cs" />
     <Compile Include="NachoUI.Android\ContactViewFragment.cs" />
+    <Compile Include="NachoUI.Android\NachoNowFragment.cs" />
+    <Compile Include="NachoUI.Android\HomeFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -259,6 +261,9 @@
     <AndroidResource Include="Resources\layout\ContactViewFragment.axml" />
     <AndroidResource Include="Resources\layout\CalendarItemViewFragment.axml" />
     <AndroidResource Include="Resources\menu\ContactListFragment.axml" />
+    <AndroidResource Include="Resources\layout\NachoNowFragment.axml" />
+    <AndroidResource Include="Resources\layout\NachoNowPage.axml" />
+    <AndroidResource Include="Resources\layout\HomeFragment.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
