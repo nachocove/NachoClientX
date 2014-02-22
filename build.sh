@@ -55,7 +55,7 @@ doMake MCSwipeTableViewCellBinding
 doMake bc-csharp -f ../NachoClientX/bc-csharp.mk
 doMake MimeKit -f ../NachoClientX/MimeKit.mk
 doMake DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
-doMake DDay-iCal-Xamarin
+# doMake DDay-iCal-Xamarin
 
 # Build ebedded native code.
 pushd native.iOS
