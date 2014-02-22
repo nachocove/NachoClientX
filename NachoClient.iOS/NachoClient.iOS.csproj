@@ -140,6 +140,9 @@
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSmartCommand\" />
     <Folder Include="NachoPlatform.iOS\" />
     <Folder Include="NachoPlatform\" />
+    <Folder Include="NachoUI.iOS\Support\" />
+    <Folder Include="NachoUI.iOS\Interfaces\" />
+    <Folder Include="NachoUI.iOS\Tables\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -172,12 +175,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ServerCertificatePeek.cs">
       <Link>NachoCore\Extensions\ServerCertificatePeek.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AccountTableSource.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
       <DependentUpon>AccountViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\FolderTableSource.cs" />
     <Compile Include="NachoUI.iOS\FolderViewController.cs" />
     <Compile Include="NachoUI.iOS\FolderViewController.designer.cs">
       <DependentUpon>FolderViewController.cs</DependentUpon>
@@ -278,13 +279,10 @@
       <Link>NachoCore\Extensions\NachoAssert.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
-    <Compile Include="NachoUI.iOS\Util.cs" />
-    <Compile Include="NachoUI.iOS\Locale.cs" />
     <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
     <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs">
       <DependentUpon>ComposeViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\MultilineEntryElement.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.designer.cs">
       <DependentUpon>ContactChooserViewController.cs</DependentUpon>
@@ -303,7 +301,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
       <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\CidImageProtocol.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcStateMachine.cs">
       <Link>NachoCore\Utils\NcStateMachine.cs</Link>
     </Compile>
@@ -317,16 +314,13 @@
     <Compile Include="NachoUI.iOS\MessageListViewController.designer.cs">
       <DependentUpon>MessageListViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\PlatformHelpers.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\MimeHelpers.cs">
       <Link>NachoCore\Utils\MimeHelpers.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\NachoSwipeTableViewCell.cs" />
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.cs" />
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.designer.cs">
       <DependentUpon>MessagePriorityViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\BlurryViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderItem.cs">
       <Link>NachoCore\Model\McMapFolderItem.cs</Link>
     </Compile>
@@ -344,7 +338,6 @@
     <Compile Include="NachoUI.iOS\StartupViewController.designer.cs">
       <DependentUpon>StartupViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\LabeledIconButton.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageThreads.cs">
       <Link>NachoCore\Brain\NcMessageThreads.cs</Link>
     </Compile>
@@ -362,7 +355,6 @@
     <Compile Include="NachoUI.iOS\MessageActionViewController.designer.cs">
       <DependentUpon>MessageActionViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\INachoMessageController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoFolders.cs">
       <Link>NachoCore\Adapters\NachoFolders.cs</Link>
     </Compile>
@@ -526,6 +518,17 @@
     <Compile Include="..\NachoClient.Android\NachoPlatform\IPlatform.cs">
       <Link>NachoPlatform\IPlatform.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\BlurryViewController.cs" />
+    <Compile Include="NachoUI.iOS\Support\LabeledIconButton.cs" />
+    <Compile Include="NachoUI.iOS\Support\NachoSwipeTableViewCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\Locale.cs" />
+    <Compile Include="NachoUI.iOS\Support\Util.cs" />
+    <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
+    <Compile Include="NachoUI.iOS\Support\MultilineEntryElement.cs" />
+    <Compile Include="NachoUI.iOS\Support\CidImageProtocol.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageController.cs" />
+    <Compile Include="NachoUI.iOS\Tables\FolderTableSource.cs" />
+    <Compile Include="NachoUI.iOS\Tables\AccountTableSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
