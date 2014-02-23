@@ -264,6 +264,33 @@
     <AndroidResource Include="Resources\layout\NachoNowFragment.axml" />
     <AndroidResource Include="Resources\layout\NachoNowPage.axml" />
     <AndroidResource Include="Resources\layout\HomeFragment.axml" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_add_alarm.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_alarms.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_event.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_go_to_today.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_group.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_map.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_place.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_settings.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_web_site.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_add_alarm.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_alarms.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_event.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_go_to_today.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_group.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_map.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_place.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_settings.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_web_site.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_add_alarm.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_alarms.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_event.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_go_to_today.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_group.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_map.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_place.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_settings.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_web_site.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
