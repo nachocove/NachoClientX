@@ -46,6 +46,7 @@ gitUpdate bc-csharp
 pushd ../bc-csharp; git checkout -b visual-studio-2010 origin/visual-studio-2010; popd
 gitUpdate MimeKit
 gitUpdate DnDns
+gitUpdate DDay-iCal-Xamarin
 
 doMake iCarouselBinding
 doMake UIImageEffects
@@ -54,6 +55,7 @@ doMake MCSwipeTableViewCellBinding
 doMake bc-csharp -f ../NachoClientX/bc-csharp.mk
 doMake MimeKit -f ../NachoClientX/MimeKit.mk
 doMake DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
+doMake DDay-iCal-Xamarin
 
 # Build ebedded native code.
 pushd native.iOS
