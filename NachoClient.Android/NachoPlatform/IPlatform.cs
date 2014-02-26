@@ -28,11 +28,38 @@ namespace NachoPlatform
         bool IsSimulator ();
     }
 
-    public interface IPlatformReachability
+    public delegate void NetStatusEventHandler (Object sender, NetStatusEventArgs e);
+
+    public enum NetStatusStatusEnum
     {
-        event EventHandler ReachabilityEvent;
-        void AddHost (string host);
-        void RemoveHost (string host);
+        Up,
+        Down,
+    };
+
+    public enum NetStatusSpeedEnum
+    {
+        WiFi,
+        CellFast,
+        CellSlow,
+    };
+
+    public class NetStatusEventArgs : EventArgs
+    {
+        public NetStatusStatusEnum Status { get; set; }
+        public NetStatusSpeedEnum Speed { get; set; }
+
+        public NetStatusEventArgs (NetStatusStatusEnum status, NetStatusSpeedEnum speed)
+        {
+            Status = status;
+            Speed = speed;
+        }
+    }
+
+    public interface IPlatformNetStatus
+    {
+        // This event MUST fire on status change, and MAY fire on speed change.
+        event NetStatusEventHandler NetStatusEvent;
+        void GetCurrentStatus (out NetStatusStatusEnum status, out NetStatusSpeedEnum speed);
     }
 
     public interface IPlatformInvokeOnUIThread

@@ -168,7 +168,6 @@
     <Compile Include="NachoPlatform.Android\AssetsAndroid.cs" />
     <Compile Include="NachoPlatform.Android\DeviceAndroid.cs" />
     <Compile Include="NachoPlatform.Android\InvokeOnUIThreadAndroid.cs" />
-    <Compile Include="NachoPlatform.Android\ReachabilityAndroid.cs" />
     <Compile Include="NachoPlatform.Android\RegDomAndroid.cs" />
     <Compile Include="NachoUI.Android\CalendarListFragment.cs" />
     <Compile Include="NachoUI.Android\ContactListFragment.cs" />
@@ -176,6 +175,8 @@
     <Compile Include="NachoUI.Android\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\NachoNowFragment.cs" />
     <Compile Include="NachoUI.Android\HomeFragment.cs" />
+    <Compile Include="NachoCore\BackEnd\NcCommStatus\ServerTracker.cs" />
+    <Compile Include="NachoPlatform.Android\NetStatusAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

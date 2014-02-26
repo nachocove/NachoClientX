@@ -147,6 +147,7 @@ namespace NachoCore
         public void Start (int accountId)
         {
             Task.Run (delegate {
+                NcCommStatus.Instance.Refresh ();
                 var service = ServiceFromAccountId (accountId);
                 if (null == service) {
                     /* NOTE: This code needs to be able to detect the account type and start the 
@@ -197,6 +198,7 @@ namespace NachoCore
         public void ForceSync (int accountId)
         {
             Task.Run (delegate {
+                NcCommStatus.Instance.Refresh ();
                 ServiceFromAccountId (accountId).ForceSync ();
             });
         }

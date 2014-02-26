@@ -42,6 +42,7 @@ gitUpdate SWRevealViewController
 gitUpdate SWRevealViewControllerBinding
 gitUpdate MCSwipeTableViewCell
 gitUpdate MCSwipeTableViewCellBinding
+gitUpdate NachoPlatformBinding
 gitUpdate bc-csharp
 pushd ../bc-csharp; git checkout -b visual-studio-2010 origin/visual-studio-2010; popd
 gitUpdate MimeKit
@@ -52,6 +53,7 @@ doMake iCarouselBinding
 doMake UIImageEffects
 doMake SWRevealViewControllerBinding
 doMake MCSwipeTableViewCellBinding
+doMake NachoPlatformBinding
 doMake bc-csharp -f ../NachoClientX/bc-csharp.mk
 doMake MimeKit -f ../NachoClientX/MimeKit.mk
 doMake DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk

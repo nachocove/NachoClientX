@@ -146,7 +146,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
-    <None Include="libNachoPlatformSDK.a" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -513,7 +512,6 @@
     <Compile Include="NachoPlatform.iOS\AssetsiOS.cs" />
     <Compile Include="NachoPlatform.iOS\DeviceiOS.cs" />
     <Compile Include="NachoPlatform.iOS\InvokeOnUIThreadiOS.cs" />
-    <Compile Include="NachoPlatform.iOS\ReachabilityiOS.cs" />
     <Compile Include="NachoPlatform.iOS\RegDomiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoPlatform\IPlatform.cs">
       <Link>NachoPlatform\IPlatform.cs</Link>
@@ -529,6 +527,10 @@
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageController.cs" />
     <Compile Include="NachoUI.iOS\Tables\FolderTableSource.cs" />
     <Compile Include="NachoUI.iOS\Tables\AccountTableSource.cs" />
+    <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
+      <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -624,6 +626,10 @@
     <ProjectReference Include="..\..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
       <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
       <Name>MCSwipeTableViewCellBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
+      <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
+      <Name>NachoPlatformBinding</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

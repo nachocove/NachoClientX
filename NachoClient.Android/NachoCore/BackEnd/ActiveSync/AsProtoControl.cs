@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
@@ -688,10 +689,17 @@ namespace NachoCore.ActiveSync
                 update.IsDispatched = false;
                 update.Update ();
             }
+            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
         }
         // Methods callable by the owner.
         public override void Execute ()
         {
+            // FIXME #2 - should we check if we are running before sending Launch?
+
+            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
+                return;
+            }
             Sm.PostAtMostOneEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
         }
 
@@ -975,8 +983,23 @@ namespace NachoCore.ActiveSync
                 defaultInbox.Update ();
             }
             Task.Run (delegate {
+                if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                    Log.Warn (Log.LOG_AS, "Execute called while network is down.");
+                    return;
+                }
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
             });
+        }
+
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        {
+            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
+                // FIXME #1 - need to not get an event on speed change.
+                Execute ();
+            } else {
+                // The "Down" case.
+                ForceStop ();
+            }
         }
 
         public override bool Cancel (string token)
