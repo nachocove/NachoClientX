@@ -1164,7 +1164,7 @@ namespace NachoCore.ActiveSync
             oldMapEntry.Delete ();
 
             Task.Run (delegate {
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCMOVMSG");
+				Sm.PostAtMostOneEvent ((uint)CtlEvt.E.Move, "ASPCMOVMSG");
             });
             return moveUpdate.Token;
         }
