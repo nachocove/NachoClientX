@@ -23,6 +23,7 @@ namespace NachoClient.iOS
         ///      "SidebarToDeferredMessages"
         ///      "SidebarToNachoNow"
         ///      "SidebarToHome"
+
      
         class SidebarMenu
         {
@@ -118,7 +119,7 @@ namespace NachoClient.iOS
             deviceCalendar.isDeviceCalendarKludge = true;
             menu.Add (deviceCalendar);
 
-            menu.Add (new SidebarMenu (null, "Home", SidebarToHomeSegueId));
+            menu.Add (new SidebarMenu (null, "Tutorial", SidebarToHomeSegueId));
             menu.Add (new SidebarMenu (null, "Accounts", "SidebarToAccounts"));
             menu.Add (new SidebarMenu (null, "Settings", "SidebarToSettings"));
 
