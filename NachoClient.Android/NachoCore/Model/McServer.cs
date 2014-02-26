@@ -14,7 +14,7 @@ namespace NachoCore.Model
 			Port = 443;
 		}
 
-		public string Fqdn { get; set; }
+		public string Host { get; set; }
 
 		public string Path { get; set; }
 
@@ -27,7 +27,7 @@ namespace NachoCore.Model
 		public static McServer Create (Uri uri)
 		{
 			return new McServer () {
-				Fqdn = uri.Host,
+				Host = uri.Host,
 				Path = uri.AbsolutePath,
 				Scheme = uri.Scheme,
 				Port = uri.Port
@@ -37,7 +37,7 @@ namespace NachoCore.Model
 		public void Update (McServer src)
 		{
 			// FIXME Do we need a generic way to do this, using reflection?
-			Fqdn = src.Fqdn;
+			Host = src.Host;
 			Path = src.Path;
 			Scheme = src.Scheme;
 			Port = src.Port;
@@ -50,7 +50,7 @@ namespace NachoCore.Model
 
 		public static McServer QueryByHost (string host)
 		{
-			return BackEnd.Instance.Db.Table<McServer> ().SingleOrDefault (x => host == x.Fqdn);
+			return BackEnd.Instance.Db.Table<McServer> ().SingleOrDefault (x => host == x.Host);
 		}
 	}
 }

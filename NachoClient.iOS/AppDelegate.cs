@@ -375,7 +375,7 @@ namespace NachoClient.iOS
                         // FIXME need to scan string to make sure it is of right format
                         if (txt != null) {
                             Log.Info (Log.LOG_UI, " New Server Name = " + txt);
-                            tmpServer.Fqdn = txt;
+                            tmpServer.Host = txt;
                             tmpServer.Update ();
                             Be.ServerConfResp (accountId, false); 
                             credView.ResignFirstResponder();
