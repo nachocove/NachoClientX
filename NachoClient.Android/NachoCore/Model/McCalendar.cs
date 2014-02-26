@@ -1,6 +1,8 @@
 using SQLite;
 using System;
+using System.Linq;
 using System.Collections.Generic;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -372,8 +374,32 @@ namespace NachoCore.Model
         UmalQuraReservedMustNotBeUsed = 23,
     }
 
+    public partial class McCalendarRoot
+    {
+        public McCalendarRoot () : base ()
+        {
+            attendees = new List<McAttendee> ();
+            categories = new List<McCalendarCategory> ();
+        }
+    }
+
     public partial class McCalendar
     {
+        public McCalendar () : base ()
+        {
+            exceptions = new List<McException> ();
+            recurrences = new List<McRecurrence> ();
+        }
+
+        public NcResult ReadAncillaryData ()
+        {
+            var db = BackEnd.Instance.Db;
+            attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList();
+            categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList();
+            exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList();
+            recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList();
+            return NcResult.OK ();
+        }
     }
 
     public partial class McAttendee
