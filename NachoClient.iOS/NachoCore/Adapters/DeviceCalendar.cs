@@ -1,6 +1,7 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using NachoCore;
 using MonoTouch.UIKit;
 using MonoTouch.EventKit;
@@ -10,7 +11,7 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class DeviceCalendar : INachoCalendar
+    public class DeviceCalendar : NachoCalendarCommon
     {
         AppDelegate appDelegate { get; set; }
 
@@ -40,21 +41,7 @@ namespace NachoCore
             return e.EndDate;
         }
 
-        private static int sortByStartDate (EKCalendarItem a, EKCalendarItem b)
-        {
-            // TODO: Adjust for timezones.
-            // TODO: Adjust for all day events.
-            DateTime aStart = DecipherStartTime (a);
-            DateTime bStart = DecipherStartTime (b);
-            return aStart.CompareTo (bStart);
-        }
-
-        public DeviceCalendar ()
-        {
-            Refresh ();
-        }
-
-        public void Refresh()
+        protected override void Reload ()
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
@@ -65,19 +52,17 @@ namespace NachoCore
             DateTime endDate = DateTime.Now.AddDays (90);
             NSPredicate query = appDelegate.EventStore.PredicateForEvents (startDate, endDate, calendars);
             events = appDelegate.EventStore.EventsMatching (query);
-
             if (null == events) {
-                events = new EKCalendarItem[0];
+                list = new List<McCalendar> ();
+            } else {
+                list = new List<McCalendar> (events.Length);
+                for (var i = 0; i < events.Length; i++) {
+                    list [i] = Convert (i);
+                }
             }
-            Array.Sort<EKCalendarItem> (events, sortByStartDate);
         }
 
-        public int Count ()
-        {
-            return events.Length;
-        }
-
-        public McCalendar GetCalendarItem (int i)
+        public McCalendar Convert (int i)
         {
             var e = events [i];
             var c = new McCalendar ();

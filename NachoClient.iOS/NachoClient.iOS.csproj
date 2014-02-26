@@ -531,6 +531,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoCalendarCommon.cs">
+      <Link>NachoCore\Adapters\NachoCalendarCommon.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -597,7 +600,9 @@
     <BundleResource Include="Resources\check.png" />
     <BundleResource Include="Resources\check%402x.png" />
     <BundleResource Include="Resources\clock.png" />
-    <BundleResource Include="Resources\clock%402x.png" />
+    <BundleResource Include="Resources\clock%402x.png">
+      <DependentUpon>cross.png</DependentUpon>
+    </BundleResource>
     <BundleResource Include="Resources\cross.png" />
     <BundleResource Include="Resources\cross%402x.png" />
     <BundleResource Include="Resources\list.png" />
@@ -609,6 +614,13 @@
     <BundleResource Include="Resources\cup-48.png" />
     <BundleResource Include="Resources\mute-48.png" />
     <BundleResource Include="Resources\phone-48.png" />
+    <BundleResource Include="Resources\ic_action_add_alarm.png" />
+    <BundleResource Include="Resources\ic_action_alarms.png" />
+    <BundleResource Include="Resources\ic_action_event.png" />
+    <BundleResource Include="Resources\ic_action_group.png" />
+    <BundleResource Include="Resources\ic_action_map.png" />
+    <BundleResource Include="Resources\ic_action_place.png" />
+    <BundleResource Include="Resources\ic_action_time.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

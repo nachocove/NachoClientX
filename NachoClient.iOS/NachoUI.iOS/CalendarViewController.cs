@@ -25,6 +25,9 @@ namespace NachoClient.iOS
         public CalendarViewController (IntPtr handle) : base (handle)
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+
+            var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
+            a.TextColor = UIColor.LightGray;
         }
 
         public override void ViewDidLoad ()
@@ -70,7 +73,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals (CellSegueID)) {
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = TableView.IndexPathForCell (cell);
-                McCalendar i = calendar.GetCalendarItem (indexPath.Row);
+                McCalendar i = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
                 CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
                 destinationController.calendarItem = i;
                 destinationController.Title = i.Subject;
@@ -79,12 +82,20 @@ namespace NachoClient.iOS
 
         public override int NumberOfSections (UITableView tableView)
         {
-            return 1;
+            if (null == calendar) {
+                return 0;
+            } else {
+                return calendar.NumberOfDays ();
+            }
         }
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return ((null == calendar) ? 0 : calendar.Count ());
+            if (null == calendar) {
+                return 0;
+            } else {
+                return calendar.NumberOfItemsForDay (section);
+            }
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -93,12 +104,54 @@ namespace NachoClient.iOS
             // Should always get a prototype cell
             NachoCore.NachoAssert.True (null != cell);
 
-            McCalendar c = calendar.GetCalendarItem (indexPath.Row);
+            McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
 
-            cell.TextLabel.Text = c.Subject;
-            cell.DetailTextLabel.Text = c.StartTime.ToString ();
+            UILabel startLabel = (UILabel)cell.ViewWithTag (1);
+            UILabel durationLabel = (UILabel)cell.ViewWithTag (2);
+            UIImageView calendarImage = (UIImageView)cell.ViewWithTag (3);
+            UILabel titleLabel = (UILabel)cell.ViewWithTag (4);
+
+            if (c.AllDayEvent) {
+                startLabel.Text = "ALL DAY";
+                durationLabel.Text = "";
+            } else {
+                startLabel.Text = c.StartTime.ToString ("t");
+                durationLabel.Text = PrettyCompactDuration (c);
+            }
+            calendarImage.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+            var titleLabelFrame = titleLabel.Frame;
+            titleLabelFrame.Width = cell.Frame.Width - titleLabel.Frame.Left;
+            titleLabel.Frame = titleLabelFrame;
+            titleLabel.Text = c.Subject;
+            titleLabel.SizeToFit ();
 
             return cell;
         }
+
+        string PrettyCompactDuration (McCalendar c)
+        {
+            if (c.StartTime == c.EndTime) {
+                return "";
+            }
+            TimeSpan s = c.EndTime - c.StartTime;
+            if (s.TotalMinutes < 60) {
+                return String.Format ("{0}m", s.Minutes);
+            }
+            if (s.TotalHours < 24) {
+                if (0 == s.Minutes) {
+                    return String.Format ("{0}h", s.Hours);
+                } else {
+                    return String.Format ("{0}h{1}m", s.Hours, s.Minutes);
+                }
+            }
+            return "1d+";
+        }
+
+        public override string TitleForHeader (UITableView tableView, int section)
+        {
+            DateTime d = calendar.GetDayDate (section);
+            return d.ToString ("D").ToUpper ();
+        }
+
     }
 }

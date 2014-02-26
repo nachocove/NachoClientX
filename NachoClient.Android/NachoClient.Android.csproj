@@ -15,8 +15,9 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
+    <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -177,6 +178,7 @@
     <Compile Include="NachoUI.Android\HomeFragment.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\ServerTracker.cs" />
     <Compile Include="NachoPlatform.Android\NetStatusAndroid.cs" />
+    <Compile Include="NachoCore\Adapters\NachoCalendarCommon.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -293,6 +295,7 @@
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_place.png" />
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_settings.png" />
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_web_site.png" />
+    <AndroidResource Include="Resources\layout\CalendarListGroup.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
