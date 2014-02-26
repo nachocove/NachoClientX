@@ -126,7 +126,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsConstants.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsContact.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsHelpers.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\StepRobot.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs" />
@@ -179,6 +178,8 @@
     <Compile Include="NachoCore\BackEnd\NcCommStatus\ServerTracker.cs" />
     <Compile Include="NachoPlatform.Android\NetStatusAndroid.cs" />
     <Compile Include="NachoCore\Adapters\NachoCalendarCommon.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -323,6 +324,7 @@
     <Folder Include="NachoPlatform\" />
     <Folder Include="NachoPlatform.Android\" />
     <Folder Include="NachoPlatform.Android\libs\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

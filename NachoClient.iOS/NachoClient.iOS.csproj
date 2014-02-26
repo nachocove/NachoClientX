@@ -143,6 +143,7 @@
     <Folder Include="NachoUI.iOS\Support\" />
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="NachoUI.iOS\Tables\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -413,9 +414,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsHelpers.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsHelpers.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\IAsDataSource.cs">
       <Link>NachoCore\BackEnd\ActiveSync\IAsDataSource.cs</Link>
     </Compile>
@@ -533,6 +531,12 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoCalendarCommon.cs">
       <Link>NachoCore\Adapters\NachoCalendarCommon.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
