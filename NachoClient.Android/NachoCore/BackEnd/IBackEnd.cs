@@ -5,69 +5,81 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public interface IBackEnd
-    {
-        // This is the API Contract for the BackEnd object. The owner of the BackEnd
-        // object is given these APIs.
-        // for each account in the DB, fire up the protocol & start server interaction
-        // (if it isn't already running).
-        void Start ();
-        // attempt to (re)start a specific account.
-        void Start (int accountId);
-        // stop all activity in the BE.
-        void Stop ();
-        // ... for a specific account.
-        void Stop (int accountId);
-        // ask all accounts to sync immediately (does a Start if needed).
-        void ForceSync ();
-        // for a single account to sync immediately.
-        void ForceSync (int accountId);
-        // let the BE know that the asked-about server cert is/not okay to trust.
-        void CertAskResp (int accountId, bool isOkay);
-        // let the BE know that the server info has been updated for this account.
-        void ServerConfResp (int accountId, bool forceAutodiscovery);
-        // let the BE know that the credentials have been updated for this account.
-        void CredResp (int accountId);
-        // cancel command/request associated with this token (if possible).
-        bool Cancel (int accountId, string token);
-        // event can be used to register for status indications.
-        event EventHandler StatusIndEvent;
-        // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
-        string StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
-        // follow-on contacts search, using same token.
-        void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
-        // send specified email (not in a synced folder). returns token that can be used to possibly cancel.
-        string SendEmailCmd (int accountId, int emailMessageId);
+	public interface IBackEnd
+	{
+		// This is the API Contract for the BackEnd object. The owner of the BackEnd
+		// object is given these APIs.
+		// for each account in the DB, fire up the protocol & start server interaction
+		// (if it isn't already running).
+		void Start ();
+		// attempt to (re)start a specific account.
+		void Start (int accountId);
+		// stop all activity in the BE.
+		void Stop ();
+		// ... for a specific account.
+		void Stop (int accountId);
+		// ask all accounts to sync immediately (does a Start if needed).
+		void ForceSync ();
+		// for a single account to sync immediately.
+		void ForceSync (int accountId);
+		// let the BE know that the asked-about server cert is/not okay to trust.
+		void CertAskResp (int accountId, bool isOkay);
+		// let the BE know that the server info has been updated for this account.
+		void ServerConfResp (int accountId, bool forceAutodiscovery);
+		// let the BE know that the credentials have been updated for this account.
+		void CredResp (int accountId);
+		// cancel command/request associated with this token (if possible).
+		bool Cancel (int accountId, string token);
+		// event can be used to register for status indications.
+		event EventHandler StatusIndEvent;
+		// search contacts. returns token that can be used to cancel the search and all eclipsed searches.
+		string StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
+		// follow-on contacts search, using same token.
+		void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
+		// send specified email (not in a synced folder). returns token that can be used to possibly cancel.
+		string SendEmailCmd (int accountId, int emailMessageId);
 
-        string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
-                                int folderId, bool originalEmailIsEmbedded);
+		string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
+		                              int folderId, bool originalEmailIsEmbedded);
 
-        string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
-                              int folderId, bool originalEmailIsEmbedded);
-        // delete an email from a synced folder. returns token that can be used to possibly cancel.
-        string DeleteEmailCmd (int accountId, int emailMessageId);
-        // move an email from one folder to another. returns token that can be used to possibly cancel.
-        string MoveItemCmd (int accountId, int emailMessageId, int destFolderId);
-        // mark an email as read. returns token that can be used to possibly cancel.
-        string MarkEmailReadCmd (int accountId, int emailMessageId);
-        // set the flag value on the email.
-        string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
-                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
-        // clear the flag value on the email.
-        string ClearEmailFlagCmd (int accountId, int emailMessageId);
-        // mark the flag as "done" for the server, and clear the values in the DB.
-        string MarkEmailFlagDone (int accountId, int emailMessageId,
-                                  DateTime completeTime, DateTime dateCompleted);
-        // download an attachment. returns token that can be used to possibly cancel.
-        string DnldAttCmd (int accountId, int attId);
-        //
-        // in the BE for now, but moving to middleware/app-land someday:
-        //
-        McFolder GetOutbox (int accountId);
+		string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
+		                            int folderId, bool originalEmailIsEmbedded);
+		// delete an email from a synced folder. returns token that can be used to possibly cancel.
+		string DeleteEmailCmd (int accountId, int emailMessageId);
+		// move an email from one folder to another. returns token that can be used to possibly cancel.
+		string MoveItemCmd (int accountId, int emailMessageId, int destFolderId);
+		// mark an email as read. returns token that can be used to possibly cancel.
+		string MarkEmailReadCmd (int accountId, int emailMessageId);
+		// set the flag value on the email.
+		string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+		                              DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
+		// clear the flag value on the email.
+		string ClearEmailFlagCmd (int accountId, int emailMessageId);
+		// mark the flag as "done" for the server, and clear the values in the DB.
+		string MarkEmailFlagDone (int accountId, int emailMessageId,
+		                                DateTime completeTime, DateTime dateCompleted);
+		// download an attachment. returns token that can be used to possibly cancel.
+		string DnldAttCmd (int accountId, int attId);
+		// create a subordinate folder.
+		string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
+		                        bool IsClientOwned, bool isHidden);
+		// create a root folder.
+		string CreateFolderCmd (int accountId, string DisplayName, uint folderType,
+		                        bool IsClientOwned, bool isHidden);
+		// delete a folder.
+		string DeleteFolderCmd (int accountId, int folderId);
+		// move a folder.
+		string MoveFolder (int accountId, int folderId, int destFolderId);
+		// rename a folder.
+		string RenameFolder (int accountId, int folderId, string displayName);
+		//
+		// in the BE for now, but moving to middleware/app-land someday:
+		//
+		McFolder GetOutbox (int accountId);
 
-        McFolder GetGalCache (int accountId);
+		McFolder GetGalCache (int accountId);
 
-        McFolder GetGleaned (int accountId);
-    }
+		McFolder GetGleaned (int accountId);
+	}
 }
 

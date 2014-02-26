@@ -320,7 +320,7 @@ namespace NachoCore.ActiveSync
             Domain = DomainFromEmailAddr (DataSource.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
             if (null == DataSource.Server || true == DataSource.Server.UsedBefore ||
-                string.Empty == DataSource.Server.Fqdn) {
+                string.Empty == DataSource.Server.Host) {
                 Sm.Start ();
             } else {
                 ServerCandidate = DataSource.Server;

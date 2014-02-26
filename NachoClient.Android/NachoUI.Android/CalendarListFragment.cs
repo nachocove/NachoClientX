@@ -23,11 +23,23 @@ namespace NachoClient.AndroidClient
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var rootView = inflater.Inflate (Resource.Layout.CalendarListFragment, container, false);
-            var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
+            var listview = rootView.FindViewById<ExpandableListView> (Resource.Id.listview);
 
             calendarItems = new NachoCalendar ();
             adapter = new CalendarListAdapter (this.Activity, calendarItems);
-            listview.Adapter = adapter;
+            listview.SetAdapter (adapter);
+
+            // Ignore clicks
+            listview.GroupClick += (object sender, ExpandableListView.GroupClickEventArgs e) => {
+                ; // ignore group clicks
+            };
+            // Remove the open/close icon
+            listview.SetGroupIndicator (null);
+
+            // Need to dump expandable view to remove this kludge!
+            for (var i = 0; i < calendarItems.NumberOfDays (); i++) {
+                listview.ExpandGroup (i);
+            }
 
             // Watch for changes from the back end
             BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -38,10 +50,10 @@ namespace NachoClient.AndroidClient
                 }
             };
 
-            listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
+            listview.ChildClick += (object sender, ExpandableListView.ChildClickEventArgs e) => {
                 var fragment = new CalendarItemViewFragment ();
                 var bundle = new Bundle ();
-                var calendarItem = calendarItems.GetCalendarItem (e.Position);
+                var calendarItem = calendarItems.GetCalendarItem (e.GroupPosition, e.ChildPosition);
                 bundle.PutInt ("accountId", calendarItem.AccountId);
                 bundle.PutInt ("calendarItemId", calendarItem.Id);
                 bundle.PutString ("segue", "CalendarListToCalendarItemView");
@@ -57,7 +69,7 @@ namespace NachoClient.AndroidClient
         }
     }
 
-    public class CalendarListAdapter : BaseAdapter<McCalendar>
+    public class CalendarListAdapter : BaseExpandableListAdapter
     {
         Activity context;
         INachoCalendar calendarItems;
@@ -68,20 +80,18 @@ namespace NachoClient.AndroidClient
             this.calendarItems = calendarItems;
         }
 
-        public override long GetItemId (int position)
+        public override View GetGroupView (int groupPosition, bool isExpanded, View convertView, ViewGroup parent)
         {
-            return position;
+            if (null == convertView) {
+                convertView = context.LayoutInflater.Inflate (Resource.Layout.CalendarListGroup, null);
+            }
+            var header = convertView.FindViewById<TextView> (Resource.Id.header);
+            var date = calendarItems.GetDayDate (groupPosition);
+            header.Text = date.ToString ("D");
+            return convertView;
         }
 
-        public override McCalendar this [int position] {  
-            get { return calendarItems.GetCalendarItem (position); }
-        }
-
-        public override int Count {
-            get { return calendarItems.Count (); }
-        }
-
-        public override View GetView (int position, View convertView, ViewGroup parent)
+        public override View GetChildView (int groupPosition, int childPosition, bool isLastChild, View convertView, ViewGroup parent)
         {
             View view = convertView; // re-use an existing view, if one is available
             if (view == null) {
@@ -91,7 +101,7 @@ namespace NachoClient.AndroidClient
             var subject = view.FindViewById<TextView> (Android.Resource.Id.Text1);
             var startDate = view.FindViewById<TextView> (Android.Resource.Id.Text2);
 
-            var calendarItem = calendarItems.GetCalendarItem (position);
+            var calendarItem = calendarItems.GetCalendarItem (groupPosition, childPosition);
             subject.Text = ConvertToPrettySubjectString (calendarItem.Subject);
             startDate.Text = calendarItem.StartTime.ToString ();
 
@@ -106,5 +116,50 @@ namespace NachoClient.AndroidClient
                 return Subject;
             }
         }
+
+        public override int GetChildrenCount (int groupPosition)
+        {
+            return calendarItems.NumberOfItemsForDay (groupPosition);
+        }
+
+        public override int GroupCount {
+            get { return calendarItems.NumberOfDays (); }
+        }
+
+        #region implemented abstract members of BaseExpandableListAdapter
+
+        public override Java.Lang.Object GetChild (int groupPosition, int childPosition)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public override long GetChildId (int groupPosition, int childPosition)
+        {
+            return childPosition;
+        }
+
+        public override Java.Lang.Object GetGroup (int groupPosition)
+        {
+            throw new NotImplementedException ();
+        }
+
+        public override long GetGroupId (int groupPosition)
+        {
+            return groupPosition;
+        }
+
+        public override bool IsChildSelectable (int groupPosition, int childPosition)
+        {
+            return true;
+        }
+
+        public override bool HasStableIds {
+            get {
+                return true;
+            }
+        }
+
+        #endregion
+
     }
 }

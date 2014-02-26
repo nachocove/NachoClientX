@@ -143,10 +143,10 @@
     <Folder Include="NachoUI.iOS\Support\" />
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="NachoUI.iOS\Tables\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
-    <None Include="libNachoPlatformSDK.a" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -414,9 +414,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsHelpers.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsHelpers.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\IAsDataSource.cs">
       <Link>NachoCore\BackEnd\ActiveSync\IAsDataSource.cs</Link>
     </Compile>
@@ -513,7 +510,6 @@
     <Compile Include="NachoPlatform.iOS\AssetsiOS.cs" />
     <Compile Include="NachoPlatform.iOS\DeviceiOS.cs" />
     <Compile Include="NachoPlatform.iOS\InvokeOnUIThreadiOS.cs" />
-    <Compile Include="NachoPlatform.iOS\ReachabilityiOS.cs" />
     <Compile Include="NachoPlatform.iOS\RegDomiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoPlatform\IPlatform.cs">
       <Link>NachoPlatform\IPlatform.cs</Link>
@@ -529,6 +525,19 @@
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageController.cs" />
     <Compile Include="NachoUI.iOS\Tables\FolderTableSource.cs" />
     <Compile Include="NachoUI.iOS\Tables\AccountTableSource.cs" />
+    <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
+      <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoCalendarCommon.cs">
+      <Link>NachoCore\Adapters\NachoCalendarCommon.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -595,7 +604,9 @@
     <BundleResource Include="Resources\check.png" />
     <BundleResource Include="Resources\check%402x.png" />
     <BundleResource Include="Resources\clock.png" />
-    <BundleResource Include="Resources\clock%402x.png" />
+    <BundleResource Include="Resources\clock%402x.png">
+      <DependentUpon>cross.png</DependentUpon>
+    </BundleResource>
     <BundleResource Include="Resources\cross.png" />
     <BundleResource Include="Resources\cross%402x.png" />
     <BundleResource Include="Resources\list.png" />
@@ -607,6 +618,13 @@
     <BundleResource Include="Resources\cup-48.png" />
     <BundleResource Include="Resources\mute-48.png" />
     <BundleResource Include="Resources\phone-48.png" />
+    <BundleResource Include="Resources\ic_action_add_alarm.png" />
+    <BundleResource Include="Resources\ic_action_alarms.png" />
+    <BundleResource Include="Resources\ic_action_event.png" />
+    <BundleResource Include="Resources\ic_action_group.png" />
+    <BundleResource Include="Resources\ic_action_map.png" />
+    <BundleResource Include="Resources\ic_action_place.png" />
+    <BundleResource Include="Resources\ic_action_time.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -624,6 +642,10 @@
     <ProjectReference Include="..\..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
       <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
       <Name>MCSwipeTableViewCellBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
+      <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
+      <Name>NachoPlatformBinding</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

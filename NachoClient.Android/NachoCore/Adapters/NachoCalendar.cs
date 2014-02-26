@@ -8,32 +8,11 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class NachoCalendar : INachoCalendar
+    public class NachoCalendar : NachoCalendarCommon
     {
-
-        List<McCalendar> list;
-
-        public NachoCalendar ()
+        protected override void Reload ()
         {
-            Refresh ();
-        }
-
-        public void Refresh()
-        {
-            list = BackEnd.Instance.Db.Table<McCalendar> ().OrderByDescending (c => c.StartTime).ToList ();
-            if (null == list) {
-                list = new List<McCalendar> ();
-            }
-        }
-
-        public int Count ()
-        {
-            return list.Count;
-        }
-
-        public McCalendar GetCalendarItem (int i)
-        {
-            return list.ElementAt (i);
+            list = BackEnd.Instance.Db.Table<McCalendar> ().ToList ();
         }
     }
 }

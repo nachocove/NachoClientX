@@ -432,6 +432,20 @@ namespace NachoCore.ActiveSync
                 x.AccountId == DataSource.Account.Id).ToList ();
 
             foreach (var pending in pendings) {
+				switch (pending.Operation) {
+				// Only Pendings that are resolved by Sync count for us here.
+				case McPending.Operations.EmailDelete:
+				case McPending.Operations.EmailMarkRead:
+				case McPending.Operations.EmailSetFlag:
+				case McPending.Operations.EmailClearFlag:
+				case McPending.Operations.EmailMarkFlagDone:
+					break;
+
+				default:
+					continue;
+				}
+
+				// FIXME - we need a clear rule on who is responsible for setting AsSyncRequired.
                 if (null != pending.FolderServerId && string.Empty != pending.FolderServerId) {
                     var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
                     x.ServerId == pending.FolderServerId);

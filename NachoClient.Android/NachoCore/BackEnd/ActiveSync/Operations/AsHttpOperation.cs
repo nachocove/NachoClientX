@@ -456,7 +456,7 @@ namespace NachoCore.ActiveSync
                         ServerUriBeingTested = true;
                         McServer dummy = new McServer () {
                             Scheme = redirUri.Scheme,
-                            Fqdn = redirUri.Host,
+                            Host = redirUri.Host,
                             Port = redirUri.Port,
                             Path = redirUri.AbsolutePath
                         };

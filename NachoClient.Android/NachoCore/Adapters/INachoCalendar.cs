@@ -7,8 +7,16 @@ namespace NachoCore
 {
     public interface INachoCalendar
     {
-        int Count ();
         void Refresh ();
-        McCalendar GetCalendarItem (int i);
+
+        int NumberOfDays ();
+
+        int NumberOfItemsForDay (int i);
+
+        int IndexOfDate (DateTime target);
+
+        DateTime GetDayDate (int day);
+
+        McCalendar GetCalendarItem (int day, int item);
     }
 }

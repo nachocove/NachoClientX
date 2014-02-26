@@ -127,7 +127,7 @@ namespace NachoCore.ActiveSync
         {
             var server = DataSource.Server;
             server.Scheme = ServerUri.Scheme;
-            server.Fqdn = ServerUri.Host;
+            server.Host = ServerUri.Host;
             server.Port = ServerUri.Port;
             server.Path = ServerUri.AbsolutePath;
             // Updates the value in the DB.
@@ -270,7 +270,7 @@ namespace NachoCore.ActiveSync
         static internal Uri BaseUri (McServer server)
         {
             var retval = string.Format ("{0}://{1}:{2}{3}",
-                             server.Scheme, server.Fqdn, server.Port, server.Path);
+                             server.Scheme, server.Host, server.Port, server.Path);
             return new Uri (retval);
         }
     }

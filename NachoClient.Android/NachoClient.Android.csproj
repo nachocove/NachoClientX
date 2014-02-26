@@ -15,8 +15,9 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
+    <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,6 +30,7 @@
     <AndroidLinkMode>None</AndroidLinkMode>
     <ConsolePause>false</ConsolePause>
     <AndroidSupportedAbis>armeabi;x86</AndroidSupportedAbis>
+    <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -124,7 +126,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsConstants.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsContact.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsHelpers.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\StepRobot.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs" />
@@ -167,7 +168,6 @@
     <Compile Include="NachoPlatform.Android\AssetsAndroid.cs" />
     <Compile Include="NachoPlatform.Android\DeviceAndroid.cs" />
     <Compile Include="NachoPlatform.Android\InvokeOnUIThreadAndroid.cs" />
-    <Compile Include="NachoPlatform.Android\ReachabilityAndroid.cs" />
     <Compile Include="NachoPlatform.Android\RegDomAndroid.cs" />
     <Compile Include="NachoUI.Android\CalendarListFragment.cs" />
     <Compile Include="NachoUI.Android\ContactListFragment.cs" />
@@ -175,6 +175,11 @@
     <Compile Include="NachoUI.Android\ContactViewFragment.cs" />
     <Compile Include="NachoUI.Android\NachoNowFragment.cs" />
     <Compile Include="NachoUI.Android\HomeFragment.cs" />
+    <Compile Include="NachoCore\BackEnd\NcCommStatus\ServerTracker.cs" />
+    <Compile Include="NachoPlatform.Android\NetStatusAndroid.cs" />
+    <Compile Include="NachoCore\Adapters\NachoCalendarCommon.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -291,6 +296,7 @@
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_place.png" />
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_settings.png" />
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_web_site.png" />
+    <AndroidResource Include="Resources\layout\CalendarListGroup.axml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
@@ -318,6 +324,7 @@
     <Folder Include="NachoPlatform\" />
     <Folder Include="NachoPlatform.Android\" />
     <Folder Include="NachoPlatform.Android\libs\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

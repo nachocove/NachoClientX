@@ -20,7 +20,7 @@ namespace NachoClient.iOS
             var cred = new McCred () { Username = txtUserName.Text, Password = txtPassword.Text };
             BackEnd.Instance.Db.Insert (cred);
             // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
-            var server = new McServer () { Fqdn = txtServerName.Text };
+            var server = new McServer () { Host = txtServerName.Text };
             BackEnd.Instance.Db.Insert (server);
             // In the near future, you won't need to create this protocol state object.
             var protocolState = new McProtocolState ();
