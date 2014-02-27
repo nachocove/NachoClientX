@@ -583,7 +583,9 @@ namespace NachoCore.ActiveSync
             public const string Delete = "Delete";
             public const string DisplayName = AirSyncBase.DisplayName;
             public const string FolderCreate = "FolderCreate";
+            public const string FolderDelete = "FolderDelete";
             public const string FolderSync = "FolderSync";
+            public const string FolderUpdate = "FolderUpdate";
             public const string ParentId = "ParentId";
             public const string ServerId = AirSync.ServerId;
             public const string Status = AirSync.Status;
@@ -598,8 +600,8 @@ namespace NachoCore.ActiveSync
                 ReSync = 9,
                 BadFormat = 10,
                 Unknown = 11,
-                ServerFail = 12}
-            ;
+                ServerFail = 12,
+            };
             // FIXME: Ric is not supported for AS version 12.1.
             public enum FolderCreateStatusCode : uint
             {
@@ -611,8 +613,8 @@ namespace NachoCore.ActiveSync
                 ReSync = 9,
                 BadFormat = 10,
                 Unknown = 11,
-                BackEndError = 12}
-            ;
+                BackEndError = 12,
+            };
 
             public enum FolderDeleteStatusCode : uint
             {
@@ -621,8 +623,19 @@ namespace NachoCore.ActiveSync
                 Missing = 4,
                 ServerError = 6,
                 ReSync = 9,
-                BadFormat = 10}
-            ;
+                BadFormat = 10,
+            };
+
+            public enum FolderUpdateStatusCode : uint
+            {
+                Success = 1,
+                Exists = 2,
+                Special = 3,
+                Missing = 4,
+                BadParent = 5,
+                ServerError = 6,
+                ReSync = 9,
+            };
 
             public enum TypeCode : uint
             {
@@ -644,8 +657,8 @@ namespace NachoCore.ActiveSync
                 UserCreatedJournal = 16,
                 UserCreatedNotes = 17,
                 Unknown = 18,
-                Ric = 19}
-            ;
+                Ric = 19,
+            };
 
             public static string TypeCodeToAirSyncClassCode (uint code)
             {
@@ -871,7 +884,6 @@ namespace NachoCore.ActiveSync
                 Success = 1,
                 ProtocolError = 2,
                 ServerError = 3,
-
             };
 
             public enum PolicyRespStatusCode : uint
@@ -949,7 +961,7 @@ namespace NachoCore.ActiveSync
                 // "Prompt user."
                 NotFound = 6,
                 // "Prompt the user. Sometimes these are transient, so retry. If it continues to fail, point user to administrator."
-                ConnectionFailed = 7, 
+                ConnectionFailed = 7,
                 TooComplex = 8,
                 // 9 omitted.
                 // "The search timed out. Retry with or without rebuilding results. If it continues, contact the Administrator."

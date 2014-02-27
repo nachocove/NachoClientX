@@ -171,7 +171,7 @@ namespace NachoCore.Model
             }
         }
 
-        public void DeleteBody ()
+        private void DeleteBody ()
         {
             if (0 != BodyId) {
                 var body = new McBody ();
@@ -188,15 +188,13 @@ namespace NachoCore.Model
                 fld.AccountId == accountId &&
             fld.ServerId == serverId);
         }
-
         // Note need to paramtrize <T> and move to McItem.
         public static McEmailMessage QueryById (int id)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
             " e.Id = ? ",
-                id).SingleOrDefault();
+                id).SingleOrDefault ();
         }
-
         // Note need to paramtrize <T> and move to McItem.
         public static List<McEmailMessage> QueryByFolderId (int accountId, int folderId)
         {
@@ -223,6 +221,12 @@ namespace NachoCore.Model
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
             " e.FlagUtcDeferUntil > ?",
                 DateTime.UtcNow);
+        }
+
+        public override int Delete ()
+        {
+            DeleteBody ();
+            return base.Delete ();
         }
     }
 

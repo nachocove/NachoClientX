@@ -17,7 +17,7 @@ namespace NachoCore.ActiveSync
 		private void DeletePendingSearchReqs (string token, bool ignoreDispatched)
 		{
 			var query = BackEnd.Instance.Db.Table<McPending> ().Where (rec => rec.AccountId == Account.Id &&
-				rec.Token == token);
+			            rec.Token == token);
 			if (ignoreDispatched) {
 				query = query.Where (rec => false == rec.IsDispatched);
 			}
@@ -63,7 +63,7 @@ namespace NachoCore.ActiveSync
 		}
 
 		private string SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
-			int folderId, bool originalEmailIsEmbedded)
+		                              int folderId, bool originalEmailIsEmbedded)
 		{
 			if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
 				return SendEmailCmd (newEmailMessageId);
@@ -97,14 +97,14 @@ namespace NachoCore.ActiveSync
 		}
 
 		public override string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-			int folderId, bool originalEmailIsEmbedded)
+		                                      int folderId, bool originalEmailIsEmbedded)
 		{
 			return SmartEmailCmd (McPending.Operations.EmailReply,
 				newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
 		}
 
 		public override string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-			int folderId, bool originalEmailIsEmbedded)
+		                                        int folderId, bool originalEmailIsEmbedded)
 		{
 			return SmartEmailCmd (McPending.Operations.EmailForward,
 				newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
@@ -134,13 +134,12 @@ namespace NachoCore.ActiveSync
 			// Delete the actual item.
 			var maps = BackEnd.Instance.Db.Table<McMapFolderItem> ().Where (x =>
 				x.AccountId == Account.Id &&
-				x.ItemId == emailMessageId &&
-				x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
+			           x.ItemId == emailMessageId &&
+			           x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
 
 			foreach (var map in maps) {
 				map.Delete ();
 			}
-			emailMessage.DeleteBody ();
 			emailMessage.Delete ();
 			StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
 			Task.Run (delegate {
@@ -183,9 +182,9 @@ namespace NachoCore.ActiveSync
 
 			var oldMapEntry = BackEnd.Instance.Db.Table<McMapFolderItem> ().Single (x =>
 				x.AccountId == Account.Id &&
-				x.ItemId == emailMessageId &&
-				x.FolderId == srcFolder.Id &&
-				x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
+			                  x.ItemId == emailMessageId &&
+			                  x.FolderId == srcFolder.Id &&
+			                  x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
 			oldMapEntry.Delete ();
 
 			Task.Run (delegate {
@@ -195,8 +194,8 @@ namespace NachoCore.ActiveSync
 		}
 
 		private bool GetEmailMessageAndFolder (int emailMessageId, 
-			out McEmailMessage emailMessage,
-			out McFolder folder)
+		                                       out McEmailMessage emailMessage,
+		                                       out McFolder folder)
 		{
 			folder = null;
 			emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
@@ -239,7 +238,7 @@ namespace NachoCore.ActiveSync
 		}
 
 		public override string SetEmailFlagCmd (int emailMessageId, string flagType, 
-			DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
+		                                        DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
@@ -297,7 +296,7 @@ namespace NachoCore.ActiveSync
 		}
 
 		public override string MarkEmailFlagDone (int emailMessageId,
-			DateTime completeTime, DateTime dateCompleted)
+		                                          DateTime completeTime, DateTime dateCompleted)
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
@@ -346,30 +345,145 @@ namespace NachoCore.ActiveSync
 		}
 
 		public override string CreateFolderCmd (int destFolderId, string displayName, uint folderType,
-			bool IsClientOwned, bool isHidden)
+		                                        bool isClientOwned, bool isHidden)
 		{
-			return null;
+			var serverId = DateTime.UtcNow.Ticks.ToString ();
+			string destFldServerId;
+
+			if (0 > destFolderId) {
+				// Root case.
+				destFldServerId = "0";
+			} else {
+				// Sub-folder case.
+				var destFld = McFolder.QueryById (destFolderId);
+				if (null == destFld) {
+					return null;
+				}
+				if (isClientOwned ^ destFld.IsClientOwned) {
+					// Keep client/server-owned domains separate for now.
+					return null;
+				}
+				destFldServerId = destFld.ServerId;
+			}
+
+			if (isHidden && !isClientOwned) {
+				return null;
+			}
+
+			McFolder.Create (Account.Id,
+				isClientOwned,
+				isHidden,
+				destFldServerId,
+				serverId,
+				displayName,
+				folderType);
+
+			if (isClientOwned) {
+				return McPending.KSynchronouslyCompleted;
+			}
+
+			var createFolder = new McPending (Account.Id) {
+				Operation = McPending.Operations.FolderCreate,
+				ServerId = serverId,
+				DestFolderServerId = destFldServerId,
+				DisplayName = displayName,
+				FolderType = folderType,
+			};
+
+			createFolder.Insert ();
+
+			Task.Run (delegate {
+				Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FCre, "ASPCFCRE");
+			});
+
+			return createFolder.Token;
 		}
 
-		public override string CreateFolderCmd (string DisplayName, uint folderType,
-			bool IsClientOwned, bool isHidden)
+		public override string CreateFolderCmd (string displayName, uint folderType,
+		                                        bool isClientOwned, bool isHidden)
 		{
-			return null;
+			return CreateFolderCmd (-1, displayName, folderType, isClientOwned, isHidden);
 		}
 
 		public override string DeleteFolderCmd (int folderId)
 		{
-			return null;
+			var folder = McFolder.QueryById (folderId);
+			if (folder.IsClientOwned) {
+				folder.Delete ();
+				return McPending.KSynchronouslyCompleted;
+			}
+
+			var delFolder = new McPending (Account.Id) {
+				Operation = McPending.Operations.FolderDelete,
+				ServerId = folder.ServerId,
+			};
+
+			folder.Delete ();
+
+			delFolder.Insert ();
+
+			Task.Run (delegate {
+				Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FDel, "ASPCFDEL");
+			});
+
+			return delFolder.Token;
 		}
 
-		public override string MoveFolder (int folderId, int destFolderId)
+		public override string MoveFolderCmd (int folderId, int destFolderId)
 		{
-			return null;
+			var folder = McFolder.QueryById (folderId);
+			var destFolder = McFolder.QueryById (destFolderId);
+			if (folder.IsClientOwned ^ destFolder.IsClientOwned) {
+				return null;
+			}
+
+			folder.ParentId = destFolder.ServerId;
+			folder.Update ();
+
+			if (folder.IsClientOwned) {
+				return McPending.KSynchronouslyCompleted;
+			}
+
+			var upFolder = new McPending (Account.Id) {
+				Operation = McPending.Operations.FolderUpdate,
+				ServerId = folder.ServerId,
+				DestFolderServerId = destFolder.ServerId,
+				DisplayName = folder.DisplayName,
+			};
+
+			upFolder.Insert ();
+
+			Task.Run (delegate {
+				Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FUp, "ASPCFUP1");
+			});
+
+			return upFolder.Token;
 		}
 
-		public override string RenameFolder (int folderId, string displayName)
+		public override string RenameFolderCmd (int folderId, string displayName)
 		{
-			return null;
+			var folder = McFolder.QueryById (folderId);
+
+			folder.DisplayName = displayName;
+			folder.Update ();
+
+			if (folder.IsClientOwned) {
+				return McPending.KSynchronouslyCompleted;
+			}
+
+			var upFolder = new McPending (Account.Id) {
+				Operation = McPending.Operations.FolderUpdate,
+				ServerId = folder.ServerId,
+				DestFolderServerId = folder.ParentId,
+				DisplayName = displayName,
+			};
+
+			upFolder.Insert ();
+
+			Task.Run (delegate {
+				Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FUp, "ASPCFUP2");
+			});
+			return upFolder.Token;
 		}
 	}
 }

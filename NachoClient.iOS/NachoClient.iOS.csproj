@@ -538,6 +538,15 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControlApis.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderCreateCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderCreateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

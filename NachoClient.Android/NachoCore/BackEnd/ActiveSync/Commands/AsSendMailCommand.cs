@@ -56,7 +56,6 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
-            EmailMessage.DeleteBody ();
             EmailMessage.Delete ();
             Update.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");

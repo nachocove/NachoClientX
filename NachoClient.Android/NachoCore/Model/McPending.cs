@@ -60,7 +60,6 @@ namespace NachoCore.Model
         {
             AccountId = accountId;
             Token = DateTime.UtcNow.Ticks.ToString ();
-
         }
 
         public static List<McPending> ToList (int accountId)
@@ -121,8 +120,12 @@ namespace NachoCore.Model
 
         public uint MaxResults { set; get; }
 
+        public uint FolderType { set; get; }
+
         [Indexed]
         public string Token { set; get; }
+
+        public const string KSynchronouslyCompleted	= "synchronously completed";
 
         public string DestFolderServerId { set; get; }
 

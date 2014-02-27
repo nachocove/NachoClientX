@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using SQLite;
 
@@ -27,11 +28,11 @@ namespace NachoCore.Model
         }
 
         public static McMapFolderItem QueryByFolderIdItemIdClassCode (int accountId, int folderId, int itemId,
-            uint classCode)
+                                                                      uint classCode)
         {
             return BackEnd.Instance.Db.Table<McMapFolderItem> ().SingleOrDefault (mm => 
                 accountId == mm.AccountId && folderId == mm.FolderId && itemId == mm.ItemId &&
-                classCode == mm.ClassCode);
+            classCode == mm.ClassCode);
         }
     }
 }

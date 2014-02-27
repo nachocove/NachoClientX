@@ -27,6 +27,7 @@ namespace NachoCore.ActiveSync
             uint foldersLeft = DataSource.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
             var folders = BackEnd.Instance.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
+                          false == x.IsClientOwned &&
                           ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type
                           || (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type
                           || (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type

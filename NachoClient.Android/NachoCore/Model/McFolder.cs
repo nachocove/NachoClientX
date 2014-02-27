@@ -37,14 +37,26 @@ namespace NachoCore.Model
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
         // "factory" to create client-owned folders.
-        public static McFolder CreateClientOwned (int accountId)
+        public static McFolder Create (int accountId, 
+                                 bool isClientOwned,
+                                 bool isHidden,
+                                 string parentId,
+                                 string serverId,
+                                 string displayName,
+                                 uint folderType)
         {
             var folder = new McFolder () {
-                IsClientOwned = true,
                 AsSyncKey = "0",
                 AsSyncRequired = false,
                 AccountId = accountId,
+                IsClientOwned = isClientOwned,
+                IsHidden = isHidden,
+                ParentId = parentId,
+                ServerId = serverId,
+                DisplayName = displayName,
+                Type = folderType,
             };
+            folder.Insert ();
             return folder;
         }
 
@@ -59,7 +71,7 @@ namespace NachoCore.Model
         {
             return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
             " f.Id = ? ",
-                id).SingleOrDefault();
+                id).SingleOrDefault ();
         }
 
         public static List<McFolder> QueryByItemId (int accountId, int itemId)
@@ -68,6 +80,21 @@ namespace NachoCore.Model
             " m.AccountId = ? AND " +
             " m.ItemId = ? ",
                 accountId, itemId);
+        }
+
+        public override int Delete ()
+        {
+            // Delete anything in the folder and any map entries (recursively).
+            // FIXME - query needs to find non-email items and sub-dirs.
+            var contents = McEmailMessage.QueryByFolderId (AccountId, Id);
+            foreach (var item in contents) {
+                var map = McMapFolderItem.QueryByFolderIdItemIdClassCode (AccountId, Id, item.Id,
+                    (uint)McItem.ClassCodeEnum.Email);
+                // FIXME capture result of ALL delete ops.
+                map.Delete ();
+                item.Delete ();
+            }
+            return base.Delete ();
         }
     }
 }
