@@ -33,6 +33,7 @@ namespace NachoClient.iOS
             public McFolder Folder;
             public bool isDeviceContactsKludge;
             public bool isDeviceCalendarKludge;
+            public string IconName;
 
             public SidebarMenu (McFolder folder, string displayName, string segueName)
             {
@@ -43,13 +44,19 @@ namespace NachoClient.iOS
                 isDeviceContactsKludge = false;
                 isDeviceCalendarKludge = false;
             }
+
+            public SidebarMenu (McFolder folder, string displayName, string segueName, string iconName) :
+                this (folder, displayName, segueName)
+            {
+                IconName = iconName;
+            }
         };
 
+        List<SidebarMenu> topMenu;
         List<SidebarMenu> menu;
         NachoFolders email;
         NachoFolders contacts;
         NachoFolders calendars;
-
         const string SidebarToFoldersSegueId = "SidebarToFolders";
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
@@ -57,7 +64,6 @@ namespace NachoClient.iOS
         const string SidebarToDeferredMessagesSegueId = "SidebarToDeferredMessages";
         const string SidebarToNachoNowSegueId = "SidebarToNachoNow";
         const string SidebarToHomeSegueId = "SidebarToHome";
-
 
         public SidebarViewController (IntPtr handle) : base (handle)
         {
@@ -78,13 +84,14 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
+            topMenu = new List<SidebarMenu> ();
             menu = new List<SidebarMenu> ();
 
             email = new NachoFolders (NachoFolders.FilterForEmail);
             contacts = new NachoFolders (NachoFolders.FilterForContacts);
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
-            menu.Add (new SidebarMenu (null, "Now", SidebarToNachoNowSegueId));
+            topMenu.Add (new SidebarMenu (null, "Now", SidebarToNachoNowSegueId, "ic_action_time"));
 
             menu.Add (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId));
 
@@ -93,10 +100,13 @@ namespace NachoClient.iOS
                 var m = new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId);
                 m.Indent = 1;
                 menu.Add (m);
+                if (f.DisplayName.Equals ("Inbox")) {
+                    topMenu.Add (new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId, "ic_action_email"));
+                }
             }
             menu.Add (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId));
 
-
+            topMenu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId, "ic_action_group"));
             menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
             for (int i = 0; i < contacts.Count (); i++) {
                 McFolder f = contacts.GetFolder (i);
@@ -108,6 +118,7 @@ namespace NachoClient.iOS
             deviceContacts.isDeviceContactsKludge = true;
             menu.Add (deviceContacts);
 
+            topMenu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId, "ic_action_event"));
             menu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId));
             for (int i = 0; i < calendars.Count (); i++) {
                 McFolder f = calendars.GetFolder (i);
@@ -133,7 +144,13 @@ namespace NachoClient.iOS
             NSIndexPath indexPath = this.TableView.IndexPathForSelectedRow;
             UIViewController destViewController = (UIViewController)segue.DestinationViewController;
 
-            SidebarMenu m = menu [indexPath.Row];
+            SidebarMenu m;
+
+            if (0 == indexPath.Section) {
+                m = topMenu [indexPath.Row];
+            } else {
+                m = menu [indexPath.Row];
+            }
 
             destViewController.Title = m.DisplayName;
 
@@ -170,7 +187,7 @@ namespace NachoClient.iOS
             }
 
             if (segue.GetType () == typeof(SWRevealViewControllerSegue)) {
-            Log.Info (Log.LOG_UI, "PrepareForSqueue: SWRevealViewControllerSegue");
+                Log.Info (Log.LOG_UI, "PrepareForSqueue: SWRevealViewControllerSegue");
                 SWRevealViewControllerSegue swSegue = (SWRevealViewControllerSegue)segue;
                 swSegue.PerformBlock = PerformBlock;
             }
@@ -192,7 +209,7 @@ namespace NachoClient.iOS
         /// </summary>
         public override int NumberOfSections (UITableView tableView)
         {
-            return 1;
+            return 2;
         }
 
         /// <summary>
@@ -200,7 +217,11 @@ namespace NachoClient.iOS
         /// </summary>
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return menu.Count;
+            if (0 == section) {
+                return topMenu.Count; // Now, Inbox, Contacts, Calendars
+            } else {
+                return menu.Count;
+            }
         }
 
         /// <summary>
@@ -208,14 +229,22 @@ namespace NachoClient.iOS
         /// </summary>
         public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
-            // TODO: Highlight folders
-            var m = menu [indexPath.Row];
-            UITableViewCell cell = tableView.DequeueReusableCell (m.SegueName);
+            SidebarMenu m = null;
+            if (0 == indexPath.Section) {
+                m = topMenu [indexPath.Row];
+            } else {
+                m = menu [indexPath.Row];
+            }
+            var cell = tableView.DequeueReusableCell (m.SegueName);
             NachoCore.NachoAssert.True (null != cell);
             cell.TextLabel.Text = m.DisplayName;
+            if (null == m.IconName) {
+                cell.ImageView.Image = null;
+            } else {
+                cell.ImageView.Image = UIImage.FromBundle (m.IconName);
+            }
             return cell;
         }
-
 
         public class SWRevealDelegate : SWRevealViewControllerDelegate
         {
@@ -237,7 +266,7 @@ namespace NachoClient.iOS
                     lockingView.SizeToFit ();
                 } else {
                     var lockingView = revealController.FrontViewController.View.ViewWithTag (1000);
-                    if(null != lockingView) {
+                    if (null != lockingView) {
                         lockingView.RemoveFromSuperview ();
                     }
                 }
