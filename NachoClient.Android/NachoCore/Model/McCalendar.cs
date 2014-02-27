@@ -443,6 +443,32 @@ namespace NachoCore.Model
             ParentId = r.Id;
             ParentType = GetParentType (r);
         }
+
+        private string displayName;
+
+        [Ignore]
+        /// <summary>
+        /// Gets the display name.
+        /// </summary>
+        /// <value>The display name is calculated unless set non-null.</value>
+        public string DisplayName {
+            get {
+                if (null != displayName) {
+                    return displayName;
+                }
+                if (null != Name) {
+                    return Name;
+                }
+                if (null != Email) {
+                    return Email;
+                }
+                NachoCore.NachoAssert.CaseError ();
+                return "";
+            }
+            protected set {
+                displayName = value;
+            }
+        }
     }
 
     public partial class McCalendarCategory

@@ -12,9 +12,10 @@ namespace NachoClient.iOS
     public partial class CalendarItemViewController : DialogViewController
     {
         public bool editing;
-        public McCalendar calendarItem;
         UIBarButtonItem doneButton;
         UIBarButtonItem editButton;
+        public McCalendar calendarItem;
+        private McCalendar c;
 
         public CalendarItemViewController (IntPtr handle) : base (handle)
         {
@@ -39,7 +40,7 @@ namespace NachoClient.iOS
                         editing = false;
                         // TODO: Save the new
                         NavigationItem.RightBarButtonItem = editButton;
-                        Root = ToDialogElement (calendarItem);
+                        Root = ShowDetail ();
                         ReloadComplete ();
                     }
                 };
@@ -49,7 +50,7 @@ namespace NachoClient.iOS
             editButton.Clicked += (object sender, EventArgs e) => {
                 editing = true;
                 NavigationItem.RightBarButtonItem = doneButton;
-                Root = ToDialogElement (calendarItem);
+                Root = EditDetail ();
                 ReloadComplete ();
             };
                 
@@ -57,62 +58,35 @@ namespace NachoClient.iOS
             Pushing = true;
             if (null == calendarItem) {
                 editing = true;
-                calendarItem = new McCalendar ();
-                Root = ToDialogElement (calendarItem);
+                c = new McCalendar ();
+                Root = EditDetail ();
                 NavigationItem.RightBarButtonItem = doneButton;
             } else {
                 editing = false;
                 calendarItem.ReadAncillaryData ();
-                Root = ShowDetail (calendarItem);
+                c = calendarItem;
+                Root = ShowDetail ();
                 NavigationItem.RightBarButtonItem = editButton;
             }
 
             TableView.SeparatorColor = UIColor.Clear;
         }
 
-        public void AddIfSet (ref Section section, string name, string value, UIKeyboardType kbt = UIKeyboardType.Default)
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (editing) {
-                EntryElement e = new EntryElement (name, "", value ?? "");
-                e.KeyboardType = kbt;
-                section.Add (e);
-            } else if (null != value) {
-                section.Add (new StringElement (name, value));
+            if (segue.Identifier.Equals ("CalendarItemToAttendeeView")) {
+                var dc = (AttendeeViewController)segue.DestinationViewController;
+                dc.PushAttendees (c.attendees);
+                dc.ViewDisappearing += (object s, EventArgs e) => {
+                    dc.PullAttendees(ref c.attendees);
+                };
             }
         }
 
-        public void AddIfSet (ref Section section, string name, DateTime value)
-        {
-            if (!McContact.IsNull (value)) {
-                // Note DateTime, not Date, for calendar
-                section.Add (new DateTimeElement (name, value));
-            }
-        }
-
-        public void AddIfSet (ref Section section, string name, int value)
-        {
-            if (!McContact.IsNull (value)) {
-                section.Add (new StringElement (name, value.ToString ()));
-            }
-        }
-
-        public void AddRadioGroup (ref Section section, string name, Enum value)
-        {
-            Section radioButtons = new Section ();
-            Array values = Enum.GetValues (value.GetType ());
-            foreach (Enum e in values) {
-                radioButtons.Add (new RadioElement (e.ToString ()));
-            }
-            int i = Array.IndexOf (values, value);
-            NachoCore.NachoAssert.True (i >= 0);
-
-            var radioGroup = new RadioGroup (i);
-            var radioRoot = new RootElement (name, radioGroup);
-            radioRoot.Add (radioButtons);
-            section.Add (radioRoot);
-        }
-
-        public RootElement ShowDetail (McCalendar c)
+        /// <summary>
+        /// Shows the calendar, read-only.
+        /// </summary>
+        public RootElement ShowDetail ()
         {
             var root = new RootElement (c.Subject);
             root.UnevenRows = true;
@@ -120,7 +94,6 @@ namespace NachoClient.iOS
             Section section = null;
 
             section = CustomSection ();
-
             section.Add (new SubjectElement (c.Subject));
             section.Add (new StartTimeElement (PrettyFullDateString (c.StartTime)));
             if (c.AllDayEvent) {
@@ -131,7 +104,7 @@ namespace NachoClient.iOS
             root.Add (section);
 
             if (null != c.Location) {
-                section = new Section ();
+                section = CustomSection ();
                 section.Add (new LocationElement (c.Location));
                 root.Add (section);
             }
@@ -140,22 +113,88 @@ namespace NachoClient.iOS
             {
                 var e = new StyledStringElement ("People");
                 var image = UIImage.FromBundle ("ic_action_group");
-                e.Image = image.Scale (new SizeF (22f, 22f));
-                e.Font = UIFont.SystemFontOfSize (17);
+                e.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                e.Font = UIFont.SystemFontOfSize (17.0f);
                 e.Tapped += () => {
-                    PushAttendeeView (c);
+                    PushAttendeeView ();
                 };
                 e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
                 section.Add (e);
             }
             root.Add (section);
 
+            return root;
+        }
+
+        EntryElementWithIcon titleEntryElement;
+        AppointmentEntryElement appointmentEntryElement;
+        RootElementWithIcon reminderEntryElement;
+        PeopleEntryElement peopleEntryElement;
+        EntryElementWithIcon locationEntryElement;
+
+        /// <summary>
+        /// Edit the (possibly empty) calendar entry
+        /// </summary>
+        public RootElement EditDetail ()
+        {
+            titleEntryElement = new EntryElementWithIcon (DotWithColor (UIColor.Blue), "Title", c.Subject);
+            using (var icon = UIImage.FromBundle ("ic_action_place")) {
+                var scaledIcon = icon.Scale (new SizeF (22.0f, 22.0f));
+                locationEntryElement = new EntryElementWithIcon (scaledIcon, "Location", c.Location);
+            }
+            appointmentEntryElement = new AppointmentEntryElement (DateTime.Now, DateTime.Now);
+            peopleEntryElement = new PeopleEntryElement ();
+            reminderEntryElement = new RootElementWithIcon ("Reminder", new RadioGroup (7)) {
+                new Section () {
+                    new RadioElement ("1 minute before"),
+                    new RadioElement ("5 minutes before"),
+                    new RadioElement ("15 minutes before"),
+                    new RadioElement ("30 minutes before"),
+                    new RadioElement ("1 hour before"),
+                    new RadioElement ("4hours before"),
+                    new RadioElement ("1 day before"),
+                    new RadioElement ("None"),
+                }
+            };
+
+            appointmentEntryElement.Tapped += (DialogViewController arg1, UITableView arg2, NSIndexPath arg3) => {
+                arg2.DeselectRow (arg3, true);
+                AppointmentEntryPopup ();
+            };
+
+            peopleEntryElement.Tapped += () => {
+                AttendeeEntryPopup();
+            };
+                
+            var root = new RootElement (c.Subject);
+            root.UnevenRows = true;
+
+            Section section = null;
+
+            section = CustomSection ();
+            section.Add (titleEntryElement);
+            root.Add (section);
+
+            section = CustomSection ();
+            section.Add (appointmentEntryElement);
+            root.Add (section);
+
+            section = CustomSection ();
+            section.Add (peopleEntryElement);
+            root.Add (section);
+
+            section = CustomSection ();
+            section.Add (locationEntryElement);
+            root.Add (section);
+
+            section = CustomSection ();
+            section.Add (reminderEntryElement);
+            root.Add (section);
 
             return root;
         }
 
- 
-        public Section CustomSection()
+        public Section CustomSection ()
         {
             var s = new Section ();
             s.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 15.0f));
@@ -163,12 +202,68 @@ namespace NachoClient.iOS
             return s;
         }
 
+        public class RootElementWithIcon : RootElement
+        {
+            public RootElementWithIcon (string caption, Group group) : base (caption, group)
+            {
+            }
+
+            public override UITableViewCell GetCell (UITableView tv)
+            {
+                var c = base.GetCell (tv);
+                c.ImageView.Image = UIImage.FromBundle ("ic_action_alarms").Scale (new SizeF (22.0f, 22.0f));
+                c.TextLabel.TextColor = UIColor.Gray;
+                c.DetailTextLabel.TextColor = UIColor.Black;
+                return c;
+            }
+        }
+
+        public class EntryElementWithIcon : EntryElement
+        {
+            protected UIImage icon { get; private set; }
+
+            public EntryElementWithIcon (UIImage icon, string placeholder, string value) : base ("", placeholder, value)
+            {
+                this.icon = icon;
+            }
+
+            public override UITableViewCell GetCell (UITableView tv)
+            {
+                var cell = base.GetCell (tv);
+                var textField = cell.ContentView.ViewWithTag (1);
+                var textFieldframe = textField.Frame;
+                textFieldframe.Location = new PointF (50.0f, textFieldframe.Location.Y);
+                textField.Frame = textFieldframe;
+                cell.ImageView.Image = icon;
+                return cell;
+            }
+        }
+
         public class SubjectElement : StyledMultilineElement
         {
             public SubjectElement (string caption) : base (caption)
             {
                 this.Image = CalendarItemViewController.DotWithColor (UIColor.Blue);
-                this.Font = UIFont.SystemFontOfSize (17);
+                this.Font = UIFont.SystemFontOfSize (17.0f);
+            }
+        }
+
+        public class PeopleEntryElement : StyledStringElement
+        {
+            public PeopleEntryElement () : base ("People")
+            {
+                this.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+                var image = UIImage.FromBundle ("ic_action_group");
+                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                this.Font = UIFont.SystemFontOfSize (17.0f);
+                this.TextColor = UIColor.Gray;
+            }
+        }
+
+        public class DateTimeEntryElement : DateTimeElement
+        {
+            public DateTimeEntryElement (string caption) : base (caption, DateTime.Now)
+            {
             }
         }
 
@@ -177,7 +272,7 @@ namespace NachoClient.iOS
             public StartTimeElement (string caption) : base (caption)
             {
                 this.Image = CalendarItemViewController.DotWithColor (UIColor.Clear);
-                this.Font = UIFont.SystemFontOfSize (15);
+                this.Font = UIFont.SystemFontOfSize (15.0f);
             }
         }
 
@@ -186,8 +281,8 @@ namespace NachoClient.iOS
             public DurationElement (string caption) : base (caption)
             {
                 var image = UIImage.FromBundle ("ic_action_time");
-                this.Image = image.Scale (new SizeF (22f, 22f));
-                this.Font = UIFont.SystemFontOfSize (15);
+                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                this.Font = UIFont.SystemFontOfSize (15.0f);
             }
         }
 
@@ -196,9 +291,48 @@ namespace NachoClient.iOS
             public LocationElement (string caption) : base (caption)
             {
                 var image = UIImage.FromBundle ("ic_action_place");
-                this.Image = image.Scale (new SizeF (22f, 22f));
-                this.Font = UIFont.SystemFontOfSize (17);
+                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                this.Font = UIFont.SystemFontOfSize (17.0f);
             }
+        }
+
+
+        /// <summary>
+        /// Update the screen representation with new
+        /// start, end, and all-day event information.
+        /// </summary>
+        public void AppointmentEntryPopup ()
+        {
+            var allDayEvent = new BooleanElement ("All day event", appointmentEntryElement.allDayEvent);
+            var startDateTimeElement = new DateTimeEntryElement ("Start time");
+            var endDateTimeElement = new DateTimeEntryElement ("End time");
+
+            startDateTimeElement.DateValue = appointmentEntryElement.startDateTime;
+            endDateTimeElement.DateValue = appointmentEntryElement.endDateTime;
+            allDayEvent.Value = appointmentEntryElement.allDayEvent;
+
+            var root = new RootElement("Meeting Time");
+            var section = new Section ();
+            section.Add (startDateTimeElement);
+            section.Add (endDateTimeElement);
+            section.Add (allDayEvent);
+            root.Add (section);
+                  
+            var dvc = new DialogViewController (root, true);
+
+            dvc.ViewDisappearing += (object sender, EventArgs e) => {
+                appointmentEntryElement.allDayEvent = allDayEvent.Value;
+                appointmentEntryElement.startDateTime = startDateTimeElement.DateValue;
+                appointmentEntryElement.endDateTime = endDateTimeElement.DateValue;
+                Root.Reload(appointmentEntryElement, UITableViewRowAnimation.Fade);
+            };
+
+            NavigationController.PushViewController (dvc, true);
+        }
+
+        public void AttendeeEntryPopup()
+        {
+            PerformSegue ("CalendarItemToAttendeeView", this);
         }
 
         public string PrettyFullDateString (DateTime d)
@@ -270,71 +404,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public RootElement ToDialogElement (McCalendar c)
-        {
-            NachoCore.NachoAssert.True (null != c);
-
-            var root = new RootElement (c.Subject);
-            var section = new Section ();
-
-            AddIfSet (ref section, "Location", c.Location);
-
-            section.Add (new BooleanElement ("All Day Event", c.AllDayEvent));
-
-            AddIfSet (ref section, "Start time", c.StartTime);
-            AddIfSet (ref section, "End time", c.EndTime);
-
-            AddIfSet (ref section, "Reminder", (int)c.Reminder);
-
-            AddIfSet (ref section, "Organizer name", c.OrganizerName);
-            AddIfSet (ref section, "Organizer email", c.OrganizerEmail);
-
-            AddRadioGroup (ref section, "Sensitivity", c.Sensitivity);
-            AddRadioGroup (ref section, "Busy status", c.BusyStatus);
-            AddRadioGroup (ref section, "Response type", c.ResponseType);
-            AddRadioGroup (ref section, "Meeting status", c.MeetingStatus);
-
-            section.Add (new BooleanElement ("Disallow new time proposal", c.DisallowNewTimeProposal));
-            section.Add (new BooleanElement ("Response requested", c.ResponseRequested));
-            AddIfSet (ref section, "Appointment reply time", c.AppointmentReplyTime);
-
-            AddIfSet (ref section, "Online meeting link", c.OnlineMeetingConfLink);
-            AddIfSet (ref section, "Online meeting external link", c.OnlineMeetingExternalLink);
-
-            // TODO: Shouldn't be null
-            if (null != c.attendees) {
-                NachoCore.NachoAssert.True (null != c.attendees);
-                foreach (McAttendee a in c.attendees) {
-                    AddIfSet (ref section, "Attendee", a.Email);
-                }
-            }
-
-            // TODO: Shouldn't be null
-            if (null != c.recurrences) {
-                NachoCore.NachoAssert.True (null != c.recurrences);
-                foreach (var r in c.recurrences) {
-                    var s = new Section ();
-                    AddRadioGroup (ref s, "Recurrence Type", r.Type);
-                    AddIfSet (ref s, "Occurences", r.Occurences);
-                    AddIfSet (ref s, "Interval", r.Interval);
-                    AddIfSet (ref s, "Week of month", r.WeekOfMonth);
-                    AddRadioGroup (ref s, "Day of week", r.DayOfWeek); // hmmm
-                    AddIfSet (ref s, "Month of year", r.MonthOfYear);
-                    AddIfSet (ref s, "Until", r.Until);
-                    AddIfSet (ref s, "Day of month", r.DayOfMonth);
-                    AddRadioGroup (ref s, "Calendar type", r.CalendarType);
-                    s.Add (new BooleanElement ("Is leap month", r.isLeapMonth));
-                    AddIfSet (ref s, "First day of week", r.FirstDayOfWeek);
-                    var recurrenceElement = new RootElement ("Recurrence");
-                    recurrenceElement.Add (s);
-                    section.Add (recurrenceElement);
-                }
-            }
-
-            root.Add (section);
-            return root;
-        }
-
         public static UIImage DotWithColor (UIColor color)
         {
             UIGraphics.BeginImageContext (new SizeF (22, 22));
@@ -348,7 +417,7 @@ namespace NachoClient.iOS
             return image;
         }
 
-        public void PushAttendeeView (McCalendar c)
+        public void PushAttendeeView ()
         {
             var root = new RootElement (c.Subject);
             var section = new Section ();
@@ -373,16 +442,16 @@ namespace NachoClient.iOS
                     this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
                     break;
                 case NcAttendeeStatus.Decline:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Red);
                     break;
                 case NcAttendeeStatus.NotResponded:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Gray);
                     break;
                 case NcAttendeeStatus.ResponseUnknown:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+                    this.Image = CalendarItemViewController.DotWithColor (UIColor.LightGray);
                     break;
                 case NcAttendeeStatus.Tentative:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Yellow);
                     break;
                 }
             }

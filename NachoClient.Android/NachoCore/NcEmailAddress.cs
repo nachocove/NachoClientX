@@ -22,11 +22,21 @@ namespace NachoCore
             address = a;
         }
 
+        public NcEmailAddress (McAttendee attendee)
+        {
+            this.kind = FromAttendeeType (attendee.AttendeeType);
+            this.address = attendee.Email;
+        }
+
         public enum Kind
         {
             To,
             Cc,
             Bcc,
+            Required,
+            Optional,
+            Resource,
+            Unknown,
         };
 
         /// Which list?
@@ -47,6 +57,19 @@ namespace NachoCore
             if (prefix.StartsWith ("Bcc")) {
                 return Kind.Bcc;
             }
+            if (prefix.StartsWith ("Req")) {
+                return Kind.Required;
+            }
+            if (prefix.StartsWith ("Opt")) {
+                return Kind.Optional;
+            }
+            if (prefix.StartsWith ("Res")) {
+                return Kind.Resource;
+            }
+            if (prefix.StartsWith ("Unk")) {
+                return Kind.Unknown;
+            }
+
             throw new System.BadImageFormatException ();
         }
 
@@ -59,11 +82,54 @@ namespace NachoCore
                 return "Cc:";
             case Kind.Bcc:
                 return "Bcc:";
+            case Kind.Required:
+                return "Required";
+            case Kind.Optional:
+                return "Optional:";
+            case Kind.Resource:
+                return "Resource:";
+            case Kind.Unknown:
+                return "Unkown";
             default:
                 NachoAssert.CaseError ();
                 return"";
             }
         }
+
+        public static Kind FromAttendeeType (NcAttendeeType type)
+        {
+            switch (type) {
+            case NcAttendeeType.Required:
+                return Kind.Required;
+            case NcAttendeeType.Optional:
+                return Kind.Optional;
+            case NcAttendeeType.Resource:
+                return Kind.Resource;
+            case NcAttendeeType.Unknown:
+                return Kind.Unknown;
+            default:
+                NachoAssert.CaseError ();
+                return Kind.Unknown;
+            }
+        }
+
+        public static NcAttendeeType ToAttendeeType (Kind kind)
+        {
+            switch (kind) {
+            case Kind.Required:
+                return NcAttendeeType.Required;
+            case  Kind.Optional:
+                return NcAttendeeType.Optional;
+            case Kind.Resource:
+                return NcAttendeeType.Resource;
+            case Kind.Unknown:
+                return NcAttendeeType.Unknown;
+            default:
+                NachoAssert.CaseError ();
+                return NcAttendeeType.Unknown;
+            }
+        }
+
     }
 }
 

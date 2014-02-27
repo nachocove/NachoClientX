@@ -548,6 +548,13 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\AppointmentEntryElement.cs" />
+    <Compile Include="NachoUI.iOS\AttendeeViewController.cs" />
+    <Compile Include="NachoUI.iOS\AttendeeViewController.designer.cs">
+      <DependentUpon>AttendeeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoContactChooser.cs" />
+    <Compile Include="NachoUI.iOS\Support\SegueHolder.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -635,6 +642,11 @@
     <BundleResource Include="Resources\ic_action_map.png" />
     <BundleResource Include="Resources\ic_action_place.png" />
     <BundleResource Include="Resources\ic_action_time.png" />
+    <BundleResource Include="Resources\ic_action_email.png" />
+    <BundleResource Include="Resources\ic_action_accept.png" />
+    <BundleResource Include="Resources\ic_action_cancel.png" />
+    <BundleResource Include="Resources\ic_action_help.png" />
+    <BundleResource Include="Resources\ic_action_add_person.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
