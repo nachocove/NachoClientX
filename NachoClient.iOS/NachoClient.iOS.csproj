@@ -144,6 +144,7 @@
     <Folder Include="NachoUI.iOS\Interfaces\" />
     <Folder Include="NachoUI.iOS\Tables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
+    <Folder Include="Content\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -662,5 +663,8 @@
       <Version>0.7.1</Version>
       <Visible>False</Visible>
     </XamarinComponentReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\Welcome to Taco Mail.pdf" />
   </ItemGroup>
 </Project>
