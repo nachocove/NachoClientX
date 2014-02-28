@@ -15,14 +15,20 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactChooserViewController : UIViewController, IUITextFieldDelegate
+    public partial class ContactChooserViewController : UIViewController, IUITextFieldDelegate, INachoContactChooser
     {
         // Interface
-        public int ownerIndex;
-        public ComposeViewController owner;
+        protected NcEmailAddress address;
+        protected INachoContactChooserDelegate owner;
         // Internal state
         INachoContacts contacts;
         List<McContact> autocompleteResults = null;
+
+        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address)
+        {
+            this.owner = owner;
+            this.address = address;
+        }
 
         public ContactChooserViewController (IntPtr handle) : base (handle)
         {
@@ -35,6 +41,9 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            NachoAssert.True (null != owner);
+            NachoAssert.True (null != address);
 
             // Manage the button toggles thru To, Cc, and Bcc
             ToButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -71,12 +80,9 @@ namespace NachoClient.iOS
 
             contacts = new NachoContacts ();
 
-            var c = owner.GetEmailAddress (ownerIndex);
-            NachoAssert.True (null != c);
-
-            AutocompleteTextField.Text = c.address;
-            UpdateAutocompleteResults (0, c.address);
-            SetToButtonLabel (c.kind);
+            AutocompleteTextField.Text = address.address;
+            UpdateAutocompleteResults (0, address.address);
+            SetToButtonLabel (address.kind);
 
             AutocompleteTextField.BecomeFirstResponder ();
         }
@@ -102,6 +108,13 @@ namespace NachoClient.iOS
             case NcEmailAddress.Kind.Bcc:
                 ToButton.SetTitle ("Bcc:", UIControlState.Normal);
                 break;
+            case NcEmailAddress.Kind.Required:
+                ToButton.SetTitle ("Req", UIControlState.Normal);
+                break;
+            case NcEmailAddress.Kind.Optional:
+                ToButton.SetTitle ("Opt:", UIControlState.Normal);
+                break;
+            case NcEmailAddress.Kind.Resource:
             default:
                 NachoAssert.CaseError ();
                 break;
@@ -116,14 +129,18 @@ namespace NachoClient.iOS
         {
             McContact contact = autocompleteResults.ElementAt (indexPath.Row);
 
-            // TODO: Proper implementation of address
-            var e = new NcEmailAddress (NcEmailAddress.ToKind (ToButton.TitleLabel.Text));
-            e.address = contact.DisplayEmailAddress;
-            e.contact = contact;
+            UpdateEmailAddress (contact, contact.DisplayEmailAddress);
 
-            owner.ReplaceEmailAddress (ownerIndex, e);
-
+            owner = null;
             NavigationController.PopViewControllerAnimated (true);
+        }
+
+        protected void UpdateEmailAddress (McContact contact, string address)
+        {
+            this.address.contact = contact;
+            this.address.address = address;
+            this.address.kind = NcEmailAddress.ToKind (ToButton.TitleLabel.Text);
+            owner.UpdateEmailAddress (this.address);
         }
 
         [Export ("scrollViewWillBeginDragging:")]
@@ -138,14 +155,11 @@ namespace NachoClient.iOS
         public void DoneSelected (UITextField textField)
         {
             if ((null == textField.Text) || (0 == textField.Text.Length)) {
-                owner.DeleteEmailAddress (ownerIndex);
+                owner.DeleteEmailAddress (address);
             } else {
-                // TODO: Proper implementation of address
-                var e = new NcEmailAddress (NcEmailAddress.ToKind (ToButton.TitleLabel.Text));
-                e.address = textField.Text;
-                e.contact = null;
-                owner.ReplaceEmailAddress (ownerIndex, e);
+                UpdateEmailAddress (null, textField.Text);
             }
+            owner = null;
             NavigationController.PopViewControllerAnimated (true);
         }
 
@@ -197,10 +211,7 @@ namespace NachoClient.iOS
 
         public void DoublePop (ContactSearchViewController vc, McContact contact)
         {
-            var e = new NcEmailAddress (NcEmailAddress.ToKind (ToButton.TitleLabel.Text));
-            e.address = contact.DisplayEmailAddress;
-            e.contact = contact;
-            owner.ReplaceEmailAddress (ownerIndex, e);
+            UpdateEmailAddress (contact, contact.DisplayEmailAddress);
             vc.owner = null;
             vc.NavigationController.PopViewControllerAnimated (false);
             NavigationController.PopViewControllerAnimated (true);

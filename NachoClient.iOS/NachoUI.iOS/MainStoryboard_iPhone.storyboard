@@ -274,11 +274,48 @@
                     </navigationItem>
                     <connections>
                         <outlet property="editBarButtonItem" destination="pLL-Ph-CEQ" id="ZX5-DJ-fvj"/>
+                        <segue destination="PUz-nc-h33" kind="push" identifier="CalendarItemToAttendeeView" id="mSu-Hi-cds"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-909" y="-1627"/>
+        </scene>
+        <!--Attendee View Controller-->
+        <scene sceneID="Qdn-rb-w8l">
+            <objects>
+                <tableViewController storyboardIdentifier="AttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="PUz-nc-h33" customClass="AttendeeViewController" sceneMemberID="viewController">
+                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="CVB-up-ERg">
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <prototypes>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="zmC-Ff-rpD">
+                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="zmC-Ff-rpD" id="THa-lK-abm">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="PUz-nc-h33" id="BhN-Ee-SOR"/>
+                            <outlet property="delegate" destination="PUz-nc-h33" id="jHT-K3-bMC"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="aU2-wW-1ge">
+                        <barButtonItem key="rightBarButtonItem" systemItem="done" id="3zJ-k8-O1U"/>
+                    </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <connections>
+                        <outlet property="doneButton" destination="3zJ-k8-O1U" id="kMI-oY-1fA"/>
+                        <segue destination="Mow-Gy-F9N" kind="push" identifier="AttendeeViewToContactChooser" id="nAp-rc-bND"/>
+                    </connections>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="var-bn-Y7r" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-427" y="-1627"/>
         </scene>
         <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
@@ -627,7 +664,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8CR-pi-522" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="167" y="-962"/>
+            <point key="canvasLocation" x="82" y="-990"/>
         </scene>
         <!--Contact Search View Controller - Contacts-->
         <scene sceneID="qZb-fd-BvT">
@@ -710,7 +747,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="639" y="-1562"/>
+            <point key="canvasLocation" x="601" y="-1627"/>
         </scene>
         <!--Contact Chooser View Controller - Chooser-->
         <scene sceneID="Ora-ag-cc2">
@@ -800,7 +837,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="640" y="-955"/>
+            <point key="canvasLocation" x="82" y="-1627"/>
         </scene>
         <!--Message List View Controller - Messages-->
         <scene sceneID="piL-bm-yTE">
@@ -1225,15 +1262,16 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Fvv-mz-C9l"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="Mvu-uQ-8cr"/>
         <segue reference="hCT-pP-PUu"/>
         <segue reference="5fj-Ta-mc9"/>
+        <segue reference="Fvv-mz-C9l"/>
         <segue reference="7H5-MT-Qxr"/>
         <segue reference="JWi-mA-RVD"/>
         <segue reference="Rd3-YY-NMX"/>
         <segue reference="S6l-ao-xdW"/>
         <segue reference="1iq-X7-xab"/>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="nAp-rc-bND"/>
     </inferredMetricsTieBreakers>
 </document>
