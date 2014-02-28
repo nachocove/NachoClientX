@@ -99,8 +99,9 @@ namespace NachoCore.ActiveSync
                 LocalStateType = typeof(HttpOpLst),
                 TransTable = new [] {
                     new Node {State = (uint)St.Start,
+                        Drop = new [] {(uint)HttpOpEvt.E.Cancel},
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
-                            (uint)HttpOpEvt.E.Cancel, (uint)HttpOpEvt.E.Delay, (uint)HttpOpEvt.E.Timeout, (uint)HttpOpEvt.E.Final
+                            (uint)HttpOpEvt.E.Delay, (uint)HttpOpEvt.E.Timeout, (uint)HttpOpEvt.E.Final
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
