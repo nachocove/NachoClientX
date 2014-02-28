@@ -11,7 +11,7 @@ namespace NachoCore
     public class NachoCalendarCommon : INachoCalendar
     {
         protected List<McCalendar> list;
-        protected Dictionary<DateTime, Dictionary<DateTime, int>> bag;
+        protected Dictionary<DateTime, List<int>> bag;
         protected List<DateTime> listOfDays;
         protected List<int>[] listOfDaysEvents;
 
@@ -23,7 +23,7 @@ namespace NachoCore
         public void Refresh ()
         {
             Reload ();
-            bag = new Dictionary<DateTime, Dictionary<DateTime, int>> ();
+            bag = new Dictionary<DateTime, List<int>> ();
             if (null == list) {
                 listOfDays = new List<DateTime> ();
                 listOfDaysEvents = new List<int>[0];
@@ -53,12 +53,12 @@ namespace NachoCore
 
         protected void AddItem (DateTime d, int i)
         {
-            Dictionary<DateTime, int> day;
+            List<int> day;
             if (false == bag.TryGetValue (d.Date, out day)) {
-                day = new Dictionary<DateTime, int> ();
+                day = new List<int> ();
                 bag.Add (d.Date, day);
             }
-            day.Add (d, i);
+            day.Add (i);
         }
 
         public int NumberOfDays ()
@@ -80,7 +80,7 @@ namespace NachoCore
         public int NumberOfItemsForDay (int i)
         {
             if (null == listOfDaysEvents [i]) {
-                listOfDaysEvents [i] = bag [listOfDays [i]].Values.ToList ();
+                listOfDaysEvents [i] = bag [listOfDays [i]];
             }
             return listOfDaysEvents [i].Count;
         }
