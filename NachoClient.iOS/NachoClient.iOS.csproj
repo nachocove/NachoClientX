@@ -558,6 +558,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Pretty.cs">
       <Link>NachoCore\Utils\Pretty.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\Elements.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
