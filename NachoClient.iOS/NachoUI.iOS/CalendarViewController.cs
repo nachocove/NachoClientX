@@ -116,7 +116,7 @@ namespace NachoClient.iOS
                 durationLabel.Text = "";
             } else {
                 startLabel.Text = c.StartTime.ToString ("t");
-                durationLabel.Text = PrettyCompactDuration (c);
+                durationLabel.Text = Pretty.CompactDuration (c);
             }
             calendarImage.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
             var titleLabelFrame = titleLabel.Frame;
@@ -128,30 +128,10 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        string PrettyCompactDuration (McCalendar c)
-        {
-            if (c.StartTime == c.EndTime) {
-                return "";
-            }
-            TimeSpan s = c.EndTime - c.StartTime;
-            if (s.TotalMinutes < 60) {
-                return String.Format ("{0}m", s.Minutes);
-            }
-            if (s.TotalHours < 24) {
-                if (0 == s.Minutes) {
-                    return String.Format ("{0}h", s.Hours);
-                } else {
-                    return String.Format ("{0}h{1}m", s.Hours, s.Minutes);
-                }
-            }
-            return "1d+";
-        }
-
         public override string TitleForHeader (UITableView tableView, int section)
         {
             DateTime d = calendar.GetDayDate (section);
             return d.ToString ("D").ToUpper ();
         }
-
     }
 }

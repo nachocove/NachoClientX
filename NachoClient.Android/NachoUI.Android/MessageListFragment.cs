@@ -78,7 +78,6 @@ namespace NachoClient.AndroidClient
             Activity.Title = "Messages";
             return rootView;
         }
-            
     }
 
     public class MessageListAdapter : BaseAdapter<McEmailMessage>
@@ -122,13 +121,13 @@ namespace NachoClient.AndroidClient
             var message = thread.First ();
 
             sender.Text = message.From;
-            subject.Text = ConvertToPrettySubjectString (message.Subject);
+            subject.Text = Pretty.SubjectString (message.Subject);
             if (null == message.Summary) {
                 UpdateDbWithSummary (message);
             }
             NachoAssert.True (null != message.Summary);
             summary.Text = message.Summary;
-            received.Text = ConvertToPrettyDateString (message.DateReceived);
+            received.Text = Pretty.FullDateString (message.DateReceived);
 
             if (message.IsRead) {
                 image.Visibility = ViewStates.Invisible;
@@ -145,37 +144,6 @@ namespace NachoClient.AndroidClient
             var summary = MimeHelpers.CreateSummary (body);
             message.Summary = summary;
             BackEnd.Instance.Db.Update (message);
-        }
-
-        /// <summary>
-        /// Converts a date to a string worthy
-        /// of being displayed in the message list.
-        /// </summary>
-        string ConvertToPrettyDateString (DateTime Date)
-        {
-            var diff = DateTime.Now - Date;
-            if (diff < TimeSpan.FromMinutes (60)) {
-                return String.Format ("{0:n0}m", diff.TotalMinutes);
-            }
-            if (diff < TimeSpan.FromHours (24)) {
-                return String.Format ("{0:n0}h", diff.TotalHours);
-            }
-            if (diff <= TimeSpan.FromHours (24)) {
-                return "Yesterday";
-            }
-            if (diff < TimeSpan.FromDays (6)) {
-                return Date.ToString ("dddd");
-            }
-            return Date.ToShortDateString ();
-        }
-
-        string ConvertToPrettySubjectString (String Subject)
-        {
-            if (null == Subject) {
-                return "";
-            } else {
-                return Subject;
-            }
         }
     }
 }

@@ -97,11 +97,11 @@ namespace NachoClient.iOS
 
             section = CustomSection ();
             section.Add (new SubjectElement (c.Subject));
-            section.Add (new StartTimeElement (PrettyFullDateString (c.StartTime)));
+            section.Add (new StartTimeElement (Pretty.FullDateString (c.StartTime)));
             if (c.AllDayEvent) {
-                section.Add (new DurationElement (PrettyAllDayStartToEnd (c)));
+                section.Add (new DurationElement (Pretty.AllDayStartToEnd (c)));
             } else {
-                section.Add (new DurationElement (PrettyEventStartToEnd (c)));
+                section.Add (new DurationElement (Pretty.EventStartToEnd (c)));
             }
             root.Add (section);
 
@@ -126,7 +126,7 @@ namespace NachoClient.iOS
             root.Add (section);
 
             section = CustomSection ();
-            section.Add (new StyledStringElementWithIcon ("Reminder", PrettyReminderString (c.Reminder), "ic_action_alarms"));
+            section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (c.Reminder), "ic_action_alarms"));
             root.Add (section);
 
             return root;
@@ -192,23 +192,6 @@ namespace NachoClient.iOS
             return root;
         }
 
-        static public string PrettyReminderString (uint reminder)
-        {
-            if (0 == reminder) {
-                return "None";
-            }
-            if (1 == reminder) {
-                return "1 minute before";
-            }
-            if (60 == reminder) {
-                return "1 hour before";
-            }
-            if ((24 * 60) == reminder) {
-                return "1 day before";
-            }
-            return String.Format ("{0} minutes before", reminder);
-        }
-
         public class ReminderSection : Section
         {
             List<CheckboxElementWithData> list;
@@ -222,11 +205,11 @@ namespace NachoClient.iOS
                 hidden = new HiddenElement ("");
                 this.Add (hidden);
 
-                CreateCheckboxElementWithData (PrettyReminderString (1), 1);
-                CreateCheckboxElementWithData (PrettyReminderString (5), 5);
-                CreateCheckboxElementWithData (PrettyReminderString (60), 60);
-                CreateCheckboxElementWithData (PrettyReminderString (24 * 60), 24 * 60);
-                CreateCheckboxElementWithData (PrettyReminderString (0), 0);
+                CreateCheckboxElementWithData (Pretty.ReminderString (1), 1);
+                CreateCheckboxElementWithData (Pretty.ReminderString (5), 5);
+                CreateCheckboxElementWithData (Pretty.ReminderString (60), 60);
+                CreateCheckboxElementWithData (Pretty.ReminderString (24 * 60), 24 * 60);
+                CreateCheckboxElementWithData (Pretty.ReminderString (0), 0);
 
                 custom = new NumericEntryElementWithCheckmark ("Custom", "", "", false);
                 custom.ClearButtonMode = UITextFieldViewMode.WhileEditing;
@@ -245,7 +228,7 @@ namespace NachoClient.iOS
 
                 if (!found) {
                     custom.checkmark = true;
-                    custom.Value = PrettyReminderString (initialValue);
+                    custom.Value = Pretty.ReminderString (initialValue);
                     hidden.SetSummary (custom.Value, initialValue);
                 }
 
@@ -262,7 +245,7 @@ namespace NachoClient.iOS
                         if (String.IsNullOrEmpty (custom.Value)) {
                             hidden.SetSummary ("None", 0);
                         } else {
-                            hidden.SetSummary (PrettyReminderString (custom.NumericValue), custom.NumericValue);
+                            hidden.SetSummary (Pretty.ReminderString (custom.NumericValue), custom.NumericValue);
                         }
                     }
                     custom.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
@@ -578,75 +561,6 @@ namespace NachoClient.iOS
         public void AttendeeEntryPopup ()
         {
             PerformSegue ("CalendarItemToAttendeeView", this);
-        }
-
-        public string PrettyFullDateString (DateTime d)
-        {
-            return d.ToString ("D");
-        }
-
-        public string PrettyAllDayStartToEnd (McCalendar c)
-        {
-            var d = c.EndTime.Date.Subtract (c.StartTime.Date);
-            if (d.Minutes < 1) {
-                return "All day";
-            }
-            return String.Format ("All day ({0} days)", d.Days);
-        }
-
-        public string PrettyEventStartToEnd (McCalendar c)
-        {
-            var startString = c.StartTime.ToString ("t");
-
-            if (c.StartTime == c.EndTime) {
-                return startString;
-            }
-            var durationString = PrettyEventDuration (c);
-            if (c.StartTime.Date == c.EndTime.Date) {
-                return String.Format ("{0} - {1} ({2})", startString, c.EndTime.ToString ("t"), durationString);
-            } else {
-                return String.Format ("{0} -\n{1} ({2})", startString, PrettyFullDateString (c.EndTime), durationString);
-            }
-        }
-
-        public string PrettyEventDuration (McCalendar c)
-        {
-            var d = c.EndTime.Subtract (c.StartTime);
-
-            if (0 == d.TotalMinutes) {
-                return ""; // no duration
-            }
-
-            // Even number of days?
-            if (0 == (d.TotalMinutes % (24 * 60))) {
-                if (1 == d.Days) {
-                    return "1 day";
-                } else {
-                    return String.Format ("{0} days", d.Days);
-                }
-            }
-            // Even number of hours?
-            if (0 == (d.TotalMinutes % 60)) {
-                if (1 == d.Hours) {
-                    return "1 hour";
-                } else {
-                    return String.Format ("{0} hours", d.Hours);
-                }
-            }
-            // Less than one hour?
-            if (60 > d.Minutes) {
-                if (1 == d.Minutes) {
-                    return "1 minute";
-                } else {
-                    return String.Format ("{0} minutes", d.Minutes);
-                }
-            }
-            // Less than one day?
-            if ((24 * 60) > d.Minutes) {
-                return String.Format ("{0}:{1} hours", d.Hours, d.Minutes % 60);
-            } else {
-                return String.Format ("{0}d{1}h{2}m", d.Days, d.Hours % 24, d.Minutes % 60);
-            }
         }
 
         public static UIImage DotWithColor (UIColor color)

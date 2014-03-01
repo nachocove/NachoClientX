@@ -555,6 +555,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\SegueHolder.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Pretty.cs">
+      <Link>NachoCore\Utils\Pretty.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
