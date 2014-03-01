@@ -64,6 +64,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             Style = UITableViewStyle.Plain;
+            TableView.SeparatorInset = new UIEdgeInsets (0, 0, 0, 0);
 
             // Closes the multi-line edit view!
             var tap = new UITapGestureRecognizer ();
@@ -174,7 +175,8 @@ namespace NachoClient.iOS
         {
             var e = new StyledStringElement (NcEmailAddress.ToPrefix (kind));
             e.Image = UIImage.FromBundle ("ic_action_add_person");
-            e.BackgroundColor = UIColor.LightGray;
+            e.TextColor = UIColor.LightGray;
+            e.BackgroundColor = UIColor.LightTextColor;
             e.Tapped += () => {
                 SectionTapped(kind);
             };
