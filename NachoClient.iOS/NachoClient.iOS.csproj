@@ -678,5 +678,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />
+    <Content Include="Content\TacoMailDoc.pdf" />
+    <Content Include="Content\HomePage1.png" />
+    <Content Include="Content\PageTwo.png" />
+    <Content Include="Content\PageThree.png" />
+    <Content Include="Content\PageFour.png" />
+    <Content Include="Content\PageFive.png" />
+    <Content Include="Content\PageSix.png" />
+    <Content Include="Content\PageSeven.png" />
   </ItemGroup>
 </Project>
