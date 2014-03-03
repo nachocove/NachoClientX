@@ -77,19 +77,19 @@ namespace NachoCore
         {
             switch (kind) {
             case Kind.To:
-                return "To:";
+                return "To";
             case Kind.Cc:
-                return "Cc:";
+                return "Cc";
             case Kind.Bcc:
-                return "Bcc:";
+                return "Bcc";
             case Kind.Required:
                 return "Required";
             case Kind.Optional:
-                return "Optional:";
+                return "Optional";
             case Kind.Resource:
-                return "Resource:";
+                return "Resource";
             case Kind.Unknown:
-                return "Unkown";
+                return "Unknown";
             default:
                 NachoAssert.CaseError ();
                 return"";

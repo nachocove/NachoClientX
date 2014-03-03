@@ -57,6 +57,18 @@ namespace NachoClient.iOS
                 case NcEmailAddress.Kind.Bcc:
                     SetToButtonLabel (NcEmailAddress.Kind.To);
                     break;
+                case NcEmailAddress.Kind.Required:
+                    SetToButtonLabel (NcEmailAddress.Kind.Optional);
+                    break;
+                case NcEmailAddress.Kind.Optional:
+                    SetToButtonLabel (NcEmailAddress.Kind.Resource);
+                    break;
+                case NcEmailAddress.Kind.Resource:
+                    SetToButtonLabel (NcEmailAddress.Kind.Required);
+                    break;
+                case NcEmailAddress.Kind.Unknown:
+                    SetToButtonLabel (NcEmailAddress.Kind.Required);
+                    break;
                 default:
                     NachoAssert.CaseError ();
                     break;
@@ -115,6 +127,11 @@ namespace NachoClient.iOS
                 ToButton.SetTitle ("Opt:", UIControlState.Normal);
                 break;
             case NcEmailAddress.Kind.Resource:
+                ToButton.SetTitle ("Res:", UIControlState.Normal);
+                break;
+            case NcEmailAddress.Kind.Unknown:
+                ToButton.SetTitle ("Unk:", UIControlState.Normal);
+                break;
             default:
                 NachoAssert.CaseError ();
                 break;

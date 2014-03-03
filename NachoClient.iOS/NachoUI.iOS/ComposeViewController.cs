@@ -64,6 +64,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             Style = UITableViewStyle.Plain;
+            TableView.SeparatorInset = new UIEdgeInsets (0, 0, 0, 0);
 
             // Closes the multi-line edit view!
             var tap = new UITapGestureRecognizer ();
@@ -94,8 +95,9 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("ComposeToContactChooser")) {
                 var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder<MyEmailAddress>;
-                dc.SetOwner (this, holder.value);
+                var holder = sender as SegueHolder;
+                var address = (MyEmailAddress)holder.value;
+                dc.SetOwner (this, address);
             }
         }
 
@@ -147,7 +149,7 @@ namespace NachoClient.iOS
                 var e = new StringElement (a.address);
                 var lambda_object = i;
                 e.Tapped += () => {
-                    AddressTapped(lambda_object);
+                    AddressTapped (lambda_object);
                 };
                 switch (a.kind) {
                 case NcEmailAddress.Kind.To:
@@ -174,9 +176,10 @@ namespace NachoClient.iOS
         {
             var e = new StyledStringElement (NcEmailAddress.ToPrefix (kind));
             e.Image = UIImage.FromBundle ("ic_action_add_person");
-            e.BackgroundColor = UIColor.LightGray;
+            e.TextColor = UIColor.LightGray;
+            e.BackgroundColor = UIColor.LightTextColor;
             e.Tapped += () => {
-                SectionTapped(kind);
+                SectionTapped (kind);
             };
             var s = new Section ();
             s.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
@@ -190,14 +193,14 @@ namespace NachoClient.iOS
             var address = AddressList [i];
             address.index = i;
             address.action = MyEmailAddress.Action.edit;
-            PerformSegue ("ComposeToContactChooser", new SegueHolder<MyEmailAddress> (address));
+            PerformSegue ("ComposeToContactChooser", new SegueHolder (address));
         }
 
         protected void SectionTapped (NcEmailAddress.Kind kind)
         {
             var address = new MyEmailAddress (kind);
             address.action = MyEmailAddress.Action.create;
-            PerformSegue ("ComposeToContactChooser", new SegueHolder<MyEmailAddress> (address));
+            PerformSegue ("ComposeToContactChooser", new SegueHolder (address));
         }
 
         public void UpdateEmailAddress (NcEmailAddress address)

@@ -10,8 +10,8 @@ using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
 {
-
-    public enum NachoMessageIcon {
+    public enum NachoMessageIcon
+    {
         None,
         Read,
         Clock,
@@ -194,7 +194,7 @@ namespace NachoClient.iOS
                 }
 
                 UIColor.FromRGB (36, 112, 216).SetColor ();
-                var date = ConvertToPrettyDateString (Date);
+                var date = Pretty.CompactDateString (Date);
                 ssize = StringSize (date, SubjectFont);
                 float dateSize = ssize.Width + padright + 5;
                 DrawString (date, new RectangleF (Bounds.Width - dateSize, 6, dateSize, 14), SubjectFont, UILineBreakMode.Clip, UITextAlignment.Left);
@@ -203,8 +203,8 @@ namespace NachoClient.iOS
                 float bw = Bounds.Width - offset;
 
                 UIColor.Black.SetColor ();
-                var sender = ConvertToPrettySenderString (Sender);
-                var subject = ConvertToPrettySubjectString (Subject);
+                var sender = Pretty.SenderString (Sender);
+                var subject = Pretty.SubjectString (Subject);
                 DrawString (sender, new PointF (offset, 2), bw - dateSize, SenderFont, UILineBreakMode.TailTruncation);
                 DrawString (subject, new PointF (offset, 23), bw - offset - boxWidth, SubjectFont, UILineBreakMode.TailTruncation);
 
@@ -215,7 +215,7 @@ namespace NachoClient.iOS
                     drawRectChecked (new RectangleF (5, 27, 22, 22));
                 } else if (NachoMessageIcon.Clock == Icon) {
                     drawRectClock (new RectangleF (5, 27, 22, 22));
-                } else if(NachoMessageIcon.Read == Icon) {
+                } else if (NachoMessageIcon.Read == Icon) {
                     ctx.SaveState ();
                     ctx.AddEllipseInRect (new RectangleF (10, 32, 12, 12));
                     ctx.Clip ();
@@ -276,7 +276,6 @@ namespace NachoClient.iOS
             }
         }
 
-
         void drawRectClock (RectangleF rect)
         {
             //// General Declarations
@@ -291,11 +290,11 @@ namespace NachoClient.iOS
             var shadow2ColorRadius = 2.5f;
 
             var checkedOvalPath = UIBezierPath.FromOval (
-                new RectangleF (
-                    rect.GetMinX (),
-                    rect.GetMinY (),
-                    (float)Math.Floor (rect.Width * 1.00000f + 0.5f),
-                    (float)Math.Floor (rect.Height * 1.00000f + 0.5f)));
+                                      new RectangleF (
+                                          rect.GetMinX (),
+                                          rect.GetMinY (),
+                                          (float)Math.Floor (rect.Width * 1.00000f + 0.5f),
+                                          (float)Math.Floor (rect.Height * 1.00000f + 0.5f)));
 
             using (var context = UIGraphics.GetCurrentContext ()) {
                 context.SaveState ();
@@ -318,56 +317,6 @@ namespace NachoClient.iOS
                 UIColor.White.SetStroke ();
                 bezierPath.LineWidth = 2.7f;
                 bezierPath.Stroke ();
-            }
-        }
-
-        /// <summary>
-        /// Given an email address, return a string
-        /// worthy of being displayed in the message list.
-        /// </summary>
-        public static string ConvertToPrettySenderString (string Sender)
-        {
-            if (null == Sender) {
-                return "";
-            }
-            System.Net.Mail.MailAddress address = new System.Net.Mail.MailAddress (Sender);
-            if (null != address.DisplayName) {
-                return address.DisplayName;
-            }
-            if (null != address.User) {
-                return address.User;
-            }
-            return Sender;
-        }
-
-        /// <summary>
-        /// Converts a date to a string worthy
-        /// of being displayed in the message list.
-        /// </summary>
-        string ConvertToPrettyDateString (DateTime Date)
-        {
-            var diff = DateTime.Now - Date;
-            if (diff < TimeSpan.FromMinutes (60)) {
-                return String.Format ("{0:n0}m", diff.TotalMinutes);
-            }
-            if (diff < TimeSpan.FromHours (24)) {
-                return String.Format ("{0:n0}h", diff.TotalHours);
-            }
-            if (diff <= TimeSpan.FromHours (24)) {
-                return "Yesterday";
-            }
-            if (diff < TimeSpan.FromDays (6)) {
-                return Date.ToString ("dddd");
-            }
-            return Date.ToShortDateString ();
-        }
-
-        string ConvertToPrettySubjectString (String Subject)
-        {
-            if (null == Subject) {
-                return "";
-            } else {
-                return Subject;
             }
         }
     }

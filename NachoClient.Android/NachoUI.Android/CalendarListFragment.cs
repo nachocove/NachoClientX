@@ -102,19 +102,10 @@ namespace NachoClient.AndroidClient
             var startDate = view.FindViewById<TextView> (Android.Resource.Id.Text2);
 
             var calendarItem = calendarItems.GetCalendarItem (groupPosition, childPosition);
-            subject.Text = ConvertToPrettySubjectString (calendarItem.Subject);
+            subject.Text = Pretty.SubjectString (calendarItem.Subject);
             startDate.Text = calendarItem.StartTime.ToString ();
 
             return view;
-        }
-
-        string ConvertToPrettySubjectString (String Subject)
-        {
-            if (null == Subject) {
-                return "";
-            } else {
-                return Subject;
-            }
         }
 
         public override int GetChildrenCount (int groupPosition)
@@ -160,6 +151,5 @@ namespace NachoClient.AndroidClient
         }
 
         #endregion
-
     }
 }

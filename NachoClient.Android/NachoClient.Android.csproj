@@ -183,6 +183,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderCreateCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs" />
+    <Compile Include="NachoCore\Utils\Pretty.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

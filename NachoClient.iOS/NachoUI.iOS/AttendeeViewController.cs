@@ -15,7 +15,6 @@ namespace NachoClient.iOS
 {
     public partial class AttendeeViewController : DialogViewController, INachoContactChooserDelegate
     {
-
         protected class MyEmailAddress : NcEmailAddress
         {
             public enum Action
@@ -38,7 +37,7 @@ namespace NachoClient.iOS
                 this.action = Action.undefined;
             }
 
-            public MyEmailAddress (McAttendee attendee) : base(attendee)
+            public MyEmailAddress (McAttendee attendee) : base (attendee)
             {
                 this.action = Action.undefined;
             }
@@ -46,7 +45,7 @@ namespace NachoClient.iOS
 
         List<McAttendee> AttendeeList = new List<McAttendee> ();
 
-        public void PushAttendees(List<McAttendee> attendees)
+        public void PushAttendees (List<McAttendee> attendees)
         {
             AttendeeList = new List<McAttendee> ();
             foreach (var attendee in attendees) {
@@ -54,7 +53,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void PullAttendees(ref List<McAttendee> attendees)
+        public void PullAttendees (ref List<McAttendee> attendees)
         {
             attendees = new List<McAttendee> ();
             foreach (var attendee in AttendeeList) {
@@ -76,6 +75,7 @@ namespace NachoClient.iOS
 
             this.Pushing = true;
             this.Style = UITableViewStyle.Plain;
+            TableView.SeparatorInset = new UIEdgeInsets (0, 0, 0, 0);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -88,8 +88,9 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("AttendeeViewToContactChooser")) {
                 var dc = (INachoContactChooser)segue.DestinationViewController;
-                var holder = sender as SegueHolder<MyEmailAddress>;
-                dc.SetOwner (this, holder.value);
+                var holder = sender as SegueHolder;
+                var address = (MyEmailAddress)holder.value;
+                dc.SetOwner (this, address);
             }
         }
 
@@ -124,7 +125,7 @@ namespace NachoClient.iOS
                 var e = new StringElement (a.DisplayName);
                 var lambda_object = i;
                 e.Tapped += () => {
-                    AddressTapped(lambda_object);
+                    AddressTapped (lambda_object);
                 };
                 switch (a.AttendeeType) {
                 case NcAttendeeType.Required:
@@ -152,9 +153,10 @@ namespace NachoClient.iOS
         {
             var e = new StyledStringElement (NcEmailAddress.ToPrefix (kind));
             e.Image = UIImage.FromBundle ("ic_action_add_person");
-            e.BackgroundColor = UIColor.LightGray;
+            e.TextColor = UIColor.LightGray;
+            e.BackgroundColor = UIColor.LightTextColor;
             e.Tapped += () => {
-                SectionTapped(kind);
+                SectionTapped (kind);
             };
             var s = new Section ();
             s.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
@@ -169,14 +171,14 @@ namespace NachoClient.iOS
             var address = new MyEmailAddress (attendee);
             address.index = i;
             address.action = MyEmailAddress.Action.edit;
-            PerformSegue ("AttendeeViewToContactChooser", new SegueHolder<MyEmailAddress> (address));
+            PerformSegue ("AttendeeViewToContactChooser", new SegueHolder (address));
         }
 
         protected void SectionTapped (NcEmailAddress.Kind kind)
         {
             var address = new MyEmailAddress (kind);
             address.action = MyEmailAddress.Action.create;
-            PerformSegue ("AttendeeViewToContactChooser", new SegueHolder<MyEmailAddress> (address));
+            PerformSegue ("AttendeeViewToContactChooser", new SegueHolder (address));
         }
 
         public void UpdateEmailAddress (NcEmailAddress address)
@@ -213,8 +215,5 @@ namespace NachoClient.iOS
 
             AttendeeList.RemoveAt (a.index);
         }
-
-
-  
     }
 }

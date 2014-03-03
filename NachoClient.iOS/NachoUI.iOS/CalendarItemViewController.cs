@@ -2,10 +2,11 @@
 
 using System;
 using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using NachoCore.Model;
+using System.Collections.Generic;
 using MonoTouch.Dialog;
+using MonoTouch.UIKit;
+using MonoTouch.Foundation;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
@@ -78,7 +79,7 @@ namespace NachoClient.iOS
                 var dc = (AttendeeViewController)segue.DestinationViewController;
                 dc.PushAttendees (c.attendees);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    dc.PullAttendees(ref c.attendees);
+                    dc.PullAttendees (ref c.attendees);
                 };
             }
         }
@@ -95,11 +96,11 @@ namespace NachoClient.iOS
 
             section = CustomSection ();
             section.Add (new SubjectElement (c.Subject));
-            section.Add (new StartTimeElement (PrettyFullDateString (c.StartTime)));
+            section.Add (new StartTimeElement (Pretty.FullDateString (c.StartTime)));
             if (c.AllDayEvent) {
-                section.Add (new DurationElement (PrettyAllDayStartToEnd (c)));
+                section.Add (new DurationElement (Pretty.AllDayStartToEnd (c)));
             } else {
-                section.Add (new DurationElement (PrettyEventStartToEnd (c)));
+                section.Add (new DurationElement (Pretty.EventStartToEnd (c)));
             }
             root.Add (section);
 
@@ -123,6 +124,10 @@ namespace NachoClient.iOS
             }
             root.Add (section);
 
+            section = CustomSection ();
+            section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (c.Reminder), "ic_action_alarms"));
+            root.Add (section);
+
             return root;
         }
 
@@ -144,18 +149,10 @@ namespace NachoClient.iOS
             }
             appointmentEntryElement = new AppointmentEntryElement (DateTime.Now, DateTime.Now);
             peopleEntryElement = new PeopleEntryElement ();
-            reminderEntryElement = new RootElementWithIcon ("Reminder", new RadioGroup (7)) {
-                new Section () {
-                    new RadioElement ("1 minute before"),
-                    new RadioElement ("5 minutes before"),
-                    new RadioElement ("15 minutes before"),
-                    new RadioElement ("30 minutes before"),
-                    new RadioElement ("1 hour before"),
-                    new RadioElement ("4hours before"),
-                    new RadioElement ("1 day before"),
-                    new RadioElement ("None"),
-                }
-            };
+
+            reminderEntryElement = new RootElementWithIcon ("Reminder");
+            reminderEntryElement.Add (new ReminderSection (c.Reminder));
+            reminderEntryElement.UnevenRows = true;
 
             appointmentEntryElement.Tapped += (DialogViewController arg1, UITableView arg2, NSIndexPath arg3) => {
                 arg2.DeselectRow (arg3, true);
@@ -163,7 +160,7 @@ namespace NachoClient.iOS
             };
 
             peopleEntryElement.Tapped += () => {
-                AttendeeEntryPopup();
+                AttendeeEntryPopup ();
             };
                 
             var root = new RootElement (c.Subject);
@@ -194,6 +191,86 @@ namespace NachoClient.iOS
             return root;
         }
 
+        public class ReminderSection : Section
+        {
+            List<CheckboxElementWithData> list;
+            NumericEntryElementWithCheckmark custom;
+            HiddenElement hidden;
+
+            public ReminderSection (uint initialValue)
+            {
+                list = new List<CheckboxElementWithData> ();
+
+                hidden = new HiddenElement ("");
+                this.Add (hidden);
+
+                CreateCheckboxElementWithData (Pretty.ReminderString (1), 1);
+                CreateCheckboxElementWithData (Pretty.ReminderString (5), 5);
+                CreateCheckboxElementWithData (Pretty.ReminderString (60), 60);
+                CreateCheckboxElementWithData (Pretty.ReminderString (24 * 60), 24 * 60);
+                CreateCheckboxElementWithData (Pretty.ReminderString (0), 0);
+
+                custom = new NumericEntryElementWithCheckmark ("Custom", "", "", false);
+                custom.ClearButtonMode = UITextFieldViewMode.WhileEditing;
+                custom.KeyboardType = UIKeyboardType.Default;
+                this.Add (custom);
+
+                bool found = false;
+                foreach (var l in list) {
+                    if (initialValue == l.Data) {
+                        hidden.SetSummary (l.Summary (), l.Data);
+                        l.Value = true;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    custom.checkmark = true;
+                    custom.Value = Pretty.ReminderString (initialValue);
+                    hidden.SetSummary (custom.Value, initialValue);
+                }
+
+                custom.EntryStarted += delegate {
+                    foreach (var l in list) {
+                        l.Value = false;
+                    }
+                    custom.checkmark = true;
+                    custom.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
+                    custom.BecomeFirstResponder (true);
+                };
+                custom.EntryEnded += delegate {
+                    if (custom.checkmark) {
+                        if (String.IsNullOrEmpty (custom.Value)) {
+                            hidden.SetSummary ("None", 0);
+                        } else {
+                            hidden.SetSummary (Pretty.ReminderString (custom.NumericValue), custom.NumericValue);
+                        }
+                    }
+                    custom.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
+                };
+            }
+
+            protected CheckboxElementWithData CreateCheckboxElementWithData (string caption, uint data)
+            {
+                var c = new CheckboxElementWithData (caption, data);
+                this.Add (c);
+                list.Add (c);
+
+                c.Tapped += () => {
+                    foreach (var l in list) {
+                        l.Value = false;
+                    }
+                    c.Value = true;
+                    custom.checkmark = false;
+                    hidden.SetSummary (c.Summary (), c.Data);
+                    c.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
+                };
+
+                return c;
+            }
+        }
+
         public Section CustomSection ()
         {
             var s = new Section ();
@@ -201,101 +278,6 @@ namespace NachoClient.iOS
             s.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
             return s;
         }
-
-        public class RootElementWithIcon : RootElement
-        {
-            public RootElementWithIcon (string caption, Group group) : base (caption, group)
-            {
-            }
-
-            public override UITableViewCell GetCell (UITableView tv)
-            {
-                var c = base.GetCell (tv);
-                c.ImageView.Image = UIImage.FromBundle ("ic_action_alarms").Scale (new SizeF (22.0f, 22.0f));
-                c.TextLabel.TextColor = UIColor.Gray;
-                c.DetailTextLabel.TextColor = UIColor.Black;
-                return c;
-            }
-        }
-
-        public class EntryElementWithIcon : EntryElement
-        {
-            protected UIImage icon { get; private set; }
-
-            public EntryElementWithIcon (UIImage icon, string placeholder, string value) : base ("", placeholder, value)
-            {
-                this.icon = icon;
-            }
-
-            public override UITableViewCell GetCell (UITableView tv)
-            {
-                var cell = base.GetCell (tv);
-                var textField = cell.ContentView.ViewWithTag (1);
-                var textFieldframe = textField.Frame;
-                textFieldframe.Location = new PointF (50.0f, textFieldframe.Location.Y);
-                textField.Frame = textFieldframe;
-                cell.ImageView.Image = icon;
-                return cell;
-            }
-        }
-
-        public class SubjectElement : StyledMultilineElement
-        {
-            public SubjectElement (string caption) : base (caption)
-            {
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.Blue);
-                this.Font = UIFont.SystemFontOfSize (17.0f);
-            }
-        }
-
-        public class PeopleEntryElement : StyledStringElement
-        {
-            public PeopleEntryElement () : base ("People")
-            {
-                this.Accessory = UITableViewCellAccessory.DisclosureIndicator;
-                var image = UIImage.FromBundle ("ic_action_group");
-                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-                this.Font = UIFont.SystemFontOfSize (17.0f);
-                this.TextColor = UIColor.Gray;
-            }
-        }
-
-        public class DateTimeEntryElement : DateTimeElement
-        {
-            public DateTimeEntryElement (string caption) : base (caption, DateTime.Now)
-            {
-            }
-        }
-
-        public class StartTimeElement : StyledStringElement
-        {
-            public StartTimeElement (string caption) : base (caption)
-            {
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.Clear);
-                this.Font = UIFont.SystemFontOfSize (15.0f);
-            }
-        }
-
-        public class DurationElement : StyledStringElement
-        {
-            public DurationElement (string caption) : base (caption)
-            {
-                var image = UIImage.FromBundle ("ic_action_time");
-                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-                this.Font = UIFont.SystemFontOfSize (15.0f);
-            }
-        }
-
-        public class LocationElement : StyledMultilineElement
-        {
-            public LocationElement (string caption) : base (caption)
-            {
-                var image = UIImage.FromBundle ("ic_action_place");
-                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-                this.Font = UIFont.SystemFontOfSize (17.0f);
-            }
-        }
-
 
         /// <summary>
         /// Update the screen representation with new
@@ -311,7 +293,7 @@ namespace NachoClient.iOS
             endDateTimeElement.DateValue = appointmentEntryElement.endDateTime;
             allDayEvent.Value = appointmentEntryElement.allDayEvent;
 
-            var root = new RootElement("Meeting Time");
+            var root = new RootElement ("Meeting Time");
             var section = new Section ();
             section.Add (startDateTimeElement);
             section.Add (endDateTimeElement);
@@ -324,84 +306,15 @@ namespace NachoClient.iOS
                 appointmentEntryElement.allDayEvent = allDayEvent.Value;
                 appointmentEntryElement.startDateTime = startDateTimeElement.DateValue;
                 appointmentEntryElement.endDateTime = endDateTimeElement.DateValue;
-                Root.Reload(appointmentEntryElement, UITableViewRowAnimation.Fade);
+                Root.Reload (appointmentEntryElement, UITableViewRowAnimation.Fade);
             };
 
             NavigationController.PushViewController (dvc, true);
         }
 
-        public void AttendeeEntryPopup()
+        public void AttendeeEntryPopup ()
         {
             PerformSegue ("CalendarItemToAttendeeView", this);
-        }
-
-        public string PrettyFullDateString (DateTime d)
-        {
-            return d.ToString ("D");
-        }
-
-        public string PrettyAllDayStartToEnd (McCalendar c)
-        {
-            var d = c.EndTime.Date.Subtract (c.StartTime.Date);
-            if (d.Minutes < 1) {
-                return "All day";
-            }
-            return String.Format ("All day ({0} days)", d.Days);
-        }
-
-        public string PrettyEventStartToEnd (McCalendar c)
-        {
-            var startString = c.StartTime.ToString ("t");
-
-            if (c.StartTime == c.EndTime) {
-                return startString;
-            }
-            var durationString = PrettyEventDuration (c);
-            if (c.StartTime.Date == c.EndTime.Date) {
-                return String.Format ("{0} - {1} ({2})", startString, c.EndTime.ToString ("t"), durationString);
-            } else {
-                return String.Format ("{0} -\n{1} ({2})", startString, PrettyFullDateString (c.EndTime), durationString);
-            }
-        }
-
-        public string PrettyEventDuration (McCalendar c)
-        {
-            var d = c.EndTime.Subtract (c.StartTime);
-
-            if (0 == d.TotalMinutes) {
-                return ""; // no duration
-            }
-
-            // Even number of days?
-            if (0 == (d.TotalMinutes % (24 * 60))) {
-                if (1 == d.Days) {
-                    return "1 day";
-                } else {
-                    return String.Format ("{0} days", d.Days);
-                }
-            }
-            // Even number of hours?
-            if (0 == (d.TotalMinutes % 60)) {
-                if (1 == d.Hours) {
-                    return "1 hour";
-                } else {
-                    return String.Format ("{0} hours", d.Hours);
-                }
-            }
-            // Less than one hour?
-            if (60 > d.Minutes) {
-                if (1 == d.Minutes) {
-                    return "1 minute";
-                } else {
-                    return String.Format ("{0} minutes", d.Minutes);
-                }
-            }
-            // Less than one day?
-            if ((24 * 60) > d.Minutes) {
-                return String.Format ("{0}:{1} hours", d.Hours, d.Minutes % 60);
-            } else {
-                return String.Format ("{0}d{1}h{2}m", d.Days, d.Hours % 24, d.Minutes % 60);
-            }
         }
 
         public static UIImage DotWithColor (UIColor color)
@@ -431,30 +344,6 @@ namespace NachoClient.iOS
 
             var dynamic = new DialogViewController (root, true);
             NavigationController.PushViewController (dynamic, true);
-        }
-
-        class AttendeeElement : StyledStringElement
-        {
-            public AttendeeElement (string name, string email, NcAttendeeStatus status) : base (name, email, UITableViewCellStyle.Value2)
-            {
-                switch (status) {
-                case NcAttendeeStatus.Accept:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
-                    break;
-                case NcAttendeeStatus.Decline:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Red);
-                    break;
-                case NcAttendeeStatus.NotResponded:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Gray);
-                    break;
-                case NcAttendeeStatus.ResponseUnknown:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.LightGray);
-                    break;
-                case NcAttendeeStatus.Tentative:
-                    this.Image = CalendarItemViewController.DotWithColor (UIColor.Yellow);
-                    break;
-                }
-            }
         }
     }
 }
