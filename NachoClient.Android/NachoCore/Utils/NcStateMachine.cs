@@ -92,6 +92,8 @@ namespace NachoCore.Utils
     {
         public string Name { set; get; }
 
+        public int Id { set; get; }
+
         public Type LocalEventType { set; get; }
 
         public Type LocalStateType { set; get; }
@@ -116,11 +118,21 @@ namespace NachoCore.Utils
         private Dictionary<uint,string> EventName;
         private Queue EventQ;
         private bool IsFiring;
+        private static int NextId = 0;
+        private static Object NextIdLockObj = new Object ();
 
         public NcStateMachine ()
         {
+            lock (NextIdLockObj) {
+                Id = ++NextId;
+            }
             EventQ = new Queue ();
             State = (uint)St.Start;
+        }
+
+        public string NameAndId ()
+        {
+            return string.Format ("({0}:{1})", Name, Id);
         }
 
         public void Start ()
@@ -130,7 +142,6 @@ namespace NachoCore.Utils
 
         public void Start (uint StartState)
         {
-            Log.Info (Log.LOG_STATE, "State Machine start {0}", StartState);
             State = StartState;
             PostEvent ((uint)SmEvt.E.Launch, "SMSTART");
         }
@@ -140,7 +151,7 @@ namespace NachoCore.Utils
             foreach (var elem in EventQ) {
                 var inQEvent = (Event)elem;
                 if (eventCode == inQEvent.EventCode) {
-                    Log.Info (Log.LOG_STATE, "SM({0}): E={1} already in queue.", Name, EventName [eventCode]);
+                    Log.Info (Log.LOG_STATE, "SM{0}: E={1} already in queue.", NameAndId (), EventName [eventCode]);
                     return;
                 }
             }
@@ -161,10 +172,6 @@ namespace NachoCore.Utils
         {
             BuildEventDicts ();
 
-            if ((uint)St.Stop == State) {
-                Log.Info (Log.LOG_STATE, "PostEvent stop");
-                return;
-            }
             EventQ.Enqueue (smEvent);
             if (IsFiring) {
                 return;
@@ -177,29 +184,29 @@ namespace NachoCore.Utils
                 Message = fireEvent.Message;
                 if ((uint)St.Stop == State) {
                     if (fireEvent.DropIfStopped) {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED IN St.Stop",
-                            Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         continue;
                     } else {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
-                            Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         throw new Exception ();
                     }
                 }
                 var hotNode = TransTable.Where (x => State == x.State).Single ();
                 if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => DROPPED EVENT",
-                        Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                     continue;
                 }
                 if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => INVALID EVENT",
-                        Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                     throw new Exception ();
                 }
                 var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM({0}): S={1} & E={2}/{3} => S={4}",
-                    Name, StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                    NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
                 Action = hotTrans.Act;
                 NextState = hotTrans.State;
                 Action ();

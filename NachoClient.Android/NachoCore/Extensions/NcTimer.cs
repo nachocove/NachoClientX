@@ -7,11 +7,11 @@ namespace NachoCore.Utils
 {
     public class NcTimer
     {
-        Timer timer;
-        TimerCallback callback;
-        static int nextId = 0;
-        static Object nextIdLockObj = new Object ();
-        static int id;
+        public Timer timer;
+        public TimerCallback callback;
+        private static int nextId = 0;
+        private static Object nextIdLockObj = new Object ();
+        public static int id;
 
         private TimerCallback PartialInit (TimerCallback c)
         {
