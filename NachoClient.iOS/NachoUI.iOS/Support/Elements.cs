@@ -2,6 +2,7 @@
 //
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 using MonoTouch.CoreGraphics;
 using MonoTouch.Dialog;
 using MonoTouch.Foundation;
@@ -12,12 +13,20 @@ namespace NachoClient.iOS
 {
     public class RootElementWithIcon : RootElement
     {
-        public RootElementWithIcon (string caption, Group group) : base (caption, group)
+        protected string name;
+
+        /// <summary>
+        /// Create a root element that displays an icon.
+        /// </summary>
+        /// <param name="name">The resource name of the icon.</param>
+        public RootElementWithIcon (string name, string caption, Group group) : base (caption, group)
         {
+            this.name = name;
         }
 
-        public RootElementWithIcon (string caption) : base (caption, 0, 0)
+        public RootElementWithIcon (string name, string caption) : base (caption, 0, 0)
         {
+            this.name = name;
         }
 
         protected override NSString CellKey {
@@ -29,13 +38,112 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var c = base.GetCell (tv);
-            c.ImageView.Image = UIImage.FromBundle ("ic_action_alarms").Scale (new SizeF (22.0f, 22.0f));
+            c.ImageView.Image = UIImage.FromBundle (name).Scale (new SizeF (22.0f, 22.0f));
             c.TextLabel.TextColor = UIColor.Gray;
             c.DetailTextLabel.TextColor = UIColor.Black;
             return c;
         }
     }
 
+    /// <summary>
+    /// A section that doesn't take up screen height
+    /// </summary>
+    public class ThinSection : Section
+    {
+        public ThinSection () : base ()
+        {
+            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 15.0f));
+            this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+        }
+    }
+
+    /// <summary>
+    /// Radio group with a text field for freestyle entry.
+    /// </summary>
+    public class ReminderSection : Section
+    {
+        List<CheckboxElementWithData> list;
+        NumericEntryElementWithCheckmark custom;
+        HiddenElement hidden;
+
+        public ReminderSection (uint initialValue)
+        {
+            list = new List<CheckboxElementWithData> ();
+
+            hidden = new HiddenElement ("");
+            this.Add (hidden);
+
+            CreateCheckboxElementWithData (Pretty.ReminderString (1), 1);
+            CreateCheckboxElementWithData (Pretty.ReminderString (5), 5);
+            CreateCheckboxElementWithData (Pretty.ReminderString (60), 60);
+            CreateCheckboxElementWithData (Pretty.ReminderString (24 * 60), 24 * 60);
+            CreateCheckboxElementWithData (Pretty.ReminderString (0), 0);
+
+            custom = new NumericEntryElementWithCheckmark ("Custom", "", "", false);
+            custom.ClearButtonMode = UITextFieldViewMode.WhileEditing;
+            custom.KeyboardType = UIKeyboardType.Default;
+            this.Add (custom);
+
+            bool found = false;
+            foreach (var l in list) {
+                if (initialValue == l.Data) {
+                    hidden.SetSummary (l.Summary (), l.Data);
+                    l.Value = true;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                custom.checkmark = true;
+                custom.Value = Pretty.ReminderString (initialValue);
+                hidden.SetSummary (custom.Value, initialValue);
+            }
+
+            custom.EntryStarted += delegate {
+                foreach (var l in list) {
+                    l.Value = false;
+                }
+                custom.checkmark = true;
+                custom.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
+                custom.BecomeFirstResponder (true);
+            };
+            custom.EntryEnded += delegate {
+                if (custom.checkmark) {
+                    if (String.IsNullOrEmpty (custom.Value)) {
+                        hidden.SetSummary ("None", 0);
+                    } else {
+                        hidden.SetSummary (Pretty.ReminderString (custom.NumericValue), custom.NumericValue);
+                    }
+                }
+                custom.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
+            };
+        }
+
+        protected CheckboxElementWithData CreateCheckboxElementWithData (string caption, uint data)
+        {
+            var c = new CheckboxElementWithData (caption, data);
+            this.Add (c);
+            list.Add (c);
+
+            c.Tapped += () => {
+                foreach (var l in list) {
+                    l.Value = false;
+                }
+                c.Value = true;
+                custom.checkmark = false;
+                hidden.SetSummary (c.Summary (), c.Data);
+                c.GetImmediateRootElement ().Reload (this, UITableViewRowAnimation.None);
+            };
+
+            return c;
+        }
+    }
+
+    /// <summary>
+    /// Hidden element useful holding summary data for a section.
+    /// Section does allow Summary to override, not does it have a value.
+    /// </summary>
     public class HiddenElement : OwnerDrawnElement
     {
         string summary;
@@ -69,6 +177,10 @@ namespace NachoClient.iOS
         }
     }
 
+    /// <summary>
+    /// Checkbox element with associated data item useful
+    /// for getting a value associated with a selected item.
+    /// </summary>
     public class CheckboxElementWithData : CheckboxElement
     {
         public uint Data { get; set; }
@@ -183,7 +295,7 @@ namespace NachoClient.iOS
     {
         public SubjectElement (string caption) : base (caption)
         {
-            this.Image = CalendarItemViewController.DotWithColor (UIColor.Blue);
+            this.Image = NachoClient.Util.DotWithColor (UIColor.Blue);
             this.Font = UIFont.SystemFontOfSize (17.0f);
         }
     }
@@ -212,7 +324,7 @@ namespace NachoClient.iOS
         public StartTimeElement (string caption) : base (caption)
         {
             // Add (invisible) image to get the proper indentation
-            this.Image = CalendarItemViewController.DotWithColor (UIColor.Clear);
+            this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
             this.Font = UIFont.SystemFontOfSize (15.0f);
         }
     }
@@ -229,16 +341,15 @@ namespace NachoClient.iOS
 
     public class StyledStringElementWithIcon : StyledStringElement
     {
-        public StyledStringElementWithIcon (string caption, string value, string icon) : base (caption, value)
+        public StyledStringElementWithIcon (string caption, string value, UIImage icon) : base (caption, value)
         {
-            var image = UIImage.FromBundle (icon);
-            this.Image = image.Scale (new SizeF (22.0f, 22.0f));
+            this.Image = icon;
             this.Font = UIFont.SystemFontOfSize (15.0f);
             this.TextColor = UIColor.LightGray;
             this.DetailColor = UIColor.Black;
         }
 
-        public StyledStringElementWithIcon (string caption, string icon) : this (caption, "", icon)
+        public StyledStringElementWithIcon (string caption, UIImage icon) : this (caption, "", icon)
         {
             this.Font = UIFont.SystemFontOfSize (15.0f);
             this.TextColor = UIColor.Black;
@@ -257,23 +368,23 @@ namespace NachoClient.iOS
 
     class AttendeeElement : StyledStringElement
     {
-        public AttendeeElement (string name, string email, NcAttendeeStatus status) : base (name, email, UITableViewCellStyle.Value2)
+        public AttendeeElement (string name, string email, NcAttendeeStatus status) : base (name, email, UITableViewCellStyle.Subtitle)
         {
             switch (status) {
             case NcAttendeeStatus.Accept:
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+                this.Image = NachoClient.Util.DotWithColor (UIColor.Green);
                 break;
             case NcAttendeeStatus.Decline:
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.Red);
+                this.Image = NachoClient.Util.DotWithColor (UIColor.Red);
                 break;
             case NcAttendeeStatus.NotResponded:
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.Gray);
+                this.Image = NachoClient.Util.DotWithColor (UIColor.Gray);
                 break;
             case NcAttendeeStatus.ResponseUnknown:
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.LightGray);
+                this.Image = NachoClient.Util.DotWithColor (UIColor.LightGray);
                 break;
             case NcAttendeeStatus.Tentative:
-                this.Image = CalendarItemViewController.DotWithColor (UIColor.Yellow);
+                this.Image = NachoClient.Util.DotWithColor (UIColor.Yellow);
                 break;
             }
         }

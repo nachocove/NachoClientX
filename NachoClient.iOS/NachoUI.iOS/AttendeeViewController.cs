@@ -45,18 +45,18 @@ namespace NachoClient.iOS
 
         List<McAttendee> AttendeeList = new List<McAttendee> ();
 
-        public void PushAttendees (List<McAttendee> attendees)
+        public void SetAttendeeList (List<McAttendee> attendees)
         {
-            AttendeeList = new List<McAttendee> ();
+            this.AttendeeList = new List<McAttendee> ();
             foreach (var attendee in attendees) {
-                AttendeeList.Add (attendee);
+                this.AttendeeList.Add (attendee);
             }
         }
 
-        public void PullAttendees (ref List<McAttendee> attendees)
+        public void GetAttendeeList (ref List<McAttendee> attendees)
         {
             attendees = new List<McAttendee> ();
-            foreach (var attendee in AttendeeList) {
+            foreach (var attendee in this.AttendeeList) {
                 attendees.Add (attendee);
             }
         }

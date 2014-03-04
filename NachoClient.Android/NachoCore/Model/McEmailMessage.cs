@@ -137,28 +137,10 @@ namespace NachoCore.Model
         /// Integer -- plain test, html, rtf, mime
         public string BodyType { set; get; }
 
+        // TODO: Support other types besides mime!
         public string ToMime ()
         {
-            string message = "";
-            foreach (var propertyName in new [] {"From", "To", "Subject", "ReplyTo", "DisplayTo"}) {
-                message = Append (message, propertyName);
-            }
-            string date = DateTime.UtcNow.ToString ("ddd, dd MMM yyyy HH:mm:ss K", DateTimeFormatInfo.InvariantInfo);
-            message = message + CrLf + "Date" + ColonSpace + date;
-            message = message + CrLf + CrLf + GetBody ();
-            return message;
-        }
-
-        private string Append (string message, string propertyName)
-        {
-            string propertyValue = (string)typeof(McEmailMessage).GetProperty (propertyName).GetValue (this);
-            if (null == propertyValue) {
-                return message;
-            }
-            if ("" == message) {
-                return propertyName + ColonSpace + propertyValue;
-            }
-            return message + CrLf + propertyName + ColonSpace + propertyValue;
+            return GetBody ();
         }
 
         public string GetBody ()

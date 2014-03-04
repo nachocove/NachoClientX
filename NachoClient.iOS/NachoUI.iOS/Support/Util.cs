@@ -35,7 +35,7 @@ using System.Drawing;
 using NachoCore;
 using NachoCore.Utils;
 
-namespace NachoClient.iOS
+namespace NachoClient
 {
     public static class Util
     {
@@ -43,9 +43,7 @@ namespace NachoClient.iOS
         ///   A shortcut to the main application
         /// </summary>
         public static UIApplication MainApp = UIApplication.SharedApplication;
-
         public readonly static string BaseDir = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.Personal), "..");
-
         //
         // Since we are a multithreaded application and we could have many
         // different outgoing network connections (api.twitter, images,
@@ -57,7 +55,7 @@ namespace NachoClient.iOS
 
         public static void PushNetworkActive ()
         {
-            lock (networkLock){
+            lock (networkLock) {
                 active++;
                 MainApp.NetworkActivityIndicatorVisible = true;
             }
@@ -65,13 +63,12 @@ namespace NachoClient.iOS
 
         public static void PopNetworkActive ()
         {
-            lock (networkLock){
+            lock (networkLock) {
                 active--;
                 if (active == 0)
                     MainApp.NetworkActivityIndicatorVisible = false;
             }
         }
-
 
         public static void ReportError (UIViewController current, Exception e, string msg)
         {
@@ -80,24 +77,25 @@ namespace NachoClient.iOS
 
             var root = new RootElement (Locale.GetText ("Error")) {
                 new Section (Locale.GetText ("Error")) {
-                    new StyledStringElement (msg){
+                    new StyledStringElement (msg) {
                         Font = UIFont.BoldSystemFontOfSize (14),
                     }
                 }
             };
 
-            if (e != null){
-                root.Add (new Section (e.GetType ().ToString ()){
-                    new StyledStringElement (e.Message){
+            if (e != null) {
+                root.Add (new Section (e.GetType ().ToString ()) {
+                    new StyledStringElement (e.Message) {
                         Font = UIFont.SystemFontOfSize (14),
                     }
                 });
-                root.Add (new Section ("Stacktrace"){
-                    new StyledStringElement (e.ToString ()){
+                root.Add (new Section ("Stacktrace") {
+                    new StyledStringElement (e.ToString ()) {
                         Font = UIFont.SystemFontOfSize (14),
                     }
                 });
-            };
+            }
+            ;
 
             // Delay one second, as UIKit does not like to present
             // views in the middle of an animation.
@@ -105,11 +103,11 @@ namespace NachoClient.iOS
                 UINavigationController nav = null;
                 DialogViewController dvc = new DialogViewController (root);
                 dvc.NavigationItem.LeftBarButtonItem = new UIBarButtonItem (Locale.GetText ("Close"), UIBarButtonItemStyle.Plain, delegate {
-                    nav.DismissViewController(false, null);
+                    nav.DismissViewController (false, null);
                 });
 
                 nav = new UINavigationController (dvc);
-                current.PresentViewController(nav, false, null);
+                current.PresentViewController (nav, false, null);
             });
         }
 
@@ -135,13 +133,10 @@ namespace NachoClient.iOS
             Defaults.SetString (key, DateTime.UtcNow.Ticks.ToString ());
         }
 
-
         public static NSUserDefaults Defaults = NSUserDefaults.StandardUserDefaults;
-
         const long TicksOneDay = 864000000000;
         const long TicksOneHour = 36000000000;
         const long TicksMinute = 600000000;
-
         static string s1 = Locale.GetText ("1 sec");
         static string sn = Locale.GetText (" secs");
         static string m1 = Locale.GetText ("1 min");
@@ -155,19 +150,19 @@ namespace NachoClient.iOS
         {
             int v;
 
-            if (ts.Ticks < TicksMinute){
+            if (ts.Ticks < TicksMinute) {
                 v = ts.Seconds;
                 if (v <= 1)
                     return s1;
                 else
                     return v + sn;
-            } else if (ts.Ticks < TicksOneHour){
+            } else if (ts.Ticks < TicksOneHour) {
                 v = ts.Minutes;
                 if (v == 1)
                     return m1;
                 else
                     return v + mn;
-            } else if (ts.Ticks < TicksOneDay){
+            } else if (ts.Ticks < TicksOneDay) {
                 v = ts.Hours;
                 if (v == 1)
                     return h1;
@@ -187,18 +182,18 @@ namespace NachoClient.iOS
             if (str.IndexOf ('<') == -1)
                 return str;
             var sb = new StringBuilder ();
-            for (int i = 0; i < str.Length; i++){
+            for (int i = 0; i < str.Length; i++) {
                 char c = str [i];
-                if (c != '<'){
+                if (c != '<') {
                     sb.Append (c);
                     continue;
                 }
 
-                for (i++; i < str.Length; i++){
-                    c =  str [i];
-                    if (c == '"' || c == '\''){
+                for (i++; i < str.Length; i++) {
+                    c = str [i];
+                    if (c == '"' || c == '\'') {
                         var last = c;
-                        for (i++; i < str.Length; i++){
+                        for (i++; i < str.Length; i++) {
                             c = str [i];
                             if (c == last)
                                 break;
@@ -218,7 +213,7 @@ namespace NachoClient.iOS
                 return "";
 
             bool clean = true;
-            foreach (char c in name){
+            foreach (char c in name) {
                 if (Char.IsLetterOrDigit (c) || c == '_')
                     continue;
                 clean = false;
@@ -228,7 +223,7 @@ namespace NachoClient.iOS
                 return name;
 
             var sb = new StringBuilder ();
-            foreach (char c in name){
+            foreach (char c in name) {
                 if (!Char.IsLetterOrDigit (c))
                     break;
 
@@ -239,8 +234,8 @@ namespace NachoClient.iOS
 
         public static RootElement MakeProgressRoot (string caption)
         {
-            return new RootElement (caption){
-                new Section (){
+            return new RootElement (caption) {
+                new Section () {
                     new ActivityElement ()
                 }
             };
@@ -248,39 +243,41 @@ namespace NachoClient.iOS
 
         public static RootElement MakeError (string diagMsg)
         {
-            return new RootElement (Locale.GetText ("Error")){
-                new Section (Locale.GetText ("Error")){
+            return new RootElement (Locale.GetText ("Error")) {
+                new Section (Locale.GetText ("Error")) {
                     new MultilineElement (Locale.GetText ("Unable to retrieve the information"))
                 }
             };
         }
 
         static long lastTime;
+
         [Conditional ("TRACE")]
         public static void ReportTime (string s)
         {
             long now = DateTime.UtcNow.Ticks;
 
-            Debug.WriteLine (string.Format ("[{0}] ticks since last invoke: {1}", s, now-lastTime));
+            Debug.WriteLine (string.Format ("[{0}] ticks since last invoke: {1}", s, now - lastTime));
             lastTime = now;
         }
 
         [Conditional ("TRACE")]
-        public static void Log (string format, params object [] args)
+        public static void Log (string format, params object[] args)
         {
             Debug.WriteLine (String.Format (format, args));
         }
 
         public static void LogException (string text, Exception e)
         {
-            using (var s = System.IO.File.AppendText (Util.BaseDir + "/Documents/crash.log")){
-                var msg = String.Format ("On {0}, message: {1}\nException:\n{2}", DateTime.Now, text, e.ToString());
+            using (var s = System.IO.File.AppendText (Util.BaseDir + "/Documents/crash.log")) {
+                var msg = String.Format ("On {0}, message: {1}\nException:\n{2}", DateTime.Now, text, e.ToString ());
                 s.WriteLine (msg);
                 NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_UI, msg);
             }
         }
 
         static UIActionSheet sheet;
+
         public static UIActionSheet GetSheet (string title)
         {
             sheet = new UIActionSheet (title);
@@ -288,6 +285,7 @@ namespace NachoClient.iOS
         }
 
         static CultureInfo americanCulture;
+
         public static CultureInfo AmericanCulture {
             get {
                 if (americanCulture == null)
@@ -295,31 +293,31 @@ namespace NachoClient.iOS
                 return americanCulture;
             }
         }
+
         #region Location
 
-        internal class MyCLLocationManagerDelegate : CLLocationManagerDelegate {
+        internal class MyCLLocationManagerDelegate : CLLocationManagerDelegate
+        {
             Action<CLLocation> callback;
 
             public MyCLLocationManagerDelegate (Action<CLLocation> callback)
             {
                 this.callback = callback;
             }
-
-//            public override void UpdatedLocation (CLLocationManager manager, CLLocation newLocation, CLLocation oldLocation)
-//            {
-//                manager.StopUpdatingLocation ();
-//                locationManager = null;
-//                callback (newLocation);
-//            }
-
+            //            public override void UpdatedLocation (CLLocationManager manager, CLLocation newLocation, CLLocation oldLocation)
+            //            {
+            //                manager.StopUpdatingLocation ();
+            //                locationManager = null;
+            //                callback (newLocation);
+            //            }
             public override void Failed (CLLocationManager manager, NSError error)
             {
                 callback (null);
             }
-
         }
 
         static CLLocationManager locationManager;
+
         static public void RequestLocation (Action<CLLocation> callback)
         {
             locationManager = new CLLocationManager () {
@@ -329,7 +327,25 @@ namespace NachoClient.iOS
             };
             if (CLLocationManager.LocationServicesEnabled)
                 locationManager.StartUpdatingLocation ();
-        }   
+        }
+
+        #endregion
+
+        #region NachoCove
+
+        public static UIImage DotWithColor (UIColor color)
+        {
+            UIGraphics.BeginImageContext (new SizeF (22, 22));
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (color.CGColor);
+            ctx.FillEllipseInRect (new RectangleF (5, 5, 12, 12));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
         #endregion
     }
 }

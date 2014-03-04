@@ -9,7 +9,10 @@ namespace NachoClient.iOS
     [MonoTouch.Foundation.Register ("LabeledIconButton")]
     public class LabeledIconButton : UIButton
     {
-        public LabeledIconButton (IntPtr p) : base(p)
+        /// <summary>
+        /// Button with vertically stacked and centered icon and label.
+        /// </summary>
+        public LabeledIconButton (IntPtr p) : base (p)
         {
         }
 

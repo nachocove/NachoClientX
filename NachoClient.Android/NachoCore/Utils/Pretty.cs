@@ -188,6 +188,15 @@ namespace NachoClient
             }
             return Date.ToShortDateString ();
         }
+
+        static public string DisplayNameForAccount (McAccount account)
+        {
+            if (null == account.DisplayName) {
+                return account.EmailAddr;
+            } else {
+                return account.DisplayName;
+            }
+        }
     }
 }
 

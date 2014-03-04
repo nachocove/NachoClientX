@@ -257,18 +257,18 @@ namespace NachoClient.iOS
         /// </summary>
         public void SendMessage ()
         {
-            var message = new MimeMessage ();
+            var mimeMessage = new MimeMessage ();
 
             foreach (var a in AddressList) {
                 switch (a.kind) {
                 case NcEmailAddress.Kind.To:
-                    message.To.Add (GetMailboxAddress (a));
+                    mimeMessage.To.Add (GetMailboxAddress (a));
                     break;
                 case NcEmailAddress.Kind.Cc:
-                    message.Cc.Add (GetMailboxAddress (a));
+                    mimeMessage.Cc.Add (GetMailboxAddress (a));
                     break;
                 case NcEmailAddress.Kind.Bcc:
-                    message.Bcc.Add (GetMailboxAddress (a));
+                    mimeMessage.Bcc.Add (GetMailboxAddress (a));
                     break;
                 default:
                     NachoAssert.CaseError ();
@@ -276,42 +276,26 @@ namespace NachoClient.iOS
                 }
             }
             if (null != Subject) {
-                message.Subject = Subject;
+                mimeMessage.Subject = Subject;
             }
-            message.To.ToString ();
-            message.Date = System.DateTime.UtcNow;
-
-            var msg = new McEmailMessage ();
-            msg.To = CommaSeparatedList (message.To);
-            msg.Cc = CommaSeparatedList (message.Cc);
-            msg.Subject = message.Subject;
-
-            var body = new McBody ();
-            body.Body = Body.Summary ();
-            BackEnd.Instance.Db.Insert (body);
-            msg.BodyId = body.Id;
-
-            BackEnd.Instance.Db.Insert (msg);
+            mimeMessage.Date = System.DateTime.UtcNow;
+           
+            var body = new TextPart ("plain");
+            var text = Body.Summary ();
+            if (null != text) {
+                body.Text = text;
+            }
+            mimeMessage.Body = body;
 
             // TODO: Push account in UI
             // We only have one account, for now.
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
 
-            BackEnd.Instance.SendEmailCmd (account.Id, msg.Id);
+            MimeHelpers.SendEmail (account.Id, mimeMessage);
 
             // Might want to defer until BE says message is queued.
             owner = null;
             NavigationController.PopViewControllerAnimated (true);
-        }
-
-        string CommaSeparatedList (InternetAddressList addresses)
-        {
-            var list = new List<string> ();
-
-            foreach (var a in addresses) {
-                list.Add (a.Name);
-            }
-            return String.Join (",", list);
         }
 
         /// <summary>

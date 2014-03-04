@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MimeKit;
 using NachoCore;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -139,6 +140,52 @@ namespace NachoCore.Utils
             } else {
                 return text.Substring (0, Math.Min(text.Length, 180));
             }
+        }
+
+        static protected string CommaSeparatedList (InternetAddressList addresses)
+        {
+            var list = new List<string> ();
+
+            foreach (var a in addresses) {
+                list.Add (a.Name);
+            }
+            return String.Join (",", list);
+        }
+
+        /// <summary>
+        /// Convert MimeMessage to McEmailMessage and send it.
+        /// </summary>
+        static public void SendEmail(int AccountId, MimeMessage mimeMessage)
+        {
+            // Don't let 0 into the db
+            NachoAssert.True (AccountId > 0);
+
+            var msg = new McEmailMessage ();
+            msg.To = CommaSeparatedList (mimeMessage.To);
+            msg.Cc = CommaSeparatedList (mimeMessage.Cc);
+            msg.From = CommaSeparatedList(mimeMessage.From);
+            msg.Subject = mimeMessage.Subject;
+
+            var body = new McBody ();
+            var bodyStream = new System.IO.MemoryStream();
+            mimeMessage.WriteTo (bodyStream);
+            bodyStream.Seek (0, SeekOrigin.Begin);
+            var textStream = new StreamReader(bodyStream);
+
+            // TODO: KLUDGE ZONE
+            StringBuilder builder = new StringBuilder(textStream.ReadToEnd ());
+            builder.Replace ("method=\"REQUEST\"", "method=REQUEST");
+            body.Body = builder.ToString ();
+//            body.Body = textStream.ReadToEnd ();
+            // TODO: KLUDGE END
+
+            BackEnd.Instance.Db.Insert (body);
+            msg.BodyId = body.Id;
+
+            msg.AccountId = AccountId;
+            BackEnd.Instance.Db.Insert (msg);
+
+            BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id);
         }
     }
 }

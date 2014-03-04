@@ -118,7 +118,7 @@ namespace NachoClient.iOS
                 startLabel.Text = c.StartTime.ToString ("t");
                 durationLabel.Text = Pretty.CompactDuration (c);
             }
-            calendarImage.Image = CalendarItemViewController.DotWithColor (UIColor.Green);
+            calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Green);
             var titleLabelFrame = titleLabel.Frame;
             titleLabelFrame.Width = cell.Frame.Width - titleLabel.Frame.Left;
             titleLabel.Frame = titleLabelFrame;
