@@ -70,9 +70,9 @@ namespace NachoClient
         /// <summary>
         /// All day, with n days for multi-day events
         /// </summary>
-        static public string AllDayStartToEnd (McCalendar c)
+        static public string AllDayStartToEnd (DateTime startTime, DateTime endTime)
         {
-            var d = c.EndTime.Date.Subtract (c.StartTime.Date);
+            var d = endTime.Date.Subtract (startTime.Date);
             if (d.Minutes < 1) {
                 return "All day";
             }
@@ -82,18 +82,18 @@ namespace NachoClient
         /// <summary>
         /// StartTime - EndTime, on two lines.
         /// </summary>
-        static public string EventStartToEnd (McCalendar c)
+        static public string EventStartToEnd (DateTime startTime, DateTime endTime)
         {
-            var startString = c.StartTime.ToString ("t");
+            var startString = startTime.ToString ("t");
 
-            if (c.StartTime == c.EndTime) {
+            if (startTime == endTime) {
                 return startString;
             }
-            var durationString = PrettyEventDuration (c);
-            if (c.StartTime.Date == c.EndTime.Date) {
-                return String.Format ("{0} - {1} ({2})", startString, c.EndTime.ToString ("t"), durationString);
+            var durationString = PrettyEventDuration (startTime, endTime);
+            if (startTime.Date == endTime.Date) {
+                return String.Format ("{0} - {1} ({2})", startString, endTime.ToString ("t"), durationString);
             } else {
-                return String.Format ("{0} -\n{1} ({2})", startString, FullDateString (c.EndTime), durationString);
+                return String.Format ("{0} -\n{1} ({2})", startString, FullDateString (endTime), durationString);
             }
         }
 
@@ -108,9 +108,9 @@ namespace NachoClient
         /// <summary>
         /// Compact version of event duration
         /// </summary>
-        static public string PrettyEventDuration (McCalendar c)
+        static public string PrettyEventDuration (DateTime startTime, DateTime endTime)
         {
-            var d = c.EndTime.Subtract (c.StartTime);
+            var d = endTime.Subtract (startTime);
 
             if (0 == d.TotalMinutes) {
                 return ""; // no duration
