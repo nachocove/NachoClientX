@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -92,7 +92,6 @@
     <Compile Include="NachoCore\Model\McPolicy.cs" />
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
     <Compile Include="NachoCore\Model\McServer.cs" />
-    <Compile Include="NachoCore\Extensions\NachoTimer.cs" />
     <Compile Include="NachoCore\Extensions\NachoAssert.cs" />
     <Compile Include="NachoCore\NcEnforcer.cs" />
     <Compile Include="NachoCore\NcEmailAddress.cs" />
@@ -184,6 +183,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs" />
     <Compile Include="NachoCore\Utils\Pretty.cs" />
+    <Compile Include="NachoCore\Extensions\NcTimer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

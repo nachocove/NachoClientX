@@ -45,11 +45,11 @@ namespace NachoClient.iOS
     
 
 
-        private NachoTimer TimeoutTimer;
+        private NcTimer TimeoutTimer;
         // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
         #pragma warning disable 414
 
-        private NachoTimer DisposedTimeoutTimer;
+        private NcTimer DisposedTimeoutTimer;
         #pragma warning restore 414
         // end timer constants
 
@@ -169,7 +169,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "PerformFetch Called");
             // Set up a Timer to kill BG after 25 Secs
-            TimeoutTimer = new NachoTimer (CancelFetchCallback, null, Timeout, System.Threading.Timeout.InfiniteTimeSpan);
+            TimeoutTimer = new NcTimer (CancelFetchCallback, null, Timeout, System.Threading.Timeout.InfiniteTimeSpan);
             CompletionHandler = completionHandler;
             // DEBUG - comment this if you want to just return as soon as we enter BG
             // completion handler call to just immediately return from BG perform fetch call
