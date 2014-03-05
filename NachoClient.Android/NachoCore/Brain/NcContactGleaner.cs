@@ -66,6 +66,11 @@ namespace NachoCore.Brain
                 return;
             }
             var gleanedFolder = BackEnd.Instance.GetGleaned (accountId);
+            if (null == gleanedFolder) {
+                NachoCore.Utils.Log.Error ("GleanContacts gleandedFolder is null for account id {0}", accountId);
+                MarkAsGleaned (emailMessage);
+                return;
+            }
             List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
             if (null != mimeMsg.To) {
                 addrsLists.Add (mimeMsg.To);
