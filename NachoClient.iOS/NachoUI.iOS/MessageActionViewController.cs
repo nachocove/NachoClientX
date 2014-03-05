@@ -57,10 +57,12 @@ namespace NachoClient.iOS
             {
                 var folderSource = (FolderTableSource)tableView.DataSource;
                 var folder = folderSource.getFolder (indexPath);
-
                 foreach (var message in owner.thread) {
                     BackEnd.Instance.MoveItemCmd (message.AccountId, message.Id, folder.Id);
                 }
+                var o = owner;
+                owner = null;
+                o.DismissViewController (true, null);
             }
         }
     }
