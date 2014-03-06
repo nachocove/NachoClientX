@@ -64,21 +64,23 @@ namespace NachoClient.iOS
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
 
-            if (UseDeviceContacts) {
-                var book = new AddressBook ();
-                book.RequestPermission ().ContinueWith (t => {
-                    if (!t.Result) {
-                        alert = new UIAlertView ("Permission denied", "You have denied this app access to your contacts", null, "Close");
-                        alert.Show ();
-                    } else {
-                        contacts = new DeviceContacts ();
-                        TableView.ReloadData ();
-                    }
-                }, TaskScheduler.FromCurrentSynchronizationContext ());
-            } else {
-                contacts = new NachoContacts ();
-                TableView.ReloadData ();
-            }
+//            if (UseDeviceContacts) {
+//                var book = new AddressBook ();
+//                book.RequestPermission ().ContinueWith (t => {
+//                    if (!t.Result) {
+//                        alert = new UIAlertView ("Permission denied", "You have denied this app access to your contacts", null, "Close");
+//                        alert.Show ();
+//                    } else {
+//                        contacts = new DeviceContacts ();
+//                        TableView.ReloadData ();
+//                    }
+//                }, TaskScheduler.FromCurrentSynchronizationContext ());
+//            } else {
+//                contacts = new NachoContacts ();
+//                TableView.ReloadData ();
+//            }
+
+            contacts = NcContactManager.Instance.GetNachoContactsObject ();
         }
 
         /// <summary>

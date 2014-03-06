@@ -22,7 +22,6 @@ namespace NachoClient.iOS
         protected INachoContactChooserDelegate owner;
         // Internal state
         INachoContacts contacts;
-        List<McContact> autocompleteResults = null;
 
         public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address)
         {
@@ -90,7 +89,7 @@ namespace NachoClient.iOS
             TableView.WeakDelegate = this;
             TableView.DataSource = new ContactChooserDataSource (this);
 
-            contacts = new NachoContacts ();
+            contacts = NcContactManager.Instance.GetNachoContactsObject ();
 
             AutocompleteTextField.Text = address.address;
             UpdateAutocompleteResults (0, address.address);
@@ -144,7 +143,7 @@ namespace NachoClient.iOS
         [Export ("tableView:didSelectRowAtIndexPath:")]
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact = autocompleteResults.ElementAt (indexPath.Row);
+            McContact contact = contacts.GetSearchResult (indexPath.Row);
 
             UpdateEmailAddress (contact, contact.DisplayEmailAddress);
 
@@ -191,27 +190,7 @@ namespace NachoClient.iOS
         public bool UpdateAutocompleteResults (int forSearchOption, string forSearchString)
         {
             // TODO: Make this work like EAS
-            autocompleteResults = new List<McContact> ();
-            if ((null == forSearchString) || (0 == forSearchString.Length)) {
-                forSearchString = "";
-            }
-            for (int i = 0; i < contacts.Count (); i++) {
-                McContact c = contacts.GetContact (i);
-                if (StartsWithIgnoringNull (forSearchString, c.FirstName)) {
-                    autocompleteResults.Add (c);
-                    continue;
-                }
-                if (StartsWithIgnoringNull (forSearchString, c.LastName)) {
-                    autocompleteResults.Add (c);
-                    continue;
-                }
-                foreach (var e in c.EmailAddresses) {
-                    if (StartsWithIgnoringNull (forSearchString, e.Value)) {
-                        autocompleteResults.Add (c);
-                        break;
-                    }
-                }
-            }
+            contacts.Search (forSearchString);
             return true;
         }
 
@@ -250,12 +229,12 @@ namespace NachoClient.iOS
 
             public override int RowsInSection (UITableView tableview, int section)
             {
-                return ((Owner.autocompleteResults == null) ? 0 : Owner.autocompleteResults.Count ());
+                return Owner.contacts.SearchResultsCount ();
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
-                McContact contact = Owner.autocompleteResults.ElementAt (indexPath.Row);
+                var contact = Owner.contacts.GetSearchResult (indexPath.Row);
 
                 var displayName = contact.DisplayName;
                 var displayEmailAddress = contact.DisplayEmailAddress;

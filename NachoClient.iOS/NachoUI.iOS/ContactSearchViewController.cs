@@ -57,7 +57,7 @@ namespace NachoClient.iOS
             // Manages the search bar & auto-complete table.
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
 
-            contacts = new NachoContacts ();
+            contacts = NcContactManager.Instance.GetNachoContactsObject ();
             TableView.ReloadData ();
 
             // Let's be ready to search!
