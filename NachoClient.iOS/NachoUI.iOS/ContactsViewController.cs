@@ -27,7 +27,7 @@ namespace NachoClient.iOS
     public partial class ContactsViewController : UITableViewController
     {
         public bool UseDeviceContacts;
-        UIAlertView alert;
+//        UIAlertView alert;
         INachoContacts contacts;
         List<McContact> searchResults = null;
         /// <summary>
