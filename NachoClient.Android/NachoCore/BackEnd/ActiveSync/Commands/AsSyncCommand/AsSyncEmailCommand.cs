@@ -29,7 +29,7 @@ namespace NachoCore.ActiveSync
             // MoveItems should make the server send an Add/Delete that we want to ignore.
             // If we see an Add with a pre-existing ServerId in the DB, then we ignore the Add Op.
             // FIXME be more precise about dropping these Add/Deletes.
-            var emailMessage = McEmailMessage.QueryByServerId (folder.AccountId, serverId);
+            var emailMessage = McFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, serverId);
             if (null == emailMessage) {
                 justCreated = true;
                 emailMessage = new McEmailMessage {

@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
         public AsSendMailCommand (IAsDataSource dataSource) : base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
         {
             Update = NextPending (McPending.Operations.EmailSend);
-            EmailMessage = McEmailMessage.QueryById (Update.EmailMessageId);
+            EmailMessage = McObject.QueryById<McEmailMessage> (Update.EmailMessageId);
         }
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)

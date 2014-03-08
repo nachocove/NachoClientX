@@ -184,6 +184,8 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs" />
     <Compile Include="NachoCore\Utils\Pretty.cs" />
     <Compile Include="NachoCore\Extensions\NcTimer.cs" />
+    <Compile Include="NachoCore\Model\McFolderEntry.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

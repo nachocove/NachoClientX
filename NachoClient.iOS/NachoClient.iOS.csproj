@@ -559,6 +559,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NcTimer.cs">
       <Link>NachoCore\Extensions\NcTimer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolderEntry.cs">
+      <Link>NachoCore\Model\McFolderEntry.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

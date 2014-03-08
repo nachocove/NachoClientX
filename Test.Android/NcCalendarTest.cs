@@ -161,6 +161,7 @@ namespace Test.iOS
     {
         public MockNcFolder ()
         {
+            this.AccountId = 1;
             this.Id = 86;
             this.ServerId = "mock folder";
             this.ParentId = "mock folder parent";

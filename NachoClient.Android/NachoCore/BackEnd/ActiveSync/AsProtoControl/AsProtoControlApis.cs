@@ -62,6 +62,31 @@ namespace NachoCore.ActiveSync
 			return sendUpdate.Token;
 		}
 
+        public override string SendEmailCmd (int emailMessageId, int calId)
+        {
+            var cal = McObject.QueryById<McCalendar> (calId);
+            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            if (null == cal || null == emailMessage) {
+                return null;
+            }
+
+            var pendingCalCre = BackEnd.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.CalId);
+            var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
+
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailSend,
+                EmailMessageId = emailMessageId,
+                PredPendingId = pendingCalCreId,
+            };
+
+            pending.Insert ();
+
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCSENDCAL");
+            });
+            return pending.Token;
+        }
+
 		private string SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
 		                              int folderId, bool originalEmailIsEmbedded)
 		{
@@ -72,8 +97,8 @@ namespace NachoCore.ActiveSync
 			McEmailMessage refdEmailMessage;
 			McFolder folder;
 
-			refdEmailMessage = McEmailMessage.QueryById (refdEmailMessageId);
-			folder = McFolder.QueryById (folderId);
+            refdEmailMessage = McObject.QueryById<McEmailMessage> (refdEmailMessageId);
+            folder = McObject.QueryById<McFolder> (folderId);
 			if (null == refdEmailMessage || null == folder) {
 				return null;
 			}
@@ -112,12 +137,12 @@ namespace NachoCore.ActiveSync
 
 		public override string DeleteEmailCmd (int emailMessageId)
 		{
-			var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
 			if (null == emailMessage) {
 				return null;
 			}
 
-			var folders = McFolder.QueryByItemId (Account.Id, emailMessageId);
+            var folders = McFolder.QueryByItemId<McEmailMessage> (Account.Id, emailMessageId);
 			if (null == folders || 0 == folders.Count) {
 				return null;
 			}
@@ -150,15 +175,15 @@ namespace NachoCore.ActiveSync
 
 		public override string MoveItemCmd (int emailMessageId, int destFolderId)
 		{
-			var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
+            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
 			if (null == emailMessage) {
 				return null;
 			}
-			var destFolder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => destFolderId == x.Id);
+            var destFolder = McObject.QueryById<McFolder> (destFolderId);
 			if (null == destFolder) {
 				return null;
 			}
-			var srcFolders = McFolder.QueryByItemId (Account.Id, emailMessageId);
+            var srcFolders = McFolder.QueryByItemId<McEmailMessage> (Account.Id, emailMessageId);
 			if (null == srcFolders || 0 == srcFolders.Count) {
 				return null;
 			}
@@ -193,17 +218,18 @@ namespace NachoCore.ActiveSync
 			return moveUpdate.Token;
 		}
 
-		private bool GetEmailMessageAndFolder (int emailMessageId, 
-		                                       out McEmailMessage emailMessage,
-		                                       out McFolder folder)
+        // FIXME - which folder? also move to Model.
+        private bool GetItemAndFolder<T> (int itemId, 
+            out T item,
+            out McFolder folder) where T : McItem, new()
 		{
 			folder = null;
-			emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => emailMessageId == x.Id);
-			if (null == emailMessage) {
+            item = McObject.QueryById<T> (itemId);
+            if (null == item) {
 				return false;
 			}
 
-			var folders = McFolder.QueryByItemId (Account.Id, emailMessageId);
+            var folders = McFolder.QueryByItemId<T> (Account.Id, itemId);
 			if (null == folders || 0 == folders.Count) {
 				return false;
 			}
@@ -216,7 +242,7 @@ namespace NachoCore.ActiveSync
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-			if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, out folder)) {
 				return null;
 			}
 
@@ -242,7 +268,7 @@ namespace NachoCore.ActiveSync
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-			if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, out folder)) {
 				return null;
 			}
 
@@ -276,7 +302,7 @@ namespace NachoCore.ActiveSync
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-			if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, out folder)) {
 				return null;
 			}
 
@@ -300,7 +326,7 @@ namespace NachoCore.ActiveSync
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-			if (!GetEmailMessageAndFolder (emailMessageId, out emailMessage, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, out folder)) {
 				return null;
 			}
 
@@ -325,13 +351,15 @@ namespace NachoCore.ActiveSync
 
 		public override string DnldAttCmd (int attId)
 		{
-			var att = BackEnd.Instance.Db.Table<McAttachment> ().SingleOrDefault (x => x.Id == attId);
-			if (null == att || att.IsDownloaded) {
-				return null;
+            var att = McObject.QueryById<McAttachment> (attId);
+            if (null == att) {
+                return null;
 			}
-			var update = new McPending {
+            if (att.IsDownloaded) {
+                return null; // FIXME - need to say "done already".
+            }
+            var update = new McPending (Account.Id) {
 				Operation = McPending.Operations.AttachmentDownload,
-				AccountId = AccountId,
 				IsDispatched = false,
 				AttachmentId = attId,
 			};
@@ -344,6 +372,51 @@ namespace NachoCore.ActiveSync
 			return update.Token;
 		}
 
+        public override string CreateCalCmd (int calId)
+        {
+            McCalendar cal;
+            McFolder folder;
+            if (!GetItemAndFolder<McCalendar> (calId, out cal, out folder)) {
+                return null;
+            }
+
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.CalCreate,
+                CalId = calId,
+                FolderServerId = folder.ServerId,
+                ClientId = cal.ClientId,
+            };
+
+            pending.Insert ();
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCCRECAL");
+            });
+
+            return pending.Token;
+        }
+
+        public override string RespondCalCmd (int calId, RespondCalEnum response)
+        {
+            McCalendar cal;
+            McFolder folder;
+            if (!GetItemAndFolder<McCalendar> (calId, out cal, out folder)) {
+                return null;
+            }
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.CalRespond,
+                ServerId = cal.ServerId,
+                FolderServerId = folder.ServerId,
+                CalResponse = (uint)response,
+            };
+
+            pending.Insert ();
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.CalResp, "ASPCRESPCAL");
+            });
+
+            return pending.Token;
+        }
+
 		public override string CreateFolderCmd (int destFolderId, string displayName, uint folderType,
 		                                        bool isClientOwned, bool isHidden)
 		{
@@ -355,7 +428,7 @@ namespace NachoCore.ActiveSync
 				destFldServerId = "0";
 			} else {
 				// Sub-folder case.
-				var destFld = McFolder.QueryById (destFolderId);
+                var destFld = McObject.QueryById<McFolder> (destFolderId);
 				if (null == destFld) {
 					return null;
 				}
@@ -407,7 +480,7 @@ namespace NachoCore.ActiveSync
 
 		public override string DeleteFolderCmd (int folderId)
 		{
-			var folder = McFolder.QueryById (folderId);
+            var folder = McObject.QueryById<McFolder> (folderId);
 			if (folder.IsClientOwned) {
 				folder.Delete ();
 				return McPending.KSynchronouslyCompleted;
@@ -431,8 +504,8 @@ namespace NachoCore.ActiveSync
 
 		public override string MoveFolderCmd (int folderId, int destFolderId)
 		{
-			var folder = McFolder.QueryById (folderId);
-			var destFolder = McFolder.QueryById (destFolderId);
+            var folder = McObject.QueryById<McFolder> (folderId);
+            var destFolder = McObject.QueryById<McFolder> (destFolderId);
 			if (folder.IsClientOwned ^ destFolder.IsClientOwned) {
 				return null;
 			}
@@ -462,7 +535,7 @@ namespace NachoCore.ActiveSync
 
 		public override string RenameFolderCmd (int folderId, string displayName)
 		{
-			var folder = McFolder.QueryById (folderId);
+            var folder = McObject.QueryById<McFolder> (folderId);
 
 			folder.DisplayName = displayName;
 			folder.Update ();

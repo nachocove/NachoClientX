@@ -5,6 +5,8 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
+    public enum RespondCalEnum { Accepted = 1, Tentatively = 2, Declined = 3};
+
     public interface IBackEnd
     {
         // This is the API Contract for the BackEnd object. The owner of the BackEnd
@@ -38,6 +40,9 @@ namespace NachoCore
         void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
         // send specified email (not in a synced folder). returns token that can be used to possibly cancel.
         string SendEmailCmd (int accountId, int emailMessageId);
+        // BE will make sure that the operation that created calId is complete before sending the
+        // email to the server. If the calId operation fails (hard), then the SendEmailCmd will too.
+        string SendEmailCmd (int accountId, int emailMessageId, int calId);
 
         string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
                           int folderId, bool originalEmailIsEmbedded);
@@ -60,6 +65,8 @@ namespace NachoCore
                             DateTime completeTime, DateTime dateCompleted);
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
+        string CreateCalCmd (int accountId, int calId);
+        string RespondCalCmd (int accountId, int calId, RespondCalEnum response);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
                           bool IsClientOwned, bool isHidden);

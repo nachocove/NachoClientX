@@ -11,7 +11,7 @@ namespace NachoCore.ActiveSync
         {
             CommandName = Xml.ComposeMail.SmartReply;
             Update = NextPending (McPending.Operations.EmailReply);
-            EmailMessage = McEmailMessage.QueryById (Update.EmailMessageId);
+            EmailMessage = McObject.QueryById<McEmailMessage> (Update.EmailMessageId);
         }
     }
 }

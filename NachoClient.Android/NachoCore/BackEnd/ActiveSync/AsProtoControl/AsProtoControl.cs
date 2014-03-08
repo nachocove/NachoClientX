@@ -41,6 +41,7 @@ namespace NachoCore.ActiveSync
             FCreW,
             FDelW,
             FUpW,
+            CRW,
         };
         // If you're exposed to AsHttpOperation, you need to cover these.
         public class AsEvt : SmEvt
@@ -76,6 +77,7 @@ namespace NachoCore.ActiveSync
                 FCre,
                 FDel,
                 FUp,
+                CalResp,
             };
         }
 
@@ -97,8 +99,11 @@ namespace NachoCore.ActiveSync
                         State = (uint)St.Start,
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
-                            (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.SFwdMail,  (uint)CtlEvt.E.SRplyMail, (uint)CtlEvt.E.UiSetCred, (uint)CtlEvt.E.UiSetServConf, (uint)CtlEvt.E.UiCertOkNo, 
-                            (uint)CtlEvt.E.UiCertOkYes, (uint)CtlEvt.E.UiSearch
+                            (uint)CtlEvt.E.SendMail, (uint)CtlEvt.E.SFwdMail,  (uint)CtlEvt.E.SRplyMail, (uint)CtlEvt.E.UiSetCred, (uint)CtlEvt.E.UiSetServConf, (uint)CtlEvt.E.UiCertOkNo, (uint)CtlEvt.E.CalResp, (uint)CtlEvt.E.Move,
+                            (uint)CtlEvt.E.FCre,
+                            (uint)CtlEvt.E.FDel,
+                            (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.UiCertOkYes, (uint)CtlEvt.E.UiSearch,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -111,10 +116,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.DnldAtt,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf,
-                            (uint)CtlEvt.E.Move,
-                            (uint)CtlEvt.E.FCre,
-                            (uint)CtlEvt.E.FDel,
-                            (uint)CtlEvt.E.FUp,
+
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -136,11 +138,13 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.HardFail,
                             (uint)AsEvt.E.ReProv,
-                            (uint)CtlEvt.E.ReFSync, (uint)CtlEvt.E.DnldAtt
+                            (uint)CtlEvt.E.ReFSync,
+                            (uint)CtlEvt.E.DnldAtt,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -185,6 +189,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -223,6 +228,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -261,6 +267,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -296,6 +303,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -342,6 +350,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)AsEvt.E.ReDisc,
@@ -376,6 +385,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)AsEvt.E.ReProv,
@@ -410,6 +420,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.ReFSync,
@@ -443,6 +454,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.ReFSync,
@@ -476,6 +488,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -527,6 +540,8 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)CtlEvt.E.FCre, Act = DoFCre, State = (uint)Lst.FCreW },
                             new Trans { Event = (uint)CtlEvt.E.FDel, Act = DoFDel, State = (uint)Lst.FDelW },
                             new Trans { Event = (uint)CtlEvt.E.FUp, Act = DoFUp, State = (uint)Lst.FUpW },
+                            new Trans { Event = (uint)CtlEvt.E.CalResp, Act = DoCalResp, State = (uint)Lst.CRW },
+
                         }
                     },
 
@@ -544,6 +559,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -578,6 +594,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -612,6 +629,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -646,6 +664,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -681,6 +700,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -716,6 +736,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -750,6 +771,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -784,6 +806,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -818,6 +841,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.FCre,
                             (uint)CtlEvt.E.FDel,
                             (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
                         },
                         Invalid = new [] {
                             (uint)CtlEvt.E.DnldAtt,
@@ -828,6 +852,41 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoFUp, State = (uint)Lst.FUpW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoFUp, State = (uint)Lst.FUpW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
+                        }
+                    },
+
+                    new Node {
+                        State = (uint)Lst.CRW,
+                        Drop = new [] {
+                            (uint)CtlEvt.E.SendMail,
+                            (uint)CtlEvt.E.SFwdMail,
+                            (uint)CtlEvt.E.SRplyMail,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.UiSetCred,
+                            (uint)CtlEvt.E.UiSetServConf,
+                            (uint)CtlEvt.E.Move,
+                            (uint)CtlEvt.E.FCre,
+                            (uint)CtlEvt.E.FDel,
+                            (uint)CtlEvt.E.FUp,
+                            (uint)CtlEvt.E.CalResp,
+                        },
+                        Invalid = new [] {
+                            (uint)CtlEvt.E.DnldAtt,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.GetServConf
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoCalResp, State = (uint)Lst.CRW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoCalResp, State = (uint)Lst.CRW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
@@ -1048,6 +1107,12 @@ namespace NachoCore.ActiveSync
             Cmd.Execute (Sm);
         }
 
+        private void DoCalResp ()
+        {
+            SetCmd (new AsMeetingResponseCommand (this));
+            Cmd.Execute (Sm);
+        }
+
         private void DoPing ()
         {
             if (!FirePendingInstead ()) {
@@ -1067,7 +1132,13 @@ namespace NachoCore.ActiveSync
         {
             var pending = BackEnd.Instance.Db.Table<McPending> ().Where (rec => rec.AccountId == Account.Id).OrderBy (x => x.Id);
             if (0 < pending.Count ()) {
-                var next = pending.First ();
+                McPending next = null;
+                foreach (var candidate in pending) {
+                    if (0 == candidate.PredPendingId) {
+                        next = candidate;
+                        break;
+                    }
+                }
                 switch (next.Operation) {
                 case McPending.Operations.ContactSearch:
                     Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
@@ -1093,11 +1164,16 @@ namespace NachoCore.ActiveSync
                     Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
                     return true;
 
+                case McPending.Operations.CalRespond:
+                    Sm.PostEvent ((uint)CtlEvt.E.CalResp, "ASPCCR");
+                    return true;
+
                 case McPending.Operations.EmailDelete:
                 case McPending.Operations.EmailMarkRead:
                 case McPending.Operations.EmailSetFlag:
                 case McPending.Operations.EmailClearFlag:
                 case McPending.Operations.EmailMarkFlagDone:
+                case McPending.Operations.CalCreate:
                     Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCPDIRS");
                     return true;
                 }

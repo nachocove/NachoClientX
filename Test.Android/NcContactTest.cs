@@ -34,6 +34,7 @@ namespace Test.iOS
                 Owner = new MockProtoControlOwner ();
                 BackEnd.Instance.Db = new TestDb ();
                 Account = new McAccount ();
+                Account.Id = 1;
             }
         }
 
@@ -104,6 +105,7 @@ namespace Test.iOS
                 var ds = new MockDataSource ();
                 // Set up folder
                 var f = new McFolder ();
+                f.AccountId = ds.Account.Id;
                 f.ServerId = "Contact:DEFAULT";
                 f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
                 BackEnd.Instance.Db.Insert (f);
@@ -125,6 +127,7 @@ namespace Test.iOS
                 var ds = new MockDataSource ();
                 // Set up folder
                 var f = new McFolder ();
+                f.AccountId = ds.Account.Id;
                 f.ServerId = "Contact:DEFAULT";
                 f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
                 BackEnd.Instance.Db.Insert (f);

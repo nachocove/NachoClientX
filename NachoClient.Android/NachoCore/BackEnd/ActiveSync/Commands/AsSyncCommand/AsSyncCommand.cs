@@ -37,14 +37,9 @@ namespace NachoCore.ActiveSync
             FoldersInRequest = new List<McFolder> ();
             foreach (var folder in folders) {
                 FoldersInRequest.Add (folder);
-                // E.g.
-                // <Collection>
-                //  <SyncKey>0</SyncKey>
-                //  <CollectionId>Contact:DEFAULT</CollectionId>
-                // </Collection>
                 var collection = new XElement (m_ns + Xml.AirSync.Collection,
-                         new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
-                         new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
+                                     new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
+                                     new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
                 // Add <GetChanges/> if we've done a sync before
                 if (Xml.AirSync.SyncKey_Initial != folder.AsSyncKey) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
@@ -67,8 +62,8 @@ namespace NachoCore.ActiveSync
                     XElement commands = null;
                     var deles = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailDelete);
+                                x.FolderServerId == folder.ServerId &&
+                                x.Operation == McPending.Operations.EmailDelete);
                     if (0 != deles.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
@@ -83,8 +78,8 @@ namespace NachoCore.ActiveSync
                     // If there are make-reads, then push them to the server.
                     var mRs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailMarkRead);
+                              x.FolderServerId == folder.ServerId &&
+                              x.Operation == McPending.Operations.EmailMarkRead);
                     if (0 != mRs.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
@@ -101,20 +96,26 @@ namespace NachoCore.ActiveSync
                     // If there are set/clear/mark-dones, then push them to the server.
                     var setFs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailSetFlag);
+                                x.FolderServerId == folder.ServerId &&
+                                x.Operation == McPending.Operations.EmailSetFlag);
 
                     var clearFs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailClearFlag);
+                                  x.FolderServerId == folder.ServerId &&
+                                  x.Operation == McPending.Operations.EmailClearFlag);
 
                     var markFs = BackEnd.Instance.Db.Table<McPending> ()
                         .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailMarkFlagDone);
+                                 x.FolderServerId == folder.ServerId &&
+                                 x.Operation == McPending.Operations.EmailMarkFlagDone);
 
-                    if (0 != setFs.Count () || 0 != clearFs.Count () || 0 != markFs.Count ()) {
+                    var calCres = BackEnd.Instance.Db.Table<McPending> ()
+                        .Where (x => x.AccountId == DataSource.Account.Id &&
+                                  x.FolderServerId == folder.ServerId &&
+                                  x.Operation == McPending.Operations.CalCreate);
+
+                    if (0 != setFs.Count () || 0 != clearFs.Count () || 0 != markFs.Count () ||
+                        0 != calCres.Count ()) {
                         if (null == commands) {
                             commands = new XElement (m_ns + Xml.AirSync.Commands);
                         }
@@ -156,6 +157,19 @@ namespace NachoCore.ActiveSync
                         markF.Update ();
                     }
 
+                    foreach (var calCre in calCres) {
+                        var cal = McObject.QueryById<McCalendar> (calCre.CalId);
+                        if (null != cal) {
+                            commands.Add (new XElement (m_ns + Xml.AirSync.Add,
+                                new XElement (m_ns + Xml.AirSync.ClientId, calCre.ClientId),
+                                new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar),
+                                AsHelpers.ToXmlApplicationData (cal)));
+                            // FIXME - what do we need to say if the item is missing from the DB?
+                            calCre.IsDispatched = true;
+                            calCre.Update ();
+                        }
+                    }
+
                     if (null != commands) {
                         collection.Add (commands);
                     }
@@ -172,6 +186,7 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessTopLevelStatus (AsHttpOperation sender, uint status)
         {
+            // FIXME - deal with Limit element.
             var globEvent = base.ProcessTopLevelStatus (sender, status);
             if (null != globEvent) {
                 return globEvent;
@@ -194,190 +209,57 @@ namespace NachoCore.ActiveSync
         {
             Log.Info (Log.LOG_SYNC, "AsSyncCommand response:\n{0}", doc);
 
-            var collections = doc.Root.Element (m_ns + Xml.AirSync.Collections).Elements (m_ns + Xml.AirSync.Collection);
+            // ProcessTopLevelStatus will handle Status and Limit elements, if  included.
+            // If we get here, we know any TL Status is okay.
+            var xmlCollections = doc.Root.Element (m_ns + Xml.AirSync.Collections);
+            if (null == xmlCollections) {
+                return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCODD");
+            }
+            var collections = xmlCollections.Elements (m_ns + Xml.AirSync.Collection);
+            // Note: we may get back zero Collection items.
             foreach (var collection in collections) {
+                // Note: CollectionId, Status and SyncKey are required to be present.
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
-                var folder = BackEnd.Instance.Db.Table<McFolder> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
-                 rec.ServerId == serverId);
-                var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
+                var folder = McFolderEntry.QueryByServerId<McFolder> (DataSource.Account.Id, serverId);
                 var oldSyncKey = folder.AsSyncKey;
+                var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
+                var xmlMoreAvailable = collection.Element (m_ns + Xml.AirSync.MoreAvailable);
+                var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
+
                 if (null != xmlSyncKey) {
                     // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
-                    folder.AsSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey).Value;
-                    folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) ||
-                    (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable));
+                    folder.AsSyncKey = xmlSyncKey.Value;
+                    folder.AsSyncRequired = (Xml.AirSync.SyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
                 } else {
                     Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
                 }
-                Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != collection.Element (m_ns + Xml.AirSync.MoreAvailable)));
+                Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != xmlMoreAvailable));
                 Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId, oldSyncKey, folder.AsSyncKey);
-                var status = collection.Element (m_ns + Xml.AirSync.Status);
-                var statusCode = (Xml.AirSync.StatusCode)uint.Parse (status.Value);
-                switch (statusCode) {
+                var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
+                switch (status) {
                 case Xml.AirSync.StatusCode.Success:
-                    // Clear any deletes dispached in the request.
-                    var deles = BackEnd.Instance.Db.Table<McPending> ()
-                        .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailDelete &&
-                    x.IsDispatched == true);
-                    if (0 != deles.Count ()) {
-                        foreach (var change in deles) {
-                            change.Delete ();
-                        }
-                    }
-                    // Clear any mark-reads dispatched in the request.
-                    var mRs = BackEnd.Instance.Db.Table<McPending> ()
-                        .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailMarkRead &&
-                    x.IsDispatched == true);
-                    if (0 != mRs.Count ()) {
-                        foreach (var markRead in mRs) {
-                            markRead.Delete ();
-                        }
-                    }
-                    // Clear any set/clear/mark-dones dispatched in the request.
-                    var setFs = BackEnd.Instance.Db.Table<McPending> ()
-                        .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailSetFlag &&
-                    x.IsDispatched == true);
-                    foreach (var setF in setFs) {
-                        setF.Delete ();
-                    }
+                    var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
+                    ProcessCollectionCommands (folder, xmlCommands);
 
-                    var clearFs = BackEnd.Instance.Db.Table<McPending> ()
-                        .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailClearFlag &&
-                    x.IsDispatched == true);
-                    foreach (var clearF in clearFs) {
-                        clearF.Delete ();
-                    }
+                    var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
+                    ProcessCollectionResponses (folder, xmlResponses);
 
-                    var markFs = BackEnd.Instance.Db.Table<McPending> ()
-                        .Where (x => x.AccountId == DataSource.Account.Id &&
-                    x.FolderServerId == folder.ServerId &&
-                    x.Operation == McPending.Operations.EmailMarkFlagDone &&
-                    x.IsDispatched == true);
-                    foreach (var markF in markFs) {
-                        markF.Delete ();
-                    }
-                    // FIXME - this is a DUMB way to cleanup dispatched!
-
-                    // Perform all commands.
-                    XElement xmlClass;
-                    string classCode;
-                    var commandsNode = collection.Element (m_ns + Xml.AirSync.Commands);
-                    if (null != commandsNode) {
-                        var commands = commandsNode.Elements ();
-                        foreach (var command in commands) {
-                            switch (command.Name.LocalName) {
-                            case Xml.AirSync.Add:
-                                // If the Class element is present, respect it. Otherwise key off
-                                // the type of the folder.
-                                xmlClass = command.Element (m_ns + Xml.AirSync.Class);
-                                if (null != xmlClass) {
-                                    classCode = xmlClass.Value;
-                                } else {
-                                    classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
-                                }
-                                switch (classCode) {
-                                case Xml.AirSync.ClassCode.Contacts:
-                                    HadContactChanges = true;
-                                    ServerSaysAddContact (command, folder);
-                                    break;
-                                case Xml.AirSync.ClassCode.Email:
-                                    HadEmailMessageChanges = true;
-                                    var emailMessage = ServerSaysAddEmail (command, folder);
-                                    if (null != emailMessage && (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == folder.Type &&
-                                    false == emailMessage.IsRead) {
-                                        HadNewUnreadEmailMessageInInbox = true;
-                                    }
-                                    break;
-                                case Xml.AirSync.ClassCode.Calendar:
-                                    HadCalendarChanges = true;
-                                    ServerSaysAddCalendarItem (command, folder);
-                                    break;
-                                default:
-                                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
-                                    break;
-                                }
-                                break;
-                            case Xml.AirSync.Change:
-                                // TODO: Merge with Add.
-                                xmlClass = command.Element (m_ns + Xml.AirSync.Class);
-                                if (null != xmlClass) {
-                                    classCode = xmlClass.Value;
-                                } else {
-                                    classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
-                                }
-                                switch (classCode) {
-                                case Xml.AirSync.ClassCode.Email:
-                                    ServerSaysChangeEmail (command, folder);
-                                    break;
-                                case Xml.AirSync.ClassCode.Calendar:
-                                    ServerSaysChangeCalendarItem (command, folder);
-                                    break;
-                                case Xml.AirSync.ClassCode.Contacts:
-                                    ServerSaysChangeContact (command, folder);
-                                    break;
-                                default:
-                                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED class " + classCode);
-                                    break;
-                                }
-                                break;
-
-                            case Xml.AirSync.Delete:
-                                xmlClass = command.Element (m_ns + Xml.AirSync.Class);
-                                if (null != xmlClass) {
-                                    classCode = xmlClass.Value;
-                                } else {
-                                    classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
-                                }
-                                switch (classCode) {
-                                // FIXME: support Calendar & Contacts too.
-                                case Xml.AirSync.ClassCode.Email:
-                                    HadEmailMessageChanges = true;
-                                    var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
-                                    var emailMessage = BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (x => x.ServerId == delServerId);
-                                    if (null != emailMessage) {
-                                        emailMessage.Delete ();
-                                    }
-                                    break;
-                                case Xml.AirSync.ClassCode.Calendar:
-                                    HadCalendarChanges = true;
-                                    // FIXME - do the delete.
-                                    break;
-                                case Xml.AirSync.ClassCode.Contacts:
-                                    HadContactChanges = true;
-                                    // FIXME - do the delete.
-                                    break;
-                                }
-                                break;
-
-                            default:
-                                Log.Error ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
-                                break;
-                            }
-                        }
-                    }
+                    McPending.DeleteDispatchedByFolderServerId (DataSource.Account.Id, folder.ServerId);
                     break;
 
                 case Xml.AirSync.StatusCode.SyncKeyInvalid:
                 case Xml.AirSync.StatusCode.NotFound:
-                    Log.Info ("Need to ReSync because of status {0}.", statusCode);
+                    Log.Info ("Need to ReSync because of status {0}.", status);
                     // NotFound as seen so far (GOOG) isn't making sense. 
                     folder.AsSyncKey = Xml.AirSync.SyncKey_Initial;
                     folder.AsSyncRequired = true;
                     break;
 
                 default:
+                    // FIXME - on hard fail, whack dependent McPending.
                     Log.Error ("AsSyncCommand ProcessResponse UNHANDLED Collection status: {0}", status);
                     break;
                 }
-
                 folder.Update ();
             }
             if (HadEmailMessageChanges) {
@@ -438,6 +320,7 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.EmailSetFlag:
                 case McPending.Operations.EmailClearFlag:
                 case McPending.Operations.EmailMarkFlagDone:
+                case McPending.Operations.CalCreate:
                     break;
 
                 default:
@@ -473,6 +356,198 @@ namespace NachoCore.ActiveSync
                 return true;
             default:
                 throw new Exception ();
+            }
+        }
+
+        private string GetClassCode (XElement command, McFolder folder)
+        {
+            var xmlClass = command.Element (m_ns + Xml.AirSync.Class);
+            // If the Class element is present, respect it. Otherwise key off
+            // the type of the folder.
+            if (null != xmlClass) {
+                return xmlClass.Value;
+            } else {
+                return Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
+            }
+        }
+
+        private void ProcessCollectionCommands (McFolder folder, XElement xmlCommands)
+        {
+            if (null == xmlCommands) {
+                return;
+            }
+            var commands = xmlCommands.Elements ();
+            foreach (var command in commands) {
+                var classCode = GetClassCode (command, folder);
+                switch (command.Name.LocalName) {
+                case Xml.AirSync.Add:
+                    switch (classCode) {
+                    case Xml.AirSync.ClassCode.Contacts:
+                        HadContactChanges = true;
+                        ServerSaysAddContact (command, folder);
+                        break;
+                    case Xml.AirSync.ClassCode.Email:
+                        HadEmailMessageChanges = true;
+                        var emailMessage = ServerSaysAddEmail (command, folder);
+                        if (null != emailMessage && (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == folder.Type &&
+                                false == emailMessage.IsRead) {
+                            HadNewUnreadEmailMessageInInbox = true;
+                        }
+                        break;
+                    case Xml.AirSync.ClassCode.Calendar:
+                        HadCalendarChanges = true;
+                        ServerSaysAddCalendarItem (command, folder);
+                        break;
+                    default:
+                        Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        break;
+                    }
+                    break;
+                case Xml.AirSync.Change:
+                    switch (classCode) {
+                    case Xml.AirSync.ClassCode.Email:
+                        ServerSaysChangeEmail (command, folder);
+                        break;
+                    case Xml.AirSync.ClassCode.Calendar:
+                        ServerSaysChangeCalendarItem (command, folder);
+                        break;
+                    case Xml.AirSync.ClassCode.Contacts:
+                        ServerSaysChangeContact (command, folder);
+                        break;
+                    default:
+                        Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        break;
+                    }
+                    break;
+
+                case Xml.AirSync.Delete:
+                    var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    switch (classCode) {
+                    case Xml.AirSync.ClassCode.Email:
+                        HadEmailMessageChanges = true;
+                        var emailMessage = McFolderEntry.QueryByServerId<McEmailMessage> (DataSource.Account.Id, delServerId);
+                        if (null != emailMessage) {
+                            emailMessage.Delete ();
+                        }
+                        break;
+                    case Xml.AirSync.ClassCode.Calendar:
+                        HadCalendarChanges = true;
+                        var cal = McFolderEntry.QueryByServerId<McCalendar> (DataSource.Account.Id, delServerId);
+                        if (null != cal) {
+                            cal.Delete ();
+                        }
+                        break;
+                    case Xml.AirSync.ClassCode.Contacts:
+                        HadContactChanges = true;
+                        var contact = McFolderEntry.QueryByServerId<McContact> (DataSource.Account.Id, delServerId);
+                        if (null != contact) {
+                            contact.Delete ();
+                        }
+                        break;
+                    default:
+                        Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        break;
+                    }
+                    break;
+
+                default:
+                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
+                    break;
+                }
+            }
+        }
+
+        private void ProcessCollectionResponses (McFolder folder, XElement xmlResponses)
+        {
+            if (null == xmlResponses) {
+                return;
+            }
+
+            var responses = xmlResponses.Elements ();
+            foreach (var response in responses) {
+                var classCode = GetClassCode (response, folder);
+                McItem item;
+                switch (response.Name.LocalName) {
+                case Xml.AirSync.Add:
+                    // Status and ClientId are required to be present.
+                    var xmlStatus = response.Element (m_ns + Xml.AirSync.Status);
+                    var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
+                    switch (status) {
+                    case Xml.AirSync.StatusCode.Success:
+                    case Xml.AirSync.StatusCode.LimitReWait:
+                        // Note: we don't wait using Sync, we use Ping.
+                        break;
+                    case Xml.AirSync.StatusCode.ProtocolError:
+                    case Xml.AirSync.StatusCode.ClientError:
+                    case Xml.AirSync.StatusCode.ResendFull:
+                    case Xml.AirSync.StatusCode.ServerWins:
+                    case Xml.AirSync.StatusCode.NoSpace:
+                        // Note: we don't send partial Sync requests.
+                        // The Add operation is permanently screwed.
+                        // FIXME - do a StatusInd to say so.
+                        continue;
+                    }
+
+                    var xmlClientId = response.Element (m_ns + Xml.AirSync.ClientId);
+                    var clientId = xmlClientId.Value;
+                    switch (classCode) {
+                    case Xml.AirSync.ClassCode.Email:
+                        Log.Warn ("AsSyncCommand ProcessCollectionResponses:Add - should not see Email.");
+                        continue;
+                    case Xml.AirSync.ClassCode.Contacts:
+                        item = McItem.QueryByClientId<McContact> (DataSource.Account.Id, clientId);
+                        break;
+                    case Xml.AirSync.ClassCode.Calendar:
+                        item = McItem.QueryByClientId<McCalendar> (DataSource.Account.Id, clientId);
+                        break;
+                    default:
+                        Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                        continue;
+                    }
+                    var xmlServerId = response.Element (m_ns + Xml.AirSync.ServerId);
+                    var serverId = xmlServerId.Value;
+                    if (null != serverId) {
+                        item.ServerId = serverId;
+                    }
+                    item.Update ();
+                    break;
+
+                case Xml.AirSync.Change:
+                    // Note: we are only supposed to see Change here if it failed.
+                    switch (classCode) {
+                    case Xml.AirSync.ClassCode.Email:
+                        Log.Warn ("AsSyncCommand ProcessCollectionResponses:Change - should not see Email.");
+                        continue;
+                    case Xml.AirSync.ClassCode.Contacts:
+                    case Xml.AirSync.ClassCode.Calendar:
+                        // FIXME - report error Status values via StatusInd.
+                        continue;
+                    default:
+                        Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                        continue;
+                    }
+                        #pragma warning disable 162
+                    break;
+                        #pragma warning restore 162
+
+                case Xml.AirSync.Fetch:
+                    // Note: we are only supposed to see Fetch here if it succeeded.
+                    switch (classCode) {
+                    case Xml.AirSync.ClassCode.Contacts:
+                    case Xml.AirSync.ClassCode.Email:
+                    case Xml.AirSync.ClassCode.Calendar:
+                        // FIXME. We don't use Fetch (yet). In a fetch, we need to save the complete item to the DB.
+                        continue;
+                    default:
+                        Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                        continue;
+                    }
+                    break;
+
+                default:
+                    Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED response " + response.Name.LocalName);
+                    break;
+                }
             }
         }
     }

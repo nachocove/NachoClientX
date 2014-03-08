@@ -50,6 +50,8 @@ namespace NachoCore.Model
             EmailSetFlag,
             EmailClearFlag,
             EmailMarkFlagDone,
+            CalCreate,
+            CalRespond,
         };
         // Parameterless constructor only here for use w/LINQ.
         public McPending ()
@@ -83,6 +85,9 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { set; get; }
 
+        [Indexed]
+        public string ClientId { set; get; }
+
         public string FlagType { set; get; }
 
         public DateTime Start { set; get; }
@@ -103,6 +108,14 @@ namespace NachoCore.Model
         [Indexed]
         // For use by SendMail & MoveItem ONLY!
         public int EmailMessageId { set; get; }
+        // For use by CreateCal ONLY!
+        [Indexed]
+        public int CalId { set; get; }
+
+        public uint CalResponse { set; get; }
+
+        [Indexed]
+        public int PredPendingId { set; get; }
 
         [Indexed]
         // For use by any command.
@@ -150,6 +163,24 @@ namespace NachoCore.Model
                 }
             }
             return (updateNeeded) ? ActionEnum.Update : ActionEnum.DoNothing;
+        }
+
+        public static void DeleteDispatchedByFolderServerId (int accountId, string serverId)
+        {
+            // This would be more efficient in SQL.
+            var gonners = BackEnd.Instance.Db.Table<McPending> ()
+                .Where (x => x.AccountId == accountId &&
+                    x.FolderServerId == serverId &&
+                    x.IsDispatched == true);
+            foreach (var gonner in gonners) {
+                var succs = BackEnd.Instance.Db.Table<McPending> ()
+                    .Where (x => x.AccountId == accountId &&
+                              x.PredPendingId == gonner.Id);
+                foreach (var succ in succs) {
+                    succ.PredPendingId = 0;
+                }
+                gonner.Delete ();
+            }
         }
     }
 }

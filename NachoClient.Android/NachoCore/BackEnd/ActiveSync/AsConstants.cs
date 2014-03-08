@@ -171,17 +171,20 @@ namespace NachoCore.ActiveSync
             public const string BodyPreference = "BodyPreference";
             public const string Change = "Change";
             public const string Class = "Class";
+            public const string ClientId = "ClientId";
             public const string Collection = "Collection";
             public const string CollectionId = "CollectionId";
             public const string Collections = "Collections";
             public const string Commands = "Commands";
             public const string Delete = "Delete";
             public const string DeleteAsMoves = "DeleteAsMoves";
+            public const string Fetch = "Fetch";
             public const string FilterType = "FilterType";
             public const string GetChanges = "GetChanges";
             public const string MimeSupport = "MIMESupport";
             public const string MoreAvailable = "MoreAvailable";
             public const string Options = "Options";
+            public const string Responses = "Responses";
             public const string ServerId = "ServerId";
             public const string Status = "Status";
             public const string Sync = "Sync";
@@ -345,14 +348,18 @@ namespace NachoCore.ActiveSync
             // Elements in alpha order.
             public const string AllDayEvent = "AllDayEvent";
             public const string AppointmentReplyTime = "AppointmentReplyTime";
+            public const string AttendeeStatus = "AttendeeStatus";
+            public const string AttendeeType = "AttendeeType";
             // public const string airsyncbase:Body = "airsyncbase:Body";
             public const string BusyStatus = "BusyStatus";
+            public const string Category = "Category";
             public const string DisallowNewTimeProposal = "DisallowNewTimeProposal";
             public const string DtStamp = "DtStamp";
+            public const string Email = "Email";
             public const string EndTime = "EndTime";
             public const string Location = "Location";
             public const string MeetingStatus = "MeetingStatus";
-            // public const string airsyncbase:NativeBodyType = "airsyncbase:NativeBodyType";
+            public const string Name = "Name";
             public const string OnlineMeetingConfLink = "OnlineMeetingConfLink";
             public const string OnlineMeetingExternalLink = "OnlineMeetingExternalLink";
             public const string OrganizerEmail = "OrganizerEmail";
@@ -769,6 +776,25 @@ namespace NachoCore.ActiveSync
                 ProtocolErrorMissing = 155,
                 ActionNotSupported = 156}
             ;
+        }
+
+        public class MeetingResp
+        {
+            public const string Ns = "MeetingResponse";
+            // Alpha order.
+            public const string CollectionId = "CollectionId";
+            public const string MeetingResponse = "MeetingResponse";
+            public const string Request = "Request";
+            public const string RequestId = "RequestId";
+            public const string Result = "Result";
+            public const string Status = "Status";
+            public const string UserResponse = "UserResponse";
+
+            public enum StatusCode : uint
+            {
+                Success = 1,
+                InvalidMeetingRequest = 2,
+            }
         }
 
         public class Mov

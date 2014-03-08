@@ -71,6 +71,8 @@ namespace NachoCore
 
         public abstract string SendEmailCmd (int emailMessageId);
 
+        public abstract string SendEmailCmd (int emailMessageId, int calId);
+
         public abstract string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
                                           int folderId, bool originalEmailIsEmbedded);
 
@@ -92,6 +94,10 @@ namespace NachoCore
                                             DateTime completeTime, DateTime dateCompleted);
 
         public abstract string DnldAttCmd (int attId);
+
+        public abstract string CreateCalCmd (int calId);
+
+        public abstract string RespondCalCmd (int calId, RespondCalEnum response);
 
         public abstract string CreateFolderCmd (int destFolderId, string displayName, uint folderType,
                                           bool IsClientOwned, bool isHidden);

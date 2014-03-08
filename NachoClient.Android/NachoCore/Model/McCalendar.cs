@@ -20,7 +20,7 @@ namespace NachoCore.Model
         /// When this item was created or modified (Compact DateTime, optional)
         public DateTime DtStamp { get; set; }
 
-        /// Start time of this item (Compact DateTime)
+        /// Start time of this item (Compact DateTime, optional)
         public DateTime StartTime { get; set; }
 
         /// End time of this item (Compact DateTime, optional)
@@ -42,15 +42,19 @@ namespace NachoCore.Model
 
         /// Recommended privacy policy for this item (optional)
         public NcSensitivity Sensitivity { get; set; }
+        public bool SensitivityIsSet { get; set; }
 
         /// Busy status of the meeting organizer (optional)
         public NcBusyStatus BusyStatus { get; set; }
+        public bool BusyStatusIsSet { get; set; }
 
         /// None, Organizer, Tentative, ...
         public NcResponseType ResponseType;
+        public bool ResponseTypeIsSet { get; set; }
 
         /// Status of the meeting (optional)
         public NcMeetingStatus MeetingStatus { get; set; }
+        public bool MeetingStatusIsSet { get; set; }
 
         /// The time this user responded to the request
         public DateTime AppointmentReplyTime { get; set; }
@@ -141,9 +145,11 @@ namespace NachoCore.Model
 
         /// Required, optional, resource
         public NcAttendeeType AttendeeType { get; set; }
+        public bool AttendeeTypeIsSet { get; set; }
 
         /// Unknown, tentative, accept, ...
         public NcAttendeeStatus AttendeeStatus { get; set; }
+        public bool AttendeeStatusIsSet { get; set; }
     }
 
     /// <summary>
@@ -193,6 +199,7 @@ namespace NachoCore.Model
         public int WeekOfMonth { get; set; }
 
         public NcDayOfWeek DayOfWeek { get; set; }
+        public bool DayOfWeekIsSet { get; set; }
 
         /// The month of the year for the recurrence, range is 1..12
         public int MonthOfYear { get; set; }
@@ -204,6 +211,7 @@ namespace NachoCore.Model
         public int DayOfMonth { get; set; }
 
         public NcCalendarType CalendarType { get; set; }
+        public bool CalendarTypeIsSet { get; set; }
 
         /// Takes place on the embolismic (leap) month
         public bool isLeapMonth { get; set; }
@@ -423,7 +431,9 @@ namespace NachoCore.Model
             Name = name;
             Email = email;
             AttendeeType = type;
+            AttendeeTypeIsSet = (NcAttendeeType.Unknown != type);
             AttendeeStatus = status;
+            AttendeeStatusIsSet = (NcAttendeeStatus.NotResponded != status);
         }
 
         public static int GetParentType (McCalendarRoot r)

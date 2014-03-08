@@ -26,7 +26,7 @@ namespace NachoCore.ActiveSync
         public void ServerSaysAddCalendarItem (XElement command, McFolder folder)
         {
             Log.Info (Log.LOG_CALENDAR, "ServerSaysAddCalendarItem\n{0}", command);
-            ProcessCalendarItem (command, folder);
+            ProcessCalendarItem (command, folder, true);
         }
         // [MS-ASCMD]
         // If a calendar:Exceptions node is not specified, the properties
@@ -44,10 +44,10 @@ namespace NachoCore.ActiveSync
         public void ServerSaysChangeCalendarItem (XElement command, McFolder folder)
         {
             Log.Info (Log.LOG_CALENDAR, "ServerSaysChangeCalendarItem\n{0}", command);
-            ProcessCalendarItem (command, folder);
+            ProcessCalendarItem (command, folder, false);
         }
 
-        public void ProcessCalendarItem (XElement command, McFolder folder)
+        public void ProcessCalendarItem (XElement command, McFolder folder, bool isAdd)
         {
             // Convert the event to an NcCalendar
             var h = new AsHelpers ();
@@ -60,16 +60,15 @@ namespace NachoCore.ActiveSync
             // Look up the event by ServerId
             McCalendar oldItem = null;
 
-            try {
-                oldItem = BackEnd.Instance.Db.Get<McCalendar> (x => x.ServerId == newItem.ServerId);
-            } catch (System.InvalidOperationException) {
-                Log.Info (Log.LOG_CALENDAR, "ProcessCalendarItem: System.InvalidOperationException handled");
-            } catch (Exception e) {
-                Log.Info ("ProcessCalendarItem:\n{0}", e);
+            if (isAdd) {
+                oldItem = McItem.QueryByClientId<McCalendar> (folder.AccountId, newItem.ClientId);
+            } else {
+                oldItem = McFolderEntry.QueryByServerId<McCalendar> (folder.AccountId, newItem.ServerId);
             }
 
             // If there is no match, insert the new item.
             if (null == oldItem) {
+                newItem.AccountId = folder.AccountId;
                 int ir = newItem.Insert ();
                 NachoCore.NachoAssert.True (0 < ir);
                 MergeAttendees (newItem);
@@ -89,7 +88,7 @@ namespace NachoCore.ActiveSync
 
             // Pull over the Body
             if (0 == newItem.BodyId) {
-                newItem.BodyId = newItem.BodyId;
+                newItem.BodyId = oldItem.BodyId;
             }
 
             // Overwrite the old item with the new item
@@ -107,6 +106,7 @@ namespace NachoCore.ActiveSync
 
         /// <param name="parentType">CALENDAR or EXCEPTION</param>
         /// <param name="parentId">Id field from McCalendar or NcException</param>
+        /// FIXME - move to McAttendee.
         public List<McAttendee> GetAttendees (McCalendarRoot r)
         {
             NachoCore.NachoAssert.True (r.Id > 0);
@@ -288,7 +288,7 @@ namespace NachoCore.ActiveSync
         /// </summary>
         /// <param name="exception">An NcException object</param>
         // TODO: error checking and unit tests.
-        public void DeleteException(McException exception)
+        public void DeleteException (McException exception)
         {
             NachoCore.NachoAssert.True (null != exception);
 

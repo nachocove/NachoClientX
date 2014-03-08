@@ -48,7 +48,7 @@ namespace NachoCore.ActiveSync
             protected override void ApplyChangeToModel ()
             {
                 // Remove the folder and anything subordinate.
-                var folder = McFolder.QueryByServerId (AccountId, ServerId);
+                var folder = McFolderEntry.QueryByServerId<McFolder> (AccountId, ServerId);
                 folder.Delete ();
             }
         }

@@ -235,6 +235,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).SendEmailCmd (emailMessageId);
         }
 
+        public string SendEmailCmd (int accountId, int emailMessageId, int calId)
+        {
+            return ServiceFromAccountId (accountId).SendEmailCmd (emailMessageId, calId);
+        }
+
         public string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
                                  int folderId, bool originalEmailIsEmbedded)
         {
@@ -262,6 +267,16 @@ namespace NachoCore
         public string DnldAttCmd (int accountId, int attId)
         {
             return ServiceFromAccountId (accountId).DnldAttCmd (attId);
+        }
+
+        public string CreateCalCmd (int accountId, int calId)
+        {
+            return ServiceFromAccountId (accountId).CreateCalCmd (calId);
+        }
+
+        public string RespondCalCmd (int accountId, int calId, RespondCalEnum response)
+        {
+            return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
         }
 
         public string MarkEmailReadCmd (int accountId, int emailMessageId)
@@ -354,9 +369,6 @@ namespace NachoCore
         public void StatusInd (ProtoControl sender, NcResult status)
         {
             try {
-                InvokeOnUIThread.Instance.Invoke (delegate() {
-                    Owner.StatusInd (sender.AccountId, status);
-                });
                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Account = sender.Account,
                     Status = status,
@@ -369,9 +381,6 @@ namespace NachoCore
         public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
             try {
-                InvokeOnUIThread.Instance.Invoke (delegate() {
-                    Owner.StatusInd (sender.AccountId, status, tokens);
-                });
                 InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = sender.Account,
                     Status = status,

@@ -6,16 +6,13 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McFolder : McObjectPerAccount
+    public class McFolder : McFolderEntry
     {
         [Indexed]
         public bool IsClientOwned { get; set; }
 
         [Indexed]
         public bool IsHidden { get; set; }
-
-        [Indexed]
-        public string ServerId { get; set; }
 
         [Indexed]
         public string ParentId { get; set; }
@@ -38,12 +35,12 @@ namespace NachoCore.Model
         }
         // "factory" to create client-owned folders.
         public static McFolder Create (int accountId, 
-                                 bool isClientOwned,
-                                 bool isHidden,
-                                 string parentId,
-                                 string serverId,
-                                 string displayName,
-                                 uint folderType)
+                                       bool isClientOwned,
+                                       bool isHidden,
+                                       string parentId,
+                                       string serverId,
+                                       string displayName,
+                                       uint folderType)
         {
             var folder = new McFolder () {
                 AsSyncKey = "0",
@@ -60,36 +57,41 @@ namespace NachoCore.Model
             return folder;
         }
 
-        public static McFolder QueryByServerId (int accountId, string serverId)
+        public static List<McFolder> QueryByItemId<T> (int accountId, int itemId)
         {
-            return BackEnd.Instance.Db.Table<McFolder> ().Single (fld => 
-                fld.AccountId == accountId &&
-            fld.ServerId == serverId);
-        }
+            uint classCode;
+            switch (typeof(T).FullName) {
+            case "NachoCore.Model.McEmailMessage":
+                classCode = (uint)McItem.ClassCodeEnum.Email;
+                break;
 
-        public static McFolder QueryById (int id)
-        {
-            return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-            " f.Id = ? ",
-                id).SingleOrDefault ();
-        }
+            case "NachoCore.Model.McCalendar":
+                classCode = (uint)McItem.ClassCodeEnum.Calendar;
+                break;
 
-        public static List<McFolder> QueryByItemId (int accountId, int itemId)
-        {
+            case "NachoCore.Model.McContact":
+                classCode = (uint)McItem.ClassCodeEnum.Contact;
+                break;
+
+            default:
+                throw new Exception ("Usupported Item class.");
+            }
+
             return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderItem AS m ON f.Id = m.FolderId WHERE " +
             " m.AccountId = ? AND " +
-            " m.ItemId = ? ",
-                accountId, itemId);
+            " m.ItemId = ? AND " +
+            " m.ClassCode = ? ",
+                accountId, itemId, classCode);
         }
 
         public override int Delete ()
         {
             // Delete anything in the folder and any map entries (recursively).
             // FIXME - query needs to find non-email items and sub-dirs.
-            var contents = McEmailMessage.QueryByFolderId (AccountId, Id);
+            var contents = McItem.QueryByFolderId<McEmailMessage> (AccountId, Id);
             foreach (var item in contents) {
                 var map = McMapFolderItem.QueryByFolderIdItemIdClassCode (AccountId, Id, item.Id,
-                    (uint)McItem.ClassCodeEnum.Email);
+                              (uint)McItem.ClassCodeEnum.Email);
                 // FIXME capture result of ALL delete ops.
                 map.Delete ();
                 item.Delete ();

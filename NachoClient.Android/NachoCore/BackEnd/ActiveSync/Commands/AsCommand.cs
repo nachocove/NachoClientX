@@ -252,6 +252,7 @@ namespace NachoCore.ActiveSync
         {
         }
 
+        // FIXME - move to McPending.
         protected virtual McPending NextPending (McPending.Operations operation)
         {
             return BackEnd.Instance.Db.Table<McPending> ()
@@ -259,6 +260,7 @@ namespace NachoCore.ActiveSync
                         rec.AccountId == DataSource.Account.Id &&
             rec.Operation == operation);
         }
+
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {

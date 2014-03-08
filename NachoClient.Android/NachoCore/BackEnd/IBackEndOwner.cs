@@ -9,19 +9,6 @@ namespace NachoCore
     // the owner of a BackEnd object.
     public interface IBackEndOwner
     {
-        /* StatusInd: Indicates a status change applicable to all accounts.
-         */
-        void StatusInd (NcResult status);
-
-        /* StatusInd: Indicates a status change for a specific account.
-         */
-        void StatusInd (int accountId, NcResult status);
-
-        /* StatusInd: Indicates a status change for a specific account, with one or more
-         * affected operation tokens.
-         */
-        void StatusInd (int accountId, NcResult status, string[] tokens);
-
         /* CredRequest: When called, the callee must gather the credential for the specified 
          * account and add/update it to/in the DB. The callee must then update
          * the account record. The BE will act based on the update event for the

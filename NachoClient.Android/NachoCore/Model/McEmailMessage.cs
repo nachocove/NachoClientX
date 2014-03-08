@@ -164,29 +164,6 @@ namespace NachoCore.Model
             }
         }
 
-        public static McEmailMessage QueryByServerId (int accountId, string serverId)
-        {
-            return BackEnd.Instance.Db.Table<McEmailMessage> ().SingleOrDefault (fld => 
-                fld.AccountId == accountId &&
-            fld.ServerId == serverId);
-        }
-        // Note need to paramtrize <T> and move to McItem.
-        public static McEmailMessage QueryById (int id)
-        {
-            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
-            " e.Id = ? ",
-                id).SingleOrDefault ();
-        }
-        // Note need to paramtrize <T> and move to McItem.
-        public static List<McEmailMessage> QueryByFolderId (int accountId, int folderId)
-        {
-            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
-            " e.AccountId = ? AND " +
-            " m.AccountId = ? AND " +
-            " m.FolderId = ? ",
-                accountId, accountId, folderId);
-        }
-
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +

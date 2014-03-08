@@ -38,14 +38,115 @@ namespace NachoCore.ActiveSync
         {
             return uint.Parse (intString);
         }
-
     }
 
     public class AsHelpers
     {
-        public AsHelpers ()
-        {
+        const string CompactDateTimeFmt1 = "yyyyMMddTHHmmssZ";
+        const string CompactDateTimeFmt2 = "yyyyMMddTHHmmssfffZ";
+        const string DateTimeFmt1 = "yyyy-MM-ddTHH:mm:ss.fffZ";
 
+        private static string XmlFromBool (bool value)
+        {
+            return (value) ? "1" : "0";
+        }
+
+        public static XElement ToXmlApplicationData (McCalendar cal)
+        {
+            XNamespace AirSyncNs = Xml.AirSync.Ns;
+            XNamespace CalendarNs = Xml.Calendar.Ns;
+            XNamespace AirSyncBaseNs = Xml.AirSyncBase.Ns;
+
+            var xmlAppData = new XElement (AirSyncNs + Xml.AirSync.ApplicationData);
+            if (cal.AllDayEvent) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.AllDayEvent));
+            }
+            if (DateTime.MinValue != cal.DtStamp) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.DtStamp,
+                    cal.DtStamp.ToString (CompactDateTimeFmt1)));
+            }
+            if (DateTime.MinValue != cal.StartTime) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.StartTime,
+                    cal.StartTime.ToString (CompactDateTimeFmt1)));
+            }
+            if (DateTime.MinValue != cal.EndTime) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.EndTime,
+                    cal.EndTime.ToString (CompactDateTimeFmt1)));
+            }
+            if (0 != cal.Reminder) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Reminder, cal.Reminder));
+            }
+            // TODO TimeZoneId - TimeZone table not implemented yet.
+
+            if (null != cal.Subject) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Subject, cal.Subject));
+            }
+            if (null != cal.Location) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Location, cal.Location));
+            }
+            if (cal.SensitivityIsSet) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Sensitivity, (uint)cal.Sensitivity));
+            }
+            if (cal.BusyStatusIsSet) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.BusyStatus, (uint)cal.BusyStatus));
+            }
+            if (cal.ResponseTypeIsSet) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseType, (uint)cal.ResponseType));
+            }
+            if (cal.MeetingStatusIsSet) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.MeetingStatus, (uint)cal.MeetingStatus));
+            }
+            if (DateTime.MinValue != cal.AppointmentReplyTime) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.AppointmentReplyTime,
+                    cal.AppointmentReplyTime.ToString (DateTimeFmt1)));
+            }
+            if (null != cal.OnlineMeetingConfLink) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingConfLink, cal.OnlineMeetingConfLink));
+            }
+            if (null != cal.OnlineMeetingExternalLink) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingExternalLink, cal.OnlineMeetingExternalLink));
+            }
+            // TODO: BodyId not supported yet.
+
+            if (0 != cal.attendees.Count) {
+                var xmlAttendees = new XElement (CalendarNs + Xml.Calendar.Calendar_Attendees);
+                foreach (var attendee in cal.attendees) {
+                    var xmlAttendee = new XElement (CalendarNs + Xml.Calendar.Attendees.Attendee,
+                                          new XElement (CalendarNs + Xml.Calendar.Email, attendee.Email),
+                                          new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
+                    if (attendee.AttendeeTypeIsSet) {
+                        xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeType, (uint)attendee.AttendeeType));
+                    }
+                    if (attendee.AttendeeStatusIsSet) {
+                        xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeStatus, (uint)attendee.AttendeeStatus));
+                    }
+                }
+                xmlAppData.Add (xmlAttendees);
+            }
+            if (0 != cal.categories.Count) {
+                var xmlCategories = new XElement (CalendarNs + Xml.Calendar.Calendar_Categories);
+                foreach (var category in cal.categories) {
+                    xmlCategories.Add (new XElement (CalendarNs + Xml.Calendar.Category, category.Name));
+                }
+            }
+            // TODO: exceptions.
+            // TODO recurrences.
+
+            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
+            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.DisallowNewTimeProposal, XmlFromBool (cal.DisallowNewTimeProposal)));
+            if (null != cal.OrganizerName) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OrganizerName, cal.OrganizerName));
+            }
+            if (null != cal.OrganizerEmail) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OrganizerEmail, cal.OrganizerEmail));
+            }
+            if (null != cal.UID) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.UID, cal.UID));
+            }
+            if (0 != cal.NativeBodyType) {
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, cal.NativeBodyType));
+            }
+            return xmlAppData;
         }
         // ParseAsCompactDataType
         // A Compact DateTime value is a representation of a UTC date and time.
@@ -66,14 +167,11 @@ namespace NachoCore.ActiveSync
         public System.DateTime ParseAsCompactDateTime (string compactDateTime)
         {
             DateTime dateValue;
-            const string fmt1 = "yyyyMMddTHHmmssZ";
-            const string fmt2 = "yyyyMMddTHHmmssfffZ";
             DateTimeStyles styles = DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal;
-
-            if (DateTime.TryParseExact (compactDateTime, fmt1, CultureInfo.InvariantCulture, styles, out dateValue)) {
+            if (DateTime.TryParseExact (compactDateTime, CompactDateTimeFmt1, CultureInfo.InvariantCulture, styles, out dateValue)) {
                 return dateValue;
             }
-            if (DateTime.TryParseExact (compactDateTime, fmt2, CultureInfo.InvariantCulture, styles, out dateValue)) {
+            if (DateTime.TryParseExact (compactDateTime, CompactDateTimeFmt2, CultureInfo.InvariantCulture, styles, out dateValue)) {
                 return dateValue;
             }
             return DateTime.MinValue;
@@ -88,9 +186,8 @@ namespace NachoCore.ActiveSync
         public System.DateTime ParseAsDateTime (string dateTime)
         {
             DateTime dateValue;
-            const string fmt1 = "yyyy-MM-ddTHH:mm:ss.fffZ";
             DateTimeStyles styles = DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal;
-            if (DateTime.TryParseExact (dateTime, fmt1, CultureInfo.InvariantCulture, styles, out dateValue)) {
+            if (DateTime.TryParseExact (dateTime, DateTimeFmt1, CultureInfo.InvariantCulture, styles, out dateValue)) {
                 return dateValue;
             }
             return DateTime.MinValue;
@@ -305,21 +402,25 @@ namespace NachoCore.ActiveSync
                         break;
                     case Xml.Calendar.Exception.BusyStatus:
                         e.BusyStatus = child.Value.ToEnum<NcBusyStatus> ();
+                        e.BusyStatusIsSet = true;
                         break;
                     case Xml.Calendar.Exception.Deleted:
                         e.Deleted = child.Value.ToUint ();
                         break;
                     case Xml.Calendar.Exception.MeetingStatus:
                         e.MeetingStatus = child.Value.ParseInteger<NcMeetingStatus> ();
+                        e.MeetingStatusIsSet = true;
                         break;
                     case Xml.Calendar.Exception.Reminder:
                         e.Reminder = child.Value.ToUint ();
                         break;
                     case Xml.Calendar.Exception.ResponseType:
                         e.ResponseType = child.Value.ParseInteger<NcResponseType> ();
+                        e.ResponseTypeIsSet = true;
                         break;
                     case Xml.Calendar.Exception.Sensitivity:
                         e.Sensitivity = child.Value.ParseInteger<NcSensitivity> ();
+                        e.SensitivityIsSet = true;
                         break;
                     case Xml.Calendar.Exception.AppointmentReplyTime:
                     case Xml.Calendar.Exception.DtStamp:
@@ -410,12 +511,14 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.BusyStatus:
                     c.BusyStatus = child.Value.ToEnum<NcBusyStatus> ();
+                    c.BusyStatusIsSet = true;
                     break;
                 case Xml.Calendar.DisallowNewTimeProposal:
                     c.DisallowNewTimeProposal = child.Value.ToBoolean ();
                     break;
                 case Xml.Calendar.MeetingStatus:
                     c.MeetingStatus = child.Value.ParseInteger<NcMeetingStatus> ();
+                    c.MeetingStatusIsSet = true;
                     break;
                 case Xml.Calendar.Reminder:
                     c.Reminder = child.Value.ToUint ();
@@ -425,9 +528,11 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.ResponseType:
                     c.ResponseType = child.Value.ParseInteger<NcResponseType> ();
+                    c.ResponseTypeIsSet = true;
                     break;
                 case Xml.Calendar.Sensitivity:
                     c.Sensitivity = child.Value.ParseInteger<NcSensitivity> ();
+                    c.SensitivityIsSet = true;
                     break;
                 case Xml.Calendar.AppointmentReplyTime:
                 case Xml.Calendar.DtStamp:

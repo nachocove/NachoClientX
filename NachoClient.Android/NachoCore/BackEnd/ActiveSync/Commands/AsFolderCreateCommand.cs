@@ -41,7 +41,7 @@ namespace NachoCore.ActiveSync
                 protocolState.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
                 var serverId = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                var folder = McFolder.QueryByServerId (DataSource.Account.Id, Update.ServerId);
+                var folder = McItem.QueryByServerId<McFolder> (DataSource.Account.Id, Update.ServerId);
                 if (null != folder) {
                     folder.ServerId = serverId;
                     folder.Update ();
