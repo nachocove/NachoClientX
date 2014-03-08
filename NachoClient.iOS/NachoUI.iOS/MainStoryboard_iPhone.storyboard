@@ -540,7 +540,7 @@
                                 <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="center" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Server Name" textAlignment="center" clearsOnBeginEditing="YES" minimumFontSize="17" clearButtonMode="always" id="FAx-1P-Ryk">
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="center" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Server Name" textAlignment="center" minimumFontSize="17" clearButtonMode="always" id="FAx-1P-Ryk">
                                 <rect key="frame" x="71" y="122" width="154" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>

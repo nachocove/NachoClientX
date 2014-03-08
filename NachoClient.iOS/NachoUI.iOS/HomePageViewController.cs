@@ -24,30 +24,29 @@ namespace NachoClient.iOS
             get;
             private set;
         }
+        const string TutPageOne = "Content/HomePage1.png";
+        const string TutPageTwo = "Content/PageTwo.png";
+        const string TutPageThree = "Content/PageThree.png";
+        const string TutPageFour = "Content/PageFour.png";
+        const string TutPageFive = "Content/PageFive.png";
+        const string TutPageSix = "Content/PageSix.png";
+        const string TutPageSeven = "Content/PageSeven.png";
+        string[] Tutorial = { TutPageOne, TutPageTwo, TutPageThree, TutPageFour, TutPageFive, TutPageSix, TutPageSeven };
+       
 
-        private UILabel contentLabel;
+
       
 
         public override void ViewDidLoad ()
         {
            UIWebView tutorialText = new UIWebView(this.View.Frame);
            
-            string fileName = "Content/Welcome to Taco Mail.pdf";
+            string fileName = Tutorial [this.PageIndex];
             string localUrl = System.IO.Path.Combine (NSBundle.MainBundle.BundlePath, fileName);
 
             base.ViewDidLoad ();
             tutorialText.LoadRequest (new NSUrlRequest (new NSUrl (localUrl, false)));
             tutorialText.ScalesPageToFit = true;
-          
-
-
-            this.contentLabel = new UILabel(new RectangleF(10f, 30f, this.View.Bounds.Width - 20f, 60f));
-            this.contentLabel.TextAlignment = UITextAlignment.Center;
-            this.contentLabel.Font = UIFont.FromName("Verdana-Bold", 24f);
-
-
-            this.contentLabel.Text = string.Format("Page {0}", this.PageIndex + 1);
-            this.View.AddSubview(this.contentLabel);
             this.View.AddSubview (tutorialText);
 
 

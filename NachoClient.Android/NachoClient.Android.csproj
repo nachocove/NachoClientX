@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.3</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -186,6 +186,7 @@
     <Compile Include="NachoCore\Extensions\NcTimer.cs" />
     <Compile Include="NachoCore\Model\McFolderEntry.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
+    <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -31,19 +31,15 @@ namespace NachoClient.AndroidClient
             var rootView = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
             var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
-            contacts = new NachoContacts ();
+            contacts = NcContactManager.Instance.GetNachoContactsObject ();
             adapter = new ContactListAdapter (this.Activity, contacts);
             listview.Adapter = adapter;
 
-            // Watch for changes from the back end
-            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
-                var s = (StatusIndEventArgs)e;
-                if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
-                    contacts.Refresh ();
-                    adapter.NotifyDataSetChanged ();
-                }
+            NcContactManager.Instance.ContactsChanged += (object sender, EventArgs e) => {
+                contacts = NcContactManager.Instance.GetNachoContactsObject ();
+                adapter.NotifyDataSetChanged ();
             };
-
+                
             listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
                 var fragment = new ContactViewFragment ();
                 var bundle = new Bundle ();

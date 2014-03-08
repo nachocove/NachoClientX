@@ -295,6 +295,7 @@ namespace NachoClient.iOS
     {
         public SubjectElement (string caption) : base (caption)
         {
+            // TODO: use color associated with calendar
             this.Image = NachoClient.Util.DotWithColor (UIColor.Blue);
             this.Font = UIFont.SystemFontOfSize (17.0f);
         }
@@ -387,6 +388,14 @@ namespace NachoClient.iOS
                 this.Image = NachoClient.Util.DotWithColor (UIColor.Yellow);
                 break;
             }
+        }
+    }
+
+    class StyledStringElementWithDot : StyledStringElement
+    {
+        public StyledStringElementWithDot (string caption, UIColor color) : base (caption, "", UITableViewCellStyle.Default)
+        {
+            this.Image = NachoClient.Util.DotWithColor (color);
         }
     }
 }

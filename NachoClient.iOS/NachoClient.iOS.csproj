@@ -565,6 +565,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcContactManager.cs">
+      <Link>NachoCore\Adapters\NcContactManager.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

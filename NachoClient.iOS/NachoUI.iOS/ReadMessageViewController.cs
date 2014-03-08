@@ -13,6 +13,11 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MimeKit;
+using MimeKit.Utils;
+using MimeKit.Encodings;
+using DDay.iCal;
+using DDay.iCal.Serialization;
+using DDay.iCal.Serialization.iCalendar;
 
 namespace NachoClient.iOS
 {
@@ -65,7 +70,7 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageToCompose", ComposeViewController.Forward);
             };
             deleteButton.Clicked += (object sender, EventArgs e) => {
-                DeleteThisMessage();
+                DeleteThisMessage ();
             };
         }
 
@@ -118,7 +123,7 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void DeleteThisMessage()
+        public void DeleteThisMessage ()
         {
             var t = messages.GetEmailThread (ThreadIndex);
             var m = t.First ();
@@ -249,6 +254,8 @@ namespace NachoClient.iOS
 
                 if (text.ContentType.Matches ("text", "html")) {
                     RenderHtml (text.Text, section);
+                } else if (text.ContentType.Matches ("text", "calendar")) {
+                    RenderCalendar (text, section);
                 } else {
                     RenderText (text.Text, section);
                 }
@@ -404,6 +411,91 @@ namespace NachoClient.iOS
             {
                 return viewC.View.Frame;
             }
+        }
+
+        public string GetText (TextPart text)
+        {
+            switch (text.ContentTransferEncoding) {
+            case ContentEncoding.Base64:
+                var decoded = System.Convert.FromBase64String (text.Text);
+                return System.Text.Encoding.UTF8.GetString (decoded);
+            case ContentEncoding.QuotedPrintable:
+                var input = Encoding.ASCII.GetBytes (text.Text);
+                var decoder = new QuotedPrintableDecoder ();
+                var output = new byte[decoder.EstimateOutputLength (input.Length)];
+                var outputLength = decoder.Decode (input, 0, input.Length, output);
+                // TODO: L10N
+                return System.Text.Encoding.UTF8.GetString (output, 0, outputLength);
+            case ContentEncoding.Default:
+                return text.Text;
+            case ContentEncoding.EightBit:
+                return text.Text;
+            case ContentEncoding.SevenBit:
+                return text.Text;
+            default:
+                NachoAssert.CaseError ();
+                return null;
+            }
+        }
+        // TODO: Malformed calendars
+        public void RenderCalendar (TextPart text, Section section)
+        {
+            var decodedText = GetText (text);
+            var stringReader = new StringReader (decodedText);
+            IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
+            IEvent evt = iCal.Events.First ();
+
+            section.Add (new SubjectElement (evt.Summary));
+            section.Add (new StartTimeElement (Pretty.FullDateString (evt.Start.Value)));
+            if (evt.IsAllDay) {
+                section.Add (new DurationElement (Pretty.AllDayStartToEnd (evt.Start.Value, evt.End.Value)));
+            } else {
+                section.Add (new DurationElement (Pretty.EventStartToEnd (evt.Start.Value, evt.End.Value)));
+            }
+
+            if (null != evt.Location) {
+                section = new ThinSection ();
+                section.Add (new LocationElement (evt.Location));
+            }
+
+            var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
+            button1.Tapped += () => {
+                UpdateStatus (evt, NcAttendeeStatus.Accept);
+            };
+            var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
+            button2.Tapped += () => {
+                UpdateStatus (evt, NcAttendeeStatus.Tentative);
+            };
+            var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
+            button3.Tapped += () => {
+                UpdateStatus (evt, NcAttendeeStatus.Decline);
+            };
+            section.Add (button1);
+            section.Add (button2);
+            section.Add (button3);
+
+            {
+                var e = new StyledStringElement ("People");
+                var image = UIImage.FromBundle ("ic_action_group");
+                e.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                e.Font = UIFont.SystemFontOfSize (17.0f);
+//                e.Tapped += () => {
+//                    PushAttendeeView ();
+//                };
+                e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+            }
+
+//            section = new ThinSection ();
+//            using (var image = UIImage.FromBundle ("ic_action_alarms")) {
+//                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
+//                section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (evt.Alarms.First()), scaledImage));
+//            }
+//            root.Add (section);
+
+        }
+
+        void UpdateStatus (IEvent evt, NcAttendeeStatus status)
+        {
         }
     }
 }

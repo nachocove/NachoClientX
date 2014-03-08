@@ -204,6 +204,7 @@ namespace NachoCore.Model
         /// </summary>
         public McContact ()
         {
+            HasReadAncillaryData = false;
             Dates = new List<McContactDateAttribute> ();
             Addresses = new List<McContactAddressAttribute> ();
             PhoneNumbers = new List<McContactStringAttribute> ();
@@ -415,6 +416,9 @@ namespace NachoCore.Model
         ///        Db.CreateTable<McContactStringAttribute> ();
         ///        Db.CreateTable<McContactAddressAttribute> ();
         /// </summary>
+        /// 
+      
+        protected bool HasReadAncillaryData;
 
         /// <summary>
         /// Read the specified db and pk.
@@ -431,6 +435,16 @@ namespace NachoCore.Model
         }
 
         public NcResult ReadAncillaryData (SQLiteConnection db)
+        {
+            if (!HasReadAncillaryData) {
+                HasReadAncillaryData = true;
+                return ForceReadAncillaryData (db);
+            }
+            return NcResult.OK ();
+        }
+
+
+        public NcResult ForceReadAncillaryData (SQLiteConnection db)
         {
             Dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             Addresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
