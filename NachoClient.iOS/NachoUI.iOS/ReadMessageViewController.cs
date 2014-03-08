@@ -204,93 +204,45 @@ namespace NachoClient.iOS
                 var message = bodyParser.ParseMessage ();
                 PlatformHelpers.motd = message; // for cid handler
                 MimeHelpers.DumpMessage (message, 0);
-                RenderMessage (message, bodySection);
+
+                var list = new List<MimeEntity> ();
+                MimeHelpers.MimeDisplayList (message, ref list);
+                RenderDisplayList (list, bodySection);
             }
           
             Root = root;
 
         }
 
-        void RenderMessage (MimeMessage message, Section section)
+        protected void RenderDisplayList (List<MimeEntity> list, Section section)
         {
-            RenderMimeEntity (message.Body, section);
+            for (var i = 0; i < list.Count; i++) {
+                var entity = list [i];
+                var part = (MimePart)entity;
+                if (part.ContentType.Matches ("text", "html")) {
+                    RenderHtml (part, section);
+                    continue;
+                }
+                if (part.ContentType.Matches ("text", "calendar")) {
+                    RenderCalendar (part, section);
+                    continue;
+                }
+                if (part.ContentType.Matches ("text", "*")) {
+                    RenderText (part, section);
+                    continue;
+                }
+                if (part.ContentType.Matches ("image", "*")) {
+                    RenderImage (part, section);
+                    continue;
+                }
+            }
         }
 
-        void RenderMimeEntity (MimeEntity entity, Section section)
+        void RenderHtml (MimePart part, Section section)
         {
-            if (entity is MessagePart) {
-                // This entity is an attached message/rfc822 mime part.
-                var messagePart = (MessagePart)entity;
-                // If you'd like to render this inline instead of treating
-                // it as an attachment, you would just continue to recurse:
-                RenderMessage (messagePart.Message, section);
-                return;
-            }
-            if (entity is Multipart) {
-                // This entity is a multipart container.
-                var multipart = (Multipart)entity;
+            var textPart = part as TextPart;
+            var html = textPart.Text;
 
-                if (multipart.ContentType.Matches ("multipart", "alternative")) {
-                    RenderBestAlternative (multipart, section);
-                    return;
-                }
-
-                foreach (var subpart in multipart) {
-                    RenderMimeEntity (subpart, section);
-                }
-                return;
-            }
-
-            // Everything that isn't either a MessagePart or a Multipart is a MimePart
-            var part = (MimePart)entity;
-
-            // Don't render anything that is explicitly marked as an attachment.
-//            if (part.IsAttachment)
-//                return;
-
-            if (part is TextPart) {
-                // This is a mime part with textual content.
-                var text = (TextPart)part;
-
-                if (text.ContentType.Matches ("text", "html")) {
-                    RenderHtml (text.Text, section);
-                } else if (text.ContentType.Matches ("text", "calendar")) {
-                    RenderCalendar (text, section);
-                } else {
-                    RenderText (text.Text, section);
-                }
-                return;
-            }
-            if (entity.ContentType.Matches ("image", "*")) {
-                RenderImage (part, section);
-                return;
-            }
-
-            if (entity.ContentType.Matches ("application", "ics")) {
-                NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
-                return;
-            }
-            if (entity.ContentType.Matches ("application", "octet-stream")) {
-                NachoCore.Utils.Log.Error ("Unhandled octet-stream: {0}\n", part.ContentType);
-                return;
-            }
-
-            NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
-        }
-
-        /// <summary>
-        /// Renders the best alternative.
-        /// http://en.wikipedia.org/wiki/MIME#Alternative
-        /// </summary>
-        void RenderBestAlternative (Multipart multipart, Section section)
-        {
-            var e = multipart.Last ();
-            RenderMimeEntity (e, section);
-
-        }
-
-        void RenderHtml (string html, Section section)
-        {
             Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
 
             int i = 0;
@@ -298,11 +250,17 @@ namespace NachoClient.iOS
             var web = new UIWebView (UIScreen.MainScreen.Bounds) {
                 BackgroundColor = UIColor.White,
                 ScalesPageToFit = true,
-                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin,
+                AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin
             };
+            web.ContentMode = UIViewContentMode.ScaleAspectFit;
             web.ScrollView.PagingEnabled = false;
             web.ScrollView.ScrollEnabled = false;
             web.ScrollView.MultipleTouchEnabled = true;
+
+            var e = new UIViewElement ("", web, true);
+            section.Add (e);
+            NachoCore.Utils.Log.Info ("Add webview element: {0}", e);
+            web.LoadHtmlString (html, null);
 
             web.LoadStarted += delegate {
                 // this is called several times
@@ -310,19 +268,29 @@ namespace NachoClient.iOS
                     ;
                 }
             };
-
             web.LoadFinished += delegate {
                 if (--i == 0) {
                     // we stopped loading
                     web.StopLoading ();
+                    string padding = "document.body.style.margin='0';document.body.style.padding = '0'";
+                    web.EvaluateJavascript (padding);
                     System.Drawing.RectangleF frame = web.Frame;
                     frame.Height = 1;
+                    frame.Width = 320;
                     web.Frame = frame;
-                    frame.Size = web.SizeThatFits (new System.Drawing.SizeF (0f, 0f));
+                    frame.Height = web.ScrollView.ContentSize.Height;
                     web.Frame = frame;
-                    Log.Info ("web frame: {0}", web, frame);
+                    Root.Reload (e, UITableViewRowAnimation.None);
 //                    web.Dispose ();
                 }
+            };
+            web.ScrollView.ViewForZoomingInScrollView = delegate {
+                return web;
+            };
+            web.ScrollView.DidZoom += (object sender, EventArgs ee) => {
+                System.Drawing.RectangleF frame = web.Frame;
+                frame.Height = web.ScrollView.ContentSize.Height;
+                web.Frame = frame;
             };
             web.LoadError += (webview, args) => {
                 // we stopped loading
@@ -339,16 +307,14 @@ namespace NachoClient.iOS
                 return true;
             };
 
-            web.LoadHtmlString (html, null);
-            var e = new UIViewElement ("", web, true);
-            NachoCore.Utils.Log.Info ("Add webview element: {0}", e);
-            section.Add (e);
         }
 
-        void RenderText (string text, Section section)
+        void RenderText (MimePart part, Section section)
         {
-            var e = new MultilineElement (text);
-            NachoCore.Utils.Log.Info ("Add multiline element: {0}", e);
+            var textPart = part as TextPart;
+            var text = textPart.Text;
+            var e = new StyledMultilineElement (text);
+            e.Font = UIFont.SystemFontOfSize (17.0f);
             section.Add (e);
         }
 
@@ -438,9 +404,10 @@ namespace NachoClient.iOS
             }
         }
         // TODO: Malformed calendars
-        public void RenderCalendar (TextPart text, Section section)
+        public void RenderCalendar (MimePart part, Section section)
         {
-            var decodedText = GetText (text);
+            var textPart = part as TextPart;
+            var decodedText = GetText (textPart);
             var stringReader = new StringReader (decodedText);
             IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
             IEvent evt = iCal.Events.First ();

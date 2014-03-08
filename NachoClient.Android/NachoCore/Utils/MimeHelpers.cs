@@ -187,6 +187,77 @@ namespace NachoCore.Utils
 
             BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id);
         }
+
+        public static void MimeDisplayList (MimeMessage message, ref List<MimeEntity> list)
+        {
+            if (null == list) {
+                list = new List<MimeEntity> ();
+            }
+            MimeEntityDisplayList (message.Body, ref list);
+        }
+
+        protected static void MimeEntityDisplayList (MimeEntity entity, ref List<MimeEntity> list)
+        {
+            if (entity is MessagePart) {
+                // This entity is an attached message/rfc822 mime part.
+                var messagePart = (MessagePart)entity;
+                // If you'd like to render this inline instead of treating
+                // it as an attachment, you would just continue to recurse:
+                MimeDisplayList (messagePart.Message, ref list);
+                return;
+            }
+            if (entity is Multipart) {
+                var multipart = (Multipart)entity;
+                if (multipart.ContentType.Matches ("multipart", "alternative")) {
+                    MimeBestAlternativeDisplayList (multipart, ref list);
+                    return;
+                }
+                foreach (var subpart in multipart) {
+                    MimeEntityDisplayList (subpart, ref list);
+                }
+                return;
+            }
+
+            // Everything that isn't either a MessagePart or a Multipart is a MimePart
+            var part = (MimePart)entity;
+
+            // Don't render anything that is explicitly marked as an attachment.
+            if (part.IsAttachment) {
+                return;
+            }
+
+            if (part is TextPart) {
+                list.Add (part);
+                return;
+            }
+
+            if (entity.ContentType.Matches ("image", "*")) {
+                list.Add (part);
+                return;
+            }
+
+            if (entity.ContentType.Matches ("application", "ics")) {
+                NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
+                return;
+            }
+            if (entity.ContentType.Matches ("application", "octet-stream")) {
+                NachoCore.Utils.Log.Error ("Unhandled octet-stream: {0}\n", part.ContentType);
+                return;
+            }
+
+            NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
+        }
+
+        /// <summary>
+        /// Renders the best alternative.
+        /// http://en.wikipedia.org/wiki/MIME#Alternative
+        /// </summary>
+        protected static void MimeBestAlternativeDisplayList (Multipart multipart, ref List<MimeEntity> list)
+        {
+            var e = multipart.Last ();
+            MimeEntityDisplayList (e, ref list);
+
+        }
     }
 }
 
