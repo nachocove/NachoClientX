@@ -245,6 +245,7 @@ namespace NachoCore.ActiveSync
 
             // Add the new
             foreach (var exception in c.exceptions) {
+                exception.AccountId = c.AccountId;
                 if (exception.Id > 0) {
                     int r = exception.Update ();
                     NachoCore.NachoAssert.True (0 < r);
