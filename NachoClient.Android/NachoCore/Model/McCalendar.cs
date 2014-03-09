@@ -393,14 +393,27 @@ namespace NachoCore.Model
 
     public partial class McCalendar
     {
+        protected bool HasReadAncillaryData;
+
         public McCalendar () : base ()
         {
+            HasReadAncillaryData = false;
             exceptions = new List<McException> ();
             recurrences = new List<McRecurrence> ();
         }
 
         public NcResult ReadAncillaryData ()
         {
+            if (!HasReadAncillaryData) {
+                HasReadAncillaryData = true;
+                return ForceReadAncillaryData ();
+            }
+            return NcResult.OK ();
+        }
+
+        public NcResult ForceReadAncillaryData ()
+        {
+            HasReadAncillaryData = true;
             var db = BackEnd.Instance.Db;
             attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList();
             categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList();
