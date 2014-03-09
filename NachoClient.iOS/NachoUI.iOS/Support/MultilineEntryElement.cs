@@ -100,6 +100,7 @@ namespace NachoClient.iOS
             {
                 base.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
                 base.Text = placeholder;
+                base.Font = UIFont.SystemFontOfSize(19.0f);
                 base.TextAlignment = UITextAlignment.Left;
                 base.TextColor = UIColor.LightGray;
                 base.Delegate = new TextDelgate (placeholder);
