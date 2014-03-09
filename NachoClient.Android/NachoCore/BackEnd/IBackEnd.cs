@@ -5,8 +5,6 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public enum RespondCalEnum { Accepted = 1, Tentatively = 2, Declined = 3};
-
     public interface IBackEnd
     {
         // This is the API Contract for the BackEnd object. The owner of the BackEnd
@@ -66,7 +64,7 @@ namespace NachoCore
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
         string CreateCalCmd (int accountId, int calId);
-        string RespondCalCmd (int accountId, int calId, RespondCalEnum response);
+        string RespondCalCmd (int accountId, int calId, NcResponseType response);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
                           bool IsClientOwned, bool isHidden);

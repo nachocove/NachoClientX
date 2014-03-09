@@ -97,7 +97,7 @@ namespace NachoCore
 
         public abstract string CreateCalCmd (int calId);
 
-        public abstract string RespondCalCmd (int calId, RespondCalEnum response);
+        public abstract string RespondCalCmd (int calId, NcResponseType response);
 
         public abstract string CreateFolderCmd (int destFolderId, string displayName, uint folderType,
                                           bool IsClientOwned, bool isHidden);

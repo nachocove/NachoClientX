@@ -274,7 +274,7 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).CreateCalCmd (calId);
         }
 
-        public string RespondCalCmd (int accountId, int calId, RespondCalEnum response)
+        public string RespondCalCmd (int accountId, int calId, NcResponseType response)
         {
             return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
         }

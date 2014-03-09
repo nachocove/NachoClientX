@@ -395,18 +395,37 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
-        public override string RespondCalCmd (int calId, RespondCalEnum response)
+        public override string RespondCalCmd (int calId, NcResponseType response)
         {
             McCalendar cal;
             McFolder folder;
             if (!GetItemAndFolder<McCalendar> (calId, out cal, out folder)) {
                 return null;
             }
+
+            AsMeetingResponseCommand.ResponseEnum apiResponse;
+            switch (response) {
+            case NcResponseType.Accepted:
+                apiResponse = AsMeetingResponseCommand.ResponseEnum.Accepted;
+                break;
+
+            case NcResponseType.Tentative:
+                apiResponse = AsMeetingResponseCommand.ResponseEnum.Tentatively;
+                break;
+
+            case NcResponseType.Declined:
+                apiResponse = AsMeetingResponseCommand.ResponseEnum.Declined;
+                break;
+
+            default:
+                return null;
+            }
+
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.CalRespond,
                 ServerId = cal.ServerId,
                 FolderServerId = folder.ServerId,
-                CalResponse = (uint)response,
+                CalResponse = (uint)apiResponse,
             };
 
             pending.Insert ();

@@ -10,6 +10,8 @@ namespace NachoCore.ActiveSync
 {
     public class AsMeetingResponseCommand : AsCommand
     {
+        public enum ResponseEnum { Accepted = 1, Tentatively = 2, Declined = 3};
+
         public AsMeetingResponseCommand (IAsDataSource dataSource) : base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
         {
             Update = NextPending (McPending.Operations.CalRespond);
