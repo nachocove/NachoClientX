@@ -399,6 +399,29 @@ namespace NachoClient.iOS
         }
     }
 
+    class RadioElementWithDot : RadioElement
+    {
+        protected UIColor color;
+
+        public RadioElementWithDot(string caption, UIColor color) : base(caption)
+        {
+            this.color = color;
+        }
+
+        protected override NSString CellKey {
+            get {
+                return new NSString ("Nacho.RadioElementWithDot");
+            }
+        }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+            cell.ImageView.Image = NachoClient.Util.DotWithColor(color);
+            return cell;
+        }
+    }
+
     class CalendarRadioElementSection : Section
     {
         public CalendarRadioElementSection (NachoFolders calendars) : base("Calendars")
@@ -406,7 +429,8 @@ namespace NachoClient.iOS
             // TODO: Arrange by account
             for(int i = 0; i < calendars.Count(); i++) {
                 var c = calendars.GetFolder(i);
-                var e = new RadioElement (c.DisplayName);
+                // TODO: Get color from calendar
+                var e = new RadioElementWithDot (c.DisplayName, UIColor.Green);
                 this.Add (e);
             }
         }
