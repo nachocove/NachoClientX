@@ -398,5 +398,18 @@ namespace NachoClient.iOS
             this.Image = NachoClient.Util.DotWithColor (color);
         }
     }
+
+    class CalendarRadioElementSection : Section
+    {
+        public CalendarRadioElementSection (NachoFolders calendars) : base("Calendars")
+        {
+            // TODO: Arrange by account
+            for(int i = 0; i < calendars.Count(); i++) {
+                var c = calendars.GetFolder(i);
+                var e = new RadioElement (c.DisplayName);
+                this.Add (e);
+            }
+        }
+    }
 }
 

@@ -21,24 +21,27 @@ namespace NachoClient.iOS
     {
         public bool editing;
         public McCalendar calendarItem;
-        UIBarButtonItem doneButton;
-        UIBarButtonItem editButton;
-        private McAccount account;
-        private McCalendar c;
+        protected UIBarButtonItem doneButton;
+        protected UIBarButtonItem editButton;
+        protected McAccount account;
+        protected McCalendar c;
+        protected McFolder f;
+        protected NachoFolders calendars;
 
         public CalendarItemViewController (IntPtr handle) : base (handle)
         {
             doneButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
             editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
-
-            // TODO: Need account manager.
-            // We only have one account, for now.
-            account = BackEnd.Instance.Db.Table<McAccount> ().First ();
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            // TODO: Need account manager.
+            // We only have one account, for now.
+            account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
@@ -154,6 +157,7 @@ namespace NachoClient.iOS
         RootElementWithIcon reminderEntryElement;
         PeopleEntryElement peopleEntryElement;
         EntryElementWithIcon locationEntryElement;
+        RootElementWithIcon calendarEntryElement;
 
         /// <summary>
         /// Edit the (possibly empty) calendar entry
@@ -167,6 +171,10 @@ namespace NachoClient.iOS
             }
             appointmentEntryElement = new AppointmentEntryElement (DateTime.Now, DateTime.Now);
             peopleEntryElement = new PeopleEntryElement ();
+
+            calendarEntryElement = new RootElementWithIcon ("ic_action_event", "Calendar", new RadioGroup (0)) {
+                new CalendarRadioElementSection (calendars)
+            };
 
             reminderEntryElement = new RootElementWithIcon ("ic_action_alarms", "Reminder");
             reminderEntryElement.Add (new ReminderSection (c.Reminder));
@@ -203,6 +211,7 @@ namespace NachoClient.iOS
             root.Add (section);
 
             section = new ThinSection ();
+            section.Add (calendarEntryElement);
             section.Add (reminderEntryElement);
             root.Add (section);
 
@@ -278,6 +287,7 @@ namespace NachoClient.iOS
             var reminderSection = reminderEntryElement [0] as ReminderSection;
             var hiddenElement = reminderSection [0] as HiddenElement;
             c.Reminder = hiddenElement.Value;
+            f = calendars.GetFolder (calendarEntryElement.RadioSelected);
             // Extras
             c.OrganizerName = Pretty.DisplayNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
@@ -287,6 +297,7 @@ namespace NachoClient.iOS
             var iCal = iCalendarFromMcCalendar (c);
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = iCal.Events [0].UID;
+            } else {
                 iCal.Events [0].UID = c.UID;
             }
             return iCal;
@@ -312,7 +323,13 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-            BackEnd.Instance.Db.Insert (c);
+            c.Insert ();
+            var map = new McMapFolderItem (c.AccountId) {
+                FolderId = f.Id,
+                ItemId = c.Id,
+                ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
+            };
+            map.Insert ();
             BackEnd.Instance.CreateCalCmd (account.Id, c.Id);
         }
 
@@ -339,16 +356,17 @@ namespace NachoClient.iOS
             // TODO: Do we really need to add name parameter, like AS doc shows?
             body.ContentType.Parameters.Add (new Parameter ("name", "meeting.ics"));
 
+            // TODO: Smarter about character encoding
             using (var iCalStream = new MemoryStream ()) {
                 iCalendarSerializer serializer = new iCalendarSerializer ();
-                serializer.Serialize (iCal, iCalStream, System.Text.Encoding.UTF8);
+                serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
                 iCalStream.Seek (0, SeekOrigin.Begin);
                 using (var textStream = new StreamReader (iCalStream)) {
                     body.Text = textStream.ReadToEnd ();
                 }
             }
 
-            body.ContentTransferEncoding = ContentEncoding.Base64;
+            body.ContentTransferEncoding = ContentEncoding.EightBit;
 
             // TODO: Do we really need multipart?
             var msg = new Multipart ("alternative",
