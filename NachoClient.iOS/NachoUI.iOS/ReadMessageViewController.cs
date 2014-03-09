@@ -379,29 +379,10 @@ namespace NachoClient.iOS
             }
         }
 
+        // Gets the decoded text content.
         public string GetText (TextPart text)
         {
-            switch (text.ContentTransferEncoding) {
-            case ContentEncoding.Base64:
-                var decoded = System.Convert.FromBase64String (text.Text);
-                return System.Text.Encoding.UTF8.GetString (decoded);
-            case ContentEncoding.QuotedPrintable:
-                var input = Encoding.ASCII.GetBytes (text.Text);
-                var decoder = new QuotedPrintableDecoder ();
-                var output = new byte[decoder.EstimateOutputLength (input.Length)];
-                var outputLength = decoder.Decode (input, 0, input.Length, output);
-                // TODO: L10N
-                return System.Text.Encoding.UTF8.GetString (output, 0, outputLength);
-            case ContentEncoding.Default:
-                return text.Text;
-            case ContentEncoding.EightBit:
-                return text.Text;
-            case ContentEncoding.SevenBit:
-                return text.Text;
-            default:
-                NachoAssert.CaseError ();
-                return null;
-            }
+            return text.Text;
         }
         // TODO: Malformed calendars
         public void RenderCalendar (MimePart part, Section section)
