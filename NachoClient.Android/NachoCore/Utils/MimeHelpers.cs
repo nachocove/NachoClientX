@@ -155,7 +155,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Convert MimeMessage to McEmailMessage and send it.
         /// </summary>
-        static public void SendEmail(int AccountId, MimeMessage mimeMessage)
+        static public void SendEmail(int AccountId, MimeMessage mimeMessage, int CalendarId = 0)
         {
             // Don't let 0 into the db
             NachoAssert.True (AccountId > 0);
@@ -185,7 +185,11 @@ namespace NachoCore.Utils
             msg.AccountId = AccountId;
             BackEnd.Instance.Db.Insert (msg);
 
-            BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id);
+            if (0 == CalendarId) {
+                BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id);
+            } else {
+                BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id, CalendarId);
+            }
         }
 
         public static void MimeDisplayList (MimeMessage message, ref List<MimeEntity> list)

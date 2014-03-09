@@ -52,9 +52,9 @@ namespace NachoClient.iOS
                     if (0 == alertEvent.ButtonIndex) {
                         editing = false;
                         // TODO: Save the new
-                        ExtractDialogValues ();
+                        var iCal = ExtractDialogValues ();
                         SyncMeetingRequest ();
-                        SendMessage ();
+                        SendInvites (iCal);
                         NavigationItem.RightBarButtonItem = editButton;
                         Root = ShowDetail ();
                         ReloadComplete ();
@@ -267,7 +267,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Extract values from dialog.root into 'c'.
         /// </summary>
-        protected void ExtractDialogValues ()
+        protected IICalendar ExtractDialogValues ()
         {
             c.Subject = subjectEntryElement.Value;
             c.AllDayEvent = appointmentEntryElement.allDayEvent;
@@ -278,6 +278,18 @@ namespace NachoClient.iOS
             var reminderSection = reminderEntryElement [0] as ReminderSection;
             var hiddenElement = reminderSection [0] as HiddenElement;
             c.Reminder = hiddenElement.Value;
+            // Extras
+            c.OrganizerName = Pretty.DisplayNameForAccount (account);
+            c.OrganizerEmail = account.EmailAddr;
+            c.AccountId = account.Id;
+            c.DtStamp = DateTime.Now;
+            // IICalendar
+            var iCal = iCalendarFromMcCalendar (c);
+            if (String.IsNullOrEmpty (c.UID)) {
+                c.UID = iCal.Events [0].UID;
+                iCal.Events [0].UID = c.UID;
+            }
+            return iCal;
         }
 
         protected IICalendar iCalendarFromMcCalendar (McCalendar c)
@@ -289,7 +301,7 @@ namespace NachoClient.iOS
             evt.End = new iCalDateTime (c.EndTime);
             evt.IsAllDay = c.AllDayEvent;
             evt.Location = c.Location;
-            evt.Organizer = new Organizer ("steves@nac01.com");
+            evt.Organizer = new Organizer (account.EmailAddr);
             foreach (var a in c.attendees) {
                 var iAttendee = new Attendee ("mailto:" + a.Email);
                 iAttendee.CommonName = a.Name;
@@ -300,13 +312,14 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-            // TODO: Need BE API
+            BackEnd.Instance.Db.Insert (c);
+            BackEnd.Instance.CreateCalCmd (account.Id, c.Id);
         }
 
         /// <summary>
         /// Sends the message. Message (UID) must already exist in EAS.
         /// </summary>
-        protected void SendMessage ()
+        protected void SendInvites (IICalendar iCal)
         {
             var mimeMessage = new MimeMessage ();
 
@@ -325,7 +338,6 @@ namespace NachoClient.iOS
             body.ContentType.Parameters.Add (new Parameter ("method", "REQUEST"));
             // TODO: Do we really need to add name parameter, like AS doc shows?
             body.ContentType.Parameters.Add (new Parameter ("name", "meeting.ics"));
-            var iCal = iCalendarFromMcCalendar (c);
 
             using (var iCalStream = new MemoryStream ()) {
                 iCalendarSerializer serializer = new iCalendarSerializer ();
@@ -346,7 +358,7 @@ namespace NachoClient.iOS
 
             mimeMessage.Body = msg;
 
-            MimeHelpers.SendEmail (account.Id, mimeMessage);
+            MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
         }
     }
 }
