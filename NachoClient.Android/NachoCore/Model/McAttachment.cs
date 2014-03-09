@@ -1,5 +1,7 @@
 using SQLite;
 using System;
+using System.IO;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -38,5 +40,20 @@ namespace NachoCore.Model
 
         public string ContentType { get; set; }
 
+        public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
+        {
+            NachoAssert.True (typeof(T) == typeof(McEmailMessage));
+            // TODO: support attachments in other items (e.g. Calendar).
+            return BackEnd.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
+                " a.AccountId = ? AND " +
+                " a.EmailMessageId = ? ",
+                accountId, itemId);
+        }
+
+        public override int Delete ()
+        {
+            File.Delete (Path.Combine (BackEnd.Instance.AttachmentsDir, LocalFileName));
+            return base.Delete ();
+        }
     }
 }

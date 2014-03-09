@@ -164,6 +164,14 @@ namespace NachoCore.Model
             }
         }
 
+        public void DeleteAttachments ()
+        {
+            var atts = McAttachment.QueryByItemId<McEmailMessage> (AccountId, Id);
+            foreach (var toNix in atts) {
+                toNix.Delete ();
+            }
+        }
+
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
@@ -185,6 +193,7 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             DeleteBody ();
+            DeleteAttachments ();
             return base.Delete ();
         }
     }

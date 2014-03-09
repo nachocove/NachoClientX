@@ -40,6 +40,7 @@ namespace NachoCore.ActiveSync
                     Log.Error (Log.LOG_AS, "as:itemoperations: FileReference mismatch.");
                     throw new Exception ();
                 }
+                // TODO: move the file-manip stuff to McAttachment.
                 var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                 attachment.LocalFileName = attachment.Id.ToString ();
@@ -51,7 +52,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
-                File.WriteAllBytes (Path.Combine (DataSource.Owner.AttachmentsDir, attachment.LocalFileName),
+                File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName),
                     Convert.FromBase64String (xmlData.Value));
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
