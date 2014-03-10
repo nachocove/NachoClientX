@@ -98,7 +98,11 @@ namespace NachoClient.iOS
             public MultilineView (string placeholder, string value, float height, bool transparentBackground)
                 : base (new RectangleF (0, 0, 10, height - (transparentBackground ? 0 : 12)))
             {
+                int currentPos = base.SelectedRange.Location;
+                NSRange newPos;
+
                 base.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleLeftMargin;
+              
                 base.Text = placeholder;
                 base.Font = UIFont.SystemFontOfSize(19.0f);
                 base.TextAlignment = UITextAlignment.Left;
@@ -108,6 +112,9 @@ namespace NachoClient.iOS
                 base.TextContainerInset = new UIEdgeInsets (0f, 0f, 10f, 0f);
 
                 base.ScrollEnabled = true;
+
+
+              
 
                 AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleRightMargin;
 
@@ -122,7 +129,12 @@ namespace NachoClient.iOS
                     base.Delegate.EditingStarted (this);
                     base.Text = value;
                     base.Delegate.EditingEnded (this);
+                    // and reset the cursor location to start of window now
+                    newPos = new NSRange(currentPos, 0);
+                    base.SelectedRange = newPos;
                 }
+
+
             }
 
             public override void LayoutSubviews ()
