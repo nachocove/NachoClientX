@@ -37,10 +37,9 @@ namespace NachoClient.iOS
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                     if(0 == alertEvent.ButtonIndex) {
                         editing = false;
-                        // TODO: Save the new
-                        NavigationItem.RightBarButtonItem = editButton;
-                        Root = ToDialogElement (contact);
-                        ReloadComplete ();
+                        // TODO: Save the new contact
+                        Configure();
+;
                     }
                 };
                 alert.Show();
@@ -48,9 +47,7 @@ namespace NachoClient.iOS
 
             editButton.Clicked += (object sender, EventArgs e) => {
                 editing = true;
-                NavigationItem.RightBarButtonItem = doneButton;
-                Root = ToDialogElement (contact);
-                ReloadComplete ();
+                Configure();
             };
 
             // Set up view
@@ -58,13 +55,21 @@ namespace NachoClient.iOS
             if (null == contact) {
                 editing = true;
                 contact = new McContact ();
-                Root = ToDialogElement (contact);
-                NavigationItem.RightBarButtonItem = doneButton;
             } else {
                 editing = false;
-                Root = ToDialogElement (contact);
+            }
+            Configure ();
+        }
+
+        protected void Configure()
+        {
+            if (editing) {
+                NavigationItem.RightBarButtonItem = doneButton;
+            } else {
                 NavigationItem.RightBarButtonItem = editButton;
             }
+            Root = ToDialogElement (contact);
+            ReloadComplete ();
         }
 
         public void AddIfSet (ref Section section, string name, string value, UIKeyboardType kbt = UIKeyboardType.Default)

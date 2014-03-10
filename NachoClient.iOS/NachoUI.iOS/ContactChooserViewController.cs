@@ -15,18 +15,20 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactChooserViewController : UIViewController, IUITextFieldDelegate, INachoContactChooser
+    public partial class ContactChooserViewController : UIViewController, IUITableViewDelegate, IUITextFieldDelegate, INachoContactChooser
     {
         // Interface
         protected NcEmailAddress address;
+        protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
         // Internal state
         INachoContacts contacts;
 
-        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address)
+        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType contactType)
         {
             this.owner = owner;
             this.address = address;
+            this.contactType = contactType;
         }
 
         public ContactChooserViewController (IntPtr handle) : base (handle)
@@ -105,6 +107,12 @@ namespace NachoClient.iOS
                 destinationController.owner = this;
                 destinationController.initialSearchString = AutocompleteTextField.Text;
             }
+            if (segue.Identifier.Equals ("ContactChooserToContactView")) {
+                var holder = (SegueHolder) sender;
+                ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
+                destinationController.editing = false;
+                destinationController.contact = (McContact)holder.value;
+            }
         }
 
         protected void SetToButtonLabel (NcEmailAddress.Kind k)
@@ -144,6 +152,16 @@ namespace NachoClient.iOS
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             McContact contact = contacts.GetSearchResult (indexPath.Row);
+
+            // TODO: require phone numbers in contact chooser
+            NachoAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
+
+            if (NachoContactType.EmailRequired == (contactType & NachoContactType.EmailRequired)) {
+                if (null == contact.DisplayEmailAddress) {
+                    ComplainAboutMissingEmailAddress (contact);
+                    return;
+                }
+            }
 
             UpdateEmailAddress (contact, contact.DisplayEmailAddress);
 
@@ -252,6 +270,20 @@ namespace NachoClient.iOS
                     return cell;  
                 }
             }
+        }
+
+        string complaintTitle = "Email Address Missing";
+        string complaintMessage = "You've selected a contact that does not have an email address.  Would you like to edit this contact?";
+
+        void ComplainAboutMissingEmailAddress (McContact contact)
+        {
+            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", new string[] { "Edit contact" });
+            alert.Clicked += (s, b) => {
+                if(1 == b.ButtonIndex) {
+                    PerformSegue("ContactChooserToContactView", new SegueHolder(contact));
+                }
+            };
+            alert.Show ();
         }
     }
 }

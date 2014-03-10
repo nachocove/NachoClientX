@@ -97,7 +97,7 @@ namespace NachoClient.iOS
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = (MyEmailAddress)holder.value;
-                dc.SetOwner (this, address);
+                dc.SetOwner (this, address, NachoContactType.EmailRequired);
             }
         }
 
@@ -225,9 +225,10 @@ namespace NachoClient.iOS
         {
             var a = address as MyEmailAddress;
             NachoAssert.True (null != a);
-            NachoAssert.True (MyEmailAddress.Action.edit == a.action);
 
-            AddressList.RemoveAt (a.index);
+            if (MyEmailAddress.Action.edit == a.action) {
+                AddressList.RemoveAt (a.index);
+            }
         }
 
         public MailboxAddress GetMailboxAddress (NcEmailAddress address)
