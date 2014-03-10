@@ -123,6 +123,26 @@ namespace NachoClient.iOS
             }
             root.Add (section);
 
+            if (c.ResponseRequested) {
+                section = new ThinSection ();
+                var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
+                button1.Tapped += () => {
+                    UpdateStatus (NcResponseType.Accepted);
+                };
+                var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
+                button2.Tapped += () => {
+                    UpdateStatus (NcResponseType.Tentative);
+                };
+                var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
+                button3.Tapped += () => {
+                    UpdateStatus (NcResponseType.Declined);
+                };
+                section.Add (button1);
+                section.Add (button2);
+                section.Add (button3);
+                root.Add (section);
+            }
+
             if (null != c.Location) {
                 section = new ThinSection ();
                 section.Add (new LocationElement (c.Location));
@@ -389,6 +409,11 @@ namespace NachoClient.iOS
         {
             var candidates = McFolder.QueryByItemId<McCalendar> (account.Id, c.Id);
             return candidates.First ().DisplayName;
+        }
+
+        protected void UpdateStatus(NcResponseType status)
+        {
+            BackEnd.Instance.RespondCalCmd (account.Id, c.Id, status);
         }
     }
 }
