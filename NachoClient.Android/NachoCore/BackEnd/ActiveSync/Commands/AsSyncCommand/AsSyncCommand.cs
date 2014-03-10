@@ -162,7 +162,8 @@ namespace NachoCore.ActiveSync
                         if (null != cal) {
                             commands.Add (new XElement (m_ns + Xml.AirSync.Add,
                                 new XElement (m_ns + Xml.AirSync.ClientId, calCre.ClientId),
-                                new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar),
+                                // TODO: need the line below if not in a Calendar folder.
+                                // new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar),
                                 AsHelpers.ToXmlApplicationData (cal)));
                             // FIXME - what do we need to say if the item is missing from the DB?
                             calCre.IsDispatched = true;

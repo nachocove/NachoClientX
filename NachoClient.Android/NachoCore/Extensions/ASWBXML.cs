@@ -203,7 +203,7 @@ namespace NachoCore.Wbxml
             codePages [2].AddToken (0x30, "MonthOfYear");
             codePages [2].AddToken (0x31, "StartTime");
             codePages [2].AddToken (0x32, "Sensitivity");
-            codePages [2].AddToken (0x33, "TimeZone");
+            codePages [2].AddToken (0x33, "Timezone");
             codePages [2].AddToken (0x34, "GlobalObjId");
             codePages [2].AddToken (0x35, "ThreadTopic");
             codePages [2].AddToken (0x39, "InternetCPID");
@@ -228,7 +228,7 @@ namespace NachoCore.Wbxml
             codePages [4].Namespace = "Calendar";
             codePages [4].Xmlns = "calendar";
 
-            codePages [4].AddToken (0x05, "TimeZone");
+            codePages [4].AddToken (0x05, "Timezone");
             codePages [4].AddToken (0x06, "AllDayEvent");
             codePages [4].AddToken (0x07, "Attendees");
             codePages [4].AddToken (0x08, "Attendee");

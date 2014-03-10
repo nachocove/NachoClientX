@@ -322,7 +322,9 @@ namespace NachoClient.iOS
             // IICalendar
             var iCal = iCalendarFromMcCalendar (c);
             if (String.IsNullOrEmpty (c.UID)) {
-                c.UID = iCal.Events [0].UID;
+                // Note - this only works becasue DDay makes UID as a dashed GUID.
+                c.UID = iCal.Events [0].UID.Replace ("-", null).ToUpper ();
+                iCal.Events [0].UID = c.UID;
             } else {
                 iCal.Events [0].UID = c.UID;
             }

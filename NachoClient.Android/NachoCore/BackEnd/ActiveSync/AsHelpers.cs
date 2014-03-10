@@ -76,12 +76,14 @@ namespace NachoCore.ActiveSync
             if (0 != cal.Reminder) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Reminder, cal.Reminder));
             }
+
             // TODO TimeZoneId - TimeZone table not implemented yet.
+            //xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, "4AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAMAAAAAAAAAxP///w=="));//FIXME.
 
             if (null != cal.Subject) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Subject, cal.Subject));
             }
-            if (null != cal.Location) {
+            if (! string.IsNullOrEmpty (cal.Location)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Location, cal.Location));
             }
             if (cal.SensitivityIsSet) {
@@ -521,7 +523,11 @@ namespace NachoCore.ActiveSync
                     c.MeetingStatusIsSet = true;
                     break;
                 case Xml.Calendar.Reminder:
-                    c.Reminder = child.Value.ToUint ();
+                    if (string.IsNullOrEmpty (child.Value)) {
+                        // TODO: add support for top-level Reminder element.
+                    } else {
+                        c.Reminder = child.Value.ToUint ();
+                    }
                     break;
                 case Xml.Calendar.ResponseRequested:
                     c.ResponseRequested = child.Value.ToBoolean ();
