@@ -833,6 +833,7 @@
                         <outlet property="ContactsButton" destination="PfB-rr-F7z" id="JTC-Ef-UAG"/>
                         <outlet property="TableView" destination="9hu-Bf-IM7" id="BGO-Do-fuf"/>
                         <outlet property="ToButton" destination="t9Q-AT-iDf" id="3ct-gd-Zi5"/>
+                        <segue destination="cRD-uS-uKj" kind="push" identifier="ContactChooserToContactView" id="WJc-Y6-XJB"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1262,16 +1263,16 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="hCT-pP-PUu"/>
-        <segue reference="5fj-Ta-mc9"/>
-        <segue reference="Fvv-mz-C9l"/>
-        <segue reference="7H5-MT-Qxr"/>
-        <segue reference="JWi-mA-RVD"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="S6l-ao-xdW"/>
-        <segue reference="1iq-X7-xab"/>
         <segue reference="Mvu-uQ-8cr"/>
         <segue reference="g4G-tD-G9H"/>
+        <segue reference="hCT-pP-PUu"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="7H5-MT-Qxr"/>
+        <segue reference="JWi-mA-RVD"/>
+        <segue reference="1iq-X7-xab"/>
+        <segue reference="S6l-ao-xdW"/>
+        <segue reference="5fj-Ta-mc9"/>
         <segue reference="nAp-rc-bND"/>
+        <segue reference="WJc-Y6-XJB"/>
     </inferredMetricsTieBreakers>
 </document>

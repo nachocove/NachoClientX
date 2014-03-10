@@ -7,9 +7,15 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
+    public enum NachoContactType : int {
+        EmailRequired = 1,
+        PhoneNumberRequired = 2,
+        All = (EmailRequired | PhoneNumberRequired),
+    };
+
     public interface INachoContactChooser
     {
-        void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address);
+        void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType type);
         void DismissViewController (bool animated, NSAction action);
     }
 
