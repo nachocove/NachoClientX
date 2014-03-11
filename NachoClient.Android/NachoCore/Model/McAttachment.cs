@@ -52,7 +52,9 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            File.Delete (Path.Combine (BackEnd.Instance.AttachmentsDir, LocalFileName));
+            if (IsDownloaded) {
+                File.Delete (Path.Combine (BackEnd.Instance.AttachmentsDir, LocalFileName));
+            }
             return base.Delete ();
         }
     }
