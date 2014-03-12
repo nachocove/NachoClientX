@@ -324,6 +324,14 @@ namespace NachoClient.iOS
     {
         public StartTimeElement (string caption) : base (caption)
         {
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+        }
+    }
+
+    public class StartTimeElementWithIconIndent : StyledStringElement
+    {
+        public StartTimeElementWithIconIndent (string caption) : base (caption)
+        {
             // Add (invisible) image to get the proper indentation
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
             this.Font = UIFont.SystemFontOfSize (15.0f);
