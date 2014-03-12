@@ -353,7 +353,7 @@ namespace NachoCore.ActiveSync
                 try {
                     HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
                 } catch (Exception ex) {
-                    Log.Info (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}", ex, ServerUri, ex.Message);
+                    Log.Info ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                     HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
                  }
             }
@@ -377,7 +377,7 @@ namespace NachoCore.ActiveSync
             case HttpStatusCode.OK:
                 NcCommStatus.Instance.ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
-                if (0 != ContentData.Length) {
+                if (0 < ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
