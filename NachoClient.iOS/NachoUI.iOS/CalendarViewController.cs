@@ -7,6 +7,7 @@ using MonoTouch.EventKit;
 using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -59,6 +60,15 @@ namespace NachoClient.iOS
                 calendar = new NachoCalendar ();
                 TableView.ReloadData ();
             }
+
+            // Watch for changes from the back end
+            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
+                    calendar.Refresh();
+                    TableView.ReloadData();
+                }
+            };
         }
 
         /// <summary>
