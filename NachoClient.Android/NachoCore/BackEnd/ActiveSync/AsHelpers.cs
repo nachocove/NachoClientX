@@ -1,6 +1,7 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
@@ -45,6 +46,7 @@ namespace NachoCore.ActiveSync
         const string CompactDateTimeFmt1 = "yyyyMMddTHHmmssZ";
         const string CompactDateTimeFmt2 = "yyyyMMddTHHmmssfffZ";
         const string DateTimeFmt1 = "yyyy-MM-ddTHH:mm:ss.fffZ";
+        protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
 
         private static string XmlFromBool (bool value)
         {
@@ -83,7 +85,7 @@ namespace NachoCore.ActiveSync
             if (null != cal.Subject) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Subject, cal.Subject));
             }
-            if (! string.IsNullOrEmpty (cal.Location)) {
+            if (!string.IsNullOrEmpty (cal.Location)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Location, cal.Location));
             }
             if (cal.SensitivityIsSet) {
@@ -437,8 +439,26 @@ namespace NachoCore.ActiveSync
                     case Xml.Calendar.Exception.Subject:
                         TrySetStringFromXml (e, child.Name.LocalName, child.Value);
                         break;
-//                  case Xml.Calendar.airsyncbase:Body:
-//                      break
+                    case Xml.AirSyncBase.Body:
+                        var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
+                        if (null != bodyElement) {
+                            var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                            if (null != saveAttr) {
+                                e.BodyId = int.Parse (saveAttr.Value);
+                            } else {
+                                var body = new McBody ();
+                                body.Body = bodyElement.Value; 
+                                body.Insert ();
+                                e.BodyId = body.Id;
+                            }
+                        } else {
+                            e.BodyId = 0;
+                            Console.WriteLine ("Truncated message from server.");
+                        }
+                        break;
+                    case Xml.AirSyncBase.NativeBodyType:
+                        NachoAssert.CaseError (); // Docs claim this doesn't exist
+                        break;
                     default:
                         Log.Warn (Log.LOG_AS, "CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                         break;
@@ -503,10 +523,26 @@ namespace NachoCore.ActiveSync
                     var recurrence = ParseRecurrence (nsCalendar, child);
                     c.recurrences.Add (recurrence);
                     break;
-//                case Xml.Calendar.airsyncbase:Body:
-//                    break
-//                case Xml.Calendar.airsyncbase:NativeBodyType:
-//                    break;
+                case Xml.AirSyncBase.Body:
+                    var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
+                    if (null != bodyElement) {
+                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                        if (null != saveAttr) {
+                            c.BodyId = int.Parse (saveAttr.Value);
+                        } else {
+                            var body = new McBody ();
+                            body.Body = bodyElement.Value; 
+                            body.Insert ();
+                            c.BodyId = body.Id;
+                        }
+                    } else {
+                        c.BodyId = 0;
+                        Console.WriteLine ("Truncated message from server.");
+                    }
+                    break;
+                case Xml.AirSyncBase.NativeBodyType:
+                    c.NativeBodyType = child.Value.ToInt ();
+                    break;
                 // Elements
                 case Xml.Calendar.AllDayEvent:
                     c.AllDayEvent = child.Value.ToBoolean ();
