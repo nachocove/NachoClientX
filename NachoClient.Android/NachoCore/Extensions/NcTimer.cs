@@ -27,11 +27,11 @@ namespace NachoCore.Utils
             Log.Info (Log.LOG_TIMER, "NcTimer {0} created", id);
 
             return state => {
-                if (null == callback) {
-                    Log.Info (Log.LOG_TIMER, "NcTimer {0} fired after Dispose.", id);
-                } else {
-                    Log.Info (Log.LOG_TIMER, "NcTimer {0} fired.", id);
-                    lock (lockObj) {
+                lock (lockObj) {
+                    if (null == callback) {
+                        Log.Info (Log.LOG_TIMER, "NcTimer {0} fired after Dispose.", id);
+                    } else {
+                        Log.Info (Log.LOG_TIMER, "NcTimer {0} fired.", id);
                         callback (state);
                     }
                 }
