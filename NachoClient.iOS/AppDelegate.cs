@@ -52,6 +52,11 @@ namespace NachoClient.iOS
             // It manages everything while the app is running.
             var Be = BackEnd.Instance;
             Be.Owner = this;
+            Be.StatusIndEvent += (object sender, EventArgs e) => {
+                // Watch for changes from the back end
+                var s = (StatusIndEventArgs)e;
+                this.StatusInd (s.Account.Id, s.Status, s.Tokens);
+            };
             if (0 == Be.Db.Table<McAccount> ().Count ()) {
                 Log.Info (Log.LOG_UI, "Empty Table");
             } else {
@@ -212,13 +217,8 @@ namespace NachoClient.iOS
                 // in future, we'll use this to open to right screen if we got launched from a notification
             }
         }
-        // Methods for IBackEndOwner
-        public void StatusInd (NcResult status)
-        {
-            // FIXME.
-        }
 
-        public void StatusInd (int accountId, NcResult status)
+        public void StatusInd (int accountId, NcResult status, string[] tokens)
         {
             {
 
@@ -274,11 +274,6 @@ namespace NachoClient.iOS
                     break;
                 }
             }
-        }
-
-        public void StatusInd (int accountId, NcResult status, string[] tokens)
-        {
-            // FIXME.
         }
 
         public void CredReq (int accountId)
