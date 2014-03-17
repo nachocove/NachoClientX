@@ -186,6 +186,11 @@ namespace NachoClient.iOS
                 vc.messages = messageThreads;
                 vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
             }
+            if (segue.Identifier == "MessageListToMessageView") {
+                var vc = (MessageViewController)segue.DestinationViewController;
+                vc.messages = messageThreads;
+                vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
+            }
             if (segue.Identifier == "MessageToMessagePriority") {
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 var indexPath = (NSIndexPath)sender;
@@ -231,7 +236,8 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            PerformSegue ("MessagesToRead", indexPath);
+//            PerformSegue ("MessagesToRead", indexPath);
+            PerformSegue ("MessageListToMessageView", indexPath);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
