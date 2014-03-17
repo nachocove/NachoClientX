@@ -64,6 +64,7 @@
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="Bab-sA-Ld3" kind="push" identifier="NachoNowToMessage" id="7H5-MT-Qxr"/>
+                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -634,7 +635,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -930,7 +931,7 @@
                         <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" id="qB9-ce-7gT"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageViewToMessageAction" id="G1z-aV-19B"/>
-                        <segue destination="lOe-mG-VS5" kind="modal" identifier="MessageViewToComposeView" id="P29-wJ-GoN"/>
+                        <segue destination="lOe-mG-VS5" kind="push" identifier="MessageViewToComposeView" id="P29-wJ-GoN"/>
                     </connections>
                 </viewController>
                 <barButtonItem image="clock.png" id="IfT-j6-Bb4" userLabel="Bar Button Item - Clock"/>
@@ -1317,16 +1318,17 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="emO-35-rbd"/>
         <segue reference="5fj-Ta-mc9"/>
         <segue reference="nAp-rc-bND"/>
         <segue reference="WJc-Y6-XJB"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="emO-35-rbd"/>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="ueb-Jn-ag7"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="Afu-47-Kju"/>
         <segue reference="Xn1-hQ-Sqh"/>
+        <segue reference="P29-wJ-GoN"/>
+        <segue reference="G1z-aV-19B"/>
     </inferredMetricsTieBreakers>
 </document>
