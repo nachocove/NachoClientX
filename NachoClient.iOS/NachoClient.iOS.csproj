@@ -664,6 +664,7 @@
     <BundleResource Include="Resources\ic_action_cancel.png" />
     <BundleResource Include="Resources\ic_action_help.png" />
     <BundleResource Include="Resources\ic_action_add_person.png" />
+    <BundleResource Include="Resources\Default-568h%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
