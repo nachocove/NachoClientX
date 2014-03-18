@@ -233,23 +233,33 @@ namespace NachoClient.iOS
 
         public MailboxAddress GetMailboxAddress (NcEmailAddress address)
         {
+            // Must have a contact or an address
             NachoAssert.True ((null != address.contact) || (null != address.address));
 
-            string name;
-            string email;
+            string candidate;
+            MailboxAddress mailbox;
 
-            if (null == address.contact) {
-                name = address.address;
-                email = address.address;
+            if (null != address.contact) {
+                candidate = address.contact.DisplayEmailAddress;
             } else {
-                name = address.contact.DisplayName;
-                if (null == address.address) {
-                    email = address.contact.DisplayEmailAddress;
-                } else {
-                    email = address.address;
-                }
+                candidate = address.address;
             }
-            return new MailboxAddress (name, email);
+
+            if (!MailboxAddress.TryParse (candidate, out mailbox)) {
+                Log.Error ("Mailbox candidate won't parse: {0}", candidate);
+                return null;
+            }
+
+            if (null == mailbox.Address) {
+                Log.Error ("Mailbox candidate has null address: {0}", candidate);
+                return null;
+            }
+
+            if (null == mailbox.Name) {
+                mailbox.Name = address.contact.DisplayName;
+            }
+
+            return mailbox;
         }
 
         /// <summary>
@@ -261,15 +271,19 @@ namespace NachoClient.iOS
             var mimeMessage = new MimeMessage ();
 
             foreach (var a in AddressList) {
+                var mailbox = GetMailboxAddress (a);
+                if (null == mailbox) {
+                    continue;
+                }
                 switch (a.kind) {
                 case NcEmailAddress.Kind.To:
-                    mimeMessage.To.Add (GetMailboxAddress (a));
+                    mimeMessage.To.Add (mailbox);
                     break;
                 case NcEmailAddress.Kind.Cc:
-                    mimeMessage.Cc.Add (GetMailboxAddress (a));
+                    mimeMessage.Cc.Add (mailbox);
                     break;
                 case NcEmailAddress.Kind.Bcc:
-                    mimeMessage.Bcc.Add (GetMailboxAddress (a));
+                    mimeMessage.Bcc.Add (mailbox);
                     break;
                 default:
                     NachoAssert.CaseError ();
