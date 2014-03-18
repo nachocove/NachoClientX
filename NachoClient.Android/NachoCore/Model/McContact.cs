@@ -113,6 +113,12 @@ namespace NachoCore.Model
 
         /// Nickname for the contact
         public string NickName { get; set; }
+
+        /// Index of Body container
+        public int BodyId { get; set; }
+
+        /// How the body stored on the server.
+        public int NativeBodyType { get; set; }
     }
 
     /// Addresses associated with the contact
