@@ -39,8 +39,6 @@ namespace NachoClient.iOS
             }
         }
 
-        string Subject;
-        MultilineEntryElement Body;
         List<MyEmailAddress> AddressList = new List<MyEmailAddress> ();
         public static readonly NSString Reply = new NSString ("Reply");
         public static readonly NSString ReplyAll = new NSString ("ReplyAll");
@@ -109,6 +107,8 @@ namespace NachoClient.iOS
         Section toAddresses;
         Section ccAddresses;
         Section bccAddresses;
+        SubjectEntryElement subjectEntryElement;
+        MultilineEntryElement bodyElement;
 
         protected void ReloadRoot ()
         {
@@ -120,19 +120,23 @@ namespace NachoClient.iOS
             root.Add (ccAddresses);
             root.Add (bccAddresses);
 
-            var section = new Section ();
+            var section = new SectionWithLineSeparator ();
             root.Add (section);
 
-            var subjectEntry = new EntryElement ("Subject: ", "", Subject);
-            subjectEntry.Changed += delegate(object sender, EventArgs e) {
-                EntryElement o = (EntryElement)sender;
-                Subject = o.Value;
-            };
-            section.Add (subjectEntry);
+            if (null == subjectEntryElement) {
+                var initialSubject = CreateInitialSubjectLine ();
+                subjectEntryElement = new SubjectEntryElement (initialSubject);
+            } else {
+                subjectEntryElement = new SubjectEntryElement (subjectEntryElement.Value);
+            }
+            section.Add (subjectEntryElement);
 
-            var s = (null == Body) ? null : Body.Summary ();
-            Body = new MultilineEntryElement ("Enter your message...", s, 120.0f, true);
-            section.Add (Body);
+            if (null == bodyElement) {
+                bodyElement = new MultilineEntryElement ("Enter your message...", "", 120.0f, true);
+            } else {
+                bodyElement = new MultilineEntryElement ("Enter your message...", bodyElement.Summary (), 120.0f, true);
+            }
+            section.Add (bodyElement);
 
             root.UnevenRows = true;
             Root = root;
@@ -140,16 +144,17 @@ namespace NachoClient.iOS
 
         protected void ReloadAddresses ()
         {
-            toAddresses = CustomSection (NcEmailAddress.Kind.To);
-            ccAddresses = CustomSection (NcEmailAddress.Kind.Cc);
-            bccAddresses = CustomSection (NcEmailAddress.Kind.Bcc);
+            toAddresses = AddressSection (NcEmailAddress.Kind.To);
+            ccAddresses = AddressSection (NcEmailAddress.Kind.Cc);
+            bccAddresses = AddressSection (NcEmailAddress.Kind.Bcc);
 
             for (int i = 0; i < AddressList.Count; i++) {
                 var a = AddressList [i];
+                a.index = i;
+                a.action = MyEmailAddress.Action.edit;
                 var e = new StringElement (a.address);
-                var lambda_object = i;
                 e.Tapped += () => {
-                    AddressTapped (lambda_object);
+                    PerformSegue ("ComposeToContactChooser", new SegueHolder (a));
                 };
                 switch (a.kind) {
                 case NcEmailAddress.Kind.To:
@@ -172,37 +177,26 @@ namespace NachoClient.iOS
         /// Create a section for To, CC, and Bcc
         /// with special cell to trigger a new address.
         /// </summary>
-        public Section CustomSection (NcEmailAddress.Kind kind)
+        public Section AddressSection (NcEmailAddress.Kind kind)
         {
-            var e = new StyledStringElement (NcEmailAddress.ToPrefix (kind));
-            e.Image = UIImage.FromBundle ("ic_action_add_person");
-            e.TextColor = UIColor.LightGray;
-            e.BackgroundColor = UIColor.LightTextColor;
-            e.Tapped += () => {
-                SectionTapped (kind);
-            };
-            var s = new Section ();
-            s.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
-            s.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
-            s.Add (e);
+            var s = new SectionWithLineSeparator ();
+            using (var image = UIImage.FromBundle ("ic_action_add_person")) {
+                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
+                var e = new StyledStringElementWithIcon (NcEmailAddress.ToPrefix (kind), scaledImage);
+                e.BackgroundColor = UIColor.LightTextColor;
+                e.Tapped += () => {
+                    var address = new MyEmailAddress (kind);
+                    address.action = MyEmailAddress.Action.create;
+                    PerformSegue ("ComposeToContactChooser", new SegueHolder (address));
+                };
+                s.Add (e);
+            }
             return s;
         }
 
-        protected void AddressTapped (int i)
-        {
-            var address = AddressList [i];
-            address.index = i;
-            address.action = MyEmailAddress.Action.edit;
-            PerformSegue ("ComposeToContactChooser", new SegueHolder (address));
-        }
-
-        protected void SectionTapped (NcEmailAddress.Kind kind)
-        {
-            var address = new MyEmailAddress (kind);
-            address.action = MyEmailAddress.Action.create;
-            PerformSegue ("ComposeToContactChooser", new SegueHolder (address));
-        }
-
+        /// <summary>
+        /// Callback
+        /// </summary>
         public void UpdateEmailAddress (NcEmailAddress address)
         {
             var a = address as MyEmailAddress;
@@ -221,6 +215,9 @@ namespace NachoClient.iOS
             }
         }
 
+        /// <summary>
+        /// Callback
+        /// </summary>
         public void DeleteEmailAddress (NcEmailAddress address)
         {
             var a = address as MyEmailAddress;
@@ -290,13 +287,11 @@ namespace NachoClient.iOS
                     break;
                 }
             }
-            if (null != Subject) {
-                mimeMessage.Subject = Subject;
-            }
+            mimeMessage.Subject = subjectEntryElement.Value;
             mimeMessage.Date = System.DateTime.UtcNow;
            
             var body = new TextPart ("plain");
-            var text = Body.Summary ();
+            var text = bodyElement.Summary ();
             if (null != text) {
                 body.Text = text;
             }
@@ -313,6 +308,27 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
+        protected string CreateInitialSubjectLine ()
+        {
+            if (null == ActionThread) {
+                return ""; // Creating a message
+            }
+
+            var ActionMessage = ActionThread.First ();
+            NachoAssert.True (null != ActionMessage);
+
+            if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
+                if (ActionMessage.Subject.StartsWith ("Re:")) {
+                    return ActionMessage.Subject;
+                }
+                return "Re: " + ActionMessage.Subject;
+            }
+            if (Action.Equals (Forward)) {
+                return "Fwd: " + ActionMessage.Subject;
+            }
+            return "";
+        }
+
         /// <summary>
         /// Reply, ReplyAll, Forward
         /// </summary>
@@ -321,11 +337,7 @@ namespace NachoClient.iOS
             var ActionMessage = ActionThread.First ();
 
             if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
-                Subject = "Re: " + ActionMessage.Subject;
                 AddressList.Add (new MyEmailAddress (NcEmailAddress.Kind.To, ActionMessage.From));
-            }
-            if (Action.Equals (Forward)) {
-                Subject = "Fwd: " + ActionMessage.Subject;
             }
             if (Action.Equals (ReplyAll)) {
                 // Add the To list to the CC list
@@ -355,12 +367,12 @@ namespace NachoClient.iOS
             }
             if (Action.Equals (Forward)) {
                 // TODO: Compose needs to be smart about MIME messages.
-                Body = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
+                bodyElement = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
                 return;
             }
             string someText = MimeHelpers.FetchSomeText (body);
             string quotedText = QuoteForReply (someText);
-            Body = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
+            bodyElement = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
         }
 
         string QuoteForReply (string s)

@@ -58,6 +58,18 @@ namespace NachoClient.iOS
     }
 
     /// <summary>
+    /// A section that doesn't take up screen height
+    /// </summary>
+    public class SectionWithLineSeparator : Section
+    {
+        public SectionWithLineSeparator () : base ()
+        {
+            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+            this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+        }
+    }
+
+    /// <summary>
     /// Radio group with a text field for freestyle entry.
     /// </summary>
     public class ReminderSection : Section
@@ -313,6 +325,28 @@ namespace NachoClient.iOS
         }
     }
 
+    public class SubjectEntryElement : EntryElement
+    {
+        public SubjectEntryElement (string value) : base ("Subject", "", value)
+        {
+            this.Value = value;
+        }
+
+        protected override NSString CellKey {
+            get {
+                return new NSString ("Nacho.SubjectEntryElement");
+            }
+        }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+            cell.TextLabel.Font = UIFont.SystemFontOfSize (19.0f);
+            cell.TextLabel.TextColor = UIColor.Gray;
+            return cell;
+        }
+    }
+
     public class DateTimeEntryElement : DateTimeElement
     {
         public DateTimeEntryElement (string caption) : base (caption, DateTime.Now)
@@ -342,9 +376,10 @@ namespace NachoClient.iOS
     {
         public DurationElement (string caption) : base (caption)
         {
-            var image = UIImage.FromBundle ("ic_action_time");
-            this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            using (var image = UIImage.FromBundle ("ic_action_time")) {
+                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                this.Font = UIFont.SystemFontOfSize (15.0f);
+            }
         }
     }
 
@@ -411,7 +446,7 @@ namespace NachoClient.iOS
     {
         protected UIColor color;
 
-        public RadioElementWithDot(string caption, UIColor color) : base(caption)
+        public RadioElementWithDot (string caption, UIColor color) : base (caption)
         {
             this.color = color;
         }
@@ -425,18 +460,18 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
-            cell.ImageView.Image = NachoClient.Util.DotWithColor(color);
+            cell.ImageView.Image = NachoClient.Util.DotWithColor (color);
             return cell;
         }
     }
 
     class CalendarRadioElementSection : Section
     {
-        public CalendarRadioElementSection (NachoFolders calendars) : base("Calendars")
+        public CalendarRadioElementSection (NachoFolders calendars) : base ("Calendars")
         {
             // TODO: Arrange by account
-            for(int i = 0; i < calendars.Count(); i++) {
-                var c = calendars.GetFolder(i);
+            for (int i = 0; i < calendars.Count (); i++) {
+                var c = calendars.GetFolder (i);
                 // TODO: Get color from calendar
                 var e = new RadioElementWithDot (c.DisplayName, UIColor.Green);
                 this.Add (e);
