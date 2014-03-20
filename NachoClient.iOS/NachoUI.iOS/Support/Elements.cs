@@ -55,6 +55,12 @@ namespace NachoClient.iOS
             this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 15.0f));
             this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
         }
+
+        public ThinSection(UIColor color) : this()
+        {
+            this.HeaderView.BackgroundColor = color;
+            this.FooterView.BackgroundColor = color;
+        }
     }
 
     /// <summary>
@@ -436,9 +442,29 @@ namespace NachoClient.iOS
 
     class StyledStringElementWithDot : StyledStringElement
     {
-        public StyledStringElementWithDot (string caption, UIColor color) : base (caption, "", UITableViewCellStyle.Default)
+        public StyledStringElementWithDot (string caption, string value, UIColor color) : base (caption, value)
         {
             this.Image = NachoClient.Util.DotWithColor (color);
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.TextColor = UIColor.LightGray;
+            this.DetailColor = UIColor.Black;
+        }
+
+        public StyledStringElementWithDot (string caption, UIColor color) : this (caption, "", color)
+        {
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.TextColor = UIColor.Black;
+        }
+    }
+
+    public class StyledStringElementWithIndent : StyledStringElement
+    {
+        public StyledStringElementWithIndent (string caption) : base (caption)
+        {
+            // Add (invisible) image to get the proper indentation
+            this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
+            this.TextColor = UIColor.Gray;
+            this.Font = UIFont.SystemFontOfSize (15.0f);
         }
     }
 

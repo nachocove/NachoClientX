@@ -114,7 +114,7 @@ namespace NachoCore.Brain
                             // Create a new gleaned contact.
                             var contact = new McContact () {
                                 AccountId = accountId,
-                                Source = McContact.McContactSource.Internal,
+                                Source = McItem.ItemSource.Internal,
                                 RefCount = 1,
                             };
                             BackEnd.Instance.Db.Insert (contact);

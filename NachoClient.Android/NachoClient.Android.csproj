@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -304,6 +304,18 @@
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_settings.png" />
     <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_web_site.png" />
     <AndroidResource Include="Resources\layout\CalendarListGroup.axml" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_collection.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_collection.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_collection.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_accounts.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_brightness_high.png" />
+    <AndroidResource Include="Resources\Drawable-xhdpi\ic_action_help.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_accounts.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_brightness_high.png" />
+    <AndroidResource Include="Resources\Drawable-mdpi\ic_action_help.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_accounts.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_help.png" />
+    <AndroidResource Include="Resources\Drawable-hdpi\ic_action_brightness_high.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>

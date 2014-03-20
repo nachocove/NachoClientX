@@ -472,7 +472,7 @@ namespace NachoCore.ActiveSync
         {
             var c = new McContact ();
 
-            c.Source = McContact.McContactSource.ActiveSync;
+            c.Source = McItem.ItemSource.ActiveSync;
             c.ServerId = ServerId;
 
             c.BodyId = BodyId;

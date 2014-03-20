@@ -21,6 +21,15 @@ namespace NachoCore.Model
             ClientId = DateTime.UtcNow.Ticks.ToString ();
         }
 
+        public enum ItemSource
+        {
+            Unknown,
+            ActiveSync,
+            Device,
+            User,
+            Internal,
+        };
+
         public enum ClassCodeEnum : uint
         {
             Tasks = 1,
@@ -35,20 +44,20 @@ namespace NachoCore.Model
         {
             return BackEnd.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " f.AccountId = ? AND " +
-                    " f.ClientId = ? ", 
+                " f.AccountId = ? AND " +
+                " f.ClientId = ? ", 
                     typeof(T).Name), 
                 accountId, clientId).SingleOrDefault ();
         }
 
-        public static List<T> QueryByFolderId<T> (int accountId, int folderId) where T : McItem, new ()
+        public static List<T> QueryByFolderId<T> (int accountId, int folderId) where T : McItem, new()
         {
             return BackEnd.Instance.Db.Query<T> (
                 string.Format (
-                "SELECT e.* FROM {0} AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
-                " e.AccountId = ? AND " +
-                " m.AccountId = ? AND " +
-                " m.FolderId = ? ",
+                    "SELECT e.* FROM {0} AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
+                    " e.AccountId = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " m.FolderId = ? ",
                     typeof(T).Name),
                 accountId, accountId, folderId);
         }

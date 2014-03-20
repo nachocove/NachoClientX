@@ -14,7 +14,7 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <connections>
-                        <segue destination="vTX-M4-ELu" kind="custom" identifier="sw_rear" customClass="SWRevealViewControllerSegue" id="68v-pW-lFd"/>
+                        <segue destination="42X-V6-cKb" kind="custom" identifier="sw_rear" customClass="SWRevealViewControllerSegue" id="68v-pW-lFd"/>
                         <segue destination="0Qz-3B-5qw" kind="custom" identifier="sw_front" customClass="SWRevealViewControllerSegue" id="Zzd-GE-nyB"/>
                     </connections>
                 </viewController>
@@ -72,123 +72,31 @@
             <point key="canvasLocation" x="-2205" y="-1910"/>
         </scene>
         <!--Sidebar View Controller-->
-        <scene sceneID="Gid-MG-Ux4">
+        <scene sceneID="XdS-E0-snZ">
             <objects>
-                <tableViewController storyboardIdentifier="SidebarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="vTX-M4-ELu" customClass="SidebarViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="4pL-6w-lGL">
+                <viewController storyboardIdentifier="SidebarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="FKU-f3-o4b" customClass="SidebarViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ae4-ht-cwe">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToAccounts" id="0a6-yN-lLz">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="0a6-yN-lLz" id="hEy-oH-Y8Y">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="lzp-XD-dor"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToCalendar" id="5aR-kY-vjg">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="5aR-kY-vjg" id="oBW-UK-sg2">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="ef5-Td-j3Y" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="6IA-LE-E8D"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToContacts" id="HdQ-Z7-YcU">
-                                <rect key="frame" x="0.0" y="110" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="HdQ-Z7-YcU" id="58v-kF-29y">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="jTc-Vg-SXZ" kind="custom" identifier="SidebarToContacts" customClass="SWRevealViewControllerSegue" id="wSf-Ax-NJc"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToFolders" id="JZb-mO-rkN">
-                                <rect key="frame" x="0.0" y="154" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="JZb-mO-rkN" id="mhT-Ra-igr">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="UKd-1I-ARy" kind="custom" identifier="SidebarToFolders" customClass="SWRevealViewControllerSegue" id="GNr-eh-wrb"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToSettings" id="su4-Rr-PUt">
-                                <rect key="frame" x="0.0" y="198" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="su4-Rr-PUt" id="I5O-Bi-v1G">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="n4d-09-jTS" kind="custom" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="VrW-k4-eyP"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToMessages" id="yba-YA-xWm">
-                                <rect key="frame" x="0.0" y="242" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="yba-YA-xWm" id="LHS-b9-5IJ">
-                                    <rect key="frame" x="0.0" y="0.0" width="287" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="dvB-9f-OAg"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToNachoNow" id="Pyt-vw-rTy">
-                                <rect key="frame" x="0.0" y="286" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Pyt-vw-rTy" id="2EW-2O-wPa">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="hCT-pP-PUu"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToHome" id="2is-hh-WGb">
-                                <rect key="frame" x="0.0" y="330" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="2is-hh-WGb" id="Bg1-8g-b9L">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="OQ8-xH-iKh" kind="custom" identifier="SidebarToHome" customClass="SWRevealViewControllerSegue" id="ULW-ai-y2x"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToDeferredMessages" id="s5z-PW-eNA">
-                                <rect key="frame" x="0.0" y="374" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="s5z-PW-eNA" id="0XB-2b-LRl">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="mNz-Pt-AEO"/>
-                                </connections>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="vTX-M4-ELu" id="Ypi-m7-7Vb"/>
-                            <outlet property="delegate" destination="vTX-M4-ELu" id="Xkg-hN-ANq"/>
-                        </connections>
-                    </tableView>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="hG3-6S-iGw" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="FxN-dd-cNv"/>
+                    <nil key="simulatedTopBarMetrics"/>
+                    <connections>
+                        <segue destination="UKd-1I-ARy" kind="custom" identifier="SidebarToFolders" customClass="SWRevealViewControllerSegue" id="DSB-SJ-fIa"/>
+                        <segue destination="jTc-Vg-SXZ" kind="custom" identifier="SidebarToContacts" customClass="SWRevealViewControllerSegue" id="p6V-c0-caL"/>
+                        <segue destination="ef5-Td-j3Y" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="JJM-dg-rMA"/>
+                        <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="n8e-Oj-wO2"/>
+                        <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="vRC-Oi-s8D"/>
+                        <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="wdd-u9-GeA"/>
+                        <segue destination="OQ8-xH-iKh" kind="custom" identifier="SidebarToHome" customClass="SWRevealViewControllerSegue" id="Oi3-nV-lAC"/>
+                        <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="qb2-sr-GOb"/>
+                        <segue destination="n4d-09-jTS" kind="custom" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="HgA-ew-8M7"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2203" y="-1183"/>
+            <point key="canvasLocation" x="-2205" y="-1169"/>
         </scene>
         <!--Calendar View Controller - Calendar-->
         <scene sceneID="6Ul-I4-1j0">
@@ -259,7 +167,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dzm-K4-fVM" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1435" y="-1627"/>
+            <point key="canvasLocation" x="-909" y="-1627"/>
         </scene>
         <!--Calendar Item View Controller - Calendar Item-->
         <scene sceneID="RpJ-bl-dQ1">
@@ -280,7 +188,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-909" y="-1627"/>
+            <point key="canvasLocation" x="-383" y="-1627"/>
         </scene>
         <!--Attendee View Controller-->
         <scene sceneID="Qdn-rb-w8l">
@@ -316,7 +224,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="var-bn-Y7r" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-427" y="-1627"/>
+            <point key="canvasLocation" x="99" y="-1627"/>
         </scene>
         <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
@@ -398,7 +306,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="-1435" y="-983"/>
+            <point key="canvasLocation" x="-909" y="-983"/>
         </scene>
         <!--Contact View Controller - Contact-->
         <scene sceneID="FRe-Er-G10">
@@ -418,7 +326,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-902" y="-983"/>
+            <point key="canvasLocation" x="-376" y="-983"/>
         </scene>
         <!--Settings View Controller - Settings-->
         <scene sceneID="Jbb-0l-SOs">
@@ -635,7 +543,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -665,7 +573,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8CR-pi-522" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="82" y="-990"/>
+            <point key="canvasLocation" x="608" y="-990"/>
         </scene>
         <!--Contact Search View Controller - Contacts-->
         <scene sceneID="qZb-fd-BvT">
@@ -748,7 +656,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="601" y="-1627"/>
+            <point key="canvasLocation" x="1127" y="-1627"/>
         </scene>
         <!--Contact Chooser View Controller - Chooser-->
         <scene sceneID="Ora-ag-cc2">
@@ -839,7 +747,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="82" y="-1627"/>
+            <point key="canvasLocation" x="608" y="-1627"/>
         </scene>
         <!--Message List View Controller - Messages-->
         <scene sceneID="piL-bm-yTE">
@@ -1302,6 +1210,25 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-2203" y="-422"/>
         </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="jfg-Bp-uoy">
+            <objects>
+                <navigationController storyboardIdentifier="SidebarNavigationController" automaticallyAdjustsScrollViewInsets="NO" navigationBarHidden="YES" id="42X-V6-cKb" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <nil key="simulatedTopBarMetrics"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="aEP-lS-rAM">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="FKU-f3-o4b" kind="relationship" relationship="rootViewController" id="dUe-l1-pc6"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="uVi-Fp-v8F" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2661" y="-1175"/>
+        </scene>
     </scenes>
     <resources>
         <image name="Menu.png" width="20" height="20"/>
@@ -1318,17 +1245,17 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="emO-35-rbd"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="wdd-u9-GeA"/>
+        <segue reference="vRC-Oi-s8D"/>
         <segue reference="5fj-Ta-mc9"/>
         <segue reference="nAp-rc-bND"/>
         <segue reference="WJc-Y6-XJB"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="Xn1-hQ-Sqh"/>
-        <segue reference="P29-wJ-GoN"/>
+        <segue reference="7H5-MT-Qxr"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="JWi-mA-RVD"/>
         <segue reference="G1z-aV-19B"/>
+        <segue reference="qB9-ce-7gT"/>
     </inferredMetricsTieBreakers>
 </document>

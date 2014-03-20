@@ -791,67 +791,79 @@ namespace NachoClient.AndroidClient
 			public const int ic_action_accept = 2130837596;
 			
 			// aapt resource value: 0x7f02005d
-			public const int ic_action_add_alarm = 2130837597;
+			public const int ic_action_accounts = 2130837597;
 			
 			// aapt resource value: 0x7f02005e
-			public const int ic_action_alarms = 2130837598;
+			public const int ic_action_add_alarm = 2130837598;
 			
 			// aapt resource value: 0x7f02005f
-			public const int ic_action_call = 2130837599;
+			public const int ic_action_alarms = 2130837599;
 			
 			// aapt resource value: 0x7f020060
-			public const int ic_action_event = 2130837600;
+			public const int ic_action_brightness_high = 2130837600;
 			
 			// aapt resource value: 0x7f020061
-			public const int ic_action_forward = 2130837601;
+			public const int ic_action_call = 2130837601;
 			
 			// aapt resource value: 0x7f020062
-			public const int ic_action_go_to_today = 2130837602;
+			public const int ic_action_collection = 2130837602;
 			
 			// aapt resource value: 0x7f020063
-			public const int ic_action_group = 2130837603;
+			public const int ic_action_event = 2130837603;
 			
 			// aapt resource value: 0x7f020064
-			public const int ic_action_map = 2130837604;
+			public const int ic_action_forward = 2130837604;
 			
 			// aapt resource value: 0x7f020065
-			public const int ic_action_new = 2130837605;
+			public const int ic_action_go_to_today = 2130837605;
 			
 			// aapt resource value: 0x7f020066
-			public const int ic_action_place = 2130837606;
+			public const int ic_action_group = 2130837606;
 			
 			// aapt resource value: 0x7f020067
-			public const int ic_action_remove = 2130837607;
+			public const int ic_action_help = 2130837607;
 			
 			// aapt resource value: 0x7f020068
-			public const int ic_action_reply = 2130837608;
+			public const int ic_action_map = 2130837608;
 			
 			// aapt resource value: 0x7f020069
-			public const int ic_action_reply_all = 2130837609;
+			public const int ic_action_new = 2130837609;
 			
 			// aapt resource value: 0x7f02006a
-			public const int ic_action_search = 2130837610;
+			public const int ic_action_place = 2130837610;
 			
 			// aapt resource value: 0x7f02006b
-			public const int ic_action_settings = 2130837611;
+			public const int ic_action_remove = 2130837611;
 			
 			// aapt resource value: 0x7f02006c
-			public const int ic_action_storage = 2130837612;
+			public const int ic_action_reply = 2130837612;
 			
 			// aapt resource value: 0x7f02006d
-			public const int ic_action_time = 2130837613;
+			public const int ic_action_reply_all = 2130837613;
 			
 			// aapt resource value: 0x7f02006e
-			public const int ic_action_web_site = 2130837614;
+			public const int ic_action_search = 2130837614;
 			
 			// aapt resource value: 0x7f02006f
-			public const int ic_drawer_dark = 2130837615;
+			public const int ic_action_settings = 2130837615;
 			
 			// aapt resource value: 0x7f020070
-			public const int ic_drawer_light = 2130837616;
+			public const int ic_action_storage = 2130837616;
 			
 			// aapt resource value: 0x7f020071
-			public const int Icon = 2130837617;
+			public const int ic_action_time = 2130837617;
+			
+			// aapt resource value: 0x7f020072
+			public const int ic_action_web_site = 2130837618;
+			
+			// aapt resource value: 0x7f020073
+			public const int ic_drawer_dark = 2130837619;
+			
+			// aapt resource value: 0x7f020074
+			public const int ic_drawer_light = 2130837620;
+			
+			// aapt resource value: 0x7f020075
+			public const int Icon = 2130837621;
 			
 			static Drawable()
 			{
