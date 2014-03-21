@@ -51,13 +51,13 @@ namespace NachoClient.iOS
                 deleteButton,
                 checkButton,
                 clockButton,
-                listButton
+                foldersButton,
             };
 
             clockButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToMessagePriority", this);
             };
-            listButton.Clicked += (object sender, EventArgs e) => {
+            foldersButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToMessageAction", this);
             };
             replyButton.Clicked += (object sender, EventArgs e) => {

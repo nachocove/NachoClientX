@@ -44,9 +44,17 @@ namespace NachoClient.iOS
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, searchButton };
 
+            // Multiple buttons on the left side
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+            nachoButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue("MessageListToNachoNow", this);
+            };
+
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
-
 
             // Search button brings up the search controller
             searchButton.Clicked += (object sender, EventArgs e) => {

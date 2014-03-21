@@ -60,6 +60,15 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
+            // Multiple buttons on the left side
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+            nachoButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue("ContactsToNachoNow", this);
+            };
+
             // We must request permission to access the user's address book
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.

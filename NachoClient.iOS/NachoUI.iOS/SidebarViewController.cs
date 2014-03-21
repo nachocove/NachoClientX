@@ -108,7 +108,7 @@ namespace NachoClient.iOS
             contacts = new NachoFolders (NachoFolders.FilterForContacts);
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
-            AddToTopMenu (new SidebarMenu (null, "Now!", SidebarToNachoNowSegueId, "ic_action_time"));
+            AddToTopMenu (new SidebarMenu (null, "Now!", SidebarToNachoNowSegueId, "Nacho-Cove-Icon"));
             AddToMenu (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId, "ic_action_time"));
 
             AddToMenu (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId, "ic_action_collection"));

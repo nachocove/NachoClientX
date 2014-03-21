@@ -56,9 +56,6 @@ namespace NachoClient.iOS
             dataSource = new TableViewDataSource ();
             folderDataTableview.DataSource = dataSource;
             folderDataTableview.Delegate = new TableViewDelegate (this);
-
-            var taco = UIImage.FromBundle ("Menu").ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            NavigationItem.LeftBarButtonItem.Image = taco;
         }
 
         public override void ViewWillAppear (bool animated)

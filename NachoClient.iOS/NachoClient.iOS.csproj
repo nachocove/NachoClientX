@@ -668,6 +668,8 @@
     <BundleResource Include="Resources\ic_action_collection.png" />
     <BundleResource Include="Resources\ic_action_accounts.png" />
     <BundleResource Include="Resources\ic_action_settings.png" />
+    <BundleResource Include="Resources\Nacho-Cove-Icon.png" />
+    <BundleResource Include="Resources\Nacho-Cove-Icon%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

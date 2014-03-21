@@ -25,10 +25,10 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem flexibleSpaceButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem foldersButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem listButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem replyAllButton { get; set; }
@@ -61,14 +61,14 @@ namespace NachoClient.iOS
 				flexibleSpaceButton = null;
 			}
 
+			if (foldersButton != null) {
+				foldersButton.Dispose ();
+				foldersButton = null;
+			}
+
 			if (forwardButton != null) {
 				forwardButton.Dispose ();
 				forwardButton = null;
-			}
-
-			if (listButton != null) {
-				listButton.Dispose ();
-				listButton = null;
 			}
 
 			if (replyAllButton != null) {
