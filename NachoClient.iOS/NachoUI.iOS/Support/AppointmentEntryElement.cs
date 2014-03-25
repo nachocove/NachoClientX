@@ -45,16 +45,17 @@ namespace NachoClient.iOS
             var endString = EndDateTime.ToString ("ddd, MMM d - h:mm tt");
            
             UIColor.Gray.SetColor ();
-            DrawString ("Start", new RectangleF (50.0f, 7.0f, 100.0f, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Left);
             if (!AllDayEvent) {
+                DrawString ("Start", new RectangleF (50.0f, 7.0f, 100.0f, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Left);
                 DrawString ("End", new RectangleF (50.0f, 49.0f, 100.0f, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Left);
             }
 
             UIColor.Black.SetColor ();
-            DrawString (startString, new RectangleF (0.0f, 7.0f, rect.Width - padright, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Right);
             if (AllDayEvent) {
-                DrawString ("ALL DAY", new RectangleF (0.0f, 49.0f, rect.Width - padright, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Right);
+                DrawString (startString, new RectangleF (50.0f, 7.0f, rect.Width - padright, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Left);
+                DrawString ("All day", new RectangleF (50.0f, 49.0f, rect.Width - padright, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Left);
             } else {
+                DrawString (startString, new RectangleF (0.0f, 7.0f, rect.Width - padright, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Right);
                 DrawString (endString, new RectangleF (0.0f, 49.0f, rect.Width - padright, 22.0f), Font, UILineBreakMode.Clip, UITextAlignment.Right);
             }
         }
@@ -92,10 +93,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public AppointmentEntryElement (DateTime startDateTime, DateTime endDateTime) : base ("")
+        public AppointmentEntryElement (DateTime startDateTime, DateTime endDateTime, bool allDayEvent) : base ("")
         {
             this.startDateTime = startDateTime;
             this.endDateTime = endDateTime;
+            this.allDayEvent = allDayEvent;
         }
 
         public AppointmentEntryElement (Action<DialogViewController,UITableView,NSIndexPath> tapped) : base ("")

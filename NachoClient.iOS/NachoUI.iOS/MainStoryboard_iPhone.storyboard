@@ -92,6 +92,7 @@
                         <segue destination="OQ8-xH-iKh" kind="custom" identifier="SidebarToHome" customClass="SWRevealViewControllerSegue" id="Oi3-nV-lAC"/>
                         <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="qb2-sr-GOb"/>
                         <segue destination="n4d-09-jTS" kind="custom" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="HgA-ew-8M7"/>
+                        <segue destination="T5y-Ms-wQ4" kind="push" identifier="SidebarToCalendarSettings" id="ebP-h4-BhC"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -106,9 +107,17 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <searchBar key="tableHeaderView" contentMode="redraw" id="d12-Sj-4ft">
+                            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                            <textInputTraits key="textInputTraits"/>
+                            <connections>
+                                <outlet property="delegate" destination="ef5-Td-j3Y" id="SR8-Md-sfT"/>
+                            </connections>
+                        </searchBar>
                         <prototypes>
                             <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="CalendarToCalendarItem" id="BdV-el-rbL">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
+                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="BdV-el-rbL" id="moG-EF-Nk7">
                                     <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
@@ -153,22 +162,37 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="tmU-Hu-v9N"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="JIw-qG-pPK">
-                            <connections>
-                                <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToNewCalendarItem" id="5fj-Ta-mc9"/>
-                            </connections>
-                        </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="addButton" destination="JIw-qG-pPK" id="LMB-DB-l90"/>
                         <outlet property="nachoButton" destination="1y0-Ud-A7G" id="Rdd-eH-X1v"/>
                         <outlet property="revealButton" destination="tmU-Hu-v9N" id="YzY-zA-O1i"/>
+                        <outlet property="searchButton" destination="0m8-eh-T52" id="MkM-Ej-JNS"/>
+                        <outlet property="searchDisplayController" destination="wxJ-Pi-exX" id="X6Y-Fe-FOd"/>
+                        <outlet property="switcherButton" destination="TIg-xV-rRe" id="OBz-gZ-mG8"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="P1C-rg-Luy"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dzm-K4-fVM" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem systemItem="add" id="JIw-qG-pPK">
+                    <connections>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToNewCalendarItem" id="5fj-Ta-mc9"/>
+                    </connections>
+                </barButtonItem>
                 <barButtonItem title="Item" id="1y0-Ud-A7G" userLabel="Bar Button Item - Nacho"/>
+                <barButtonItem systemItem="search" id="0m8-eh-T52" userLabel="Bar Button Item - Search"/>
+                <barButtonItem title="Item" id="TIg-xV-rRe" userLabel="Bar Button Item - Switcher"/>
+                <searchDisplayController id="wxJ-Pi-exX">
+                    <connections>
+                        <outlet property="delegate" destination="ef5-Td-j3Y" id="VQY-yl-m4r"/>
+                        <outlet property="searchBar" destination="d12-Sj-4ft" id="zmh-mB-i6s"/>
+                        <outlet property="searchContentsController" destination="ef5-Td-j3Y" id="fR1-ae-c6Z"/>
+                        <outlet property="searchResultsDataSource" destination="ef5-Td-j3Y" id="XCZ-LY-gqu"/>
+                        <outlet property="searchResultsDelegate" destination="ef5-Td-j3Y" id="6Qx-ZP-H2i"/>
+                    </connections>
+                </searchDisplayController>
             </objects>
             <point key="canvasLocation" x="-909" y="-1627"/>
         </scene>
@@ -177,19 +201,22 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Calendar Item" id="fZY-MQ-nPh">
-                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="pLL-Ph-CEQ"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Calendar Item" id="fZY-MQ-nPh"/>
                     <connections>
-                        <outlet property="editBarButtonItem" destination="pLL-Ph-CEQ" id="ZX5-DJ-fvj"/>
+                        <outlet property="cancelButton" destination="sFR-r8-TDe" id="wgg-bq-bR2"/>
+                        <outlet property="doneButton" destination="1VR-x3-yGz" id="ADN-jO-YUj"/>
+                        <outlet property="editButton" destination="mEu-xP-156" id="72K-Lt-yXg"/>
                         <segue destination="PUz-nc-h33" kind="push" identifier="CalendarItemToAttendeeView" id="mSu-Hi-cds"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem systemItem="edit" id="mEu-xP-156" userLabel="Bar Button Item - Edit"/>
+                <barButtonItem systemItem="done" id="1VR-x3-yGz" userLabel="Bar Button Item - Done"/>
+                <barButtonItem systemItem="cancel" id="sFR-r8-TDe" userLabel="Bar Button Item - Cancel"/>
             </objects>
             <point key="canvasLocation" x="-383" y="-1627"/>
         </scene>
@@ -374,6 +401,7 @@
                         <outlet property="nachoButton" destination="MBQ-pK-OUo" id="jlf-Ar-7q9"/>
                         <outlet property="revealButton" destination="iWE-UD-FOg" id="NKz-Ge-qr2"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="SettingsToNachoNow" id="AcJ-nB-pBP"/>
+                        <segue destination="T5y-Ms-wQ4" kind="push" identifier="SettingsToCalendarSettings" id="zXa-AG-jcx"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YtI-ix-b1g" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -987,6 +1015,26 @@
             </objects>
             <point key="canvasLocation" x="596" y="-203"/>
         </scene>
+        <!--Calendar Settings View Controller-->
+        <scene sceneID="4Ji-RJ-mnY">
+            <objects>
+                <tableViewController storyboardIdentifier="CalendarSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="T5y-Ms-wQ4" customClass="CalendarSettingsViewController" sceneMemberID="viewController">
+                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="XlL-fj-rkO">
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <connections>
+                            <outlet property="dataSource" destination="T5y-Ms-wQ4" id="Hlo-8x-7wt"/>
+                            <outlet property="delegate" destination="T5y-Ms-wQ4" id="cVh-Zy-LjT"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="UMn-jV-yyk"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Fx1-ms-9ya" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-579" y="-2269"/>
+        </scene>
         <!--Message Priority View Controller-->
         <scene sceneID="qaB-g2-0kE">
             <objects>
@@ -1269,17 +1317,18 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="JGd-do-Y28"/>
+        <segue reference="Xn1-hQ-Sqh"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="P1C-rg-Luy"/>
+        <segue reference="PxE-UU-EfC"/>
         <segue reference="nAp-rc-bND"/>
         <segue reference="5fj-Ta-mc9"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="ueb-Jn-ag7"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="Xn1-hQ-Sqh"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="ndB-gP-BtH"/>
+        <segue reference="6LT-Zj-XeH"/>
     </inferredMetricsTieBreakers>
 </document>

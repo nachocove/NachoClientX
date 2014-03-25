@@ -572,6 +572,10 @@
     <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
       <DependentUpon>MessageViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\CalendarSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\CalendarSettingsViewController.designer.cs">
+      <DependentUpon>CalendarSettingsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

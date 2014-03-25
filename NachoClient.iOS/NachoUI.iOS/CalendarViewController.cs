@@ -11,22 +11,17 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : UITableViewController
+    public partial class CalendarViewController : UITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate
     {
-        public bool UseDeviceCalendar;
-        UIAlertView alert;
         INachoCalendar calendar;
+        public bool UseDeviceCalendar;
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>
-        static readonly NSString CellSegueID = new NSString ("CalendarToCalendarItem");
-
-        AppDelegate appDelegate { get; set; }
+        static readonly NSString CalendarToCalendarItemSegueID = new NSString ("CalendarToCalendarItem");
 
         public CalendarViewController (IntPtr handle) : base (handle)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-
             var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
             a.TextColor = UIColor.LightGray;
         }
@@ -46,36 +41,30 @@ namespace NachoClient.iOS
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("CalendarToNachoNow", this);
+                PerformSegue ("CalendarToNachoNow", this);
             };
 
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton, searchButton };
+
+            searchButton.Clicked += (object sender, EventArgs e) => {
+                if (!SearchDisplayController.Active) {
+                    SearchDisplayController.SearchBar.BecomeFirstResponder ();
+                }
+            };
+                
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
-            if (UseDeviceCalendar) {
-                appDelegate.EventStore.RequestAccess (EKEntityType.Event, 
-                    (bool granted, NSError e) => {
-                        InvokeOnMainThread (() => {
-                            if (granted) {
-                                calendar = new DeviceCalendar ();
-                                TableView.ReloadData ();
-                            } else {
-                                alert = new UIAlertView ("Permissions denied", "You have denied this app access to your calendars", null, "Close");
-                                alert.Show ();
-                            }
-                        });
-                    });
-            } else {
-                calendar = new NachoCalendar ();
-                TableView.ReloadData ();
-            }
+
+            calendar = new NachoCalendar ();
+            TableView.ReloadData ();
 
             // Watch for changes from the back end
             BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                    calendar.Refresh();
-                    TableView.ReloadData();
+                    calendar.Refresh ();
+                    TableView.ReloadData ();
                 }
             };
         }
@@ -89,13 +78,13 @@ namespace NachoClient.iOS
         {
             // The "+" button segues with CalendarToNewCalendarItem
             // Cells segue with CellSegueID, CalendarToCalendarItem
-            if (segue.Identifier.Equals (CellSegueID)) {
+            if (segue.Identifier.Equals (CalendarToCalendarItemSegueID)) {
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = TableView.IndexPathForCell (cell);
-                McCalendar i = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
+                McCalendar calendarItem = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
                 CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
-                destinationController.calendarItem = i;
-                destinationController.Title = i.Subject;
+                destinationController.calendarItem = calendarItem;
+                destinationController.Title = calendarItem.Subject;
             }
         }
 
@@ -119,7 +108,7 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            UITableViewCell cell = TableView.DequeueReusableCell (CellSegueID);
+            UITableViewCell cell = TableView.DequeueReusableCell (CalendarToCalendarItemSegueID);
             // Should always get a prototype cell
             NachoCore.NachoAssert.True (null != cell);
 

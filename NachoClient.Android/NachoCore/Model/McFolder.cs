@@ -29,7 +29,10 @@ namespace NachoCore.Model
 
         [Indexed]
         public string DisplayName { get; set; }
-        // FIXME: Need enumeration
+
+        public int DisplayColor { get; set; }
+
+        /// FIXME: Need enumeration
         public uint Type { get; set; }
 
         public override string ToString ()
