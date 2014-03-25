@@ -127,9 +127,9 @@ namespace NachoClient.iOS
                 McFolder f = contacts.GetFolder (i);
                 AddToMenu (new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId));
             }
-            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
-            deviceContacts.Source = McItem.ItemSource.Device;
-            AddToMenu (deviceContacts);
+//            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
+//            deviceContacts.Source = McItem.ItemSource.Device;
+//            AddToMenu (deviceContacts);
 
             AddToTopMenu (new SidebarMenu (null, "Calendar", SidebarToCalendarSegueId, "ic_action_event"));
             AddToMenu (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId, "ic_action_event"));
@@ -137,9 +137,9 @@ namespace NachoClient.iOS
                 McFolder f = calendars.GetFolder (i);
                 AddToMenu (new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId));
             }
-            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
-            deviceCalendar.Source = McItem.ItemSource.Device;
-            AddToMenu (deviceCalendar);
+//            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
+//            deviceCalendar.Source = McItem.ItemSource.Device;
+//            AddToMenu (deviceCalendar);
 
             AddToMenu (new SidebarMenu (null, "Help", SidebarToHomeSegueId, "ic_action_help"));
             AddToMenu (new SidebarMenu (null, "Settings", SidebarToSettingsSegueId, "ic_action_settings"));

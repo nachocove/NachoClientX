@@ -20,29 +20,29 @@ namespace NachoClient.iOS
 {
     public partial class CalendarItemViewController : DialogViewController
     {
-        public bool editing;
+        protected enum Action
+        {
+            undefined,
+            create,
+            edit,
+        };
+
+        protected Action action;
         public McCalendar calendarItem;
-        protected UIBarButtonItem doneButton;
-        protected UIBarButtonItem editButton;
-        protected McAccount account;
+        // 'c' is working copy
         protected McCalendar c;
-        protected McFolder f;
+        protected bool editing;
+        protected McFolder folder;
+        protected McAccount account;
         protected NachoFolders calendars;
 
         public CalendarItemViewController (IntPtr handle) : base (handle)
         {
-            doneButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
-            editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            // TODO: Need account manager.
-            // We only have one account, for now.
-            account = BackEnd.Instance.Db.Table<McAccount> ().First ();
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
@@ -54,42 +54,61 @@ namespace NachoClient.iOS
                 alert.AddButton ("No");
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                     if (0 == alertEvent.ButtonIndex) {
-                        editing = false;
-                        // TODO: Save the new
                         var iCal = ExtractDialogValues ();
                         SyncMeetingRequest ();
                         SendInvites (iCal);
-                        NavigationItem.RightBarButtonItem = editButton;
-                        Root = ShowDetail ();
-                        ReloadComplete ();
+                        ReloadRoot(ShowDetail ());
                     }
                 };
                 alert.Show ();
             };
 
             editButton.Clicked += (object sender, EventArgs e) => {
-                editing = true;
-                NavigationItem.RightBarButtonItem = doneButton;
-                Root = EditDetail ();
-                ReloadComplete ();
+                ReloadRoot (EditDetail ());
             };
-                
+
+            cancelButton.Clicked += (object sender, EventArgs e) => {
+                if (Action.create == action) {
+                    NavigationController.PopViewControllerAnimated (true);
+                    return;
+                }
+                if (Action.edit == action) {
+                    c = calendarItem;
+                    ReloadRoot(ShowDetail ());
+                    return;
+                }
+                NachoAssert.CaseError ();
+            };
+
+            // TODO: Need account manager.
+            // We only have one account, for now.
+            account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+
             // Set up view
             Pushing = true;
             if (null == calendarItem) {
-                editing = true;
+                action = Action.create;
                 c = new McCalendar ();
+                c.StartTime = DateTime.Now;
+                c.EndTime = c.StartTime.AddMinutes (30.0);
                 Root = EditDetail ();
-                NavigationItem.RightBarButtonItem = doneButton;
             } else {
-                editing = false;
+                action = Action.edit;
                 calendarItem.ReadAncillaryData ();
                 c = calendarItem;
                 Root = ShowDetail ();
-                NavigationItem.RightBarButtonItem = editButton;
             }
-
             TableView.SeparatorColor = UIColor.Clear;
+        }
+
+        protected void ReloadRoot (RootElement root)
+        {
+            NSAction animation = new NSAction (delegate {
+                Root = root;
+                ReloadComplete ();
+            });
+            UIView.Transition (TableView, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, animation, null);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -108,6 +127,10 @@ namespace NachoClient.iOS
         /// </summary>
         protected RootElement ShowDetail ()
         {
+            editing = false;
+            NavigationItem.LeftBarButtonItem = null;
+            NavigationItem.RightBarButtonItem = editButton;
+
             var root = new RootElement (c.Subject);
             root.UnevenRows = true;
 
@@ -166,7 +189,7 @@ namespace NachoClient.iOS
             section = new ThinSection ();
             using (var image = UIImage.FromBundle ("ic_action_event")) {
                 var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
-                section.Add (new StyledStringElementWithIcon ("Calendar", MyCalendarName(c), scaledImage));
+                section.Add (new StyledStringElementWithIcon ("Calendar", MyCalendarName (c), scaledImage));
             }
             using (var image = UIImage.FromBundle ("ic_action_alarms")) {
                 var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
@@ -189,12 +212,16 @@ namespace NachoClient.iOS
         /// </summary>
         protected RootElement EditDetail ()
         {
+            editing = true;
+            NavigationItem.LeftBarButtonItem = cancelButton;
+            NavigationItem.RightBarButtonItem = doneButton;
+
             subjectEntryElement = new EntryElementWithIcon (NachoClient.Util.DotWithColor (UIColor.Blue), "Title", c.Subject);
             using (var icon = UIImage.FromBundle ("ic_action_place")) {
                 var scaledIcon = icon.Scale (new SizeF (22.0f, 22.0f));
                 locationEntryElement = new EntryElementWithIcon (scaledIcon, "Location", c.Location);
             }
-            appointmentEntryElement = new AppointmentEntryElement (DateTime.Now, DateTime.Now);
+            appointmentEntryElement = new AppointmentEntryElement (c.StartTime, c.EndTime, c.AllDayEvent);
             peopleEntryElement = new PeopleEntryElement ();
 
             // TODO: Get the calendar folder that holds the event
@@ -313,7 +340,7 @@ namespace NachoClient.iOS
             var reminderSection = reminderEntryElement [0] as ReminderSection;
             var hiddenElement = reminderSection [0] as HiddenElement;
             c.Reminder = hiddenElement.Value;
-            f = calendars.GetFolder (calendarEntryElement.RadioSelected);
+            folder = calendars.GetFolder (calendarEntryElement.RadioSelected);
             // Extras
             c.OrganizerName = Pretty.DisplayNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
@@ -353,7 +380,7 @@ namespace NachoClient.iOS
         {
             c.Insert ();
             var map = new McMapFolderItem (c.AccountId) {
-                FolderId = f.Id,
+                FolderId = folder.Id,
                 ItemId = c.Id,
                 ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
             };
@@ -407,13 +434,13 @@ namespace NachoClient.iOS
             MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
         }
 
-        protected string MyCalendarName(McCalendar c)
+        protected string MyCalendarName (McCalendar c)
         {
             var candidates = McFolder.QueryByItemId<McCalendar> (account.Id, c.Id);
             return candidates.First ().DisplayName;
         }
 
-        protected void UpdateStatus(NcResponseType status)
+        protected void UpdateStatus (NcResponseType status)
         {
             // FIXME BackEnd.Instance.RespondCalCmd (account.Id, c.Id, status);
         }

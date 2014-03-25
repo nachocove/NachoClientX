@@ -7,7 +7,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using MonoTouch.EventKit;
 using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -29,11 +28,7 @@ namespace NachoClient.iOS
 
         public McAccount Account { get; set; }
 
-        public EKEventStore EventStore {
-            get { return eventStore; }
-        }
 
-        protected EKEventStore eventStore;
         // constants for managing timers
         private const uint KDefaultDelaySeconds = 10;
         private const int KDefaultTimeoutSeconds = 25;
@@ -71,9 +66,7 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
-            // An instance of the EKEventStore class represents the iOS Calendar database.
 
-            eventStore = new EKEventStore ();
             application.ApplicationIconBadgeNumber = 0;
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
