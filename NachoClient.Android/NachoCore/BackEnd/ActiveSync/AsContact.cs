@@ -2,6 +2,7 @@
 //
 using SQLite;
 using System;
+using System.Linq;
 using System.Xml.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
@@ -210,6 +211,13 @@ namespace NachoCore.ActiveSync
         /// Nickname for the contact
         public string NickName { get; set; }
 
+        /// Index of Body container
+        public int BodyId { get; set; }
+
+        /// How the body stored on the server.
+        /// Beware: Not documented in MS-ASCNTC.
+        public int NativeBodyType { get; set; }
+
         protected void AddCategoriesFromXml (XNamespace ns, XElement categories)
         {
             NachoCore.NachoAssert.True (null != categories);
@@ -252,9 +260,31 @@ namespace NachoCore.ActiveSync
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             NachoCore.NachoAssert.True (null != applicationData);
 
+            XNamespace m_baseNs = Xml.AirSyncBase.Ns;
+
             Log.Info (Log.LOG_CALENDAR, "AsContact FromXML\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
+                case Xml.AirSyncBase.Body:
+                    var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
+                    if (null != bodyElement) {
+                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                        if (null != saveAttr) {
+                            c.BodyId = int.Parse (saveAttr.Value);
+                        } else {
+                            var body = new McBody ();
+                            body.Body = bodyElement.Value; 
+                            body.Insert ();
+                            c.BodyId = body.Id;
+                        }
+                    } else {
+                        c.BodyId = 0;
+                        Console.WriteLine ("Truncated message from server.");
+                    }
+                    break;
+                case Xml.AirSyncBase.NativeBodyType:
+                    c.NativeBodyType = child.Value.ToInt ();
+                    break;
                 case Xml.Contacts.Anniversary:
                 case Xml.Contacts.Birthday:
                     h.TrySetDateTimeFromXml (c, child.Name.LocalName, child.Value);
@@ -346,6 +376,9 @@ namespace NachoCore.ActiveSync
             var n = new AsContact ();
 
             n.ServerId = c.ServerId;
+
+            n.BodyId = c.BodyId;
+            n.NativeBodyType = c.NativeBodyType;
 
             n.Alias = c.Alias;
             n.CompanyName = c.CompanyName;
@@ -439,8 +472,11 @@ namespace NachoCore.ActiveSync
         {
             var c = new McContact ();
 
-            c.Source = McContact.McContactSource.ActiveSync;
+            c.Source = McItem.ItemSource.ActiveSync;
             c.ServerId = ServerId;
+
+            c.BodyId = BodyId;
+            c.NativeBodyType = NativeBodyType;
 
             c.Alias = Alias;
             c.CompanyName = CompanyName;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="4514" systemVersion="13C64" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5053" systemVersion="13C64" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3747"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
     </dependencies>
     <scenes>
         <!--Main View Controller-->
@@ -14,7 +14,7 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <connections>
-                        <segue destination="vTX-M4-ELu" kind="custom" identifier="sw_rear" customClass="SWRevealViewControllerSegue" id="68v-pW-lFd"/>
+                        <segue destination="42X-V6-cKb" kind="custom" identifier="sw_rear" customClass="SWRevealViewControllerSegue" id="68v-pW-lFd"/>
                         <segue destination="0Qz-3B-5qw" kind="custom" identifier="sw_front" customClass="SWRevealViewControllerSegue" id="Zzd-GE-nyB"/>
                     </connections>
                 </viewController>
@@ -50,7 +50,7 @@
                     </view>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="3Av-eh-eab"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="3Av-eh-eab"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="compose" id="HwW-s6-dM7">
                             <connections>
                                 <segue destination="lOe-mG-VS5" kind="push" identifier="NachoNowToCompose" id="JWi-mA-RVD"/>
@@ -64,6 +64,7 @@
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="Bab-sA-Ld3" kind="push" identifier="NachoNowToMessage" id="7H5-MT-Qxr"/>
+                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -71,123 +72,31 @@
             <point key="canvasLocation" x="-2205" y="-1910"/>
         </scene>
         <!--Sidebar View Controller-->
-        <scene sceneID="Gid-MG-Ux4">
+        <scene sceneID="XdS-E0-snZ">
             <objects>
-                <tableViewController storyboardIdentifier="SidebarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="vTX-M4-ELu" customClass="SidebarViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="4pL-6w-lGL">
+                <viewController storyboardIdentifier="SidebarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="FKU-f3-o4b" customClass="SidebarViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ae4-ht-cwe">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToAccounts" id="0a6-yN-lLz">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="0a6-yN-lLz" id="hEy-oH-Y8Y">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="lzp-XD-dor"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToCalendar" id="5aR-kY-vjg">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="5aR-kY-vjg" id="oBW-UK-sg2">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="ef5-Td-j3Y" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="6IA-LE-E8D"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToContacts" id="HdQ-Z7-YcU">
-                                <rect key="frame" x="0.0" y="110" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="HdQ-Z7-YcU" id="58v-kF-29y">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="jTc-Vg-SXZ" kind="custom" identifier="SidebarToContacts" customClass="SWRevealViewControllerSegue" id="wSf-Ax-NJc"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToFolders" id="JZb-mO-rkN">
-                                <rect key="frame" x="0.0" y="154" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="JZb-mO-rkN" id="mhT-Ra-igr">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="UKd-1I-ARy" kind="custom" identifier="SidebarToFolders" customClass="SWRevealViewControllerSegue" id="GNr-eh-wrb"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToSettings" id="su4-Rr-PUt">
-                                <rect key="frame" x="0.0" y="198" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="su4-Rr-PUt" id="I5O-Bi-v1G">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="n4d-09-jTS" kind="custom" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="VrW-k4-eyP"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToMessages" id="yba-YA-xWm">
-                                <rect key="frame" x="0.0" y="242" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="yba-YA-xWm" id="LHS-b9-5IJ">
-                                    <rect key="frame" x="0.0" y="0.0" width="287" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="dvB-9f-OAg"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToNachoNow" id="Pyt-vw-rTy">
-                                <rect key="frame" x="0.0" y="286" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Pyt-vw-rTy" id="2EW-2O-wPa">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="hCT-pP-PUu"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToHome" id="2is-hh-WGb">
-                                <rect key="frame" x="0.0" y="330" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="2is-hh-WGb" id="Bg1-8g-b9L">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="OQ8-xH-iKh" kind="custom" identifier="SidebarToHome" customClass="SWRevealViewControllerSegue" id="ULW-ai-y2x"/>
-                                </connections>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SidebarToDeferredMessages" id="s5z-PW-eNA">
-                                <rect key="frame" x="0.0" y="374" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="s5z-PW-eNA" id="0XB-2b-LRl">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="mNz-Pt-AEO"/>
-                                </connections>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="vTX-M4-ELu" id="Ypi-m7-7Vb"/>
-                            <outlet property="delegate" destination="vTX-M4-ELu" id="Xkg-hN-ANq"/>
-                        </connections>
-                    </tableView>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="hG3-6S-iGw" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="FxN-dd-cNv"/>
+                    <nil key="simulatedTopBarMetrics"/>
+                    <connections>
+                        <segue destination="UKd-1I-ARy" kind="custom" identifier="SidebarToFolders" customClass="SWRevealViewControllerSegue" id="DSB-SJ-fIa"/>
+                        <segue destination="jTc-Vg-SXZ" kind="custom" identifier="SidebarToContacts" customClass="SWRevealViewControllerSegue" id="p6V-c0-caL"/>
+                        <segue destination="ef5-Td-j3Y" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="JJM-dg-rMA"/>
+                        <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="n8e-Oj-wO2"/>
+                        <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="vRC-Oi-s8D"/>
+                        <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="wdd-u9-GeA"/>
+                        <segue destination="OQ8-xH-iKh" kind="custom" identifier="SidebarToHome" customClass="SWRevealViewControllerSegue" id="Oi3-nV-lAC"/>
+                        <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="qb2-sr-GOb"/>
+                        <segue destination="n4d-09-jTS" kind="custom" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="HgA-ew-8M7"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2203" y="-1183"/>
+            <point key="canvasLocation" x="-2205" y="-1169"/>
         </scene>
         <!--Calendar View Controller - Calendar-->
         <scene sceneID="6Ul-I4-1j0">
@@ -243,7 +152,7 @@
                     </tableView>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="tmU-Hu-v9N"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="tmU-Hu-v9N"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="add" id="JIw-qG-pPK">
                             <connections>
                                 <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToNewCalendarItem" id="5fj-Ta-mc9"/>
@@ -253,12 +162,15 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="nachoButton" destination="1y0-Ud-A7G" id="Rdd-eH-X1v"/>
                         <outlet property="revealButton" destination="tmU-Hu-v9N" id="YzY-zA-O1i"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="P1C-rg-Luy"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dzm-K4-fVM" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="1y0-Ud-A7G" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-1435" y="-1627"/>
+            <point key="canvasLocation" x="-909" y="-1627"/>
         </scene>
         <!--Calendar Item View Controller - Calendar Item-->
         <scene sceneID="RpJ-bl-dQ1">
@@ -279,7 +191,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-909" y="-1627"/>
+            <point key="canvasLocation" x="-383" y="-1627"/>
         </scene>
         <!--Attendee View Controller-->
         <scene sceneID="Qdn-rb-w8l">
@@ -315,7 +227,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="var-bn-Y7r" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-427" y="-1627"/>
+            <point key="canvasLocation" x="99" y="-1627"/>
         </scene>
         <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
@@ -373,7 +285,7 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="jLa-UU-2VJ"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="jLa-UU-2VJ"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="add" id="uyu-bB-1zI">
                             <connections>
                                 <segue destination="cRD-uS-uKj" kind="push" identifier="ContactsToNewContact" id="PxE-UU-EfC"/>
@@ -382,8 +294,10 @@
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
+                        <outlet property="nachoButton" destination="DbK-yy-Alh" id="YgY-Zo-4hj"/>
                         <outlet property="revealButton" destination="jLa-UU-2VJ" id="dUB-Zb-Sre"/>
                         <outlet property="searchDisplayController" destination="rbr-Tg-MJy" id="gRe-Gf-Fmo"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="ContactsToNachoNow" id="ndB-gP-BtH"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jgG-ds-vYF" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -396,8 +310,9 @@
                         <outlet property="searchResultsDelegate" destination="jTc-Vg-SXZ" id="l09-nH-VUH"/>
                     </connections>
                 </searchDisplayController>
+                <barButtonItem title="Item" id="DbK-yy-Alh" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-1435" y="-983"/>
+            <point key="canvasLocation" x="-909" y="-983"/>
         </scene>
         <!--Contact View Controller - Contact-->
         <scene sceneID="FRe-Er-G10">
@@ -417,7 +332,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-902" y="-983"/>
+            <point key="canvasLocation" x="-376" y="-983"/>
         </scene>
         <!--Settings View Controller - Settings-->
         <scene sceneID="Jbb-0l-SOs">
@@ -452,14 +367,17 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" title="Settings" id="adw-HC-FaJ">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="iWE-UD-FOg"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="iWE-UD-FOg"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
+                        <outlet property="nachoButton" destination="MBQ-pK-OUo" id="jlf-Ar-7q9"/>
                         <outlet property="revealButton" destination="iWE-UD-FOg" id="NKz-Ge-qr2"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="SettingsToNachoNow" id="AcJ-nB-pBP"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YtI-ix-b1g" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="MBQ-pK-OUo" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-1435" y="397"/>
         </scene>
@@ -497,15 +415,18 @@
                     </tableView>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Accounts" id="dQE-jZ-sB2">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="o0L-DA-IuO"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="o0L-DA-IuO"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="nachoButton" destination="Dvq-sT-DNT" id="bTP-Ab-3BX"/>
                         <outlet property="revealButton" destination="o0L-DA-IuO" id="sNC-t6-Mxf"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="AccountsToNachoNow" id="850-wG-qo0"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="DfX-V3-vYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="Dvq-sT-DNT" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-1435" y="-2263"/>
         </scene>
@@ -514,14 +435,17 @@
             <objects>
                 <pageViewController storyboardIdentifier="HomeViewController" autoresizesArchivedViewToFullSize="NO" useStoryboardIdentifierAsRestorationIdentifier="YES" transitionStyle="pageCurl" navigationOrientation="horizontal" spineLocation="min" id="OQ8-xH-iKh" customClass="HomeViewController" sceneMemberID="viewController">
                     <navigationItem key="navigationItem" title="Home" id="CJe-bJ-vOa">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="5xM-Np-yHN"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="5xM-Np-yHN"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
+                        <outlet property="nachoButton" destination="nOm-08-vvV" id="kRl-O8-Agh"/>
                         <outlet property="revealButton" destination="5xM-Np-yHN" id="4Xf-uv-Ic1"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="HomeToNachoNow" id="v5u-iO-UgY"/>
                     </connections>
                 </pageViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1uw-1F-jlg" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="nOm-08-vvV" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-1945" y="397"/>
         </scene>
@@ -612,8 +536,8 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="puc-hC-DdW" userLabel="Bar Button Item - Taco"/>
-                        <barButtonItem key="rightBarButtonItem" title="Compose" id="JfL-cu-kdr">
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="puc-hC-DdW" userLabel="Bar Button Item - Menu"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="JfL-cu-kdr">
                             <connections>
                                 <segue destination="lOe-mG-VS5" kind="push" identifier="FolderToCompose" id="ueb-Jn-ag7"/>
                             </connections>
@@ -622,10 +546,13 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="nachoButton" destination="KaA-7V-JQm" id="9Hn-RD-U9Q"/>
                         <outlet property="revealButton" destination="puc-hC-DdW" id="cgH-Sc-5L7"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="FoldersToNachoNow" id="4qv-ZA-Stq"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="61c-Dw-Qpc" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="KaA-7V-JQm" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-1435" y="-283"/>
         </scene>
@@ -664,7 +591,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8CR-pi-522" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="82" y="-990"/>
+            <point key="canvasLocation" x="608" y="-990"/>
         </scene>
         <!--Contact Search View Controller - Contacts-->
         <scene sceneID="qZb-fd-BvT">
@@ -747,7 +674,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="601" y="-1627"/>
+            <point key="canvasLocation" x="1127" y="-1627"/>
         </scene>
         <!--Contact Chooser View Controller - Chooser-->
         <scene sceneID="Ora-ag-cc2">
@@ -838,7 +765,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="82" y="-1627"/>
+            <point key="canvasLocation" x="608" y="-1627"/>
         </scene>
         <!--Message List View Controller - Messages-->
         <scene sceneID="piL-bm-yTE">
@@ -862,7 +789,7 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" title="Messages" id="ted-eg-Hzc">
-                        <barButtonItem key="leftBarButtonItem" title="Item" image="Menu.png" id="2XU-yE-OMg"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="2XU-yE-OMg" userLabel="Bar Button Item - Reveal"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <refreshControl key="refreshControl" opaque="NO" multipleTouchEnabled="YES" contentMode="center" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" id="3jE-aJ-4sz">
@@ -870,12 +797,15 @@
                     </refreshControl>
                     <connections>
                         <outlet property="composeButton" destination="A97-xe-h8f" id="ik2-qX-BDT"/>
+                        <outlet property="nachoButton" destination="lwb-Kh-Nak" id="FlC-aR-3AG"/>
                         <outlet property="revealButton" destination="2XU-yE-OMg" id="j7H-HA-a1S"/>
                         <outlet property="searchButton" destination="zTu-79-4b2" id="EGO-9q-D24"/>
                         <outlet property="searchDisplayController" destination="Ug7-2K-mbR" id="1qh-sO-pLj"/>
                         <segue destination="Bab-sA-Ld3" kind="push" identifier="MessagesToRead" id="Xn1-hQ-Sqh"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
+                        <segue destination="96Q-f8-PuZ" kind="push" identifier="MessageListToMessageView" id="c79-xS-Npa"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="MessageListToNachoNow" id="gkM-dU-I3K"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -894,8 +824,62 @@
                         <segue destination="lOe-mG-VS5" kind="push" identifier="MessageListToCompose" id="6LT-Zj-XeH"/>
                     </connections>
                 </barButtonItem>
+                <barButtonItem image="Nacho-Cove-Icon.png" id="lwb-Kh-Nak" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-477" y="397"/>
+        </scene>
+        <!--Message View Controller-->
+        <scene sceneID="eKj-ii-dif">
+            <objects>
+                <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="372"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <gestureRecognizers/>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                        <gestureRecognizers/>
+                    </view>
+                    <navigationItem key="navigationItem" id="9RR-VH-nzx"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
+                    <connections>
+                        <outlet property="checkButton" destination="48s-Jx-T9s" id="be8-kU-gAI"/>
+                        <outlet property="clockButton" destination="IfT-j6-Bb4" id="Zsd-5X-ipN"/>
+                        <outlet property="deleteButton" destination="Zr2-lX-3VI" id="I6X-nG-eOk"/>
+                        <outlet property="flexibleSpaceButton" destination="hYC-KD-Xk0" id="ekc-yV-Qi3"/>
+                        <outlet property="foldersButton" destination="U02-SH-VHC" id="OsV-FF-xHc"/>
+                        <outlet property="forwardButton" destination="mmY-Kk-Ld8" id="yz0-CK-zzG"/>
+                        <outlet property="replyAllButton" destination="R7P-Ye-Fgq" id="tgo-VQ-ORd"/>
+                        <outlet property="replyButton" destination="l45-TG-u6H" id="mS9-Up-jCu"/>
+                        <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" id="qB9-ce-7gT"/>
+                        <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageViewToMessageAction" id="G1z-aV-19B"/>
+                        <segue destination="lOe-mG-VS5" kind="push" identifier="MessageViewToComposeView" id="P29-wJ-GoN"/>
+                    </connections>
+                </viewController>
+                <barButtonItem image="clock.png" id="IfT-j6-Bb4" userLabel="Bar Button Item - Clock"/>
+                <barButtonItem systemItem="stop" id="Zr2-lX-3VI"/>
+                <barButtonItem image="check.png" id="48s-Jx-T9s" userLabel="Bar Button Item - Check"/>
+                <barButtonItem image="ic_action_collection.png" id="U02-SH-VHC" userLabel="Bar Button Item - Folders"/>
+                <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="5C3-Gh-DbC">
+                    <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                    <items>
+                        <barButtonItem title="Reply" id="l45-TG-u6H"/>
+                        <barButtonItem title="Reply All" id="R7P-Ye-Fgq"/>
+                        <barButtonItem title="Forward" id="mmY-Kk-Ld8"/>
+                        <barButtonItem style="plain" systemItem="flexibleSpace" id="hYC-KD-Xk0"/>
+                    </items>
+                </toolbar>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-185" y="1044"/>
         </scene>
         <!--Read Message View Controller-->
         <scene sceneID="sfz-09-thi">
@@ -965,7 +949,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="LN7-gk-jcs">
-                                <rect key="frame" x="210" y="430" width="90" height="30"/>
+                                <rect key="frame" x="115" y="430" width="90" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <state key="normal" title="Dismiss">
@@ -1233,9 +1217,10 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" title="Startup" id="kho-Lu-JgG">
-                        <barButtonItem key="leftBarButtonItem" image="Menu.png" id="ARB-Ca-gEw"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="ARB-Ca-gEw"/>
                     </navigationItem>
                     <connections>
+                        <outlet property="nachoButton" destination="UkI-mn-IKV" id="bqh-Th-qQd"/>
                         <outlet property="revealButton" destination="ARB-Ca-gEw" id="ZYb-Tk-CeU"/>
                         <segue destination="6rF-Ad-StO" kind="modal" identifier="StartupToLaunch" modalTransitionStyle="crossDissolve" id="A0a-NV-skH"/>
                         <segue destination="OQ8-xH-iKh" kind="push" identifier="StartupToHome" id="g4G-tD-G9H"/>
@@ -1244,17 +1229,38 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0IS-Oz-vYd" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="UkI-mn-IKV" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-2203" y="-422"/>
         </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="jfg-Bp-uoy">
+            <objects>
+                <navigationController storyboardIdentifier="SidebarNavigationController" automaticallyAdjustsScrollViewInsets="NO" navigationBarHidden="YES" id="42X-V6-cKb" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <nil key="simulatedTopBarMetrics"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="aEP-lS-rAM">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="FKU-f3-o4b" kind="relationship" relationship="rootViewController" id="dUe-l1-pc6"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="uVi-Fp-v8F" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2661" y="-1175"/>
+        </scene>
     </scenes>
     <resources>
-        <image name="Menu.png" width="20" height="20"/>
+        <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
         <image name="background.png" width="50" height="468"/>
         <image name="calendar-3-48.png" width="48" height="48"/>
         <image name="check.png" width="23" height="20"/>
         <image name="clock-3-48.png" width="48" height="48"/>
         <image name="clock.png" width="22" height="22"/>
+        <image name="ic_action_collection.png" width="32" height="32"/>
         <image name="list.png" width="20" height="18"/>
     </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
@@ -1263,16 +1269,17 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="hCT-pP-PUu"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="7H5-MT-Qxr"/>
-        <segue reference="JWi-mA-RVD"/>
-        <segue reference="1iq-X7-xab"/>
-        <segue reference="S6l-ao-xdW"/>
-        <segue reference="5fj-Ta-mc9"/>
         <segue reference="nAp-rc-bND"/>
-        <segue reference="WJc-Y6-XJB"/>
+        <segue reference="5fj-Ta-mc9"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="JGd-do-Y28"/>
+        <segue reference="ueb-Jn-ag7"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="Xn1-hQ-Sqh"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="ndB-gP-BtH"/>
     </inferredMetricsTieBreakers>
 </document>

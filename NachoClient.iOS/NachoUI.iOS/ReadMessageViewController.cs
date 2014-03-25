@@ -72,6 +72,13 @@ namespace NachoClient.iOS
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 DeleteThisMessage ();
             };
+            // Watch for changes from the back end
+            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
+                    RefreshAttachments ();
+                }
+            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -131,70 +138,79 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
+        Section attachmentSection;
+
+        protected void RefreshAttachments ()
+        {
+            UpdateAttachmentSection ();
+            if (null != attachmentSection) {
+                attachmentSection.GetImmediateRootElement ().Reload (attachmentSection, UITableViewRowAnimation.None);
+            }
+        }
+
+        protected void UpdateAttachmentSection ()
+        {
+            var t = messages.GetEmailThread (ThreadIndex);
+            var m = t.First ();
+            var attachments = BackEnd.Instance.Db.Table<McAttachment> ().Where (a => a.EmailMessageId == m.Id).ToList ();
+
+            if (0 == attachments.Count) {
+                attachmentSection = null;
+                return;
+            }
+
+            if (null == attachmentSection) {
+                attachmentSection = new ThinSection ();
+            } else {
+                attachmentSection.Clear ();
+            }
+
+            foreach (var a in attachments) {
+                StyledStringElement s;
+                if (a.IsInline) {
+                    s = new StyledStringElement (a.DisplayName, "Is inline", UITableViewCellStyle.Subtitle);
+                } else if (a.IsDownloaded) {
+                    s = new StyledStringElement (a.DisplayName, "Is downloaded", UITableViewCellStyle.Subtitle);
+                    s.Tapped += delegate {
+                        DisplayAttachment (a);
+                    };
+                } else if (a.PercentDownloaded > 0) {
+                    s = new StyledStringElement (a.DisplayName, "Downloading...", UITableViewCellStyle.Subtitle);
+                } else {
+                    s = new StyledStringElement (a.DisplayName, "Is not downloaded", UITableViewCellStyle.Subtitle);
+                    s.Tapped += delegate {
+                        DownloadAttachment (a);
+                    };
+                }
+                attachmentSection.Add (s);
+            }
+        }
+
         protected void ReloadRoot ()
         {
-            var root = new RootElement (null);
-            root.UnevenRows = true;
-
             var t = messages.GetEmailThread (ThreadIndex);
             var m = t.First ();
 
-            var topSection = new Section ();
+            var root = new RootElement ("");
+            root.UnevenRows = true;
+
+            var topSection = new ThinSection ();
+
             root.Add (topSection);
 
-            if (null != m.From) {
-                topSection.Add (new StringElement ("From: " + m.From));
-            }
             if (null != m.Subject) {
-                topSection.Add (new StringElement ("Subject: " + m.Subject));
+                topSection.Add (new MultilineElement (m.Subject));
             }
 
-            if (null != m.To) {
-                string[] toList = m.To.Split (new Char [] { ',' });
-                foreach (var s in toList) {
-                    topSection.Add (new StringElement ("To: " + s));
-                }
-            }
-            if (null != m.DisplayTo) {
-                string[] displayToList = m.DisplayTo.Split (new Char[] { ';' });
-                foreach (var s in displayToList) {
-                    topSection.Add (new StringElement ("Display To: " + s));
-                }
-            }
-            if (null != m.Cc) {
-                string[] CcList = m.Cc.Split (new Char [] { ',' });
-                foreach (var s in CcList) {
-                    topSection.Add (new StringElement ("Cc: " + s));
-                }
-            }
+            topSection.Add (new StartTimeElement (Pretty.FullDateString (m.DateReceived)));
 
-            var attachments = BackEnd.Instance.Db.Table<McAttachment> ().Where (a => a.EmailMessageId == m.Id).ToList ();
-
-            if (0 < attachments.Count) {
-                var attachmentSection = new Section ("Attachments");
+            attachmentSection = null;
+            UpdateAttachmentSection ();
+            if (null != attachmentSection) {
                 root.Add (attachmentSection);
-                foreach (var a in attachments) {
-                    StyledStringElement s;
-                    if (a.IsInline) {
-                        s = new StyledStringElement (a.DisplayName, "Is inline", UITableViewCellStyle.Subtitle);
-                    } else if (a.IsDownloaded) {
-                        s = new StyledStringElement (a.DisplayName, "Is downloaded", UITableViewCellStyle.Subtitle);
-                        s.Tapped += delegate {
-                            DisplayAttachment (a);
-                        };
-                    } else if (a.PercentDownloaded > 0) {
-                        s = new StyledStringElement (a.DisplayName, "Downloading...", UITableViewCellStyle.Subtitle);
-                    } else {
-                        s = new StyledStringElement (a.DisplayName, "Is not downloaded", UITableViewCellStyle.Subtitle);
-                        s.Tapped += delegate {
-                            DownloadAttachment (a);
-                        };
-                    }
-                    attachmentSection.Add (s);
-                }
             }
-
-            var bodySection = new Section ();
+           
+            var bodySection = new ThinSection ();
             root.Add (bodySection);
 
             var body = m.GetBody ();
@@ -204,7 +220,6 @@ namespace NachoClient.iOS
                 var message = bodyParser.ParseMessage ();
                 PlatformHelpers.motd = message; // for cid handler
                 MimeHelpers.DumpMessage (message, 0);
-
                 var list = new List<MimeEntity> ();
                 MimeHelpers.MimeDisplayList (message, ref list);
                 RenderDisplayList (list, bodySection);
@@ -238,6 +253,18 @@ namespace NachoClient.iOS
             }
         }
 
+        string magic = @"
+            var style = document.createElement(""style""); 
+            document.head.appendChild(style); 
+            style.innerHTML = ""html{-webkit-text-size-adjust: auto;}"";
+            var viewPortTag=document.createElement('meta');
+            viewPortTag.id=""viewport"";
+            viewPortTag.name = ""viewport"";
+            viewPortTag.content = ""width=device-width; initial-scale=1.0;"";
+            document.getElementsByTagName('head')[0].appendChild(viewPortTag);
+        ";
+
+
         void RenderHtml (MimePart part, Section section)
         {
             var textPart = part as TextPart;
@@ -260,7 +287,9 @@ namespace NachoClient.iOS
             var e = new UIViewElement ("", web, true);
             section.Add (e);
             NachoCore.Utils.Log.Info ("Add webview element: {0}", e);
+
             web.LoadHtmlString (html, null);
+            web.Alpha = 0.0f;
 
             web.LoadStarted += delegate {
                 // this is called several times
@@ -272,16 +301,22 @@ namespace NachoClient.iOS
                 if (--i == 0) {
                     // we stopped loading
                     web.StopLoading ();
-                    string padding = "document.body.style.margin='0';document.body.style.padding = '0'";
-                    web.EvaluateJavascript (padding);
+                    // Size viewport and text
+                    web.EvaluateJavascript (magic);
+//                    string padding = "document.body.style.margin='0';document.body.style.padding = '0'";
+//                    web.EvaluateJavascript (padding);
                     System.Drawing.RectangleF frame = web.Frame;
                     frame.Height = 1;
                     frame.Width = 320;
                     web.Frame = frame;
                     frame.Height = web.ScrollView.ContentSize.Height;
                     web.Frame = frame;
-                    Root.Reload (e, UITableViewRowAnimation.None);
-//                    web.Dispose ();
+                    e.GetActiveCell().Frame = frame;
+                    UIView.BeginAnimations(null);
+                    UIView.SetAnimationDuration(0.30);
+                    web.Alpha = 1.0f;
+                    UIView.CommitAnimations();
+                    e.GetImmediateRootElement().Reload(e, UITableViewRowAnimation.None);
                 }
             };
             web.ScrollView.ViewForZoomingInScrollView = delegate {
@@ -314,7 +349,7 @@ namespace NachoClient.iOS
             var textPart = part as TextPart;
             var text = textPart.Text;
             var e = new StyledMultilineElement (text);
-            e.Font = UIFont.SystemFontOfSize (17.0f);
+            e.Font = UIFont.SystemFontOfSize (19.0f);
             section.Add (e);
         }
 
@@ -378,7 +413,6 @@ namespace NachoClient.iOS
                 return viewC.View.Frame;
             }
         }
-
         // Gets the decoded text content.
         public string GetText (TextPart text)
         {

@@ -47,7 +47,7 @@ namespace NachoClient.iOS
             }
 
             dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                owner.DismissMessageViewController (this);
+                DismissViewController (true, null);
             };
             nowButton.TouchUpInside += (object sender, EventArgs e) => {
                 NcMessageDeferral.UndeferThread (thread);

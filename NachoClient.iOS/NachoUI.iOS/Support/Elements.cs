@@ -55,6 +55,24 @@ namespace NachoClient.iOS
             this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 15.0f));
             this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
         }
+
+        public ThinSection(UIColor color) : this()
+        {
+            this.HeaderView.BackgroundColor = color;
+            this.FooterView.BackgroundColor = color;
+        }
+    }
+
+    /// <summary>
+    /// A section that doesn't take up screen height
+    /// </summary>
+    public class SectionWithLineSeparator : Section
+    {
+        public SectionWithLineSeparator () : base ()
+        {
+            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+            this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+        }
     }
 
     /// <summary>
@@ -313,6 +331,28 @@ namespace NachoClient.iOS
         }
     }
 
+    public class SubjectEntryElement : EntryElement
+    {
+        public SubjectEntryElement (string value) : base ("Subject", "", value)
+        {
+            this.Value = value;
+        }
+
+        protected override NSString CellKey {
+            get {
+                return new NSString ("Nacho.SubjectEntryElement");
+            }
+        }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+            cell.TextLabel.Font = UIFont.SystemFontOfSize (19.0f);
+            cell.TextLabel.TextColor = UIColor.Gray;
+            return cell;
+        }
+    }
+
     public class DateTimeEntryElement : DateTimeElement
     {
         public DateTimeEntryElement (string caption) : base (caption, DateTime.Now)
@@ -324,6 +364,14 @@ namespace NachoClient.iOS
     {
         public StartTimeElement (string caption) : base (caption)
         {
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+        }
+    }
+
+    public class StartTimeElementWithIconIndent : StyledStringElement
+    {
+        public StartTimeElementWithIconIndent (string caption) : base (caption)
+        {
             // Add (invisible) image to get the proper indentation
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
             this.Font = UIFont.SystemFontOfSize (15.0f);
@@ -334,9 +382,10 @@ namespace NachoClient.iOS
     {
         public DurationElement (string caption) : base (caption)
         {
-            var image = UIImage.FromBundle ("ic_action_time");
-            this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            using (var image = UIImage.FromBundle ("ic_action_time")) {
+                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
+                this.Font = UIFont.SystemFontOfSize (15.0f);
+            }
         }
     }
 
@@ -393,9 +442,29 @@ namespace NachoClient.iOS
 
     class StyledStringElementWithDot : StyledStringElement
     {
-        public StyledStringElementWithDot (string caption, UIColor color) : base (caption, "", UITableViewCellStyle.Default)
+        public StyledStringElementWithDot (string caption, string value, UIColor color) : base (caption, value)
         {
             this.Image = NachoClient.Util.DotWithColor (color);
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.TextColor = UIColor.LightGray;
+            this.DetailColor = UIColor.Black;
+        }
+
+        public StyledStringElementWithDot (string caption, UIColor color) : this (caption, "", color)
+        {
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.TextColor = UIColor.Black;
+        }
+    }
+
+    public class StyledStringElementWithIndent : StyledStringElement
+    {
+        public StyledStringElementWithIndent (string caption) : base (caption)
+        {
+            // Add (invisible) image to get the proper indentation
+            this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
+            this.TextColor = UIColor.Gray;
+            this.Font = UIFont.SystemFontOfSize (15.0f);
         }
     }
 
@@ -403,7 +472,7 @@ namespace NachoClient.iOS
     {
         protected UIColor color;
 
-        public RadioElementWithDot(string caption, UIColor color) : base(caption)
+        public RadioElementWithDot (string caption, UIColor color) : base (caption)
         {
             this.color = color;
         }
@@ -417,18 +486,18 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
-            cell.ImageView.Image = NachoClient.Util.DotWithColor(color);
+            cell.ImageView.Image = NachoClient.Util.DotWithColor (color);
             return cell;
         }
     }
 
     class CalendarRadioElementSection : Section
     {
-        public CalendarRadioElementSection (NachoFolders calendars) : base("Calendars")
+        public CalendarRadioElementSection (NachoFolders calendars) : base ("Calendars")
         {
             // TODO: Arrange by account
-            for(int i = 0; i < calendars.Count(); i++) {
-                var c = calendars.GetFolder(i);
+            for (int i = 0; i < calendars.Count (); i++) {
+                var c = calendars.GetFolder (i);
                 // TODO: Get color from calendar
                 var e = new RadioElementWithDot (c.DisplayName, UIColor.Green);
                 this.Add (e);

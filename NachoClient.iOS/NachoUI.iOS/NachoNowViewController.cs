@@ -95,6 +95,12 @@ namespace NachoClient.iOS
                 readMessageViewController.messages = dataSource.messages;
                 readMessageViewController.ThreadIndex = folderDataTableview.IndexPathForSelectedRow.Row;
             }
+
+            if (segue.Identifier == "NachoNowToMessageView") {
+                var dvc = (MessageViewController)segue.DestinationViewController;
+                dvc.messages = dataSource.messages;
+                dvc.ThreadIndex = folderDataTableview.IndexPathForSelectedRow.Row;
+            }
         }
 
         public class TableViewDataSource : UITableViewDataSource
@@ -154,7 +160,7 @@ namespace NachoClient.iOS
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
                 var conversation = owner.dataSource.messages.GetEmailThread (indexPath.Row);
-                owner.PerformSegue ("NachoNowToMessage", new ConversationHolder (conversation));
+                owner.PerformSegue ("NachoNowToMessageView", new ConversationHolder (conversation));
             }
 
         }

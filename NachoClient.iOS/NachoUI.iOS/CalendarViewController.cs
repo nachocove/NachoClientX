@@ -7,6 +7,7 @@ using MonoTouch.EventKit;
 using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -39,6 +40,15 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
+            // Multiple buttons on the left side
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+            nachoButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue("CalendarToNachoNow", this);
+            };
+
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
@@ -59,6 +69,15 @@ namespace NachoClient.iOS
                 calendar = new NachoCalendar ();
                 TableView.ReloadData ();
             }
+
+            // Watch for changes from the back end
+            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
+                    calendar.Refresh();
+                    TableView.ReloadData();
+                }
+            };
         }
 
         /// <summary>

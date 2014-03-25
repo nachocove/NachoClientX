@@ -115,7 +115,7 @@ namespace NachoClient.iOS
 
             section = new ThinSection ();
             section.Add (new SubjectElement (c.Subject));
-            section.Add (new StartTimeElement (Pretty.FullDateString (c.StartTime)));
+            section.Add (new StartTimeElementWithIconIndent (Pretty.FullDateString (c.StartTime)));
             if (c.AllDayEvent) {
                 section.Add (new DurationElement (Pretty.AllDayStartToEnd (c.StartTime, c.EndTime)));
             } else {

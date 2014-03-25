@@ -13,10 +13,18 @@ namespace NachoClient.iOS
 	partial class AccountsViewController
 	{
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (nachoButton != null) {
+				nachoButton.Dispose ();
+				nachoButton = null;
+			}
+
 			if (revealButton != null) {
 				revealButton.Dispose ();
 				revealButton = null;

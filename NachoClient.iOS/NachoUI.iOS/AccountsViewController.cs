@@ -22,6 +22,15 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+
+            // Multiple buttons on the left side
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+            nachoButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue("AccountsToNachoNow", this);
+            };
         }
 	}
 }

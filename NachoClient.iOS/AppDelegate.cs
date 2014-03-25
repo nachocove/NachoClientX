@@ -18,14 +18,12 @@ using SQLite;
 
 namespace NachoClient.iOS
 {
-    // The UIApplicationDelegate for the application. This class is responsible for launching the 
-    // User Interface of the application, as well as listening (and optionally responding) to 
+    // The UIApplicationDelegate for the application. This class is responsible for launching the
+    // User Interface of the application, as well as listening (and optionally responding) to
     // application events from iOS.
     [Register ("AppDelegate")]
     public partial class AppDelegate : UIApplicationDelegate, IBackEndOwner
     {
-       
-
         // class-level declarations
         public override UIWindow Window { get; set; }
 
@@ -34,17 +32,13 @@ namespace NachoClient.iOS
         public EKEventStore EventStore {
             get { return eventStore; }
         }
+
         protected EKEventStore eventStore;
-
         // constants for managing timers
-
         private const uint KDefaultDelaySeconds = 10;
-        private const int KDefaultTimeoutSeconds = 25;  
+        private const int KDefaultTimeoutSeconds = 25;
         // iOS kills us after 30, so make sure we dont get there
-        private TimeSpan Timeout= new TimeSpan (0, 0, KDefaultTimeoutSeconds);
-    
-
-
+        private TimeSpan Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
         private NcTimer TimeoutTimer;
         // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
         #pragma warning disable 414
@@ -52,35 +46,38 @@ namespace NachoClient.iOS
         private NcTimer DisposedTimeoutTimer;
         #pragma warning restore 414
         // end timer constants
-
-
-
-        private bool launchBe()
+        private bool launchBe ()
         {
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
             var Be = BackEnd.Instance;
             Be.Owner = this;
+            Be.StatusIndEvent += (object sender, EventArgs e) => {
+                // Watch for changes from the back end
+                var s = (StatusIndEventArgs)e;
+                this.StatusInd (s.Account.Id, s.Status, s.Tokens);
+            };
             if (0 == Be.Db.Table<McAccount> ().Count ()) {
-                Log.Info(Log.LOG_UI, "Empty Table");
+                Log.Info (Log.LOG_UI, "Empty Table");
             } else {
                 // FIXME - this is wrong. Need to handle multiple accounts in future
-                this.Account = Be.Db.Table<McAccount>().ElementAt(0);
+                this.Account = Be.Db.Table<McAccount> ().ElementAt (0);
             }
             Be.Start ();
             NcContactGleaner.Start ();
             return true;
         }
+
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // An instance of the EKEventStore class represents the iOS Calendar database.
 
-            eventStore = new EKEventStore ( );
+            eventStore = new EKEventStore ();
             application.ApplicationIconBadgeNumber = 0;
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
-            NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof (CidImageProtocol)));
+            NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
             if (launcOptions != null) {
                 // we got some launch options from the OS, probably launched from a localNotification
                 if (launcOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
@@ -99,7 +96,7 @@ namespace NachoClient.iOS
             }
 
             // FIXME - should this get started before AlertView above, to ensure the BE is active?
-            launchBe();
+            launchBe ();
             Log.Info (Log.LOG_UI, "AppDelegate FinishedLaunching done.");
 
             return true;
@@ -110,18 +107,19 @@ namespace NachoClient.iOS
          */
         private Action<UIBackgroundFetchResult> CompletionHandler;
         private UIBackgroundFetchResult FetchResult;
+
         private void StatusHandler (object sender, EventArgs e)
         {
             // FIXME - need to wait for ALL accounts to complete, not just 1st!
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Log.Info(Log.LOG_UI,"StatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info (Log.LOG_UI, "StatusHandler:Info_NewUnreadEmailMessageInInbox");
                 FetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Log.Info (Log.LOG_UI , "StatusHandler:Info_SyncSucceeded");
+                Log.Info (Log.LOG_UI, "StatusHandler:Info_SyncSucceeded");
                 if (UIBackgroundFetchResult.Failed == FetchResult) {
                     FetchResult = UIBackgroundFetchResult.NoData;
                 }
@@ -140,8 +138,6 @@ namespace NachoClient.iOS
                 break;
             }
         }
-
-
 
         private void CancelFetchCallback (object State)
         {
@@ -163,8 +159,6 @@ namespace NachoClient.iOS
             }
         }
 
-
-
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_UI, "PerformFetch Called");
@@ -179,8 +173,6 @@ namespace NachoClient.iOS
             BackEnd.Instance.StatusIndEvent += StatusHandler;
             BackEnd.Instance.ForceSync ();
         }
-    
-
         //
         // This method is invoked when the application is about to move from active to inactive state.
         //
@@ -192,7 +184,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "App Resign Activation: time remaining: " + application.BackgroundTimeRemaining);
             BackEnd.Instance.Stop ();
         }
-
         // This method should be used to release shared resources and it should store the application state.
         // If your application supports background exection this method is called instead of WillTerminate
         // when the user quits.
@@ -200,21 +191,18 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "App Did Enter Background");
         }
-
         // This method is called as part of the transiton from background to active state.
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Will Enter Foreground");
             BackEnd.Instance.ForceSync ();
         }
-
         // Equivalent to applicationDidBecomeActive
-        public override void OnActivated(UIApplication application)
+        public override void OnActivated (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Did Become Active");
         }
-       
-        // This method is called when the application is about to terminate. Save data, if needed. 
+        // This method is called when the application is about to terminate. Save data, if needed.
         public override void WillTerminate (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Will Terminate");
@@ -230,14 +218,7 @@ namespace NachoClient.iOS
             }
         }
 
-        // Methods for IBackEndOwner
-
-        public void StatusInd (NcResult status)
-        {
-            // FIXME.
-        }
-
-        public void StatusInd (int accountId, NcResult status)
+        public void StatusInd (int accountId, NcResult status, string[] tokens)
         {
             {
 
@@ -295,20 +276,14 @@ namespace NachoClient.iOS
             }
         }
 
-  
-        public void StatusInd (int accountId, NcResult status, string[] tokens)
-
+        public void CredReq (int accountId)
         {
-            // FIXME.
-        }
-
-        public void CredReq(int accountId) {
             var Be = BackEnd.Instance;
 
             Log.Info (Log.LOG_UI, "Asking for Credentials");
             InvokeOnMainThread (delegate {
                 var credView = new UIAlertView ();
-                var account = Be.Db.Table<McAccount> ().Single (rec=>rec.Id == accountId);
+                var account = Be.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
                 var tmpCred = Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
                 credView.Title = "Need to update Login Credentials";
@@ -319,33 +294,35 @@ namespace NachoClient.iOS
                 credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
                     var parent = (UIAlertView)sender;
                     // FIXME - need  to display the login id they used in first login attempt
-                    var tmplog = parent.GetTextField(0).Text; // login id
-                    var tmppwd = parent.GetTextField(1).Text; // password
+                    var tmplog = parent.GetTextField (0).Text; // login id
+                    var tmppwd = parent.GetTextField (1).Text; // password
                     if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
-                        tmpCred.Username = (string) tmplog;
-                        tmpCred.Password = (string) tmppwd;
-                        Be.Db.Update(tmpCred); //  update with new username/password
+                        tmpCred.Username = (string)tmplog;
+                        tmpCred.Password = (string)tmppwd;
+                        Be.Db.Update (tmpCred); //  update with new username/password
 
-                        Be.CredResp(accountId);
-                        credView.ResignFirstResponder();
+                        Be.CredResp (accountId);
+                        credView.ResignFirstResponder ();
                     } else {
-                            var DoitYadummy = new UIAlertView();
-                            DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                            DoitYadummy.AddButton("Go Back");
-                            DoitYadummy.AddButton("Exit - Do Not Care");
-                            DoitYadummy.CancelButtonIndex = 1;
-                            DoitYadummy.Show();
-                            DoitYadummy.Clicked+= delegate(object silly, UIButtonEventArgs e) {
+                        var DoitYadummy = new UIAlertView ();
+                        DoitYadummy.Title = "You need to enter fields for Login ID and Password";
+                        DoitYadummy.AddButton ("Go Back");
+                        DoitYadummy.AddButton ("Exit - Do Not Care");
+                        DoitYadummy.CancelButtonIndex = 1;
+                        DoitYadummy.Show ();
+                        DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
 
                             if (e.ButtonIndex == 0) { // I want to actually enter login data
-                                CredReq(accountId);    // call to get credentials
-                            };
+                                CredReq (accountId);    // call to get credentials
+                            }
+                            ;
 
-                            DoitYadummy.ResignFirstResponder();
+                            DoitYadummy.ResignFirstResponder ();
                            
                         };
-                    };
-                    credView.ResignFirstResponder(); // might want this moved
+                    }
+                    ;
+                    credView.ResignFirstResponder (); // might want this moved
                 };
             }); // end invokeonMain
         }
@@ -359,7 +336,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Asking for Config Info");
             InvokeOnMainThread (delegate {  // lock on main thread
                 var account = Be.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-            var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
+                var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
 
                 var credView = new UIAlertView ();
 
@@ -378,10 +355,12 @@ namespace NachoClient.iOS
                             tmpServer.Host = txt;
                             tmpServer.Update ();
                             Be.ServerConfResp (accountId, false); 
-                            credView.ResignFirstResponder();
-                        };
+                            credView.ResignFirstResponder ();
+                        }
+                        ;
 
-                    };
+                    }
+                    ;
                   
                     if (b.ButtonIndex == 1) {
                         var gonnaquit = new UIAlertView ();
@@ -392,12 +371,13 @@ namespace NachoClient.iOS
                         gonnaquit.CancelButtonIndex = 1;
                         gonnaquit.Show ();
                         gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                            if (e.ButtonIndex== 1){
+                            if (e.ButtonIndex == 1) {
                                 ServConfReq (accountId); // go again
                             }
-                            gonnaquit.ResignFirstResponder();
+                            gonnaquit.ResignFirstResponder ();
                         };
-                    };
+                    }
+                    ;
                 };
             }); // end invoke MainThread
         }
@@ -409,6 +389,7 @@ namespace NachoClient.iOS
             // UI FIXME - ask user and call CertAskResp async'ly.
             Be.CertAskResp (accountId, true);
         }
+
         public void SearchContactsResp (int accountId, string prefix, string token)
         {
             // FIXME.

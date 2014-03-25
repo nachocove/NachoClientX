@@ -44,9 +44,17 @@ namespace NachoClient.iOS
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, searchButton };
 
+            // Multiple buttons on the left side
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+            nachoButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue("MessageListToNachoNow", this);
+            };
+
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
-
 
             // Search button brings up the search controller
             searchButton.Clicked += (object sender, EventArgs e) => {
@@ -186,6 +194,11 @@ namespace NachoClient.iOS
                 vc.messages = messageThreads;
                 vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
             }
+            if (segue.Identifier == "MessageListToMessageView") {
+                var vc = (MessageViewController)segue.DestinationViewController;
+                vc.messages = messageThreads;
+                vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
+            }
             if (segue.Identifier == "MessageToMessagePriority") {
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 var indexPath = (NSIndexPath)sender;
@@ -231,7 +244,8 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            PerformSegue ("MessagesToRead", indexPath);
+//            PerformSegue ("MessagesToRead", indexPath);
+            PerformSegue ("MessageListToMessageView", indexPath);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)

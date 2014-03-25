@@ -74,10 +74,15 @@ namespace Test.iOS
             DropTable<McMapFolderItem> ();
             CreateTable<McMapFolderItem> ();
 
-            // NcPendingUpdate
+            // McPending
             CreateTable<McPending> ();
             DropTable<McPending> ();
             CreateTable<McPending> ();
+
+            // McBody
+            CreateTable<McBody> ();
+            DropTable<McBody> ();
+            CreateTable<McBody> ();
         }
     }
 
@@ -124,6 +129,8 @@ namespace Test.iOS
         public MockDataSource ()
         {
             Owner = new MockProtoControlOwner ();
+            Account = new McAccount ();
+            Account.Id = 1;
             BackEnd.Instance.Db = new TestDb ();
         }
     }

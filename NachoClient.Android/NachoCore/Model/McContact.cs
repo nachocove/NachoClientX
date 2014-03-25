@@ -14,17 +14,9 @@ namespace NachoCore.Model
         /// </summary>
         /// 
 
-        /// Who defined this contact?
-        public enum McContactSource
-        {
-            ActiveSync,
-            Device,
-            User,
-            Internal,
-        }
 
         /// ActiveSync or Device
-        public McContactSource Source { get; set; }
+        public McItem.ItemSource Source { get; set; }
 
         /// The collection of important dates associated with the contact
         public List<McContactDateAttribute> Dates;
@@ -113,6 +105,12 @@ namespace NachoCore.Model
 
         /// Nickname for the contact
         public string NickName { get; set; }
+
+        /// Index of Body container
+        public int BodyId { get; set; }
+
+        /// How the body stored on the server.
+        public int NativeBodyType { get; set; }
     }
 
     /// Addresses associated with the contact
@@ -214,7 +212,7 @@ namespace NachoCore.Model
             Categories = new List<McContactStringAttribute> ();
         }
 
-        public McContact (McContactSource source) : this ()
+        public McContact (McItem.ItemSource source) : this ()
         {
             Source = source;
         }
