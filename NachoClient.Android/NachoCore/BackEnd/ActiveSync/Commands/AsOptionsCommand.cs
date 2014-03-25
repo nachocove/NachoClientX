@@ -11,7 +11,7 @@ namespace NachoCore.ActiveSync
 {
     public class AsOptionsCommand : AsCommand
     {
-        public AsOptionsCommand (IAsDataSource dataSource) : base ("Options", dataSource)
+        public AsOptionsCommand (IBEContext dataSource) : base ("Options", dataSource)
         {
         }
 
@@ -22,7 +22,7 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            if (ProcessOptionsHeaders (response.Headers, DataSource)) {
+            if (ProcessOptionsHeaders (response.Headers, BEContext)) {
                 return Event.Create ((uint)SmEvt.E.Success, "OPTSUCCESS");
             }
             return Event.Create ((uint)SmEvt.E.HardFail, "OPTHARD");
@@ -38,14 +38,14 @@ namespace NachoCore.ActiveSync
             return "";
         }
 
-        internal static void SetOldestProtoVers (IAsDataSource dataSource)
+        internal static void SetOldestProtoVers (IBEContext dataSource)
         {
             McProtocolState update = dataSource.ProtocolState;
             update.AsProtocolVersion = "12.0";
             dataSource.ProtocolState = update;
         }
 
-        internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IAsDataSource dataSource)
+        internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext dataSource)
         {
             IEnumerable<string> values;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);

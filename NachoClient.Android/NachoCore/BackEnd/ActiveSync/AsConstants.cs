@@ -9,153 +9,154 @@ namespace NachoCore.ActiveSync
         // These status code values are common to ALL commands, independent of namespace.
         public enum StatusCode
         {
-            InvalidContent = 101,
+            InvalidContent_101 = 101,
             // AsCommand. CODEFIX. HTTP 400 in 2007.
-            First = InvalidContent,
-            InvalidWBXML = 102,
+            First = InvalidContent_101,
+            InvalidWBXML_102 = 102,
             // AsCommand. CODEFIX.
-            InvalidXML = 103,
+            InvalidXML_103 = 103,
             // AsCommand. CODEFIX.
-            InvalidDateTime = 104,
+            InvalidDateTime_104 = 104,
             // AsCommand. CODEFIX.
-            InvalidCombinationOfIDs = 105,
+            InvalidCombinationOfIDs_105 = 105,
             // AsCommand subclass. RECOVER.
-            InvalidIDs = 106,
+            InvalidIDs_106 = 106,
             // AsCommand subclass. RECOVER. HTTP 400 in 2007, except SendMail which was HTTP 500.
-            InvalidMIME = 107,
+            InvalidMIME_107 = 107,
             // AsSendMailCommand. RECOVER.
-            DeviceIdMissingOrInvalid = 108,
+            DeviceIdMissingOrInvalid_108 = 108,
             // AsCommand. CODEFIX.
-            DeviceTypeMissingOrInvalid = 109,
+            DeviceTypeMissingOrInvalid_109 = 109,
             // AsCommand. CODEFIX.
-            ServerError = 110,
+            ServerError_110 = 110,
             // We should NOT retry later. AsCommand => AsControl. ADMIN. HTTP 500 in 2007.
-            ServerErrorRetryLater = 111,
+            ServerErrorRetryLater_111 = 111,
             // AsCommand => AsControl. RECOVER. HTTP 503 in 2007.
-            ActiveDirectoryAccessDenied = 112,
+            ActiveDirectoryAccessDenied_112 = 112,
             // AsCommand => AsControl. ADMIN. HTTP 403 in 2007.
-            MailboxQuotaExceeded = 113,
+            MailboxQuotaExceeded_113 = 113,
             // AsCommand => AsControl. USER. HTTP 507 in 2007.
-            MailboxServerOffline = 114,
+            MailboxServerOffline_114 = 114,
             // AsCommand => AsControl. ADMIN.
-            SendQuotaExceeded = 115,
+            SendQuotaExceeded_115 = 115,
             // AsCommand => AsControl. ADMIN.
-            MessageRecipientUnresolved = 116,
+            MessageRecipientUnresolved_116 = 116,
             // AsSendMailCommand. USER.
-            MessageReplyNotAllowed = 117,
+            MessageReplyNotAllowed_117 = 117,
             // AsSendMailCommand. USER.
-            MessagePreviouslySent = 118,
+            MessagePreviouslySent_118 = 118,
             // AsSendMailCommand. RECOVER.
-            MessageHasNoRecipient = 119,
+            MessageHasNoRecipient_119 = 119,
             // AsSendMailCommand. USER.
-            MailSubmissionFailed = 120,
+            MailSubmissionFailed_120 = 120,
             // AsSendMailCommand. RECOVER.
-            MessageReplyFailed = 121,
+            MessageReplyFailed_121 = 121,
             // AsSendMailCommand. RECOVER.
-            AttachmentIsTooLarge = 122,
+            AttachmentIsTooLarge_122 = 122,
             // AsSendMailCommand. USER.
-            UserHasNoMailbox = 123,
+            UserHasNoMailbox_123 = 123,
             // AsCommand => AsControl. ADMIN.
-            UserCannotBeAnonymous = 124,
+            UserCannotBeAnonymous_124 = 124,
             // AsCommand => AsControl. CODEFIX.
-            UserPrincipalCouldNotBeFound = 125,
+            UserPrincipalCouldNotBeFound_125 = 125,
             // AsCommand => AsControl. ADMIN.
-            UserDisabledForSync = 126,
+            UserDisabledForSync_126 = 126,
             // AsCommand => AsControl. ADMIN.
-            UserOnNewMailboxCannotSync = 127,
+            UserOnNewMailboxCannotSync_127 = 127,
             // AsCommand => AsControl. ADMIN.
-            UserOnLegacyMailboxCannotSync = 128,
+            UserOnLegacyMailboxCannotSync_128 = 128,
             // AsCommand => AsControl. ADMIN.
-            DeviceIsBlockedForThisUser = 129,
+            DeviceIsBlockedForThisUser_129 = 129,
             // AsCommand => AsControl. ADMIN.
-            AccessDenied = 130,
+            AccessDenied_130 = 130,
             // AsCommand. ADMIN.
-            AccountDisabled = 131,
+            AccountDisabled_131 = 131,
             // AsCommand => AsControl. ADMIN.
-            SyncStateNotFound = 132,
+            SyncStateNotFound_132 = 132,
             // Do a full re-sync. RECOVER. Let USER know. HTTP 500 in 2007, except Provision which was HTTP 403.
-            SyncStateLocked = 133,
+            SyncStateLocked_133 = 133,
             // AsCommand => AsControl. ADMIN.
-            SyncStateCorrupt = 134,
+            SyncStateCorrupt_134 = 134,
             // Do a full re-sync. RECOVER. Let USER/ADMIN know.
-            SyncStateAlreadyExists = 135,
+            SyncStateAlreadyExists_135 = 135,
             // Do a full re-sync. RECOVER. Let USER/ADMIN know.
-            SyncStateVersionInvalid = 136,
+            SyncStateVersionInvalid_136 = 136,
             // Do a full re-sync. RECOVER. Let USER/ADMIN know.
-            CommandNotSupported = 137,
+            CommandNotSupported_137 = 137,
             // AsControl. CODEFIX. HTTP 501 in 2007.
-            VersionNotSupported = 138,
+            VersionNotSupported_138 = 138,
             // AsControl. CODEFIX. HTTP 400 in 2007, except for 1.0 devices which got a 505.
-            DeviceNotFullyProvisionable = 139,
+            DeviceNotFullyProvisionable_139 = 139,
             // AsProvision. CODEFIX.
-            RemoteWipeRequested = 140,
+            RemoteWipeRequested_140 = 140,
             // AsCommand. Device should wipe via Provision commands. HTTP 449 in 2007, or 403 if no policy header.
-            LegacyDeviceOnStrictPolicy = 141,
+            LegacyDeviceOnStrictPolicy_141 = 141,
             // AsCommand. ADMIN.
-            DeviceNotProvisioned = 142,
+            DeviceNotProvisioned_142 = 142,
             // AsCommand. RECOVER (reprovision). HTTP 449 in 2007.
-            PolicyRefresh = 143,
+            PolicyRefresh_143 = 143,
             // AsCommand. RECOVER (reprovision).
-            InvalidPolicyKey = 144,
+            InvalidPolicyKey_144 = 144,
             // AsCommand. RECOVER (reprovision).
-            ExternallyManagedDevicesNotAllowed = 145,
+            ExternallyManagedDevicesNotAllowed_145 = 145,
             // AsCommand. CODEFIX.
-            NoRecurrenceInCalendar = 146,
+            NoRecurrenceInCalendar_146 = 146,
             // AsCommand. CODEFIX.
-            UnexpectedItemClass = 147,
+            UnexpectedItemClass_147 = 147,
             // AsCommand. CODEFIX. HTTP 400 or 501 in 2007.
-            RemoteServerHasNoSSL = 148,
+            RemoteServerHasNoSSL_148 = 148,
             // AsCommand. ADMIN.
-            InvalidStoredRequest = 149,
+            InvalidStoredRequest_149 = 149,
             // AsPingCommand? RECOVER.
-            ItemNotFound = 150,
+            ItemNotFound_150 = 150,
             // SmartReply, SmartForward. RECOVER.
-            TooManyFolders = 151,
+            TooManyFolders_151 = 151,
             // AsCommand. USER/ADMIN.
-            NoFoldersFound = 152,
+            NoFoldersFound_152 = 152,
             // AsCommand. ADMIN.
-            ItemsLostAfterMove = 153,
+            ItemsLostAfterMove_153 = 153,
             // ItemOperations. USER/ADMIN. RECOVER.
-            FailureInMoveOperation = 154,
+            FailureInMoveOperation_154 = 154,
             // ItemOperations. USER/ADMIN. RECOVER.
-            MoveCommandDisallowedForNonPersistentMoveAction = 155,
+            MoveCommandDisallowedForNonPersistentMoveAction_155 = 155,
             // ItemOperations. CODEFIX.
-            MoveCommandInvalidDestinationFolder = 156,
+            MoveCommandInvalidDestinationFolder_156 = 156,
             // ItemOperations. RECOVER.
             // [157,159] unused.
-            AvailabilityTooManyRecipients = 160,
+            AvailabilityTooManyRecipients_160 = 160,
             // AsSendMailCommand. USER.
-            AvailabilityDLLimitReached = 161,
+            AvailabilityDLLimitReached_161 = 161,
             // AsSendMailCommand. USER.
-            AvailabilityTransientFailure = 162,
+            AvailabilityTransientFailure_162 = 162,
             // USER/RECOVER.
-            AvailabilityFailure = 163,
+            AvailabilityFailure_163 = 163,
             // USER/ADMIN.
-            BodyPartPreferenceTypeNotSupported = 164,
+            BodyPartPreferenceTypeNotSupported_164 = 164,
             // Where? CODEFIX.
-            DeviceInformationRequired = 165,
+            DeviceInformationRequired_165 = 165,
             // AsProvisionCommand. CODEFIX.
-            InvalidAccountId = 166,
+            InvalidAccountId_166 = 166,
             // Where? USER.
-            AccountSendDisabled = 167,
+            AccountSendDisabled_167 = 167,
             // AsSendMailCommand. ADMIN.
-            IRM_FeatureDisabled = 168,
+            IRM_FeatureDisabled_168 = 168,
             // IGNORE: No RM yet.
-            IRM_TransientError = 169,
-            IRM_PermanentError = 170,
-            IRM_InvalidTemplateID = 171,
-            IRM_OperationNotPermitted = 172,
-            NoPicture = 173,
+            IRM_TransientError_169 = 169,
+            IRM_PermanentError_170 = 170,
+            IRM_InvalidTemplateID_171 = 171,
+            IRM_OperationNotPermitted_172 = 172,
+            NoPicture_173 = 173,
             // Where? RECOVER.
-            PictureTooLarge = 174,
+            PictureTooLarge_174 = 174,
             // Where? RECOVER.
-            PictureLimitReached = 175,
+            PictureLimitReached_175 = 175,
             // Where? RECOVER.
-            BodyPart_ConversationTooLarge = 176,
+            BodyPart_ConversationTooLarge_176 = 176,
             // Where? RECOVER.
-            MaximumDevicesReached = 177,
+            MaximumDevicesReached_177 = 177,
             // AsCommand. USER/ADMIN.
-            Last = MaximumDevicesReached}
+            Last = MaximumDevicesReached_177,
+        }
         ;
         /* The following section is organized as follows:
          * 1) The order is AirSync, AirSyncBase, and then classes are in alpha order.
@@ -181,6 +182,7 @@ namespace NachoCore.ActiveSync
             public const string Fetch = "Fetch";
             public const string FilterType = "FilterType";
             public const string GetChanges = "GetChanges";
+            public const string Limit = "Limit";
             public const string MimeSupport = "MIMESupport";
             public const string MoreAvailable = "MoreAvailable";
             public const string Options = "Options";
@@ -189,7 +191,6 @@ namespace NachoCore.ActiveSync
             public const string Status = "Status";
             public const string Sync = "Sync";
             public const string SyncKey = "SyncKey";
-            public const string SyncKey_Initial = "0";
             public const string TruncationSize = "TruncationSize";
             public const string Type = "Type";
             public const string WindowSize = "WindowSize";
@@ -226,34 +227,34 @@ namespace NachoCore.ActiveSync
 
             public enum MimeSupportCode : uint
             {
-                NoMime = 0,
-                SMimeOnly = 1,
-                AllMime = 2,
+                NoMime_0 = 0,
+                SMimeOnly_1 = 1,
+                AllMime_2 = 2,
             };
 
             public enum StatusCode : uint
             {
-                Success = 1,
-                SyncKeyInvalid = 3,
-                ProtocolError = 4,
-                ServerError = 5,
-                ClientError = 6,
-                ServerWins = 7,
-                NotFound = 8,
-                NoSpace = 9,
-                FolderChange = 12,
-                ResendFull = 13,
-                LimitReWait = 14,
-                TooMany = 15,
-                Retry = 16,
+                Success_1 = 1,
+                SyncKeyInvalid_3 = 3,
+                ProtocolError_4 = 4,
+                ServerError_5 = 5,
+                ClientError_6 = 6,
+                ServerWins_7 = 7,
+                NotFound_8 = 8,
+                NoSpace_9 = 9,
+                FolderChange_12 = 12,
+                ResendFull_13 = 13,
+                LimitReWait_14 = 14,
+                TooMany_15 = 15,
+                Retry_16 = 16,
             };
 
             public enum TypeCode : uint
             {
-                PlainText = 1,
-                Html = 2,
-                Rtf = 3,
-                Mime = 4,
+                PlainText_1 = 1,
+                Html_2 = 2,
+                Rtf_3 = 3,
+                Mime_4 = 4,
             }
         }
 
@@ -282,19 +283,19 @@ namespace NachoCore.ActiveSync
 
             public enum MethodCode : uint
             {
-                NormalAttachment = 1,
+                NormalAttachment_1 = 1,
                 /* [2, 4] Reserved. */
-                EmbeddedEml = 5,
-                AttachOle = 6,
+                EmbeddedEml_5 = 5,
+                AttachOle_6 = 6,
             };
             // NOTE that TypeCode is for both Type and NativeBodyType.
             public enum TypeCode : uint
             {
-                PlainText = 1,
-                Html = 2,
-                Rtf = 3,
+                PlainText_1 = 1,
+                Html_2 = 2,
+                Rtf_3 = 3,
                 /* Data element will be base64-encoded. */
-                Mime = 4,
+                Mime_4 = 4,
             };
         }
 
@@ -325,14 +326,14 @@ namespace NachoCore.ActiveSync
 
             public enum ErrorCodeCode : uint
             {
-                InvalidRequest = 600,
-                NoProviderForSchema = 601,
+                InvalidRequest_600 = 600,
+                NoProviderForSchema_601 = 601,
             };
 
             public enum StatusCode : uint
             {
-                Success = 1,
-                ProtocolError = 2,
+                Success_1 = 1,
+                ProtocolError_2 = 2,
             };
 
             public class TypeCode
@@ -463,6 +464,7 @@ namespace NachoCore.ActiveSync
             public const string SmartForward = "SmartForward";
             public const string SmartReply = "SmartReply";
             public const string Source = "Source";
+            public const string Status = AirSync.Status;
             public const string Mime = "Mime";
         }
 
@@ -565,9 +567,9 @@ namespace NachoCore.ActiveSync
 
             public enum FlagStatusCode : uint
             {
-                Clear = 0,
-                MarkDone = 1,
-                Set = 2,
+                Clear_0 = 0,
+                MarkDone_1 = 1,
+                Set_2 = 2,
             };
         }
 
@@ -602,105 +604,107 @@ namespace NachoCore.ActiveSync
             // FIXME: with Unknown, we need to retry & watch for a loop.
             public enum FolderSyncStatusCode : uint
             {
-                Success = 1,
-                Retry = 6,
-                ReSync = 9,
-                BadFormat = 10,
-                Unknown = 11,
-                ServerFail = 12,
+                Success_1 = 1,
+                Retry_6 = 6,
+                ReSync_9 = 9,
+                BadFormat_10 = 10,
+                Unknown_11 = 11,
+                ServerFail_12 = 12,
             };
             // FIXME: Ric is not supported for AS version 12.1.
             public enum FolderCreateStatusCode : uint
             {
-                Success = 1,
-                Exists = 2,
-                SpecialParent = 3,
-                BadParent = 5,
-                ServerError = 6,
-                ReSync = 9,
-                BadFormat = 10,
-                Unknown = 11,
-                BackEndError = 12,
+                Success_1 = 1,
+                Exists_2 = 2,
+                SpecialParent_3 = 3,
+                BadParent_5 = 5,
+                ServerError_6 = 6,
+                ReSync_9 = 9,
+                BadFormat_10 = 10,
+                Unknown_11 = 11,
+                BackEndError_12 = 12,
             };
 
             public enum FolderDeleteStatusCode : uint
             {
-                Success = 1,
-                Special = 3,
-                Missing = 4,
-                ServerError = 6,
-                ReSync = 9,
-                BadFormat = 10,
+                Success_1 = 1,
+                Special_3 = 3,
+                Missing_4 = 4,
+                ServerError_6 = 6,
+                ReSync_9 = 9,
+                BadFormat_10 = 10,
             };
 
             public enum FolderUpdateStatusCode : uint
             {
-                Success = 1,
-                Exists = 2,
-                Special = 3,
-                Missing = 4,
-                BadParent = 5,
-                ServerError = 6,
-                ReSync = 9,
+                Success_1 = 1,
+                Exists_2 = 2,
+                Special_3 = 3,
+                Missing_4 = 4,
+                MissingParent_5 = 5,
+                ServerError_6 = 6,
+                ReSync_9 = 9,
+                BadFormat_10 = 10,
+                Unknown_11 = 11,
             };
 
             public enum TypeCode : uint
             {
-                UserCreatedGeneric = 1,
-                DefaultInbox = 2,
-                DefaultDrafts = 3,
-                DefaultDeleted = 4,
-                DefaultSent = 5,
-                DefaultOutbox = 6,
-                DefaultTasks = 7,
-                DefaultCal = 8,
-                DefaultContacts = 9,
-                DefaultNotes = 10,
-                DefaultJournal = 11,
-                UserCreatedMail = 12,
-                UserCreatedCal = 13,
-                UserCreatedContacts = 14,
-                UserCreatedTasks = 15,
-                UserCreatedJournal = 16,
-                UserCreatedNotes = 17,
-                Unknown = 18,
-                Ric = 19,
+                UserCreatedGeneric_1 = 1,
+                DefaultInbox_2 = 2,
+                DefaultDrafts_3 = 3,
+                DefaultDeleted_4 = 4,
+                DefaultSent_5 = 5,
+                DefaultOutbox_6 = 6,
+                DefaultTasks_7 = 7,
+                DefaultCal_8 = 8,
+                DefaultContacts_9 = 9,
+                DefaultNotes_10 = 10,
+                DefaultJournal_11 = 11,
+                UserCreatedMail_12 = 12,
+                UserCreatedCal_13 = 13,
+                UserCreatedContacts_14 = 14,
+                UserCreatedTasks_15 = 15,
+                UserCreatedJournal_16 = 16,
+                UserCreatedNotes_17 = 17,
+                Unknown_18 = 18,
+                Ric_19 = 19,
             };
 
             public static string TypeCodeToAirSyncClassCode (uint code)
             {
                 switch (code) {
-                case (uint)TypeCode.UserCreatedGeneric:
-                case (uint)TypeCode.DefaultJournal:
-                case (uint)TypeCode.UserCreatedJournal:
-                case (uint)TypeCode.Unknown:
-                case (uint)TypeCode.Ric:
+                case (uint)TypeCode.UserCreatedGeneric_1:
+                case (uint)TypeCode.DefaultJournal_11:
+                case (uint)TypeCode.UserCreatedJournal_16:
+                case (uint)TypeCode.Unknown_18:
+                case (uint)TypeCode.Ric_19:
                     //FIXME - we don't know what to do with these yet.
-                    Log.Error (Log.LOG_AS, "TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
+                    Log.Info (Log.LOG_AS, "TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
                     return AirSync.ClassCode.Notes;
 
-                case (uint)TypeCode.DefaultInbox:
-                case (uint)TypeCode.DefaultDrafts:
-                case (uint)TypeCode.DefaultDeleted:
-                case (uint)TypeCode.DefaultSent:
-                case (uint)TypeCode.DefaultOutbox:
-                case (uint)TypeCode.UserCreatedMail:
+                case (uint)TypeCode.DefaultInbox_2:
+                case (uint)TypeCode.DefaultDrafts_3:
+                case (uint)TypeCode.DefaultDeleted_4:
+                case (uint)TypeCode.DefaultSent_5:
+                case (uint)TypeCode.DefaultOutbox_6:
+                case (uint)TypeCode.UserCreatedMail_12:
                     return AirSync.ClassCode.Email;
 
-                case (uint)TypeCode.DefaultTasks:
-                case (uint)TypeCode.UserCreatedTasks:
+                case (uint)TypeCode.DefaultTasks_7:
+                case (uint)TypeCode.UserCreatedTasks_15:
                     return AirSync.ClassCode.Tasks;
 
-                case (uint)TypeCode.DefaultCal:
-                case (uint)TypeCode.UserCreatedCal:
+                case (uint)TypeCode.DefaultCal_8:
+                case (uint)TypeCode.UserCreatedCal_13:
                     return AirSync.ClassCode.Calendar;
 
-                case (uint)TypeCode.DefaultContacts:
-                case (uint)TypeCode.UserCreatedContacts:
+                case (uint)TypeCode.DefaultContacts_9:
+                case (uint)TypeCode.UserCreatedContacts_14:
                     return AirSync.ClassCode.Contacts;
 
-                case (uint)TypeCode.DefaultNotes:
-                case (uint)TypeCode.UserCreatedNotes:
+                case (uint)TypeCode.DefaultNotes_10:
+                case (uint)TypeCode.UserCreatedNotes_17:
                     return AirSync.ClassCode.Notes;
                 }
                 throw new Exception ();
@@ -727,10 +731,10 @@ namespace NachoCore.ActiveSync
 
             public enum StatusCode : uint
             {
-                Success = 1,
-                NoPhoto = 173,
-                TooBig = 174,
-                TooMany = 175,
+                Success_1 = 1,
+                NoPhoto_173 = 173,
+                TooBig_174 = 174,
+                TooMany_175 = 175,
             };
         }
 
@@ -754,28 +758,28 @@ namespace NachoCore.ActiveSync
 
             public enum StatusCode : uint
             {
-                Success = 1,
-                ProtocolError = 2,
-                ServerError = 3,
-                DocLibBadUri = 4,
-                DocLibAccessDenied = 5,
-                DocLibAccessDeniedOrMissing = 6,
-                DocLibFailedServerConn = 7,
-                ByteRangeInvalidOrTooLarge = 8,
-                StoreUnknownOrNotSupported = 9,
-                FileEmpty = 10,
-                RequestTooLarge = 11,
-                IoFailure = 12,
+                Success_1 = 1,
+                ProtocolError_2 = 2,
+                ServerError_3 = 3,
+                DocLibBadUri_4 = 4,
+                DocLibAccessDenied_5 = 5,
+                DocLibAccessDeniedOrMissing_6 = 6,
+                DocLibFailedServerConn_7 = 7,
+                ByteRangeInvalidOrTooLarge_8 = 8,
+                StoreUnknownOrNotSupported_9 = 9,
+                FileEmpty_10 = 10,
+                RequestTooLarge_11 = 11,
+                IoFailure_12 = 12,
                 /* 13 omitted */
-                ConversionFailure = 14,
-                AttachmentOrIdInvalid = 15,
-                ResourceAccessDenied = 16,
-                PartialFailure = 17,
-                CredRequired = 18,
+                ConversionFailure_14 = 14,
+                AttachmentOrIdInvalid_15 = 15,
+                ResourceAccessDenied_16 = 16,
+                PartialFailure_17 = 17,
+                CredRequired_18 = 18,
                 /* [19, 154] omitted */
-                ProtocolErrorMissing = 155,
-                ActionNotSupported = 156}
-            ;
+                ProtocolErrorMissing_155 = 155,
+                ActionNotSupported_156 = 156,
+            };
         }
 
         public class MeetingResp
@@ -790,10 +794,17 @@ namespace NachoCore.ActiveSync
             public const string Status = "Status";
             public const string UserResponse = "UserResponse";
 
-            public enum StatusCode : uint
+            public enum UserResponseCode
             {
-                Success = 1,
-                InvalidMeetingRequest = 2,
+                Accepted_1 = 1,
+                Tentatively_2 = 2,
+                Declined_3 = 3,
+            }
+
+            public enum StatusCode
+            {
+                Success_1 = 1,
+                InvalidMeetingRequest_2 = 2,
             }
         }
 
@@ -812,13 +823,13 @@ namespace NachoCore.ActiveSync
 
             public enum StatusCode : uint
             {
-                InvalidSrc = 1,
-                InvalidDest = 2,
-                Success = 3,
-                SrcDestSame = 4,
-                ClobberOrMulti = 5,
+                InvalidSrc_1 = 1,
+                InvalidDest_2 = 2,
+                Success_3 = 3,
+                SrcDestSame_4 = 4,
+                ClobberOrMulti_5 = 5,
                 // 6 omitted.
-                Locked = 7,
+                Locked_7 = 7,
             };
         }
 
@@ -836,14 +847,14 @@ namespace NachoCore.ActiveSync
 
             public enum StatusCode : uint
             {
-                NoChanges = 1,
-                Changes = 2,
-                MissingParams = 3,
-                SyntaxError = 4,
-                BadHeartbeat = 5,
-                TooManyFolders = 6,
-                NeedFolderSync = 7,
-                ServerError = 8,
+                NoChanges_1 = 1,
+                Changes_2 = 2,
+                MissingParams_3 = 3,
+                SyntaxError_4 = 4,
+                BadHeartbeat_5 = 5,
+                TooManyFolders_6 = 6,
+                NeedFolderSync_7 = 7,
+                ServerError_8 = 8,
             };
         }
 
@@ -907,45 +918,45 @@ namespace NachoCore.ActiveSync
 
             public enum ProvisionStatusCode : uint
             {
-                Success = 1,
-                ProtocolError = 2,
-                ServerError = 3,
+                Success_1 = 1,
+                ProtocolError_2 = 2,
+                ServerError_3 = 3,
             };
 
             public enum PolicyRespStatusCode : uint
             {
-                Success = 1,
-                NoPolicy = 2,
-                UnknownPolicyType = 3,
-                ServerCorrupt = 4,
-                WrongPolicyKey = 5,
+                Success_1 = 1,
+                NoPolicy_2 = 2,
+                UnknownPolicyType_3 = 3,
+                ServerCorrupt_4 = 4,
+                WrongPolicyKey_5 = 5,
             };
 
             public enum PolicyReqStatusCode : uint
             {
-                Success = 1,
-                PartialSuccess = 2,
-                NotApplied = 3,
+                Success_1 = 1,
+                PartialSuccess_2 = 2,
+                NotApplied_3 = 3,
                 // MDM case:
-                External = 4,
+                External_4 = 4,
             };
 
             public enum RemoteWipeStatusCode : uint
             {
-                Success = 1,
-                Failure = 2,
+                Success_1 = 1,
+                Failure_2 = 2,
             };
 
             public enum MaxAgeFilterCode : uint
             {
                 Min = 0,
-                SyncAll = Min,
-                OneDay = 1,
-                ThreeDays = 2,
-                OneWeek = 3,
-                TwoWeeks = 4,
-                OneMonth = 5,
-                Max = OneMonth,
+                SyncAll_0 = Min,
+                OneDay_1 = 1,
+                ThreeDays_2 = 2,
+                OneWeek_3 = 3,
+                TwoWeeks_4 = 4,
+                OneMonth_5 = 5,
+                Max = OneMonth_5,
             };
         }
 
@@ -972,31 +983,31 @@ namespace NachoCore.ActiveSync
 
             public enum SearchStatusCode : uint
             {
-                Success = 1,
-                ServerError = 3,
+                Success_1 = 1,
+                ServerError_3 = 3,
             };
 
             public enum StoreStatusCode : uint
             {
-                Success = 1,
-                InvalidRequest = 2,
+                Success_1 = 1,
+                InvalidRequest_2 = 2,
                 // likely transient - do retry.
-                ServerError = 3,
-                BadLink = 4,
-                AccessDenied = 5,
+                ServerError_3 = 3,
+                BadLink_4 = 4,
+                AccessDenied_5 = 5,
                 // "Prompt user."
-                NotFound = 6,
+                NotFound_6 = 6,
                 // "Prompt the user. Sometimes these are transient, so retry. If it continues to fail, point user to administrator."
-                ConnectionFailed = 7,
-                TooComplex = 8,
+                ConnectionFailed_7 = 7,
+                TooComplex_8 = 8,
                 // 9 omitted.
                 // "The search timed out. Retry with or without rebuilding results. If it continues, contact the Administrator."
-                TimedOut = 10,
+                TimedOut_10 = 10,
                 // do FSync.
-                FSyncRequired = 11,
-                EndOfRRange = 12,
-                AccessBlocked = 13,
-                CredRequired = 14,
+                FSyncRequired_11 = 11,
+                EndOfRRange_12 = 12,
+                AccessBlocked_13 = 13,
+                CredRequired_14 = 14,
             };
         }
 
@@ -1011,18 +1022,27 @@ namespace NachoCore.ActiveSync
             public const string OS = "OS";
             public const string OSLanguage = "OSLanguage";
             public const string Set = "Set";
+            public const string Status = AirSync.Status;
             public const string UserAgent = "UserAgent";
             public const string UserInformation = "UserInformation";
 
             public enum StatusCode : uint
             {
-                Success = 1,
-                ProtocolError = 2,
-                AccessDenied = 3,
-                ServerUnavailable = 4,
-                InvalidArgs = 5,
-                ConflictingArgs = 6,
-                PolicyDeny = 7
+                Success_1 = 1,
+                ProtocolError_2 = 2,
+                AccessDenied_3 = 3,
+                ServerUnavailable_4 = 4,
+                InvalidArgs_5 = 5,
+                ConflictingArgs_6 = 6,
+                PolicyDeny_7 = 7
+            }
+
+            public enum SetGetStatusCode 
+            {
+                Success_1 = 1,
+                ProtocolError_2 = 2,
+                InvalidArgs_5 = 5,
+                ConflictingArgs_6 = 6,
             }
         }
 

@@ -14,6 +14,7 @@ namespace NachoCore.ActiveSync
         Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc);
+        void PostProcessEvent (Event evt);
         Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status);
         XDocument ToXDocument (AsHttpOperation Sender);
         string ToMime (AsHttpOperation Sender);
@@ -23,6 +24,9 @@ namespace NachoCore.ActiveSync
         bool UseWbxml (AsHttpOperation Sender);
         bool DoSendPolicyKey (AsHttpOperation Sender);
         void StatusInd (bool didSucceed);
+        bool WasAbleToRephrase ();
+        void ResoveAllFailed (NcResult.WhyEnum why);
+        void ResoveAllDeferred ();
     }
 }
 

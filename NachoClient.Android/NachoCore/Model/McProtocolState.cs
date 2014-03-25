@@ -7,11 +7,15 @@ namespace NachoCore.Model
     // NOTE: eventually this will be a base class, with an active-sync sub-class.
     public class McProtocolState : McObject
     {
+        public const string AsSyncKey_Initial = "0";
+        public const string AsPolicyKey_Initial = "0";
+
         public McProtocolState ()
         {
             AsProtocolVersion = "12.0";
-            AsPolicyKey = "0";
-            AsSyncKey = "0";
+            AsPolicyKey = AsPolicyKey_Initial;
+            AsSyncKey = AsSyncKey_Initial;
+            AsSyncLimit = uint.MaxValue;
             HeartbeatInterval = 600;
             MaxFolders = 200;
             KludgeSimulatorIdentity = Guid.NewGuid ().ToString ("N").Substring (0, 20);
@@ -23,6 +27,8 @@ namespace NachoCore.Model
         public string AsPolicyKey { get; set; }
 
         public string AsSyncKey { get; set; }
+
+        public uint AsSyncLimit { get; set; } // FIXME - respect this!
 
         public uint HeartbeatInterval { get; set; }
 

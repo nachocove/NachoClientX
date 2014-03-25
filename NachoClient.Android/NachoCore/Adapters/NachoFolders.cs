@@ -30,22 +30,22 @@ namespace NachoClient
         //        Xml.FolderHierarchy.TypeCode.UserCreatedNotes,
 
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForEmail = {
-            Xml.FolderHierarchy.TypeCode.DefaultInbox,
-            Xml.FolderHierarchy.TypeCode.DefaultDrafts,
-            Xml.FolderHierarchy.TypeCode.DefaultDeleted,
-            Xml.FolderHierarchy.TypeCode.DefaultSent,
-            Xml.FolderHierarchy.TypeCode.DefaultOutbox,
-            Xml.FolderHierarchy.TypeCode.UserCreatedMail,
+            Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
+            Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
+            Xml.FolderHierarchy.TypeCode.DefaultDeleted_4,
+            Xml.FolderHierarchy.TypeCode.DefaultSent_5,
+            Xml.FolderHierarchy.TypeCode.DefaultOutbox_6,
+            Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
         };
 
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForCalendars = {
-            Xml.FolderHierarchy.TypeCode.DefaultCal,
-            Xml.FolderHierarchy.TypeCode.UserCreatedCal,
+            Xml.FolderHierarchy.TypeCode.DefaultCal_8,
+            Xml.FolderHierarchy.TypeCode.UserCreatedCal_13,
         };
 
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForContacts = {
-            Xml.FolderHierarchy.TypeCode.DefaultContacts,
-            Xml.FolderHierarchy.TypeCode.UserCreatedContacts,
+            Xml.FolderHierarchy.TypeCode.DefaultContacts_9,
+            Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14,
         };
 
         List<McFolder> list;

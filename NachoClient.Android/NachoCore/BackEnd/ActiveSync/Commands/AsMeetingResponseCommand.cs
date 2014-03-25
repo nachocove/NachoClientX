@@ -10,24 +10,21 @@ namespace NachoCore.ActiveSync
 {
     public class AsMeetingResponseCommand : AsCommand
     {
-        public enum ResponseEnum { Accepted = 1, Tentatively = 2, Declined = 3};
-
-        public AsMeetingResponseCommand (IAsDataSource dataSource) : base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
+        public AsMeetingResponseCommand (IBEContext dataSource) : base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
         {
-            Update = NextPending (McPending.Operations.CalRespond);
+            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.CalRespond);
+            PendingSingle.MarkDispached ();
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse,
                                   new XElement (m_ns + Xml.MeetingResp.Request,
-                                      new XElement (m_ns + Xml.MeetingResp.UserResponse, Update.CalResponse),
-                                      new XElement (m_ns + Xml.MeetingResp.CollectionId, Update.FolderServerId),
-                                      new XElement (m_ns + Xml.MeetingResp.RequestId, Update.ServerId)));
+                                      new XElement (m_ns + Xml.MeetingResp.UserResponse, PendingSingle.CalResponse),
+                                      new XElement (m_ns + Xml.MeetingResp.CollectionId, PendingSingle.FolderServerId),
+                                      new XElement (m_ns + Xml.MeetingResp.RequestId, PendingSingle.ServerId)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (meetingResp);
-            Update.IsDispatched = true;
-            Update.Update ();
             return doc;
         }
 
@@ -35,15 +32,19 @@ namespace NachoCore.ActiveSync
         {
             var xmlMeetingResp = doc.Root;
             switch ((Xml.MeetingResp.StatusCode)Convert.ToUInt32 (xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Status).Value)) {
-            case Xml.MeetingResp.StatusCode.Success:
-                Update.Delete ();
+            case Xml.MeetingResp.StatusCode.Success_1:
+                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_MeetingResponseSucceeded));
                 return Event.Create ((uint)SmEvt.E.Success, "FUPSUCCESS");
 
-            case Xml.MeetingResp.StatusCode.InvalidMeetingRequest:
-                // FIXME - status-ind required.
+            case Xml.MeetingResp.StatusCode.InvalidMeetingRequest_2:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
+                    NcResult.WhyEnum.BadOrMalformed));
+                return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL1");
+
             default:
-                Update.Delete ();
-                return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL");
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
+                    NcResult.WhyEnum.Unknown));
+                return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL2");
             }
         }
     }

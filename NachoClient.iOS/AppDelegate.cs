@@ -279,7 +279,7 @@ namespace NachoClient.iOS
                     UIApplication.SharedApplication.ScheduleLocalNotification (notification);
 
                     break;
-                case NcResult.SubKindEnum.Info_EmailMessageMarkedRead:
+                case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
                     // need to find way to pop badge number without alert on app popping up
                     badgeNotification = new UILocalNotification ();
                     badgeNotification.AlertAction = "Taco Mail";

@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
         private NcStateMachine Sm;
         private AsHttpOperation GetOp, AckOp;
 
-        public AsProvisionCommand (IAsDataSource dataSource) : base (Xml.Provision.Ns, Xml.Provision.Ns, dataSource)
+        public AsProvisionCommand (IBEContext dataSource) : base (Xml.Provision.Ns, Xml.Provision.Ns, dataSource)
         {
             Sm = new NcStateMachine () { 
                 LocalStateType = typeof(Lst),
@@ -131,23 +131,23 @@ namespace NachoCore.ActiveSync
             if (MustWipe) {
                 if (AckOp == Sender) {
                     provision.Add (new XElement (m_ns + Xml.Provision.RemoteWipe,
-                        (WipeSucceeded) ? Xml.Provision.RemoteWipeStatusCode.Success :
-                        Xml.Provision.RemoteWipeStatusCode.Failure));
+                        (WipeSucceeded) ? Xml.Provision.RemoteWipeStatusCode.Success_1 :
+                        Xml.Provision.RemoteWipeStatusCode.Failure_2));
                 }
             } else {
-                if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
+                if ((!BEContext.ProtocolState.InitialProvisionCompleted) &&
                     GetOp == Sender &&
-                    "14.1" == DataSource.ProtocolState.AsProtocolVersion) {
+                    "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
                     provision.Add (AsSettingsCommand.DeviceInformation ());
                 }
                 var policy = new XElement (m_ns + Xml.Provision.Policy, 
                                  new XElement (m_ns + Xml.Provision.PolicyType, Xml.Provision.PolicyTypeValue));
-                if (DataSource.ProtocolState.InitialProvisionCompleted) {
-                    policy.Add (new XElement (m_ns + Xml.Provision.PolicyKey, DataSource.ProtocolState.AsPolicyKey));
+                if (BEContext.ProtocolState.InitialProvisionCompleted) {
+                    policy.Add (new XElement (m_ns + Xml.Provision.PolicyKey, BEContext.ProtocolState.AsPolicyKey));
                 }
                 if (AckOp == Sender) {
                     policy.Add (new XElement (m_ns + Xml.Provision.Status,
-                        ((uint)NcEnforcer.Instance.Compliance (DataSource.Account)).ToString ()));
+                        ((uint)NcEnforcer.Instance.Compliance (BEContext.Account)).ToString ()));
                 }
                 provision.Add (new XElement (m_ns + Xml.Provision.Policies, policy));
             }
@@ -159,17 +159,17 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
-            switch ((Xml.Provision.ProvisionStatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
-            case Xml.Provision.ProvisionStatusCode.Success:
-                if ((!DataSource.ProtocolState.InitialProvisionCompleted) &&
+            switch ((Xml.Provision.ProvisionStatusCode)uint.Parse (xmlStatus.Value)) {
+            case Xml.Provision.ProvisionStatusCode.Success_1:
+                if ((!BEContext.ProtocolState.InitialProvisionCompleted) &&
                     GetOp == Sender) {
-                    var protocolState = DataSource.ProtocolState;
+                    var protocolState = BEContext.ProtocolState;
                     protocolState.InitialProvisionCompleted = true;
                     protocolState.Update ();
                 }
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
-                    WipeSucceeded = NcEnforcer.Instance.Wipe (DataSource.Account);
+                    WipeSucceeded = NcEnforcer.Instance.Wipe (BEContext.Account);
                     if (!MustWipe) {
                         MustWipe = true;
                         return Event.Create ((uint)ProvEvt.E.Wipe, "PROVWIPE", null, "RemoteWipe element in Provision.");
@@ -181,7 +181,7 @@ namespace NachoCore.ActiveSync
                     var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
 
                     // PolicyKey required element of Policy.
-                    McProtocolState update = DataSource.ProtocolState;
+                    McProtocolState update = BEContext.ProtocolState;
                     update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
                     update.Update ();
 
@@ -193,21 +193,27 @@ namespace NachoCore.ActiveSync
 
                     // Status required element of Policy.
                     var xmlPolicyStatus = xmlPolicy.Element (m_ns + Xml.Provision.Status);
-                    switch ((Xml.Provision.PolicyRespStatusCode)Convert.ToUInt32 (xmlPolicyStatus.Value)) {
-                    case Xml.Provision.PolicyRespStatusCode.Success:
+                    switch ((Xml.Provision.PolicyRespStatusCode)uint.Parse (xmlPolicyStatus.Value)) {
+                    case Xml.Provision.PolicyRespStatusCode.Success_1:
                         break;
-                    case Xml.Provision.PolicyRespStatusCode.NoPolicy:
-                    case Xml.Provision.PolicyRespStatusCode.UnknownPolicyType:
-                    case Xml.Provision.PolicyRespStatusCode.ServerCorrupt:
-                    case Xml.Provision.PolicyRespStatusCode.WrongPolicyKey:
-                        return Event.Create ((uint)SmEvt.E.HardFail, "PROVHARD0");
+                    case Xml.Provision.PolicyRespStatusCode.NoPolicy_2:
+                    case Xml.Provision.PolicyRespStatusCode.UnknownPolicyType_3:
+                    case Xml.Provision.PolicyRespStatusCode.WrongPolicyKey_5:
+                        BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ProvisionFailed,
+                            NcResult.WhyEnum.ProtocolError));
+                        return Event.Create ((uint)SmEvt.E.HardFail, "PROVHARD0A");
+
+                    case Xml.Provision.PolicyRespStatusCode.ServerCorrupt_4:
+                        BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ProvisionFailed,
+                            NcResult.WhyEnum.ServerError));
+                        return Event.Create ((uint)SmEvt.E.HardFail, "PROVHARD0B");
                     }
 
                     // Data only required element of Policy in get, not ack.
                     // One or more EASProvisionDoc are required underneath the Data element.
                     var xmlData = xmlPolicy.Element (m_ns + Xml.Provision.Data);
                     if (null != xmlData) {
-                        var policyId = DataSource.Account.PolicyId;
+                        var policyId = BEContext.Account.PolicyId;
                         var policy = BackEnd.Instance.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
                         foreach (var xmlEASProvisionDoc in xmlData.Elements(m_ns+Xml.Provision.EASProvisionDoc)) {
                             // Right now, we serially apply EASProvisionDoc elements against the policy. It is not clear
@@ -221,14 +227,19 @@ namespace NachoCore.ActiveSync
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "PROVSUCCESS");
 
-            case Xml.Provision.ProvisionStatusCode.ProtocolError:
+            case Xml.Provision.ProvisionStatusCode.ProtocolError_2:
+                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ProvisionFailed,
+                    NcResult.WhyEnum.ProtocolError));
                 return Event.Create ((uint)SmEvt.E.HardFail, "PROVPE");
 
-            case Xml.Provision.ProvisionStatusCode.ServerError:
+            case Xml.Provision.ProvisionStatusCode.ServerError_3:
+                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ProvisionFailed,
+                    NcResult.WhyEnum.ServerError));
                 return Event.Create ((uint)SmEvt.E.TempFail, "PROVSE");
 
             default:
-                    // Unknown Provision Status code.
+                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ProvisionFailed,
+                    NcResult.WhyEnum.Unknown));
                 return Event.Create ((uint)SmEvt.E.HardFail, "PROVHARD1");
             }
         }

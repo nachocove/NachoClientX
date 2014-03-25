@@ -412,9 +412,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsHelpers.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsHelpers.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\IAsDataSource.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\IAsDataSource.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs</Link>
     </Compile>
@@ -567,6 +564,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcContactManager.cs">
       <Link>NachoCore\Adapters\NcContactManager.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\IBEContext.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\IBEContext.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

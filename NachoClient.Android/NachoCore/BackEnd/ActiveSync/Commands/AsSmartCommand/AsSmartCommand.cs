@@ -15,50 +15,48 @@ namespace NachoCore.ActiveSync
     {
         protected McEmailMessage EmailMessage;
 
-        public AsSmartCommand (IAsDataSource dataSource) : base (string.Empty, Xml.ComposeMail.Ns, dataSource)
+        public AsSmartCommand (IBEContext dataSource) : base (string.Empty, Xml.ComposeMail.Ns, dataSource)
         {
-            // Update & EmailMessage set by subclass.
+            // PendingSingle MarkDispatched & EmailMessage set by subclass.
         }
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
         {
-            if (14.0 <= Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
 
             return new Dictionary<string, string> () {
-                { "ItemId", Update.ServerId },
-                { "CollectionId", Update.FolderServerId },
+                { "ItemId", PendingSingle.ServerId },
+                { "CollectionId", PendingSingle.FolderServerId },
                 { "SaveInSent", "T" },
             };
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
 
             var smartMail = new XElement (m_ns + CommandName, 
                                 new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                 new XElement (m_ns + Xml.ComposeMail.Source,
-                                    new XElement (m_ns + Xml.ComposeMail.FolderId, Update.FolderServerId),
-                                    new XElement (m_ns + Xml.ComposeMail.ItemId, Update.ServerId)),
+                                    new XElement (m_ns + Xml.ComposeMail.FolderId, PendingSingle.FolderServerId),
+                                    new XElement (m_ns + Xml.ComposeMail.ItemId, PendingSingle.ServerId)),
                                 new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                 new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
-            if (Update.OriginalEmailIsEmbedded) {
+            if (PendingSingle.OriginalEmailIsEmbedded) {
                 smartMail.Add (new XElement (m_ns + Xml.ComposeMail.ReplaceMime));
             }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (smartMail);
-            Update.IsDispatched = true;
-            Update.Update ();
             return doc;
         }
 
         public override string ToMime (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return GenerateMime ();
             }
             return null;
@@ -66,22 +64,19 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
+            PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, 
+                NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             EmailMessage.Delete ();
-            Update.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "SESUCC");
         }
-        // FIXME - need an OnFail callback for negative indication delivery.
+
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
+            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
+                    NcResult.WhyEnum.Unknown));
             return Event.Create ((uint)SmEvt.E.HardFail, "SEFAIL", null, 
                 string.Format ("Server sent non-empty response to SendMail: {0}", doc.ToString ()));
-        }
-
-        public override void Cancel ()
-        {
-            base.Cancel ();
-            // FIXME - revert IsDispatched.
         }
 
         private string GenerateMime ()

@@ -20,17 +20,17 @@ namespace NachoCore.ActiveSync
             }
 
             protected override List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                        out McPending.ActionEnum action)
+                                                                        out McPending.DbActionEnum action)
             {
-                action = McPending.ActionEnum.DoNothing;
+                action = McPending.DbActionEnum.DoNothing;
                 switch (pending.Operation) {
                 case McPending.Operations.FolderCreate:
                     // FIXME - need to handle the indirect subordinate cases.
                     if (pending.ParentId == ServerId) {
-                        action = McPending.ActionEnum.Delete;
+                        action = McPending.DbActionEnum.Delete;
                         return new List<McPending.ReWrite> () {
                             new McPending.ReWrite () {
-                                Action = McPending.ReWrite.ActionEnum.Delete,
+                                Action = McPending.ReWrite.LocalActionEnum.Delete,
                                 Field = McPending.ReWrite.FieldEnum.ParentId,
                                 Match = ServerId,
                             }

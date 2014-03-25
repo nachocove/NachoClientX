@@ -13,45 +13,89 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderUpdateCommand : AsCommand
     {
-        public AsFolderUpdateCommand (IAsDataSource dataSource) :
+        public AsFolderUpdateCommand (IBEContext dataSource) :
             base (Xml.FolderHierarchy.FolderUpdate, Xml.FolderHierarchy.Ns, dataSource)
         {
-            Update = NextPending (McPending.Operations.FolderUpdate);
+            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.FolderUpdate);
+            PendingSingle.MarkDispached ();
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var folderUpdate = new XElement (m_ns + Xml.FolderHierarchy.FolderUpdate,
-                                   new XElement (m_ns + Xml.FolderHierarchy.SyncKey, DataSource.ProtocolState.AsSyncKey),
-                                   new XElement (m_ns + Xml.FolderHierarchy.ServerId, Update.ServerId),
-                                   new XElement (m_ns + Xml.FolderHierarchy.ParentId, Update.DestFolderServerId),
-                                   new XElement (m_ns + Xml.FolderHierarchy.DisplayName, Update.DisplayName));
+                                   new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),
+                                   new XElement (m_ns + Xml.FolderHierarchy.ServerId, PendingSingle.ServerId),
+                                   new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.DestFolderServerId),
+                                   new XElement (m_ns + Xml.FolderHierarchy.DisplayName, PendingSingle.DisplayName));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderUpdate);
-            Update.IsDispatched = true;
-            Update.Update ();
             return doc;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
+            McProtocolState protocolState = BEContext.ProtocolState;
             var xmlFolderUpdate = doc.Root;
             switch ((Xml.FolderHierarchy.FolderUpdateStatusCode)Convert.ToUInt32 (xmlFolderUpdate.Element (m_ns + Xml.FolderHierarchy.Status).Value)) {
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.Success:
-                var protocolState = DataSource.ProtocolState;
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderUpdate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
-                Update.Delete ();
+                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
+                    NcResult.Info (NcResult.SubKindEnum.Info_FolderUpdateSucceeded));
                 return Event.Create ((uint)SmEvt.E.Success, "FUPSUCCESS");
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.Exists:
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.Special:
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.Missing:
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.BadParent:
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.ServerError:
-            case Xml.FolderHierarchy.FolderUpdateStatusCode.ReSync:
-				// FIXME - all the error cases.
+
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.Exists_2:
+                // "A folder with that name already exists" - makes no sense for update.
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.Special_3:
+                PendingSingle.ResolveAsUserBlocked (BEContext.ProtoControl,
+                    McPending.BlockReasonEnum.MustPickNewParent,
+                    NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed,
+                        NcResult.WhyEnum.SpecialFolder));
+                return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL1");
+
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.Missing_4:
+                if (0 == PendingSingle.DefersRemaining) {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                            NcResult.WhyEnum.MissingOnServer));
+                    return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
+                } else {
+                    PendingSingle.ResolveAsDeferredForce ();
+                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
+                }
+
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.MissingParent_5:
+                if (0 == PendingSingle.DefersRemaining) {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                            NcResult.WhyEnum.MissingOnServer));
+                    return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
+                } else {
+                    PendingSingle.ResolveAsDeferredForce ();
+                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
+                }
+
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.ServerError_6:
+                /* TODO: "Retry the FolderDelete command. If continued attempts to synchronization fail,
+                 * consider returning to synchronization key zero (0)."
+                 * Right now, we don't retry - we just slam the key to 0.
+                 */
+                protocolState.AsSyncKey = McProtocolState.AsSyncKey_Initial;
+                protocolState.Update ();
+                PendingSingle.ResolveAsDeferredForce ();
+                return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC2");
+
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.ReSync_9:
+                protocolState.AsSyncKey = McProtocolState.AsSyncKey_Initial;
+                protocolState.Update ();
+                PendingSingle.ResolveAsDeferredForce ();
+                return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC3");
+
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.BadFormat_10:
+            case Xml.FolderHierarchy.FolderUpdateStatusCode.Unknown_11:
             default:
-                Update.Delete ();
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                    NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed));
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL");
             }
         }

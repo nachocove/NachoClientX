@@ -24,18 +24,18 @@ namespace NachoCore.ActiveSync
             }
 
             protected override List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                             out McPending.ActionEnum action)
+                                                                             out McPending.DbActionEnum action)
             {
-                action = McPending.ActionEnum.DoNothing;
+                action = McPending.DbActionEnum.DoNothing;
                 switch (pending.Operation) {
                 case McPending.Operations.FolderCreate:
                     if (pending.DisplayName == DisplayName &&
                         pending.ParentId == ParentId) {
-                        action = McPending.ActionEnum.Delete;
+                        action = McPending.DbActionEnum.Delete;
                         var guid = pending.ServerId;
                         return new List<McPending.ReWrite> () {
                             new McPending.ReWrite () {
-                                Action = McPending.ReWrite.ActionEnum.Replace,
+                                Action = McPending.ReWrite.LocalActionEnum.Replace,
                                 Field = McPending.ReWrite.FieldEnum.ServerId,
                                 Match = guid,
                                 ReplaceWith = ServerId,
@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
                     ParentId = ParentId,
                     DisplayName = DisplayName,
                     Type = FolderType,
-                    AsSyncKey = Xml.AirSync.SyncKey_Initial,
+                    AsSyncKey = McFolder.AsSyncKey_Initial,
                     AsSyncRequired = true,
                 };
                 folder.Insert ();

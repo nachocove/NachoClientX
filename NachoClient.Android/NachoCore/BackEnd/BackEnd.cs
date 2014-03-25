@@ -48,14 +48,14 @@ namespace NachoCore
         public enum DbActors
         {
             Ui,
-            Proto}
-        ;
+            Proto,
+        };
 
         public enum DbEvents
         {
             DidWrite,
-            WillDelete}
-        ;
+            WillDelete,
+        };
 
         public event EventHandler StatusIndEvent;
 
@@ -159,17 +159,17 @@ namespace NachoCore
                     if (null == GetOutbox (accountId)) {
                         McFolder.Create (accountId, true, false, "0",
                             ClientOwned_Outbox, ClientOwned_Outbox,
-                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail);
+                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     }
                     if (null == GetGalCache (accountId)) {
                         McFolder.Create (accountId, true, true, "0",
                             ClientOwned_GalCache, string.Empty,
-                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts);
+                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     }
                     if (null == GetGleaned (accountId)) {
                         McFolder.Create (accountId, true, true, "0",
                             ClientOwned_Gleaned, string.Empty,
-                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts);
+                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     }
                 }
                 service.Execute ();
@@ -214,11 +214,21 @@ namespace NachoCore
             });
         }
 
-        public bool Cancel (int accountId, string token)
+        public void Cancel (int accountId, string token)
         {
             // Don't Task.Run.
-            return ServiceFromAccountId (accountId).Cancel (token);
+            ServiceFromAccountId (accountId).Cancel (token);
         }
+        // TODO - should these take Token?
+        public void UnblockPendingCmd (int accountId, int pendingId)
+        {
+            ServiceFromAccountId (accountId).UnblockPendingCmd (pendingId);
+        }
+        public void DeletePendingCmd (int accountId, int pendingId)
+        {
+            ServiceFromAccountId (accountId).DeletePendingCmd (pendingId);
+        }
+
         // Commands need to do Task.Run as appropriate in protocol controller.
         public string StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
@@ -269,37 +279,37 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).DnldAttCmd (attId);
         }
 
-        public string CreateCalCmd (int accountId, int calId)
+        public string CreateCalCmd (int accountId, int calId, int folderId)
         {
-            return ServiceFromAccountId (accountId).CreateCalCmd (calId);
+            return ServiceFromAccountId (accountId).CreateCalCmd (calId, folderId);
         }
 
-        public string RespondCalCmd (int accountId, int calId, NcResponseType response)
+        public string RespondCalCmd (int accountId, int calId, int folderId, NcResponseType response)
         {
-            return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
+            return ServiceFromAccountId (accountId).RespondCalCmd (calId, folderId, response);
         }
 
-        public string MarkEmailReadCmd (int accountId, int emailMessageId)
+        public string MarkEmailReadCmd (int accountId, int emailMessageId, int folderId)
         {
-            return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
+            return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId, folderId);
         }
 
-        public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+        public string SetEmailFlagCmd (int accountId, int emailMessageId, int folderId, string flagType, 
                                  DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
-            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagType, 
+            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, folderId, flagType, 
                 start, utcStart, due, utcDue);
         }
 
-        public string ClearEmailFlagCmd (int accountId, int emailMessageId)
+        public string ClearEmailFlagCmd (int accountId, int emailMessageId, int folderId)
         {
-            return ServiceFromAccountId (accountId).ClearEmailFlagCmd (emailMessageId);
+            return ServiceFromAccountId (accountId).ClearEmailFlagCmd (emailMessageId, folderId);
         }
 
-        public string MarkEmailFlagDone (int accountId, int emailMessageId,
+        public string MarkEmailFlagDone (int accountId, int emailMessageId, int folderId,
                                    DateTime completeTime, DateTime dateCompleted)
         {
-            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId,
+            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId, folderId,
                 completeTime, dateCompleted);
         }
 

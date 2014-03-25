@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -145,7 +145,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\IAsCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\IAsDataSource.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Operations\AsDnsOperation.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Operations\AsHttpOperation.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Operations\IAsDnsOperationOwner.cs" />
@@ -187,6 +186,7 @@
     <Compile Include="NachoCore\Model\McFolderEntry.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

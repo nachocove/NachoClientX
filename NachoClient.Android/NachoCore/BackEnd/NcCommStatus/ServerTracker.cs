@@ -9,8 +9,11 @@ using NachoPlatform;
 namespace NachoCore.Utils
 {
     // class for tracking the access health/quality of a server.
+    // TODO - this could be enhanced by tracking RTT and timeouts, folding back into setting the timeout value.
     public class ServerTracker
     {
+        public const double KSunsetMinutes = -3.0;
+
         // class for the result of a single access attempt on a server.
         public class ServerAccess
         {
@@ -28,20 +31,19 @@ namespace NachoCore.Utils
         public ServerTracker (int serverId)
         {
             Accesses = new List<ServerAccess> ();
+            ServerId = serverId;
             Reset ();
         }
 
-        public void UpdateQuality (bool didFailGenerally)
+        public void UpdateQuality ()
         {
-            Accesses.Add (new ServerAccess () { DidFailGenerally = didFailGenerally, When = DateTime.UtcNow });
-
             // Remove stale entries.
             var trailing = DateTime.UtcNow;
-            trailing.AddMinutes (-3.0);
+            trailing = trailing.AddMinutes (KSunsetMinutes);
             Accesses.RemoveAll (x => x.When < trailing);
 
             // Say "OK" unless we have enough to judge failure.
-            if (4 < Accesses.Count) {
+            if (4 > Accesses.Count) {
                 Quality = NcCommStatus.CommQualityEnum.OK;
                 return;
             }
@@ -58,6 +60,12 @@ namespace NachoCore.Utils
                 Quality = NcCommStatus.CommQualityEnum.OK;
             }
             Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
+        }
+
+        public void UpdateQuality (bool didFailGenerally)
+        {
+            Accesses.Add (new ServerAccess () { DidFailGenerally = didFailGenerally, When = DateTime.UtcNow });
+            UpdateQuality ();
         }
 
         public bool Reset ()

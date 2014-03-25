@@ -13,15 +13,16 @@ namespace NachoCore.ActiveSync
     {
         private McEmailMessage EmailMessage;
 
-        public AsSendMailCommand (IAsDataSource dataSource) : base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
+        public AsSendMailCommand (IBEContext dataSource) : base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
         {
-            Update = NextPending (McPending.Operations.EmailSend);
-            EmailMessage = McObject.QueryById<McEmailMessage> (Update.EmailMessageId);
+            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.EmailSend);
+            PendingSingle.MarkDispached ();
+            EmailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.EmailMessageId);
         }
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
         {
-            if (14.0 <= Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
             return new Dictionary<string, string> () {
@@ -31,7 +32,7 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
@@ -40,14 +41,12 @@ namespace NachoCore.ActiveSync
                                new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
-            Update.IsDispatched = true;
-            Update.Update ();
             return doc;
         }
 
         public override string ToMime (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (DataSource.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return GenerateMime ();
             }
             return null;
@@ -55,22 +54,19 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded), new [] { Update.Token });
+            PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             EmailMessage.Delete ();
-            Update.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
-        // FIXME - need an OnFail callback for negative indication delivery.
+
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
+            // The only applicable TL Status codes are the general ones.
+            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
+                    NcResult.WhyEnum.Unknown));
             return Event.Create ((uint)SmEvt.E.HardFail, "SMHARD0", null, 
-                string.Format ("Server sent non-empty response to SendMail: {0}", doc.ToString ()));
-        }
-
-        public override void Cancel ()
-        {
-            base.Cancel ();
-            // FIXME - revert IsDispatched.
+                string.Format ("Server sent non-empty response to SendMail w/unrecognized TL Status: {0}", doc.ToString ()));
         }
 
         private string GenerateMime ()

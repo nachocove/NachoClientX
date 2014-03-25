@@ -12,6 +12,10 @@ namespace NachoCore.Utils
     {
         private List<ServerTracker> Trackers;
 
+        #pragma warning disable 414
+        private NcTimer TrackerMonitorTimer;
+        #pragma warning restore 414
+
         private ServerTracker GetTracker (int serverId)
         {
             // Mutex so we get an atomic find-or-create tracker.
@@ -35,6 +39,16 @@ namespace NachoCore.Utils
             Speed = NetStatusSpeedEnum.WiFi;
             UserInterventionIsRequired = false;
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
+            // TODO: we really only need to run the timer if one or more tracker reports degraded.
+            TrackerMonitorTimer = new NcTimer (status => {
+                lock (syncRoot) {
+                    foreach (var tracker in Trackers) {
+                        var oldQ = tracker.Quality;
+                        tracker.UpdateQuality ();
+                        MaybeEvent (oldQ, tracker);
+                    }
+                }
+            }, null, 1000, 1000);
         }
 
         public static NcCommStatus Instance {
@@ -73,18 +87,22 @@ namespace NachoCore.Utils
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
 
         public event NetStatusEventHandler CommStatusNetEvent;
-        // FIXME - user intervention.
-        // NOTE - this could be enhanced by tracking RTT and timeouts, folding back into setting the timeout value.
+
+        private void MaybeEvent (CommQualityEnum oldQ, ServerTracker tracker)
+        {
+            var newQ = tracker.Quality;
+            if (oldQ != newQ && null != CommStatusServerEvent) {
+                CommStatusServerEvent (this, new NcCommStatusServerEventArgs (tracker.ServerId, tracker.Quality));
+            }
+        }
+
         public void ReportCommResult (int serverId, bool didFailGenerally)
         {
             lock (syncRoot) {
                 var tracker = GetTracker (serverId);
                 var oldQ = tracker.Quality;
                 tracker.UpdateQuality (didFailGenerally);
-                var newQ = tracker.Quality;
-                if (oldQ != newQ && null != CommStatusServerEvent) {
-                    CommStatusServerEvent (this, new NcCommStatusServerEventArgs (serverId, tracker.Quality));
-                }
+                MaybeEvent (oldQ, tracker);
             }
         }
 

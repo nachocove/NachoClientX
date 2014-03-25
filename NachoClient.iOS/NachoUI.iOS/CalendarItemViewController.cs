@@ -358,7 +358,7 @@ namespace NachoClient.iOS
                 ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
             };
             map.Insert ();
-            BackEnd.Instance.CreateCalCmd (account.Id, c.Id);
+            // FIXME BackEnd.Instance.CreateCalCmd (account.Id, c.Id);
         }
 
         /// <summary>
@@ -415,7 +415,7 @@ namespace NachoClient.iOS
 
         protected void UpdateStatus(NcResponseType status)
         {
-            BackEnd.Instance.RespondCalCmd (account.Id, c.Id, status);
+            // FIXME BackEnd.Instance.RespondCalCmd (account.Id, c.Id, status);
         }
     }
 }

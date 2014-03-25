@@ -350,7 +350,7 @@ namespace NachoClient.iOS
             var thread = messages.GetEmailThread (index);
             var message = thread.First ();
             if (false == message.IsRead) {
-                BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
+                // FIXME BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
             }
         }
 

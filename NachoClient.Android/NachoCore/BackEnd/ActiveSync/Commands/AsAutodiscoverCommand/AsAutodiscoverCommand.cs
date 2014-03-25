@@ -34,7 +34,7 @@ namespace NachoCore.ActiveSync
     /* The only reason we implement & proxy IAsDataSource is so that we can source
      * candidate values for Server to AsHttpOperation when testing them.
      */
-    public partial class AsAutodiscoverCommand : AsCommand, IAsDataSource
+    public partial class AsAutodiscoverCommand : AsCommand, IBEContext
     {
         public enum Lst : uint
         {
@@ -89,7 +89,7 @@ namespace NachoCore.ActiveSync
 
         public NcStateMachine Sm { get; set; }
         // CALLABLE BY THE OWNER.
-        public AsAutodiscoverCommand (IAsDataSource dataSource) : base ("Autodiscover", 
+        public AsAutodiscoverCommand (IBEContext dataSource) : base ("Autodiscover", 
                                                                         RequestSchema,
                                                                         dataSource)
         {
@@ -317,20 +317,20 @@ namespace NachoCore.ActiveSync
         {
             OwnerSm = ownerSm;
             Sm.Name = OwnerSm.Name + ":AUTOD";
-            Domain = DomainFromEmailAddr (DataSource.Account.EmailAddr);
+            Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
-            if (null == DataSource.Server || true == DataSource.Server.UsedBefore ||
-                string.Empty == DataSource.Server.Host) {
+            if (null == BEContext.Server || true == BEContext.Server.UsedBefore ||
+                string.Empty == BEContext.Server.Host) {
                 Sm.Start ();
             } else {
-                ServerCandidate = DataSource.Server;
+                ServerCandidate = BEContext.Server;
                 Sm.Start ((uint)Lst.TestW);
             }
         }
         // UTILITY METHODS.
         private void AddAndStartRobot (StepRobot.Steps step, string domain)
         {
-            var robot = new StepRobot (this, step, DataSource.Account.EmailAddr, domain);
+            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain);
             Robots.Add (robot);
             robot.Execute ();
         }
@@ -448,7 +448,7 @@ namespace NachoCore.ActiveSync
 
         private void DoTestFromUi ()
         {
-            ServerCandidate = DataSource.Server;
+            ServerCandidate = BEContext.Server;
             DoTest ();
         }
 
@@ -473,7 +473,7 @@ namespace NachoCore.ActiveSync
         private void DoAcceptServerConf ()
         {
             // Save validated server config in DB.
-            var serverRecord = DataSource.Server;
+            var serverRecord = BEContext.Server;
             serverRecord.Update (ServerCandidate);
             serverRecord.UsedBefore = true;
             serverRecord.Update ();
@@ -483,18 +483,18 @@ namespace NachoCore.ActiveSync
         }
         // IAsDataSource proxying.
         public IProtoControlOwner Owner {
-            get { return DataSource.Owner; }
-            set { DataSource.Owner = value; }
+            get { return BEContext.Owner; }
+            set { BEContext.Owner = value; }
         }
 
-        public AsProtoControl Control {
-            get { return DataSource.Control; }
-            set { DataSource.Control = value; }
+        public AsProtoControl ProtoControl {
+            get { return BEContext.ProtoControl; }
+            set { BEContext.ProtoControl = value; }
         }
 
         public McProtocolState ProtocolState {
-            get { return DataSource.ProtocolState; }
-            set { DataSource.ProtocolState = value; }
+            get { return BEContext.ProtocolState; }
+            set { BEContext.ProtocolState = value; }
         }
 
         public McServer Server {
@@ -503,11 +503,11 @@ namespace NachoCore.ActiveSync
         }
 
         public McAccount Account {
-            get { return DataSource.Account; }
+            get { return BEContext.Account; }
         }
 
         public McCred Cred {
-            get { return DataSource.Cred; }
+            get { return BEContext.Cred; }
         }
     }
 }

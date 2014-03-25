@@ -33,7 +33,7 @@ namespace NachoCore.ActiveSync
             if (null == emailMessage) {
                 justCreated = true;
                 emailMessage = new McEmailMessage {
-                    AccountId = DataSource.Account.Id,
+                    AccountId = BEContext.Account.Id,
                     ServerId = serverId,
                 };
             }
@@ -245,10 +245,10 @@ namespace NachoCore.ActiveSync
 
             // We handle the illegal case (GOOG "All" folder) where the ServerId is used twice
             // on the 2nd insert of the same message.
-            var map = McMapFolderItem.QueryByFolderIdItemIdClassCode (DataSource.Account.Id, 
+            var map = McMapFolderItem.QueryByFolderIdItemIdClassCode (BEContext.Account.Id, 
                 folder.Id, emailMessage.Id, (uint)McItem.ClassCodeEnum.Email);
             if (null == map) {
-                map = new McMapFolderItem (DataSource.Account.Id) {
+                map = new McMapFolderItem (BEContext.Account.Id) {
                     ItemId = emailMessage.Id,
                     FolderId = folder.Id,
                     ClassCode = (uint)McItem.ClassCodeEnum.Email,

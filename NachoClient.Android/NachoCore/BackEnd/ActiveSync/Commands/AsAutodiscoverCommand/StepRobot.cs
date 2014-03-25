@@ -421,8 +421,9 @@ namespace NachoCore.ActiveSync
             private void DoRobotHttp ()
             {
                 if (0 < RetriesLeft--) {
-                    HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
+                    HttpOp = new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
                         Allow451Follow = false,
+                        DontReportCommResult = true,
                         TriesLeft = 3,
                     };
                     HttpOp.Execute (StepSm);
@@ -447,8 +448,9 @@ namespace NachoCore.ActiveSync
                 // FIXME: catch loops by recording been-there URLs.
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
-                    HttpOp = new AsHttpOperation (Command.CommandName, this, Command.DataSource) {
+                    HttpOp = new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
                         Allow451Follow = false,
+                        DontReportCommResult = true,
                         TriesLeft = 3,
                     };
                     HttpOp.Execute (StepSm);
@@ -566,6 +568,22 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
+            public virtual bool WasAbleToRephrase ()
+            {
+                // Autodiscover does not touch pending.
+                return false;
+            }
+
+            public virtual void ResoveAllFailed (NcResult.WhyEnum why)
+            {
+                // Autodiscover does not touch pending.
+            }
+
+            public virtual void ResoveAllDeferred ()
+            {
+                // Autodiscover does not touch pending.
+            }
+
             public HttpMethod Method (AsHttpOperation Sender)
             {
                 return MethodToUse;
@@ -669,13 +687,17 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR1HARD");
             }
 
+            public void PostProcessEvent (Event evt)
+            {
+            }
+
             private Event ProcessXmlError (AsHttpOperation Sender, XElement xmlError)
             {
                 var xmlStatus = xmlError.ElementAnyNs (Xml.Autodisco.Status);
                 // FIXME: log Time and Id attributes if present:
                 // Time="16:56:32.6164027" Id="1054084152".
                 if (null != xmlStatus) {
-                    if ((uint)Xml.Autodisco.StatusCode.ProtocolError != uint.Parse (xmlStatus.Value)) {
+                    if ((uint)Xml.Autodisco.StatusCode.ProtocolError_2 != uint.Parse (xmlStatus.Value)) {
                         // ProtocolError is the only valid value, but MSFT does not always obey! See
                         // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
                         ; // FIXME: log this case.

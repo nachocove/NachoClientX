@@ -63,7 +63,11 @@ namespace NachoCore
 
         public abstract void CredResp ();
 
-        public abstract bool Cancel (string token);
+        public abstract void Cancel (string token);
+
+        public abstract void UnblockPendingCmd (int pendingId);
+
+        public abstract void DeletePendingCmd (int pendingId);
 
         public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
 
@@ -81,23 +85,23 @@ namespace NachoCore
 
         public abstract string DeleteEmailCmd (int emailMessageId);
 
-        public abstract string MarkEmailReadCmd (int emailMessageId);
+        public abstract string MarkEmailReadCmd (int emailMessageId, int folderId);
 
         public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
 
-        public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
+        public abstract string SetEmailFlagCmd (int emailMessageId, int folderId, string flagType, 
                                           DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
 
-        public abstract string ClearEmailFlagCmd (int emailMessageId);
+        public abstract string ClearEmailFlagCmd (int emailMessageId, int folderId);
 
-        public abstract string MarkEmailFlagDone (int emailMessageId,
+        public abstract string MarkEmailFlagDone (int emailMessageId, int folderId,
                                             DateTime completeTime, DateTime dateCompleted);
 
         public abstract string DnldAttCmd (int attId);
 
-        public abstract string CreateCalCmd (int calId);
+        public abstract string CreateCalCmd (int calId, int folderId);
 
-        public abstract string RespondCalCmd (int calId, NcResponseType response);
+        public abstract string RespondCalCmd (int calId, int folderId, NcResponseType response);
 
         public abstract string CreateFolderCmd (int destFolderId, string displayName, uint folderType,
                                           bool IsClientOwned, bool isHidden);

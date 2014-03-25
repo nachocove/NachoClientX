@@ -10,9 +10,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsItemOperationsCommand : AsCommand
     {
-        public AsItemOperationsCommand (IAsDataSource dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
+        public AsItemOperationsCommand (IBEContext dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
         {
-            Update = NextPending (McPending.Operations.AttachmentDownload);
+            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload);
+            PendingSingle.MarkDispached ();
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
@@ -24,8 +25,6 @@ namespace NachoCore.ActiveSync
                                  new XElement (m_baseNs + Xml.AirSyncBase.FileReference, attachment.FileReference)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
-            Update.IsDispatched = true;
-            Update.Update ();
             return doc;
         }
 
@@ -33,7 +32,7 @@ namespace NachoCore.ActiveSync
         {
             var attachment = Attachment ();
             switch ((Xml.ItemOperations.StatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.ItemOperations.Status).Value)) {
-            case Xml.ItemOperations.StatusCode.Success:
+            case Xml.ItemOperations.StatusCode.Success_1:
                 var xmlFetch = doc.Root.Element (m_ns + Xml.ItemOperations.Response).Element (m_ns + Xml.ItemOperations.Fetch);
                 var xmlFileReference = xmlFetch.Element (m_ns + Xml.AirSyncBase.FileReference);
                 if (null != xmlFileReference && xmlFileReference.Value != attachment.FileReference) {
@@ -45,7 +44,7 @@ namespace NachoCore.ActiveSync
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                 attachment.LocalFileName = attachment.Id.ToString ();
                 // Add file extension
-                if(null != attachment.DisplayName) {
+                if (null != attachment.DisplayName) {
                     var ext = Path.GetExtension (attachment.DisplayName);
                     if (null != ext) {
                         attachment.LocalFileName += ext;
@@ -57,21 +56,73 @@ namespace NachoCore.ActiveSync
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
                 attachment.Update ();
-                DataSource.Control.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate), new [] { Update.Token });
-                break;
+                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
+                return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
+
+            case Xml.ItemOperations.StatusCode.ProtocolError_2:
+            case Xml.ItemOperations.StatusCode.ByteRangeInvalidOrTooLarge_8:
+            case Xml.ItemOperations.StatusCode.StoreUnknownOrNotSupported_9:
+            case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
+            case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.ProtocolError));
+                return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD0");
+
+            case Xml.ItemOperations.StatusCode.ServerError_3:
+            case Xml.ItemOperations.StatusCode.IoFailure_12:
+            case Xml.ItemOperations.StatusCode.ConversionFailure_14:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.ServerError));
+                return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD1");
+
+            case Xml.ItemOperations.StatusCode.DocLibBadUri_4:
+            case Xml.ItemOperations.StatusCode.DocLibAccessDenied_5:
+            case Xml.ItemOperations.StatusCode.DocLibAccessDeniedOrMissing_6:
+            case Xml.ItemOperations.StatusCode.DocLibFailedServerConn_7:
+            case Xml.ItemOperations.StatusCode.PartialFailure_17:
+            case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.Unknown));
+                return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD2");
+
+            
+
+            case Xml.ItemOperations.StatusCode.FileEmpty_10:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.MissingOnServer));
+                return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
+
+            case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.TooBig));
+                return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
+
+            case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.AccessDeniedOrBlocked));
+                return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD4");
+
+            /* FIXME. Need to be able to trigger cred-req from here.
+             * case Xml.ItemOperations.StatusCode.CredRequired_18:
+             * PendingSingle.ResoveAsDeferredForce ();
+             */
             default:
-                // FIXME - handle other status values less bluntly.
-                DataSource.Control.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed), new [] { Update.Token });
-                break;
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                        NcResult.WhyEnum.Unknown));
+                return Event.Create ((uint)SmEvt.E.Success, "IOFAIL");
             }
-            Update.Delete ();
-            return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
         }
 
         private McAttachment Attachment ()
         {
-            return BackEnd.Instance.Db.Table<McAttachment> ().Single (rec => rec.AccountId == DataSource.Account.Id &&
-            rec.Id == Update.AttachmentId);
+            return McObject.QueryById<McAttachment> (PendingSingle.AttachmentId);
         }
     }
 }

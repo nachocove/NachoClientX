@@ -15,10 +15,6 @@ using NachoCore.Wbxml;
 using NachoCore.Utils;
 using NachoPlatform;
 
-// NOTE: The class that interfaces with HttpClient (or other low-level network API) needs
-// to manage network conditions. There are three classes of failure:
-// #1 - unable to perform because of present conditions.
-// #2 - unable to perform because of some protocol issue, expected to persist.
 namespace NachoCore.ActiveSync
 {
     public abstract class AsCommand : IAsCommand, IAsHttpOperationOwner
@@ -36,34 +32,44 @@ namespace NachoCore.ActiveSync
         public XNamespace m_ns;
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
         protected NcStateMachine OwnerSm;
-        protected IAsDataSource DataSource;
+        protected IBEContext BEContext;
         protected AsHttpOperation Op;
-        protected McPending Update;
+        // PendingSingle is for commands that process 1-at-a-time. Pending list is for N-at-a-time commands.
+        // Both get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
+        // The sublass is responsible for re-writing each from dispatched to something else.
+        // This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
+        // is responsible for clearing PendingSingle/PendingList.
+        protected McPending PendingSingle;
+        protected List<McPending> PendingList;
         protected NcResult SuccessInd;
         protected NcResult FailureInd;
+        protected Object LockObj = new Object ();
 
         public TimeSpan Timeout { set; get; }
         // Initializers.
-        public AsCommand (string commandName, string nsName, IAsDataSource dataSource) : this (commandName, dataSource)
+        public AsCommand (string commandName, string nsName, IBEContext beContext) : this (commandName, beContext)
         {
             m_ns = nsName;
         }
 
-        public AsCommand (string commandName, IAsDataSource dataSource)
+        public AsCommand (string commandName, IBEContext beContext)
         {
             Timeout = TimeSpan.Zero;
             CommandName = commandName;
-            DataSource = dataSource;
+            BEContext = beContext;
+            PendingList = new List<McPending> ();
         }
         // Virtual Methods.
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
         {
-            Op = new AsHttpOperation (CommandName, this, DataSource);
-            if (TimeSpan.Zero != Timeout) {
-                Op.Timeout = Timeout;
+            lock (LockObj) {
+                Op = new AsHttpOperation (CommandName, this, BEContext);
+                if (TimeSpan.Zero != Timeout) {
+                    Op.Timeout = Timeout;
+                }
+                opRef = Op;
+                Op.Execute (sm);
             }
-            opRef = Op;
-            Op.Execute (sm);
         }
 
         public virtual void Execute (NcStateMachine sm)
@@ -74,9 +80,25 @@ namespace NachoCore.ActiveSync
         // Cancel() must be safe to call even when the command has already completed.
         public virtual void Cancel ()
         {
-            if (null != Op) {
-                Op.Cancel ();
-                Op = null;
+            lock (LockObj) {
+                if (null != Op) {
+                    Op.Cancel ();
+                    Op = null;
+                }
+                if (null != PendingSingle) {
+                    PendingList.Add (PendingSingle);
+                    PendingSingle = null;
+                }
+                foreach (var pending in PendingList) {
+                    /* Q: Do we need another state? We need to be smart about the case where
+                 * the cancel comes after the op has been run against the server. The op
+                 * may fail the 2nd time because the item exists. Don't want to bug the user.
+                 */
+                    if (McPending.StateEnum.Dispatched == pending.State) {
+                        pending.ResolveAsDeferredForce ();
+                    }
+                }
+                PendingList.Clear ();
             }
         }
 
@@ -102,10 +124,10 @@ namespace NachoCore.ActiveSync
         // Override if the subclass wants total control over the query string.
         public virtual string QueryString (AsHttpOperation Sender)
         {
-            var ident = (Device.Instance.IsSimulator ()) ? DataSource.ProtocolState.KludgeSimulatorIdentity : Device.Instance.Identity ();
+            var ident = (Device.Instance.IsSimulator ()) ? BEContext.ProtocolState.KludgeSimulatorIdentity : Device.Instance.Identity ();
             return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
                 CommandName, 
-                DataSource.Cred.Username,
+                BEContext.Cred.Username,
                 ident,
                 Device.Instance.Type ());
         }
@@ -120,18 +142,18 @@ namespace NachoCore.ActiveSync
                         "&", string.Format ("{0}={1}", pair.Key, pair.Value));
                 }
             }
-            return new Uri (AsCommand.BaseUri (DataSource.Server), requestLine);
+            return new Uri (AsCommand.BaseUri (BEContext.Server), requestLine);
         }
 
         public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
         {
-            var server = DataSource.Server;
+            var server = BEContext.Server;
             server.Scheme = ServerUri.Scheme;
             server.Host = ServerUri.Host;
             server.Port = ServerUri.Port;
             server.Path = ServerUri.AbsolutePath;
             // Updates the value in the DB.
-            DataSource.Server = server;
+            BEContext.Server = server;
         }
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
         public virtual XDocument ToXDocument (AsHttpOperation Sender)
@@ -148,17 +170,20 @@ namespace NachoCore.ActiveSync
         {
             if (didSucceed) {
                 if (null != SuccessInd) {
-                    DataSource.Owner.StatusInd (DataSource.Control, SuccessInd);
+                    BEContext.Owner.StatusInd (BEContext.ProtoControl, SuccessInd);
                 }
             } else {
                 if (null != FailureInd) {
-                    DataSource.Owner.StatusInd (DataSource.Control, FailureInd);
+                    BEContext.Owner.StatusInd (BEContext.ProtoControl, FailureInd);
                 }
             }
         }
 
         public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
+            PendingApply (pending => {
+                pending.ResponseHttpStatusCode = (uint)response.StatusCode;
+            });
             return null;
         }
         // Called for non-WBXML HTTP 200 responses.
@@ -171,54 +196,326 @@ namespace NachoCore.ActiveSync
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
+        // In the cases where the subclass overrides don't clean up Pending(s) (or don't even get called)
+        // we need to clean up pending.
+        public virtual void PostProcessEvent (Event evt)
+        {
+            ConsolidatePending ();
+            if ((uint)SmEvt.E.HardFail == evt.EventCode) {
+                foreach (var pending in PendingList) {
+                    if (McPending.StateEnum.Dispatched == pending.State) {
+                        pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
+                    }
+                }
+            } else {
+                foreach (var pending in PendingList) {
+                    if (McPending.StateEnum.Dispatched == pending.State) {
+                        pending.ResolveAsDeferredForce ();
+                    }
+                }
+            }
+            PendingList.Clear ();
+        }
+        // Sub-class can override if there is a way to break-up the pending list (e.g. Sync).
+        // If not returning false, this function must fix-up all pending before returning.
+        public virtual bool WasAbleToRephrase ()
+        {
+            return false;
+        }
+
+        public virtual void ResoveAllFailed (NcResult.WhyEnum why)
+        {
+            ConsolidatePending ();
+            foreach (var pending in PendingList) {
+                pending.ResolveAsHardFail (BEContext.ProtoControl, why);
+            }
+            PendingList.Clear ();
+        }
+
+        public virtual void ResoveAllDeferred ()
+        {
+            ConsolidatePending ();
+            // FIXME - do we have a loop issue here?
+            foreach (var pending in PendingList) {
+                pending.ResolveAsDeferredForce ();
+            }
+        }
+
+        protected void ConsolidatePending ()
+        {
+            if (null != PendingSingle) {
+                PendingList.Add (PendingSingle);
+                PendingSingle = null;
+            }
+        }
+
+        protected delegate void PendingAction (McPending pending);
+
+        private void PendingApply (PendingAction action)
+        {
+            var tmpPendingList = PendingList.ToList ();
+            if (null != PendingSingle) {
+                tmpPendingList.Add (PendingSingle);
+            }
+            foreach (var pending in tmpPendingList) {
+                        action (pending);
+            }
+        }
+
+        protected Event CompleteAsHardFail (uint status, NcResult.WhyEnum why)
+        {
+            PendingApply (pending => {
+                pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
+                pending.ResponsegXmlStatus = (uint)status;
+                pending.ResolveAsHardFail (BEContext.ProtoControl, why);
+            });
+            return Event.Create ((uint)SmEvt.E.HardFail, 
+                string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
+                string.Format ("{0}", (Xml.StatusCode)status));
+        }
+
+        protected Event CompleteAsUserBlocked (uint status, 
+            McPending.BlockReasonEnum reason, NcResult.WhyEnum why)
+        {
+            PendingApply (pending => {
+                pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
+                pending.ResponsegXmlStatus = (uint)status;
+                pending.ResolveAsUserBlocked(BEContext.ProtoControl, reason, why);
+            });
+            return Event.Create ((uint)SmEvt.E.HardFail, 
+                string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
+                string.Format ("{0}", (Xml.StatusCode)status));
+        }
+
+        protected Event CompleteAsTempFail (uint status)
+        {
+            PendingApply (pending => {
+                pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
+                pending.ResponsegXmlStatus = (uint)status;
+                pending.ResolveAsDeferredForce ();
+            });
+            return Event.Create ((uint)SmEvt.E.TempFail,
+                string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
+                string.Format ("{0}", (Xml.StatusCode)status));
+        }
+
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
+        // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
         public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
         {
-            // returning -1 means that this function did not know how to convert the status value.
-            // NOTE(A): Subclass can possibly make this a TempFail or Success if the id issue is just a sync issue.
-            // NOTE(B): Subclass can retry with a formatting simplification.
-            // NOTE(C): Subclass MUST catch & handle this code.
-            // FIXME - package enough telemetry information so that we can fix our bugs.
-            // FIXME - catch TempFail loops and convert to HardFail.
-            // FIXME(A): MUST provide user with information about how to possibly rectify.
             switch ((Xml.StatusCode)status) {
-            case Xml.StatusCode.InvalidContent:
-            case Xml.StatusCode.InvalidWBXML:
-            case Xml.StatusCode.InvalidXML:
-                return Event.Create ((uint)SmEvt.E.HardFail, "TLSHARD0", null, string.Format ("Xml.StatusCode {0}", status));
+            case Xml.StatusCode.InvalidContent_101:
+            case Xml.StatusCode.InvalidWBXML_102:
+            case Xml.StatusCode.InvalidXML_103:
+            case Xml.StatusCode.InvalidDateTime_104:
+            case Xml.StatusCode.InvalidCombinationOfIDs_105:
+            case Xml.StatusCode.InvalidIDs_106:
+            case Xml.StatusCode.InvalidMIME_107:
+            case Xml.StatusCode.DeviceIdMissingOrInvalid_108:
+            case Xml.StatusCode.DeviceTypeMissingOrInvalid_109:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.BadOrMalformed);
 
-            case Xml.StatusCode.InvalidDateTime: // Maybe the next time generated may parse okay.
-                return Event.Create ((uint)SmEvt.E.TempFail, "TLSTEMP0", null, "Xml.StatusCode.InvalidDateTime");
+            case Xml.StatusCode.ServerError_110:
+                if (WasAbleToRephrase ()) {
+                    return Event.Create ((uint)SmEvt.E.TempFail, "TLS110A");
+                }
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
 
-            case Xml.StatusCode.InvalidCombinationOfIDs: // NOTE(A).
-            case Xml.StatusCode.InvalidMIME: // NOTE(B).
-            case Xml.StatusCode.DeviceIdMissingOrInvalid:
-            case Xml.StatusCode.DeviceTypeMissingOrInvalid:
-            case Xml.StatusCode.ServerError:
-                return Event.Create ((uint)SmEvt.E.HardFail, "TLSHARD1", null, string.Format ("Xml.StatusCode {0}", status));
+            case Xml.StatusCode.ServerErrorRetryLater_111:
+                return CompleteAsTempFail (status);
 
-            case Xml.StatusCode.ServerErrorRetryLater:
-                return Event.Create ((uint)SmEvt.E.TempFail, "TLSTEMP1", null, "Xml.StatusCode.ServerErrorRetryLater");
+            case Xml.StatusCode.ActiveDirectoryAccessDenied_112:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.AccessDeniedOrBlocked);
 
-            case Xml.StatusCode.ActiveDirectoryAccessDenied: // FIXME(A).
-            case Xml.StatusCode.MailboxQuotaExceeded: // FIXME(A).
-            case Xml.StatusCode.MailboxServerOffline: // FIXME(A).
-            case Xml.StatusCode.SendQuotaExceeded: // NOTE(C).
-            case Xml.StatusCode.MessageRecipientUnresolved: // NOTE(C).
-            case Xml.StatusCode.MessageReplyNotAllowed: // NOTE(C).
-            case Xml.StatusCode.MessagePreviouslySent:
-            case Xml.StatusCode.MessageHasNoRecipient: // NOTE(C).
-            case Xml.StatusCode.MailSubmissionFailed:
-            case Xml.StatusCode.MessageReplyFailed:
-            case Xml.StatusCode.UserHasNoMailbox: // FIXME(A).
-            case Xml.StatusCode.UserCannotBeAnonymous: // FIXME(A).
-            case Xml.StatusCode.UserPrincipalCouldNotBeFound: // FIXME(A).
-                return Event.Create ((uint)SmEvt.E.HardFail, "TLSHARD2", null, string.Format ("Xml.StatusCode {0}", status));
-            // Meh. do some cases end-to-end, with user messaging (before all this typing).
+            case Xml.StatusCode.MailboxQuotaExceeded_113:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.NoSpace);
 
-            case Xml.StatusCode.DeviceNotProvisioned:
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLSREPROV0", null, "Global DeviceNotProvisioned");
+            case Xml.StatusCode.MailboxServerOffline_114:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.ServerOffline);
+
+            case Xml.StatusCode.SendQuotaExceeded_115:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.QuotaExceeded);
+
+            case Xml.StatusCode.MessageRecipientUnresolved_116:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.UnresolvedRecipient);
+
+            case Xml.StatusCode.MessageReplyNotAllowed_117:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ReplyNotAllowed);
+
+            case Xml.StatusCode.MessagePreviouslySent_118:
+                // If server says previously sent, then we succeeded!
+                PendingApply (pending => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                });
+                return Event.Create ((uint)SmEvt.E.HardFail, "TLS118");
+
+            case Xml.StatusCode.MessageHasNoRecipient_119:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.NoRecipient);
+
+            case Xml.StatusCode.MailSubmissionFailed_120:
+            case Xml.StatusCode.MessageReplyFailed_121:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
+
+            case Xml.StatusCode.UserHasNoMailbox_123:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.MissingOnServer);
+
+            case Xml.StatusCode.UserCannotBeAnonymous_124:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.UserPrincipalCouldNotBeFound_125:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.UserDisabledForSync_126:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.AccessDeniedOrBlocked);
+
+            case Xml.StatusCode.UserOnNewMailboxCannotSync_127:
+            case Xml.StatusCode.UserOnLegacyMailboxCannotSync_128:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
+
+            case Xml.StatusCode.DeviceIsBlockedForThisUser_129:
+            case Xml.StatusCode.AccessDenied_130:
+            case Xml.StatusCode.AccountDisabled_131:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.AccessDeniedOrBlocked);
+
+            case Xml.StatusCode.SyncStateNotFound_132:
+            case Xml.StatusCode.SyncStateLocked_133:
+            case Xml.StatusCode.SyncStateCorrupt_134:
+            case Xml.StatusCode.SyncStateAlreadyExists_135:
+            case Xml.StatusCode.SyncStateVersionInvalid_136:
+                PendingApply (pending => {
+                    pending.ResolveAsDeferredForce ();
+                });
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "TLS132-6");
+
+            case Xml.StatusCode.CommandNotSupported_137:
+            case Xml.StatusCode.VersionNotSupported_138:
+            case Xml.StatusCode.DeviceNotFullyProvisionable_139:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.RemoteWipeRequested_140:
+                PendingApply (pending => {
+                    pending.ResolveAsDeferredForce ();
+                });
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS140");
+
+            case Xml.StatusCode.LegacyDeviceOnStrictPolicy_141:
+                PendingApply (pending => {
+                    pending.ResolveAsDeferredForce ();
+                });
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.DeviceNotProvisioned_142:
+            case Xml.StatusCode.PolicyRefresh_143:
+                PendingApply (pending => {
+                    pending.ResolveAsDeferredForce ();
+                });
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
+
+            case Xml.StatusCode.InvalidPolicyKey_144:
+                PendingApply (pending => {
+                    pending.ResolveAsDeferredForce ();
+                });
+                BEContext.ProtocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
+
+            case Xml.StatusCode.ExternallyManagedDevicesNotAllowed_145:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.NoRecurrenceInCalendar_146:
+            case Xml.StatusCode.UnexpectedItemClass_147:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.RemoteServerHasNoSSL_148:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.ServerOffline);
+
+            case Xml.StatusCode.InvalidStoredRequest_149:
+                // We don't use the stored-request trick. If we did, we'd need to set a flag
+                // to force re-generation, and defer, then retry.
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.ItemNotFound_150:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.BadOrMalformed);
+
+            case Xml.StatusCode.TooManyFolders_151:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.BeyondRange);
+
+            case Xml.StatusCode.NoFoldersFound_152:
+            case Xml.StatusCode.ItemsLostAfterMove_153:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.MissingOnServer);
+
+            case Xml.StatusCode.FailureInMoveOperation_154:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
+
+            case Xml.StatusCode.MoveCommandDisallowedForNonPersistentMoveAction_155:
+            case Xml.StatusCode.MoveCommandInvalidDestinationFolder_156:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.AvailabilityTooManyRecipients_160:
+            case Xml.StatusCode.AvailabilityDLLimitReached_161:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.BadOrMalformed);
+
+            case Xml.StatusCode.AvailabilityTransientFailure_162:
+                return CompleteAsTempFail (status);
+
+            case Xml.StatusCode.AvailabilityFailure_163:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
+
+            case Xml.StatusCode.BodyPartPreferenceTypeNotSupported_164:
+            case Xml.StatusCode.DeviceInformationRequired_165:
+            case Xml.StatusCode.InvalidAccountId_166:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.AccountSendDisabled_167:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.AccessDeniedOrBlocked);
+
+            case Xml.StatusCode.IRM_FeatureDisabled_168:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.AccessDeniedOrBlocked);
+
+            case Xml.StatusCode.IRM_TransientError_169:
+                return CompleteAsTempFail (status);
+
+            case Xml.StatusCode.IRM_PermanentError_170:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
+
+            case Xml.StatusCode.IRM_InvalidTemplateID_171:
+            case Xml.StatusCode.IRM_OperationNotPermitted_172:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.NoPicture_173:
+                return CompleteAsHardFail (status, NcResult.WhyEnum.MissingOnServer);
+
+            case Xml.StatusCode.PictureTooLarge_174:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.TooBig);
+
+            case Xml.StatusCode.PictureLimitReached_175:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.UserRemediation,
+                    NcResult.WhyEnum.QuotaExceeded);
+
+            case Xml.StatusCode.BodyPart_ConversationTooLarge_176:
+                // FIXME - The conversation is too large to compute the body parts. 
+                // Try requesting the body of the item again, without body parts.
+                return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
+
+            case Xml.StatusCode.MaximumDevicesReached_177:
+                return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
+                    NcResult.WhyEnum.QuotaExceeded);
+
+                // DO NOT add a default: here. We return null so that success codes and 
+                // command-specific codes can be processed elsewhere.
             }
             return null;
         }
@@ -251,16 +548,6 @@ namespace NachoCore.ActiveSync
         protected void DoNop ()
         {
         }
-
-        // FIXME - move to McPending.
-        protected virtual McPending NextPending (McPending.Operations operation)
-        {
-            return BackEnd.Instance.Db.Table<McPending> ()
-                .FirstOrDefault (rec => 
-                        rec.AccountId == DataSource.Account.Id &&
-            rec.Operation == operation);
-        }
-
         // Static internal helper methods.
         static internal XDocument ToEmptyXDocument ()
         {

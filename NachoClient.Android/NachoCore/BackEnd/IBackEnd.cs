@@ -29,9 +29,13 @@ namespace NachoCore
         // let the BE know that the credentials have been updated for this account.
         void CredResp (int accountId);
         // cancel command/request associated with this token (if possible).
-        bool Cancel (int accountId, string token);
+        void Cancel (int accountId, string token);
         // event can be used to register for status indications.
         event EventHandler StatusIndEvent;
+        // user-block issue is resolved, try again.
+        void UnblockPendingCmd (int accountId, int pendingId);
+        // accept the fail. delete the pending obj.
+        void DeletePendingCmd (int accountId, int pendingId);
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
         string StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
         // follow-on contacts search, using same token.
@@ -52,19 +56,19 @@ namespace NachoCore
         // move an email from one folder to another. returns token that can be used to possibly cancel.
         string MoveItemCmd (int accountId, int emailMessageId, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
-        string MarkEmailReadCmd (int accountId, int emailMessageId);
+        string MarkEmailReadCmd (int accountId, int emailMessageId, int folderId);
         // set the flag value on the email.
-        string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+        string SetEmailFlagCmd (int accountId, int emailMessageId, int folderId, string flagType, 
                           DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
         // clear the flag value on the email.
-        string ClearEmailFlagCmd (int accountId, int emailMessageId);
+        string ClearEmailFlagCmd (int accountId, int emailMessageId, int folderId);
         // mark the flag as "done" for the server, and clear the values in the DB.
-        string MarkEmailFlagDone (int accountId, int emailMessageId,
+        string MarkEmailFlagDone (int accountId, int emailMessageId, int folderId,
                             DateTime completeTime, DateTime dateCompleted);
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
-        string CreateCalCmd (int accountId, int calId);
-        string RespondCalCmd (int accountId, int calId, NcResponseType response);
+        string CreateCalCmd (int accountId, int calId, int folderId);
+        string RespondCalCmd (int accountId, int calId, int folderId, NcResponseType response);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
                           bool IsClientOwned, bool isHidden);

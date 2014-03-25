@@ -21,14 +21,17 @@ namespace NachoCore.Utils
     // Precise events are used to indicate value-based failures (e.g. credential, server config, etc).
     public class SmEvt
     {
+        // Sequence is a place-holder for a sequence of Events posted at once. Not a "real" event code.
+        public const uint Sequence = 1000000;
+
         public enum E : uint
         {
             Launch,
             Success,
             HardFail,
             TempFail,
-            Last = TempFail}
-        ;
+            Last = TempFail,
+        };
     }
     // { state => { event => [handlers, ...]}}.
     // All possible events must be covered.
@@ -37,8 +40,8 @@ namespace NachoCore.Utils
     {
         Start,
         Stop,
-        Last = Stop}
-    ;
+        Last = Stop,
+    };
 
     public class Node
     {
@@ -71,6 +74,17 @@ namespace NachoCore.Utils
         public string Message { get; set; }
 
         public bool DropIfStopped { get; set; }
+
+        public Event[] Sequence { get; set; }
+
+        public static Event Create (Event[] sequence)
+        {
+            return new Event () {
+                EventCode = SmEvt.Sequence,
+                Mnemonic = sequence[0].Mnemonic,
+                Sequence = (Event[])sequence.Clone(),
+            };
+        }
 
         public static Event Create (uint eventCode, string mnemonic)
         {
@@ -172,7 +186,15 @@ namespace NachoCore.Utils
         {
             BuildEventDicts ();
 
-            EventQ.Enqueue (smEvent);
+            if ((uint)SmEvt.Sequence == smEvent.EventCode) {
+                NachoAssert.True (null != smEvent.Sequence && 0 < smEvent.Sequence.Length);
+                foreach (var subSmEvent in smEvent.Sequence) {
+                    EventQ.Enqueue (subSmEvent);
+                }
+            } else {
+                NachoAssert.True (null == smEvent.Sequence);
+                EventQ.Enqueue (smEvent);
+            }
             if (IsFiring) {
                 return;
             }

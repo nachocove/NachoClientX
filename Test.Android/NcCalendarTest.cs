@@ -107,11 +107,11 @@ namespace Test.iOS
         }
     }
 
-    public class MockDataSource : IAsDataSource
+    public class MockDataSource : IBEContext
     {
         public IProtoControlOwner Owner { set; get; }
 
-        public AsProtoControl Control { set; get; }
+        public AsProtoControl ProtoControl { set; get; }
 
         public McProtocolState ProtocolState { get; set; }
 

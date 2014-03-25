@@ -294,7 +294,7 @@ namespace NachoClient.AndroidClient
         void MarkAsRead (McEmailMessage message)
         {
             if (false == message.IsRead) {
-                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
+                // FIXME BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
             }
         }
 

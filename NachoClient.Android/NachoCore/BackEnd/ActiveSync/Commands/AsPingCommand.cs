@@ -11,10 +11,10 @@ namespace NachoCore.ActiveSync
     {
         private bool m_hitMaxFolders = false;
 
-        public AsPingCommand (IAsDataSource dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
+        public AsPingCommand (IBEContext dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
         {
             // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
-            Timeout = new TimeSpan (0, 0, (int)DataSource.ProtocolState.HeartbeatInterval + 10);
+            Timeout = new TimeSpan (0, 0, (int)BEContext.ProtocolState.HeartbeatInterval + 10);
         }
 
         public override bool DoSendPolicyKey (AsHttpOperation Sender)
@@ -24,17 +24,17 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            uint foldersLeft = DataSource.ProtocolState.MaxFolders;
+            uint foldersLeft = BEContext.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
-            var folders = BackEnd.Instance.Db.Table<McFolder> ().Where (x => x.AccountId == DataSource.Account.Id &&
+            var folders = BackEnd.Instance.Db.Table<McFolder> ().Where (x => x.AccountId == BEContext.Account.Id &&
                           false == x.IsClientOwned &&
-                          ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultCal == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultDrafts == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultSent == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultOutbox == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultDeleted == x.Type
+                          ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type
+                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type
+                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type
+                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultDrafts_3 == x.Type
+                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultSent_5 == x.Type
+                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultOutbox_6 == x.Type
+                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 == x.Type
                           ));
 
             foreach (var folder in folders) {
@@ -47,7 +47,7 @@ namespace NachoCore.ActiveSync
                 }
             }
             var ping = new XElement (m_ns + Xml.Ping.Ns);
-            ping.Add (new XElement (m_ns + Xml.Ping.HeartbeatInterval, DataSource.ProtocolState.HeartbeatInterval.ToString ()));
+            ping.Add (new XElement (m_ns + Xml.Ping.HeartbeatInterval, BEContext.ProtocolState.HeartbeatInterval.ToString ()));
             ping.Add (xFolders);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (ping);
@@ -65,42 +65,42 @@ namespace NachoCore.ActiveSync
             string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;
             switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
 
-            case Xml.Ping.StatusCode.NoChanges:
+            case Xml.Ping.StatusCode.NoChanges_1:
                 if (m_hitMaxFolders) {
                     return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGNOCHGMAX");
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "PINGNOCHG");
             
-            case Xml.Ping.StatusCode.Changes:
+            case Xml.Ping.StatusCode.Changes_2:
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
                     var folder = BackEnd.Instance.Db.Table<McFolder> ().Single (
-                                     rec => DataSource.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
+                                     rec => BEContext.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
                     folder.AsSyncRequired = true;
                     folder.Update ();
                 }
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGRESYNC");
             
-            case Xml.Ping.StatusCode.MissingParams:
-            case Xml.Ping.StatusCode.SyntaxError:
+            case Xml.Ping.StatusCode.MissingParams_3:
+            case Xml.Ping.StatusCode.SyntaxError_4:
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD0", null, "Xml.Ping.StatusCode.MissingParams/SyntaxError");
 
-            case Xml.Ping.StatusCode.BadHeartbeat:
-                update = DataSource.ProtocolState;
+            case Xml.Ping.StatusCode.BadHeartbeat_5:
+                update = BEContext.ProtocolState;
                 update.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
-                DataSource.ProtocolState = update;
+                BEContext.ProtocolState = update;
                 return Event.Create ((uint)SmEvt.E.Success, "PINGBADH");
 
-            case Xml.Ping.StatusCode.TooManyFolders:
-                update = DataSource.ProtocolState;
+            case Xml.Ping.StatusCode.TooManyFolders_6:
+                update = BEContext.ProtocolState;
                 update.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
-                DataSource.ProtocolState = update;
+                BEContext.ProtocolState = update;
                 return Event.Create ((uint)SmEvt.E.Success, "PINGTMF");
 
-            case Xml.Ping.StatusCode.NeedFolderSync:
+            case Xml.Ping.StatusCode.NeedFolderSync_7:
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "PINGNFS");
             
-            case Xml.Ping.StatusCode.ServerError:
+            case Xml.Ping.StatusCode.ServerError_8:
                 return Event.Create ((uint)SmEvt.E.TempFail, "PINGSE", null, "Xml.Ping.StatusCode.ServerError");
 
             default:

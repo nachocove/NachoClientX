@@ -16,35 +16,35 @@ namespace NachoCore.ActiveSync
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();
-            PendingQ = McPending.ToList (AccountId);
+            PendingQ = McPending.Query (AccountId);
         }
 
         public void ProcessDelta ()
         {
             foreach (var pending in PendingQ) {
                 switch (pending.ApplyReWrites (ReWrites)) {
-                case McPending.ActionEnum.DoNothing:
+                case McPending.DbActionEnum.DoNothing:
                     break;
-                case McPending.ActionEnum.Update:
+                case McPending.DbActionEnum.Update:
                     pending.Update ();
                     break;
-                case McPending.ActionEnum.Delete:
+                case McPending.DbActionEnum.Delete:
                     pending.Delete ();
                     continue;
                 }
 
-                McPending.ActionEnum action = McPending.ActionEnum.DoNothing;
+                McPending.DbActionEnum action = McPending.DbActionEnum.DoNothing;
                 var newReWrites = ApplyChangeToPending (pending, out action);
                 if (null != newReWrites) {
                     ReWrites.AddRange (newReWrites);
                 }
                 switch (action) {
-                case McPending.ActionEnum.DoNothing:
+                case McPending.DbActionEnum.DoNothing:
                     break;
-                case McPending.ActionEnum.Update:
+                case McPending.DbActionEnum.Update:
                     pending.Update ();
                     break;
-                case McPending.ActionEnum.Delete:
+                case McPending.DbActionEnum.Delete:
                     pending.Delete ();
                     break; // Note not the same as 'continue;' above!
                 }
@@ -53,7 +53,7 @@ namespace NachoCore.ActiveSync
         }
 
         protected abstract List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                         out McPending.ActionEnum action);
+                                                                         out McPending.DbActionEnum action);
 
         protected abstract void ApplyChangeToModel ();
     }

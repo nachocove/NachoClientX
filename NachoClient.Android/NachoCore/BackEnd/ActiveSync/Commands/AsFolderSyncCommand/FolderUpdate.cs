@@ -25,9 +25,9 @@ namespace NachoCore.ActiveSync
             }
 
             protected override List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                    out McPending.ActionEnum action)
+                                                                    out McPending.DbActionEnum action)
             {
-                action = McPending.ActionEnum.DoNothing;
+                action = McPending.DbActionEnum.DoNothing;
                 switch (pending.Operation) {
                 default:
                     break;

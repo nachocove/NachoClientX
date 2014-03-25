@@ -20,6 +20,8 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwatingCreate { get; set; }
 
+        public const string AsSyncKey_Initial = "0";
+
         public string AsSyncKey { get; set; }
 
         public bool AsSyncRequired { get; set; }
@@ -43,7 +45,7 @@ namespace NachoCore.Model
                                        uint folderType)
         {
             var folder = new McFolder () {
-                AsSyncKey = "0",
+                AsSyncKey = AsSyncKey_Initial,
                 AsSyncRequired = false,
                 AccountId = accountId,
                 IsClientOwned = isClientOwned,
@@ -97,6 +99,19 @@ namespace NachoCore.Model
                 item.Delete ();
             }
             return base.Delete ();
+        }
+
+        public static void AsResetState (int accountId)
+        {
+            // TODO: SQL UPDATE.
+            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          "f.AccountId = ? ",
+                              accountId);
+            foreach (var folder in folders) {
+                folder.AsSyncKey = AsSyncKey_Initial;
+                folder.AsSyncRequired = true;
+                folder.Update ();
+            }
         }
     }
 }

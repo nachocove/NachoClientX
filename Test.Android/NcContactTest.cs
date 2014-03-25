@@ -15,11 +15,11 @@ namespace Test.iOS
     [TestFixture]
     public class NcContactTest
     {
-        public class MockDataSource : IAsDataSource
+        public class MockDataSource : IBEContext
         {
             public IProtoControlOwner Owner { set; get; }
 
-            public AsProtoControl Control { set; get; }
+            public AsProtoControl ProtoControl { set; get; }
 
             public McProtocolState ProtocolState { get; set; }
 
@@ -107,7 +107,7 @@ namespace Test.iOS
                 var f = new McFolder ();
                 f.AccountId = ds.Account.Id;
                 f.ServerId = "Contact:DEFAULT";
-                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
+                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts_9;
                 BackEnd.Instance.Db.Insert (f);
                 // Process sync command
                 var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
@@ -129,7 +129,7 @@ namespace Test.iOS
                 var f = new McFolder ();
                 f.AccountId = ds.Account.Id;
                 f.ServerId = "Contact:DEFAULT";
-                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts;
+                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts_9;
                 BackEnd.Instance.Db.Insert (f);
                 // Process sync command
                 var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
