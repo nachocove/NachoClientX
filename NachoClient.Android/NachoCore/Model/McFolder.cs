@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SQLite;
 using NachoCore.Utils;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
@@ -57,6 +58,30 @@ namespace NachoCore.Model
             };
             folder.Insert ();
             return folder;
+        }
+
+        private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
+        {
+            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? AND " +
+                " f.Type = ? ",
+                accountId, (uint)typeCode);
+            NachoAssert.True (1 == folders.Count);
+            return folders.First ();
+        }
+        public static McFolder GetDefaultInboxFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+        }
+
+        public static McFolder GetDefaultCalendarFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+        }
+
+        public static McFolder GetDefaultContactFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
         }
 
         public static List<McFolder> QueryByItemId<T> (int accountId, int itemId)
