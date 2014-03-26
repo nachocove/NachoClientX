@@ -32,7 +32,6 @@ namespace NachoCore.ActiveSync
                                  new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.GAL),
                                  new XElement (m_ns + Xml.Search.Query, PendingSingle.Prefix),
                                  options));
-
             doc.Add (search);
             return doc;
         }
@@ -53,7 +52,10 @@ namespace NachoCore.ActiveSync
                 switch ((Xml.Search.StoreStatusCode)uint.Parse (status)) {
                 case Xml.Search.StoreStatusCode.Success_1:
                 case Xml.Search.StoreStatusCode.NotFound_6:
-                    // FIXME - save result (if any) into GAL cache.
+                    var xmlResults = xmlStore.Elements (m_ns + Xml.Search.Result);
+                    foreach (var xmlResult in xmlResults) {
+
+                    }
                     PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
                     return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");

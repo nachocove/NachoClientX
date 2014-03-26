@@ -971,6 +971,7 @@ namespace NachoCore.ActiveSync
             public const string Range = "Range";
             public const string RebuildResults = "RebuildResults";
             public const string Response = Autodisco.Response;
+            public const string Result = MeetingResp.Result;
             public const string Status = AirSync.Status;
             public const string Store = ItemOperations.Store;
 

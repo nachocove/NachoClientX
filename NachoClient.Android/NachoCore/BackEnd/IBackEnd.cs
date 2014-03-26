@@ -56,19 +56,19 @@ namespace NachoCore
         // move an email from one folder to another. returns token that can be used to possibly cancel.
         string MoveItemCmd (int accountId, int emailMessageId, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
-        string MarkEmailReadCmd (int accountId, int emailMessageId, int folderId);
+        string MarkEmailReadCmd (int accountId, int emailMessageId);
         // set the flag value on the email.
-        string SetEmailFlagCmd (int accountId, int emailMessageId, int folderId, string flagType, 
+        string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
                           DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
         // clear the flag value on the email.
-        string ClearEmailFlagCmd (int accountId, int emailMessageId, int folderId);
+        string ClearEmailFlagCmd (int accountId, int emailMessageId);
         // mark the flag as "done" for the server, and clear the values in the DB.
-        string MarkEmailFlagDone (int accountId, int emailMessageId, int folderId,
+        string MarkEmailFlagDone (int accountId, int emailMessageId,
                             DateTime completeTime, DateTime dateCompleted);
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
         string CreateCalCmd (int accountId, int calId, int folderId);
-        string RespondCalCmd (int accountId, int calId, int folderId, NcResponseType response);
+        string RespondCalCmd (int accountId, int calId, NcResponseType response);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
                           bool IsClientOwned, bool isHidden);

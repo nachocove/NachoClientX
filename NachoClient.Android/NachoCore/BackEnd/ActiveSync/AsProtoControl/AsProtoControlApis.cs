@@ -235,7 +235,10 @@ namespace NachoCore.ActiveSync
 
             var folders = McFolder.QueryByItemId<T> (Account.Id, itemId);
             foreach (var maybe in folders) {
-                if (maybe.Id == folderId) {
+                if (maybe.IsClientOwned) {
+                    continue;
+                }
+                if (-1 == folderId || maybe.Id == folderId) {
                     folder = maybe;
                     return true;
                 }
@@ -243,11 +246,11 @@ namespace NachoCore.ActiveSync
 		    return false;
 		}
 
-        public override string MarkEmailReadCmd (int emailMessageId, int folderId)
+        public override string MarkEmailReadCmd (int emailMessageId)
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, folderId, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
 				return null;
 			}
 
@@ -267,12 +270,12 @@ namespace NachoCore.ActiveSync
 			return markUpdate.Token;
 		}
 
-        public override string SetEmailFlagCmd (int emailMessageId, int folderId, string flagType, 
+        public override string SetEmailFlagCmd (int emailMessageId, string flagType, 
 		                                        DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, folderId, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
 				return null;
 			}
 
@@ -302,11 +305,11 @@ namespace NachoCore.ActiveSync
 			return setFlag.Token;
 		}
 
-        public override string ClearEmailFlagCmd (int emailMessageId, int folderId)
+        public override string ClearEmailFlagCmd (int emailMessageId)
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, folderId, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
 				return null;
 			}
 
@@ -325,12 +328,12 @@ namespace NachoCore.ActiveSync
 			return clearFlag.Token;
 		}
 
-        public override string MarkEmailFlagDone (int emailMessageId, int folderId,
+        public override string MarkEmailFlagDone (int emailMessageId,
 		                                          DateTime completeTime, DateTime dateCompleted)
 		{
 			McEmailMessage emailMessage;
 			McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, folderId, out folder)) {
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
 				return null;
 			}
 
@@ -398,11 +401,11 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
-        public override string RespondCalCmd (int calId, int folderId, NcResponseType response)
+        public override string RespondCalCmd (int calId, NcResponseType response)
         {
             McCalendar cal;
             McFolder folder;
-            if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder)) {
+            if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
                 return null;
             }
 

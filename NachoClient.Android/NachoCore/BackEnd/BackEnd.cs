@@ -284,32 +284,32 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).CreateCalCmd (calId, folderId);
         }
 
-        public string RespondCalCmd (int accountId, int calId, int folderId, NcResponseType response)
+        public string RespondCalCmd (int accountId, int calId, NcResponseType response)
         {
-            return ServiceFromAccountId (accountId).RespondCalCmd (calId, folderId, response);
+            return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
         }
 
-        public string MarkEmailReadCmd (int accountId, int emailMessageId, int folderId)
+        public string MarkEmailReadCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId, folderId);
+            return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
         }
 
-        public string SetEmailFlagCmd (int accountId, int emailMessageId, int folderId, string flagType, 
+        public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
                                  DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
-            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, folderId, flagType, 
+            return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagType, 
                 start, utcStart, due, utcDue);
         }
 
-        public string ClearEmailFlagCmd (int accountId, int emailMessageId, int folderId)
+        public string ClearEmailFlagCmd (int accountId, int emailMessageId)
         {
-            return ServiceFromAccountId (accountId).ClearEmailFlagCmd (emailMessageId, folderId);
+            return ServiceFromAccountId (accountId).ClearEmailFlagCmd (emailMessageId);
         }
 
-        public string MarkEmailFlagDone (int accountId, int emailMessageId, int folderId,
+        public string MarkEmailFlagDone (int accountId, int emailMessageId,
                                    DateTime completeTime, DateTime dateCompleted)
         {
-            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId, folderId,
+            return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId,
                 completeTime, dateCompleted);
         }
 
