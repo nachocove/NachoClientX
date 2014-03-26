@@ -1,8 +1,10 @@
 using SQLite;
 using System;
+using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
@@ -32,6 +34,9 @@ namespace NachoCore.Model
         public List<McContactStringAttribute> Relationships;
         /// The collection of user labels assigned to the contact
         public List<McContactStringAttribute> Categories;
+
+        // Valid when in the GAL-cache.
+        public bool GalCacheHidden { get; set; }
 
         /// Reference count.
         [Indexed]
@@ -457,19 +462,9 @@ namespace NachoCore.Model
             IMAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
             Categories = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
 
-            // TODO: Error handling
+            // FIXME: Error handling
             return NcResult.OK ();
         }
-
-        /*
-        public NcResult Insert (SQLiteConnection db)
-        {
-            db.Insert (this);
-            InsertAncillaryData (db);
-            // TODO: Error handling
-            return NcResult.OK ();
-        }
-        */
 
         public NcResult InsertAncillaryData (SQLiteConnection db)
         {
@@ -507,8 +502,15 @@ namespace NachoCore.Model
                 db.Insert (o);
             }
     
-            // TODO: Error handling
+            // FIXME: Error handling
             return NcResult.OK ();
+        }
+
+        public override int Insert ()
+        {
+            int retval = base.Insert ();
+            InsertAncillaryData (BackEnd.Instance.Db);
+            return retval;
         }
 
         public override int Delete ()
@@ -534,6 +536,70 @@ namespace NachoCore.Model
             }
             // TODO: Add error processing
             return NcResult.OK ();
+        }
+
+        public void RefreshFromGalXml (XElement xmlProperties)
+        {
+            var props = xmlProperties.Elements ();
+            foreach (var prop in props) {
+                switch (prop.Name.LocalName) {
+                case Xml.Gal.Alias:
+                    Alias = prop.Value;
+                    break;
+
+                case Xml.Gal.Company:
+                    CompanyName = prop.Value;
+                    break;
+
+                case Xml.Gal.Data:
+                    // FIXME.
+                    Log.Warn (Log.LOG_AS, "Xml.Gal.Data not yet implemented.");
+                    break;
+
+                case Xml.Gal.DisplayName:
+                    DisplayName = prop.Value;
+                    break;
+
+                case Xml.Gal.EmailAddress:
+                    // FIXME.
+
+                case Xml.Gal.FirstName:
+                    FirstName = prop.Value;
+                    break;
+
+                case Xml.Gal.HomePhone:
+                    // FIXME
+                case Xml.Gal.LastName:
+                    LastName = prop.Value;
+                    break;
+
+                case Xml.Gal.MobilePhone:
+                    // FIXME 
+                case Xml.Gal.Office:
+                    OfficeLocation = prop.Value;
+                    break;
+
+                case Xml.Gal.Phone:
+                    // FIXME
+
+                case Xml.Gal.Picture:
+                    // FIXME.
+                    Log.Warn (Log.LOG_AS, "Xml.Gal.Picture not yet implemented.");
+                    break;
+
+                default:
+                    Log.Error (Log.LOG_AS, "Unknown GAL property {0}.", prop.Name.LocalName);
+                    break;
+                }
+            }
+        }
+
+        public static McContact CreateFromGalXml (int accountId, XElement xmlProperties)
+        {
+            var contact = new McContact (ItemSource.ActiveSync);
+            contact.AccountId = accountId;
+            contact.RefreshFromGalXml (xmlProperties);
+            return contact;
         }
 
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)

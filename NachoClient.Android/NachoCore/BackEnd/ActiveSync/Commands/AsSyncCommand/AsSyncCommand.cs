@@ -279,6 +279,7 @@ namespace NachoCore.ActiveSync
             var collections = xmlCollections.Elements (m_ns + Xml.AirSync.Collection);
             // Note: we may get back zero Collection items.
             foreach (var collection in collections) {
+                List<McPending> pendingInFolder;
                 // Note: CollectionId, Status and SyncKey are required to be present.
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
                 var folder = McFolderEntry.QueryByServerId<McFolder> (BEContext.Account.Id, serverId);
@@ -306,7 +307,8 @@ namespace NachoCore.ActiveSync
                     ProcessCollectionResponses (folder, xmlResponses);
 
                     // Any pending not already resolved gets resolved as Success.
-                    foreach (var pending in PendingList.Where (x => x.FolderServerId == folder.ServerId)) {
+                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                     }
@@ -322,7 +324,8 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
                     folder.AsSyncRequired = true;
                     // Defer all the outbound commands until after ReSync.
-                    foreach (var pending in PendingList.Where (x => x.FolderServerId == folder.ServerId)) {
+                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
                             McPending.DeferredEnum.UntilSync,
@@ -331,7 +334,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.ProtocolError_4:
-                    var pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId);
+                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
                     if (1 == pendingInFolder.Count ()) {
                         var pending = pendingInFolder.First ();
@@ -350,7 +353,8 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.FolderChange_12:
                     FolderSyncIsMandated = true;
-                    foreach (var pending in PendingList.Where (x => x.FolderServerId == folder.ServerId)) {
+                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
                             McPending.DeferredEnum.UntilFSync,
@@ -360,7 +364,8 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.Retry_16:
                     folder.AsSyncRequired = true;
-                    foreach (var pending in PendingList.Where (x => x.FolderServerId == folder.ServerId)) {
+                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferredForce ();
                     }

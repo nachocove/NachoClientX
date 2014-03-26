@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -160,14 +161,23 @@ namespace NachoCore.ActiveSync
             var galCacheFolder = McFolder.GetGalCacheFolder (BEContext.Account.Id);
             var existingItems = McContact.QueryByEmailAddressInFolder (BEContext.Account.Id, galCacheFolder.Id, emailAddress);
             if (0 != existingItems.Count) {
-                // FIXME UPDATE AND RETURN.
+                if (1 != existingItems.Count) {
+                    Log.Error (Log.LOG_AS, "{0} GAL-cache entries for email address {1}", existingItems.Count, emailAddress);
+                }
+                var existing = existingItems.First ();
+                existing.RefreshFromGalXml (xmlProperties);
+                existing.Update ();
+                return;
             }
 
             var existingSyncedItems = McContact.QueryByEmailAddressInSyncedFolder (BEContext.Account.Id, emailAddress);
-            // FIXME INSERT NEW 
+            var contact = McContact.CreateFromGalXml (BEContext.Account.Id, xmlProperties);
+
             if (0 != existingSyncedItems.Count) {
-                // FIXME MUST BE HIDDEN.
+                contact.GalCacheHidden = true;
             }
+            contact.Insert ();
+            galCacheFolder.Link (contact);
         }
     }
 }
