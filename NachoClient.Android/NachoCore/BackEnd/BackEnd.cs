@@ -68,9 +68,7 @@ namespace NachoCore
 
         public IBackEndOwner Owner { set; private get; }
 
-        private const string ClientOwned_Outbox = "Outbox2";
-        private const string ClientOwned_GalCache = "GAL";
-        private const string ClientOwned_Gleaned = "GLEANED";
+
 
         private ProtoControl ServiceFromAccountId (int accountId)
         {
@@ -93,7 +91,7 @@ namespace NachoCore
                 storeDateTimeAsTicks: true);
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
-            Db.CreateTable<McMapFolderItem> ();
+            Db.CreateTable<McMapFolderFolderEntry> ();
             Db.CreateTable<McFolder> ();
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McAttachment> ();
@@ -156,19 +154,19 @@ namespace NachoCore
                     service = new AsProtoControl (this, accountId);
                     Services.Add (service);
                     // Create client owned objects as needed.
-                    if (null == GetOutbox (accountId)) {
+                    if (null == McFolder.GetOutboxFolder (accountId)) {
                         McFolder.Create (accountId, true, false, "0",
-                            ClientOwned_Outbox, ClientOwned_Outbox,
+                            McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
                             (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     }
-                    if (null == GetGalCache (accountId)) {
+                    if (null == McFolder.GetGalCacheFolder (accountId)) {
                         McFolder.Create (accountId, true, true, "0",
-                            ClientOwned_GalCache, string.Empty,
+                            McFolder.ClientOwned_GalCache, string.Empty,
                             (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     }
-                    if (null == GetGleaned (accountId)) {
+                    if (null == McFolder.GetGleanedFolder (accountId)) {
                         McFolder.Create (accountId, true, true, "0",
-                            ClientOwned_Gleaned, string.Empty,
+                            McFolder.ClientOwned_Gleaned, string.Empty,
                             (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     }
                 }
@@ -341,29 +339,7 @@ namespace NachoCore
         {
             return ServiceFromAccountId (accountId).RenameFolderCmd (folderId, displayName);
         }
-
-        private McFolder GetClientOwned (int accountId, string serverId)
-        {
-            return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
-                accountId == x.AccountId &&
-            serverId == x.ServerId &&
-            true == x.IsClientOwned);
-        }
-
-        public McFolder GetOutbox (int accountId)
-        {
-            return GetClientOwned (accountId, ClientOwned_Outbox);
-        }
-
-        public McFolder GetGalCache (int accountId)
-        {
-            return GetClientOwned (accountId, ClientOwned_GalCache);
-        }
-
-        public McFolder GetGleaned (int accountId)
-        {
-            return GetClientOwned (accountId, ClientOwned_Gleaned);
-        }
+            
         //
         // For IProtoControlOwner.
         //

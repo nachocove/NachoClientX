@@ -34,6 +34,10 @@ namespace NachoCore.Model
 
         /// FIXME: Need enumeration
         public uint Type { get; set; }
+        // Client-owned distinguised folders.
+        public const string ClientOwned_Outbox = "Outbox2";
+        public const string ClientOwned_GalCache = "GAL";
+        public const string ClientOwned_Gleaned = "GLEANED";
 
         public override string ToString ()
         {
@@ -63,15 +67,39 @@ namespace NachoCore.Model
             return folder;
         }
 
+        public static McFolder GetClientOwnedFolder (int accountId, string serverId)
+        {
+            return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+                accountId == x.AccountId &&
+            serverId == x.ServerId &&
+            true == x.IsClientOwned);
+        }
+
+        public static McFolder GetOutboxFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
+        }
+
+        public static McFolder GetGalCacheFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_GalCache);
+        }
+
+        public static McFolder GetGleanedFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Gleaned);
+        }
+
         private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.Type = ? ",
-                accountId, (uint)typeCode);
+                          " f.AccountId = ? AND " +
+                          " f.Type = ? ",
+                              accountId, (uint)typeCode);
             NachoAssert.True (1 == folders.Count);
             return folders.First ();
         }
+
         public static McFolder GetDefaultInboxFolder (int accountId)
         {
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
@@ -87,31 +115,16 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
         }
 
-        public static List<McFolder> QueryByItemId<T> (int accountId, int itemId)
+        public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McFolderEntry
         {
-            uint classCode;
-            switch (typeof(T).FullName) {
-            case "NachoCore.Model.McEmailMessage":
-                classCode = (uint)McItem.ClassCodeEnum.Email;
-                break;
-
-            case "NachoCore.Model.McCalendar":
-                classCode = (uint)McItem.ClassCodeEnum.Calendar;
-                break;
-
-            case "NachoCore.Model.McContact":
-                classCode = (uint)McItem.ClassCodeEnum.Contact;
-                break;
-
-            default:
-                throw new Exception ("Usupported Item class.");
-            }
-
-            return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderItem AS m ON f.Id = m.FolderId WHERE " +
+            var getClassCode = typeof(T).GetMethod ("GetClassCode");
+            NachoAssert.True (null != getClassCode);
+            ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
+            return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
             " m.AccountId = ? AND " +
-            " m.ItemId = ? AND " +
+            " m.FolderEntryId = ? AND " +
             " m.ClassCode = ? ",
-                accountId, itemId, classCode);
+                accountId, folderEntryId, (uint)classCode);
         }
 
         public override int Delete ()
@@ -120,13 +133,46 @@ namespace NachoCore.Model
             // FIXME - query needs to find non-email items and sub-dirs.
             var contents = McItem.QueryByFolderId<McEmailMessage> (AccountId, Id);
             foreach (var item in contents) {
-                var map = McMapFolderItem.QueryByFolderIdItemIdClassCode (AccountId, Id, item.Id,
-                              (uint)McItem.ClassCodeEnum.Email);
+                var map = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId, Id, item.Id,
+                              McItem.ClassCodeEnum.Email);
                 // FIXME capture result of ALL delete ops.
                 map.Delete ();
                 item.Delete ();
             }
             return base.Delete ();
+        }
+
+        public NcResult Link (McFolderEntry obj)
+        {
+            var getClassCode = obj.GetType().GetMethod ("GetClassCode");
+            NachoAssert.True (null != getClassCode);
+            ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+                (AccountId, Id, obj.Id, classCode);
+            if (null != existing) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_AlreadyInFolder);
+            }
+            var map = new McMapFolderFolderEntry (AccountId) {
+                FolderId = Id,
+                FolderEntryId = obj.Id,
+                ClassCode = classCode,
+            };
+            map.Insert ();
+            return NcResult.OK ();
+        }
+
+        public NcResult Unlink (McFolderEntry obj)
+        {
+            var getClassCode = obj.GetType().GetMethod ("GetClassCode");
+            NachoAssert.True (null != getClassCode);
+            ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+                (AccountId, Id, obj.Id, classCode);
+            if (null == existing) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
+            }
+            existing.Delete ();
+            return NcResult.OK ();
         }
 
         public static void AsResetState (int accountId)
@@ -140,6 +186,11 @@ namespace NachoCore.Model
                 folder.AsSyncRequired = true;
                 folder.Update ();
             }
+        }
+
+        public static ClassCodeEnum GetClassCode ()
+        {
+            return McFolderEntry.ClassCodeEnum.Folder;
         }
     }
 }

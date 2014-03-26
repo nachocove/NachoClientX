@@ -74,12 +74,7 @@ namespace NachoCore.ActiveSync
                 MergeAttendees (newItem);
                 MergeCategories (newItem);
                 MergeExceptions (newItem);
-                var map = new McMapFolderItem (newItem.AccountId) {
-                    FolderId = folder.Id,
-                    ItemId = newItem.Id,
-                    ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
-                };
-                map.Insert ();
+                folder.Link (newItem);
                 return;
             }
 

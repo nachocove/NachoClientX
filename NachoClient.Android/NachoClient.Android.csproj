@@ -101,7 +101,6 @@
     <Compile Include="NachoCore\Utils\Log.cs" />
     <Compile Include="NachoCore\Utils\MimeHelpers.cs" />
     <Compile Include="NachoCore\Model\McObjectPerAccount.cs" />
-    <Compile Include="NachoCore\Model\McMapFolderItem.cs" />
     <Compile Include="NachoCore\Brain\NcMessageThreads.cs" />
     <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="NachoCore\Model\McPending.cs" />
@@ -187,6 +186,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
+    <Compile Include="NachoCore\Model\McMapFolderFolderEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

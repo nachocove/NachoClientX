@@ -48,6 +48,8 @@ namespace NachoCore.Utils
             Error_ProtocolError,
             Error_NoSpace,
             Error_ServerConflict,
+            Error_AlreadyInFolder,
+            Error_NotInFolder,
             Error_InappropriateStatus,
             Error_ObjectNotFoundOnServer,
             Error_CalendarCreateFailed,

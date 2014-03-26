@@ -965,6 +965,7 @@ namespace NachoCore.ActiveSync
             public const string Ns = "Search";
             // Alpha order.
             public const string DeepTraversal = "DeepTraversal";
+            public const string Properties = "Properties";
             public const string Name = "Name";
             public const string Options = "Options";
             public const string Query = "Query";

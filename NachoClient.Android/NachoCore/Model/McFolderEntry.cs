@@ -6,8 +6,22 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
+    // If SQLite.Net would tolerate an abstract class, we'd be one.
     public class McFolderEntry : McObjectPerAccount
     {
+        public enum ClassCodeEnum
+        {
+            // Values taken from ActiveSync are < 100.
+            Tasks = 1,
+            Email = 2,
+            Calendar = 3,
+            Contact = 4,
+            Notes = 5,
+            Sms = 6,
+            // Values created by Nacho are >= 100.
+            Folder = 100,
+        };
+
         [Indexed]
         public string ServerId { get; set; }
 

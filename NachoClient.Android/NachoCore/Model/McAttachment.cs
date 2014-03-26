@@ -43,7 +43,7 @@ namespace NachoCore.Model
         public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
         {
             NachoAssert.True (typeof(T) == typeof(McEmailMessage));
-            // TODO: support attachments in other items (e.g. Calendar).
+            // FIXME: support attachments in other items (e.g. Calendar).
             return BackEnd.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
                 " a.AccountId = ? AND " +
                 " a.EmailMessageId = ? ",

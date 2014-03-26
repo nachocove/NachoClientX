@@ -101,6 +101,11 @@ namespace NachoCore.Model
 
         /// How is the body stored on the server?  Calendar only.
         public int NativeBodyType { get; set; }
+
+        public static ClassCodeEnum GetClassCode ()
+        {
+            return McFolderEntry.ClassCodeEnum.Calendar;
+        }
     }
 
     /// <summary>

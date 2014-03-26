@@ -319,9 +319,6 @@
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.designer.cs">
       <DependentUpon>MessagePriorityViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderItem.cs">
-      <Link>NachoCore\Model\McMapFolderItem.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McObjectPerAccount.cs">
       <Link>NachoCore\Model\McObjectPerAccount.cs</Link>
     </Compile>
@@ -575,6 +572,9 @@
     <Compile Include="NachoUI.iOS\CalendarSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\CalendarSettingsViewController.designer.cs">
       <DependentUpon>CalendarSettingsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderFolderEntry.cs">
+      <Link>NachoCore\Model\McMapFolderFolderEntry.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

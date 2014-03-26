@@ -84,11 +84,7 @@ namespace NachoCore
         //
         // in the BE for now, but moving to middleware/app-land someday:
         //
-        McFolder GetOutbox (int accountId);
 
-        McFolder GetGalCache (int accountId);
-
-        McFolder GetGleaned (int accountId);
     }
 }
 

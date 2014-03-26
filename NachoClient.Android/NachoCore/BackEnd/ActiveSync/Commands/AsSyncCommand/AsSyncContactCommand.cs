@@ -40,14 +40,9 @@ namespace NachoCore.ActiveSync
 
             // TODO: Do we have to ghost or merge here?
             mcContact.AccountId = folder.AccountId;
-            var ur = mcContact.Insert (BackEnd.Instance.Db);
-            var map = new McMapFolderItem (mcContact.AccountId) {
-                FolderId = folder.Id,
-                ItemId = mcContact.Id,
-                ClassCode = (uint)McItem.ClassCodeEnum.Contact,
-            };
-            map.Insert ();
-            NachoCore.NachoAssert.True (ur.isOK ());
+            var ur = mcContact.Insert();
+            folder.Link (mcContact);
+            NachoCore.NachoAssert.True (0 < ur);
         }
     }
 }

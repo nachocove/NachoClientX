@@ -70,9 +70,9 @@ namespace Test.iOS
             CreateTable<McFolder> ();
 
             // McMapFolderItem
-            CreateTable<McMapFolderItem> ();
-            DropTable<McMapFolderItem> ();
-            CreateTable<McMapFolderItem> ();
+            CreateTable<McMapFolderFolderEntry> ();
+            DropTable<McMapFolderFolderEntry> ();
+            CreateTable<McMapFolderFolderEntry> ();
 
             // McPending
             CreateTable<McPending> ();

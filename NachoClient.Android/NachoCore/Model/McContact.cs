@@ -111,6 +111,11 @@ namespace NachoCore.Model
 
         /// How the body stored on the server.
         public int NativeBodyType { get; set; }
+
+        public static ClassCodeEnum GetClassCode ()
+        {
+            return McFolderEntry.ClassCodeEnum.Contact;
+        }
     }
 
     /// Addresses associated with the contact
@@ -456,6 +461,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
+        /*
         public NcResult Insert (SQLiteConnection db)
         {
             db.Insert (this);
@@ -463,6 +469,7 @@ namespace NachoCore.Model
             // TODO: Error handling
             return NcResult.OK ();
         }
+        */
 
         public NcResult InsertAncillaryData (SQLiteConnection db)
         {
@@ -504,15 +511,14 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Delete (SQLiteConnection db)
+        public override int Delete ()
         {
-            db.Delete (this);
-            DeleteAncillaryData (db);
-            // TODO: Add error processing
-            return NcResult.OK ();
+            int retval = base.Delete ();
+            DeleteAncillaryData (BackEnd.Instance.Db);
+            return retval;
         }
 
-        protected NcResult DeleteAncillaryData (SQLiteConnection db)
+        private NcResult DeleteAncillaryData (SQLiteConnection db)
         {
             var dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             foreach (var d in dates) {
@@ -537,6 +543,36 @@ namespace NachoCore.Model
             " s.Type = ? AND " +
             " s.Value = ? ",
                 accountId, McContactStringType.EmailAddress, emailAddress);
+        }
+
+        public static List<McContact> QueryByEmailAddressInFolder (int accountId, int folderId, string emailAddress)
+        {
+            return BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
+            " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+            " WHERE " +
+            " c.AccountId = m.AccountId AND " +
+            " c.AccountId = ? AND " +
+            " s.Type = ? AND " +
+            " s.Value = ? AND " +
+            " m.FolderId = ? ",
+                accountId, McContactStringType.EmailAddress, emailAddress, folderId).ToList ();
+        }
+
+        public static List<McContact> QueryByEmailAddressInSyncedFolder (int accountId, string emailAddress)
+        {
+            return BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
+            " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+            " JOIN McFolder AS f ON f.Id = m.FolderId " +
+            " WHERE " +
+            " c.AccountId = m.AccountId AND " +
+            " c.AccountId = f.AccountId AND " +
+            " c.AccountId = ? AND " +
+            " s.Type = ? AND " +
+            " s.Value = ? AND " +
+            " f.IsClientOwned = false ",
+                accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
         }
     }
 }

@@ -65,7 +65,7 @@ namespace NachoCore.Brain
                 NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
                 return;
             }
-            var gleanedFolder = BackEnd.Instance.GetGleaned (accountId);
+            var gleanedFolder = McFolder.GetGleanedFolder (accountId);
             if (null == gleanedFolder) {
                 NachoCore.Utils.Log.Error ("GleanContacts gleandedFolder is null for account id {0}", accountId);
                 MarkAsGleaned (emailMessage);
@@ -118,13 +118,7 @@ namespace NachoCore.Brain
                                 RefCount = 1,
                             };
                             BackEnd.Instance.Db.Insert (contact);
-
-                            var map = new McMapFolderItem (contact.AccountId) {
-                                FolderId = gleanedFolder.Id,
-                                ItemId = contact.Id,
-                                ClassCode = (uint)McItem.ClassCodeEnum.Contact,
-                            };
-                            BackEnd.Instance.Db.Insert (map);
+                            gleanedFolder.Link (contact);
 
                             var strattr = new McContactStringAttribute () {
                                 Name = "Email1Address",

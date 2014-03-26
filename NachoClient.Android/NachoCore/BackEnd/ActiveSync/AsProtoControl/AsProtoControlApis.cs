@@ -146,30 +146,27 @@ namespace NachoCore.ActiveSync
 				return null;
 			}
 
-            var folders = McFolder.QueryByItemId<McEmailMessage> (Account.Id, emailMessageId);
+            var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId);
 			if (null == folders || 0 == folders.Count) {
 				return null;
 			}
 
-			var folder = folders.First ();
+            // FIXME - ensure not client-owned folder.
+            var primeFolder = folders.First ();
 
 			var deleUpdate = new McPending (Account.Id) {
 				Operation = McPending.Operations.EmailDelete,
-				FolderServerId = folder.ServerId,
+                FolderServerId = primeFolder.ServerId,
 				ServerId = emailMessage.ServerId
 			};   
 			deleUpdate.Insert ();
 
-			// Delete the actual item.
-			var maps = BackEnd.Instance.Db.Table<McMapFolderItem> ().Where (x =>
-				x.AccountId == Account.Id &&
-			           x.ItemId == emailMessageId &&
-			           x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
-
-			foreach (var map in maps) {
-				map.Delete ();
-			}
+            // Delete the actual item.
+            foreach (var folder in folders) {
+                folder.Unlink (emailMessage);
+            }
 			emailMessage.Delete ();
+
 			StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
 			Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
@@ -187,10 +184,11 @@ namespace NachoCore.ActiveSync
 			if (null == destFolder) {
 				return null;
 			}
-            var srcFolders = McFolder.QueryByItemId<McEmailMessage> (Account.Id, emailMessageId);
+            var srcFolders = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId);
 			if (null == srcFolders || 0 == srcFolders.Count) {
 				return null;
 			}
+            // FIXME - we should not be guessing on src-folder!
 			var srcFolder = srcFolders.First ();
 			var moveUpdate = new McPending (Account.Id) {
 				Operation = McPending.Operations.EmailMove,
@@ -202,19 +200,8 @@ namespace NachoCore.ActiveSync
 
 			moveUpdate.Insert ();
 			// Move the actual item.
-			var newMapEntry = new McMapFolderItem (Account.Id) {
-				FolderId = destFolderId,
-				ItemId = emailMessageId,
-				ClassCode = (uint)McItem.ClassCodeEnum.Email,
-			};
-			newMapEntry.Insert ();
-
-			var oldMapEntry = BackEnd.Instance.Db.Table<McMapFolderItem> ().Single (x =>
-				x.AccountId == Account.Id &&
-			                  x.ItemId == emailMessageId &&
-			                  x.FolderId == srcFolder.Id &&
-			                  x.ClassCode == (uint)McItem.ClassCodeEnum.Email);
-			oldMapEntry.Delete ();
+            destFolder.Link (emailMessage);
+            srcFolder.Unlink (emailMessage);
 
 			Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
@@ -233,7 +220,7 @@ namespace NachoCore.ActiveSync
 				return false;
 			}
 
-            var folders = McFolder.QueryByItemId<T> (Account.Id, itemId);
+            var folders = McFolder.QueryByFolderEntryId<T> (Account.Id, itemId);
             foreach (var maybe in folders) {
                 if (maybe.IsClientOwned) {
                     continue;

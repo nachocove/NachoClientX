@@ -6,7 +6,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    // Treat as abstract.
+    // If SQLite.Net would tolerate an abstract class, we'd be one.
     public class McObject
     {
         [PrimaryKey, AutoIncrement, Unique]

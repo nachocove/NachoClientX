@@ -174,7 +174,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderItem AS m ON e.Id = m.ItemId WHERE " +
+            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
             " e.AccountId = ? AND " +
             " m.AccountId = ? AND " +
             " m.FolderId = ? AND " +
@@ -195,6 +195,11 @@ namespace NachoCore.Model
             DeleteBody ();
             DeleteAttachments ();
             return base.Delete ();
+        }
+
+        public static ClassCodeEnum GetClassCode ()
+        {
+            return McFolderEntry.ClassCodeEnum.Email;
         }
     }
 

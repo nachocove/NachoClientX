@@ -379,12 +379,7 @@ namespace NachoClient.iOS
         protected void SyncMeetingRequest ()
         {
             c.Insert ();
-            var map = new McMapFolderItem (c.AccountId) {
-                FolderId = folder.Id,
-                ItemId = c.Id,
-                ClassCode = (uint)McItem.ClassCodeEnum.Calendar,
-            };
-            map.Insert ();
+            folder.Link (c);
             // FIXME BackEnd.Instance.CreateCalCmd (account.Id, c.Id);
         }
 
@@ -436,7 +431,7 @@ namespace NachoClient.iOS
 
         protected string MyCalendarName (McCalendar c)
         {
-            var candidates = McFolder.QueryByItemId<McCalendar> (account.Id, c.Id);
+            var candidates = McFolder.QueryByFolderEntryId<McCalendar> (account.Id, c.Id);
             return candidates.First ().DisplayName;
         }
 

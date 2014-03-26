@@ -54,7 +54,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.NotFound_6:
                     var xmlResults = xmlStore.Elements (m_ns + Xml.Search.Result);
                     foreach (var xmlResult in xmlResults) {
-
+                        UpdateOrInsertGalCache (xmlResult);
                     }
                     PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
@@ -146,6 +146,28 @@ namespace NachoCore.ActiveSync
                         NcResult.WhyEnum.Unknown));
             }
             return Event.Create ((uint)SmEvt.E.HardFail, "SRTLYUK");
+        }
+
+        private void UpdateOrInsertGalCache (XElement xmlResult)
+        {
+            var xmlProperties = xmlResult.Element (m_ns + Xml.Search.Properties);
+            var xmlEmailAddress = xmlProperties.Element (Xml.Gal.Ns + Xml.Gal.EmailAddress);
+            // TODO: there may be a reason to use a GAL entry w/out an email address in the future.
+            if (null == xmlEmailAddress) {
+                return;
+            }
+            var emailAddress = xmlEmailAddress.Value.Trim ();
+            var galCacheFolder = McFolder.GetGalCacheFolder (BEContext.Account.Id);
+            var existingItems = McContact.QueryByEmailAddressInFolder (BEContext.Account.Id, galCacheFolder.Id, emailAddress);
+            if (0 != existingItems.Count) {
+                // FIXME UPDATE AND RETURN.
+            }
+
+            var existingSyncedItems = McContact.QueryByEmailAddressInSyncedFolder (BEContext.Account.Id, emailAddress);
+            // FIXME INSERT NEW 
+            if (0 != existingSyncedItems.Count) {
+                // FIXME MUST BE HIDDEN.
+            }
         }
     }
 }
