@@ -158,7 +158,7 @@ namespace NachoCore.ActiveSync
             if (null == xmlEmailAddress) {
                 return;
             }
-            var emailAddress = xmlEmailAddress.Value.Trim ();
+            var emailAddress = xmlEmailAddress.Value;
             var galCacheFolder = McFolder.GetGalCacheFolder (BEContext.Account.Id);
             var existingItems = McContact.QueryByEmailAddressInFolder (BEContext.Account.Id, galCacheFolder.Id, emailAddress);
             if (0 != existingItems.Count) {

@@ -96,8 +96,17 @@ namespace NachoCore.ActiveSync
                             new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
                             new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
                     }
-                    // Expect that we will have more complex code that may add to options, and that
-                    // we should only send options if not empty.
+                    if (Xml.AirSync.ClassCode.Calendar.Equals (classCode)) {
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
+                    }
+                    if (Xml.AirSync.ClassCode.Contacts.Equals (classCode)) {
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
+                    }
                     if (options.HasElements) {
                         collection.Add (options);
                     }

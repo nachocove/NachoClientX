@@ -34,9 +34,6 @@ namespace NachoCore.ActiveSync
         /// Birth date of the contact
         public DateTime Birthday { get; set; }
 
-        /// Notes for the contact
-        // TODO: Add body
-
         /// Business city of the contact
         public string BusinessAddressCity { get; set; }
 
@@ -279,7 +276,7 @@ namespace NachoCore.ActiveSync
                         }
                     } else {
                         c.BodyId = 0;
-                        Console.WriteLine ("Truncated message from server.");
+                        Log.Info(Log.LOG_AS, "Truncated message or zero-length body from server.");
                     }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
