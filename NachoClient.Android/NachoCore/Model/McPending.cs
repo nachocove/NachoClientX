@@ -297,8 +297,22 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_FolderUpdateFailed;
             case Operations.FolderDelete:
                 return NcResult.SubKindEnum.Error_FolderDeleteFailed;
+            case Operations.EmailForward:
+                return NcResult.SubKindEnum.Error_EmailMessageForwardFailed;
+            case Operations.EmailReply:
+                return NcResult.SubKindEnum.Error_EmailMessageReplyFailed;
+            case Operations.EmailSend:
+                return NcResult.SubKindEnum.Error_EmailMessageSendFailed;
+            case Operations.AttachmentDownload:
+                return NcResult.SubKindEnum.Error_AttDownloadFailed;
+            case Operations.ContactSearch:
+                return NcResult.SubKindEnum.Error_SearchCommandFailed;
+            case Operations.ContactUpdate:
+                return NcResult.SubKindEnum.Error_ContactUpdateFailed;
             case Operations.EmailDelete:
                 return NcResult.SubKindEnum.Error_EmailMessageDeleteFailed;
+            case Operations.EmailMove:
+                return NcResult.SubKindEnum.Error_EmailMessageMoveFailed;
             case Operations.EmailMarkRead:
                 return NcResult.SubKindEnum.Error_EmailMessageMarkedReadFailed;
             case Operations.EmailSetFlag:
@@ -309,6 +323,10 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageMarkFlagDoneFailed;
             case Operations.CalCreate:
                 return NcResult.SubKindEnum.Error_CalendarCreateFailed;
+            case Operations.CalRespond:
+                return NcResult.SubKindEnum.Error_MeetingResponseFailed;
+            case Operations.CalUpdate:
+                return NcResult.SubKindEnum.Error_CalendarUpdateFailed;
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
