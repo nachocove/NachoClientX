@@ -14,7 +14,7 @@ namespace NachoCore.ActiveSync
     {
         public AsMoveItemsCommand (IBEContext beContext) : base (Xml.Mov.MoveItems, Xml.Mov.Ns, beContext)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.EmailMove);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailMove);
             PendingSingle.MarkDispached ();
         }
 

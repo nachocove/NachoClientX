@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
         public AsFolderDeleteCommand (IBEContext dataSource) :
             base (Xml.FolderHierarchy.FolderDelete, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.FolderDelete);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderDelete);
             PendingSingle.MarkDispached ();
         }
 

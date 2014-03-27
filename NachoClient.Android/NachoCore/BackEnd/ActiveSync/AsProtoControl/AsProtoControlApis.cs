@@ -50,7 +50,7 @@ namespace NachoCore.ActiveSync
 			var newSearch = new McPending (Account.Id) {
 				Operation = McPending.Operations.ContactSearch,
 				Prefix = prefix,
-				MaxResults = (null == maxResults) ? 0 : (uint)maxResults,
+                MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
 				Token = token
 			};
 			newSearch.Insert ();

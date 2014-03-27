@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
     {
         public AsItemOperationsCommand (IBEContext dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload);
             PendingSingle.MarkDispached ();
         }
 

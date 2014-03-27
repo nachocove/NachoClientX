@@ -525,12 +525,13 @@ namespace NachoCore.Model
             rec.Operation == operation).ToList ();
         }
 
-        public static McPending QueryFirstByOperation (int accountId, McPending.Operations operation)
+        public static McPending QueryFirstEligibleByOperation (int accountId, McPending.Operations operation)
         {
             return BackEnd.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&
-            rec.Operation == operation);
+                        rec.Operation == operation &&
+                        rec.State == StateEnum.Eligible);
         }
 
         public static McPending QueryByClientId (int accountId, string clientId)

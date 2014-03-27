@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
         public AsFolderUpdateCommand (IBEContext dataSource) :
             base (Xml.FolderHierarchy.FolderUpdate, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.FolderUpdate);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderUpdate);
             PendingSingle.MarkDispached ();
         }
 

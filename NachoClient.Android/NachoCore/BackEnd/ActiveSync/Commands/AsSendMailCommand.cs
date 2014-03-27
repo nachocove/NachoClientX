@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
 
         public AsSendMailCommand (IBEContext dataSource) : base (Xml.ComposeMail.SendMail, Xml.ComposeMail.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.EmailSend);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailSend);
             PendingSingle.MarkDispached ();
             EmailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.EmailMessageId);
         }

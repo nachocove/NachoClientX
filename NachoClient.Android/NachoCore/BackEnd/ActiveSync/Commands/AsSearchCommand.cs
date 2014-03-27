@@ -13,7 +13,7 @@ namespace NachoCore.ActiveSync
         public AsSearchCommand (IBEContext beContext) :
             base (Xml.Search.Ns, Xml.Search.Ns, beContext)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.ContactSearch);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactSearch);
             PendingSingle.MarkDispached ();
         }
 
@@ -22,16 +22,12 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
 
             var options = new XElement (m_ns + Xml.Search.Options,
-                              new XElement (m_ns + Xml.Search.DeepTraversal),
-                              new XElement (m_ns + Xml.Search.RebuildResults));
-            if (0 != PendingSingle.MaxResults) {
-                options.Add (new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.MaxResults - 1)));
-            }
-
+                              new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.MaxResults - 1)));
+                            
             var search = new XElement (m_ns + Xml.Search.Ns,
                              new XElement (m_ns + Xml.Search.Store, 
                                  new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.GAL),
-                                 new XElement (m_ns + Xml.Search.Query, PendingSingle.Prefix),
+                    new XElement (m_ns + Xml.Search.Query, PendingSingle.Prefix),
                                  options));
             doc.Add (search);
             return doc;
@@ -151,8 +147,13 @@ namespace NachoCore.ActiveSync
 
         private void UpdateOrInsertGalCache (XElement xmlResult, string Token)
         {
+            XNamespace galNs = Xml.Gal.Ns;
             var xmlProperties = xmlResult.Element (m_ns + Xml.Search.Properties);
-            var xmlEmailAddress = xmlProperties.Element (Xml.Gal.Ns + Xml.Gal.EmailAddress);
+            if (null == xmlProperties) {
+                // We can get just <Result/>.
+                return;
+            }
+            var xmlEmailAddress = xmlProperties.Element (galNs + Xml.Gal.EmailAddress);
             // TODO: there may be a reason to use a GAL entry w/out an email address in the future.
             if (null == xmlEmailAddress) {
                 return;

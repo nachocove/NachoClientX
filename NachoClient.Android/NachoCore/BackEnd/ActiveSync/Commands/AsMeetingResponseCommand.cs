@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
     {
         public AsMeetingResponseCommand (IBEContext dataSource) : base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.CalRespond);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalRespond);
             PendingSingle.MarkDispached ();
         }
 

@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
         public AsFolderCreateCommand (IBEContext dataSource) :
             base (Xml.FolderHierarchy.FolderCreate, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstByOperation (BEContext.Account.Id, McPending.Operations.FolderCreate);
+            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderCreate);
             PendingSingle.MarkDispached ();
         }
 
