@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.NotFound_6:
                     var xmlResults = xmlStore.Elements (m_ns + Xml.Search.Result);
                     foreach (var xmlResult in xmlResults) {
-                        UpdateOrInsertGalCache (xmlResult);
+                        UpdateOrInsertGalCache (xmlResult, PendingSingle.Token);
                     }
                     PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
@@ -149,7 +149,7 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.HardFail, "SRTLYUK");
         }
 
-        private void UpdateOrInsertGalCache (XElement xmlResult)
+        private void UpdateOrInsertGalCache (XElement xmlResult, string Token)
         {
             var xmlProperties = xmlResult.Element (m_ns + Xml.Search.Properties);
             var xmlEmailAddress = xmlProperties.Element (Xml.Gal.Ns + Xml.Gal.EmailAddress);
@@ -166,16 +166,12 @@ namespace NachoCore.ActiveSync
                 }
                 var existing = existingItems.First ();
                 existing.RefreshFromGalXml (xmlProperties);
+                existing.GalCacheToken = Token;
                 existing.Update ();
                 return;
             }
-
-            var existingSyncedItems = McContact.QueryByEmailAddressInSyncedFolder (BEContext.Account.Id, emailAddress);
             var contact = McContact.CreateFromGalXml (BEContext.Account.Id, xmlProperties);
-
-            if (0 != existingSyncedItems.Count) {
-                contact.GalCacheHidden = true;
-            }
+            contact.GalCacheToken = Token;
             contact.Insert ();
             galCacheFolder.Link (contact);
         }

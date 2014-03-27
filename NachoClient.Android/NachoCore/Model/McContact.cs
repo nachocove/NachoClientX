@@ -35,8 +35,8 @@ namespace NachoCore.Model
         /// The collection of user labels assigned to the contact
         public List<McContactStringAttribute> Categories;
 
-        // Valid when in the GAL-cache.
-        public bool GalCacheHidden { get; set; }
+        // Valid only for GAL-cache entries. 
+        public string GalCacheToken { get; set; }
 
         /// Reference count.
         [Indexed]
@@ -395,9 +395,19 @@ namespace NachoCore.Model
             AddStringAttribute (ref PhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
         }
 
+        public void AddOrUpdatePhoneNumberAttribute (string name, string label, string value)
+        {
+            AddOrUpdateStringAttribute (ref PhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
+        }
+
         public void AddEmailAddressAttribute (string name, string label, string value)
         {
             AddStringAttribute (ref EmailAddresses, McContactStringType.EmailAddress, name, label, value);
+        }
+
+        public void AddOrUpdateEmailAddressAttribute (string name, string label, string value)
+        {
+            AddOrUpdateStringAttribute (ref EmailAddresses, McContactStringType.EmailAddress, name, label, value);
         }
 
         public void AddIMAddressAttribute (string name, string label, string value)
@@ -413,6 +423,23 @@ namespace NachoCore.Model
         public void AddCategoryAttribute (string name)
         {
             AddStringAttribute (ref Categories, McContactStringType.Category, name, null, null);
+        }
+
+        protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, McContactStringType type, string name, string label, string value)
+        {
+            var existing = list.SingleOrDefault (attr => attr.Type.Equals (type) && attr.Name.Equals (name));
+            if (null != existing) {
+                existing.Label = label;
+                existing.Value = value;
+            } else {
+                var newbie = new McContactStringAttribute ();
+                newbie.Name = name;
+                newbie.Type = type;
+                newbie.Label = label;
+                newbie.Value = value;
+                newbie.ContactId = this.Id;
+                list.Add (newbie);
+            }
         }
     }
 
@@ -508,7 +535,15 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
+            // FIXME db transaction.
             int retval = base.Insert ();
+            InsertAncillaryData (BackEnd.Instance.Db);
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            int retval = base.Update ();
             InsertAncillaryData (BackEnd.Instance.Db);
             return retval;
         }
@@ -561,26 +596,32 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.EmailAddress:
-                    // FIXME.
+                    AddOrUpdateEmailAddressAttribute (Xml.Contacts.Email1Address, null, prop.Value);
+                    break;
 
                 case Xml.Gal.FirstName:
                     FirstName = prop.Value;
                     break;
 
                 case Xml.Gal.HomePhone:
-                    // FIXME
+                    AddOrUpdatePhoneNumberAttribute (Xml.Contacts.HomePhoneNumber, null, prop.Value);
+                    break;
+
                 case Xml.Gal.LastName:
                     LastName = prop.Value;
                     break;
 
                 case Xml.Gal.MobilePhone:
-                    // FIXME 
+                    AddOrUpdatePhoneNumberAttribute (Xml.Contacts.MobilePhoneNumber, null, prop.Value);
+                    break;
+                
                 case Xml.Gal.Office:
                     OfficeLocation = prop.Value;
                     break;
 
                 case Xml.Gal.Phone:
-                    // FIXME
+                    AddOrUpdatePhoneNumberAttribute (Xml.Contacts.BusinessPhoneNumber, null, prop.Value);
+                    break;
 
                 case Xml.Gal.Picture:
                     // FIXME.

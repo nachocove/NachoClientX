@@ -261,7 +261,7 @@ namespace NachoCore.Model
             }
             State = StateEnum.Deleted;
             Update ();
-            // TODO: Find a clean way to send UpdateQ event to TL SM.
+            // FIXME: Find a clean way to send UpdateQ event to TL SM.
             UnblockSuccessors ();
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 

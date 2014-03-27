@@ -380,7 +380,8 @@ namespace NachoClient.iOS
         {
             c.Insert ();
             folder.Link (c);
-            // FIXME BackEnd.Instance.CreateCalCmd (account.Id, c.Id);
+            // FIXME - Steve - Look - just jamming in default cal here.
+            BackEnd.Instance.CreateCalCmd (account.Id, c.Id, McFolder.GetDefaultCalendarFolder (account.Id).Id);
         }
 
         /// <summary>

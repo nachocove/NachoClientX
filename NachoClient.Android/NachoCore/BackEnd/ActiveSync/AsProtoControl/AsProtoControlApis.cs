@@ -87,7 +87,31 @@ namespace NachoCore.ActiveSync
                 Operation = McPending.Operations.EmailSend,
                 EmailMessageId = emailMessageId,
             };
-            pending.MarkPredBlocked (pendingCalCreId);
+
+            // 0 means pending has already been completed & deleted.
+            if (0 != pendingCalCreId) {
+                // FIXME - race condition WRT state of pred pending obj - it could change between switch and case.
+                switch (pendingCalCre.State) {
+                case McPending.StateEnum.Deferred:
+                case McPending.StateEnum.Dispatched:
+                case McPending.StateEnum.Eligible:
+                case McPending.StateEnum.PredBlocked:
+                case McPending.StateEnum.UserBlocked:
+                    pending.MarkPredBlocked (pendingCalCreId);
+                    break;
+
+                case McPending.StateEnum.Failed:
+                    return null;
+
+                case McPending.StateEnum.Deleted:
+                    // On server already.
+                    break;
+
+                default:
+                    NachoAssert.True (false);
+                    break;
+                }
+            }
 
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
