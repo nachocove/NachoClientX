@@ -166,6 +166,7 @@ namespace NachoCore.ActiveSync
                     foreach (var pending in CalCreates) {
                         var cal = McObject.QueryById<McCalendar> (pending.CalId);
                         if (null != cal) {
+                            cal.ReadAncillaryData ();
                             commands.Add (new XElement (m_ns + Xml.AirSync.Add,
                                 new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId),
                                 // FIXME: need the line below if not in a Calendar folder.

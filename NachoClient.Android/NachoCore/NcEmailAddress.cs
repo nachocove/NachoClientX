@@ -1,6 +1,9 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using MimeKit;
+using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Model;
 
 namespace NachoCore
@@ -11,23 +14,15 @@ namespace NachoCore
     /// </summary>
     public class NcEmailAddress
     {
-        public NcEmailAddress (Kind k)
+        /// How is this NcEmailAddress being used?
+        public enum Action
         {
-            kind = k;
-        }
+            undefined,
+            create,
+            edit,
+        };
 
-        public NcEmailAddress (Kind k, string a)
-        {
-            kind = k;
-            address = a;
-        }
-
-        public NcEmailAddress (McAttendee attendee)
-        {
-            this.kind = FromAttendeeType (attendee.AttendeeType);
-            this.address = attendee.Email;
-        }
-
+        /// In what list does this NcEmailAddress reside?
         public enum Kind
         {
             To,
@@ -41,10 +36,47 @@ namespace NachoCore
 
         /// Which list?
         public Kind kind;
+        /// At what index
+        public int index;
+        /// For what reason
+        public Action action;
         /// Value as entered; never null
         public string address;
         /// Matching contact; maybe null
         public McContact contact;
+
+        /// <summary>
+        /// Create a basic NcEmailAddress
+        /// </summary>
+        public NcEmailAddress (Kind kind)
+        {
+            this.kind = kind;
+            this.action = Action.undefined;
+
+        }
+
+        /// <summary>
+        /// Create a basic NcEmailAddress
+        /// </summary>
+        public NcEmailAddress (Kind kind, string address)
+        {
+            this.kind = kind;
+            this.address = address;
+            this.action = Action.undefined;
+            this.index = -1;
+        }
+
+        /// <summary>
+        /// Create a basic NcEmailAddress
+        /// </summary>
+        public NcEmailAddress (McAttendee attendee)
+        {
+            NachoAssert.True (attendee.AttendeeTypeIsSet);
+            this.kind = FromAttendeeType (attendee.AttendeeType);
+            this.address = attendee.Email;
+            this.action = Action.undefined;
+            this.index = -1;
+        }
         // TODO: Localize!
         public static Kind ToKind (string prefix)
         {
@@ -130,6 +162,36 @@ namespace NachoCore
             }
         }
 
+        public MailboxAddress ToMailboxAddress()
+        {
+            // Must have a contact or an address
+            NachoAssert.True ((null != this.contact) || (null != this.address));
+
+            string candidate;
+            MailboxAddress mailbox;
+
+            if (null != this.contact) {
+                candidate = this.contact.DisplayEmailAddress;
+            } else {
+                candidate = this.address;
+            }
+
+            if (!MailboxAddress.TryParse (candidate, out mailbox)) {
+                Log.Error ("Mailbox candidate won't parse: {0}", candidate);
+                return null;
+            }
+
+            if (null == mailbox.Address) {
+                Log.Error ("Mailbox candidate has null address: {0}", candidate);
+                return null;
+            }
+
+            if (null == mailbox.Name) {
+                mailbox.Name = this.contact.DisplayName;
+            }
+
+            return mailbox;
+        }
     }
 }
 

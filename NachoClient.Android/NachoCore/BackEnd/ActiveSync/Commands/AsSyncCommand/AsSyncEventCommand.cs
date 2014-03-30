@@ -71,9 +71,6 @@ namespace NachoCore.ActiveSync
                 newItem.AccountId = folder.AccountId;
                 int ir = newItem.Insert ();
                 NachoCore.NachoAssert.True (0 < ir);
-                MergeAttendees (newItem);
-                MergeCategories (newItem);
-                MergeExceptions (newItem);
                 folder.Link (newItem);
                 return;
             }
@@ -160,6 +157,8 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (null != c);
             List<McAttendee> attendees = GetAttendees (c);
 
+            // FIXME: use update instead of delete & add
+
             // Delete the old
             foreach (var attendee in attendees) {
                 attendee.Delete ();
@@ -170,15 +169,10 @@ namespace NachoCore.ActiveSync
 
             // Add the new
             foreach (var attendee in c.attendees) {
-                if (attendee.Id > 0) {
-                    int r = attendee.Update ();
-                    NachoCore.NachoAssert.True (0 < r);
-                } else {
-                    attendee.ParentId = c.Id;
-                    attendee.ParentType = McAttendee.GetParentType (c);
-                    int r = attendee.Insert ();
-                    NachoCore.NachoAssert.True (0 < r);
-                }
+                attendee.ParentId = c.Id;
+                attendee.ParentType = McAttendee.GetParentType (c);
+                int r = attendee.Insert ();
+                NachoCore.NachoAssert.True (0 < r);
             }
 
         }

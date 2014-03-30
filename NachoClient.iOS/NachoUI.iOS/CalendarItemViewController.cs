@@ -57,7 +57,7 @@ namespace NachoClient.iOS
                         var iCal = ExtractDialogValues ();
                         SyncMeetingRequest ();
                         SendInvites (iCal);
-                        ReloadRoot(ShowDetail ());
+                        ReloadRoot (ShowDetail ());
                     }
                 };
                 alert.Show ();
@@ -74,7 +74,7 @@ namespace NachoClient.iOS
                 }
                 if (Action.edit == action) {
                     c = calendarItem;
-                    ReloadRoot(ShowDetail ());
+                    ReloadRoot (ShowDetail ());
                     return;
                 }
                 NachoAssert.CaseError ();
@@ -333,8 +333,8 @@ namespace NachoClient.iOS
         {
             c.Subject = subjectEntryElement.Value;
             c.AllDayEvent = appointmentEntryElement.allDayEvent;
-            c.StartTime = appointmentEntryElement.startDateTime;
-            c.EndTime = appointmentEntryElement.endDateTime;
+            c.StartTime = appointmentEntryElement.startDateTime.ToUniversalTime ();
+            c.EndTime = appointmentEntryElement.endDateTime.ToUniversalTime ();
             // c.attendees is already set via PullAttendees
             c.Location = locationEntryElement.Value;
             var reminderSection = reminderEntryElement [0] as ReminderSection;
@@ -346,6 +346,17 @@ namespace NachoClient.iOS
             c.OrganizerEmail = account.EmailAddr;
             c.AccountId = account.Id;
             c.DtStamp = DateTime.Now;
+            if (0 == c.attendees.Count) {
+                c.MeetingStatusIsSet = true;
+                c.MeetingStatus = NcMeetingStatus.Appointment;
+                c.ResponseRequested = false;
+                c.ResponseRequestedIsSet = true;
+            } else {
+                c.MeetingStatusIsSet = true;
+                c.MeetingStatus = NcMeetingStatus.Meeting;
+                c.ResponseRequested = true;
+                c.ResponseRequestedIsSet = true;
+            }
             // IICalendar
             var iCal = iCalendarFromMcCalendar (c);
             if (String.IsNullOrEmpty (c.UID)) {
@@ -361,16 +372,52 @@ namespace NachoClient.iOS
         protected IICalendar iCalendarFromMcCalendar (McCalendar c)
         {
             var iCal = new iCalendar ();
+            iCal.ProductID = "Taco Mail";
+
+            System.TimeZoneInfo timezoneinfo = System.TimeZoneInfo.Local;
+            iCalTimeZone timezone = iCalTimeZone.FromSystemTimeZone (timezoneinfo);
+            var localTimeZone = iCal.AddTimeZone (timezone);
+
             var evt = iCal.Create<DDay.iCal.Event> ();
             evt.Summary = c.Subject;
-            evt.Start = new iCalDateTime (c.StartTime);
-            evt.End = new iCalDateTime (c.EndTime);
+//            evt.Description = "\n";
+//            evt.Start = new iCalDateTime (c.StartTime.ToUniversalTime ());
+//            evt.End = new iCalDateTime (c.EndTime.ToUniversalTime ());
+            evt.LastModified = new iCalDateTime (DateTime.UtcNow);
+            evt.Start = new iCalDateTime (c.StartTime).ToTimeZone (localTimeZone);
+            evt.End = new iCalDateTime (c.EndTime).ToTimeZone (localTimeZone);
             evt.IsAllDay = c.AllDayEvent;
+            if (c.AllDayEvent) {
+                evt.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "TRUE");
+            } else {
+                evt.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
+            }
             evt.Location = c.Location;
             evt.Organizer = new Organizer (account.EmailAddr);
+            evt.Status = EventStatus.Confirmed;
+            evt.Class = "PUBLIC";
+            evt.Transparency = TransparencyType.Opaque;
             foreach (var a in c.attendees) {
                 var iAttendee = new Attendee ("mailto:" + a.Email);
-                iAttendee.CommonName = a.Name;
+                if (!String.IsNullOrEmpty (a.Name)) {
+                    iAttendee.CommonName = a.Name;
+                }
+                NachoAssert.True (a.AttendeeTypeIsSet);
+                switch (a.AttendeeType) {
+                case NcAttendeeType.Required:
+                    iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
+                    iAttendee.Role = "REQ-PARTICIPANT";
+                    iAttendee.ParticipationStatus = "NEEDS-ACTION";
+                    break;
+                case NcAttendeeType.Optional:
+                    iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
+                    iAttendee.Role = "OPT-PARTICIPANT";
+                    iAttendee.ParticipationStatus = "NEEDS-ACTION";
+                    break;
+                case NcAttendeeType.Unknown:
+                    iAttendee.Role = "NON-PARTICIPANT";
+                    break;
+                }
                 evt.Attendees.Add (iAttendee);
             }
             return iCal;
@@ -380,8 +427,7 @@ namespace NachoClient.iOS
         {
             c.Insert ();
             folder.Link (c);
-            // FIXME - Steve - Look - just jamming in default cal here.
-            BackEnd.Instance.CreateCalCmd (account.Id, c.Id, McFolder.GetDefaultCalendarFolder (account.Id).Id);
+            BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
         }
 
         /// <summary>
@@ -402,11 +448,8 @@ namespace NachoClient.iOS
             mimeMessage.Date = System.DateTime.UtcNow;
 
             var body = new TextPart ("calendar");
-            // TODO: REQUEST is coming out quoted; is that ok? (see KLUDGE)
-            body.ContentType.Parameters.Add (new Parameter ("method", "REQUEST"));
-            // TODO: Do we really need to add name parameter, like AS doc shows?
-            body.ContentType.Parameters.Add (new Parameter ("name", "meeting.ics"));
-
+            body.ContentType.Parameters.Add ("METHOD", "REQUEST");
+            iCal.Method = "REQUEST";
             // TODO: Smarter about character encoding
             using (var iCalStream = new MemoryStream ()) {
                 iCalendarSerializer serializer = new iCalendarSerializer ();
@@ -416,16 +459,17 @@ namespace NachoClient.iOS
                     body.Text = textStream.ReadToEnd ();
                 }
             }
+            body.ContentTransferEncoding = ContentEncoding.SevenBit;
 
-            body.ContentTransferEncoding = ContentEncoding.EightBit;
+            var textPart = new TextPart ("plain") {
+                Text = "Meeting request."
+            };
 
-            // TODO: Do we really need multipart?
-            var msg = new Multipart ("alternative",
-                          new TextPart ("plain", "Calendar item"),
-                          body
-                      );
+            var multipart = new Multipart ("mixed");
+            multipart.Add (textPart);
+            multipart.Add (body);
 
-            mimeMessage.Body = msg;
+            mimeMessage.Body = multipart;
 
             MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
         }

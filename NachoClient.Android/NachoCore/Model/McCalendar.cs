@@ -42,18 +42,22 @@ namespace NachoCore.Model
 
         /// Recommended privacy policy for this item (optional)
         public NcSensitivity Sensitivity { get; set; }
+
         public bool SensitivityIsSet { get; set; }
 
         /// Busy status of the meeting organizer (optional)
         public NcBusyStatus BusyStatus { get; set; }
+
         public bool BusyStatusIsSet { get; set; }
 
         /// None, Organizer, Tentative, ...
         public NcResponseType ResponseType;
+
         public bool ResponseTypeIsSet { get; set; }
 
         /// Status of the meeting (optional)
         public NcMeetingStatus MeetingStatus { get; set; }
+
         public bool MeetingStatusIsSet { get; set; }
 
         /// The time this user responded to the request
@@ -84,8 +88,12 @@ namespace NachoCore.Model
         /// Is a response to this meeting required? Calendar only.
         public bool ResponseRequested { get; set; }
 
+        public bool ResponseRequestedIsSet { get; set; }
+
         /// The default is False.  Calendar only
         public bool DisallowNewTimeProposal { get; set; }
+
+        public bool DisallowNewTimeProposalIsSet { get; set; }
 
         /// Name of the creator of the calendar item (optional). Calendar only.
         [MaxLength (256)]
@@ -150,10 +158,12 @@ namespace NachoCore.Model
 
         /// Required, optional, resource
         public NcAttendeeType AttendeeType { get; set; }
+
         public bool AttendeeTypeIsSet { get; set; }
 
         /// Unknown, tentative, accept, ...
         public NcAttendeeStatus AttendeeStatus { get; set; }
+
         public bool AttendeeStatusIsSet { get; set; }
     }
 
@@ -204,6 +214,7 @@ namespace NachoCore.Model
         public int WeekOfMonth { get; set; }
 
         public NcDayOfWeek DayOfWeek { get; set; }
+
         public bool DayOfWeekIsSet { get; set; }
 
         /// The month of the year for the recurrence, range is 1..12
@@ -216,6 +227,7 @@ namespace NachoCore.Model
         public int DayOfMonth { get; set; }
 
         public NcCalendarType CalendarType { get; set; }
+
         public bool CalendarTypeIsSet { get; set; }
 
         /// Takes place on the embolismic (leap) month
@@ -420,10 +432,75 @@ namespace NachoCore.Model
         {
             HasReadAncillaryData = true;
             var db = BackEnd.Instance.Db;
-            attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList();
-            categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList();
-            exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList();
-            recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList();
+            // FIXME: Parent types
+            attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
+            // FIXME: Parent types
+            categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
+            return NcResult.OK ();
+        }
+
+        public NcResult InsertAncillaryData (SQLiteConnection db)
+        {
+            NachoCore.NachoAssert.True (0 < Id);
+
+            // TODO: Fix this hammer?
+            DeleteAncillaryData (db);
+
+            foreach (var a in attendees) {
+                a.SetParent (this);
+                db.Insert (a);
+            }
+            foreach (var c in categories) {
+                c.SetParent (this);
+                db.Insert (c);
+            }
+
+            // TODO: Exceptions and recurrences
+
+            // FIXME: Error handling
+            return NcResult.OK ();
+        }
+
+        public override int Insert ()
+        {
+            // FIXME db transaction.
+            int retval = base.Insert ();
+            InsertAncillaryData (BackEnd.Instance.Db);
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            int retval = base.Update ();
+            InsertAncillaryData (BackEnd.Instance.Db);
+            return retval;
+        }
+
+        public override int Delete ()
+        {
+            int retval = base.Delete ();
+            DeleteAncillaryData (BackEnd.Instance.Db);
+            return retval;
+        }
+
+        private NcResult DeleteAncillaryData (SQLiteConnection db)
+        {
+            // FIXME: Parent types
+            var attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
+            foreach (var a in attendees) {
+                a.Delete ();
+            }
+            // FIXME: Parent types
+            categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            foreach (var c in categories) {
+                c.Delete ();
+            }
+
+            // TODO: Support exceptions and recurrences
+
+            // TODO: Add error processing
             return NcResult.OK ();
         }
     }
@@ -481,13 +558,13 @@ namespace NachoCore.Model
         /// <value>The display name is calculated unless set non-null.</value>
         public string DisplayName {
             get {
-                if (null != displayName) {
+                if (!String.IsNullOrEmpty (displayName)) {
                     return displayName;
                 }
-                if (null != Name) {
+                if (!String.IsNullOrEmpty (Name)) {
                     return Name;
                 }
-                if (null != Email) {
+                if (!String.IsNullOrEmpty (Email)) {
                     return Email;
                 }
                 NachoCore.NachoAssert.CaseError ();

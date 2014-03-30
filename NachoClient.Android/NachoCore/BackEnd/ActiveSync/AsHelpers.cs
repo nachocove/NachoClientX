@@ -115,15 +115,16 @@ namespace NachoCore.ActiveSync
             if (0 != cal.attendees.Count) {
                 var xmlAttendees = new XElement (CalendarNs + Xml.Calendar.Calendar_Attendees);
                 foreach (var attendee in cal.attendees) {
-                    var xmlAttendee = new XElement (CalendarNs + Xml.Calendar.Attendees.Attendee,
-                                          new XElement (CalendarNs + Xml.Calendar.Email, attendee.Email),
-                                          new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
+                    var xmlAttendee = new XElement (CalendarNs + Xml.Calendar.Attendees.Attendee);
+                    xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Email, attendee.Email));
+                    xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
                     if (attendee.AttendeeTypeIsSet) {
                         xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeType, (uint)attendee.AttendeeType));
                     }
                     if (attendee.AttendeeStatusIsSet) {
                         xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeStatus, (uint)attendee.AttendeeStatus));
                     }
+                    xmlAttendees.Add (xmlAttendee);
                 }
                 xmlAppData.Add (xmlAttendees);
             }
@@ -136,8 +137,12 @@ namespace NachoCore.ActiveSync
             // TODO: exceptions.
             // TODO recurrences.
 
-            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
-            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.DisallowNewTimeProposal, XmlFromBool (cal.DisallowNewTimeProposal)));
+            if (cal.ResponseRequestedIsSet) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
+            }
+            if (cal.DisallowNewTimeProposalIsSet) {
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.DisallowNewTimeProposal, XmlFromBool (cal.DisallowNewTimeProposal)));
+            }
             if (null != cal.OrganizerName) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OrganizerName, cal.OrganizerName));
             }
