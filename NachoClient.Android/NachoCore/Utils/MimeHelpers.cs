@@ -121,7 +121,7 @@ namespace NachoCore.Utils
             return null;
         }
 
-        static public string CreateSummary(string body)
+        static public string CreateSummary (string body)
         {
             var text = FetchSomeText (body);
             if (null == text) {
@@ -138,7 +138,7 @@ namespace NachoCore.Utils
             if (null == text) {
                 return " ";
             } else {
-                return text.Substring (0, Math.Min(text.Length, 180));
+                return text.Substring (0, Math.Min (text.Length, 180));
             }
         }
 
@@ -155,7 +155,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Convert MimeMessage to McEmailMessage and send it.
         /// </summary>
-        static public void SendEmail(int AccountId, MimeMessage mimeMessage, int CalendarId = 0)
+        static public void SendEmail (int AccountId, MimeMessage mimeMessage, int CalendarId = 0)
         {
             // Don't let 0 into the db
             NachoAssert.True (AccountId > 0);
@@ -163,21 +163,16 @@ namespace NachoCore.Utils
             var msg = new McEmailMessage ();
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);
-            msg.From = CommaSeparatedList(mimeMessage.From);
+            msg.From = CommaSeparatedList (mimeMessage.From);
             msg.Subject = mimeMessage.Subject;
 
             var body = new McBody ();
-            var bodyStream = new System.IO.MemoryStream();
+            var bodyStream = new System.IO.MemoryStream ();
             mimeMessage.WriteTo (bodyStream);
             bodyStream.Seek (0, SeekOrigin.Begin);
-            var textStream = new StreamReader(bodyStream);
+            var textStream = new StreamReader (bodyStream);
 
-            // TODO: KLUDGE ZONE
-            StringBuilder builder = new StringBuilder(textStream.ReadToEnd ());
-            builder.Replace ("method=\"REQUEST\"", "method=REQUEST");
-            body.Body = builder.ToString ();
-//            body.Body = textStream.ReadToEnd ();
-            // TODO: KLUDGE END
+            body.Body = textStream.ReadToEnd ();
 
             BackEnd.Instance.Db.Insert (body);
             msg.BodyId = body.Id;
