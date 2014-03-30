@@ -84,7 +84,7 @@ namespace NachoClient.iOS
                 McCalendar calendarItem = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
                 CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
                 destinationController.calendarItem = calendarItem;
-                destinationController.Title = calendarItem.Subject;
+                destinationController.Title = Pretty.SubjectString(calendarItem.Subject);
             }
         }
 
