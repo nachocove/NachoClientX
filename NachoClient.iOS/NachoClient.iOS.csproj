@@ -576,6 +576,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderFolderEntry.cs">
       <Link>NachoCore\Model\McMapFolderFolderEntry.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\WBXML.cs">
+      <Link>NachoCore\Extensions\WBXML.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

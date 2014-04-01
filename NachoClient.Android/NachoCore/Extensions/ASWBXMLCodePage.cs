@@ -5,7 +5,7 @@ using System.Text;
 
 namespace NachoCore.Wbxml
 {
-    class ASWBXMLCodePage
+    public class ASWBXMLCodePage
     {
         private string strNamespace = "";
         private string strXmlns = "";
