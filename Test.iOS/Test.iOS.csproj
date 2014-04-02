@@ -118,6 +118,7 @@
     <Compile Include="..\Test.Android\NcContactTest.cs">
       <Link>NcContactTest.cs</Link>
     </Compile>
+    <Compile Include="AsTimeZoneTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

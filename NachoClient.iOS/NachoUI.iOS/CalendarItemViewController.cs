@@ -90,7 +90,12 @@ namespace NachoClient.iOS
             if (null == calendarItem) {
                 action = Action.create;
                 c = new McCalendar ();
-                c.StartTime = DateTime.Now;
+                var start = DateTime.Now.AddMinutes (30.0);
+                if (start.Minute >= 30.0) {
+                    c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 30, 0, DateTimeKind.Local);
+                } else {
+                    c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Local);
+                }
                 c.EndTime = c.StartTime.AddMinutes (30.0);
                 Root = EditDetail ();
             } else {
@@ -372,47 +377,58 @@ namespace NachoClient.iOS
         protected IICalendar iCalendarFromMcCalendar (McCalendar c)
         {
             var iCal = new iCalendar ();
-            iCal.ProductID = "Taco Mail";
+            iCal.ProductID = "Nacho Mail";
 
-            System.TimeZoneInfo timezoneinfo = System.TimeZoneInfo.Local;
+            System.TimeZoneInfo timezoneinfo = System.TimeZoneInfo.Utc;
             iCalTimeZone timezone = iCalTimeZone.FromSystemTimeZone (timezoneinfo);
             var localTimeZone = iCal.AddTimeZone (timezone);
+            timezone.TZID = "Greenwich Standard Time";
+            localTimeZone.TZID = "Greenwich Standard Time";
+
+            foreach (var x in iCal.TimeZones) {
+                foreach (var y in x.TimeZoneInfos) {
+                    y.Start = y.Start.AddMilliseconds (1);
+                }
+            }
 
             var evt = iCal.Create<DDay.iCal.Event> ();
             evt.Summary = c.Subject;
-//            evt.Description = "\n";
-//            evt.Start = new iCalDateTime (c.StartTime.ToUniversalTime ());
-//            evt.End = new iCalDateTime (c.EndTime.ToUniversalTime ());
             evt.LastModified = new iCalDateTime (DateTime.UtcNow);
-            evt.Start = new iCalDateTime (c.StartTime).ToTimeZone (localTimeZone);
-            evt.End = new iCalDateTime (c.EndTime).ToTimeZone (localTimeZone);
+            evt.Start = new iCalDateTime (c.StartTime, "Greenwich Standard Time");
+            evt.End = new iCalDateTime (c.EndTime, "Greenwich Standard Time");
             evt.IsAllDay = c.AllDayEvent;
+            evt.Priority = 5;
             if (c.AllDayEvent) {
                 evt.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "TRUE");
+                evt.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "FREE");
             } else {
                 evt.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
+                evt.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
             }
             evt.Location = c.Location;
             evt.Organizer = new Organizer (account.EmailAddr);
+            evt.Organizer.CommonName = "Steve";
+            evt.Organizer.SentBy = new Uri ("MAILTO:steves@nachocove.com");
             evt.Status = EventStatus.Confirmed;
             evt.Class = "PUBLIC";
             evt.Transparency = TransparencyType.Opaque;
             foreach (var a in c.attendees) {
-                var iAttendee = new Attendee ("mailto:" + a.Email);
-                if (!String.IsNullOrEmpty (a.Name)) {
-                    iAttendee.CommonName = a.Name;
-                }
+                var iAttendee = new Attendee ("MAILTO:" + a.Email);
+                NachoAssert.True (null != a.Name);
+                iAttendee.CommonName = a.Name;
                 NachoAssert.True (a.AttendeeTypeIsSet);
                 switch (a.AttendeeType) {
                 case NcAttendeeType.Required:
                     iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
                     iAttendee.Role = "REQ-PARTICIPANT";
                     iAttendee.ParticipationStatus = "NEEDS-ACTION";
+                    iAttendee.Type = "INDIVIDUAL";
                     break;
                 case NcAttendeeType.Optional:
                     iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;
                     iAttendee.Role = "OPT-PARTICIPANT";
                     iAttendee.ParticipationStatus = "NEEDS-ACTION";
+                    iAttendee.Type = "INDIVIDUAL";
                     break;
                 case NcAttendeeType.Unknown:
                     iAttendee.Role = "NON-PARTICIPANT";
@@ -450,7 +466,6 @@ namespace NachoClient.iOS
             var body = new TextPart ("calendar");
             body.ContentType.Parameters.Add ("METHOD", "REQUEST");
             iCal.Method = "REQUEST";
-            // TODO: Smarter about character encoding
             using (var iCalStream = new MemoryStream ()) {
                 iCalendarSerializer serializer = new iCalendarSerializer ();
                 serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
@@ -459,17 +474,17 @@ namespace NachoClient.iOS
                     body.Text = textStream.ReadToEnd ();
                 }
             }
-            body.ContentTransferEncoding = ContentEncoding.SevenBit;
+            body.ContentTransferEncoding = ContentEncoding.Base64;
 
             var textPart = new TextPart ("plain") {
-                Text = "Meeting request."
+                Text = ""
             };
 
-            var multipart = new Multipart ("mixed");
-            multipart.Add (textPart);
-            multipart.Add (body);
+            var alternative = new Multipart ("alternative");
+            alternative.Add (textPart);
+            alternative.Add (body);
 
-            mimeMessage.Body = multipart;
+            mimeMessage.Body = alternative;
 
             MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
         }
