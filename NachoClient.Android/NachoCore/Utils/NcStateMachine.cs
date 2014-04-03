@@ -232,8 +232,9 @@ namespace NachoCore.Utils
                 Action = hotTrans.Act;
                 NextState = hotTrans.State;
                 Action ();
+                var oldState = State;
                 State = NextState;
-                if (null != StateChangeIndication) {
+                if (oldState != State && null != StateChangeIndication) {
                     StateChangeIndication ();
                 }
             }

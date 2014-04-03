@@ -312,6 +312,7 @@ namespace NachoCore.ActiveSync
             var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             var doc = Owner.ToXDocument (this);
             if (null != doc) {
+                Log.Info (Log.LOG_XML, "{0}:\n{1}", m_commandName, doc);
                 // Sadly, Xamarin does not support schema-based XML validation APIs.
                 if (Owner.UseWbxml (this)) {
                     var wbxml = doc.ToWbxml ();
@@ -433,11 +434,13 @@ namespace NachoCore.ActiveSync
                                 return Final (statusEvent);
                             }
                         }
+                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", m_commandName, responseDoc);
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
+                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", m_commandName, responseDoc);
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:
                         if (null == ContentType) {

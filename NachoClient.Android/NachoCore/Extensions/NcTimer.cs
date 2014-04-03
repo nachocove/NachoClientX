@@ -9,29 +9,33 @@ namespace NachoCore.Utils
     {
         public Timer timer;
         public TimerCallback callback;
+        public bool Stfu { get; set; }
+        public int Id;
+
         private static int nextId = 0;
         // Used for increment critical section.
         private static Object nextIdLockObj = new Object ();
         // Used to prevent Dispose in the middle of a callback.
         private Object lockObj;
-        public static int id;
 
         private TimerCallback PartialInit (TimerCallback c)
         {
             lock (nextIdLockObj) {
-                id = ++nextId;
+                Id = ++nextId;
             }
             lockObj = new object ();
             callback = c;
 
-            Log.Info (Log.LOG_TIMER, "NcTimer {0} created", id);
+            Log.Info (Log.LOG_TIMER, "NcTimer {0} created", Id);
 
             return state => {
                 lock (lockObj) {
                     if (null == callback) {
-                        Log.Info (Log.LOG_TIMER, "NcTimer {0} fired after Dispose.", id);
+                        Log.Info (Log.LOG_TIMER, "NcTimer {0} fired after Dispose.", Id);
                     } else {
-                        Log.Info (Log.LOG_TIMER, "NcTimer {0} fired.", id);
+                        if (!Stfu) {
+                            Log.Info (Log.LOG_TIMER, "NcTimer {0} fired.", Id);
+                        }
                         callback (state);
                     }
                 }
@@ -69,7 +73,7 @@ namespace NachoCore.Utils
                 timer.Dispose ();
                 callback = null;
             }
-            Log.Info (Log.LOG_TIMER, "NcTimer {0} disposed", id);
+            Log.Info (Log.LOG_TIMER, "NcTimer {0} disposed", Id);
         }
     }
 }

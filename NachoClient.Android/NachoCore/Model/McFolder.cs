@@ -25,15 +25,22 @@ namespace NachoCore.Model
 
         public string AsSyncKey { get; set; }
 
-        public bool AsSyncRequired { get; set; }
+        // AsSyncMeta ONLY to be manipulated by sync strategy class.
+        // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
+        public bool AsSyncMetaToClientExpected { get; set; }
+        // AsSyncMetaDoGetChanges true when strategy decides we should GetChanges for this folder.
+        public bool AsSyncMetaDoGetChanges { get; set; }
+        // When we GetChanges, AsSyncMetaFilterCode tells the date-range.
+        public Xml.Provision.MaxAgeFilterCode AsSyncMetaFilterCode { get; set; }
+        // When we GetChanges, AsSyncMetaWindowSize tells the number-of-messages-window.
+        public uint AsSyncMetaWindowSize { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
 
         public int DisplayColor { get; set; }
 
-        /// FIXME: Need enumeration
-        public uint Type { get; set; }
+        public Xml.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
         public const string ClientOwned_GalCache = "GAL";
@@ -50,11 +57,11 @@ namespace NachoCore.Model
                                        string parentId,
                                        string serverId,
                                        string displayName,
-                                       uint folderType)
+            Xml.FolderHierarchy.TypeCode folderType)
         {
             var folder = new McFolder () {
                 AsSyncKey = AsSyncKey_Initial,
-                AsSyncRequired = false,
+                AsSyncMetaToClientExpected = false,
                 AccountId = accountId,
                 IsClientOwned = isClientOwned,
                 IsHidden = isHidden,
@@ -96,6 +103,9 @@ namespace NachoCore.Model
                           " f.AccountId = ? AND " +
                           " f.Type = ? ",
                               accountId, (uint)typeCode);
+            if (0 == folders.Count) {
+                return null;
+            }
             NachoAssert.True (1 == folders.Count);
             return folders.First ();
         }
@@ -125,6 +135,15 @@ namespace NachoCore.Model
             " m.FolderEntryId = ? AND " +
             " m.ClassCode = ? ",
                 accountId, folderEntryId, (uint)classCode);
+        }
+
+        public static List<McFolder> QueryClientOwned (int accountId, bool isClientOwned)
+        {
+            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? AND " +
+                " f.IsClientOwned = ? ",
+                accountId, isClientOwned);
+            return folders.ToList ();
         }
 
         public override int Delete ()
@@ -183,7 +202,7 @@ namespace NachoCore.Model
                               accountId);
             foreach (var folder in folders) {
                 folder.AsSyncKey = AsSyncKey_Initial;
-                folder.AsSyncRequired = true;
+                folder.AsSyncMetaToClientExpected = true;
                 folder.Update ();
             }
         }

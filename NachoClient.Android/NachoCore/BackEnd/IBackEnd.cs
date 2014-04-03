@@ -2,6 +2,8 @@
 //
 using System;
 using NachoCore.Model;
+// TODO: this file should not reference ActiveSync.
+using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
@@ -68,12 +70,17 @@ namespace NachoCore
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
         string CreateCalCmd (int accountId, int calId, int folderId);
+        string UpdateCalCmd (int accountId, int calId);
+        string DeleteCalCmd (int accountId, int calId);
         string RespondCalCmd (int accountId, int calId, NcResponseType response);
+        string CreateContactCmd (int accountId, int contactId, int folderId);
+        string UpdateContactCmd (int accountId, int contactId);
+        string DeleteContactCmd (int accountId, int contactId);
         // create a subordinate folder.
-        string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
+        string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
                           bool IsClientOwned, bool isHidden);
         // create a root folder.
-        string CreateFolderCmd (int accountId, string DisplayName, uint folderType,
+        string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
                           bool IsClientOwned, bool isHidden);
         // delete a folder.
         string DeleteFolderCmd (int accountId, int folderId);

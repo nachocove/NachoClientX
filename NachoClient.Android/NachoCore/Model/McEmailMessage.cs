@@ -205,6 +205,7 @@ namespace NachoCore.Model
 
     public class McBody : McObject
     {
+        // FIXME - we should carry the encoding type (RTF, Mime, etc) here.
         public string Body { get; set; }
     }
 }

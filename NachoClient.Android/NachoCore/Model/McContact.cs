@@ -34,8 +34,7 @@ namespace NachoCore.Model
         public List<McContactStringAttribute> Relationships;
         /// The collection of user labels assigned to the contact
         public List<McContactStringAttribute> Categories;
-
-        // Valid only for GAL-cache entries. 
+        // Valid only for GAL-cache entries.
         public string GalCacheToken { get; set; }
 
         /// Reference count.
@@ -478,7 +477,6 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-
         public NcResult ForceReadAncillaryData (SQLiteConnection db)
         {
             Dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
@@ -635,6 +633,199 @@ namespace NachoCore.Model
             }
         }
 
+        private void ApplyDateTime (XElement applyTo, XNamespace ns, string name)
+        {
+            var dateVal = GetDateAttribute (name);
+            if (DateTime.MinValue != dateVal) {
+                applyTo.Add (new XElement (ns + name, dateVal.ToString (AsHelpers.DateTimeFmt1)));
+            }
+        }
+
+        private void ApplyPhoneString (XElement applyTo, XNamespace ns, string name)
+        {
+            var stringVal = GetPhoneNumberAttribute (name);
+            if (null != stringVal) {
+                applyTo.Add (new XElement (ns + name, stringVal));
+            }
+        }
+
+        private void ApplyEmailAddressString (XElement applyTo, XNamespace ns, string name)
+        {
+            var stringVal = GetEmailAddressAttribute (name);
+            if (null != stringVal) {
+                applyTo.Add (new XElement (ns + name, stringVal));
+            }
+        }
+
+        private void ApplyIMAddressString (XElement applyTo, XNamespace ns, string name)
+        {
+            var stringVal = GetIMAddressAttribute (name);
+            if (null != stringVal) {
+                applyTo.Add (new XElement (ns + name, stringVal));
+            }
+        }
+
+        private void ApplyRelationshipString (XElement applyTo, XNamespace ns, string name)
+        {
+            var stringVal = GetRelationshipAttribute (name);
+            if (null != stringVal) {
+                applyTo.Add (new XElement (ns + name, stringVal));
+            }
+        }
+
+        private void ApplyAddress (XElement applyTo, XNamespace ns, string nameCity)
+        {
+            var baseName = nameCity.Replace ("AddressCity", string.Empty);
+            var address = GetAddressAttribute (baseName);
+            if (null != address) {
+                if (null != address.City) {
+                    applyTo.Add (new XElement (ns + (baseName + "AddressCity"), address.City));
+                }
+                if (null != address.Country) {
+                    applyTo.Add (new XElement (ns + (baseName + "AddressCountry"), address.Country));
+                }
+                if (null != address.PostalCode) {
+                    applyTo.Add (new XElement (ns + (baseName + "AddressPostalCode"), address.PostalCode));
+                }
+                if (null != address.State) {
+                    applyTo.Add (new XElement (ns + (baseName + "AddressState"), address.State));
+                }
+                if (null != address.Street) {
+                    applyTo.Add (new XElement (ns + (baseName + "AddressStreet"), address.Street));
+                }
+            }
+        }
+
+        public XElement ToXmlApplicationData ()
+        {
+            XNamespace AirSyncNs = Xml.AirSync.Ns;
+            XNamespace ContactsNs = Xml.Contacts.Ns;
+            XNamespace Contacts2Ns = Xml.Contacts2.Ns;
+            XNamespace AirSyncBaseNs = Xml.AirSyncBase.Ns;
+
+            var xmlAppData = new XElement (AirSyncNs + Xml.AirSync.ApplicationData);
+
+            if (0 != BodyId) {
+                var body = McBody.QueryById<McBody> (BodyId);
+                NachoAssert.True (null != body);
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
+            }
+
+            if (0 != NativeBodyType) {
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, NativeBodyType));
+            }
+            if (null != Alias) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Alias, Alias));
+            }
+            if (null != CompanyName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.CompanyName, CompanyName));
+            }
+            if (null != Department) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Department, Department));
+            }
+            if (null != FileAs) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.FileAs, FileAs));
+            }
+            if (null != FirstName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.FirstName, FirstName));
+            }
+            if (null != JobTitle) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.JobTitle, JobTitle));
+            }
+            if (null != LastName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.LastName, LastName));
+            }
+            if (null != MiddleName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.MiddleName, MiddleName));
+            }
+            if (null != Picture) {
+                // FIXME - we may not need to send this.
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Picture, Picture));
+            }
+            if (null != Suffix) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Suffix, Suffix));
+            }
+            if (null != Title) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Title, Title));
+            }
+            if (null != WebPage) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.WebPage, WebPage));
+            }
+            if (null != YomiCompanyName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.YomiCompanyName, YomiCompanyName));
+            }
+            if (null != YomiFirstName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.YomiFirstName, YomiFirstName));
+            }
+            if (null != YomiLastName) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.YomiLastName, YomiLastName));
+            }
+            if (null != AccountName) {
+                xmlAppData.Add (new XElement (Contacts2Ns + Xml.Contacts2.AccountName, AccountName));
+            }
+            if (null != CustomerId) {
+                xmlAppData.Add (new XElement (Contacts2Ns + Xml.Contacts2.CustomerId, CustomerId));
+            }
+            if (null != GovernmentId) {
+                xmlAppData.Add (new XElement (Contacts2Ns + Xml.Contacts2.GovernmentId, GovernmentId));
+            }
+            if (null != MMS) {
+                xmlAppData.Add (new XElement (Contacts2Ns + Xml.Contacts2.MMS, MMS));
+            }
+            if (null != NickName) {
+                xmlAppData.Add (new XElement (Contacts2Ns + Xml.Contacts2.NickName, NickName));
+            }
+            if (null != OfficeLocation) {
+                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.OfficeLocation, OfficeLocation));
+            }
+            // We don't write to WeightedRank.
+
+            ApplyDateTime (xmlAppData, ContactsNs, Xml.Contacts.Anniversary);
+            ApplyDateTime (xmlAppData, ContactsNs, Xml.Contacts.Birthday);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.AssistantPhoneNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.CarPhoneNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.MobilePhoneNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.PagerNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.RadioPhoneNumber);
+            ApplyPhoneString (xmlAppData, Contacts2Ns, Xml.Contacts2.CompanyMainPhone);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.BusinessFaxNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.Business2PhoneNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.HomeFaxNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.HomePhoneNumber);
+            ApplyPhoneString (xmlAppData, ContactsNs, Xml.Contacts.Home2PhoneNumber);
+
+            ApplyEmailAddressString (xmlAppData, ContactsNs, Xml.Contacts.Email1Address);
+            ApplyEmailAddressString (xmlAppData, ContactsNs, Xml.Contacts.Email2Address);
+            ApplyEmailAddressString (xmlAppData, ContactsNs, Xml.Contacts.Email3Address);
+
+            ApplyIMAddressString (xmlAppData, Contacts2Ns, Xml.Contacts2.IMAddress);
+            ApplyIMAddressString (xmlAppData, Contacts2Ns, Xml.Contacts2.IMAddress2);
+            ApplyIMAddressString (xmlAppData, Contacts2Ns, Xml.Contacts2.IMAddress3);
+
+            ApplyRelationshipString (xmlAppData, ContactsNs, Xml.Contacts.Spouse);
+            ApplyRelationshipString (xmlAppData, ContactsNs, Xml.Contacts.AssistantName);
+            ApplyRelationshipString (xmlAppData, Contacts2Ns, Xml.Contacts2.ManagerName);
+
+            // FIXME - No child support yet ;-).
+
+            var cats = GetCategoryAttributes ();
+            if (0 < cats.Count) {
+                var xmlCategories = new XElement (ContactsNs + Xml.Contacts.Categories);
+                foreach (var cat in cats) {
+                    xmlCategories.Add (new XElement (ContactsNs + Xml.Contacts.Category, cat));
+                }
+                xmlAppData.Add (xmlCategories);
+            }
+
+            ApplyAddress (xmlAppData, ContactsNs, Xml.Contacts.BusinessAddressCity);
+            ApplyAddress (xmlAppData, ContactsNs, Xml.Contacts.HomeAddressCity);
+            ApplyAddress (xmlAppData, ContactsNs, Xml.Contacts.OtherAddressCity);
+
+            return xmlAppData;
+        }
+
         public static McContact CreateFromGalXml (int accountId, XElement xmlProperties)
         {
             var contact = new McContact (ItemSource.ActiveSync);
@@ -656,7 +847,7 @@ namespace NachoCore.Model
         {
             return BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
             " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+            " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
             " WHERE " +
             " c.AccountId = m.AccountId AND " +
             " c.AccountId = ? AND " +
@@ -670,7 +861,7 @@ namespace NachoCore.Model
         {
             return BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
             " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+            " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
             " JOIN McFolder AS f ON f.Id = m.FolderId " +
             " WHERE " +
             " c.AccountId = m.AccountId AND " +

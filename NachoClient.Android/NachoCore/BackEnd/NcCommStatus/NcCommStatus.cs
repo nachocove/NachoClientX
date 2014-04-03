@@ -49,6 +49,7 @@ namespace NachoCore.Utils
                     }
                 }
             }, null, 1000, 1000);
+            TrackerMonitorTimer.Stfu = true;
         }
 
         public static NcCommStatus Instance {

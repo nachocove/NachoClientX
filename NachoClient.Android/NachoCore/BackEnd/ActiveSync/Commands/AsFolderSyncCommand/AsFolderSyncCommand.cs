@@ -26,7 +26,6 @@ namespace NachoCore.ActiveSync
             var folderSync = new XElement (m_ns + Xml.FolderHierarchy.FolderSync, new XElement (m_ns + Xml.FolderHierarchy.SyncKey, syncKey));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderSync);
-            Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand:\n{0}", doc);
             return doc;
         }
 
@@ -39,7 +38,6 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 Log.Info ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
-                Log.Info (Log.LOG_SYNC, "AsFolderSyncCommand response:\n{0}", doc);
                 protocolState.AsSyncKey = syncKey;
                 protocolState.Update ();
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
@@ -53,7 +51,7 @@ namespace NachoCore.ActiveSync
                                 ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value, 
                                 ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
-                                FolderType = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
+                                FolderType = (Xml.FolderHierarchy.TypeCode)uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
                             applyAdd.ProcessDelta ();
                             break;

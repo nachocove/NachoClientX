@@ -3,6 +3,9 @@ using System.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
 
+// TODO: this file should not reference ActiveSync.
+using NachoCore.ActiveSync;
+
 namespace NachoCore
 {
     public abstract class ProtoControl
@@ -78,10 +81,10 @@ namespace NachoCore
         public abstract string SendEmailCmd (int emailMessageId, int calId);
 
         public abstract string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-                                          int folderId, bool originalEmailIsEmbedded);
+                                                int folderId, bool originalEmailIsEmbedded);
 
         public abstract string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-                                        int folderId, bool originalEmailIsEmbedded);
+                                              int folderId, bool originalEmailIsEmbedded);
 
         public abstract string DeleteEmailCmd (int emailMessageId);
 
@@ -90,24 +93,34 @@ namespace NachoCore
         public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
 
         public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
-                                          DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
+                                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
 
         public abstract string ClearEmailFlagCmd (int emailMessageId);
 
         public abstract string MarkEmailFlagDone (int emailMessageId,
-                                            DateTime completeTime, DateTime dateCompleted);
+                                                  DateTime completeTime, DateTime dateCompleted);
 
         public abstract string DnldAttCmd (int attId);
 
         public abstract string CreateCalCmd (int calId, int folderId);
 
+        public abstract string UpdateCalCmd (int calId);
+
+        public abstract string DeleteCalCmd (int calId);
+
         public abstract string RespondCalCmd (int calId, NcResponseType response);
 
-        public abstract string CreateFolderCmd (int destFolderId, string displayName, uint folderType,
-                                          bool IsClientOwned, bool isHidden);
+        public abstract string CreateContactCmd (int contactId, int folderId);
 
-        public abstract string CreateFolderCmd (string DisplayName, uint folderType,
-                                          bool IsClientOwned, bool isHidden);
+        public abstract string UpdateContactCmd (int contactId);
+
+        public abstract string DeleteContactCmd (int contactId);
+
+        public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
+                                                bool isClientOwned, bool isHidden);
+
+        public abstract string CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
+                                                bool IsClientOwned, bool isHidden);
 
         public abstract string DeleteFolderCmd (int folderId);
 

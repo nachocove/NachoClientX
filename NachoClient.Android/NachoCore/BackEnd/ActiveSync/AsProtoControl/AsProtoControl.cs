@@ -84,6 +84,8 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl ProtoControl { set; get; }
 
+        public AsSyncStrategy SyncStrategy { set; get; }
+
         private NcTimer PendingOnTimeTimer { set; get; }
 
         public AsProtoControl (IProtoControlOwner owner, int accountId)
@@ -511,15 +513,6 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
-                            (uint)CtlEvt.E.SendMail,
-                            (uint)CtlEvt.E.SFwdMail,
-                            (uint)CtlEvt.E.SRplyMail,
-                            (uint)CtlEvt.E.DnldAtt,
-                            (uint)CtlEvt.E.Move,
-                            (uint)CtlEvt.E.FCre,
-                            (uint)CtlEvt.E.FDel,
-                            (uint)CtlEvt.E.FUp,
-                            (uint)CtlEvt.E.CalResp,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
@@ -531,7 +524,16 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)CtlEvt.E.SendMail, Act = DoSend, State = (uint)Lst.SendMailW },
+                            new Trans { Event = (uint)CtlEvt.E.SFwdMail, Act = DoSFwd, State = (uint)Lst.SFwdMailW },
+                            new Trans { Event = (uint)CtlEvt.E.SRplyMail, Act = DoSRply, State = (uint)Lst.SRplyMailW },
+                            new Trans { Event = (uint)CtlEvt.E.DnldAtt, Act = DoDnldAtt, State = (uint)Lst.DnldAttW },
                             new Trans { Event = (uint)CtlEvt.E.UiSearch, Act = DoSearch, State = (uint)Lst.SrchW },
+                            new Trans { Event = (uint)CtlEvt.E.Move, Act = DoMove, State = (uint)Lst.MoveW },
+                            new Trans { Event = (uint)CtlEvt.E.FCre, Act = DoFCre, State = (uint)Lst.FCreW },
+                            new Trans { Event = (uint)CtlEvt.E.FDel, Act = DoFDel, State = (uint)Lst.FDelW },
+                            new Trans { Event = (uint)CtlEvt.E.FUp, Act = DoFUp, State = (uint)Lst.FUpW },
+                            new Trans { Event = (uint)CtlEvt.E.CalResp, Act = DoCalResp, State = (uint)Lst.CalRespW },
                         }
                     },
 
@@ -567,7 +569,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)CtlEvt.E.FCre, Act = DoFCre, State = (uint)Lst.FCreW },
                             new Trans { Event = (uint)CtlEvt.E.FDel, Act = DoFDel, State = (uint)Lst.FDelW },
                             new Trans { Event = (uint)CtlEvt.E.FUp, Act = DoFUp, State = (uint)Lst.FUpW },
-                            new Trans { Event = (uint)CtlEvt.E.CalResp, Act = DoCalResp, State = (uint)Lst. CalRespW },
+                            new Trans { Event = (uint)CtlEvt.E.CalResp, Act = DoCalResp, State = (uint)Lst.CalRespW },
 
                         }
                     },
@@ -907,7 +909,7 @@ namespace NachoCore.ActiveSync
                     },
 
                     new Node {
-                        State = (uint)Lst. CalRespW,
+                        State = (uint)Lst.CalRespW,
                         Drop = new [] {
                             (uint)CtlEvt.E.PendQ,
                             (uint)CtlEvt.E.UiCertOkNo,
@@ -944,17 +946,17 @@ namespace NachoCore.ActiveSync
                 }
             };
             Sm.Validate ();
-            Sm.State = ProtocolState.State;
-
-            Log.Info (Log.LOG_STATE, "Initial state: {0}", Sm.State);
+            Sm.State = ProtocolState.ProtoControlState;
+            SyncStrategy = new AsSyncStrategy (this);
 
             McPending.ResolveAllDispatchedAsDeferred (Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
-            // FIXME - make pretty.
+            // FIXME - make pretty. Make a generic timer service in the Brain.
             PendingOnTimeTimer = new NcTimer (state => {
                 McPending.MakeEligibleOnTime (Account.Id);
             }, null, 1000, 2000);
+            PendingOnTimeTimer.Stfu = true;
         }
         // Methods callable by the owner.
         public override void Execute ()
@@ -995,7 +997,7 @@ namespace NachoCore.ActiveSync
         private void UpdateSavedState ()
         {
             var protocolState = ProtocolState;
-            protocolState.State = Sm.State;
+            protocolState.ProtoControlState = Sm.State;
             protocolState.Update ();
         }
         // State-machine action methods.
@@ -1091,9 +1093,18 @@ namespace NachoCore.ActiveSync
         private void DoSync ()
         {
             ForceStop ();
-            if (0 == AsSyncCommand.FoldersNeedingSync (AccountId).Count) {
-                // If there is nothing to Sync, then just post SUCCESS.
-                Sm.PostEvent (Event.Create ((uint)SmEvt.E.Success, "ASPCNOFLD"));
+            var insteadEvent = FirePendingInstead ();
+            if (null != insteadEvent) {
+                // We can be Syncing for a long time. Let's get some pendings out & done.
+                if ((uint)AsEvt.E.ReSync == insteadEvent.EventCode) {
+                    // The Top-of-Q pending IS executed using Sync.
+                    NachoAssert.True (SyncStrategy.IsMoreSyncNeeded ());
+                    SetCmd (new AsSyncCommand (this));
+                    Cmd.Execute (Sm);
+                } else {
+                    // Go do the pending's command.
+                    Sm.PostEvent (insteadEvent);
+                }
             } else {
                 SetCmd (new AsSyncCommand (this));
                 Cmd.Execute (Sm);
@@ -1162,9 +1173,12 @@ namespace NachoCore.ActiveSync
             // FirePendingInstead will post an event and return true if there is a pending.
             // In this way DoPing just passes through and the SM jumps to the right state for
             // dealing with the pending.
-            if (!FirePendingInsteadOfPing ()) {
+            var insteadEvent = FirePendingInstead ();
+            if (null == insteadEvent) {
                 SetCmd (new AsPingCommand (this));
                 Cmd.Execute (Sm);
+            } else {
+                Sm.PostEvent (insteadEvent);
             }
         }
 
@@ -1175,7 +1189,7 @@ namespace NachoCore.ActiveSync
             Cmd.Execute (Sm);
         }
 
-        private bool FirePendingInsteadOfPing ()
+        private Event FirePendingInstead ()
         {
             var pendingEligible = McPending.QueryEligible (Account.Id);
             var next = pendingEligible.FirstOrDefault ();
@@ -1183,56 +1197,42 @@ namespace NachoCore.ActiveSync
                 next = pendingEligible.First ();
                 switch (next.Operation) {
                 case McPending.Operations.ContactSearch:
-                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.UiSearch, "ASPCDP0");
 
                 case McPending.Operations.FolderCreate:
-                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FCre, "ASPCFCRE");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.FCre, "ASPCFCRE");
 
                 case McPending.Operations.FolderUpdate:
-                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FUp, "ASPCFUP");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.FUp, "ASPCFUP");
 
                 case McPending.Operations.FolderDelete:
-                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.FDel, "ASPCFDEL");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.FDel, "ASPCFDEL");
 
                 case McPending.Operations.EmailSend:
-                    Sm.PostAtMostOneEvent ((uint)CtlEvt.E.SendMail, "ASPCDP1");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.SendMail, "ASPCDP1");
 
                 case McPending.Operations.EmailForward:
-                    Sm.PostEvent ((uint)CtlEvt.E.SFwdMail, "ASPCDSF");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.SFwdMail, "ASPCDSF");
 
                 case McPending.Operations.EmailReply:
-                    Sm.PostEvent ((uint)CtlEvt.E.SRplyMail, "ASPCDSR");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.SRplyMail, "ASPCDSR");
 
                 case McPending.Operations.EmailMove:
-                    Sm.PostEvent ((uint)CtlEvt.E.Move, "ASPCDPM");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.Move, "ASPCDPM");
 
                 case McPending.Operations.AttachmentDownload:
-                    Sm.PostEvent ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.DnldAtt, "ASPCDP2");
 
                 case McPending.Operations.CalRespond:
-                    Sm.PostEvent ((uint)CtlEvt.E.CalResp, "ASPCCR");
-                    return true;
+                    return Event.Create ((uint)CtlEvt.E.CalResp, "ASPCCR");
 
-                case McPending.Operations.EmailDelete:
-                case McPending.Operations.EmailMarkRead:
-                case McPending.Operations.EmailSetFlag:
-                case McPending.Operations.EmailClearFlag:
-                case McPending.Operations.EmailMarkFlagDone:
-                case McPending.Operations.CalCreate:
-                    Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCPDIRS");
-                    return true;
+                default:
+                    // If it isn't above then it is accomplished by doing a Sync.
+                    NachoAssert.True (AsSyncCommand.IsSyncCommand (next.Operation));
+                    return Event.Create ((uint)AsEvt.E.ReSync, "ASPCPDIRS");
                 }
             }
-            return false;
+            return null;
         }
 
         private bool CmdIs (Type cmdType)
@@ -1257,9 +1257,9 @@ namespace NachoCore.ActiveSync
         public override void ForceSync ()
         {
             ForceStop ();
-            var defaultInbox = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => x.Type == (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var defaultInbox = McFolder.GetDefaultInboxFolder (Account.Id);
             if (null != defaultInbox) {
-                defaultInbox.AsSyncRequired = true;
+                defaultInbox.AsSyncMetaToClientExpected = true;
                 defaultInbox.Update ();
             }
             Task.Run (delegate {

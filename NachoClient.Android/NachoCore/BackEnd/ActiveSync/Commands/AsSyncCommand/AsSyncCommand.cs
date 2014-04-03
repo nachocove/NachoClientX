@@ -18,175 +18,229 @@ namespace NachoCore.ActiveSync
         private bool HadNewUnreadEmailMessageInInbox;
         private bool FolderSyncIsMandated;
         private Nullable<uint> Limit;
-        private List<McPending> EmailDeletes, EmailMarkReads, EmailSetFlags, EmailClearFlags, EmailMarkFlagDones, CalCreates;
+        private List<Tuple<McFolder, List<McPending>>> SyncKitList;
+        private XNamespace EmailNs;
+        private XNamespace TasksNs;
+        private uint WindowSize;
 
-        private void PareListsToPendingList ()
+        private void ApplyStrategy ()
         {
-            // Make sure only PendingList members are in the lists. TODO: Yes O(N**2), tiny N.
-            EmailDeletes.RemoveAll (pending => 0 > PendingList.IndexOf (pending));
-            EmailMarkReads.RemoveAll (pending => 0 > PendingList.IndexOf (pending));
-            EmailSetFlags.RemoveAll (pending => 0 > PendingList.IndexOf (pending));
-            EmailClearFlags.RemoveAll (pending => 0 > PendingList.IndexOf (pending));
-            EmailMarkFlagDones.RemoveAll (pending => 0 > PendingList.IndexOf (pending));
-            CalCreates.RemoveAll (pending => 0 > PendingList.IndexOf (pending));
+            var syncKit = BEContext.ProtoControl.SyncStrategy.SyncKit ();
+            WindowSize = syncKit.Item1;
+            SyncKitList = syncKit.Item2;
+            FoldersInRequest = new List<McFolder> ();
+            foreach (var tup in SyncKitList) {
+                FoldersInRequest.Add (tup.Item1);
+                PendingList.AddRange (tup.Item2);
+            }
         }
 
-        public AsSyncCommand (IBEContext dataSource) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, dataSource)
+        public AsSyncCommand (IBEContext beContext) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
         {
             Timeout = new TimeSpan (0, 0, 20);
+            EmailNs = Xml.Email.Ns;
+            TasksNs = Xml.Tasks.Ns;
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
+            ApplyStrategy ();
+        }
 
-            var candidateList = new List<McPending> ();
-            EmailDeletes = McPending.QueryByOperation (dataSource.Account.Id, McPending.Operations.EmailDelete);
-            candidateList.AddRange (EmailDeletes);
-            EmailMarkReads = McPending.QueryByOperation (dataSource.Account.Id, McPending.Operations.EmailMarkRead);
-            candidateList.AddRange (EmailMarkReads);
-            EmailSetFlags = McPending.QueryByOperation (dataSource.Account.Id, McPending.Operations.EmailSetFlag);
-            candidateList.AddRange (EmailSetFlags);
-            EmailClearFlags = McPending.QueryByOperation (dataSource.Account.Id, McPending.Operations.EmailClearFlag);
-            candidateList.AddRange (EmailClearFlags);
-            EmailMarkFlagDones = McPending.QueryByOperation (dataSource.Account.Id, McPending.Operations.EmailMarkFlagDone);
-            candidateList.AddRange (EmailMarkFlagDones);
-            CalCreates = McPending.QueryByOperation (dataSource.Account.Id, McPending.Operations.CalCreate);
-            candidateList.AddRange (CalCreates);
-            // Check to see if any of the pending require serial mode. We end up with:
-            // List of one: just a serial-only pending.
-            // List has everything up to but not including the serial-only pending.
-            // List has everything - we didn't see a serial-only.
-            foreach (var pending in candidateList) {
-                if (pending.DeferredSerialIssueOnly) {
-                    // If the serial-only pending is 1st, execute it. Otherwise it waits.
-                    if (0 == PendingList.Count) {
-                        PendingList.Add (pending);
-                    }
-                    break;
-                }
-                PendingList.Add (pending);
+        private XElement ToEmailDelete (McPending pending)
+        {
+            // FIXME - add Class?
+            return new XElement (m_ns + Xml.AirSync.Delete,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+        }
+
+        private XElement ToEmailMarkRead (McPending pending)
+        {
+            return new XElement (m_ns + Xml.AirSync.Change,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                new XElement (m_ns + Xml.AirSync.ApplicationData,
+                    new XElement (EmailNs + Xml.Email.Read, "1")));
+        }
+
+        private XElement ToEmailSetFlag (McPending pending)
+        {
+            return new XElement (m_ns + Xml.AirSync.Change,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                new XElement (m_ns + Xml.AirSync.ApplicationData,
+                    new XElement (EmailNs + Xml.Email.Flag,
+                        new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set_2),
+                        new XElement (EmailNs + Xml.Email.FlagType, pending.FlagType),
+                        new XElement (TasksNs + Xml.Tasks.StartDate, pending.Start.ToLocalTime ().ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.UtcStartDate, pending.UtcStart.ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.DueDate, pending.Due.ToLocalTime ().ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.UtcDueDate, pending.UtcDue.ToAsUtcString ()))));
+        }
+
+        private XElement ToEmailClearFlag (McPending pending)
+        {
+            return new XElement (m_ns + Xml.AirSync.Change,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                new XElement (m_ns + Xml.AirSync.ApplicationData,
+                    new XElement (EmailNs + Xml.Email.Flag)));
+        }
+
+        private XElement ToEmailMarkFlagDone (McPending pending)
+        {
+            return new XElement (m_ns + Xml.AirSync.Change,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                new XElement (m_ns + Xml.AirSync.ApplicationData,
+                    new XElement (EmailNs + Xml.Email.Flag,
+                        new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone_1),
+                        new XElement (EmailNs + Xml.Email.CompleteTime, pending.CompleteTime.ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.DateCompleted, pending.DateCompleted.ToAsUtcString ()))));
+        }
+
+        private XElement ToCalCreate (McPending pending, McFolder folder)
+        {
+            var cal = McCalendar.QueryById<McCalendar> (pending.CalId);
+            cal.ReadAncillaryData ();
+            var add = new XElement (m_ns + Xml.AirSync.Add, 
+                          new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
+            if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
+                McFolderEntry.ClassCodeEnum.Calendar) {
+                add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar));
             }
-            PareListsToPendingList ();
+            add.Add (AsHelpers.ToXmlApplicationData (cal));
+            return add;
+        }
+
+        private XElement ToCalUpdate (McPending pending, McFolder folder)
+        {
+            var cal = McCalendar.QueryById<McCalendar> (pending.CalId);
+            cal.ReadAncillaryData ();
+            return new XElement (m_ns + Xml.AirSync.Change, 
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                AsHelpers.ToXmlApplicationData (cal));
+        }
+
+        private XElement ToCalDelete (McPending pending, McFolder folder)
+        {
+            return new XElement (m_ns + Xml.AirSync.Delete,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+        }
+
+        private XElement ToContactCreate (McPending pending, McFolder folder)
+        {
+            var contact = McObject.QueryById<McContact> (pending.ContactId);
+            contact.ReadAncillaryData (BackEnd.Instance.Db);
+            var add = new XElement (m_ns + Xml.AirSync.Add, 
+                          new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
+            if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
+                McFolderEntry.ClassCodeEnum.Contact) {
+                add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Contacts));
+            }
+            add.Add (contact.ToXmlApplicationData ());
+            return add;
+        }
+
+        private XElement ToContactUpdate (McPending pending, McFolder folder)
+        {
+            var contact = McObject.QueryById<McContact> (pending.ContactId);
+            contact.ReadAncillaryData (BackEnd.Instance.Db);
+            return new XElement (m_ns + Xml.AirSync.Change, 
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                contact.ToXmlApplicationData ());
+        }
+
+        private XElement ToContactDelete (McPending pending, McFolder folder)
+        {
+            return new XElement (m_ns + Xml.AirSync.Delete,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
         }
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            XNamespace emailNs = Xml.Email.Ns;
-            XNamespace tasksNs = Xml.Tasks.Ns;
-
-            // Get the folders needed sync
-            var folders = FoldersNeedingSync (BEContext.Account.Id);
-            // This becomes the folders in the xml <Collections>
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
-            // Save the list for later; so we can eliminiate redundant sync requests
-            FoldersInRequest = new List<McFolder> ();
-            foreach (var folder in folders) {
-                FoldersInRequest.Add (folder);
+            foreach (var tup in SyncKitList) {
+                var folder = tup.Item1;
+                var pendingSubList = tup.Item2;
                 var collection = new XElement (m_ns + Xml.AirSync.Collection,
                                      new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
                                      new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
-                // Add <GetChanges/> if we've done a sync before
-                if (McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
+                // GetChanges.
+                if (folder.AsSyncMetaDoGetChanges) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
-                    // Set flags when syncing email
-                    var classCode = Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type);
+                    collection.Add (new XElement (m_ns + Xml.AirSync.WindowSize, folder.AsSyncMetaWindowSize));
+                
+                    // WindowSize.
+                    // Options.
+                    var classCodeEnum = Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type);
                     var options = new XElement (m_ns + Xml.AirSync.Options);
-                    if (Xml.AirSync.ClassCode.Email.Equals (classCode)) {
+                    switch (classCodeEnum) {
+                    case McFolderEntry.ClassCodeEnum.Email:
+                    case McFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
-                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, "5"));
+                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
                             new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
-                    }
-                    if (Xml.AirSync.ClassCode.Calendar.Equals (classCode)) {
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
-                    }
-                    if (Xml.AirSync.ClassCode.Contacts.Equals (classCode)) {
+                        break;
+
+                    case McFolderEntry.ClassCodeEnum.Contact:
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                             new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
+                        break;
                     }
                     if (options.HasElements) {
                         collection.Add (options);
                     }
-                    // If there are email deletes, then push them up to the server.
-                    XElement commands = null;
-                    if (0 != PendingList.Count) {
-                        commands = new XElement (m_ns + Xml.AirSync.Commands);
+                }
+                // Commands.  
+                var commands = new XElement (m_ns + Xml.AirSync.Commands);
+                foreach (var pending in pendingSubList) {
+                    switch (pending.Operation) {
+                    case McPending.Operations.EmailDelete:
+                        commands.Add (ToEmailDelete (pending));
+                        break;
+                    case McPending.Operations.EmailMarkRead:
+                        commands.Add (ToEmailMarkRead (pending));
+                        break;
+                    case McPending.Operations.EmailSetFlag:
+                        commands.Add (ToEmailSetFlag (pending));
+                        break;
+                    case McPending.Operations.EmailClearFlag:
+                        commands.Add (ToEmailClearFlag (pending));
+                        break;
+                    case McPending.Operations.EmailMarkFlagDone:
+                        commands.Add (ToEmailMarkFlagDone (pending));
+                        break;
+                    case McPending.Operations.CalCreate:
+                        commands.Add (ToCalCreate (pending, folder));
+                        break;
+                    case McPending.Operations.CalUpdate:
+                        commands.Add (ToCalUpdate (pending, folder));
+                        break;
+                    case McPending.Operations.CalDelete:
+                        commands.Add (ToCalDelete (pending, folder));
+                        break;
+                    case McPending.Operations.ContactCreate:
+                        commands.Add (ToContactCreate (pending, folder));
+                        break;
+                    case McPending.Operations.ContactUpdate:
+                        commands.Add (ToContactUpdate (pending, folder));
+                        break;
+                    case McPending.Operations.ContactDelete:
+                        commands.Add (ToContactDelete (pending, folder));
+                        break;
+                    default:
+                        NachoAssert.True (false);
+                        break;
                     }
-
-                    foreach (var pending in EmailDeletes) {
-                        commands.Add (new XElement (m_ns + Xml.AirSync.Delete,
-                            new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId)));
-                        pending.MarkDispached ();
-                    }
-                    // If there are make-reads, then push them to the server.
-                    foreach (var pending in EmailMarkReads) {
-                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
-                            new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                            new XElement (m_ns + Xml.AirSync.ApplicationData,
-                                new XElement (emailNs + Xml.Email.Read, "1"))));
-                        pending.MarkDispached ();
-                    }
-                    // If there are set/clear/mark-dones, then push them to the server.
-                    foreach (var pending in EmailSetFlags) {
-                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
-                            new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                            new XElement (m_ns + Xml.AirSync.ApplicationData,
-                                new XElement (emailNs + Xml.Email.Flag,
-                                    new XElement (emailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set_2),
-                                    new XElement (emailNs + Xml.Email.FlagType, pending.FlagType),
-                                    new XElement (tasksNs + Xml.Tasks.StartDate, pending.Start.ToLocalTime ().ToAsUtcString ()),
-                                    new XElement (tasksNs + Xml.Tasks.UtcStartDate, pending.UtcStart.ToAsUtcString ()),
-                                    new XElement (tasksNs + Xml.Tasks.DueDate, pending.Due.ToLocalTime ().ToAsUtcString ()),
-                                    new XElement (tasksNs + Xml.Tasks.UtcDueDate, pending.UtcDue.ToAsUtcString ())))));
-                        pending.MarkDispached ();
-                    }
-
-                    foreach (var pending in EmailClearFlags) {
-                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
-                            new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                            new XElement (m_ns + Xml.AirSync.ApplicationData,
-                                new XElement (emailNs + Xml.Email.Flag))));
-                        pending.MarkDispached ();
-                    }
-
-                    foreach (var pending in EmailMarkFlagDones) {
-                        commands.Add (new XElement (m_ns + Xml.AirSync.Change,
-                            new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                            new XElement (m_ns + Xml.AirSync.ApplicationData,
-                                new XElement (emailNs + Xml.Email.Flag,
-                                    new XElement (emailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone_1),
-                                    new XElement (emailNs + Xml.Email.CompleteTime, pending.CompleteTime.ToAsUtcString ()),
-                                    new XElement (tasksNs + Xml.Tasks.DateCompleted, pending.DateCompleted.ToAsUtcString ())))));
-                        pending.MarkDispached ();
-                    }
-
-                    foreach (var pending in CalCreates) {
-                        var cal = McObject.QueryById<McCalendar> (pending.CalId);
-                        if (null != cal) {
-                            commands.Add (new XElement (m_ns + Xml.AirSync.Add,
-                                new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId),
-                                // FIXME: need the line below if not in a Calendar folder.
-                                // new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar),
-                                AsHelpers.ToXmlApplicationData (cal)));
-                            // FIXME - what do we need to say if the item is missing from the DB?
-                            pending.MarkDispached ();
-                        }
-                    }
-
-                    if (null != commands) {
-                        collection.Add (commands);
-                    }
+                    pending.MarkDispached ();
+                }
+                if (commands.HasElements) {
+                    collection.Add (commands);
                 }
                 collections.Add (collection);
             }
             var sync = new XElement (m_ns + Xml.AirSync.Sync, collections);
-            sync.Add (new XElement (m_ns + Xml.AirSync.WindowSize, "25"));
+            sync.Add (new XElement (m_ns + Xml.AirSync.WindowSize, WindowSize));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sync);
-            Log.Info (Log.LOG_SYNC, "AsSyncCommand:\n{0}", doc);
             return doc;
         }
 
@@ -200,11 +254,12 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.Success_1:
                 return null;
 
-            case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
+            case Xml.AirSync.StatusCode.SyncKeyInvalid_3: // FIXME see folder AsResetState.
                 // FIXME - need resolution logic to deal with _Initial-level re-sync of a folder.
+                // FoldersInRequest is NOT stale here.
                 foreach (var folder in FoldersInRequest) {
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
                 foreach (var pending in PendingList) {
@@ -233,7 +288,7 @@ namespace NachoCore.ActiveSync
                 // TODO: should retry Sync a few times before resetting to Initial.
                 foreach (var folder in FoldersInRequest) {
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
                 foreach (var pending in PendingList) {
@@ -245,7 +300,7 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.FolderChange_12:
                 foreach (var folder in FoldersInRequest) {
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
                 foreach (var pending in PendingList) {
@@ -257,7 +312,7 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.Retry_16:
                 foreach (var folder in FoldersInRequest) {
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
                 foreach (var pending in PendingList) {
@@ -274,7 +329,7 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            Log.Info (Log.LOG_SYNC, "AsSyncCommand response:\n{0}", doc);
+            List<McFolder> processedFolders = new List<McFolder> ();
             var xmlLimit = doc.Root.Element (m_ns + Xml.AirSync.Limit);
             if (null != xmlLimit) {
                 Limit = uint.Parse (xmlLimit.Value);
@@ -300,10 +355,11 @@ namespace NachoCore.ActiveSync
                 if (null != xmlSyncKey) {
                     // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                     folder.AsSyncKey = xmlSyncKey.Value;
-                    folder.AsSyncRequired = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                    folder.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
                 } else {
                     Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
                 }
+                processedFolders.Add (folder);
                 Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != xmlMoreAvailable));
                 Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId, oldSyncKey, folder.AsSyncKey);
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
@@ -331,7 +387,7 @@ namespace NachoCore.ActiveSync
                      * resynchronization.
                      */
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     // Defer all the outbound commands until after ReSync.
                     pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
                     foreach (var pending in pendingInFolder) {
@@ -372,7 +428,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.Retry_16:
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
                     foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
@@ -386,6 +442,19 @@ namespace NachoCore.ActiveSync
                 }
                 folder.Update ();
             }
+            // For any folders missing from the response, we need to note that there isn't more on the server-side.
+            // Remember the loop above re-writes folders, so FoldersInRequest object will be stale!
+            List<McFolder> reloadedFolders = new List<McFolder> ();
+            foreach (var maybeStale in FoldersInRequest) {
+                var folder = McFolder.QueryById<McFolder> (maybeStale.Id);
+                if (0 == processedFolders.Where (f => folder.Id == f.Id).Count ()) {
+                    folder.AsSyncMetaToClientExpected = false;
+                    folder.Update ();
+                }
+                reloadedFolders.Add (folder);
+            }
+            BEContext.ProtoControl.SyncStrategy.ReportSyncResult (reloadedFolders);
+
             if (HadEmailMessageChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
@@ -400,7 +469,7 @@ namespace NachoCore.ActiveSync
             }
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
-            } else if (FoldersNeedingSync (BEContext.Account.Id).Any ()) {
+            } else if (BEContext.ProtoControl.SyncStrategy.IsMoreSyncNeeded ()) {
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC0");
             } else {
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
@@ -409,16 +478,18 @@ namespace NachoCore.ActiveSync
         // Called when we get an empty Sync response body.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
+            // FoldersInRequest NOT stale here.
             foreach (var folder in FoldersInRequest) {
-                folder.AsSyncRequired = false;
+                folder.AsSyncMetaToClientExpected = false;
                 folder.Update ();
             }
+            BEContext.ProtoControl.SyncStrategy.ReportSyncResult (FoldersInRequest);
             foreach (var pending in PendingList) {
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
             }
             PendingList.Clear ();
 
-            if (FoldersNeedingSync (BEContext.Account.Id).Any ()) {
+            if (BEContext.ProtoControl.SyncStrategy.IsMoreSyncNeeded ()) {
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC1");
             } else {
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS1");
@@ -431,44 +502,6 @@ namespace NachoCore.ActiveSync
                 McPending.MakeEligibleOnSync (BEContext.Account.Id);
             }
             base.StatusInd (didSucceed);
-        }
-
-        public static List<McFolder> FoldersNeedingSync (int accountId)
-        {
-            // Make sure any folders with pending are marked as needing Sync.
-            var pendings = BackEnd.Instance.Db.Table<McPending> ().Where (x => 
-				x.AccountId == accountId).ToList ();
-
-            foreach (var pending in pendings) {
-                switch (pending.Operation) {
-                // Only Pendings that are resolved by Sync count for us here.
-                case McPending.Operations.EmailDelete:
-                case McPending.Operations.EmailMarkRead:
-                case McPending.Operations.EmailSetFlag:
-                case McPending.Operations.EmailClearFlag:
-                case McPending.Operations.EmailMarkFlagDone:
-                case McPending.Operations.CalCreate:
-                    break;
-
-                default:
-                    continue;
-                }
-
-                // FIXME - we need a clear rule on who is responsible for setting AsSyncRequired.
-                if (null != pending.FolderServerId && string.Empty != pending.FolderServerId) {
-                    var folder = BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
-                    x.ServerId == pending.FolderServerId);
-                    if (false == folder.IsClientOwned && !folder.AsSyncRequired) {
-                        folder.AsSyncRequired = true;
-                        folder.Update ();
-                    }
-                }
-            }
-
-            // Ping, et al, decide what needs to be checked.  We sync what needs sync'ing.
-            // If we don't sync the flagged folders, then the ping command starts right back up.
-            return BackEnd.Instance.Db.Table<McFolder> ().Where (x => x.AccountId == accountId &&
-            true == x.AsSyncRequired && false == x.IsClientOwned).ToList ();
         }
 
         public override bool WasAbleToRephrase ()
@@ -488,11 +521,9 @@ namespace NachoCore.ActiveSync
                 pending.ResolveAsDeferredForce ();
             }
             PendingList.Clear ();
-            PendingList.Add (firstPending);
-            PareListsToPendingList ();
+            ApplyStrategy ();
             return true;
         }
-
         // TODO - make this a generic extension.
         private bool ParseXmlBoolean (XElement bit)
         {
@@ -539,7 +570,7 @@ namespace NachoCore.ActiveSync
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageChanges = true;
                         var emailMessage = ServerSaysAddEmail (command, folder);
-                        if (null != emailMessage && (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
+                        if (null != emailMessage && Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
                             false == emailMessage.IsRead) {
                             HadNewUnreadEmailMessageInInbox = true;
                         }
@@ -766,7 +797,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case Xml.AirSync.StatusCode.NotFound_8:
-                        folder.AsSyncRequired = true;
+                        folder.AsSyncMetaToClientExpected = true;
                         folder.Update ();
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
@@ -818,6 +849,26 @@ namespace NachoCore.ActiveSync
             // Note: we are only supposed to see Fetch here if it succeeded.
             // We don't implement fetch yet. When we do, we will need to resolve all the McPendings,
             // even those that aren't in the response document.
+        }
+
+        public static bool IsSyncCommand (McPending.Operations op)
+        {
+            switch (op) {
+            case McPending.Operations.EmailDelete:
+            case McPending.Operations.EmailMarkRead:
+            case McPending.Operations.EmailSetFlag:
+            case McPending.Operations.EmailClearFlag:
+            case McPending.Operations.EmailMarkFlagDone:
+            case McPending.Operations.CalCreate:
+            case McPending.Operations.CalUpdate:
+            case McPending.Operations.CalDelete:
+            case McPending.Operations.ContactCreate:
+            case McPending.Operations.ContactUpdate:
+            case McPending.Operations.ContactDelete:
+                return true;
+            default:
+                return false;
+            }
         }
     }
 }

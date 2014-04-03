@@ -43,9 +43,9 @@ namespace NachoCore.ActiveSync
 
     public class AsHelpers
     {
-        const string CompactDateTimeFmt1 = "yyyyMMddTHHmmssZ";
-        const string CompactDateTimeFmt2 = "yyyyMMddTHHmmssfffZ";
-        const string DateTimeFmt1 = "yyyy-MM-ddTHH:mm:ss.fffZ";
+        public const string CompactDateTimeFmt1 = "yyyyMMddTHHmmssZ";
+        public const string CompactDateTimeFmt2 = "yyyyMMddTHHmmssfffZ";
+        public const string DateTimeFmt1 = "yyyy-MM-ddTHH:mm:ss.fffZ";
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
 
         private static string XmlFromBool (bool value)
@@ -61,7 +61,7 @@ namespace NachoCore.ActiveSync
 
             var xmlAppData = new XElement (AirSyncNs + Xml.AirSync.ApplicationData);
             if (cal.AllDayEvent) {
-                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.AllDayEvent));
+                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.AllDayEvent, "1"));
             }
             if (DateTime.MinValue != cal.DtStamp) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.DtStamp,
@@ -110,7 +110,14 @@ namespace NachoCore.ActiveSync
             if (null != cal.OnlineMeetingExternalLink) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingExternalLink, cal.OnlineMeetingExternalLink));
             }
-            // TODO: BodyId not supported yet.
+
+            if (0 != cal.BodyId) {
+                var body = McBody.QueryById<McBody> (cal.BodyId);
+                NachoAssert.True (null != body);
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
+            }
 
             if (0 != cal.attendees.Count) {
                 var xmlAttendees = new XElement (CalendarNs + Xml.Calendar.Calendar_Attendees);
@@ -124,6 +131,7 @@ namespace NachoCore.ActiveSync
                     if (attendee.AttendeeStatusIsSet) {
                         xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeStatus, (uint)attendee.AttendeeStatus));
                     }
+                    xmlAttendees.Add (xmlAttendee);
                 }
                 xmlAppData.Add (xmlAttendees);
             }

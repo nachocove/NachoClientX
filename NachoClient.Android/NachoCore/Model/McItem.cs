@@ -18,7 +18,7 @@ namespace NachoCore.Model
 
         public McItem ()
         {
-            ClientId = DateTime.UtcNow.Ticks.ToString ();
+            ClientId = DateTime.UtcNow.Ticks.ToString (); // FIXME - do better.
         }
 
         public enum ItemSource

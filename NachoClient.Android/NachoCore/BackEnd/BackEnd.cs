@@ -148,26 +148,24 @@ namespace NachoCore
                 NcCommStatus.Instance.Refresh ();
                 var service = ServiceFromAccountId (accountId);
                 if (null == service) {
-                    /* NOTE: This code needs to be able to detect the account type and start the 
-                 * appropriate control (not just AS).
-                 */
+                    // TODO: this is AS-specific.
                     service = new AsProtoControl (this, accountId);
                     Services.Add (service);
                     // Create client owned objects as needed.
                     if (null == McFolder.GetOutboxFolder (accountId)) {
                         McFolder.Create (accountId, true, false, "0",
                             McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
-                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                            Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     }
                     if (null == McFolder.GetGalCacheFolder (accountId)) {
                         McFolder.Create (accountId, true, true, "0",
                             McFolder.ClientOwned_GalCache, string.Empty,
-                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                            Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     }
                     if (null == McFolder.GetGleanedFolder (accountId)) {
                         McFolder.Create (accountId, true, true, "0",
                             McFolder.ClientOwned_Gleaned, string.Empty,
-                            (uint)Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                            Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     }
                 }
                 service.Execute ();
@@ -282,11 +280,21 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).CreateCalCmd (calId, folderId);
         }
 
+        public string UpdateCalCmd (int accountId, int calId)
+        {
+            return ServiceFromAccountId (accountId).UpdateCalCmd (calId);
+        }
+
+        public string DeleteCalCmd (int accountId, int calId)
+        {
+            return ServiceFromAccountId (accountId).DeleteCalCmd (calId);
+        }
+
         public string RespondCalCmd (int accountId, int calId, NcResponseType response)
         {
             return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
         }
-
+            
         public string MarkEmailReadCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
@@ -311,14 +319,29 @@ namespace NachoCore
                 completeTime, dateCompleted);
         }
 
-        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, uint folderType,
+        public string CreateContactCmd (int accountId, int contactId, int folderId)
+        {
+            return ServiceFromAccountId (accountId).CreateContactCmd (contactId, folderId);
+        }
+
+        public string UpdateContactCmd (int accountId, int contactId)
+        {
+            return ServiceFromAccountId (accountId).UpdateContactCmd (contactId);
+        }
+
+        public string DeleteContactCmd (int accountId, int contactId)
+        {
+            return ServiceFromAccountId (accountId).DeleteContactCmd (contactId);
+        }
+
+        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
                                  bool IsClientOwned, bool isHidden)
         {
             return ServiceFromAccountId (accountId).CreateFolderCmd (destFolderId, displayName, folderType,
                 IsClientOwned, isHidden);
         }
 
-        public string CreateFolderCmd (int accountId, string DisplayName, uint folderType,
+        public string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
                                  bool IsClientOwned, bool isHidden)
         {
             return ServiceFromAccountId (accountId).CreateFolderCmd (DisplayName, folderType,

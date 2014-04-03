@@ -34,7 +34,9 @@ namespace NachoCore.Model
             // Note that pending searches aren't considered relevant across app
             // re-starts, and so they are purged from the DB on app launch.
             ContactSearch,
+            ContactCreate,
             ContactUpdate,
+            ContactDelete,
             EmailDelete,
             EmailMove,
             EmailMarkRead,
@@ -42,8 +44,9 @@ namespace NachoCore.Model
             EmailClearFlag,
             EmailMarkFlagDone,
             CalCreate,
-            CalRespond,
             CalUpdate,
+            CalDelete,
+            CalRespond,
         };
         // Lifecycle of McPening:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -175,6 +178,9 @@ namespace NachoCore.Model
         // For use by CreateCal ONLY!
         [Indexed]
         public int CalId { set; get; }
+        // For use by CreateContact ONLY!
+        [Indexed]
+        public int ContactId { set; get; }
 
         public Xml.MeetingResp.UserResponseCode CalResponse { set; get; }
 
@@ -183,6 +189,7 @@ namespace NachoCore.Model
         public string EmailMessageServerId { set; get; }
 
         [Indexed]
+        // FolderServerId MUST be set for any Operation to be executed by Sync command!!!
         public string FolderServerId { set; get; }
 
         [Indexed]
@@ -194,7 +201,7 @@ namespace NachoCore.Model
 
         public uint MaxResults { set; get; }
 
-        public uint FolderType { set; get; }
+        public Xml.FolderHierarchy.TypeCode FolderType { set; get; }
 
         public const string KSynchronouslyCompleted	= "synchronously completed";
 
@@ -241,6 +248,21 @@ namespace NachoCore.Model
                 break;
             case Operations.CalCreate:
                 subKind = NcResult.SubKindEnum.Info_CalendarCreateSucceeded;
+                break;
+            case Operations.CalUpdate:
+                subKind = NcResult.SubKindEnum.Info_CalendarUpdateSucceeded;
+                break;
+            case Operations.CalDelete:
+                subKind = NcResult.SubKindEnum.Info_CalendarDeleteSucceeded;
+                break;
+            case Operations.ContactCreate:
+                subKind = NcResult.SubKindEnum.Info_ContactCreateSucceeded;
+                break;
+            case Operations.ContactUpdate:
+                subKind = NcResult.SubKindEnum.Info_ContactUpdateSucceeded;
+                break;
+            case Operations.ContactDelete:
+                subKind = NcResult.SubKindEnum.Info_ContactDeleteSucceeded;
                 break;
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
@@ -305,10 +327,6 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageSendFailed;
             case Operations.AttachmentDownload:
                 return NcResult.SubKindEnum.Error_AttDownloadFailed;
-            case Operations.ContactSearch:
-                return NcResult.SubKindEnum.Error_SearchCommandFailed;
-            case Operations.ContactUpdate:
-                return NcResult.SubKindEnum.Error_ContactUpdateFailed;
             case Operations.EmailDelete:
                 return NcResult.SubKindEnum.Error_EmailMessageDeleteFailed;
             case Operations.EmailMove:
@@ -323,10 +341,20 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageMarkFlagDoneFailed;
             case Operations.CalCreate:
                 return NcResult.SubKindEnum.Error_CalendarCreateFailed;
-            case Operations.CalRespond:
-                return NcResult.SubKindEnum.Error_MeetingResponseFailed;
             case Operations.CalUpdate:
                 return NcResult.SubKindEnum.Error_CalendarUpdateFailed;
+            case Operations.CalDelete:
+                return NcResult.SubKindEnum.Error_CalendarDeleteFailed;
+            case Operations.CalRespond:
+                return NcResult.SubKindEnum.Error_MeetingResponseFailed;
+            case Operations.ContactCreate:
+                return NcResult.SubKindEnum.Error_ContactCreateFailed;
+            case Operations.ContactUpdate:
+                return NcResult.SubKindEnum.Error_ContactUpdateFailed;
+            case Operations.ContactDelete:
+                return NcResult.SubKindEnum.Error_ContactDeleteFailed;
+            case Operations.ContactSearch:
+                return NcResult.SubKindEnum.Error_SearchCommandFailed;
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
@@ -542,8 +570,18 @@ namespace NachoCore.Model
             rec.ClientId == clientId);
         }
 
+        public static List<McPending> QueryEligibleByFolderServerId (int accountId, string folderServerId)
+        {
+            return BackEnd.Instance.Db.Table<McPending> ()
+                    .Where (rec =>
+                        rec.AccountId == accountId &&
+                        rec.FolderServerId == folderServerId &&
+                        rec.State == StateEnum.Eligible).ToList();
+        }
+
         public static McPending QueryByServerId (int accountId, string serverId)
         {
+            // FIXME - is FirstOrDefault correct here?
             return BackEnd.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&

@@ -19,7 +19,7 @@ namespace NachoCore.Model
             HeartbeatInterval = 600;
             MaxFolders = 200;
             KludgeSimulatorIdentity = Guid.NewGuid ().ToString ("N").Substring (0, 20);
-            State = (uint)St.Start;
+            ProtoControlState = (uint)St.Start;
         }
 
         public string AsProtocolVersion { get; set; }
@@ -34,7 +34,11 @@ namespace NachoCore.Model
 
         public uint MaxFolders { get; set; }
 
-        public uint State { get; set; }
+        public uint ProtoControlState { get; set; }
+
+        public uint SyncStratEmailCalendarState { get; set; }
+
+        public uint SyncStratContactsState { get; set; }
 
         public bool InitialProvisionCompleted { get; set; }
 

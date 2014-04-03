@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
 
             public string DisplayName { set; get; }
 
-            public uint FolderType { set; get; }
+            public Xml.FolderHierarchy.TypeCode FolderType { set; get; }
 
             public ApplyFolderAdd (int accountId)
                 : base (accountId)
@@ -56,7 +56,7 @@ namespace NachoCore.ActiveSync
                     DisplayName = DisplayName,
                     Type = FolderType,
                     AsSyncKey = McFolder.AsSyncKey_Initial,
-                    AsSyncRequired = true,
+                    AsSyncMetaToClientExpected = true,
                 };
                 folder.Insert ();
             }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
@@ -10,11 +11,13 @@ namespace NachoCore.ActiveSync
     public class AsPingCommand : AsCommand
     {
         private bool m_hitMaxFolders = false;
+        private List<McFolder> FoldersInRequest;
 
         public AsPingCommand (IBEContext dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
         {
             // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
             Timeout = new TimeSpan (0, 0, (int)BEContext.ProtocolState.HeartbeatInterval + 10);
+            FoldersInRequest = BEContext.ProtoControl.SyncStrategy.PingKit ();
         }
 
         public override bool DoSendPolicyKey (AsHttpOperation Sender)
@@ -26,18 +29,8 @@ namespace NachoCore.ActiveSync
         {
             uint foldersLeft = BEContext.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
-            var folders = BackEnd.Instance.Db.Table<McFolder> ().Where (x => x.AccountId == BEContext.Account.Id &&
-                          false == x.IsClientOwned &&
-                          ((uint)Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultDrafts_3 == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultSent_5 == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultOutbox_6 == x.Type
-                          || (uint)Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 == x.Type
-                          ));
 
-            foreach (var folder in folders) {
+            foreach (var folder in FoldersInRequest) {
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
                     new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
                     new XElement (m_ns + Xml.Ping.Class, Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type))));
@@ -51,16 +44,12 @@ namespace NachoCore.ActiveSync
             ping.Add (xFolders);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (ping);
-            Log.Info (Log.LOG_SYNC, "Sync:\n{0}", doc);
             return doc;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             McProtocolState update;
-
-            Log.Info (Log.LOG_SYNC, "Sync response:\n{0}", doc);
-
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
             string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;
             switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
@@ -72,11 +61,12 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.Success, "PINGNOCHG");
             
             case Xml.Ping.StatusCode.Changes_2:
+                // FIXME - move to Strat.
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
                     var folder = BackEnd.Instance.Db.Table<McFolder> ().Single (
                                      rec => BEContext.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
-                    folder.AsSyncRequired = true;
+                    folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGRESYNC");

@@ -187,6 +187,7 @@
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
     <Compile Include="NachoCore\Model\McMapFolderFolderEntry.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
