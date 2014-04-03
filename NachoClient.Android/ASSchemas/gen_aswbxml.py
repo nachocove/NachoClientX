@@ -334,7 +334,7 @@ def main():
     if len(sys.argv) > 1:
         in_fname = sys.argv[1]
     else:
-        in_fname = 'aswbxml.xml'
+        in_fname = 'as_wbxml.xml'
     as_wbxml = ASWBXMLSchemaParser(in_fname)
     generate_aswbxml(as_wbxml, open('ASWBXML.cs', 'w'))
     # TODO - generate test cases for exercising all codepages

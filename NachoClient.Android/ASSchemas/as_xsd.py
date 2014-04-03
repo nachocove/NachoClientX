@@ -56,6 +56,7 @@ def main():
     in_fname = sys.argv[1]
     (base, ext) = os.path.splitext(in_fname)
     out_fname = base + '.xml'
+    print '%s -> %s' % (in_fname, out_fname)
     AsXsd(in_fname).write_xml(out_fname)
 
 if __name__ == '__main__':
