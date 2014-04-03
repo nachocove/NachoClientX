@@ -1,0 +1,17 @@
+<xml>
+   <Ping>
+      <no_redaction/>
+      <Folders>
+         <no_redaction/>
+         <Folder>
+            <no_redaction/>
+            <Class>
+            </Class>
+            <Id>
+            </Id>
+         </Folder>
+      </Folders>
+      <HeartbeatInterval>
+      </HeartbeatInterval>
+   </Ping>
+</xml>
