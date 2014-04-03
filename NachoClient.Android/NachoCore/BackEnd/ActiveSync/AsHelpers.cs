@@ -587,10 +587,9 @@ namespace NachoCore.ActiveSync
                 case Xml.Calendar.StartTime:
                     TrySetCompactDateTimeFromXml (c, child.Name.LocalName, child.Value);
                     break;
-//                case Xml.Calendar.Timezone:
-//                    stringValue = child.Value;
-//                    NcTimeZone tz = ParseAsTimeZone (stringValue);
-//                    break;
+                case Xml.Calendar.Timezone:
+                    c.TimeZone = child.Value;
+                    break;
                 case Xml.Calendar.Location:
                 case Xml.Calendar.OnlineMeetingConfLink:
                 case Xml.Calendar.OnlineMeetingExternalLink:

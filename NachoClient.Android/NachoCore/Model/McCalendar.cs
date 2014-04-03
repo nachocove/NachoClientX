@@ -29,9 +29,8 @@ namespace NachoCore.Model
         /// Number of minutes before start time to display a message (optional)
         public uint Reminder { get; set; }
 
-        /// TZ of the calendar item.  Calendar only.
-        /// Foreign key to TimeZone table.
-        public int TimeZoneId { get; set; }
+        // The actual string from activesync
+        public string TimeZone { get; set; }
 
         /// Subject of then calendar or exception item
         public string Subject { get; set; }
