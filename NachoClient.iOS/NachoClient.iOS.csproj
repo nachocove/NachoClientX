@@ -581,7 +581,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\WBXML.cs">
       <Link>NachoCore\Extensions\WBXML.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsTimeZone.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs</Link>
     </Compile>
@@ -590,6 +589,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableHttpClient.cs">
       <Link>NachoCore\Mockables\MockableHttpClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsTimeZone.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsTimeZone.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -689,6 +691,10 @@
     <BundleResource Include="Resources\ic_action_settings.png" />
     <BundleResource Include="Resources\Nacho-Cove-Icon.png" />
     <BundleResource Include="Resources\Nacho-Cove-Icon%402x.png" />
+    <BundleResource Include="Resources\ic_action_call.png" />
+    <BundleResource Include="Resources\icon_chili.jpg" />
+    <BundleResource Include="Resources\ic_action_make_available_offline.png" />
+    <BundleResource Include="Resources\ic_action_web_site.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
