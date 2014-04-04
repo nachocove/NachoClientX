@@ -16,30 +16,7 @@ namespace NachoClient.iOS
 {
     public partial class ComposeViewController : DialogViewController, INachoMessageController, INachoContactChooserDelegate
     {
-        protected class MyEmailAddress : NcEmailAddress
-        {
-            public enum Action
-            {
-                undefined,
-                create,
-                edit,
-            };
-
-            public Action action;
-            public int index;
-
-            public MyEmailAddress (Kind kind) : base (kind)
-            {
-                this.action = Action.undefined;
-            }
-
-            public MyEmailAddress (Kind kind, string action) : base (kind, action)
-            {
-                this.action = Action.undefined;
-            }
-        }
-
-        List<MyEmailAddress> AddressList = new List<MyEmailAddress> ();
+        List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
         public static readonly NSString Reply = new NSString ("Reply");
         public static readonly NSString ReplyAll = new NSString ("ReplyAll");
         public static readonly NSString Forward = new NSString ("Forward");
@@ -94,7 +71,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ComposeToContactChooser")) {
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var address = (MyEmailAddress)holder.value;
+                var address = (NcEmailAddress)holder.value;
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
             }
         }
@@ -151,7 +128,7 @@ namespace NachoClient.iOS
             for (int i = 0; i < AddressList.Count; i++) {
                 var a = AddressList [i];
                 a.index = i;
-                a.action = MyEmailAddress.Action.edit;
+                a.action = NcEmailAddress.Action.edit;
                 var e = new StringElement (a.address);
                 e.Tapped += () => {
                     PerformSegue ("ComposeToContactChooser", new SegueHolder (a));
@@ -185,8 +162,8 @@ namespace NachoClient.iOS
                 var e = new StyledStringElementWithIcon (NcEmailAddress.ToPrefix (kind), scaledImage);
                 e.BackgroundColor = UIColor.LightTextColor;
                 e.Tapped += () => {
-                    var address = new MyEmailAddress (kind);
-                    address.action = MyEmailAddress.Action.create;
+                    var address = new NcEmailAddress (kind);
+                    address.action = NcEmailAddress.Action.create;
                     PerformSegue ("ComposeToContactChooser", new SegueHolder (address));
                 };
                 s.Add (e);
@@ -199,15 +176,14 @@ namespace NachoClient.iOS
         /// </summary>
         public void UpdateEmailAddress (NcEmailAddress address)
         {
-            var a = address as MyEmailAddress;
-            NachoAssert.True (null != a);
+            NachoAssert.True (null != address);
 
-            switch (a.action) {
-            case MyEmailAddress.Action.edit:
-                AddressList [a.index] = a;
+            switch (address.action) {
+            case NcEmailAddress.Action.edit:
+                AddressList [address.index] = address;
                 break;
-            case MyEmailAddress.Action.create:
-                AddressList.Add (a);
+            case NcEmailAddress.Action.create:
+                AddressList.Add (address);
                 break;
             default:
                 NachoAssert.CaseError ();
@@ -220,43 +196,11 @@ namespace NachoClient.iOS
         /// </summary>
         public void DeleteEmailAddress (NcEmailAddress address)
         {
-            var a = address as MyEmailAddress;
-            NachoAssert.True (null != a);
+            NachoAssert.True (null != address);
 
-            if (MyEmailAddress.Action.edit == a.action) {
-                AddressList.RemoveAt (a.index);
+            if (NcEmailAddress.Action.edit == address.action) {
+                AddressList.RemoveAt (address.index);
             }
-        }
-
-        public MailboxAddress GetMailboxAddress (NcEmailAddress address)
-        {
-            // Must have a contact or an address
-            NachoAssert.True ((null != address.contact) || (null != address.address));
-
-            string candidate;
-            MailboxAddress mailbox;
-
-            if (null != address.contact) {
-                candidate = address.contact.DisplayEmailAddress;
-            } else {
-                candidate = address.address;
-            }
-
-            if (!MailboxAddress.TryParse (candidate, out mailbox)) {
-                Log.Error ("Mailbox candidate won't parse: {0}", candidate);
-                return null;
-            }
-
-            if (null == mailbox.Address) {
-                Log.Error ("Mailbox candidate has null address: {0}", candidate);
-                return null;
-            }
-
-            if (null == mailbox.Name) {
-                mailbox.Name = address.contact.DisplayName;
-            }
-
-            return mailbox;
         }
 
         /// <summary>
@@ -268,7 +212,7 @@ namespace NachoClient.iOS
             var mimeMessage = new MimeMessage ();
 
             foreach (var a in AddressList) {
-                var mailbox = GetMailboxAddress (a);
+                var mailbox = a.ToMailboxAddress ();
                 if (null == mailbox) {
                     continue;
                 }
@@ -337,7 +281,7 @@ namespace NachoClient.iOS
             var ActionMessage = ActionThread.First ();
 
             if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
-                AddressList.Add (new MyEmailAddress (NcEmailAddress.Kind.To, ActionMessage.From));
+                AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.To, ActionMessage.From));
             }
             if (Action.Equals (ReplyAll)) {
                 // Add the To list to the CC list
@@ -345,7 +289,7 @@ namespace NachoClient.iOS
                     string[] ToList = ActionMessage.To.Split (new Char [] { ',' });
                     if (null != ToList) {
                         foreach (var a in ToList) {
-                            AddressList.Add (new MyEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
                         }
                     }
                 }
@@ -354,7 +298,7 @@ namespace NachoClient.iOS
                     string[] ccList = ActionMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
                         foreach (var a in ccList) {
-                            AddressList.Add (new MyEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
                         }
                     }
                 }

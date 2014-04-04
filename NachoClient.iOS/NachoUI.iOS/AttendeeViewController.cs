@@ -15,34 +15,6 @@ namespace NachoClient.iOS
 {
     public partial class AttendeeViewController : DialogViewController, INachoContactChooserDelegate
     {
-        protected class MyEmailAddress : NcEmailAddress
-        {
-            public enum Action
-            {
-                undefined,
-                create,
-                edit,
-            };
-
-            public Action action;
-            public int index;
-
-            public MyEmailAddress (Kind kind) : base (kind)
-            {
-                this.action = Action.undefined;
-            }
-
-            public MyEmailAddress (Kind kind, string action) : base (kind, action)
-            {
-                this.action = Action.undefined;
-            }
-
-            public MyEmailAddress (McAttendee attendee) : base (attendee)
-            {
-                this.action = Action.undefined;
-            }
-        }
-
         List<McAttendee> AttendeeList = new List<McAttendee> ();
 
         public void SetAttendeeList (List<McAttendee> attendees)
@@ -89,7 +61,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("AttendeeViewToContactChooser")) {
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var address = (MyEmailAddress)holder.value;
+                var address = (NcEmailAddress)holder.value;
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
             }
         }
@@ -127,6 +99,7 @@ namespace NachoClient.iOS
                 e.Tapped += () => {
                     AddressTapped (lambda_object);
                 };
+                NachoAssert.True (a.AttendeeTypeIsSet);
                 switch (a.AttendeeType) {
                 case NcAttendeeType.Required:
                     requiredAddresses.Add (e);
@@ -168,37 +141,46 @@ namespace NachoClient.iOS
         protected void AddressTapped (int i)
         {
             var attendee = AttendeeList [i];
-            var address = new MyEmailAddress (attendee);
+            var address = new NcEmailAddress (attendee);
             address.index = i;
-            address.action = MyEmailAddress.Action.edit;
+            address.action = NcEmailAddress.Action.edit;
             PerformSegue ("AttendeeViewToContactChooser", new SegueHolder (address));
         }
 
         protected void SectionTapped (NcEmailAddress.Kind kind)
         {
-            var address = new MyEmailAddress (kind);
-            address.action = MyEmailAddress.Action.create;
+            var address = new NcEmailAddress (kind);
+            address.action = NcEmailAddress.Action.create;
             PerformSegue ("AttendeeViewToContactChooser", new SegueHolder (address));
         }
 
+        /// <summary>
+        /// Callback
+        /// </summary>
         public void UpdateEmailAddress (NcEmailAddress address)
         {
-            var a = address as MyEmailAddress;
-            NachoAssert.True (null != a);
+            NachoAssert.True (null != address);
 
-            switch (a.action) {
-            case MyEmailAddress.Action.edit:
+            var mailboxAddress = address.ToMailboxAddress ();
+
+            var name = mailboxAddress.Name;
+            if (String.IsNullOrEmpty (name)) {
+                name = mailboxAddress.Address;
+            }
+
+            switch (address.action) {
+            case NcEmailAddress.Action.edit:
+                AttendeeList [address.index].Name = name;
+                AttendeeList [address.index].Email = mailboxAddress.Address;
+                AttendeeList [address.index].AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
+                AttendeeList [address.index].AttendeeTypeIsSet = true;
                 break;
-            case MyEmailAddress.Action.create:
+            case NcEmailAddress.Action.create:
                 var attendee = new McAttendee ();
-                if (null == a.contact) {
-                    attendee.Name = address.address;
-                    attendee.Email = address.address;
-                } else {
-                    attendee.Name = a.contact.DisplayName;
-                    attendee.Email = a.contact.DisplayEmailAddress;
-                }
-                attendee.AttendeeType = NcEmailAddress.ToAttendeeType (a.kind);
+                attendee.Name = name;
+                attendee.Email = mailboxAddress.Address;
+                attendee.AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
+                attendee.AttendeeTypeIsSet = true;
                 AttendeeList.Add (attendee);
                 break;
             default:
@@ -207,13 +189,15 @@ namespace NachoClient.iOS
             }
         }
 
+        /// <summary>
+        /// Callback
+        /// </summary>
         public void DeleteEmailAddress (NcEmailAddress address)
         {
-            var a = address as MyEmailAddress;
-            NachoAssert.True (null != a);
+            NachoAssert.True (null != address);
 
-            if (MyEmailAddress.Action.edit == a.action) {
-                AttendeeList.RemoveAt (a.index);
+            if (NcEmailAddress.Action.edit == address.action) {
+                AttendeeList.RemoveAt (address.index);
             }
         }
     }

@@ -1,0 +1,357 @@
+﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using NachoCore;
+using NachoCore.Model;
+
+namespace NachoCore.Wbxml
+{
+    public class WBXML
+    {
+        const byte versionByte = 0x03;
+        const byte publicIdentifierByte = 0x01;
+        const byte characterSetByte = 0x6A;
+        // UTF-8
+        const byte stringTableLengthByte = 0x00;
+
+        public XDocument XmlDoc { set; get; }
+
+        protected ASWBXMLCodePage[] codePages;
+        private int currentCodePage = 0;
+        private int defaultCodePage = -1;
+        private CancellationToken CToken;
+
+        public WBXML (CancellationToken cToken)
+        {
+            CToken = cToken;
+        }
+
+        public string GetXml ()
+        {
+            return XmlDoc.ToString (SaveOptions.DisableFormatting);
+        }
+
+        public void LoadBytes (Stream byteWBXML)
+        {
+            XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
+
+            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML);
+
+            // Version is ignored
+            bytes.Dequeue ();
+
+            // Public Identifier is ignored
+            bytes.DequeueMultibyteInt ();
+
+            // Character set
+            // Currently only UTF-8 is supported, throw if something else
+            int charset = bytes.DequeueMultibyteInt ();
+            if (charset != 0x6A)
+                throw new InvalidDataException ("ASWBXML only supports UTF-8 encoded XML.");
+
+            // String table length
+            // This should be 0, MS-ASWBXML does not use string tables
+            int stringTableLength = bytes.DequeueMultibyteInt ();
+            if (stringTableLength != 0)
+                throw new InvalidDataException ("WBXML data contains a string table.");
+
+            // Now we should be at the body of the data.
+            // Add the declaration
+            XElement currentNode = null;
+
+            while (bytes.Peek () >= 0) {
+                if (CToken.IsCancellationRequested) {
+                    throw new TaskCanceledException ();
+                }
+                byte currentByte = bytes.Dequeue ();
+
+                switch ((GlobalTokens)currentByte) {
+                // Check for a global token that we actually implement
+                case GlobalTokens.SWITCH_PAGE:
+                    int newCodePage = (int)bytes.Dequeue ();
+                    if (newCodePage >= 0 && newCodePage < 25) {
+                        currentCodePage = newCodePage;
+                    } else {
+                        throw new InvalidDataException (string.Format ("Unknown code page ID 0x{0:X} encountered in WBXML", currentByte));
+                    }
+                    break;
+                case GlobalTokens.END:
+                    if (currentNode.Parent != null) {
+                        currentNode = currentNode.Parent;
+                    } else {
+                        //throw new InvalidDataException("END global token encountered out of sequence");
+                    }
+                    break;
+                case GlobalTokens.OPAQUE:
+                    int OpaqueLength = bytes.DequeueMultibyteInt ();
+                    var OpaqueBytes = bytes.DequeueOpaque (OpaqueLength);
+                    XText newOpaqueNode;
+                    if (codePages [currentCodePage].GetIsOpaqueBase64 (currentNode.Name.LocalName)) {
+                        newOpaqueNode = new XText (Convert.ToBase64String (OpaqueBytes));
+                    } else {
+                        newOpaqueNode = new XText (System.Text.Encoding.UTF8.GetString(OpaqueBytes));
+                    }
+                    currentNode.Add (newOpaqueNode);
+                    //XmlCDataSection newOpaqueNode = xmlDoc.CreateCDataSection(bytes.DequeueString(CDATALength));
+                    //currentNode.AppendChild(newOpaqueNode);
+                    break;
+                case GlobalTokens.STR_I:
+                    XText newTextNode;
+                    if (codePages [currentCodePage].GetIsPeelOff (currentNode.Name.LocalName)) {
+                        newTextNode = new XText ("");
+                        var data = new McBody ();
+                        data.Body = bytes.DequeueString ();
+                        data.Insert ();
+                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                    } else {
+                        newTextNode = new XText (bytes.DequeueString ());
+                    }
+                    currentNode.Add (newTextNode);
+                    break;
+                    // According to MS-ASWBXML, these features aren't used
+                case GlobalTokens.ENTITY:
+                case GlobalTokens.EXT_0:
+                case GlobalTokens.EXT_1:
+                case GlobalTokens.EXT_2:
+                case GlobalTokens.EXT_I_0:
+                case GlobalTokens.EXT_I_1:
+                case GlobalTokens.EXT_I_2:
+                case GlobalTokens.EXT_T_0:
+                case GlobalTokens.EXT_T_1:
+                case GlobalTokens.EXT_T_2:
+                case GlobalTokens.LITERAL:
+                case GlobalTokens.LITERAL_A:
+                case GlobalTokens.LITERAL_AC:
+                case GlobalTokens.LITERAL_C:
+                case GlobalTokens.PI:
+                case GlobalTokens.STR_T:
+                    throw new InvalidDataException (string.Format ("Encountered unknown global token 0x{0:X}.", currentByte));
+
+                    // If it's not a global token, it should be a tag
+                default:
+                    bool hasAttributes = false;
+                    bool hasContent = false;
+
+                    hasAttributes = (currentByte & 0x80) > 0;
+                    hasContent = (currentByte & 0x40) > 0;
+
+                    byte token = (byte)(currentByte & 0x3F);
+
+                    if (hasAttributes)
+                        // Maybe use Trace.Assert here?
+                        throw new InvalidDataException (string.Format ("Token 0x{0:X} has attributes.", token));
+
+                    string strTag = codePages [currentCodePage].GetTag (token);
+                    if (strTag == null) {
+                        strTag = string.Format ("UNKNOWN_TAG_{0,2:X}", token);
+                    }
+                    XNamespace ns = codePages [currentCodePage].Namespace;
+                    XElement newNode = new XElement (ns + strTag);
+                    //XmlNode newNode = xmlDoc.CreateElement(codePages[currentCodePage].Xmlns, strTag, codePages[currentCodePage].Namespace);
+                    //newNode.Prefix = codePages[currentCodePage].Xmlns;
+                    if (null == currentNode) {
+                        XmlDoc.Add (newNode);
+                    } else {
+                        currentNode.Add (newNode);
+                    }
+                    if (hasContent) {
+                        currentNode = newNode;
+                    }
+                    break;
+                }
+            }
+        }
+
+        public byte[] GetBytes ()
+        {
+            List<byte> byteList = new List<byte> ();
+
+            byteList.Add (versionByte);
+            byteList.Add (publicIdentifierByte);
+            byteList.Add (characterSetByte);
+            byteList.Add (stringTableLengthByte);
+            byteList.AddRange (EncodeNode (XmlDoc.Root));
+
+            return byteList.ToArray ();
+        }
+
+        private byte[] EncodeNode (XNode node)
+        {
+            List<byte> byteList = new List<byte> ();
+
+            switch (node.NodeType) {
+            case XmlNodeType.Element:
+                var element = (XElement)node;
+                if (element.HasAttributes) {
+                    ParseXmlnsAttributes (element);
+                }
+
+                if (SetCodePageByXmlns (element.Name.NamespaceName)) {
+                    byteList.Add ((byte)GlobalTokens.SWITCH_PAGE);
+                    byteList.Add ((byte)currentCodePage);
+                }
+
+                byte token = codePages [currentCodePage].GetToken (element.Name.LocalName);
+
+                if (element.HasElements || !element.IsEmpty) {
+                    token |= 0x40;
+                }
+
+                byteList.Add (token);
+
+                if (element.HasElements || !element.IsEmpty) {
+                    foreach (XNode child in element.Nodes()) {
+                        byteList.AddRange (EncodeNode (child));
+                    }
+
+                    byteList.Add ((byte)GlobalTokens.END);
+                }
+                break;
+            case XmlNodeType.Text:
+                var text = (XText)node;
+                if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
+                    byteList.Add ((byte)GlobalTokens.OPAQUE);
+                    byteList.AddRange (EncodeOpaque (text.Value));
+                } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
+                    byteList.Add ((byte)GlobalTokens.OPAQUE);
+                    byteList.AddRange (EncodeOpaque (Convert.ToBase64String 
+                        (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value))));
+                } else {
+                    byteList.Add ((byte)GlobalTokens.STR_I);
+                    byteList.AddRange (EncodeString (text.Value));
+                }
+                break;
+            case XmlNodeType.CDATA:
+                var cdata = (XCData)node;
+                byteList.Add ((byte)GlobalTokens.OPAQUE);
+                byteList.AddRange (EncodeOpaque (cdata.Value));
+                break;
+            default:
+                break;
+            }
+
+            return byteList.ToArray ();
+        }
+
+        private int GetCodePageByXmlns (string xmlns)
+        {
+            for (int i = 0; i < codePages.Length; i++) {
+                if (codePages [i].Xmlns.ToUpper () == xmlns.ToUpper ()) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private int GetCodePageByNamespace (string nameSpace)
+        {
+            for (int i = 0; i < codePages.Length; i++) {
+                if (codePages [i].Namespace.ToUpper () == nameSpace.ToUpper ()) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private bool SetCodePageByXmlns (string xmlns)
+        {
+            if (xmlns == null || xmlns == "") {
+                // Try default namespace
+                if (currentCodePage != defaultCodePage) {
+                    currentCodePage = defaultCodePage;
+                    return true;
+                }
+
+                return false;
+            }
+
+            // Try current first
+            if (codePages [currentCodePage].Xmlns.ToUpper () == xmlns.ToUpper ()) {
+                return false;
+            }
+
+            for (int i = 0; i < codePages.Length; i++) {
+                if (codePages [i].Xmlns.ToUpper () == xmlns.ToUpper ().TrimEnd (':')) {
+                    currentCodePage = i;
+                    return true;
+                }
+            }
+
+            throw new InvalidDataException (string.Format ("Unknown Xmlns: {0}.", xmlns));
+        }
+
+        private void ParseXmlnsAttributes (XElement element)
+        {
+            foreach (XAttribute attribute in element.Attributes()) {
+                int codePage = GetCodePageByNamespace (attribute.Value);
+                if (attribute.Name.ToString ().ToUpper () == "XMLNS") {
+                    // <foo xmlns="...">
+                    defaultCodePage = codePage;
+                } else if (attribute.Name.Namespace.ToString ().ToUpper () == "XMLNS") {
+                    // <foo xmlns:bar="...">
+                    codePages [codePage].Xmlns = attribute.Name.LocalName;
+                }
+            }
+        }
+
+        private byte[] EncodeString (string value)
+        {
+            List<byte> byteList = new List<byte> ();
+
+            char[] charArray = value.ToCharArray ();
+
+            for (int i = 0; i < charArray.Length; i++) {
+                byteList.Add ((byte)charArray [i]);
+            }
+
+            byteList.Add (0x00);
+
+            return byteList.ToArray ();
+        }
+
+        private byte[] EncodeOpaque (string value)
+        {
+            List<byte> byteList = new List<byte> ();
+
+            char[] charArray = value.ToCharArray ();
+
+            byteList.AddRange (EncodeMultiByteInteger (charArray.Length));
+
+            for (int i = 0; i < charArray.Length; i++) {
+                byteList.Add ((byte)charArray [i]);
+            }
+
+            return byteList.ToArray ();
+        }
+
+        private byte[] EncodeMultiByteInteger (int value)
+        {
+            List<byte> byteList = new List<byte> ();
+
+            while (value > 0) {
+                byte addByte = (byte)(value & 0x7F);
+
+                if (byteList.Count > 0) {
+                    addByte |= 0x80;
+                }
+
+                byteList.Insert (0, addByte);
+
+                value >>= 7;
+            }
+
+            return byteList.ToArray ();
+        }
+    }
+}
+
