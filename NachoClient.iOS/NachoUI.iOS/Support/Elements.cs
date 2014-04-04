@@ -19,14 +19,14 @@ namespace NachoClient.iOS
         /// Create a root element that displays an icon.
         /// </summary>
         /// <param name="name">The resource name of the icon.</param>
-        public RootElementWithIcon (string name, string caption, Group group) : base (caption, group)
+        public RootElementWithIcon (string icon, string caption, Group group) : base (caption, group)
         {
-            this.name = name;
+            this.name = icon;
         }
 
-        public RootElementWithIcon (string name, string caption) : base (caption, 0, 0)
+        public RootElementWithIcon (string icon, string caption) : base (caption, 0, 0)
         {
-            this.name = name;
+            this.name = icon;
         }
 
         protected override NSString CellKey {
@@ -503,6 +503,29 @@ namespace NachoClient.iOS
                 this.Add (e);
             }
         }
+    }
+
+    class RadioElementWithData : RadioElement
+    {
+        public string data;
+
+        public RadioElementWithData (string caption, string group, string data) : base (caption, group)
+        {
+            this.data = data;
+        }
+
+        public RadioElementWithData (string caption, string data) : base (caption)
+        {
+            this.data = data;
+        }
+
+        public static string SelectedData(RootElement root)
+        {
+            var section = root [0];
+            var element = section [root.RadioSelected] as RadioElementWithData;
+            return element.data;
+        }
+
     }
 }
 

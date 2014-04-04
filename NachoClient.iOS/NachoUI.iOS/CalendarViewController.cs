@@ -123,7 +123,7 @@ namespace NachoClient.iOS
                 startLabel.Text = "ALL DAY";
                 durationLabel.Text = "";
             } else {
-                startLabel.Text = c.StartTime.ToString ("t");
+                startLabel.Text = Pretty.ShortTimeString (c.StartTime);
                 durationLabel.Text = Pretty.CompactDuration (c);
             }
             calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Green);
@@ -139,7 +139,7 @@ namespace NachoClient.iOS
         public override string TitleForHeader (UITableView tableView, int section)
         {
             DateTime d = calendar.GetDayDate (section);
-            return d.ToString ("D").ToUpper ();
+            return Pretty.FullDateString (d).ToUpper ();
         }
     }
 }
