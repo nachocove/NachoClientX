@@ -366,7 +366,9 @@ namespace NachoCore.ActiveSync
                     CancelTimeoutTimer ();
                     ReportCommResult (ServerUri.Host, true);
                     // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                    var webExEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                    webExEvent.DropIfStopped = true;
+                    HttpOpSm.PostEvent (webExEvent);
                 }
                 return;
             } catch (NullReferenceException ex) {

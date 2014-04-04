@@ -8,6 +8,9 @@ nacho_get_regdom(char *dest, size_t limit, char *domain) {
   if (NULL == nacho_regdom_tree) {
     nacho_regdom_tree = loadTldTree ();
   }
-  strncpy (dest, getRegisteredDomain(domain, nacho_regdom_tree), limit);
+  char *src = getRegisteredDomain(domain, nacho_regdom_tree);
+  if (NULL != src) {
+    strncpy (dest, src, limit);
+  }
 }
 
