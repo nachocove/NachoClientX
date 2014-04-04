@@ -84,7 +84,7 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl ProtoControl { set; get; }
 
-        public AsSyncStrategy SyncStrategy { set; get; }
+        public AsStrategy SyncStrategy { set; get; }
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
@@ -947,7 +947,7 @@ namespace NachoCore.ActiveSync
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
-            SyncStrategy = new AsSyncStrategy (this);
+            SyncStrategy = new AsStrategy (this);
 
             McPending.ResolveAllDispatchedAsDeferred (Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;

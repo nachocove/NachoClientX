@@ -72,7 +72,7 @@ namespace NachoCore.ActiveSync
         #pragma warning restore 414
         private NcStateMachine HttpOpSm;
         private NcStateMachine OwnerSm;
-        private HttpClient Client;
+        private IHttpClient Client;
         private Uri ServerUri;
         private bool ServerUriBeingTested;
         private Stream ContentData;
@@ -259,7 +259,7 @@ namespace NachoCore.ActiveSync
 
         private void TimeoutTimerCallback (object State)
         {
-            if ((HttpClient)State == Client) {
+            if ((IHttpClient)State == Client) {
                 var timeoutEvent = Event.Create ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
                 timeoutEvent.DropIfStopped = true;
                 HttpOpSm.PostEvent (timeoutEvent);
@@ -308,7 +308,7 @@ namespace NachoCore.ActiveSync
                 // Never send password over unencrypted channel.
                 handler.Credentials = new NetworkCredential (BEContext.Cred.Username, BEContext.Cred.Password);
             }
-            Client = new HttpClient (handler) { Timeout = this.Timeout };
+            Client = new MockableHttpClient (handler) { Timeout = this.Timeout };
             var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             var doc = Owner.ToXDocument (this);
             if (null != doc) {

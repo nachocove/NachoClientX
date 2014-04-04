@@ -187,8 +187,10 @@
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
     <Compile Include="NachoCore\Model\McMapFolderFolderEntry.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncStrategy.cs" />
     <Compile Include="NachoCore\Extensions\WBXML.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs" />
+    <Compile Include="NachoCore\Mockables\MockableHttpClient.cs" />
+    <Compile Include="NachoCore\Mockables\IHttpClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -346,6 +348,7 @@
     <Folder Include="NachoPlatform.Android\" />
     <Folder Include="NachoPlatform.Android\libs\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
+    <Folder Include="NachoCore\Mockables\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

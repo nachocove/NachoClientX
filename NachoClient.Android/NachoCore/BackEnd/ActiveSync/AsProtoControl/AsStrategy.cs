@@ -5,11 +5,15 @@ using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public class AsSyncStrategy
+    public class AsStrategy
     {
+        public const uint KBaseOverallWindowSize = 10;
+        public const uint KBasePerFolderWindowSize = 7;
+
         public enum ECLst : uint
         {
             DefI1dC2w = (St.Last + 1),
@@ -40,7 +44,7 @@ namespace NachoCore.ActiveSync
 
         private delegate Tuple<Xml.Provision.MaxAgeFilterCode, uint> Parameters (McFolder folder);
         // Success event happens when there is a sync indicating that there is no more available.
-        public AsSyncStrategy (IBEContext beContext)
+        public AsStrategy (IBEContext beContext)
         {
             BEContext = beContext;
             EmailCalendarSm = new NcStateMachine () { 
@@ -294,29 +298,37 @@ namespace NachoCore.ActiveSync
 
         private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder)
         {
-            uint windowSize = 25;
+            uint perFolderWindowSize = KBasePerFolderWindowSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast:
+                perFolderWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi:
+                perFolderWindowSize *= 3;
+                break;
+            }
             switch (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type)) {
             case McFolder.ClassCodeEnum.Email:
                 switch ((ECLst)EmailCalendarSm.State) {
                 case ECLst.DefI1dC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
 
                 case ECLst.DefI3dC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeDays_2, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeDays_2, perFolderWindowSize);
 
                 case ECLst.DefI1wC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneWeek_3, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneWeek_3, perFolderWindowSize);
 
                 case ECLst.DefI2wC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
 
                 case ECLst.All1m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
 
                 case ECLst.EInfC3m:
                 case ECLst.EInfC6m:
                 case ECLst.AllInf:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
 
                 default:
                     throw new Exception ();
@@ -328,19 +340,19 @@ namespace NachoCore.ActiveSync
                 case ECLst.DefI3dC2w:
                 case ECLst.DefI1wC2w:
                 case ECLst.DefI2wC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
 
                 case ECLst.All1m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
 
                 case ECLst.EInfC3m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, perFolderWindowSize);
 
                 case ECLst.EInfC6m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SixMonths_7, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SixMonths_7, perFolderWindowSize);
 
                 case ECLst.AllInf:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
 
                 default:
                     throw new Exception ();
@@ -351,7 +363,7 @@ namespace NachoCore.ActiveSync
                 case CLst.None:
                 case CLst.DefOnly:
                 case CLst.All:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, windowSize);
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
 
                 default:
                     throw new Exception ();
@@ -434,6 +446,15 @@ namespace NachoCore.ActiveSync
         // External API.
         public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ()
         {
+            uint overallWindowSize = KBaseOverallWindowSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast:
+                overallWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi:
+                overallWindowSize *= 3;
+                break;
+            }
             List<McFolder> eligibleForGetChanges = FolderListProvider ();
             List<McPending> issuePendings;
             bool inSerialMode = false;
@@ -491,7 +512,7 @@ namespace NachoCore.ActiveSync
                     --limit;
                 }
             }
-            return Tuple.Create ((uint)25, retList);
+            return Tuple.Create (overallWindowSize, retList);
         }
 
         public bool IsMoreSyncNeeded ()
