@@ -76,12 +76,10 @@ namespace Test.iOS
         [Test]
         public void BasicSyncResults ()
         {
-            var ds = new MockDataSource ();
-            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
             var command02a = System.Xml.Linq.XElement.Parse (string_02a);
             Assert.IsNotNull (command02a);
             Assert.AreEqual (command02a.Name.LocalName, Xml.AirSync.Add);
-            asSync.ServerSaysAddContact (command02a, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command02a, new MockNcFolder ());
 
             var c02a = BackEnd.Instance.Db.Get<McContact> (x => x.LastName == "Steve");
             Assert.IsNotNull (c02a);
@@ -90,69 +88,29 @@ namespace Test.iOS
             var command02b = System.Xml.Linq.XElement.Parse (string_02b);
             Assert.IsNotNull (command02b);
             Assert.AreEqual (command02b.Name.LocalName, Xml.AirSync.Add);
-            asSync.ServerSaysAddContact (command02b, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command02b, new MockNcFolder ());
 
             var command03 = System.Xml.Linq.XElement.Parse (string_02b);
             Assert.IsNotNull (command03);
             Assert.AreEqual (command03.Name.LocalName, Xml.AirSync.Add);
-            asSync.ServerSaysAddContact (command03, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command03, new MockNcFolder ());
         }
 
         [Test]
         public void ProcessResponse ()
         {
-            try {
-                var ds = new MockDataSource ();
-                // Set up folder
-                var f = new McFolder ();
-                f.AccountId = ds.Account.Id;
-                f.ServerId = "Contact:DEFAULT";
-                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts_9;
-                BackEnd.Instance.Db.Insert (f);
-                // Process sync command
-                var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
-                var c04 = System.Xml.Linq.XDocument.Parse (string_04);
-                Assert.IsNotNull (c04);
-                asSync.ProcessResponse (null, null, c04);
-            } catch { 
-                Assert.Fail ("exception tossed");
-            }
-
-        }
-
-        [Test]
-        public void ProcessResponse2 ()
-        {
-            try {
-                var ds = new MockDataSource ();
-                // Set up folder
-                var f = new McFolder ();
-                f.AccountId = ds.Account.Id;
-                f.ServerId = "Contact:DEFAULT";
-                f.Type = (uint)Xml.FolderHierarchy.TypeCode.DefaultContacts_9;
-                BackEnd.Instance.Db.Insert (f);
-                // Process sync command
-                var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);        
-                var c04 = System.Xml.Linq.XDocument.Parse (string_04);
-                Assert.IsNotNull (c04);
-                // write it
-                asSync.ProcessResponse (null, null, c04);
-                // update it
-                asSync.ProcessResponse (null, null, c04);
-            } catch {
-                Assert.Fail ("Exception tossed");
-            }
+            var command04 = System.Xml.Linq.XElement.Parse (string_04);
+            Assert.IsNotNull (command04);
+            Assert.AreEqual (command04.Name.LocalName, Xml.AirSync.Change);
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysChangeContact (command04, new MockNcFolder ());
         }
 
         [Test]
         public void Conversions ()
         {
-            var ds = new MockDataSource ();
             // Set up folder
-            var asSync = new NachoCore.ActiveSync.AsSyncCommand (ds);  
-
             var x05 = System.Xml.Linq.XElement.Parse (string_05);
-            var cr05 = AsContact.FromXML (asSync.m_ns, x05);
+            var cr05 = AsContact.FromXML (NachoCore.ActiveSync.AsSyncCommand.Ns, x05);
             var c05 = cr05.GetValue<AsContact> ();
             Assert.True (cr05.isOK ());
             Assert.NotNull (c05);
@@ -167,7 +125,7 @@ namespace Test.iOS
             Assert.True (nr05.isOK ());
             Assert.IsNotNull (n05);
 
-            PropertyValuesAreEquals(c05, n05);
+            PropertyValuesAreEquals (c05, n05);
         }
 
         public string string_01 = @"
@@ -241,14 +199,7 @@ namespace Test.iOS
                 </Change>
         ";
         public const string string_04 = @"
-             <Sync xmlns=""AirSync"">
-              <Collections>
-                <Collection>
-                  <SyncKey>1386565941518</SyncKey>
-                  <CollectionId>Contact:DEFAULT</CollectionId>
-                  <Status>1</Status>
-                  <Commands>
-                    <Change>
+                    <Change xmlns=""AirSync"">
                       <ServerId>1734050566625401231</ServerId>
                       <ApplicationData>
                         <Body xmlns=""AirSyncBase"">
@@ -281,10 +232,6 @@ namespace Test.iOS
                         <NickName xmlns=""Contacts2"">Freddy</NickName>
                       </ApplicationData>
                     </Change>
-                  </Commands>
-                </Collection>
-              </Collections>
-            </Sync>
             ";
         public const string string_05 = @"
              <Sync xmlns=""AirSync"">

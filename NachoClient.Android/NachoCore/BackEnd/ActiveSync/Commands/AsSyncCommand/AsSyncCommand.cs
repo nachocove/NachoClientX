@@ -23,6 +23,8 @@ namespace NachoCore.ActiveSync
         private XNamespace TasksNs;
         private uint WindowSize;
 
+        public static XNamespace Ns = Xml.AirSync.Ns;
+
         private void ApplyStrategy ()
         {
             var syncKit = BEContext.ProtoControl.SyncStrategy.SyncKit ();
