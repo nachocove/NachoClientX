@@ -11,7 +11,7 @@ namespace NachoCore.ActiveSync
 {
     public class AsOptionsCommand : AsCommand
     {
-        public AsOptionsCommand (IBEContext dataSource) : base ("Options", dataSource)
+        public AsOptionsCommand (IBEContext beContext) : base ("Options",  beContext)
         {
         }
 
@@ -38,14 +38,14 @@ namespace NachoCore.ActiveSync
             return "";
         }
 
-        internal static void SetOldestProtoVers (IBEContext dataSource)
+        internal static void SetOldestProtoVers (IBEContext beContext)
         {
-            McProtocolState update = dataSource.ProtocolState;
+            McProtocolState update = beContext.ProtocolState;
             update.AsProtocolVersion = "12.0";
-            dataSource.ProtocolState = update;
+            beContext.ProtocolState = update;
         }
 
-        internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext dataSource)
+        internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
         {
             IEnumerable<string> values;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
@@ -54,9 +54,9 @@ namespace NachoCore.ActiveSync
                 Array.Sort (float_versions);
                 Array.Reverse (float_versions);
                 string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
-                McProtocolState update = dataSource.ProtocolState;
+                McProtocolState update = beContext.ProtocolState;
                 update.AsProtocolVersion = versions [0];
-                dataSource.ProtocolState = update;
+                beContext.ProtocolState = update;
                 // NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.
             }
             return retval;

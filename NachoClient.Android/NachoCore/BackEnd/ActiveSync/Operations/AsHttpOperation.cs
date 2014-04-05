@@ -78,6 +78,8 @@ namespace NachoCore.ActiveSync
         private Stream ContentData;
         private string ContentType;
         // Properties.
+        public Type HttpClientType { set; get; }
+
         public TimeSpan Timeout { set; get; }
 
         public uint TriesLeft { set; get; }
@@ -89,15 +91,16 @@ namespace NachoCore.ActiveSync
         public string Token { set; get; }
 
         // Initializers.
-        public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext dataSource)
+        public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KToXML);
+            HttpClientType = typeof(MockableHttpClient);
             Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
             TriesLeft = KDefaultRetries + 1;
             Allow451Follow = true;
             m_commandName = commandName;
             Owner = owner;
-            BEContext = dataSource;
+            BEContext = beContext;
 
             HttpOpSm = new NcStateMachine () {
                 Name = "as:http_op",
@@ -308,7 +311,8 @@ namespace NachoCore.ActiveSync
                 // Never send password over unencrypted channel.
                 handler.Credentials = new NetworkCredential (BEContext.Cred.Username, BEContext.Cred.Password);
             }
-            Client = new MockableHttpClient (handler) { Timeout = this.Timeout };
+            Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
+            Client.Timeout = this.Timeout;
             var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             var doc = Owner.ToXDocument (this);
             if (null != doc) {
@@ -396,6 +400,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        // TODO: move a bunch of this logic into AsCommand.
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
             if (HttpStatusCode.OK != response.StatusCode &&

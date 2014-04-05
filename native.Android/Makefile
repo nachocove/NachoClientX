@@ -3,14 +3,23 @@ all: src_links gen_srcs
 	@if [ ${NDK}"x" == "x" ]; then echo Nacho native.Android/Makefile needs NDK to be set ; exit 1; fi
 	cd jni; ${NDK}/ndk-build; cd ..
 	mkdir -p ../NachoClient.Android/lib/armeabi
+	mkdir -p ../Test.Android/lib/armeabi
 	mkdir -p ../NachoClient.Android/lib/armeabi-v7a
+	mkdir -p ../Test.Android/lib/armeabi-v7a
 	mkdir -p ../NachoClient.Android/lib/x86
+	mkdir -p ../Test.Android/lib/x86
 	rm -f ../NachoClient.Android/lib/armeabi/libnachoplatform.so
+	rm -f ../Test.Android/lib/armeabi/libnachoplatform.so
 	ln libs/armeabi/libnachoplatform.so ../NachoClient.Android/lib/armeabi/libnachoplatform.so
+	ln libs/armeabi/libnachoplatform.so ../Test.Android/lib/armeabi/libnachoplatform.so
 	rm -f ../NachoClient.Android/lib/armeabi-v7a/libnachoplatform.so
+	rm -f ../Test.Android/lib/armeabi-v7a/libnachoplatform.so
 	ln libs/armeabi-v7a/libnachoplatform.so ../NachoClient.Android/lib/armeabi-v7a/libnachoplatform.so
+	ln libs/armeabi-v7a/libnachoplatform.so ../Test.Android/lib/armeabi-v7a/libnachoplatform.so
 	rm -f ../NachoClient.Android/lib/x86/libnachoplatform.so
+	rm -f ../Test.Android/lib/x86/libnachoplatform.so
 	ln libs/x86/libnachoplatform.so ../NachoClient.Android/lib/x86/libnachoplatform.so
+	ln libs/x86/libnachoplatform.so ../Test.Android/lib/x86/libnachoplatform.so
 
 src_links: jni/regdom.h jni/regdom.c jni/nacho-dkim-regdom.c jni/nacho-system-properties.c
 gen_srcs: jni/tld-canon.h
