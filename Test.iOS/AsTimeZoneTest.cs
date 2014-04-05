@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.ObjectModel;
 using NachoCore;
 using NachoCore.ActiveSync;
 using NUnit.Framework;
@@ -135,6 +136,21 @@ namespace Test.iOS
             Assert.AreEqual (data, data2);
             var tz2 = new AsTimeZone (data2);
             Assert.AreEqual (tz, tz2);
+        }
+
+        [Test]
+        public void TimeZoneInfoTest()
+        {
+            ReadOnlyCollection<TimeZoneInfo> timeZones = TimeZoneInfo.GetSystemTimeZones(); 
+
+            foreach (TimeZoneInfo timeZone in timeZones) {
+                var tzi = TimeZoneInfo.FindSystemTimeZoneById (timeZone.Id);
+                var a1 = new AsTimeZone (tzi);
+                var s1 = a1.toEncodedTimeZone ();
+                var a2 = new AsTimeZone (s1);
+                var s2 = a2.toEncodedTimeZone ();
+                Assert.True (s1.Equals (s2));
+            }
         }
     }
 }

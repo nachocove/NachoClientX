@@ -79,19 +79,43 @@ namespace NachoClient
             return String.Format ("All day ({0} days)", d.Days);
         }
 
+        static DateTime LocalT(DateTime d)
+        {
+            switch(d.Kind) {
+            case DateTimeKind.Utc:
+                {
+                    var l = d.ToLocalTime ();
+                    return l;
+                }
+            case DateTimeKind.Unspecified:
+                {
+                    var l = d.ToLocalTime ();
+                    return l;
+                }
+            case DateTimeKind.Local:
+            default:
+                NachoAssert.CaseError ();
+                return DateTime.MinValue;
+            }
+        }
+
         /// <summary>
         /// StartTime - EndTime, on two lines.
         /// </summary>
         static public string EventStartToEnd (DateTime startTime, DateTime endTime)
         {
-            var startString = startTime.ToString ("t");
+            NachoAssert.True (DateTimeKind.Local != startTime.Kind);
+            NachoAssert.True (DateTimeKind.Local != endTime.Kind);
+
+            var startString = LocalT(startTime).ToString ("t");
 
             if (startTime == endTime) {
                 return startString;
             }
+            var localEndTime = LocalT (endTime);
             var durationString = PrettyEventDuration (startTime, endTime);
             if (startTime.Date == endTime.Date) {
-                return String.Format ("{0} - {1} ({2})", startString, endTime.ToString ("t"), durationString);
+                return String.Format ("{0} - {1} ({2})", startString, localEndTime.ToString ("t"), durationString);
             } else {
                 return String.Format ("{0} -\n{1} ({2})", startString, FullDateString (endTime), durationString);
             }
@@ -102,7 +126,8 @@ namespace NachoClient
         /// </summary>
         static public string FullDateString (DateTime d)
         {
-            return d.ToString ("D");
+            NachoAssert.True (DateTimeKind.Local != d.Kind);
+            return LocalT(d).ToString ("D");
         }
 
         /// <summary>
@@ -184,9 +209,14 @@ namespace NachoClient
                 return "Yesterday";
             }
             if (diff < TimeSpan.FromDays (6)) {
-                return Date.ToString ("dddd");
+                return LocalT(Date).ToString ("dddd");
             }
-            return Date.ToShortDateString ();
+            return LocalT(Date).ToShortDateString ();
+        }
+
+        static public string ShortTimeString(DateTime Date)
+        {
+            return LocalT (Date).ToString ("t");
         }
 
         static public string DisplayNameForAccount (McAccount account)

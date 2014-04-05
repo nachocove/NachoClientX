@@ -50,7 +50,7 @@ namespace NachoClient.iOS
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("MessageListToNachoNow", this);
+                PerformSegue ("MessageListToNachoNow", this);
             };
 
             // Initially let's hide the search controller
@@ -188,12 +188,7 @@ namespace NachoClient.iOS
             if (null != blurry) {
                 blurry.CaptureView (this.View);
             }
-
-            if (segue.Identifier == "MessagesToRead") {
-                var vc = (ReadMessageViewController)segue.DestinationViewController;
-                vc.messages = messageThreads;
-                vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
-            }
+                
             if (segue.Identifier == "MessageListToMessageView") {
                 var vc = (MessageViewController)segue.DestinationViewController;
                 vc.messages = messageThreads;
@@ -328,7 +323,7 @@ namespace NachoClient.iOS
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    DeleteThisMessage(indexPath);
+                    DeleteThisMessage (indexPath);
                 });
                 clockView = ViewWithImageName ("clock");
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
@@ -376,7 +371,7 @@ namespace NachoClient.iOS
             return imageView;
         }
 
-        public void DeleteThisMessage(NSIndexPath indexPath)
+        public void DeleteThisMessage (NSIndexPath indexPath)
         {
             var t = messageThreads.GetEmailThread (indexPath.Row);
             var m = t.First ();

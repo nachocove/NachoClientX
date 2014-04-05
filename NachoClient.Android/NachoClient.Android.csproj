@@ -191,6 +191,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs" />
     <Compile Include="NachoCore\Mockables\MockableHttpClient.cs" />
     <Compile Include="NachoCore\Mockables\IHttpClient.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsTimeZone.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

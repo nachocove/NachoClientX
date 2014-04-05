@@ -37,6 +37,35 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        public AsTimeZone (TimeZoneInfo tzi)
+        {
+            binaryData = new byte[4 + 64 + 16 + 4 + 64 + 16 + 4];
+
+            var adjustments = tzi.GetAdjustmentRules ();
+
+            this.Bias = (long)tzi.BaseUtcOffset.TotalMinutes;
+            this.StandardName = tzi.StandardName;
+            if (tzi.SupportsDaylightSavingTime) {
+                this.DaylightName = tzi.DaylightName;
+            } else {
+                this.DaylightName = "";
+            }
+
+            if ((null == adjustments) || (0 == adjustments.Length)) {
+                return;
+            }
+
+            var adjustment = adjustments [adjustments.Length - 1];
+
+            if (tzi.SupportsDaylightSavingTime) {
+                this.DaylightBias = (long)adjustment.DaylightDelta.TotalMinutes;
+                var std = adjustment.DaylightTransitionEnd;
+                this.StandardDate = new SystemTime (0, std.Month, (int)std.DayOfWeek, std.Day, std.TimeOfDay.Hour, std.TimeOfDay.Minute, std.TimeOfDay.Second, std.TimeOfDay.Millisecond);
+                var dst = adjustment.DaylightTransitionStart;
+                this.DaylightDate = new SystemTime (0, dst.Month, (int)dst.DayOfWeek, dst.Day, dst.TimeOfDay.Hour, dst.TimeOfDay.Minute, std.TimeOfDay.Second, dst.TimeOfDay.Millisecond);
+            }
+        }
+
         public override bool Equals (System.Object obj)
         {
             // If parameter is null return false.
@@ -65,30 +94,6 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (binaryData.Length == (4 + 64 + 16 + 4 + 64 + 16 + 4));
             return System.Convert.ToBase64String (binaryData);
         }
-
-//        public TimeZoneInfo toTimeZoneInfo (DateTime startDate, DateTime endDate)
-//        {
-//            // Declare necessary TimeZoneInfo.AdjustmentRule objects for time zone
-//            TimeZoneInfo.AdjustmentRule adjustment;
-//            List<TimeZoneInfo.AdjustmentRule> adjustmentList = new List<TimeZoneInfo.AdjustmentRule> ();
-//            // Declare transition time variables to hold transition time information
-//            TimeZoneInfo.TransitionTime transitionRuleStart, transitionRuleEnd;
-//
-//            var sd = StandardDate;
-//            var dd = DaylightDate;
-//
-//            transitionRuleStart = TimeZoneInfo.TransitionTime.CreateFixedDateRule (new DateTime (1, 1, 1, dd.hour, dd.minute, dd.second), dd.month, dd.day);
-//            transitionRuleEnd = TimeZoneInfo.TransitionTime.CreateFixedDateRule (new DateTime (1, 1, 1, sd.hour, sd.minute, sd.second), sd.month, sd.day);
-//
-//            TimeSpan delta = new TimeSpan ((int)DaylightBias / 60, (int)DaylightBias % 60, 0);
-//            adjustment = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (startDate, endDate, delta, transitionRuleStart, transitionRuleEnd);
-//
-//            adjustmentList.Add (adjustment);
-//
-//            TimeSpan offset = new TimeSpan ((int)Bias / 60, (int)Bias % 60, 0);
-//            var tzi = TimeZoneInfo.CreateCustomTimeZone ("", offset, StandardName, StandardName, DaylightName, adjustmentList.ToArray());
-//            return tzi;
-//        }
 
         public string StandardName {
             get {
