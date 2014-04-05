@@ -24,6 +24,10 @@
     <MtouchLink>None</MtouchLink>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
     <MtouchDebug>true</MtouchDebug>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchI18n>
+    </MtouchI18n>
+    <MtouchArch>ARMv7</MtouchArch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>full</DebugType>
@@ -119,6 +123,9 @@
       <Link>NcContactTest.cs</Link>
     </Compile>
     <Compile Include="AsTimeZoneTest.cs" />
+    <Compile Include="..\Test.Android\AsHttpOperationTest.cs">
+      <Link>AsHttpOperationTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

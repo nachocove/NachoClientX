@@ -27,7 +27,7 @@ namespace NachoClient.iOS
     {
         public List<McEmailMessage> conversation { get; private set; }
 
-        public ConversationHolder(List<McEmailMessage> c)
+        public ConversationHolder (List<McEmailMessage> c)
         {
             conversation = c;
         }
@@ -90,12 +90,6 @@ namespace NachoClient.iOS
                 messageListViewController.SetEmailMessages (messageList);
             }
 
-            if (segue.Identifier == "NachoNowToMessage") {
-                var readMessageViewController = (ReadMessageViewController)segue.DestinationViewController;
-                readMessageViewController.messages = dataSource.messages;
-                readMessageViewController.ThreadIndex = folderDataTableview.IndexPathForSelectedRow.Row;
-            }
-
             if (segue.Identifier == "NachoNowToMessageView") {
                 var dvc = (MessageViewController)segue.DestinationViewController;
                 dvc.messages = dataSource.messages;
@@ -145,14 +139,13 @@ namespace NachoClient.iOS
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 return cell;
             }
-
         }
 
         public class TableViewDelegate : UITableViewDelegate
         {
             NachoNowViewController owner;
 
-            public TableViewDelegate(NachoNowViewController o)
+            public TableViewDelegate (NachoNowViewController o)
             {
                 owner = o;
             }
@@ -162,7 +155,6 @@ namespace NachoClient.iOS
                 var conversation = owner.dataSource.messages.GetEmailThread (indexPath.Row);
                 owner.PerformSegue ("NachoNowToMessageView", new ConversationHolder (conversation));
             }
-
         }
 
         public class CarouselDataSource : iCarouselDataSource

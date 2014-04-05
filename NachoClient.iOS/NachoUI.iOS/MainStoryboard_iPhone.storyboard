@@ -63,7 +63,6 @@
                         <outlet property="folderDataTableview" destination="2Mt-ji-WuY" id="lHo-yz-23R"/>
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
-                        <segue destination="Bab-sA-Ld3" kind="push" identifier="NachoNowToMessage" id="7H5-MT-Qxr"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                     </connections>
                 </viewController>
@@ -829,7 +828,6 @@
                         <outlet property="revealButton" destination="2XU-yE-OMg" id="j7H-HA-a1S"/>
                         <outlet property="searchButton" destination="zTu-79-4b2" id="EGO-9q-D24"/>
                         <outlet property="searchDisplayController" destination="Ug7-2K-mbR" id="1qh-sO-pLj"/>
-                        <segue destination="Bab-sA-Ld3" kind="push" identifier="MessagesToRead" id="Xn1-hQ-Sqh"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="MessageListToMessageView" id="c79-xS-Npa"/>
@@ -908,65 +906,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-185" y="1044"/>
-        </scene>
-        <!--Read Message View Controller-->
-        <scene sceneID="sfz-09-thi">
-            <objects>
-                <tableViewController storyboardIdentifier="ReadMessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Bab-sA-Ld3" customClass="ReadMessageViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="a0A-S1-Sif">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="pMr-lL-UdS">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="pMr-lL-UdS" id="jV0-eK-94w">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="Bab-sA-Ld3" id="EXd-zX-bnR"/>
-                            <outlet property="delegate" destination="Bab-sA-Ld3" id="4fR-lE-cuj"/>
-                        </connections>
-                    </tableView>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="heA-7l-c0K"/>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
-                    <connections>
-                        <outlet property="checkButton" destination="YtO-6p-Qbj" id="aSG-n9-h45"/>
-                        <outlet property="clockButton" destination="zUC-gk-m0P" id="rGh-p8-BUz"/>
-                        <outlet property="deleteButton" destination="rIK-V5-bvS" id="L8K-aX-yyy"/>
-                        <outlet property="flexibleSpaceButton" destination="bgA-up-4Dn" id="b59-8V-kDO"/>
-                        <outlet property="forwardButton" destination="lNm-Ep-bzj" id="GL3-bT-E9P"/>
-                        <outlet property="listButton" destination="1RU-Fu-JfL" id="vQm-uv-KoQ"/>
-                        <outlet property="replyAllButton" destination="oDa-9t-zdf" id="kw4-Uq-K6T"/>
-                        <outlet property="replyButton" destination="9QK-dp-bKk" id="cXV-dH-haI"/>
-                        <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageToMessagePriority" modalTransitionStyle="crossDissolve" id="1iq-X7-xab"/>
-                        <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageToMessageAction" modalTransitionStyle="crossDissolve" id="S6l-ao-xdW"/>
-                        <segue destination="lOe-mG-VS5" kind="push" identifier="MessageToCompose" id="dUg-Hc-Q9Y"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Uco-jf-3Pp" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="bcH-vG-SJS">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                    <items>
-                        <barButtonItem title="Reply" id="9QK-dp-bKk"/>
-                        <barButtonItem title="Reply All" id="oDa-9t-zdf"/>
-                        <barButtonItem title="Forward" id="lNm-Ep-bzj"/>
-                        <barButtonItem style="plain" systemItem="flexibleSpace" id="bgA-up-4Dn"/>
-                    </items>
-                </toolbar>
-                <barButtonItem systemItem="stop" id="rIK-V5-bvS"/>
-                <barButtonItem image="check.png" id="YtO-6p-Qbj" userLabel="Bar Button Item - Check"/>
-                <barButtonItem image="clock.png" id="zUC-gk-m0P" userLabel="Bar Button Item - Clock"/>
-                <barButtonItem image="list.png" id="1RU-Fu-JfL" userLabel="Bar Button Item - List"/>
-            </objects>
-            <point key="canvasLocation" x="82" y="397"/>
         </scene>
         <!--Message Action View Controller-->
         <scene sceneID="xTb-xg-MEn">
@@ -1317,18 +1256,17 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="PxE-UU-EfC"/>
+        <segue reference="5fj-Ta-mc9"/>
         <segue reference="g4G-tD-G9H"/>
+        <segue reference="Mvu-uQ-8cr"/>
         <segue reference="v5u-iO-UgY"/>
+        <segue reference="JGd-do-Y28"/>
         <segue reference="hxO-14-opZ"/>
-        <segue reference="Xn1-hQ-Sqh"/>
         <segue reference="c79-xS-Npa"/>
         <segue reference="Afu-47-Kju"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="PxE-UU-EfC"/>
         <segue reference="nAp-rc-bND"/>
-        <segue reference="5fj-Ta-mc9"/>
         <segue reference="6LT-Zj-XeH"/>
     </inferredMetricsTieBreakers>
 </document>
