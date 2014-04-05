@@ -593,6 +593,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsTimeZone.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsTimeZone.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailAddressHelper.cs">
+      <Link>NachoCore\Utils\EmailAddressHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
