@@ -192,6 +192,7 @@
     <Compile Include="NachoCore\Mockables\MockableHttpClient.cs" />
     <Compile Include="NachoCore\Mockables\IHttpClient.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsTimeZone.cs" />
+    <Compile Include="NachoCore\Utils\EmailAddressHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
