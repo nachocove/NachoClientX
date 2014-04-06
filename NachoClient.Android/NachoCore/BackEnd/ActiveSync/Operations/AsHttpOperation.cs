@@ -58,14 +58,14 @@ namespace NachoCore.ActiveSync
         private const uint KDefaultRetries = 15;
         private const string KToXML = "ToXML";
 
-        // IVars. FIXME - make m_commandName private when referenced.
-        public string m_commandName;
+        private string CommandName;
         private IBEContext BEContext;
         private IAsHttpOperationOwner Owner;
         private CancellationTokenSource Cts;
         private NcTimer DelayTimer;
         private NcTimer TimeoutTimer;
-        // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
+        // These DisposedXxx are used to avoid eliminating a reference while still in a callback (can cause crash).
+        // They don't leak - they are freed when this AsHttpOperation object is freed.
         #pragma warning disable 414
         private NcTimer DisposedDelayTimer;
         private NcTimer DisposedTimeoutTimer;
@@ -90,7 +90,10 @@ namespace NachoCore.ActiveSync
 
         public string Token { set; get; }
 
-        // Initializers.
+        /* Lifecycle:
+         * AsHttpOperation object gets created.
+         * obj.Execute(sm) called.
+         */
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KToXML);
@@ -98,7 +101,7 @@ namespace NachoCore.ActiveSync
             Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
             TriesLeft = KDefaultRetries + 1;
             Allow451Follow = true;
-            m_commandName = commandName;
+            CommandName = commandName;
             Owner = owner;
             BEContext = beContext;
 
@@ -209,8 +212,7 @@ namespace NachoCore.ActiveSync
                 Log.Info (Log.LOG_AS, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
             } else {
-                // FIXME - convert to TempFail, and make sure that SMs above can cope.
-                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "ASHTTPDOH", null, "Too many retries."));
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
             }
         }
 
@@ -316,7 +318,7 @@ namespace NachoCore.ActiveSync
             var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             var doc = Owner.ToXDocument (this);
             if (null != doc) {
-                Log.Info (Log.LOG_XML, "{0}:\n{1}", m_commandName, doc);
+                Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 // Sadly, Xamarin does not support schema-based XML validation APIs.
                 if (Owner.UseWbxml (this)) {
                     var wbxml = doc.ToWbxml ();
@@ -347,7 +349,7 @@ namespace NachoCore.ActiveSync
 
             // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
             // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
-            // assume the HttpClient instance has been abandoned.
+            // assume the IHttpClient instance has been abandoned.
             var myClient = Client;
             TimeoutTimer = new NcTimer (TimeoutTimerCallback, myClient, Timeout, 
                 System.Threading.Timeout.InfiniteTimeSpan);
@@ -359,8 +361,11 @@ namespace NachoCore.ActiveSync
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     if (!cToken.IsCancellationRequested) {
+                        // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        var timeoutEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        timeoutEvent.DropIfStopped = true;
+                        HttpOpSm.PostEvent (timeoutEvent);
                     }
                 }
                 return;
@@ -380,7 +385,9 @@ namespace NachoCore.ActiveSync
                 // As best I can tell, this may be driven by bug(s) in the Mono stack.
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNRE", null, string.Format ("NullReferenceException: {0}, Uri: {1}", ex.Message, ServerUri));
+                    var nRefEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                    nRefEvent.DropIfStopped = true;
+                    HttpOpSm.PostEvent (nRefEvent);
                 }
                 return;
             }
@@ -441,13 +448,13 @@ namespace NachoCore.ActiveSync
                                 return Final (statusEvent);
                             }
                         }
-                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", m_commandName, responseDoc);
+                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
-                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", m_commandName, responseDoc);
+                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:
                         if (null == ContentType) {
