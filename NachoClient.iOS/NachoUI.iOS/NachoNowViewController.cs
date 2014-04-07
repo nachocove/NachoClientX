@@ -17,6 +17,8 @@ namespace NachoClient.iOS
 {
     public partial class NachoNowViewController : UIViewController, INachoMessageControllerDelegate
     {
+        public bool wrap = true;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -28,7 +30,7 @@ namespace NachoClient.iOS
             View.BackgroundColor = UIColor.LightGray;
 
 //            tableView.WeakDataSource = new NachoNowDataSource (this);
-            tableView.Source = new NachoNowDataSource (this);
+//            tableView.Source = new NachoNowDataSource (this);
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -56,7 +58,14 @@ namespace NachoClient.iOS
             this.NavigationController.ToolbarHidden = false;
 
             UpdateHotList ();
-            tableView.ReloadData ();
+
+            // configure carousel
+            carouselView.DataSource = new CarouselDataSource (this);
+            carouselView.Delegate = new CarouselDelegate (this);  
+            carouselView.Type = iCarouselType.Wheel;
+            carouselView.Vertical = true;
+            carouselView.ContentOffset = new SizeF (0f, 60f);
+            carouselView.BackgroundColor = UIColor.LightTextColor;
         }
 
         public override void ViewDidAppear (bool animated)
@@ -151,153 +160,118 @@ namespace NachoClient.iOS
             }
         }
 
-        public class NachoNowDataSource : UITableViewSource
+        public class CarouselDataSource : iCarouselDataSource
         {
             NachoNowViewController owner;
 
-            /// <summary>
-            /// Initializes a new instance of the
-            /// <see cref="NachoClient.iOS.NachoNowViewController+NachoNowDataSource"/> class.
-            /// </summary>
-            /// <param name="owner">Owner.</param>
-            public NachoNowDataSource (NachoNowViewController owner)
+            public CarouselDataSource (NachoNowViewController o)
             {
-                this.owner = owner;
+                owner = o;
             }
 
-            public override int NumberOfSections (UITableView tableView)
+            public override uint NumberOfItemsInCarousel (iCarousel carousel)
             {
-                return 1;
+                return (uint)(5 * owner.hotList.Count ());
             }
 
-            public override int RowsInSection (UITableView tableview, int section)
+            protected void adjustIndex (ref uint index)
             {
-                return owner.hotList.Count;
+                index = (uint)(index % owner.hotList.Count ());
             }
 
-            public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+            public override UIView ViewForItemAtIndex (iCarousel carousel, uint index, UIView view)
             {
-                object item = owner.hotList [indexPath.Row];
+                adjustIndex (ref index);
+
+                // Create new view if no view is available for recycling
+                if (view == null) {
+                    var v = new UIImageView (new RectangleF (0f, 0f, 300.0f, 200.0f));
+                    v.ContentMode = UIViewContentMode.Center;
+                    v.Layer.CornerRadius = 5;
+                    v.Layer.MasksToBounds = true;
+                    v.Layer.BorderColor = UIColor.DarkGray.CGColor;
+                    v.Layer.BorderWidth = 1;
+                    var l = new UILabel (v.Bounds);
+                    l.BackgroundColor = UIColor.White;
+                    l.TextAlignment = UITextAlignment.Center;
+                    l.Font = l.Font.WithSize (20f);
+                    l.Tag = 1;
+                    v.AddSubview (l);
+                    view = v;
+                }
+
+                var label = (UILabel)view.ViewWithTag (1);
+
+                var item = owner.hotList [(int)index];
 
                 var messageThread = item as List<McEmailMessage>;
                 if (null != messageThread) {
-                    var cell = NachoSwipeTableViewCell.GetCell (tableView, messageThread);
-                    ConfigureCellActions (cell, indexPath);
-                    return cell;
+                    var message = messageThread.First ();
+                    label.Text = message.Subject;
                 }
-
                 var calendarItem = item as McCalendar;
                 if (null != calendarItem) {
-                    var cell = GetCalendarCell (tableView, calendarItem);
-                    return cell;
+                    label.Text = calendarItem.Subject;
                 }
 
-                NachoAssert.CaseError ();
-                return null;
+                return view;
             }
 
-            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            public override uint NumberOfPlaceholdersInCarousel (iCarousel carousel)
             {
-                return 78.0f;
+                return 20;
             }
 
-            public UITableViewCell GetCalendarCell (UITableView tableView, McCalendar c)
+            public override UIView PlaceholderViewAtIndex (iCarousel carousel, uint index, UIView view)
             {
-                const string CellIdentifier = "CalendarToCalendarItem";
+                adjustIndex (ref index);
 
-                UITableViewCell cell = tableView.DequeueReusableCell (CellIdentifier);
-                // Should always get a prototype cell
-                NachoCore.NachoAssert.True (null != cell);
-
-                UILabel startLabel = (UILabel)cell.ViewWithTag (1);
-                UILabel durationLabel = (UILabel)cell.ViewWithTag (2);
-                UIImageView calendarImage = (UIImageView)cell.ViewWithTag (3);
-                UILabel titleLabel = (UILabel)cell.ViewWithTag (4);
-
-                if (c.AllDayEvent) {
-                    startLabel.Text = "ALL DAY";
-                    durationLabel.Text = "";
-                } else {
-                    startLabel.Text = Pretty.ShortTimeString (c.StartTime);
-                    durationLabel.Text = Pretty.CompactDuration (c);
+                //create new view if no view is available for recycling
+                if (null == view) {
+                    var v = new UIImageView (new RectangleF (0f, 0f, 300.0f, 200.0f));
+                    v.ContentMode = UIViewContentMode.Center;
+                    v.Layer.CornerRadius = 5;
+                    v.Layer.MasksToBounds = true;
+                    var l = new UILabel (v.Bounds);
+                    l.BackgroundColor = UIColor.White;
+                    l.TextAlignment = UITextAlignment.Center;
+                    l.Font = l.Font.WithSize (20f);
+                    l.Tag = 1;
+                    v.AddSubview (l);
+                    view = v;
                 }
-                calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Green);
-                var titleLabelFrame = titleLabel.Frame;
-                titleLabelFrame.Width = cell.Frame.Width - titleLabel.Frame.Left;
-                titleLabel.Frame = titleLabelFrame;
-                titleLabel.Text = c.Subject;
-                titleLabel.SizeToFit ();
+                var label = (UILabel)view.ViewWithTag (1);
+                label.Text = "Placeholder";
 
-                return cell;
+                return view;
             }
+        }
 
-            void ConfigureCellActions (NachoSwipeTableViewCell cell, NSIndexPath indexPath)
+        public class CarouselDelegate : iCarouselDelegate
+        {
+            NachoNowViewController owner;
+
+            public CarouselDelegate (NachoNowViewController o)
             {
-                cell.FirstTrigger = 0.20f;
-                cell.SecondTrigger = 0.50f;
-
-                UIView checkView = null;
-                UIColor greenColor = null;
-                UIView crossView = null;
-                UIColor redColor = null;
-                UIView clockView = null;
-                UIColor yellowColor = null;
-                UIView listView = null;
-                UIColor brownColor = null;
-
-                try { 
-                    checkView = ViewWithImageName ("check");
-                    greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
-                    cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        Console.WriteLine ("Did swipe Checkmark cell");
-                    });
-                    crossView = ViewWithImageName ("cross");
-                    redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-                    cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        DeleteThisMessage (indexPath);
-                    });
-                    clockView = ViewWithImageName ("clock");
-                    yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
-                    cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        owner.PerformSegue ("NachoNowToMessagePriority", indexPath);
-                    });
-                    listView = ViewWithImageName ("list");
-                    brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
-                    cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        owner.PerformSegue ("NachoNowToMessageAction", indexPath);
-                    });
-                } finally {
-                    if (null != checkView) {
-                        checkView.Dispose ();
-                    }
-                    if (null != greenColor) {
-                        greenColor.Dispose ();
-                    }
-                    if (null != crossView) {
-                        crossView.Dispose ();
-                    }
-                    if (null != redColor) {
-                        redColor.Dispose ();
-                    }
-                    if (null != clockView) {
-                        clockView.Dispose ();
-                    }
-                    if (null != yellowColor) {
-                        yellowColor.Dispose ();
-                    }
-                    if (null != listView) {
-                        listView.Dispose ();
-                    }
-                    if (null != brownColor) {
-                        brownColor.Dispose ();
-                    }
-                }
+                owner = o;
             }
-
-            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+            //            public override MonoTouch.CoreAnimation.CATransform3D ItemTransformForOffset (iCarousel carousel, float offset, MonoTouch.CoreAnimation.CATransform3D transform)
+            //            {
+            //                // implement 'flip3D' style carousel
+            //                transform = CATransform3D.MakeRotation (((float)Math.PI) / 8.0f, 0.0f, 1.0f, 0.0f);
+            //                return CATransform3D.MakeTranslation (0f, 0f, offset * carousel.ItemWidth);
+            //            }
+            /// <summary>
+            /// Called when the Item is touched.
+            /// </summary>
+            public override void DidSelectItemAtIndex (iCarousel carousel, int index)
             {
-                object item = owner.hotList [indexPath.Row];
+                index = index % owner.hotList.Count;
 
+                object item = owner.hotList [index];
+
+                var indexPath = NSIndexPath.FromItemSection (index, 0);
+ 
                 var messageThread = item as List<McEmailMessage>;
                 if (null != messageThread) {
                     owner.PerformSegue ("NachoNowToMessageView", indexPath);
@@ -313,19 +287,43 @@ namespace NachoClient.iOS
                 NachoAssert.CaseError ();
             }
 
-            UIView ViewWithImageName (string imageName)
+            public override void CarouselWillBeginDragging (iCarousel carousel)
             {
-                var image = UIImage.FromBundle (imageName);
-                var imageView = new UIImageView (image);
-                imageView.ContentMode = UIViewContentMode.Center;
-                return imageView;
+                UIView.BeginAnimations (null);
+                UIView.SetAnimationDuration (0.5f);
+                UIView.CommitAnimations ();
             }
 
-            public void DeleteThisMessage (NSIndexPath indexPath)
+            public override void CarouselDidEndDragging (iCarousel carousel, bool decelerate)
             {
-                var t = owner.messageThreads.GetEmailThread (indexPath.Row);
-                var m = t.First ();
-                BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
+                UIView.BeginAnimations (null);
+                UIView.SetAnimationCurve (UIViewAnimationCurve.EaseIn);
+                UIView.SetAnimationDuration (0.5f);
+                UIView.CommitAnimations ();
+            }
+
+            /// <summary>
+            /// Values for option.
+            /// </summary>
+            public override float ValueForOption (iCarousel carousel, iCarouselOption option, float value)
+            {
+                // customize carousel display
+                switch (option) {
+                case iCarouselOption.Wrap:
+                    // normally you would hard-code this to true or false
+                    return (owner.wrap ? 1.0f : 0.0f);
+//                case iCarouselOption.Spacing:
+//                    // add a bit of spacing between the item views
+//                    return value * 1.05f;
+                case iCarouselOption.FadeMax:
+                    if (iCarouselType.Custom == carousel.Type) {
+                        return 0.0f;
+                    }
+                    return value;
+                default:
+                    return value;
+                }
+
             }
         }
     }

@@ -16,6 +16,9 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem calendarNowButton { get; set; }
 
 		[Outlet]
+		iCarouselBinding.iCarousel carouselView { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem contactsNowButton { get; set; }
 
 		[Outlet]
@@ -23,9 +26,6 @@ namespace NachoClient.iOS
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UITableView tableView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem tasksNowButton { get; set; }
@@ -52,9 +52,9 @@ namespace NachoClient.iOS
 				revealButton = null;
 			}
 
-			if (tableView != null) {
-				tableView.Dispose ();
-				tableView = null;
+			if (carouselView != null) {
+				carouselView.Dispose ();
+				carouselView = null;
 			}
 
 			if (tasksNowButton != null) {
