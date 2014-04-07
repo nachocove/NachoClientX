@@ -34,15 +34,18 @@ namespace Test.Android
                 new MailAddress ("steves@nachocove.com", "Steve Scalpone"),
             };
 
+            // Single email address, no display name
             List<MailAddress> got1 = EmailAddressHelper.ParseString ("henryk@nachocove.com");
             Compare (expected1, got1);
 
+            // Multiple email addresses, no display name
             List<MailAddress> got2a = EmailAddressHelper.ParseString ("henryk@nachocove.com,jeffe@nachocove.com");
             Compare (expected2, got2a);
 
-            List<MailAddress> got2b = EmailAddressHelper.ParseString ("henryk@nachocove.com,jeffe@nachocove.com");
+            List<MailAddress> got2b = EmailAddressHelper.ParseString ("henryk@nachocove.com, jeffe@nachocove.com");
             Compare (expected2, got2b);
 
+            // Multiple email addresses, with display name
             List<MailAddress> got3a = EmailAddressHelper.ParseString ("Henry Kwok <henryk@nachocove.com>,Jeff Enderwick <jeffe@nachocove.com>");
             Compare (expected3, got3a);
 
