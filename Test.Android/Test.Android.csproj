@@ -66,6 +66,7 @@
     <Compile Include="NcObjectTest.cs" />
     <Compile Include="NcContactTest.cs" />
     <Compile Include="AsHttpOperationTest.cs" />
+    <Compile Include="EmailAddressHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

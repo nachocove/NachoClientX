@@ -126,6 +126,9 @@
     <Compile Include="..\Test.Android\AsHttpOperationTest.cs">
       <Link>AsHttpOperationTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\EmailAddressHelperTest.cs">
+      <Link>EmailAddressHelperTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
