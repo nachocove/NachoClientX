@@ -12,8 +12,8 @@ namespace NachoCore
     {
         protected List<McCalendar> list;
         protected Dictionary<DateTime, List<int>> bag;
-        protected List<DateTime> listOfDays;
-        protected List<int>[] listOfDaysEvents;
+        protected List<DateTime> listOfDaysThatHaveEvents;
+        protected List<int>[] listOfEventsOnADay;
 
         protected NachoCalendarCommon ()
         {
@@ -25,8 +25,8 @@ namespace NachoCore
             Reload ();
             bag = new Dictionary<DateTime, List<int>> ();
             if (null == list) {
-                listOfDays = new List<DateTime> ();
-                listOfDaysEvents = new List<int>[0];
+                listOfDaysThatHaveEvents = new List<DateTime> ();
+                listOfEventsOnADay = new List<int>[0];
                 return;
             }
             for(var i = 0; i < list.Count; i++) {
@@ -41,9 +41,9 @@ namespace NachoCore
                     AddItem (c.StartTime, i);
                 }
             }
-            listOfDays = bag.Keys.ToList ();
-            listOfDays.Sort ();
-            listOfDaysEvents = new List<int>[listOfDays.Count];
+            listOfDaysThatHaveEvents = bag.Keys.ToList ();
+            listOfDaysThatHaveEvents.Sort ();
+            listOfEventsOnADay = new List<int>[listOfDaysThatHaveEvents.Count];
         }
 
         protected virtual void Reload ()
@@ -63,36 +63,46 @@ namespace NachoCore
 
         public int NumberOfDays ()
         {
-            return listOfDays.Count;
+            return listOfDaysThatHaveEvents.Count;
         }
 
         public int IndexOfDate (DateTime target)
         {
-            target = target.Date;
-            for (var i = 0; i < listOfDays.Count; i++) {
-                if (listOfDays [i] <= target) {
+            target = target.Date.AddMilliseconds (1.0);
+            for (var i = 0; i < listOfDaysThatHaveEvents.Count; i++) {
+                if (listOfDaysThatHaveEvents [i] >= target) {
                     return i;
                 }
             }
-            return Math.Max (0, listOfDays.Count - 1);
+            return Math.Max (0, listOfDaysThatHaveEvents.Count - 1);
+        }
+
+        public int IndexOfThisOrNext(DateTime target)
+        {
+            for (var i = 0; i < listOfDaysThatHaveEvents.Count; i++) {
+                if (target >= listOfDaysThatHaveEvents [i]) {
+                    return i;
+                }
+            }
+            return Math.Max (0, listOfDaysThatHaveEvents.Count - 1);
         }
 
         public int NumberOfItemsForDay (int i)
         {
-            if (null == listOfDaysEvents [i]) {
-                listOfDaysEvents [i] = bag [listOfDays [i]];
+            if (null == listOfEventsOnADay [i]) {
+                listOfEventsOnADay [i] = bag [listOfDaysThatHaveEvents [i]];
             }
-            return listOfDaysEvents [i].Count;
+            return listOfEventsOnADay [i].Count;
         }
 
         public DateTime GetDayDate(int day)
         {
-            return listOfDays [day];
+            return listOfDaysThatHaveEvents [day];
         }
 
         public McCalendar GetCalendarItem (int day, int item)
         {
-            return GetCalendarItem (listOfDaysEvents [day] [item]);
+            return GetCalendarItem (listOfEventsOnADay [day] [item]);
         }
 
         public McCalendar GetCalendarItem (int i)

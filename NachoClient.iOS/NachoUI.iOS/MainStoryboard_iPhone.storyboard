@@ -27,28 +27,64 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="background.png" id="NUL-if-4nh">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                            </imageView>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="2Mt-ji-WuY">
-                                <rect key="frame" x="20" y="284" width="280" height="176"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="0i7-KH-GeQ">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="372"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <color key="sectionIndexTrackingBackgroundColor" red="1" green="0.18481115949999999" blue="0.20839327639999999" alpha="1" colorSpace="calibratedRGB"/>
+                                <prototypes>
+                                    <tableViewCell contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="CalendarToCalendarItem" id="9qY-3M-WkP">
+                                        <rect key="frame" x="0.0" y="22" width="320" height="44"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="9qY-3M-WkP" id="Eys-4h-bjU">
+                                            <rect key="frame" x="0.0" y="0.0" width="287" height="43"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="glu-Ya-DRH">
+                                                    <rect key="frame" x="15" y="2" width="58" height="21"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                                    <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                                <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="2" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="65W-fj-9Ds">
+                                                    <rect key="frame" x="15" y="20" width="58" height="21"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                                    <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                                <imageView userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="Muq-ig-acg">
+                                                    <rect key="frame" x="81" y="2" width="21" height="22"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                </imageView>
+                                                <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="4" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="f3g-ri-A42">
+                                                    <rect key="frame" x="110" y="2" width="190" height="39"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                            </subviews>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
+                                </prototypes>
                             </tableView>
-                            <view contentMode="scaleToFill" id="izC-5B-BPD" customClass="iCarousel">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="276"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                            </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <toolbarItems/>
+                    <toolbarItems>
+                        <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="jWS-vv-VcN"/>
+                        <barButtonItem image="ic_action_email.png" id="Q8j-Ms-eXM" userLabel="Bar Button Item - Email"/>
+                        <barButtonItem style="plain" systemItem="flexibleSpace" id="jJF-li-rLp"/>
+                        <barButtonItem image="ic_action_event.png" id="ab3-Ei-AkG" userLabel="Bar Button Item - Calendar"/>
+                        <barButtonItem style="plain" systemItem="flexibleSpace" id="kcD-hH-aQ2"/>
+                        <barButtonItem image="ic_action_time.png" id="llx-zm-FnK" userLabel="Bar Button Item - Tasks"/>
+                        <barButtonItem style="plain" systemItem="flexibleSpace" id="HgG-uk-3Tb"/>
+                        <barButtonItem image="ic_action_group.png" id="SIZ-ov-VwT" userLabel="Bar Button Item - Contacts"/>
+                        <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="U1f-bf-kbg"/>
+                    </toolbarItems>
                     <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="3Av-eh-eab"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="compose" id="HwW-s6-dM7">
@@ -57,13 +93,22 @@
                             </connections>
                         </barButtonItem>
                     </navigationItem>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
                     <connections>
-                        <outlet property="Carousel" destination="izC-5B-BPD" id="WCw-8d-jAg"/>
-                        <outlet property="folderDataTableview" destination="2Mt-ji-WuY" id="lHo-yz-23R"/>
+                        <outlet property="calendarNowButton" destination="ab3-Ei-AkG" id="K9u-LA-BLa"/>
+                        <outlet property="contactsNowButton" destination="SIZ-ov-VwT" id="Sdm-YC-aif"/>
+                        <outlet property="emailNowButton" destination="Q8j-Ms-eXM" id="b1o-hi-we7"/>
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
+                        <outlet property="tableView" destination="0i7-KH-GeQ" id="CH8-LM-Ezd"/>
+                        <outlet property="tasksNowButton" destination="llx-zm-FnK" id="e7O-OU-6Zo"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
+                        <segue destination="ef5-Td-j3Y" kind="push" identifier="NachoNowToCalendar" id="8JW-bP-0Qw"/>
+                        <segue destination="jTc-Vg-SXZ" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="ciI-Ve-Wsq"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
+                        <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" id="Q8y-4K-BAb"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -200,7 +245,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -260,7 +305,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ContactsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="jTc-Vg-SXZ" customClass="ContactsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="MBn-W2-0u6">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="f7d-Bz-vIg">
@@ -345,7 +390,7 @@
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -588,7 +633,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -799,7 +844,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="Cy0-Nd-oMQ">
@@ -1242,12 +1287,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </scenes>
     <resources>
         <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
-        <image name="background.png" width="50" height="468"/>
         <image name="calendar-3-48.png" width="48" height="48"/>
         <image name="check.png" width="23" height="20"/>
         <image name="clock-3-48.png" width="48" height="48"/>
         <image name="clock.png" width="22" height="22"/>
         <image name="ic_action_collection.png" width="32" height="32"/>
+        <image name="ic_action_email.png" width="32" height="32"/>
+        <image name="ic_action_event.png" width="32" height="32"/>
+        <image name="ic_action_group.png" width="32" height="32"/>
+        <image name="ic_action_time.png" width="32" height="32"/>
         <image name="list.png" width="20" height="18"/>
     </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
@@ -1256,17 +1304,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="5fj-Ta-mc9"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="v5u-iO-UgY"/>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="PxE-UU-EfC"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="P1C-rg-Luy"/>
+        <segue reference="8JW-bP-0Qw"/>
+        <segue reference="ciI-Ve-Wsq"/>
+        <segue reference="JWi-mA-RVD"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="RaB-9o-azo"/>
         <segue reference="nAp-rc-bND"/>
-        <segue reference="6LT-Zj-XeH"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="ebP-h4-BhC"/>
     </inferredMetricsTieBreakers>
 </document>

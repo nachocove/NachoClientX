@@ -142,6 +142,14 @@ namespace NachoCore.Utils
             }
         }
 
+        static public void UpdateDbWithSummary (McEmailMessage message)
+        {
+            var body = message.GetBody ();
+            var summary = MimeHelpers.CreateSummary (body);
+            message.Summary = summary;
+            BackEnd.Instance.Db.Update (message);
+        }
+
         static protected string CommaSeparatedList (InternetAddressList addresses)
         {
             var list = new List<string> ();

@@ -21,8 +21,7 @@ namespace NachoClient.iOS
 {
     public partial class MessageViewController : UIViewController, INachoMessageControllerDelegate
     {
-        public int ThreadIndex;
-        public INachoEmailMessages messages;
+        public List<McEmailMessage> thread;
         protected UIView view;
         protected UIView attachmentsView;
         protected List<McAttachment> attachments;
@@ -81,7 +80,7 @@ namespace NachoClient.iOS
                 }
             };
 
-            MarkAsRead (ThreadIndex);
+            MarkAsRead ();
 
         }
 
@@ -109,18 +108,18 @@ namespace NachoClient.iOS
 
             if (segue.Identifier == "MessageViewToMessagePriority") {
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
-                vc.thread = messages.GetEmailThread (ThreadIndex);
+                vc.thread = thread;
                 vc.SetOwner (this);
             }
             if (segue.Identifier == "MessageViewToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
-                vc.thread = messages.GetEmailThread (ThreadIndex);
+                vc.thread = thread;
                 vc.SetOwner (this);
             }
             if (segue.Identifier == "MessageViewToComposeView") {
                 var vc = (ComposeViewController)segue.DestinationViewController;
                 vc.Action = (NSString)sender;
-                vc.ActionThread = messages.GetEmailThread (ThreadIndex);
+                vc.ActionThread = thread;
                 vc.SetOwner (this);
             }
         }
@@ -133,10 +132,9 @@ namespace NachoClient.iOS
             }));
         }
 
-        void MarkAsRead (int index)
+        void MarkAsRead ()
         {
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
-            var thread = messages.GetEmailThread (index);
             var message = thread.First ();
             if (false == message.IsRead) {
                 BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
@@ -145,16 +143,14 @@ namespace NachoClient.iOS
 
         public void DeleteThisMessage ()
         {
-            var t = messages.GetEmailThread (ThreadIndex);
-            var m = t.First ();
+            var m = thread.First ();
             BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
             NavigationController.PopViewControllerAnimated (true);
         }
 
         protected void CreateView ()
         {
-            var t = messages.GetEmailThread (ThreadIndex);
-            var m = t.First ();
+            var m = thread.First ();
 
             attachments = McAttachment.QueryByItemId<McEmailMessage> (m.AccountId, m.Id);
 
@@ -290,8 +286,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var t = messages.GetEmailThread (ThreadIndex);
-            var m = t.First ();
+            var m = thread.First ();
             attachments = McAttachment.QueryByItemId<McEmailMessage> (m.AccountId, m.Id);
 
             for (int i = 0; i < attachments.Count; i++) {

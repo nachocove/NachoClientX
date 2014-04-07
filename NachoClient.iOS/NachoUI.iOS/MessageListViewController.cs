@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Drawing;
+using System.Collections.Generic;
 using MonoTouch.Foundation;
 
 //using MonoTouch.CoreGraphics;
@@ -165,6 +166,7 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            this.NavigationController.ToolbarHidden = true;
 
             messageThreads.Refresh ();
             TableView.ReloadData ();
@@ -191,8 +193,7 @@ namespace NachoClient.iOS
                 
             if (segue.Identifier == "MessageListToMessageView") {
                 var vc = (MessageViewController)segue.DestinationViewController;
-                vc.messages = messageThreads;
-                vc.ThreadIndex = TableView.IndexPathForSelectedRow.Row;
+                vc.thread = messageThreads.GetEmailThread (TableView.IndexPathForSelectedRow.Row);
             }
             if (segue.Identifier == "MessageToMessagePriority") {
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
@@ -239,54 +240,15 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-//            PerformSegue ("MessagesToRead", indexPath);
             PerformSegue ("MessageListToMessageView", indexPath);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            const string CellIdentifier = "Cell";
-
-            NachoSwipeTableViewCell cell = (NachoSwipeTableViewCell)tableView.DequeueReusableCell (CellIdentifier);
-
-            if (null == cell) {
-                cell = new NachoSwipeTableViewCell (UITableViewCellStyle.Subtitle, CellIdentifier);
-
-                if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
-                    cell.SeparatorInset = UIEdgeInsets.Zero;
-                }
-                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
-                cell.ContentView.BackgroundColor = UIColor.White;
-            }
-            ConfigureCell (cell, indexPath);
-
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
-            var message = messageThread.First ();
-            var sender = message.From;
-            var subject = message.Subject;
-            if (null == message.Summary) {
-                UpdateDbWithSummary (message);
-            }
-            NachoAssert.True (null != message.Summary);
-            var summary = message.Summary;
-            var date = message.DateReceived;
-            var icon = (message.IsRead ? NachoMessageIcon.None : NachoMessageIcon.Read);
-            if (DateTime.UtcNow < message.FlagUtcDeferUntil) {
-                icon = NachoMessageIcon.Clock;
-            }
-            var count = (messageThread.Count > 1 ? messageThread.Count : 0);
-
-            cell.Update (sender, summary, subject, date, icon, count);
-
+            var cell = NachoSwipeTableViewCell.GetCell (tableView, messageThread);
+            ConfigureCellActions (cell, indexPath);
             return cell;
-        }
-
-        void UpdateDbWithSummary (McEmailMessage message)
-        {
-            var body = message.GetBody ();
-            var summary = MimeHelpers.CreateSummary (body);
-            message.Summary = summary;
-            BackEnd.Instance.Db.Update (message);
         }
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
@@ -294,16 +256,10 @@ namespace NachoClient.iOS
             return 78.0f;
         }
 
-        void ConfigureCell (NachoSwipeTableViewCell cell, NSIndexPath indexPath)
+        void ConfigureCellActions (NachoSwipeTableViewCell cell, NSIndexPath indexPath)
         {
-
-            // Setting the default inactive state color to the tableView background color
-            cell.DefaultColor = TableView.BackgroundView.BackgroundColor;
-
             cell.FirstTrigger = 0.20f;
             cell.SecondTrigger = 0.50f;
-
-//            cell.Delegate = this;
 
             UIView checkView = null;
             UIColor greenColor = null;

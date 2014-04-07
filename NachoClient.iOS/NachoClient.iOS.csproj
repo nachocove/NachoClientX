@@ -591,6 +591,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailAddressHelper.cs">
       <Link>NachoCore\Utils\EmailAddressHelper.cs</Link>
+    <Compile Include="NachoCore\Adapters\NcCalendarManager.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEmailManager.cs">
+      <Link>NachoCore\Adapters\NcEmailManager.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

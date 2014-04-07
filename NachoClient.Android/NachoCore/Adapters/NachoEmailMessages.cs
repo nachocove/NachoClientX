@@ -14,15 +14,18 @@ namespace NachoCore
         List<List<McEmailMessage>> threadList;
         McFolder folder;
 
-        public NachoEmailMessages (McFolder f)
+        public NachoEmailMessages (McFolder folder)
         {
-            folder = f;
+            this.folder = folder;
             Refresh ();
         }
 
         public void Refresh ()
         {
             List<McEmailMessage> list = McEmailMessage.QueryActiveMessages (folder.AccountId, folder.Id).OrderByDescending (c => c.DateReceived).ToList ();
+            if (null == list) {
+                list = new List<McEmailMessage> ();
+            }
             threadList = NcMessageThreads.ThreadByConversation (list);
         }
 

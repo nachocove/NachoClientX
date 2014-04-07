@@ -15,6 +15,8 @@ namespace NachoClient.iOS
     {
         INachoCalendar calendar;
         public bool UseDeviceCalendar;
+        protected bool adjustScrollPosition = true;
+
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>
@@ -56,7 +58,7 @@ namespace NachoClient.iOS
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
 
-            calendar = new NachoCalendar ();
+            calendar = NcCalendarManager.Instance;
             TableView.ReloadData ();
 
             // Watch for changes from the back end
@@ -67,6 +69,18 @@ namespace NachoClient.iOS
                     TableView.ReloadData ();
                 }
             };
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+
+            if (adjustScrollPosition &&  (calendar.NumberOfDays() > 0)) {
+                adjustScrollPosition = false;
+                var i = calendar.IndexOfDate (DateTime.UtcNow);
+                var p = NSIndexPath.FromItemSection (0, i);
+                TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
+            }
         }
 
         /// <summary>

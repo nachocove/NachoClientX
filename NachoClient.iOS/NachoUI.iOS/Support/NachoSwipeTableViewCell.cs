@@ -1,11 +1,15 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Drawing;
 using MonoTouch.Foundation;
 using MonoTouch.CoreGraphics;
 using MonoTouch.UIKit;
 using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
 using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
@@ -115,6 +119,46 @@ namespace NachoClient.iOS
             }
             return From;
         }
+
+
+        public static NachoSwipeTableViewCell GetCell(UITableView tableView, List<McEmailMessage> messageThread )
+        {
+            const string CellIdentifier = "EmailMessageThreadCell";
+
+            NachoSwipeTableViewCell cell = (NachoSwipeTableViewCell)tableView.DequeueReusableCell (CellIdentifier);
+
+            if (null == cell) {
+                cell = new NachoSwipeTableViewCell (UITableViewCellStyle.Subtitle, CellIdentifier);
+                if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+                    cell.SeparatorInset = UIEdgeInsets.Zero;
+                }
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+                cell.ContentView.BackgroundColor = UIColor.White;
+                cell.DefaultColor = UIColor.White;
+            }
+
+            var message = messageThread.First ();
+            var sender = message.From;
+            var subject = message.Subject;
+            if (null == message.Summary) {
+                MimeHelpers.UpdateDbWithSummary (message);
+            }
+            NachoAssert.True (null != message.Summary);
+            var summary = message.Summary;
+            var date = message.DateReceived;
+            var icon = (message.IsRead ? NachoMessageIcon.None : NachoMessageIcon.Read);
+            if (DateTime.UtcNow < message.FlagUtcDeferUntil) {
+                icon = NachoMessageIcon.Clock;
+            }
+            var count = (messageThread.Count > 1 ? messageThread.Count : 0);
+
+            cell.Update (sender, summary, subject, date, icon, count);
+
+
+            return cell;
+        }
+
+
     }
 
     public class MessageSummaryView : UIView
@@ -319,5 +363,6 @@ namespace NachoClient.iOS
                 bezierPath.Stroke ();
             }
         }
+
     }
 }

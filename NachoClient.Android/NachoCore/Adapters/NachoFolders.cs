@@ -7,7 +7,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 
-namespace NachoClient
+namespace NachoCore
 {
     public class NachoFolders : INachoFolders
     {

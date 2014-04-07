@@ -87,6 +87,7 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            this.NavigationController.ToolbarHidden = true;
 
             // Start fresh
             var subviews = View.Subviews;
@@ -109,7 +110,7 @@ namespace NachoClient.iOS
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             AddToTopMenu (new SidebarMenu (null, "Now!", SidebarToNachoNowSegueId, "Nacho-Cove-Icon"));
-            AddToMenu (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId, "ic_action_time"));
+            AddToMenu (new SidebarMenu (null, "Tasks", SidebarToDeferredMessagesSegueId, "ic_action_time"));
 
             AddToMenu (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId, "ic_action_collection"));
 

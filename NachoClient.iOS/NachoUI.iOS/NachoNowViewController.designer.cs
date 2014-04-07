@@ -13,19 +13,38 @@ namespace NachoClient.iOS
 	partial class NachoNowViewController
 	{
 		[Outlet]
-		iCarouselBinding.iCarousel Carousel { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem calendarNowButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UITableView folderDataTableview { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem contactsNowButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem emailNowButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UITableView tableView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem tasksNowButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (Carousel != null) {
-				Carousel.Dispose ();
-				Carousel = null;
+			if (calendarNowButton != null) {
+				calendarNowButton.Dispose ();
+				calendarNowButton = null;
+			}
+
+			if (contactsNowButton != null) {
+				contactsNowButton.Dispose ();
+				contactsNowButton = null;
+			}
+
+			if (emailNowButton != null) {
+				emailNowButton.Dispose ();
+				emailNowButton = null;
 			}
 
 			if (revealButton != null) {
@@ -33,9 +52,14 @@ namespace NachoClient.iOS
 				revealButton = null;
 			}
 
-			if (folderDataTableview != null) {
-				folderDataTableview.Dispose ();
-				folderDataTableview = null;
+			if (tableView != null) {
+				tableView.Dispose ();
+				tableView = null;
+			}
+
+			if (tasksNowButton != null) {
+				tasksNowButton.Dispose ();
+				tasksNowButton = null;
 			}
 		}
 	}

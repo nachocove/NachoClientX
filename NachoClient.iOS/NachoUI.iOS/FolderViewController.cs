@@ -57,6 +57,7 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            this.NavigationController.ToolbarHidden = true;
 
             folders.Refresh ();
             this.TableView.ReloadData ();

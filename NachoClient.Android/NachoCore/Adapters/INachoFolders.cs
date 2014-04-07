@@ -3,7 +3,7 @@
 using System;
 using NachoCore.Model;
 
-namespace NachoClient
+namespace NachoCore
 {
     public interface INachoFolders
     {

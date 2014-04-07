@@ -10,35 +10,13 @@ using iCarouselBinding;
 using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
+using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
 {
-    public class FolderHolder : NSObject
+    public partial class NachoNowViewController : UIViewController, INachoMessageControllerDelegate
     {
-        public McFolder folder { get; private set; }
-
-        public FolderHolder (McFolder f)
-        {
-            folder = f;
-        }
-    }
-
-    public class ConversationHolder : NSObject
-    {
-        public List<McEmailMessage> conversation { get; private set; }
-
-        public ConversationHolder (List<McEmailMessage> c)
-        {
-            conversation = c;
-        }
-    }
-
-    public partial class NachoNowViewController : UIViewController
-    {
-        bool wrap = true;
-        NachoFolders folders;
-        TableViewDataSource dataSource;
-
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -47,69 +25,144 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            View.BackgroundColor = UIColor.LightGray;
+
+//            tableView.WeakDataSource = new NachoNowDataSource (this);
+            tableView.Source = new NachoNowDataSource (this);
+
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
-            // Tableview
-            dataSource = new TableViewDataSource ();
-            folderDataTableview.DataSource = dataSource;
-            folderDataTableview.Delegate = new TableViewDelegate (this);
+            // Toolbar buttons
+            emailNowButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox ()));
+            };
+            calendarNowButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToCalendar", new SegueHolder (null));
+            };
+            tasksNowButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages ()));
+            };
+            contactsNowButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToContacts", new SegueHolder (null));
+            };
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            this.NavigationController.ToolbarHidden = false;
 
-            folders = new NachoFolders (NachoFolders.FilterForEmail);
-            UpdateTableView (0);
-
-            // configure carousel
-            Carousel.DataSource = new CarouselDataSource (this);
-            Carousel.Delegate = new CarouselDelegate (this);  
-            Carousel.Type = iCarouselType.CoverFlow2;
-            Carousel.ContentOffset = new SizeF (0f, 0f);
+            UpdateHotList ();
+            tableView.ReloadData ();
         }
 
-        public void UpdateTableView (int folderIndex)
+        public override void ViewDidAppear (bool animated)
         {
-            if (folders.Count () <= folderIndex) {
-                dataSource.ReloadMessages (folderDataTableview, null);
-            } else {
-                dataSource.ReloadMessages (folderDataTableview, folders.GetFolder (folderIndex));
-            }
+            base.ViewDidAppear (animated);
         }
-
+        //        NachoNowToCalendar(null)
+        //        NachoNowToCalendarItem (index path)
+        //        NachoNowToContacts (null)
+        //        NachoNowToMessageAction (index path)
+        //        NachoNowToMessageList (inbox folder)
+        //        NachoNowToMessageList(deferred folder)
+        //        NachoNowToMessagePriority  (index path)
+        //        NachoNowToMessageView (index path)
+        //
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            if (segue.Identifier == "NachoNowToCalendar") {
+                return; // Nothing to do
+            }
+            if (segue.Identifier == "NachoNowToCalendarItem") {
+                var indexPath = (NSIndexPath)sender;
+                McCalendar calendarItem = (McCalendar)hotList [indexPath.Row];
+                CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
+                destinationController.calendarItem = calendarItem;
+                destinationController.Title = Pretty.SubjectString (calendarItem.Subject);
+                return;
+            }
+            if (segue.Identifier == "NachoNowToContacts") {
+                return; // Nothing to do
+            }
+            if (segue.Identifier == "NachoNowToMessageAction") {
+                var vc = (MessageActionViewController)segue.DestinationViewController;
+                var indexPath = (NSIndexPath)sender;
+                vc.thread = messageThreads.GetEmailThread (indexPath.Row);
+                vc.SetOwner (this);
+                return;
+            }
             if (segue.Identifier == "NachoNowToMessageList") {
-                var folderHolder = (FolderHolder)sender;
+                var holder = (SegueHolder)sender;
+                var messageList = (INachoEmailMessages)holder.value;
                 var messageListViewController = (MessageListViewController)segue.DestinationViewController;
-                var messageList = new NachoEmailMessages (folderHolder.folder);
                 messageListViewController.SetEmailMessages (messageList);
+                return;
+            }
+            if (segue.Identifier == "NachoNowToMessageView") {
+                var indexPath = (NSIndexPath)sender;
+                var vc = (MessageViewController)segue.DestinationViewController;
+                vc.thread = (List<McEmailMessage>)hotList [indexPath.Row];
+                return;
+            }
+            if (segue.Identifier == "NachoNowToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                var indexPath = (NSIndexPath)sender;
+                vc.thread = messageThreads.GetEmailThread (indexPath.Row);
+                vc.SetOwner (this);
+                return;
             }
 
-            if (segue.Identifier == "NachoNowToMessageView") {
-                var dvc = (MessageViewController)segue.DestinationViewController;
-                dvc.messages = dataSource.messages;
-                dvc.ThreadIndex = folderDataTableview.IndexPathForSelectedRow.Row;
+            Log.Info ("Unhandled segue identifer %s", segue.Identifier);
+            NachoAssert.CaseError ();
+        }
+
+        public void DismissMessageViewController (INachoMessageController vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissViewController (false, null);
+        }
+
+        INachoEmailMessages messageThreads;
+        INachoEmailMessages taskThreads;
+        INachoCalendar calendar;
+        List<object> hotList;
+
+        protected void UpdateHotList ()
+        {
+            messageThreads = NcEmailManager.Inbox ();
+            taskThreads = new NachoDeferredEmailMessages ();
+            calendar = NcCalendarManager.Instance;
+            hotList = new List<object> ();
+
+            for (int i = 0; (i < messageThreads.Count ()) && (i < 3); i++) {
+                hotList.Add (messageThreads.GetEmailThread (i));
+            }
+            for (int i = 0; (i < taskThreads.Count ()) && (i < 3); i++) {
+                hotList.Add (taskThreads.GetEmailThread (i));
+            }
+
+            int day = calendar.IndexOfDate (DateTime.UtcNow.Date);
+            for (int i = 0; i < calendar.NumberOfItemsForDay (day); i++) {
+                hotList.Add (calendar.GetCalendarItem (day, i));
             }
         }
 
-        public class TableViewDataSource : UITableViewDataSource
+        public class NachoNowDataSource : UITableViewSource
         {
-            public NachoEmailMessages messages;
+            NachoNowViewController owner;
 
-            public TableViewDataSource ()
+            /// <summary>
+            /// Initializes a new instance of the
+            /// <see cref="NachoClient.iOS.NachoNowViewController+NachoNowDataSource"/> class.
+            /// </summary>
+            /// <param name="owner">Owner.</param>
+            public NachoNowDataSource (NachoNowViewController owner)
             {
-                messages = null;
-            }
-
-            public void ReloadMessages (UITableView tableView, McFolder folder)
-            {
-                messages = new NachoEmailMessages (folder);
-                tableView.ReloadData ();
+                this.owner = owner;
             }
 
             public override int NumberOfSections (UITableView tableView)
@@ -117,185 +170,162 @@ namespace NachoClient.iOS
                 return 1;
             }
 
-            public override int RowsInSection (UITableView tableView, int section)
+            public override int RowsInSection (UITableView tableview, int section)
             {
-                if (null == messages) {
-                    return 0;
-                } else {
-                    return messages.Count ();
-                }
+                return owner.hotList.Count;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
-                var cell = tableView.DequeueReusableCell ("cell");
-                if (null == cell) {
-                    cell = new UITableViewCell (UITableViewCellStyle.Subtitle, "cell");
+                object item = owner.hotList [indexPath.Row];
+
+                var messageThread = item as List<McEmailMessage>;
+                if (null != messageThread) {
+                    var cell = NachoSwipeTableViewCell.GetCell (tableView, messageThread);
+                    ConfigureCellActions (cell, indexPath);
+                    return cell;
                 }
-                var thread = messages.GetEmailThread (indexPath.Row);
-                var message = thread.First ();
-                cell.TextLabel.Text = message.From;
-                cell.DetailTextLabel.Text = message.Subject;
-                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+
+                var calendarItem = item as McCalendar;
+                if (null != calendarItem) {
+                    var cell = GetCalendarCell (tableView, calendarItem);
+                    return cell;
+                }
+
+                NachoAssert.CaseError ();
+                return null;
+            }
+
+            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            {
+                return 78.0f;
+            }
+
+            public UITableViewCell GetCalendarCell (UITableView tableView, McCalendar c)
+            {
+                const string CellIdentifier = "CalendarToCalendarItem";
+
+                UITableViewCell cell = tableView.DequeueReusableCell (CellIdentifier);
+                // Should always get a prototype cell
+                NachoCore.NachoAssert.True (null != cell);
+
+                UILabel startLabel = (UILabel)cell.ViewWithTag (1);
+                UILabel durationLabel = (UILabel)cell.ViewWithTag (2);
+                UIImageView calendarImage = (UIImageView)cell.ViewWithTag (3);
+                UILabel titleLabel = (UILabel)cell.ViewWithTag (4);
+
+                if (c.AllDayEvent) {
+                    startLabel.Text = "ALL DAY";
+                    durationLabel.Text = "";
+                } else {
+                    startLabel.Text = Pretty.ShortTimeString (c.StartTime);
+                    durationLabel.Text = Pretty.CompactDuration (c);
+                }
+                calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Green);
+                var titleLabelFrame = titleLabel.Frame;
+                titleLabelFrame.Width = cell.Frame.Width - titleLabel.Frame.Left;
+                titleLabel.Frame = titleLabelFrame;
+                titleLabel.Text = c.Subject;
+                titleLabel.SizeToFit ();
+
                 return cell;
             }
-        }
 
-        public class TableViewDelegate : UITableViewDelegate
-        {
-            NachoNowViewController owner;
-
-            public TableViewDelegate (NachoNowViewController o)
+            void ConfigureCellActions (NachoSwipeTableViewCell cell, NSIndexPath indexPath)
             {
-                owner = o;
-            }
+                cell.FirstTrigger = 0.20f;
+                cell.SecondTrigger = 0.50f;
 
-            public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-            {
-                var conversation = owner.dataSource.messages.GetEmailThread (indexPath.Row);
-                owner.PerformSegue ("NachoNowToMessageView", new ConversationHolder (conversation));
-            }
-        }
+                UIView checkView = null;
+                UIColor greenColor = null;
+                UIView crossView = null;
+                UIColor redColor = null;
+                UIView clockView = null;
+                UIColor yellowColor = null;
+                UIView listView = null;
+                UIColor brownColor = null;
 
-        public class CarouselDataSource : iCarouselDataSource
-        {
-            NachoNowViewController owner;
-
-            public CarouselDataSource (NachoNowViewController o)
-            {
-                owner = o;
-            }
-
-            public override uint NumberOfItemsInCarousel (iCarousel carousel)
-            {
-                return (uint)owner.folders.Count ();
-            }
-
-            public override UIView ViewForItemAtIndex (iCarousel carousel, uint index, UIView view)
-            {
-                var folder = owner.folders.GetFolder ((int)index);
-
-                //create new view if no view is available for recycling
-                if (view == null) {
-                    var v = new UIImageView (new RectangleF (0f, 0f, 200.0f, 200.0f));
-                    v.Image = UIImage.FromBundle ("page.png");
-                    v.ContentMode = UIViewContentMode.Center;
-                    var l = new UILabel (v.Bounds);
-                    l.BackgroundColor = UIColor.Clear;
-                    l.TextAlignment = UITextAlignment.Center;
-                    l.Font = l.Font.WithSize (30f);
-                    l.Tag = 1;
-                    l.Text = folder.DisplayName;
-                    v.AddSubview (l);
-                    return v;
+                try { 
+                    checkView = ViewWithImageName ("check");
+                    greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        Console.WriteLine ("Did swipe Checkmark cell");
+                    });
+                    crossView = ViewWithImageName ("cross");
+                    redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        DeleteThisMessage (indexPath);
+                    });
+                    clockView = ViewWithImageName ("clock");
+                    yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        owner.PerformSegue ("NachoNowToMessagePriority", indexPath);
+                    });
+                    listView = ViewWithImageName ("list");
+                    brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        owner.PerformSegue ("NachoNowToMessageAction", indexPath);
+                    });
+                } finally {
+                    if (null != checkView) {
+                        checkView.Dispose ();
+                    }
+                    if (null != greenColor) {
+                        greenColor.Dispose ();
+                    }
+                    if (null != crossView) {
+                        crossView.Dispose ();
+                    }
+                    if (null != redColor) {
+                        redColor.Dispose ();
+                    }
+                    if (null != clockView) {
+                        clockView.Dispose ();
+                    }
+                    if (null != yellowColor) {
+                        yellowColor.Dispose ();
+                    }
+                    if (null != listView) {
+                        listView.Dispose ();
+                    }
+                    if (null != brownColor) {
+                        brownColor.Dispose ();
+                    }
                 }
-                var label = (UILabel)view.ViewWithTag (1);
-                label.Text = folder.DisplayName;
-                return view;
             }
 
-            public override uint NumberOfPlaceholdersInCarousel (iCarousel carousel)
+            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
-                return 2;
-            }
+                object item = owner.hotList [indexPath.Row];
 
-            public override UIView PlaceholderViewAtIndex (iCarousel carousel, uint index, UIView view)
-            {
-                UILabel label = null;
-                UIImageView imageView = null;
-
-                //create new view if no view is available for recycling
-                if (null == view) {
-                    //don't do anything specific to the index within
-                    //this `if (view == nil) {...}` statement because the view will be
-                    //recycled and used with other index values later
-                    imageView = new UIImageView (new RectangleF (0f, 0f, 200.0f, 200.0f));
-                    imageView.Image = UIImage.FromBundle ("page.png");
-                    imageView.ContentMode = UIViewContentMode.Center;
-                    label = new UILabel (imageView.Bounds);
-                    label.BackgroundColor = UIColor.Clear;
-                    label.TextAlignment = UITextAlignment.Center;
-                    label.Font = label.Font.WithSize (50f);
-                    label.Tag = 1;
-                    imageView.AddSubview (label);
-                } else {
-                    label = (UILabel)view.ViewWithTag (1);
-                    imageView = (UIImageView)view;
+                var messageThread = item as List<McEmailMessage>;
+                if (null != messageThread) {
+                    owner.PerformSegue ("NachoNowToMessageView", indexPath);
+                    return;
                 }
-                //set item label
-                //remember to always set any properties of your carousel item
-                //views outside of the `if (view == nil) {...}` check otherwise
-                //you'll get weird issues with carousel item content appearing
-                //in the wrong place in the carousel
-                label.Text = (index == 0) ? "[" : "]";
 
+                var calendarItem = item as McCalendar;
+                if (null != calendarItem) {
+                    owner.PerformSegue ("NachoNowToCalendarItem", indexPath);
+                    return;
+                }
+
+                NachoAssert.CaseError ();
+            }
+
+            UIView ViewWithImageName (string imageName)
+            {
+                var image = UIImage.FromBundle (imageName);
+                var imageView = new UIImageView (image);
+                imageView.ContentMode = UIViewContentMode.Center;
                 return imageView;
             }
-        }
 
-        public class CarouselDelegate : iCarouselDelegate
-        {
-            NachoNowViewController owner;
-
-            public CarouselDelegate (NachoNowViewController o)
+            public void DeleteThisMessage (NSIndexPath indexPath)
             {
-                owner = o;
-            }
-            //            public override MonoTouch.CoreAnimation.CATransform3D ItemTransformForOffset (iCarousel carousel, float offset, MonoTouch.CoreAnimation.CATransform3D transform)
-            //            {
-            //                // implement 'flip3D' style carousel
-            //                transform = CATransform3D.MakeRotation (((float)Math.PI) / 8.0f, 0.0f, 1.0f, 0.0f);
-            //                return CATransform3D.MakeTranslation (0f, 0f, offset * carousel.ItemWidth);
-            //            }
-            /// <summary>
-            /// Called when the Item is touched.
-            /// </summary>
-            public override void DidSelectItemAtIndex (iCarousel carousel, int index)
-            {
-                var folder = owner.folders.GetFolder (index);
-                owner.PerformSegue ("NachoNowToMessageList", new FolderHolder (folder));
-            }
-
-            public override void CarouselWillBeginDragging (iCarousel carousel)
-            {
-                UIView.BeginAnimations (null);
-                UIView.SetAnimationDuration (0.5f);
-                owner.folderDataTableview.Alpha = 0f;
-                UIView.CommitAnimations ();
-            }
-
-            public override void CarouselDidEndDragging (iCarousel carousel, bool decelerate)
-            {
-                owner.UpdateTableView (carousel.CurrentItemIndex);
-                UIView.BeginAnimations (null);
-                UIView.SetAnimationCurve (UIViewAnimationCurve.EaseIn);
-                UIView.SetAnimationDuration (0.5f);
-                owner.folderDataTableview.Alpha = 1f;
-                UIView.CommitAnimations ();
-            }
-
-            /// <summary>
-            /// Values for option.
-            /// </summary>
-            public override float ValueForOption (iCarousel carousel, iCarouselOption option, float value)
-            {
-                // customize carousel display
-                switch (option) {
-                case iCarouselOption.Wrap:
-                    // normally you would hard-code this to true or false
-                    return (owner.wrap ? 1.0f : 0.0f);
-                case iCarouselOption.Spacing:
-                    // add a bit of spacing between the item views
-                    return value * 1.05f;
-                case iCarouselOption.FadeMax:
-                    if (iCarouselType.Custom == carousel.Type) {
-                        return 0.0f;
-                    }
-                    return value;
-                default:
-                    return value;
-                }
-
+                var t = owner.messageThreads.GetEmailThread (indexPath.Row);
+                var m = t.First ();
+                BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
             }
         }
     }
