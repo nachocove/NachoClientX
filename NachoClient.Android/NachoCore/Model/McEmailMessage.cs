@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using SQLite;
 using NachoCore.Utils;
+using System.Net.Mail;
 
 namespace NachoCore.Model
 {
@@ -200,6 +201,39 @@ namespace NachoCore.Model
         public static ClassCodeEnum GetClassCode ()
         {
             return McFolderEntry.ClassCodeEnum.Email;
+        }
+
+        public McContact GetFromContact ()
+        {
+            List<McContact> contactList = GetContactsFromEmailAddressString (From);
+            NachoAssert.True (1 == contactList.Count);
+            return contactList[0];
+        }
+
+        public List<McContact> GetContactsFromEmailAddressString (string emailAddressString)
+        {
+            List<MailAddress> emailAddresses = EmailAddressHelper.ParseString (emailAddressString);
+            // Use a set to eliminate duplicates
+            HashSet<McContact> contactSet = new HashSet<McContact> ();
+
+            Log.Info ("SCORE: emailAddressString={0}", emailAddressString);
+            foreach (MailAddress emailAddress in emailAddresses) {
+                Log.Info ("SCORE: emailAddress={0}", emailAddress.Address);
+                List<McContact> queryResult = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
+                if (0 == queryResult.Count) {
+                    Log.Warn ("Unknown email address {0}", emailAddress);
+                }
+                foreach (McContact contact in queryResult) {
+                    contactSet.Add (contact);
+                }
+            }
+
+            // Convert set to list
+            List<McContact> contactList = new List<McContact> ();
+            foreach (McContact contact in contactSet) {
+                contactList.Add (contact);
+            }
+            return contactList;
         }
     }
 

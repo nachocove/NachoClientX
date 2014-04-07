@@ -116,6 +116,9 @@ namespace NachoCore.Model
         /// How the body stored on the server.
         public int NativeBodyType { get; set; }
 
+        // "Hotness" of the contact. Currently, updated by the emails.
+        public int Score { get; set; }
+
         public static ClassCodeEnum GetClassCode ()
         {
             return McFolderEntry.ClassCodeEnum.Contact;
@@ -871,6 +874,13 @@ namespace NachoCore.Model
             " s.Value = ? AND " +
             " f.IsClientOwned = false ",
                 accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
+        }
+       
+        public void UpdateScore (string reason, int score)
+        {
+            Log.Info ("SCORE: {0} {1} {2}", DisplayName, score, reason);
+            Score += score;
+            Update ();
         }
     }
 }
