@@ -155,8 +155,10 @@ namespace NachoClient.iOS
             }
 
             int day = calendar.IndexOfDate (DateTime.UtcNow.Date);
-            for (int i = 0; i < calendar.NumberOfItemsForDay (day); i++) {
-                hotList.Add (calendar.GetCalendarItem (day, i));
+            if (day >= 0) {
+                for (int i = 0; i < calendar.NumberOfItemsForDay (day); i++) {
+                    hotList.Add (calendar.GetCalendarItem (day, i));
+                }
             }
         }
 

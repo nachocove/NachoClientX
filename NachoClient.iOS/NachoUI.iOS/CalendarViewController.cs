@@ -78,8 +78,10 @@ namespace NachoClient.iOS
             if (adjustScrollPosition &&  (calendar.NumberOfDays() > 0)) {
                 adjustScrollPosition = false;
                 var i = calendar.IndexOfDate (DateTime.UtcNow);
-                var p = NSIndexPath.FromItemSection (0, i);
-                TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
+                if (i >= 0) {
+                    var p = NSIndexPath.FromItemSection (0, i);
+                    TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
+                }
             }
         }
 

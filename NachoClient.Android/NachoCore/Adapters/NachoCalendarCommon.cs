@@ -74,7 +74,7 @@ namespace NachoCore
                     return i;
                 }
             }
-            return Math.Max (0, listOfDaysThatHaveEvents.Count - 1);
+            return listOfDaysThatHaveEvents.Count - 1;
         }
 
         public int IndexOfThisOrNext(DateTime target)
