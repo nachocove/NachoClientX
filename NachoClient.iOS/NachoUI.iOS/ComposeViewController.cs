@@ -247,9 +247,35 @@ namespace NachoClient.iOS
 
             MimeHelpers.SendEmail (account.Id, mimeMessage);
 
+            // SCORING - If not a reply, score each recipient. 
+            // Should it be everyone in To, cc, bcc? Or just To?
+            // Rignt now. Only To get score updated.
+            if (null == Action) {
+                UpdateScore (account.Id, "send to", +3);
+            } else if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
+                UpdateScore (account.Id, "reply", +2);
+            }
+
             // Might want to defer until BE says message is queued.
             owner = null;
             NavigationController.PopViewControllerAnimated (true);
+        }
+
+        private void UpdateScore (int id, string reason, int score)
+        {
+            foreach (var a in AddressList) {
+                var mailbox = a.ToMailboxAddress ();
+                if (null == mailbox) {
+                    continue;
+                }
+                if (NcEmailAddress.Kind.To != a.kind) {
+                    continue;
+                }
+                List<McContact> contactList = McContact.QueryByEmailAddress (id, mailbox.Address);
+                foreach (McContact contact in contactList) {
+                    contact.UpdateScore (reason, score);
+                }
+            }
         }
 
         protected string CreateInitialSubjectLine ()
