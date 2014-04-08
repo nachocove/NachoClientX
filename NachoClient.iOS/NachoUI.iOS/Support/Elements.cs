@@ -64,6 +64,21 @@ namespace NachoClient.iOS
         }
     }
 
+    public class SuperThinSection : Section
+    {
+        public SuperThinSection () : base ()
+        {
+            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+            this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+        }
+
+        public SuperThinSection(UIColor color) : this()
+        {
+            this.HeaderView.BackgroundColor = color;
+            this.FooterView.BackgroundColor = color;
+        }
+    }
+
     /// <summary>
     /// A section that doesn't take up screen height
     /// </summary>
@@ -461,6 +476,18 @@ namespace NachoClient.iOS
     public class StyledStringElementWithIndent : StyledStringElement
     {
         public StyledStringElementWithIndent (string caption) : base (caption)
+        {
+            // Add (invisible) image to get the proper indentation
+            this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
+            this.TextColor = UIColor.Gray;
+            this.Font = UIFont.SystemFontOfSize (15.0f);
+        }
+    }
+
+
+    public class StyledMultilineElementWithIndent : StyledMultilineElement
+    {
+        public StyledMultilineElementWithIndent (string caption) : base (caption)
         {
             // Add (invisible) image to get the proper indentation
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);

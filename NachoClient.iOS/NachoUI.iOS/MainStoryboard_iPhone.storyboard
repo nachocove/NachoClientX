@@ -13,6 +13,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <connections>
                         <segue destination="42X-V6-cKb" kind="custom" identifier="sw_rear" customClass="SWRevealViewControllerSegue" id="68v-pW-lFd"/>
                         <segue destination="0Qz-3B-5qw" kind="custom" identifier="sw_front" customClass="SWRevealViewControllerSegue" id="Zzd-GE-nyB"/>
@@ -30,14 +31,20 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
+                            <view contentMode="scaleToFill" id="JQi-Fy-VOe">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="148"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                            </view>
                             <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
-                                <rect key="frame" x="0.0" y="-7" width="320" height="372"/>
+                                <rect key="frame" x="0.0" y="156" width="320" height="216"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems>
                         <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="jWS-vv-VcN"/>
                         <barButtonItem image="ic_action_email.png" id="Q8j-Ms-eXM" userLabel="Bar Button Item - Email"/>
@@ -45,14 +52,13 @@
                         <barButtonItem image="ic_action_event.png" id="ab3-Ei-AkG" userLabel="Bar Button Item - Calendar"/>
                         <barButtonItem style="plain" systemItem="flexibleSpace" id="kcD-hH-aQ2"/>
                         <barButtonItem image="ic_action_time.png" id="llx-zm-FnK" userLabel="Bar Button Item - Tasks"/>
-                        <barButtonItem style="plain" systemItem="flexibleSpace" id="HgG-uk-3Tb"/>
-                        <barButtonItem image="ic_action_group.png" id="SIZ-ov-VwT" userLabel="Bar Button Item - Contacts"/>
                         <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="U1f-bf-kbg"/>
                     </toolbarItems>
                     <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="3Av-eh-eab"/>
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="compose" id="HwW-s6-dM7">
                             <connections>
+                                <action selector="composeButton:" destination="ygr-ff-C2f" id="grY-gx-tV8"/>
                                 <segue destination="lOe-mG-VS5" kind="push" identifier="NachoNowToCompose" id="JWi-mA-RVD"/>
                             </connections>
                         </barButtonItem>
@@ -62,8 +68,11 @@
                     <connections>
                         <outlet property="calendarNowButton" destination="ab3-Ei-AkG" id="K9u-LA-BLa"/>
                         <outlet property="carouselView" destination="y3I-K7-FUQ" id="T7e-1d-zpR"/>
-                        <outlet property="contactsNowButton" destination="SIZ-ov-VwT" id="Sdm-YC-aif"/>
+                        <outlet property="composeButton" destination="HwW-s6-dM7" id="Pm7-Ew-3AZ"/>
+                        <outlet property="contactButton" destination="XcW-kn-g9X" id="4Xs-dw-eFm"/>
+                        <outlet property="currentEventView" destination="JQi-Fy-VOe" id="fLr-gK-fgd"/>
                         <outlet property="emailNowButton" destination="Q8j-Ms-eXM" id="b1o-hi-we7"/>
+                        <outlet property="nachoButton" destination="Mqq-sh-bns" id="fSw-0x-68Y"/>
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
                         <outlet property="tasksNowButton" destination="llx-zm-FnK" id="e7O-OU-6Zo"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
@@ -76,6 +85,8 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem image="ic_action_group.png" id="XcW-kn-g9X" userLabel="Bar Button Item - Contacts"/>
+                <barButtonItem title="Item" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
             </objects>
             <point key="canvasLocation" x="-2205" y="-1910"/>
         </scene>
@@ -88,6 +99,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="FxN-dd-cNv"/>
                     <nil key="simulatedTopBarMetrics"/>
                     <connections>
@@ -167,6 +179,7 @@
                             <outlet property="delegate" destination="ef5-Td-j3Y" id="5Hg-Qp-f7R"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="tmU-Hu-v9N"/>
@@ -209,10 +222,11 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Calendar Item" id="fZY-MQ-nPh"/>
                     <connections>
                         <outlet property="cancelButton" destination="sFR-r8-TDe" id="wgg-bq-bR2"/>
@@ -233,7 +247,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="AttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="PUz-nc-h33" customClass="AttendeeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="CVB-up-ERg">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -251,6 +265,7 @@
                             <outlet property="delegate" destination="PUz-nc-h33" id="jHT-K3-bMC"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="aU2-wW-1ge">
                         <barButtonItem key="rightBarButtonItem" systemItem="done" id="3zJ-k8-O1U"/>
                     </navigationItem>
@@ -269,7 +284,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ContactsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="jTc-Vg-SXZ" customClass="ContactsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="MBn-W2-0u6">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="f7d-Bz-vIg">
@@ -319,6 +334,7 @@
                             <outlet property="delegate" destination="jTc-Vg-SXZ" id="MWL-O5-QFz"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="jLa-UU-2VJ"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="add" id="uyu-bB-1zI">
@@ -354,10 +370,11 @@
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Contact" id="qGr-Yu-K1Y">
                         <barButtonItem key="rightBarButtonItem" systemItem="edit" id="1h5-H1-Tex"/>
                     </navigationItem>
@@ -401,6 +418,7 @@
                             <outlet property="delegate" destination="n4d-09-jTS" id="RVB-Ew-54W"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Settings" id="adw-HC-FaJ">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="iWE-UD-FOg"/>
                     </navigationItem>
@@ -449,6 +467,7 @@
                             <outlet property="delegate" destination="KvB-j8-wfn" id="aJB-20-YcH"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Accounts" id="dQE-jZ-sB2">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="o0L-DA-IuO"/>
@@ -470,6 +489,7 @@
         <scene sceneID="HqZ-cG-lfO">
             <objects>
                 <pageViewController storyboardIdentifier="HomeViewController" autoresizesArchivedViewToFullSize="NO" useStoryboardIdentifierAsRestorationIdentifier="YES" transitionStyle="pageCurl" navigationOrientation="horizontal" spineLocation="min" id="OQ8-xH-iKh" customClass="HomeViewController" sceneMemberID="viewController">
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Home" id="CJe-bJ-vOa">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="5xM-Np-yHN"/>
                     </navigationItem>
@@ -490,7 +510,7 @@
             <objects>
                 <viewController storyboardIdentifier="LaunchViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="6rF-Ad-StO" customClass="LaunchViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="RIJ-2d-dqb">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="436"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="Welcome to Nacho Mail!" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="3GF-CP-chd">
@@ -530,6 +550,7 @@
                             </button>
                         </subviews>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="HOS-MK-Nfc"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
@@ -569,6 +590,7 @@
                             <outlet property="delegate" destination="UKd-1I-ARy" id="jPz-cU-W46"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
@@ -615,6 +637,7 @@
                             <outlet property="delegate" destination="lOe-mG-VS5" id="wzO-9m-fCU"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="JwW-7f-PQA">
                         <barButtonItem key="backBarButtonItem" title="Cancel" id="twb-2F-1L8"/>
                         <barButtonItem key="rightBarButtonItem" title="Send" id="Mjb-px-NvT"/>
@@ -634,7 +657,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -693,6 +716,7 @@
                             <outlet property="delegate" destination="HJp-il-GU9" id="Qlr-7k-Qht"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Contacts" id="I0n-EO-ORC"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
@@ -717,7 +741,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -727,7 +751,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="378"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="334"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -782,6 +806,7 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Chooser" id="d4h-6e-NRq">
                         <barButtonItem key="backBarButtonItem" title="Cancel" id="JmU-cR-I3t"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="search" id="PfB-rr-F7z">
@@ -824,6 +849,7 @@
                             <outlet property="delegate" destination="kq1-eO-X0p" id="rsz-rX-3ij"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Messages" id="ted-eg-Hzc">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="2XU-yE-OMg" userLabel="Bar Button Item - Reveal"/>
                     </navigationItem>
@@ -880,6 +906,7 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <gestureRecognizers/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="9RR-VH-nzx"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
@@ -954,6 +981,7 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <connections>
                         <outlet property="dismissButton" destination="LN7-gk-jcs" id="VDN-nS-e3t"/>
                         <outlet property="folderTableView" destination="x6D-oO-m9F" id="Ex6-0N-GgV"/>
@@ -976,6 +1004,7 @@
                             <outlet property="delegate" destination="T5y-Ms-wQ4" id="cVh-Zy-LjT"/>
                         </connections>
                     </tableView>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="UMn-jV-yyk"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                 </tableViewController>
@@ -1100,6 +1129,7 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <connections>
                         <outlet property="currentDelayLabel" destination="Tlm-3U-Ipe" id="84G-Tn-zOK"/>
                         <outlet property="customDateButton" destination="KLe-Al-1Wg" id="KhV-lL-hHT"/>
@@ -1174,6 +1204,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <connections>
                         <outlet property="OKButton" destination="Nee-fE-vF3" id="zhG-79-Cxt"/>
                         <outlet property="cancelButton" destination="dKH-yM-es9" id="tIw-aF-BXW"/>
@@ -1188,6 +1219,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <scene sceneID="qtI-DM-OKG">
             <objects>
                 <navigationController storyboardIdentifier="HomeNavigationController" automaticallyAdjustsScrollViewInsets="NO" id="0Qz-3B-5qw" sceneMemberID="viewController">
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="3hW-Ow-lb9">
@@ -1212,6 +1244,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" title="Startup" id="kho-Lu-JgG">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="ARB-Ca-gEw"/>
                     </navigationItem>
@@ -1233,6 +1266,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <scene sceneID="jfg-Bp-uoy">
             <objects>
                 <navigationController storyboardIdentifier="SidebarNavigationController" automaticallyAdjustsScrollViewInsets="NO" navigationBarHidden="YES" id="42X-V6-cKb" sceneMemberID="viewController">
+                    <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
                     <nil key="simulatedTopBarMetrics"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="aEP-lS-rAM">
@@ -1246,7 +1280,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="uVi-Fp-v8F" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2661" y="-1175"/>
+            <point key="canvasLocation" x="-2661" y="-1169"/>
         </scene>
     </scenes>
     <resources>
@@ -1268,19 +1302,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="P1C-rg-Luy"/>
-        <segue reference="8JW-bP-0Qw"/>
-        <segue reference="ciI-Ve-Wsq"/>
-        <segue reference="JWi-mA-RVD"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="FHc-YP-jWH"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="nAp-rc-bND"/>
-        <segue reference="PxE-UU-EfC"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="Oi3-nV-lAC"/>
         <segue reference="ebP-h4-BhC"/>
+        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="JGd-do-Y28"/>
+        <segue reference="ueb-Jn-ag7"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="ndB-gP-BtH"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="ciI-Ve-Wsq"/>
+        <segue reference="8JW-bP-0Qw"/>
+        <segue reference="nAp-rc-bND"/>
     </inferredMetricsTieBreakers>
 </document>
