@@ -29,25 +29,25 @@ namespace NachoClient.iOS
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
                 // TODO: Check for changes before asking the user
-                UIAlertView alert = new UIAlertView();
+                UIAlertView alert = new UIAlertView ();
                 alert.Title = "Confirmation";
                 alert.Message = "Save this contact?";
-                alert.AddButton("Yes");
-                alert.AddButton("No");
+                alert.AddButton ("Yes");
+                alert.AddButton ("No");
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                    if(0 == alertEvent.ButtonIndex) {
+                    if (0 == alertEvent.ButtonIndex) {
                         editing = false;
                         // TODO: Save the new contact
-                        Configure();
-;
+                        Configure ();
+                        ;
                     }
                 };
-                alert.Show();
+                alert.Show ();
             };
 
             editButton.Clicked += (object sender, EventArgs e) => {
                 editing = true;
-                Configure();
+                Configure ();
             };
 
             // Set up view
@@ -61,7 +61,15 @@ namespace NachoClient.iOS
             Configure ();
         }
 
-        protected void Configure()
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+        }
+
+        protected void Configure ()
         {
             if (editing) {
                 NavigationItem.RightBarButtonItem = doneButton;
