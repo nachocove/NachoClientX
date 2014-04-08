@@ -109,6 +109,12 @@ namespace NachoClient.iOS
             TableView.SeparatorColor = UIColor.Clear;
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            this.NavigationController.ToolbarHidden = true;
+        }
+
         protected void ReloadRoot (RootElement root)
         {
             NSAction animation = new NSAction (delegate {
