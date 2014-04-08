@@ -27,7 +27,6 @@ namespace NachoClient.iOS
     public partial class ContactsViewController : UITableViewController
     {
         public bool UseDeviceContacts;
-//        UIAlertView alert;
         INachoContacts contacts;
         List<McContact> searchResults = null;
         /// <summary>
@@ -66,30 +65,18 @@ namespace NachoClient.iOS
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("ContactsToNachoNow", this);
+                PerformSegue ("ContactsToNachoNow", this);
             };
 
-            // We must request permission to access the user's address book
-            // This will prompt the user on platforms that ask, or it will validate
-            // manifest permissions on platforms that declare their required permissions.
-
-//            if (UseDeviceContacts) {
-//                var book = new AddressBook ();
-//                book.RequestPermission ().ContinueWith (t => {
-//                    if (!t.Result) {
-//                        alert = new UIAlertView ("Permission denied", "You have denied this app access to your contacts", null, "Close");
-//                        alert.Show ();
-//                    } else {
-//                        contacts = new DeviceContacts ();
-//                        TableView.ReloadData ();
-//                    }
-//                }, TaskScheduler.FromCurrentSynchronizationContext ());
-//            } else {
-//                contacts = new NachoContacts ();
-//                TableView.ReloadData ();
-//            }
-
             contacts = NcContactManager.Instance.GetNachoContactsObject ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
         }
 
         /// <summary>
