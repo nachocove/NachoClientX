@@ -100,6 +100,14 @@ namespace NachoClient.iOS
             AutocompleteTextField.BecomeFirstResponder ();
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("ContactChooserToContactSearch")) {
@@ -108,7 +116,7 @@ namespace NachoClient.iOS
                 destinationController.initialSearchString = AutocompleteTextField.Text;
             }
             if (segue.Identifier.Equals ("ContactChooserToContactView")) {
-                var holder = (SegueHolder) sender;
+                var holder = (SegueHolder)sender;
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.editing = false;
                 destinationController.contact = (McContact)holder.value;
@@ -279,8 +287,8 @@ namespace NachoClient.iOS
         {
             UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", new string[] { "Edit contact" });
             alert.Clicked += (s, b) => {
-                if(1 == b.ButtonIndex) {
-                    PerformSegue("ContactChooserToContactView", new SegueHolder(contact));
+                if (1 == b.ButtonIndex) {
+                    PerformSegue ("ContactChooserToContactView", new SegueHolder (contact));
                 }
             };
             alert.Show ();
