@@ -19,10 +19,19 @@ namespace NachoClient.iOS
 		iCarouselBinding.iCarousel carouselView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem contactsNowButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem composeButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem contactButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIView currentEventView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem emailNowButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
@@ -37,9 +46,19 @@ namespace NachoClient.iOS
 				calendarNowButton = null;
 			}
 
-			if (contactsNowButton != null) {
-				contactsNowButton.Dispose ();
-				contactsNowButton = null;
+			if (carouselView != null) {
+				carouselView.Dispose ();
+				carouselView = null;
+			}
+
+			if (contactButton != null) {
+				contactButton.Dispose ();
+				contactButton = null;
+			}
+
+			if (currentEventView != null) {
+				currentEventView.Dispose ();
+				currentEventView = null;
 			}
 
 			if (emailNowButton != null) {
@@ -47,19 +66,24 @@ namespace NachoClient.iOS
 				emailNowButton = null;
 			}
 
+			if (nachoButton != null) {
+				nachoButton.Dispose ();
+				nachoButton = null;
+			}
+
 			if (revealButton != null) {
 				revealButton.Dispose ();
 				revealButton = null;
 			}
 
-			if (carouselView != null) {
-				carouselView.Dispose ();
-				carouselView = null;
-			}
-
 			if (tasksNowButton != null) {
 				tasksNowButton.Dispose ();
 				tasksNowButton = null;
+			}
+
+			if (composeButton != null) {
+				composeButton.Dispose ();
+				composeButton = null;
 			}
 		}
 	}

@@ -272,7 +272,10 @@ namespace NachoCore.ActiveSync
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
                 var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
-                if (1 == PendingList.Count) {
+                if (0 == PendingList.Count) {
+                    // We're syncing because of SM, and something tastes bad to the server.
+                    return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCPE0");
+                } else if (1 == PendingList.Count) {
                     var pending = PendingList.First ();
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                     PendingList.Clear ();

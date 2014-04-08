@@ -95,7 +95,7 @@ namespace NachoCore
             return listOfEventsOnADay [i].Count;
         }
 
-        public DateTime GetDayDate(int day)
+        public DateTime GetDateUsingDayIndex(int day)
         {
             return listOfDaysThatHaveEvents [day];
         }

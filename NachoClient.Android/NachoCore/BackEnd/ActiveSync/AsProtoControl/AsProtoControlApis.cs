@@ -668,6 +668,7 @@ namespace NachoCore.ActiveSync
                 DestFolderServerId = destFldServerId,
                 DisplayName = displayName,
                 FolderType = folderType,
+                // Epoch intentionally not set.
             };
 
             createFolder.Insert ();

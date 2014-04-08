@@ -68,8 +68,6 @@ namespace NachoCore
 
         public IBackEndOwner Owner { set; private get; }
 
-
-
         private ProtoControl ServiceFromAccountId (int accountId)
         {
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
@@ -166,6 +164,11 @@ namespace NachoCore
                         McFolder.Create (accountId, true, true, "0",
                             McFolder.ClientOwned_Gleaned, string.Empty,
                             Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    }
+                    if (null == McFolder.GetLostAndFoundFolder (accountId)) {
+                        McFolder.Create (accountId, true, true, "0",
+                            McFolder.ClientOwned_LostAndFound, string.Empty,
+                            Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
                     }
                 }
                 service.Execute ();

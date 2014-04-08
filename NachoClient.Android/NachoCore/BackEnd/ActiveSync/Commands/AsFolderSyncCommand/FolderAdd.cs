@@ -49,6 +49,10 @@ namespace NachoCore.ActiveSync
 
             protected override void ApplyChangeToModel ()
             {
+                var account = McAccount.QueryById<McAccount> (AccountId);
+                var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);
+                var folderSyncEpoch = protocolState.AsFolderSyncEpoch;
+
                 var folder = new McFolder () {
                     AccountId = AccountId,
                     ServerId = ServerId,
@@ -56,9 +60,25 @@ namespace NachoCore.ActiveSync
                     DisplayName = DisplayName,
                     Type = FolderType,
                     AsSyncKey = McFolder.AsSyncKey_Initial,
+                    AsFolderSyncEpoch = folderSyncEpoch,
                     AsSyncMetaToClientExpected = true,
                 };
-                folder.Insert ();
+
+                var maybeSame = McFolder.QueryByServerId<McFolder> (AccountId, ServerId);
+                if (null != maybeSame &&
+                    maybeSame.DisplayName == DisplayName &&
+                    maybeSame.Type == FolderType &&
+                    maybeSame.AsFolderSyncEpoch < folderSyncEpoch) {
+                    // The add is really the same as this old folder.
+                    maybeSame.ParentId = ParentId;
+                    // FIXME - see what happens when we use the prior sync key.
+                    // maybeSame.AsSyncKey = McFolder.AsSyncKey_Initial;
+                    maybeSame.AsFolderSyncEpoch = folderSyncEpoch;
+                    maybeSame.AsSyncMetaToClientExpected = true;
+                    maybeSame.Update ();
+                } else {
+                    folder.Insert ();
+                }
             }
         }
     }

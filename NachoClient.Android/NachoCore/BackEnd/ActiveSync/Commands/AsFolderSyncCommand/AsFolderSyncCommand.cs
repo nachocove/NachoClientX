@@ -12,8 +12,8 @@ namespace NachoCore.ActiveSync
     {
         private bool HadFolderChanges;
 
-        public AsFolderSyncCommand (IBEContext dataSource) :
-            base (Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, dataSource)
+        public AsFolderSyncCommand (IBEContext beContext) :
+            base (Xml.FolderHierarchy.FolderSync, Xml.FolderHierarchy.Ns, beContext)
         {
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_FolderSyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_FolderSyncFailed);
@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     HadFolderChanges = true;
-                    // Q: should we try-block each op, since we are taking the syncKey up front?
+                    // FIXME: should we try-block each op, since we are saving the syncKey up front?
                     foreach (var change in changes) {
                         switch (change.Name.LocalName) {
                         case Xml.FolderHierarchy.Add:
@@ -73,7 +73,11 @@ namespace NachoCore.ActiveSync
                         }
                     }
                 }
-                // FIXME we may need to indicate that a Sync is needed.
+
+                if (BEContext.ProtocolState.AsFolderSyncEpochScrubNeeded) {
+                    PerformFolderSyncEpochScrub ();
+                }
+
                 if (HadFolderChanges) {
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 }
@@ -85,8 +89,9 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FSYNCAGAIN");
 
             case Xml.FolderHierarchy.FolderSyncStatusCode.ReSync_9:
-                // TODO: Delete items added since last synchronization.
-                protocolState.AsSyncKey = McProtocolState.AsSyncKey_Initial;
+                // "Delete items added since last synchronization." <= Let conflict resolution deal with this.
+                protocolState.IncrementAsFolderSyncEpoch ();
+                protocolState.Update ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FSYNCAGAIN2");
 
             case Xml.FolderHierarchy.FolderSyncStatusCode.ServerFail_12:
@@ -105,6 +110,17 @@ namespace NachoCore.ActiveSync
                 McPending.MakeEligibleOnFSync (BEContext.Account.Id);
             }
             base.StatusInd (didSucceed);
+        }
+
+        private void PerformFolderSyncEpochScrub ()
+        {
+            var laf = McFolder.GetLostAndFoundFolder (BEContext.Account.Id);
+            var orphaned = McFolder.QueryClientOwned (BEContext.Account.Id, false)
+                .Where (x => x.AsFolderSyncEpoch < BEContext.ProtocolState.AsFolderSyncEpoch).ToList ();
+            foreach (var folder in orphaned) {
+                folder.ParentId = laf.ServerId;
+                folder.IsClientOwned = true;
+            }
         }
     }
 }

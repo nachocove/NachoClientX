@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();
-            PendingQ = McPending.Query (AccountId);
+            PendingQ = McPending.Query (AccountId); // FIXME can't lock up the world.
         }
 
         public void ProcessDelta ()

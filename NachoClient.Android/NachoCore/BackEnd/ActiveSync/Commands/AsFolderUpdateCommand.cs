@@ -80,13 +80,13 @@ namespace NachoCore.ActiveSync
                  * consider returning to synchronization key zero (0)."
                  * Right now, we don't retry - we just slam the key to 0.
                  */
-                protocolState.AsSyncKey = McProtocolState.AsSyncKey_Initial;
+                protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 PendingSingle.ResolveAsDeferredForce ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC2");
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.ReSync_9:
-                protocolState.AsSyncKey = McProtocolState.AsSyncKey_Initial;
+                protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 PendingSingle.ResolveAsDeferredForce ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC3");

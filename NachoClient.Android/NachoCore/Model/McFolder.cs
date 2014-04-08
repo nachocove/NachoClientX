@@ -22,8 +22,11 @@ namespace NachoCore.Model
         public bool IsAwatingCreate { get; set; }
 
         public const string AsSyncKey_Initial = "0";
+        public const string AsRootServerId = "0";
 
         public string AsSyncKey { get; set; }
+
+        public uint AsFolderSyncEpoch { get; set; }
 
         // AsSyncMeta ONLY to be manipulated by sync strategy class.
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
@@ -45,6 +48,7 @@ namespace NachoCore.Model
         public const string ClientOwned_Outbox = "Outbox2";
         public const string ClientOwned_GalCache = "GAL";
         public const string ClientOwned_Gleaned = "GLEANED";
+        public const string ClientOwned_LostAndFound = "LAF";
 
         public override string ToString ()
         {
@@ -95,6 +99,11 @@ namespace NachoCore.Model
         public static McFolder GetGleanedFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Gleaned);
+        }
+
+        public static McFolder GetLostAndFoundFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
 
         private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)

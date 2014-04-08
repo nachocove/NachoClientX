@@ -45,6 +45,7 @@ namespace NachoCore.ActiveSync
                 var folder = McItem.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
                 if (null != folder) {
                     folder.ServerId = serverId;
+                    folder.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
                     folder.Update ();
                 }
                 PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
@@ -84,7 +85,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.ReSync_9:
                 PendingSingle.ResolveAsDeferredForce ();
-                protocolState.AsSyncKey = McProtocolState.AsSyncKey_Initial;
+                protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC2");
 

@@ -154,7 +154,7 @@ namespace NachoClient.iOS
 
         public override string TitleForHeader (UITableView tableView, int section)
         {
-            DateTime d = calendar.GetDayDate (section);
+            DateTime d = calendar.GetDateUsingDayIndex (section);
             return Pretty.FullDateString (d).ToUpper ();
         }
     }
