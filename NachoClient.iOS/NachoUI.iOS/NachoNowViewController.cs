@@ -39,10 +39,11 @@ namespace NachoClient.iOS
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
             // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
             using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 carouselView.ScrollToItemAtIndex (0, true);
             };
@@ -204,26 +205,50 @@ namespace NachoClient.iOS
             taskThreads = new NachoDeferredEmailMessages ();
             calendar = NcCalendarManager.Instance;
 
-            // Set up current event view
-            var subviews = currentEventView.Subviews;
-            foreach (var s in subviews) {
-                s.RemoveFromSuperview ();
-            }
             var i = calendar.IndexOfDate (DateTime.UtcNow.Date);
-            if (i >= 0) {
-                if (calendar.NumberOfItemsForDay (i) > 0) {
-                    currentEvent = calendar.GetCalendarItem (i, 0);
-                    currentEventView.AddSubview (CalendarView (currentEvent));
-                }
+            if ((i >= 0) && (calendar.NumberOfItemsForDay (i) > 0)) {
+                currentEvent = calendar.GetCalendarItem (i, 0);
+                UpdateCurrentEventView (currentEvent);
+            } else {
+                UpdateCurrentEventView (null);
             }
-            if (0 == currentEventView.Subviews.Count ()) {
-                var l = new UILabel (currentEventView.Bounds);
-                l.BackgroundColor = UIColor.Yellow;
-                l.TextAlignment = UITextAlignment.Center;
-                l.Font = l.Font.WithSize (20f);
-                l.Text = "No upcoming events";
-                currentEventView.AddSubview (l);
+
+        }
+
+        protected void UpdateCurrentEventView (McCalendar c)
+        {
+            UILabel startLabel = (UILabel)currentEventView.ViewWithTag (1);
+            UILabel durationLabel = (UILabel)currentEventView.ViewWithTag (2);
+            UIImageView calendarImage = (UIImageView)currentEventView.ViewWithTag (3);
+            UILabel titleLabel = (UILabel)currentEventView.ViewWithTag (4);
+            UILabel noEventLabel = (UILabel)currentEventView.ViewWithTag (5);
+
+            string title;
+
+            if (null == c) {
+                startLabel.Text = "";
+                durationLabel.Text = "";
+                calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
+                noEventLabel.Text = "No events in the near future.";
+                titleLabel.Text = "";
+                return;
             }
+
+            if (c.AllDayEvent) {
+                startLabel.Text = "ALL DAY";
+                durationLabel.Text = "";
+            } else {
+                startLabel.Text = Pretty.ShortTimeString (c.StartTime);
+                durationLabel.Text = Pretty.CompactDuration (c);
+            }
+            calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Green);
+            title = Pretty.SubjectString (c.Subject);
+            noEventLabel.Text = "";
+            var titleLabelFrame = titleLabel.Frame;
+            titleLabelFrame.Width = currentEventView.Frame.Width - titleLabel.Frame.Left;
+            titleLabel.Frame = titleLabelFrame;
+            titleLabel.Text = title;
+            titleLabel.SizeToFit ();
         }
 
         protected UIView CalendarView (McCalendar c)
@@ -250,7 +275,7 @@ namespace NachoClient.iOS
         protected void EmailHotList ()
         {
             UpdateHotLists ();
-            for (int i = 0; (i < messageThreads.Count ()) && (i < 3); i++) {
+            for (int i = 0; (i < messageThreads.Count ()) && (i < 8); i++) {
                 hotList.Add (messageThreads.GetEmailThread (i));
             }
         }
@@ -269,7 +294,7 @@ namespace NachoClient.iOS
         protected void TasksHotList ()
         {
             UpdateHotLists ();
-            for (int i = 0; (i < taskThreads.Count ()) && (i < 3); i++) {
+            for (int i = 0; (i < taskThreads.Count ()) && (i < 8); i++) {
                 hotList.Add (taskThreads.GetEmailThread (i));
             }
         }
@@ -301,7 +326,6 @@ namespace NachoClient.iOS
                     var v = new UIView (frame);
                     v.AutoresizingMask = UIViewAutoresizing.None;
                     v.ContentMode = UIViewContentMode.Center;
-                    v.BackgroundColor = UIColor.Blue;
                     v.Layer.CornerRadius = 5;
                     v.Layer.MasksToBounds = true;
                     v.Layer.BorderColor = UIColor.DarkGray.CGColor;
@@ -348,6 +372,7 @@ namespace NachoClient.iOS
                 root.Add (section);
                 var dvc = new DialogViewController (root);
                 dvc.View.UserInteractionEnabled = false;
+                dvc.View.BackgroundColor = UIColor.White;
                 return dvc.View;
             }
 
@@ -369,6 +394,7 @@ namespace NachoClient.iOS
                 root.Add (section);
                 var dvc = new DialogViewController (root);
                 dvc.View.UserInteractionEnabled = false;
+                dvc.View.BackgroundColor = UIColor.White;
                 return dvc.View;
             }
 
@@ -395,7 +421,7 @@ namespace NachoClient.iOS
                     v.Layer.BorderColor = UIColor.DarkGray.CGColor;
                     v.Layer.BorderWidth = 1;
                     var l = new UILabel (v.Bounds);
-                    l.BackgroundColor = UIColor.Yellow;
+                    l.BackgroundColor = UIColor.White;
                     l.TextAlignment = UITextAlignment.Center;
                     l.Font = l.Font.WithSize (20f);
                     l.Tag = 1;

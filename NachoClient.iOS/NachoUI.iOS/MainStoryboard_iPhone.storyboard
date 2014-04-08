@@ -31,13 +31,46 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <view contentMode="scaleToFill" id="JQi-Fy-VOe">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="148"/>
+                            <view contentMode="scaleToFill" id="JQi-Fy-VOe" userLabel="View - Current Event View">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="58"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <subviews>
+                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="4" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="fon-gi-ESl" userLabel="Label - Subject">
+                                        <rect key="frame" x="110" y="9" width="190" height="39"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <imageView userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="8GD-vi-sFs">
+                                        <rect key="frame" x="81" y="9" width="21" height="22"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    </imageView>
+                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="2" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Cqg-Ez-ph3">
+                                        <rect key="frame" x="15" y="27" width="58" height="21"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                        <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="jnG-7i-Owd">
+                                        <rect key="frame" x="15" y="9" width="58" height="21"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="5" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="tfJ-ZP-2nE" userLabel="Label - No event label">
+                                        <rect key="frame" x="0.0" y="17" width="320" height="21"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
-                                <rect key="frame" x="0.0" y="156" width="320" height="216"/>
+                                <rect key="frame" x="0.0" y="66" width="320" height="306"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
@@ -619,7 +652,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -833,7 +866,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="Cy0-Nd-oMQ">
@@ -1302,19 +1335,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="Oi3-nV-lAC"/>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="ueb-Jn-ag7"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="ndB-gP-BtH"/>
-        <segue reference="FHc-YP-jWH"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="ciI-Ve-Wsq"/>
-        <segue reference="8JW-bP-0Qw"/>
         <segue reference="nAp-rc-bND"/>
+        <segue reference="ciI-Ve-Wsq"/>
+        <segue reference="emO-35-rbd"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="8JW-bP-0Qw"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="JWi-mA-RVD"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="PxE-UU-EfC"/>
     </inferredMetricsTieBreakers>
 </document>
