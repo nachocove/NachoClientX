@@ -1106,8 +1106,14 @@ namespace NachoCore.ActiveSync
                     Sm.PostEvent (insteadEvent);
                 }
             } else {
-                SetCmd (new AsSyncCommand (this));
-                Cmd.Execute (Sm);
+                if (SyncStrategy.IsMoreSyncNeeded ()) {
+                    SetCmd (new AsSyncCommand (this));
+                    Cmd.Execute (Sm);
+                } else {
+                    // There's no need to Sync, and we'd express zero Collections if we tried.
+                    // So just move on.
+                    Sm.PostEvent ((uint)SmEvt.E.Success, "DOSYNCNO");
+                }
             }
         }
 
