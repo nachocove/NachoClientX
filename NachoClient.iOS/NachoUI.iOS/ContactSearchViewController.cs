@@ -69,6 +69,14 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+        }
+
         /// <summary>
         /// Prepares for segue.
         /// </summary>
