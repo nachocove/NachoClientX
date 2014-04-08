@@ -6,22 +6,16 @@ using System.Collections.Generic;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
-
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
 
-
 namespace NachoClient.iOS
 {
-    
     public partial class AccountViewController : UITableViewController
     {
-
         public override void ViewDidLoad ()
         {
-
-
             base.ViewDidLoad ();
             TableView.Source = new AccountTableSource ();
 
@@ -32,6 +26,15 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
         }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             // prepare for segue. Target view controller here is folderView
@@ -55,18 +58,12 @@ namespace NachoClient.iOS
 
             }
         }
-    
-
-
-
 
         public AccountViewController (IntPtr handle) : base (handle)
         {
             //TableView.Source = new AccountTableSource ();
 
-                // Custom initialization
+            // Custom initialization
         }
-
     }
-
 }
