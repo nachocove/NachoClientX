@@ -3,9 +3,12 @@ import os
 import xml.sax
 from xml.sax.handler import ContentHandler
 
+
 class AsXsd(ContentHandler):
     INDENTATION = '   '
+
     def __init__(self, xsd_fname):
+        ContentHandler.__init__(self)
         self.elements = {}
         self.stack = []
         self._push(self.elements)
@@ -51,6 +54,7 @@ class AsXsd(ContentHandler):
         with open(fname, 'w') as f:
             f.write(self.generate_xml())
             f.close()
+
 
 def main():
     in_fname = sys.argv[1]
