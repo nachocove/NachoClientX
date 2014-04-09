@@ -27,8 +27,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            contact.ReadAncillaryData (BackEnd.Instance.Db);
-
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
                 // TODO: Check for changes before asking the user
