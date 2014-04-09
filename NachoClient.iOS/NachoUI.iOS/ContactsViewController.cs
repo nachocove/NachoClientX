@@ -100,7 +100,6 @@ namespace NachoClient.iOS
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
-                destinationController.Title = contact.DisplayName;
             }
         }
 
@@ -136,6 +135,13 @@ namespace NachoClient.iOS
 
             cell.TextLabel.Text = contact.DisplayName;
             cell.DetailTextLabel.Text = contact.DisplayEmailAddress;
+            if (contacts.isVIP (contact)) {
+                cell.ImageView.Image = UIImage.FromBundle ("beer");
+            } else if (contacts.isHot (contact)) {
+                cell.ImageView.Image = UIImage.FromBundle ("icon_chili");
+            } else {
+                cell.ImageView.Image = null;
+            }
 
             return cell;
         }

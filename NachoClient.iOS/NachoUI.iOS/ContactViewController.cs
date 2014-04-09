@@ -6,6 +6,7 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using MonoTouch.Dialog;
 using NachoCore.ActiveSync;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -25,6 +26,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            contact.ReadAncillaryData (BackEnd.Instance.Db);
 
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
@@ -109,11 +112,21 @@ namespace NachoClient.iOS
         {
             NachoCore.NachoAssert.True (null != m);
 
-            var root = new RootElement (m.DisplayName);
+            var root = new RootElement ("Contact");
             var section = new Section ();
 
             var r = AsContact.FromMcContact (m);
             var c = r.GetValue<AsContact> ();
+
+            if (contact.Score <= 1) {
+                section.Add (new StyledStringElementWithIndent (contact.DisplayName));
+            } else if (contact.Score < 10) {
+                var chili = UIImage.FromBundle ("icon_chili").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
+                section.Add (new StyledStringElementWithIcon (contact.DisplayName, chili));
+            } else {
+                var beer = UIImage.FromBundle ("beer").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
+                section.Add (new StyledStringElementWithIcon (contact.DisplayName, beer));
+            }
 
             // Person
             AddIfSet (ref section, "Title", c.Title);
