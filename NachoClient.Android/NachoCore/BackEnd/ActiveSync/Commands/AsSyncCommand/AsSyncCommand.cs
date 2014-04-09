@@ -127,7 +127,6 @@ namespace NachoCore.ActiveSync
         private XElement ToContactCreate (McPending pending, McFolder folder)
         {
             var contact = McObject.QueryById<McContact> (pending.ContactId);
-            contact.ReadAncillaryData (BackEnd.Instance.Db);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
@@ -141,7 +140,6 @@ namespace NachoCore.ActiveSync
         private XElement ToContactUpdate (McPending pending, McFolder folder)
         {
             var contact = McObject.QueryById<McContact> (pending.ContactId);
-            contact.ReadAncillaryData (BackEnd.Instance.Db);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 contact.ToXmlApplicationData ());

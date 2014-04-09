@@ -90,7 +90,6 @@ namespace NachoCore
             public McContact GetContact (int i)
             {
                 var c = contactList.ElementAt (i);
-                c.ReadAncillaryData (BackEnd.Instance.Db);
                 return c;
             }
 
