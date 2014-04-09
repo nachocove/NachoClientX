@@ -36,11 +36,19 @@ namespace NachoClient.iOS
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("HomeToNachoNow", this);
+                PerformSegue ("HomeToNachoNow", this);
             };
 
             // Help & demo pages
             InitializePageViewController ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
         }
 
         public void InitializePageViewController ()

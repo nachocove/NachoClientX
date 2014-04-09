@@ -12,6 +12,7 @@ namespace NachoCore
 {
     public class NcContactManager
     {
+        private const int hotness = 1;
         private static volatile NcContactManager instance;
         private static object syncRoot = new Object ();
 
@@ -45,10 +46,12 @@ namespace NachoCore
 
         protected void LoadContacts ()
         {
-            contactList = BackEnd.Instance.Db.Table<McContact> ().OrderBy (c => c.LastName).ToList ();
+            var hotList = BackEnd.Instance.Db.Table<McContact> ().Where (c => c.Score > hotness).OrderBy (c => c.Score).ToList ();
+            contactList = BackEnd.Instance.Db.Table<McContact> ().Where (c => c.Score <= hotness).OrderBy (c => c.FirstName).ToList ();
             if (null == contactList) {
                 contactList = new List<McContact> ();
             }
+            contactList.InsertRange (0, hotList);
             addressList = BackEnd.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.Type == McContactStringType.EmailAddress).ToList ();
             if (null == addressList) {
                 addressList = new List<McContactStringAttribute> ();
@@ -78,7 +81,7 @@ namespace NachoCore
             {
                 this.contactList = contactList;
                 this.addressList = addressList;
-                this.searchResults = new List<Int64>();
+                this.searchResults = new List<Int64> ();
 
             }
 
@@ -93,22 +96,22 @@ namespace NachoCore
                 return c;
             }
 
-            public void Search(string prefix)
+            public void Search (string prefix)
             {
                 searchResults = MatchesPrefix (prefix);
             }
 
-            public int SearchResultsCount()
+            public int SearchResultsCount ()
             {
                 return searchResults.Count;
             }
 
-            public McContact GetSearchResult(int searchIndex)
+            public McContact GetSearchResult (int searchIndex)
             {
                 var id = searchResults [searchIndex];
-                for(int i = 0; i < contactList.Count; i++) {
-                    if(id == contactList[i].Id) {
-                        return GetContact(i);
+                for (int i = 0; i < contactList.Count; i++) {
+                    if (id == contactList [i].Id) {
+                        return GetContact (i);
                     }
                 }
                 return null;
@@ -126,11 +129,11 @@ namespace NachoCore
                     foreach (var a in addressList) {
                         list.Add (a.ContactId);
                     }
-                    return list.ToList();
+                    return list.ToList ();
                 }
 
-                for(int i = 0; i < contactList.Count; i++) {
-                    foreach(var c in contactList) {
+                for (int i = 0; i < contactList.Count; i++) {
+                    foreach (var c in contactList) {
                         if (StartsWithIgnoringNull (prefix, c.FirstName)) {
                             list.Add (c.Id);
                         } else if (StartsWithIgnoringNull (prefix, c.LastName)) {
@@ -143,7 +146,7 @@ namespace NachoCore
                         list.Add (a.ContactId);
                     }
                 }
-                return list.ToList();
+                return list.ToList ();
             }
 
             protected bool StartsWithIgnoringNull (string prefix, string target)
@@ -155,6 +158,16 @@ namespace NachoCore
                 }
                 // TODO: Verify that we really want InvariantCultureIgnoreCase
                 return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            public bool isVIP (McContact contact)
+            {
+                return (10000 < contact.Score);
+            }
+
+            public bool isHot (McContact contact)
+            {
+                return (hotness < contact.Score);
             }
         }
     }

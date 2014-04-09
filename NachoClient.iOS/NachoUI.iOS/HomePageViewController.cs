@@ -2,11 +2,8 @@
 
 using System;
 using System.IO;
-
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-
-
 using System.Drawing;
 using NachoCore.Utils;
 
@@ -24,6 +21,7 @@ namespace NachoClient.iOS
             get;
             private set;
         }
+
         const string TutPageOne = "Content/HomePage1.png";
         const string TutPageTwo = "Content/PageTwo.png";
         const string TutPageThree = "Content/PageThree.png";
@@ -31,15 +29,19 @@ namespace NachoClient.iOS
         const string TutPageFive = "Content/PageFive.png";
         const string TutPageSix = "Content/PageSix.png";
         const string TutPageSeven = "Content/PageSeven.png";
-        string[] Tutorial = { TutPageOne, TutPageTwo, TutPageThree, TutPageFour, TutPageFive, TutPageSix, TutPageSeven };
-       
-
-
-      
+        string[] Tutorial = {
+            TutPageOne,
+            TutPageTwo,
+            TutPageThree,
+            TutPageFour,
+            TutPageFive,
+            TutPageSix,
+            TutPageSeven
+        };
 
         public override void ViewDidLoad ()
         {
-           UIWebView tutorialText = new UIWebView(this.View.Frame);
+            UIWebView tutorialText = new UIWebView (this.View.Frame);
            
             string fileName = Tutorial [this.PageIndex];
             string localUrl = System.IO.Path.Combine (NSBundle.MainBundle.BundlePath, fileName);
@@ -51,8 +53,15 @@ namespace NachoClient.iOS
 
 
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
-            Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString());
+            Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
         }
     }
-
 }

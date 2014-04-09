@@ -16,7 +16,6 @@ namespace NachoClient.iOS
         INachoCalendar calendar;
         public bool UseDeviceCalendar;
         protected bool adjustScrollPosition = true;
-
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>
@@ -75,7 +74,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            if (adjustScrollPosition &&  (calendar.NumberOfDays() > 0)) {
+            if (adjustScrollPosition && (calendar.NumberOfDays () > 0)) {
                 adjustScrollPosition = false;
                 var i = calendar.IndexOfDate (DateTime.UtcNow);
                 if (i >= 0) {
@@ -83,6 +82,7 @@ namespace NachoClient.iOS
                     TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
                 }
             }
+            this.NavigationController.ToolbarHidden = true;
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                 McCalendar calendarItem = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
                 CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
                 destinationController.calendarItem = calendarItem;
-                destinationController.Title = Pretty.SubjectString(calendarItem.Subject);
+                destinationController.Title = Pretty.SubjectString (calendarItem.Subject);
             }
         }
 
