@@ -58,10 +58,12 @@ namespace NachoClient.iOS
         {
             var value = Request.Url.ResourceSpecifier;
             using (var image = PlatformHelpers.RenderContentId (value)) {
+                // FIXME: hardcoded width
+                var scaledImage = image.Scale (new SizeF (320.0f, image.Size.Height * (320.0f / image.Size.Width)));
                 using (var response = new NSUrlResponse (Request.Url, "image/jpeg", -1, null)) {
                     Client.ReceivedResponse (this, response, NSUrlCacheStoragePolicy.NotAllowed);
                     this.InvokeOnMainThread (delegate {
-                        using (var data = image.AsJPEG ()) {
+                        using (var data = scaledImage.AsJPEG ()) {
                             Client.DataLoaded (this, data);
                         }
                         Client.FinishedLoading (this);
