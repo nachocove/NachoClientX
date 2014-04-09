@@ -14,26 +14,46 @@ namespace NachoCore
         {
         }
 
-        public static INachoEmailMessages Inbox()
+        protected static McFolder InboxFolder ()
         {
-            var email = new NachoFolders (NachoFolders.FilterForEmail);
-            for (int i = 0; i < email.Count (); i++) {
-                McFolder f = email.GetFolder (i);
+            var emailFolders = new NachoFolders (NachoFolders.FilterForEmail);
+            for (int i = 0; i < emailFolders.Count (); i++) {
+                McFolder f = emailFolders.GetFolder (i);
                 if (f.DisplayName.Equals ("Inbox")) {
-                    return new NachoEmailMessages (f);
+                    return f;
                 }
             }
-            return new MissingFolder ();
+            return null;
+        }
+
+        public static INachoEmailMessages Inbox ()
+        {
+            var inboxFolder = InboxFolder ();
+            if (null == inboxFolder) {
+                return new MissingFolder ();
+            } else {
+                return new NachoEmailMessages (inboxFolder);
+            }
+        }
+
+        public static INachoEmailMessages PriorityInbox ()
+        {
+            var inboxFolder = InboxFolder ();
+            if (null == inboxFolder) {
+                return new MissingFolder ();
+            } else {
+                return new NachoPriorityEmailMessages (inboxFolder);
+            }
         }
 
         protected class MissingFolder : INachoEmailMessages
         {
-            public int Count()
+            public int Count ()
             {
                 return 0;
             }
 
-            public void Refresh()
+            public void Refresh ()
             {
             }
 

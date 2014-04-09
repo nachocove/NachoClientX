@@ -201,7 +201,7 @@ namespace NachoClient.iOS
         protected void UpdateHotLists ()
         {
             hotList = new List<object> ();
-            messageThreads = NcEmailManager.Inbox ();
+            messageThreads = NcEmailManager.PriorityInbox ();
             taskThreads = new NachoDeferredEmailMessages ();
             calendar = NcCalendarManager.Instance;
 
