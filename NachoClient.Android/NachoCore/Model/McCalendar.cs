@@ -71,18 +71,18 @@ namespace NachoCore.Model
         /// Index of Body container
         public int BodyId { get; set; }
 
-        /// Implicit [Ignore]
-        public List<McAttendee> attendees;
-        /// Implicit [Ignore]
-        public List<McCalendarCategory> categories;
+        [Ignore]
+        private List<McAttendee> DbAttendees { get; set; }
+        [Ignore]
+        private List<McCalendarCategory> DbCategories { get; set; }
     }
 
     public partial class McCalendar : McCalendarRoot
     {
         /// Implicit [Ignore]
-        public List<McException> exceptions;
+        private List<McException> DbExceptions;
         /// Implicit [Ignore]
-        public List<McRecurrence> recurrences;
+        private List<McRecurrence> DbRecurrences;
 
         /// Is a response to this meeting required? Calendar only.
         public bool ResponseRequested { get; set; }
@@ -400,10 +400,63 @@ namespace NachoCore.Model
 
     public partial class McCalendarRoot
     {
+        private Boolean HasReadAncillaryData;
+
         public McCalendarRoot () : base ()
         {
-            attendees = new List<McAttendee> ();
-            categories = new List<McCalendarCategory> ();
+            DbAttendees = new List<McAttendee> ();
+            DbCategories = new List<McCalendarCategory> ();
+            HasReadAncillaryData = false;
+        }
+
+        [Ignore]
+        public List<McAttendee> attendees
+        {
+            get {
+                ReadAncillaryData ();
+                return DbAttendees;
+            }
+            set {
+                ReadAncillaryData ();
+                DbAttendees = value;
+            }
+        }
+
+        [Ignore]
+        public List<McCalendarCategory> categories
+        {
+            get {
+                ReadAncillaryData ();
+                return DbCategories;
+            }
+            set {
+                ReadAncillaryData ();
+                DbCategories = value;
+            }
+        }
+
+        private NcResult ReadAncillaryData ()
+        {
+            NcResult result = NcResult.OK ();
+            if (!HasReadAncillaryData) {
+                result = ForceReadAncillaryData ();
+                if (result.isOK()) {
+                    HasReadAncillaryData = true;
+                } else {
+                    Log.Warn ("Fail to read calendar ancillary data (Id={0})", Id);
+                }
+            }
+            return result;
+        }
+
+        private NcResult ForceReadAncillaryData ()
+        {
+            SQLiteConnection db = BackEnd.Instance.Db;
+            // FIXME: Parent types
+            DbAttendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
+            // FIXME: Parent types
+            DbCategories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            return NcResult.OK ();
         }
     }
 
@@ -414,11 +467,37 @@ namespace NachoCore.Model
         public McCalendar () : base ()
         {
             HasReadAncillaryData = false;
-            exceptions = new List<McException> ();
-            recurrences = new List<McRecurrence> ();
+            DbExceptions = new List<McException> ();
+            DbRecurrences = new List<McRecurrence> ();
         }
 
-        public NcResult ReadAncillaryData ()
+        [Ignore]
+        public List<McException> exceptions
+        {
+            get {
+                ReadAncillaryData ();
+                return DbExceptions;
+            }
+            set {
+                ReadAncillaryData ();
+                DbExceptions = value;
+            }
+        }
+
+        [Ignore]
+        public List<McRecurrence> recurrences
+        {
+            get {
+                ReadAncillaryData ();
+                return DbRecurrences;
+            }
+            set {
+                ReadAncillaryData ();
+                DbRecurrences = value;
+            }
+        }
+            
+        private NcResult ReadAncillaryData ()
         {
             if (!HasReadAncillaryData) {
                 HasReadAncillaryData = true;
@@ -431,12 +510,8 @@ namespace NachoCore.Model
         {
             HasReadAncillaryData = true;
             var db = BackEnd.Instance.Db;
-            // FIXME: Parent types
-            attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
-            // FIXME: Parent types
-            categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
-            exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
-            recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
+            DbExceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            DbRecurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
             return NcResult.OK ();
         }
 

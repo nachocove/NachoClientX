@@ -98,7 +98,6 @@ namespace NachoCore.ActiveSync
         private XElement ToCalCreate (McPending pending, McFolder folder)
         {
             var cal = McCalendar.QueryById<McCalendar> (pending.CalId);
-            cal.ReadAncillaryData ();
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
@@ -112,7 +111,6 @@ namespace NachoCore.ActiveSync
         private XElement ToCalUpdate (McPending pending, McFolder folder)
         {
             var cal = McCalendar.QueryById<McCalendar> (pending.CalId);
-            cal.ReadAncillaryData ();
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 AsHelpers.ToXmlApplicationData (cal));

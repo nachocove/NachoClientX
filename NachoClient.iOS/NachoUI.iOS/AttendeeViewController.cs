@@ -25,12 +25,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void GetAttendeeList (ref List<McAttendee> attendees)
+        public List<McAttendee> GetAttendeeList ()
         {
-            attendees = new List<McAttendee> ();
-            foreach (var attendee in this.AttendeeList) {
-                attendees.Add (attendee);
-            }
+            return this.AttendeeList;
         }
 
         public AttendeeViewController (IntPtr handle) : base (handle)
