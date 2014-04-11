@@ -547,32 +547,32 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="Welcome to Nacho Mail!" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="3GF-CP-chd">
-                                <rect key="frame" x="39" y="93" width="219" height="21"/>
+                                <rect key="frame" x="51" y="93" width="219" height="21"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="center" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Server Name" textAlignment="center" minimumFontSize="17" clearButtonMode="always" id="FAx-1P-Ryk">
-                                <rect key="frame" x="71" y="122" width="154" height="30"/>
+                                <rect key="frame" x="83" y="122" width="154" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="URL" enablesReturnKeyAutomatically="YES"/>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="User Name" textAlignment="center" minimumFontSize="17" id="uBu-6j-Bbo">
-                                <rect key="frame" x="71" y="153" width="154" height="30"/>
+                                <rect key="frame" x="83" y="160" width="154" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress"/>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Password" textAlignment="center" minimumFontSize="17" id="WPa-HS-ZhK">
-                                <rect key="frame" x="71" y="186" width="154" height="30"/>
+                                <rect key="frame" x="83" y="198" width="154" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="yIU-n1-bEg">
-                                <rect key="frame" x="98" y="52" width="101" height="44"/>
+                                <rect key="frame" x="110" y="52" width="101" height="44"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Connect Me">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
@@ -582,6 +582,7 @@
                                 </connections>
                             </button>
                         </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
@@ -1335,19 +1336,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="nAp-rc-bND"/>
-        <segue reference="ciI-Ve-Wsq"/>
         <segue reference="emO-35-rbd"/>
         <segue reference="ebP-h4-BhC"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="Mvu-uQ-8cr"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="8JW-bP-0Qw"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="JWi-mA-RVD"/>
-        <segue reference="RaB-9o-azo"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="8JW-bP-0Qw"/>
+        <segue reference="JWi-mA-RVD"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="ciI-Ve-Wsq"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="PxE-UU-EfC"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="nAp-rc-bND"/>
     </inferredMetricsTieBreakers>
 </document>
