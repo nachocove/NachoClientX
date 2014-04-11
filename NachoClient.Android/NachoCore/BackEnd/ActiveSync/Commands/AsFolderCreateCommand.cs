@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
                                    new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),
                                    new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.DestFolderServerId),
                                    new XElement (m_ns + Xml.FolderHierarchy.DisplayName, PendingSingle.DisplayName),
-                                   new XElement (m_ns + Xml.FolderHierarchy.Type, PendingSingle.FolderType));
+                                   new XElement (m_ns + Xml.FolderHierarchy.Type, ((int)PendingSingle.FolderType)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderCreate);
             return doc;		
