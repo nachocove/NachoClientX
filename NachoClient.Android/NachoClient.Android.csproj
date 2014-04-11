@@ -195,6 +195,7 @@
     <Compile Include="NachoCore\Utils\EmailAddressHelper.cs" />
     <Compile Include="NachoCore\Adapters\NcEmailManager.cs" />
     <Compile Include="NachoCore\Adapters\NachoPriorityEmailMessages.cs" />
+    <Compile Include="NachoCore\Brain\NcMessageArchiver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

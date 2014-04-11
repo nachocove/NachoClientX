@@ -275,6 +275,7 @@ namespace NachoClient.iOS
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe Checkmark cell");
+                    ArchiveThisMessage(indexPath);
                 });
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
@@ -332,6 +333,13 @@ namespace NachoClient.iOS
             var t = messageThreads.GetEmailThread (indexPath.Row);
             var m = t.First ();
             BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
+        }
+
+        public void ArchiveThisMessage(NSIndexPath indexPath)
+        {
+            var t = messageThreads.GetEmailThread (indexPath.Row);
+            var m = t.First ();
+            NcEmailArchiver.Archive (m);
         }
     }
 }

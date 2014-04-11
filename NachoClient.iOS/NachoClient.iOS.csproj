@@ -599,6 +599,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoPriorityEmailMessages.cs">
       <Link>NachoCore\Adapters\NachoPriorityEmailMessages.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageArchiver.cs">
+      <Link>NachoCore\Brain\NcMessageArchiver.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

@@ -106,6 +106,21 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
 
+        public static McFolder GetUserFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
+        {
+            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? AND " +
+                " f.Type = ? AND " +
+                " f.ParentId = ? AND " +
+                " f.DisplayName = ?",
+                accountId, (uint)typeCode, parentId, name);
+            if (0 == folders.Count) {
+                return null;
+            }
+            NachoAssert.True (1 == folders.Count);
+            return folders.First ();
+        }
+
         private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
