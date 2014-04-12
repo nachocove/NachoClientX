@@ -120,7 +120,7 @@ namespace NachoCore.ActiveSync
         }
 
         private string SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
-                                int folderId, bool originalEmailIsEmbedded)
+                                      int folderId, bool originalEmailIsEmbedded)
         {
             if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                 return SendEmailCmd (newEmailMessageId);
@@ -150,14 +150,14 @@ namespace NachoCore.ActiveSync
         }
 
         public override string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-                                        int folderId, bool originalEmailIsEmbedded)
+                                              int folderId, bool originalEmailIsEmbedded)
         {
             return SmartEmailCmd (McPending.Operations.EmailReply,
                 newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
         public override string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-                                          int folderId, bool originalEmailIsEmbedded)
+                                                int folderId, bool originalEmailIsEmbedded)
         {
             return SmartEmailCmd (McPending.Operations.EmailForward,
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
@@ -235,6 +235,7 @@ namespace NachoCore.ActiveSync
             destFolder.Link (emailMessage);
             srcFolder.Unlink (emailMessage);
 
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
             });
@@ -510,7 +511,7 @@ namespace NachoCore.ActiveSync
             };
 
             pending.Insert ();
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
+
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECNT");
             });
@@ -624,8 +625,8 @@ namespace NachoCore.ActiveSync
         }
 
         public override string CreateFolderCmd (int destFolderId, string displayName, 
-                                          Xml.FolderHierarchy.TypeCode folderType,
-                                          bool isClientOwned, bool isHidden)
+                                                Xml.FolderHierarchy.TypeCode folderType,
+                                                bool isClientOwned, bool isHidden)
         {
             var serverId = DateTime.UtcNow.Ticks.ToString ();
             string destFldServerId;
@@ -650,13 +651,15 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            McFolder.Create (Account.Id,
-                isClientOwned,
-                isHidden,
-                destFldServerId,
-                serverId,
-                displayName,
-                folderType);
+            var folder = McFolder.Create (Account.Id,
+                             isClientOwned,
+                             isHidden,
+                             destFldServerId,
+                             serverId,
+                             displayName,
+                             folderType);
+            folder.Insert ();
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             if (isClientOwned) {
                 return McPending.KSynchronouslyCompleted;
@@ -681,7 +684,7 @@ namespace NachoCore.ActiveSync
         }
 
         public override string CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType,
-                                          bool isClientOwned, bool isHidden)
+                                                bool isClientOwned, bool isHidden)
         {
             return CreateFolderCmd (-1, displayName, folderType, isClientOwned, isHidden);
         }
@@ -700,6 +703,7 @@ namespace NachoCore.ActiveSync
             };
 
             folder.Delete ();
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             delFolder.Insert ();
 
@@ -720,6 +724,7 @@ namespace NachoCore.ActiveSync
 
             folder.ParentId = destFolder.ServerId;
             folder.Update ();
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             if (folder.IsClientOwned) {
                 return McPending.KSynchronouslyCompleted;
@@ -747,6 +752,7 @@ namespace NachoCore.ActiveSync
 
             folder.DisplayName = displayName;
             folder.Update ();
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             if (folder.IsClientOwned) {
                 return McPending.KSynchronouslyCompleted;

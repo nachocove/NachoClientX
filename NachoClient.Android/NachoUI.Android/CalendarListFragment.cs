@@ -86,7 +86,7 @@ namespace NachoClient.AndroidClient
                 convertView = context.LayoutInflater.Inflate (Resource.Layout.CalendarListGroup, null);
             }
             var header = convertView.FindViewById<TextView> (Resource.Id.header);
-            var date = calendarItems.GetDayDate (groupPosition);
+            var date = calendarItems.GetDateUsingDayIndex (groupPosition);
             header.Text = date.ToString ("D");
             return convertView;
         }

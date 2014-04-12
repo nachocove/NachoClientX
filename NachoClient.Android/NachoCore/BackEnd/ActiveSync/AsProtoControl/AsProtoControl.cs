@@ -514,6 +514,9 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                         },
+                        // FIXME.
+                        // Problem DoSync on ReSync causes us to needlessly cancel a sync that is underway.
+                        // DoNop means that ReSync doesn't work as a way to say "sync again".
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPing, State = (uint)Lst.PingW },
@@ -1001,6 +1004,10 @@ namespace NachoCore.ActiveSync
             protocolState.Update ();
         }
         // State-machine action methods.
+        private void DoNop ()
+        {
+        }
+
         private void DoUiServConfReq ()
         {
             // Send the request toward the UI.

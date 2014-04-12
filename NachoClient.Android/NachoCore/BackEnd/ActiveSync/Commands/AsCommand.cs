@@ -59,6 +59,7 @@ namespace NachoCore.ActiveSync
             BEContext = beContext;
             PendingList = new List<McPending> ();
         }
+
         // Virtual Methods.
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
         {

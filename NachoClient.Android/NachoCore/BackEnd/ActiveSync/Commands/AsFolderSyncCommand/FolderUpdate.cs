@@ -24,10 +24,12 @@ namespace NachoCore.ActiveSync
             {
             }
 
-            protected override List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                    out McPending.DbActionEnum action)
+            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+                out McPending.DbActionEnum action,
+                out bool cancelDelta)
             {
                 action = McPending.DbActionEnum.DoNothing;
+                cancelDelta = false;
                 switch (pending.Operation) {
                 default:
                     break;
@@ -35,7 +37,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            protected override void ApplyChangeToModel ()
+            protected override void ApplyDeltaToModel ()
             {
                 var folder = McItem.QueryByServerId<McFolder> (AccountId, ServerId);
                 folder.ParentId = ParentId;

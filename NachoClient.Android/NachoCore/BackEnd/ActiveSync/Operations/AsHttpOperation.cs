@@ -57,7 +57,6 @@ namespace NachoCore.ActiveSync
         private const int KDefaultTimeoutSeconds = 15;
         private const uint KDefaultRetries = 15;
         private const string KToXML = "ToXML";
-
         private string CommandName;
         private IBEContext BEContext;
         private IAsHttpOperationOwner Owner;
@@ -89,7 +88,6 @@ namespace NachoCore.ActiveSync
         public bool DontReportCommResult { set; get; }
 
         public string Token { set; get; }
-
         /* Lifecycle:
          * AsHttpOperation object gets created.
          * obj.Execute(sm) called.
@@ -150,7 +148,11 @@ namespace NachoCore.ActiveSync
                                 Act = DoTimeoutHttp,
                                 State = (uint)HttpOpLst.HttpWait
                             },
-                            new Trans { Event = (uint)HttpOpEvt.E.Rephrase, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
+                            new Trans {
+                                Event = (uint)HttpOpEvt.E.Rephrase,
+                                Act = DoHttp,
+                                State = (uint)HttpOpLst.HttpWait
+                            },
                             new Trans { Event = (uint)HttpOpEvt.E.Final, Act = DoFinal, State = (uint)St.Stop },
                         }
                     },
@@ -166,7 +168,11 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoHttp, State = (uint)HttpOpLst.HttpWait },
-                            new Trans { Event = (uint)HttpOpEvt.E.Cancel, Act = DoCancelDelayTimer, State = (uint)St.Stop },
+                            new Trans {
+                                Event = (uint)HttpOpEvt.E.Cancel,
+                                Act = DoCancelDelayTimer,
+                                State = (uint)St.Stop
+                            },
                         }
                     },
                 }
@@ -285,7 +291,6 @@ namespace NachoCore.ActiveSync
                 NcCommStatus.Instance.ReportCommResult (host, didFailGenerally);
             }
         }
-
         // Final is how to pass the ultimate Event back to OwnerSm.
         private Event Final (uint eventCode, string mnemonic)
         {
@@ -354,7 +359,7 @@ namespace NachoCore.ActiveSync
             TimeoutTimer = new NcTimer (TimeoutTimerCallback, myClient, Timeout, 
                 System.Threading.Timeout.InfiniteTimeSpan);
             try {
-                Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString());
+                Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
                 response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
             } catch (OperationCanceledException ex) {
                 Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
@@ -390,6 +395,14 @@ namespace NachoCore.ActiveSync
                     HttpOpSm.PostEvent (nRefEvent);
                 }
                 return;
+            } catch (Exception ex) {
+                // We've seen HttpClient barf due to Cancel().
+                if (myClient == Client) {
+                    CancelTimeoutTimer ();
+                    var nRefEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
+                    nRefEvent.DropIfStopped = true;
+                    HttpOpSm.PostEvent (nRefEvent);
+                }
             }
 
             if (myClient == Client) {
@@ -403,10 +416,9 @@ namespace NachoCore.ActiveSync
                 } catch (Exception ex) {
                     Log.Info ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                     HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
-                 }
+                }
             }
         }
-
         // TODO: move a bunch of this logic into AsCommand.
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
@@ -465,8 +477,8 @@ namespace NachoCore.ActiveSync
                 } 
                 return Final (Owner.ProcessResponse (this, response));
 
-                // NOTE: ALWAYS resolve pending on Final, and ONLY resolve pending on Final.
-                // DO NOT resolve pending on Event.Create!
+            // NOTE: ALWAYS resolve pending on Final, and ONLY resolve pending on Final.
+            // DO NOT resolve pending on Event.Create!
 
             case HttpStatusCode.Found:
                 ReportCommResult (ServerUri.Host, false);
@@ -547,7 +559,7 @@ namespace NachoCore.ActiveSync
                         };
                         ServerUri = new Uri (AsCommand.BaseUri (dummy), redirUri.Query);
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
-                    } catch(Exception ex) {
+                    } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                         Owner.ResoveAllDeferred ();
                         return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451D");
@@ -584,7 +596,7 @@ namespace NachoCore.ActiveSync
                 if (response.Headers.Contains (HeaderRetryAfter)) {
                     try {
                         seconds = uint.Parse (response.Headers.GetValues (HeaderRetryAfter).First ());
-                    } catch(Exception ex) {
+                    } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                         return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", seconds, "Could not parse Retry-After value.");
                     }

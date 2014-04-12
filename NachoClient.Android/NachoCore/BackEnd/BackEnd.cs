@@ -101,6 +101,7 @@ namespace NachoCore
             Db.CreateTable<McProtocolState> ();
             Db.CreateTable<McServer> ();
             Db.CreateTable<McPending> ();
+            Db.CreateTable<McPendingPath> ();
             Db.CreateTable<McCalendar> ();
             Db.CreateTable<McException> ();
             Db.CreateTable<McAttendee> ();
@@ -150,25 +151,30 @@ namespace NachoCore
                     service = new AsProtoControl (this, accountId);
                     Services.Add (service);
                     // Create client owned objects as needed.
+                    McFolder freshMade;
                     if (null == McFolder.GetOutboxFolder (accountId)) {
-                        McFolder.Create (accountId, true, false, "0",
+                        freshMade = McFolder.Create (accountId, true, false, "0",
                             McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
                             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                        freshMade.Insert();
                     }
                     if (null == McFolder.GetGalCacheFolder (accountId)) {
-                        McFolder.Create (accountId, true, true, "0",
+                        freshMade = McFolder.Create (accountId, true, true, "0",
                             McFolder.ClientOwned_GalCache, string.Empty,
                             Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                        freshMade.Insert();
                     }
                     if (null == McFolder.GetGleanedFolder (accountId)) {
-                        McFolder.Create (accountId, true, true, "0",
+                        freshMade = McFolder.Create (accountId, true, true, "0",
                             McFolder.ClientOwned_Gleaned, string.Empty,
                             Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                        freshMade.Insert();
                     }
                     if (null == McFolder.GetLostAndFoundFolder (accountId)) {
-                        McFolder.Create (accountId, true, true, "0",
+                        freshMade = McFolder.Create (accountId, true, true, "0",
                             McFolder.ClientOwned_LostAndFound, string.Empty,
                             Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                        freshMade.Insert();
                     }
                 }
                 service.Execute ();

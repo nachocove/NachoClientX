@@ -10,18 +10,24 @@ namespace NachoCore.ActiveSync
     {
         protected int AccountId;
         protected List<McPending.ReWrite> ReWrites;
-        protected List<McPending> PendingQ;
+        protected int PriorPendingId;
 
         public AsApplyServerDelta (int accountId)
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();
-            PendingQ = McPending.Query (AccountId); // FIXME can't lock up the world.
+            PriorPendingId = 0;
         }
 
         public void ProcessDelta ()
         {
-            foreach (var pending in PendingQ) {
+            McPending pending;
+            for (pending = McPending.GetOldestYoungerThanId (AccountId, PriorPendingId);
+                null != pending;
+                pending = McPending.GetOldestYoungerThanId (AccountId, PriorPendingId)) {
+                PriorPendingId = pending.Id;
+
+                // Apply all existing re-writes to the pending.
                 switch (pending.ApplyReWrites (ReWrites)) {
                 case McPending.DbActionEnum.DoNothing:
                     break;
@@ -30,11 +36,14 @@ namespace NachoCore.ActiveSync
                     break;
                 case McPending.DbActionEnum.Delete:
                     pending.Delete ();
-                    continue;
+                    continue; // Not break! No need to apply delta to a just-deleted pending!
                 }
 
-                McPending.DbActionEnum action = McPending.DbActionEnum.DoNothing;
-                var newReWrites = ApplyChangeToPending (pending, out action);
+                // Apply this specific to-client delta to the pending,
+                // possibly generating new re-writes.
+                McPending.DbActionEnum action;
+                bool cancelDelta;
+                var newReWrites = ApplyDeltaToPending (pending, out action, out cancelDelta);
                 if (null != newReWrites) {
                     ReWrites.AddRange (newReWrites);
                 }
@@ -46,16 +55,28 @@ namespace NachoCore.ActiveSync
                     break;
                 case McPending.DbActionEnum.Delete:
                     pending.Delete ();
-                    break; // Note not the same as 'continue;' above!
+                    break;
+                }
+                if (cancelDelta) {
+                    // There is no need to keep processing the delta, and no need to apply it to the DB.
+                    return;
                 }
             }
-            ApplyChangeToModel ();
+            ApplyReWritesToModel ();
+            ApplyDeltaToModel ();
         }
 
-        protected abstract List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                         out McPending.DbActionEnum action);
+        protected abstract List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+            out McPending.DbActionEnum action,
+            out bool cancelDelta
+        );
 
-        protected abstract void ApplyChangeToModel ();
+        private void ApplyReWritesToModel ()
+        {
+            // FIXME.
+        }
+
+        protected abstract void ApplyDeltaToModel ();
     }
 }
 

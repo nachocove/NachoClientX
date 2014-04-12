@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using SQLite;
 using NachoCore;
 using NachoCore.ActiveSync;
@@ -109,9 +110,8 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
-        // Valid after transition to Dispached.
-        [Indexed]
-        public string Command { set; get; }
+        // The number of paths that are stored.
+        public uint PathCount { set; get; }
         // Valid when in PredBlocked state.
         [Indexed]
         public int PredPendingId { set; get; }
@@ -404,7 +404,6 @@ namespace NachoCore.Model
             }
             return (0 != makeEligible.Count);
         }
-
         // register for status-ind, look for FSync and Sync success.
         public void ResolveAsHardFail (ProtoControl control, NcResult.WhyEnum why)
         {
@@ -485,12 +484,112 @@ namespace NachoCore.Model
                 return true;
             });
         }
+
+        private void InsertFolderPath (string searchId, uint pathId)
+        {
+            uint orderValue = uint.MaxValue;
+            while (McFolder.AsRootServerId != searchId) {
+                var pathElem = new McPendingPath () {
+                    PendingId = Id,
+                    PathId = pathId,
+                    ServerId = searchId,
+                    Order = orderValue,
+                };
+                --orderValue;
+                pathElem.Insert ();
+                var parent = McFolder.QueryByServerId<McFolder> (AccountId, searchId);
+                searchId = parent.ParentId;
+            }
+            PathCount = 1;
+            Update ();
+        }
+
+        private void InsertItemPaths<T> (int itemId)
+        {
+            uint pathId = 0;
+            var containingFolders = McFolder.QueryByFolderEntryId<McFolder> (AccountId, itemId);
+            foreach (var folder in containingFolders.Where(x => false == x.IsClientOwned)) {
+                InsertFolderPath (folder.ServerId, pathId);
+                ++pathId;
+            }
+            PathCount = pathId;
+            Update ();
+        }
+
+        private void DeletePaths ()
+        {
+            var paths = BackEnd.Instance.Db.Table<McPendingPath> ().Where (x => Id == x.PendingId);
+            foreach (var path in paths) {
+                path.Delete ();
+            }
+        }
+
+        public bool FolderCompletelyDominates (string FolderServerId)
+        {
+            var dominatedPaths = BackEnd.Instance.Db.Table<McPendingPath> ()
+                .Where (y => Id == y.PendingId &&
+                    FolderServerId == y.ServerId).Count ();
+            NachoAssert.True (PathCount >= dominatedPaths);
+            return dominatedPaths == PathCount;
+        }
+
+        public override int Insert ()
+        {
+            // FIXME - one transaction.
+            var retval = base.Insert ();
+            switch (Operation) {
+            case Operations.FolderCreate:
+            case Operations.FolderUpdate:
+            case Operations.FolderDelete:
+                InsertFolderPath (ParentId, 0);
+                break;
+
+            case Operations.EmailForward:
+            case Operations.EmailReply:
+            case Operations.EmailMove:
+            case Operations.EmailDelete:
+            case Operations.EmailMarkRead:
+            case Operations.EmailSetFlag:
+            case Operations.EmailClearFlag:
+            case Operations.EmailMarkFlagDone:
+            case Operations.AttachmentDownload:
+                InsertItemPaths<McEmailMessage> (EmailMessageId);
+                break;
+
+            case Operations.CalCreate:
+            case Operations.CalUpdate:
+            case Operations.CalDelete:
+            case Operations.CalRespond:
+                InsertItemPaths<McCalendar> (EmailMessageId);
+                break;
+
+            case Operations.ContactCreate:
+            case Operations.ContactUpdate:
+            case Operations.ContactDelete:
+                InsertItemPaths<McContact> (EmailMessageId);
+                break;
+            }
+            return retval;
+        }
+
+        public override int Delete ()
+        {
+            // FIXME - one transaction.
+            DeletePaths ();
+            return base.Delete ();
+        }
+
         // Query APIs for any & all to call.
         public static List<McPending> Query (int accountId)
         {
             return BackEnd.Instance.Db.Table<McPending> ()
                     .Where (x => x.AccountId == accountId)
                     .OrderBy (x => x.Id).ToList ();
+        }
+
+        public static McPending GetOldestYoungerThanId (int accountId, int priorId)
+        {
+            return Query (accountId).FirstOrDefault<McPending> (x => x.Id > priorId);
         }
 
         public static List<McPending> QueryEligible (int accountId)
@@ -531,9 +630,9 @@ namespace NachoCore.Model
         {
             return BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.State == StateEnum.Deferred &&
-                rec.DeferredReason == DeferredEnum.UntilTime &&
-                rec.DeferredUntilTime < DateTime.UtcNow
+            rec.State == StateEnum.Deferred &&
+            rec.DeferredReason == DeferredEnum.UntilTime &&
+            rec.DeferredUntilTime < DateTime.UtcNow
             ).OrderBy (x => x.Id).ToList ();
         }
 
@@ -558,8 +657,8 @@ namespace NachoCore.Model
             return BackEnd.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&
-                        rec.Operation == operation &&
-                        rec.State == StateEnum.Eligible);
+            rec.Operation == operation &&
+            rec.State == StateEnum.Eligible);
         }
 
         public static McPending QueryByClientId (int accountId, string clientId)
@@ -575,8 +674,8 @@ namespace NachoCore.Model
             return BackEnd.Instance.Db.Table<McPending> ()
                     .Where (rec =>
                         rec.AccountId == accountId &&
-                        rec.FolderServerId == folderServerId &&
-                        rec.State == StateEnum.Eligible).ToList();
+            rec.FolderServerId == folderServerId &&
+            rec.State == StateEnum.Eligible).ToList ();
         }
 
         public static McPending QueryByServerId (int accountId, string serverId)
@@ -590,9 +689,18 @@ namespace NachoCore.Model
         // For re-write McPending objects on sync conflict resolution.
         public class ReWrite
         {
+            public delegate bool IsMatchDelegate (McPending McPending);
+
+            public IsMatchDelegate IsMatch;
+
+            public delegate DbActionEnum PerformReWriteDelegate (McPending pending);
+
+            public PerformReWriteDelegate PerformReWrite;
+
             public enum LocalActionEnum
             {
-                Replace,
+                ReplaceField,
+                MoveToLostAndFound,
                 Delete,
             };
 
@@ -633,6 +741,22 @@ namespace NachoCore.Model
             }
             return (updateNeeded) ? DbActionEnum.Update : DbActionEnum.DoNothing;
         }
+       
+
+    }
+
+    public class McPendingPath : McObjectPerAccount
+    {
+        // Foreign key.
+        [Indexed]
+        public int PendingId { set; get; }
+        // The path component.
+        [Indexed]
+        public string ServerId { set; get; }
+        // Which path (McItem can be in multiple folders). Unique only to the the PendingId value.
+        public uint PathId { set; get; }
+        // The location within the path, where 0 is the top (child of root).
+        public uint Order { set; get; }
     }
 }
 

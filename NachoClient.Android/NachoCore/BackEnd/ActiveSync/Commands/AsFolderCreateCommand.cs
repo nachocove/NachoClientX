@@ -42,12 +42,12 @@ namespace NachoCore.ActiveSync
                 protocolState.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
                 var serverId = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                var folder = McItem.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
-                if (null != folder) {
-                    folder.ServerId = serverId;
-                    folder.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
-                    folder.Update ();
-                }
+                var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
+                    PlaceholderId = PendingSingle.ServerId,
+                    FinalServerId = serverId,
+                };
+                applyFolderCreate.ProcessDelta ();
+
                 PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
                     NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
                 return Event.Create ((uint)SmEvt.E.Success, "FCRESUCCESS");
@@ -96,6 +96,61 @@ namespace NachoCore.ActiveSync
                 PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
                     NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
                 return Event.Create ((uint)SmEvt.E.HardFail, "FCREFAIL");
+            }
+        }
+
+        private class ApplyCreateFolder : AsApplyServerDelta
+        {
+            public string FinalServerId { set; get; }
+
+            public string PlaceholderId { set; get; }
+
+            public ApplyCreateFolder (int accountId)
+                : base (accountId)
+            {
+            }
+
+            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+                out McPending.DbActionEnum action,
+                out bool cancelDelta)
+            {
+                // FIXME - need a pending method that acts on ALL ServerId fields.
+                action = McPending.DbActionEnum.DoNothing;
+                cancelDelta = false;
+                if (null != pending.ServerId && pending.ServerId == PlaceholderId) {
+                    pending.ServerId = FinalServerId;
+                    action = McPending.DbActionEnum.Update;
+                }
+                if (null != pending.ParentId && pending.ParentId == PlaceholderId) {
+                    pending.ParentId = FinalServerId;
+                    action = McPending.DbActionEnum.Update;
+                }
+                if (null != pending.DestFolderServerId && pending.DestFolderServerId == PlaceholderId) {
+                    pending.DestFolderServerId = FinalServerId;
+                    action = McPending.DbActionEnum.Update;
+                }
+                if (null != pending.FolderServerId && pending.FolderServerId == PlaceholderId) {
+                    pending.FolderServerId = FinalServerId;
+                    action = McPending.DbActionEnum.Update;
+                }
+                return null;
+            }
+
+            protected override void ApplyDeltaToModel ()
+            {
+                var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
+                if (null != target) {
+                    target.ServerId = FinalServerId;
+                    target.Update ();
+                    var account = McAccount.QueryById<McAccount> (AccountId);
+                    var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);
+                    var folders = McFolder.QueryByParentId (AccountId, PlaceholderId);
+                    foreach (var child in folders) {
+                        child.ParentId = FinalServerId;
+                        child.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
+                        child.Update ();
+                    }
+                }
             }
         }
     }

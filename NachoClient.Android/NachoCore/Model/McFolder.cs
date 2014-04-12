@@ -54,7 +54,7 @@ namespace NachoCore.Model
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
-        // "factory" to create client-owned folders.
+        // "factory" to create folders.
         public static McFolder Create (int accountId, 
                                        bool isClientOwned,
                                        bool isHidden,
@@ -74,7 +74,6 @@ namespace NachoCore.Model
                 DisplayName = displayName,
                 Type = folderType,
             };
-            folder.Insert ();
             return folder;
         }
 
@@ -132,6 +131,15 @@ namespace NachoCore.Model
         public static McFolder GetDefaultContactFolder (int accountId)
         {
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+        }
+
+        public static List<McFolder> QueryByParentId (int accountId, string parentId)
+        {
+            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? AND " +
+                " f.ParentId = ? ",
+                accountId, parentId);
+            return folders.ToList ();
         }
 
         public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McFolderEntry
@@ -205,7 +213,7 @@ namespace NachoCore.Model
 
         public static void AsResetState (int accountId)
         {
-            // TODO: SQL UPDATE.
+            // TODO: USE SQL UPDATE.
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           "f.AccountId = ? ",
                               accountId);

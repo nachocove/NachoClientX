@@ -23,31 +23,49 @@ namespace NachoCore.ActiveSync
             {
             }
 
-            protected override List<McPending.ReWrite> ApplyChangeToPending (McPending pending, 
-                                                                             out McPending.DbActionEnum action)
+            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+                out McPending.DbActionEnum action,
+                out bool cancelDelta)
             {
                 action = McPending.DbActionEnum.DoNothing;
+                cancelDelta = false;
                 switch (pending.Operation) {
                 case McPending.Operations.FolderCreate:
                     if (pending.DisplayName == DisplayName &&
                         pending.ParentId == ParentId) {
-                        action = McPending.DbActionEnum.Delete;
-                        var guid = pending.ServerId;
-                        return new List<McPending.ReWrite> () {
-                            new McPending.ReWrite () {
-                                Action = McPending.ReWrite.LocalActionEnum.Replace,
-                                Field = McPending.ReWrite.FieldEnum.ServerId,
-                                Match = guid,
-                                ReplaceWith = ServerId,
-                            }
-                        };
+                        if (pending.FolderType == FolderType) {
+                            // Delete the pending folder create.
+                            action = McPending.DbActionEnum.Delete;
+                            // Add a re-write to replace the FolderCreate's GUID with the real ServerId henceforth.
+                            var guid = pending.ServerId;
+                            return new List<McPending.ReWrite> () {
+                                new McPending.ReWrite () {
+                                    // FIXME Search TBA Path too.
+                                    IsMatch = (subject) => subject.ServerId == guid,
+                                    PerformReWrite = (subject) => {
+                                        // FIXME be able to update the Path too.
+                                        subject.ServerId = guid;
+                                        return McPending.DbActionEnum.Update;
+                                    },
+                                }
+                            };
+
+                        } else {
+                            // Just alter the display name to alert the user.
+                            pending.DisplayName = pending.DisplayName + " Client-Created";
+                            pending.Update ();
+                        }
                     }
+                    break;
+
+                default:
+                    // No other operations are affected by FolderSync:Add.
                     break;
                 }
                 return null;
             }
 
-            protected override void ApplyChangeToModel ()
+            protected override void ApplyDeltaToModel ()
             {
                 var account = McAccount.QueryById<McAccount> (AccountId);
                 var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);
@@ -69,10 +87,10 @@ namespace NachoCore.ActiveSync
                     maybeSame.DisplayName == DisplayName &&
                     maybeSame.Type == FolderType &&
                     maybeSame.AsFolderSyncEpoch < folderSyncEpoch) {
-                    // The add is really the same as this old folder.
+                    // The FolderSync:Add is really the same as this old folder.
                     maybeSame.ParentId = ParentId;
-                    // FIXME - see what happens when we use the prior sync key.
-                    // maybeSame.AsSyncKey = McFolder.AsSyncKey_Initial;
+                    // We tried leaving the AsSyncKey untouched, and the server took it.
+                    // We are going to rely on the server resetting the AsSyncKey if it wants it.
                     maybeSame.AsFolderSyncEpoch = folderSyncEpoch;
                     maybeSame.AsSyncMetaToClientExpected = true;
                     maybeSame.Update ();
