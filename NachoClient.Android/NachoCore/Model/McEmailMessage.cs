@@ -138,6 +138,34 @@ namespace NachoCore.Model
         /// Integer -- plain test, html, rtf, mime
         public string BodyType { set; get; }
 
+        /// The score based on content. The current attribute that
+        /// affects this value is the number of messages in the thread.
+        public int ContentScore { set; get; }
+
+        private int GetMaxContactScore (string addressString)
+        {
+            List<MailAddress> emailAddressList = EmailAddressHelper.ParseString (addressString);
+            int score = int.MinValue;
+            foreach (MailAddress emailAddress in emailAddressList) {
+                List<McContact> contactList = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
+                foreach (McContact contact in contactList) {
+                    score = Math.Max (score, contact.Score);
+                }
+            }
+            return score;
+        }
+
+        public int GetScore ()
+        {
+            /// SCORING - Return the sum of the content score and 
+            /// and the max contact score.
+            int contactScore = GetMaxContactScore (To);
+            contactScore = Math.Max (contactScore, GetMaxContactScore (From));
+            contactScore = Math.Max (contactScore, GetMaxContactScore (Cc));
+
+            return ContentScore + contactScore;
+        }
+
         // TODO: Support other types besides mime!
         public string ToMime ()
         {
@@ -189,6 +217,12 @@ namespace NachoCore.Model
             return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
             " e.FlagUtcDeferUntil > ?",
                 DateTime.UtcNow);
+        }
+
+        public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
+        {
+            return BackEnd.Instance.Db.Table<McEmailMessage> ().Where (
+                x => x.AccountId == accountId && x.ThreadTopic == topic).ToList ();
         }
 
         public override int Delete ()

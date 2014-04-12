@@ -30,7 +30,7 @@ namespace NachoClient.iOS
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("SettingsToNachoNow", this);
+                PerformSegue ("SettingsToNachoNow", this);
             };
 
             // Test
@@ -58,6 +58,14 @@ namespace NachoClient.iOS
             root.Add (ResetSection);
 
             Root = root;
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
         }
 
         void EditAccount ()

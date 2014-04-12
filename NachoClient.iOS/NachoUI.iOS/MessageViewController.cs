@@ -345,6 +345,12 @@ namespace NachoClient.iOS
         void RenderImage (MimePart part)
         {
             var image = PlatformHelpers.RenderImage (part);
+
+            // FIXME: Hard-coded width
+            float width = 320.0f;
+            float height = image.Size.Height * (width / image.Size.Width);
+            image = image.Scale (new SizeF (width, height));
+
             var iv = new UIImageView (image);
             view.AddSubview (iv);
 

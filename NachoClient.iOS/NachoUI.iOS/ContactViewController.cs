@@ -6,6 +6,7 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using MonoTouch.Dialog;
 using NachoCore.ActiveSync;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -29,25 +30,25 @@ namespace NachoClient.iOS
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
                 // TODO: Check for changes before asking the user
-                UIAlertView alert = new UIAlertView();
+                UIAlertView alert = new UIAlertView ();
                 alert.Title = "Confirmation";
                 alert.Message = "Save this contact?";
-                alert.AddButton("Yes");
-                alert.AddButton("No");
+                alert.AddButton ("Yes");
+                alert.AddButton ("No");
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                    if(0 == alertEvent.ButtonIndex) {
+                    if (0 == alertEvent.ButtonIndex) {
                         editing = false;
                         // TODO: Save the new contact
-                        Configure();
-;
+                        Configure ();
+                        ;
                     }
                 };
-                alert.Show();
+                alert.Show ();
             };
 
             editButton.Clicked += (object sender, EventArgs e) => {
                 editing = true;
-                Configure();
+                Configure ();
             };
 
             // Set up view
@@ -61,7 +62,15 @@ namespace NachoClient.iOS
             Configure ();
         }
 
-        protected void Configure()
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+        }
+
+        protected void Configure ()
         {
             if (editing) {
                 NavigationItem.RightBarButtonItem = doneButton;
@@ -101,11 +110,21 @@ namespace NachoClient.iOS
         {
             NachoCore.NachoAssert.True (null != m);
 
-            var root = new RootElement (m.DisplayName);
+            var root = new RootElement ("Contact");
             var section = new Section ();
 
             var r = AsContact.FromMcContact (m);
             var c = r.GetValue<AsContact> ();
+
+            if (contact.Score <= 1) {
+                section.Add (new StyledStringElementWithIndent (contact.DisplayName));
+            } else if (contact.Score < 10) {
+                var chili = UIImage.FromBundle ("icon_chili").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
+                section.Add (new StyledStringElementWithIcon (contact.DisplayName, chili));
+            } else {
+                var beer = UIImage.FromBundle ("beer").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
+                section.Add (new StyledStringElementWithIcon (contact.DisplayName, beer));
+            }
 
             // Person
             AddIfSet (ref section, "Title", c.Title);

@@ -117,6 +117,30 @@ namespace NachoCore.Brain
                                 Source = McItem.ItemSource.Internal,
                                 RefCount = 1,
                             };
+
+                            // Try to parse the display name into first / middle / last name
+                            string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
+                            switch (items.Length) {
+                            case 2:
+                                if (0 < mbAddr.Name.IndexOf(',')) {
+                                        // Last name, First name
+                                        contact.LastName = items [0];
+                                        contact.FirstName = items [1];
+                                    } else {
+                                        // First name, Last name
+                                        contact.FirstName = items [0];
+                                        contact.LastName = items [1];
+                                    }
+                                    break;
+                            case 3:
+                                if (-1 == mbAddr.Name.IndexOf (',')) {
+                                    contact.FirstName = items [0];
+                                    contact.MiddleName = items [1];
+                                    contact.LastName = items [2];
+                                }
+                                break;
+                            }
+
                             BackEnd.Instance.Db.Insert (contact);
                             gleanedFolder.Link (contact);
 

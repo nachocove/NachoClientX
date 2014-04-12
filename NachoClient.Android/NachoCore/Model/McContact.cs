@@ -21,19 +21,19 @@ namespace NachoCore.Model
         public McItem.ItemSource Source { get; set; }
 
         /// The collection of important dates associated with the contact
-        public List<McContactDateAttribute> Dates;
+        private List<McContactDateAttribute> DbDates;
         /// The collection addresses associated with the contact
-        public List<McContactAddressAttribute> Addresses;
+        private List<McContactAddressAttribute> DbAddresses;
         /// The collection of phone numbers associated with the contact
-        public List<McContactStringAttribute> PhoneNumbers;
+        private List<McContactStringAttribute> DbPhoneNumbers;
         /// The collection of email addresses associated with the contact
-        public List<McContactStringAttribute> EmailAddresses;
+        private List<McContactStringAttribute> DbEmailAddresses;
         /// The collection of instant messaging addresses associated with the contact
-        public List<McContactStringAttribute> IMAddresses;
+        private List<McContactStringAttribute> DbIMAddresses;
         /// The collection of relationsihps assigned to the contact.
-        public List<McContactStringAttribute> Relationships;
+        private List<McContactStringAttribute> DbRelationships;
         /// The collection of user labels assigned to the contact
-        public List<McContactStringAttribute> Categories;
+        private List<McContactStringAttribute> DbCategories;
         // Valid only for GAL-cache entries.
         public string GalCacheToken { get; set; }
 
@@ -215,13 +215,13 @@ namespace NachoCore.Model
         public McContact ()
         {
             HasReadAncillaryData = false;
-            Dates = new List<McContactDateAttribute> ();
-            Addresses = new List<McContactAddressAttribute> ();
-            PhoneNumbers = new List<McContactStringAttribute> ();
-            EmailAddresses = new List<McContactStringAttribute> ();
-            IMAddresses = new List<McContactStringAttribute> ();
-            Relationships = new List<McContactStringAttribute> ();
-            Categories = new List<McContactStringAttribute> ();
+            DbDates = new List<McContactDateAttribute> ();
+            DbAddresses = new List<McContactAddressAttribute> ();
+            DbPhoneNumbers = new List<McContactStringAttribute> ();
+            DbEmailAddresses = new List<McContactStringAttribute> ();
+            DbIMAddresses = new List<McContactStringAttribute> ();
+            DbRelationships = new List<McContactStringAttribute> ();
+            DbCategories = new List<McContactStringAttribute> ();
         }
 
         public McContact (McItem.ItemSource source) : this ()
@@ -230,6 +230,97 @@ namespace NachoCore.Model
         }
 
         private string displayName;
+
+        [Ignore]
+        public List<McContactDateAttribute> Dates
+        {
+            get {
+                ReadAncillaryData ();
+                return DbDates;
+            }
+            set {
+                ReadAncillaryData ();
+                DbDates = value;
+            }
+        }
+
+        [Ignore]
+        public List<McContactAddressAttribute> Addresses
+        {
+            get {
+                ReadAncillaryData ();
+                return DbAddresses;
+            }
+            set {
+                ReadAncillaryData ();
+                DbAddresses = value;
+            }
+        }
+
+        [Ignore]
+        public List<McContactStringAttribute> PhoneNumbers
+        {
+            get {
+                ReadAncillaryData ();
+                return DbPhoneNumbers;
+            }
+            set {
+                ReadAncillaryData ();
+                DbPhoneNumbers = value;
+            }
+        }
+
+        [Ignore]
+        public List<McContactStringAttribute> EmailAddresses
+        {
+            get {
+                ReadAncillaryData ();
+                return DbEmailAddresses;
+            }
+            set {
+                ReadAncillaryData ();
+                DbEmailAddresses = value;
+            }
+        }
+
+        [Ignore]
+        public List<McContactStringAttribute> IMAddresses
+        {
+            get {
+                ReadAncillaryData ();
+                return DbIMAddresses;
+            }
+            set {
+                ReadAncillaryData ();
+                DbIMAddresses = value;
+            }
+        }
+
+        [Ignore]
+        public List<McContactStringAttribute> Relationships
+        {
+            get {
+                ReadAncillaryData ();
+                return DbRelationships;
+            }
+            set {
+                ReadAncillaryData ();
+                DbRelationships = value;
+            }
+        }
+
+        [Ignore]
+        public List<McContactStringAttribute> Categories
+        {
+            get {
+                ReadAncillaryData ();
+                return DbCategories;
+            }
+            set {
+                ReadAncillaryData ();
+                DbCategories = value;
+            }
+        }
 
         [Ignore]
         /// <summary>
@@ -394,37 +485,44 @@ namespace NachoCore.Model
 
         public void AddPhoneNumberAttribute (string name, string label, string value)
         {
-            AddStringAttribute (ref PhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
+            ReadAncillaryData ();
+            AddStringAttribute (ref DbPhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public void AddOrUpdatePhoneNumberAttribute (string name, string label, string value)
         {
-            AddOrUpdateStringAttribute (ref PhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
+            ReadAncillaryData ();
+            AddOrUpdateStringAttribute (ref DbPhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public void AddEmailAddressAttribute (string name, string label, string value)
         {
-            AddStringAttribute (ref EmailAddresses, McContactStringType.EmailAddress, name, label, value);
+            ReadAncillaryData ();
+            AddStringAttribute (ref DbEmailAddresses, McContactStringType.EmailAddress, name, label, value);
         }
 
         public void AddOrUpdateEmailAddressAttribute (string name, string label, string value)
         {
-            AddOrUpdateStringAttribute (ref EmailAddresses, McContactStringType.EmailAddress, name, label, value);
+            ReadAncillaryData ();
+            AddOrUpdateStringAttribute (ref DbEmailAddresses, McContactStringType.EmailAddress, name, label, value);
         }
 
         public void AddIMAddressAttribute (string name, string label, string value)
         {
-            AddStringAttribute (ref IMAddresses, McContactStringType.IMAddress, name, label, value);
+            ReadAncillaryData ();
+            AddStringAttribute (ref DbIMAddresses, McContactStringType.IMAddress, name, label, value);
         }
 
         public void AddRelationshipAttribute (string name, string label, string value)
         {
-            AddStringAttribute (ref Relationships, McContactStringType.Relationship, name, label, value);
+            ReadAncillaryData ();
+            AddStringAttribute (ref DbRelationships, McContactStringType.Relationship, name, label, value);
         }
 
         public void AddCategoryAttribute (string name)
         {
-            AddStringAttribute (ref Categories, McContactStringType.Category, name, null, null);
+            ReadAncillaryData ();
+            AddStringAttribute (ref DbCategories, McContactStringType.Category, name, null, null);
         }
 
         protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, McContactStringType type, string name, string label, string value)
@@ -471,7 +569,7 @@ namespace NachoCore.Model
             return NcResult.OK (c);
         }
 
-        public NcResult ReadAncillaryData (SQLiteConnection db)
+        private NcResult ReadAncillaryData (SQLiteConnection db)
         {
             if (!HasReadAncillaryData) {
                 HasReadAncillaryData = true;
@@ -480,15 +578,20 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
+        private NcResult ReadAncillaryData ()
+        {
+            return ReadAncillaryData (BackEnd.Instance.Db);
+        }
+
         public NcResult ForceReadAncillaryData (SQLiteConnection db)
         {
-            Dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            Addresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            Relationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
-            EmailAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.EmailAddress).ToList ();
-            PhoneNumbers = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
-            IMAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
-            Categories = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
+            DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            DbRelationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
+            DbEmailAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.EmailAddress).ToList ();
+            DbPhoneNumbers = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
+            DbIMAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
+            DbCategories = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
 
             // FIXME: Error handling
             return NcResult.OK ();
@@ -844,26 +947,6 @@ namespace NachoCore.Model
                 Id, type).ToList();
         }
 
-        private void QueryAncillaryData ()
-        {
-            EmailAddresses = QueryAncillaryString (McContactStringType.EmailAddress);
-            PhoneNumbers = QueryAncillaryString (McContactStringType.PhoneNumber);
-            IMAddresses = QueryAncillaryString (McContactStringType.IMAddress);
-            Relationships = QueryAncillaryString (McContactStringType.Relationship);
-            Categories = QueryAncillaryString (McContactStringType.Category);
-            Dates = BackEnd.Instance.Db.Query<McContactDateAttribute> ("SELECT * FROM " + 
-                "McContactDateAttribute WHERE ContactId = ?", Id).ToList();
-            Addresses = BackEnd.Instance.Db.Query<McContactAddressAttribute> ("SELECT * FROM " + 
-                "McContactAddressAttribute WHERE ContactId = ?", Id).ToList();
-        }
-
-        private static void QueryAncillaryDataList (List<McContact> contactList)
-        {
-            for (int n = 0; n < contactList.Count; n++) {
-                contactList [n].QueryAncillaryData ();
-            }
-        }
-
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
             List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c JOIN McContactStringAttribute AS s ON c.Id = s.ContactId WHERE " +
@@ -871,7 +954,6 @@ namespace NachoCore.Model
             " s.Type = ? AND " +
             " s.Value = ? ",
                 accountId, McContactStringType.EmailAddress, emailAddress).ToList();
-            QueryAncillaryDataList (contactList);
             return contactList;
         }
 
@@ -887,7 +969,6 @@ namespace NachoCore.Model
             " s.Value = ? AND " +
             " m.FolderId = ? ",
                 accountId, McContactStringType.EmailAddress, emailAddress, folderId).ToList ();
-            QueryAncillaryDataList (contactList);
             return contactList;
         }
 
@@ -905,7 +986,6 @@ namespace NachoCore.Model
             " s.Value = ? AND " +
             " f.IsClientOwned = false ",
                 accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
-            QueryAncillaryDataList (contactList);
             return contactList;
         }
        

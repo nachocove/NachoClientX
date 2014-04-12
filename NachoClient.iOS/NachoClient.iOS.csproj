@@ -596,6 +596,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEmailManager.cs">
       <Link>NachoCore\Adapters\NcEmailManager.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoPriorityEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoPriorityEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageArchiver.cs">
+      <Link>NachoCore\Brain\NcMessageArchiver.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />
@@ -695,9 +701,11 @@
     <BundleResource Include="Resources\Nacho-Cove-Icon.png" />
     <BundleResource Include="Resources\Nacho-Cove-Icon%402x.png" />
     <BundleResource Include="Resources\ic_action_call.png" />
-    <BundleResource Include="Resources\icon_chili.jpg" />
     <BundleResource Include="Resources\ic_action_make_available_offline.png" />
     <BundleResource Include="Resources\ic_action_web_site.png" />
+    <BundleResource Include="Resources\icon_chili.jpg" />
+    <BundleResource Include="Resources\icon_chili.png" />
+    <BundleResource Include="Resources\beer.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

@@ -108,7 +108,6 @@ namespace NachoCore
         public McCalendar GetCalendarItem (int i)
         {
             var c = list.ElementAt (i);
-            c.ReadAncillaryData ();
             return c;
         }
     }

@@ -14,5 +14,8 @@ namespace NachoCore
         void Search (string prefix);
         int SearchResultsCount ();
         McContact GetSearchResult(int searchIndex);
+
+        bool isVIP(McContact contact);
+        bool isHot(McContact contact);
     }
 }

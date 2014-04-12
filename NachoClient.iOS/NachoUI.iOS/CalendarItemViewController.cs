@@ -102,11 +102,16 @@ namespace NachoClient.iOS
                 Root = EditDetail ();
             } else {
                 action = Action.edit;
-                calendarItem.ReadAncillaryData ();
                 c = calendarItem;
                 Root = ShowDetail ();
             }
             TableView.SeparatorColor = UIColor.Clear;
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            this.NavigationController.ToolbarHidden = true;
         }
 
         protected void ReloadRoot (RootElement root)
@@ -124,7 +129,7 @@ namespace NachoClient.iOS
                 var dc = (AttendeeViewController)segue.DestinationViewController;
                 dc.SetAttendeeList (c.attendees);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    dc.GetAttendeeList (ref c.attendees);
+                    c.attendees = dc.GetAttendeeList ();
                 };
             }
         }
@@ -562,7 +567,11 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-            c.Insert ();
+            if (0 == c.Id) {
+                c.Insert (); // new entry
+            } else {
+                c.Update ();
+            }
             folder.Link (c);
             BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
         }
