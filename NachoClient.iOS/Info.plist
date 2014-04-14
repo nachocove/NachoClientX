@@ -31,13 +31,13 @@
 		<string>Icon</string>
 		<string>Icon@2x</string>
 	</array>
-	<key>CFBundleDisplayName</key>
-	<string>taco mail</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.monkeylicense.taco-mail</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
 	</array>
+	<key>CFBundleIdentifier</key>
+	<string>com.nachocove.nachomail</string>
+	<key>CFBundleDisplayName</key>
+	<string>Nacho Mail</string>
 </dict>
 </plist>
