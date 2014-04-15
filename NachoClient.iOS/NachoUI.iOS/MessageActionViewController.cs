@@ -33,6 +33,7 @@ namespace NachoClient.iOS
             };
 
             folderTableView.Delegate = new FolderTableDelegate (this);
+            folderTableView.BackgroundColor = UIColor.Clear;
         }
 
         public override void ViewWillAppear (bool animated)
