@@ -28,6 +28,7 @@ namespace NachoClient.iOS
             var folder = folders.GetFolder (indexPath.Row);
             cell.TextLabel.Text = folder.DisplayName;
             cell.TextLabel.TextColor = cellTextColor;
+            cell.BackgroundColor = UIColor.Clear;
             return cell;
         }
 
