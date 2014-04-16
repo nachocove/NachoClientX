@@ -22,12 +22,12 @@ namespace NachoCore.ActiveSync
             var doc = AsCommand.ToEmptyXDocument ();
 
             var options = new XElement (m_ns + Xml.Search.Options,
-                              new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.MaxResults - 1)));
+                              new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.Search_MaxResults - 1)));
                             
             var search = new XElement (m_ns + Xml.Search.Ns,
                              new XElement (m_ns + Xml.Search.Store, 
                                  new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.GAL),
-                    new XElement (m_ns + Xml.Search.Query, PendingSingle.Prefix),
+                    new XElement (m_ns + Xml.Search.Query, PendingSingle.Search_Prefix),
                                  options));
             doc.Add (search);
             return doc;

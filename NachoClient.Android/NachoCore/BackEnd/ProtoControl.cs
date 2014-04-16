@@ -116,6 +116,12 @@ namespace NachoCore
 
         public abstract string DeleteContactCmd (int contactId);
 
+        public abstract string CreateTaskCmd (int taskId, int folderId);
+
+        public abstract string UpdateTaskCmd (int taskId);
+
+        public abstract string DeleteTaskCmd (int taskId);
+
         public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
                                                 bool isClientOwned, bool isHidden);
 

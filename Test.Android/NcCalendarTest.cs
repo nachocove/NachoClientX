@@ -214,7 +214,7 @@ namespace Test.iOS
         /// 
         public void GoodDateTime (string compactDateTime, DateTime match)
         {
-            var d = c.ParseAsDateTime (compactDateTime);
+            var d = AsHelpers.ParseAsDateTime (compactDateTime);
             Assert.False (d.Equals (DateTime.MinValue));
             Assert.True (d.Equals (match));
         }

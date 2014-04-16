@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
 
             return new Dictionary<string, string> () {
                 { "ItemId", PendingSingle.ServerId },
-                { "CollectionId", PendingSingle.FolderServerId },
+                { "CollectionId", PendingSingle.ParentId },
                 { "SaveInSent", "T" },
             };
         }
@@ -42,11 +42,11 @@ namespace NachoCore.ActiveSync
             var smartMail = new XElement (m_ns + CommandName, 
                                 new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                 new XElement (m_ns + Xml.ComposeMail.Source,
-                                    new XElement (m_ns + Xml.ComposeMail.FolderId, PendingSingle.FolderServerId),
+                                    new XElement (m_ns + Xml.ComposeMail.FolderId, PendingSingle.ParentId),
                                     new XElement (m_ns + Xml.ComposeMail.ItemId, PendingSingle.ServerId)),
                                 new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                 new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
-            if (PendingSingle.OriginalEmailIsEmbedded) {
+            if (PendingSingle.Smart_OriginalEmailIsEmbedded) {
                 smartMail.Add (new XElement (m_ns + Xml.ComposeMail.ReplaceMime));
             }
             var doc = AsCommand.ToEmptyXDocument ();

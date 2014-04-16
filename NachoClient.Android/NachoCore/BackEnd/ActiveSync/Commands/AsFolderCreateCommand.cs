@@ -23,9 +23,9 @@ namespace NachoCore.ActiveSync
         {
             var folderCreate = new XElement (m_ns + Xml.FolderHierarchy.FolderCreate,
                                    new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),
-                                   new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.DestFolderServerId),
+                                   new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.ParentId),
                                    new XElement (m_ns + Xml.FolderHierarchy.DisplayName, PendingSingle.DisplayName),
-                                   new XElement (m_ns + Xml.FolderHierarchy.Type, ((int)PendingSingle.FolderType)));
+                                   new XElement (m_ns + Xml.FolderHierarchy.Type, ((int)PendingSingle.FolderCreate_Type)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderCreate);
             return doc;		
@@ -114,23 +114,19 @@ namespace NachoCore.ActiveSync
                 out McPending.DbActionEnum action,
                 out bool cancelDelta)
             {
-                // FIXME - need a pending method that acts on ALL ServerId fields.
+                // FIXME - need a McPending method that acts on ALL ServerId fields.
                 action = McPending.DbActionEnum.DoNothing;
                 cancelDelta = false;
                 if (null != pending.ServerId && pending.ServerId == PlaceholderId) {
                     pending.ServerId = FinalServerId;
                     action = McPending.DbActionEnum.Update;
                 }
+                if (null != pending.DestParentId && pending.DestParentId == PlaceholderId) {
+                    pending.DestParentId = FinalServerId;
+                    action = McPending.DbActionEnum.Update;
+                }
                 if (null != pending.ParentId && pending.ParentId == PlaceholderId) {
                     pending.ParentId = FinalServerId;
-                    action = McPending.DbActionEnum.Update;
-                }
-                if (null != pending.DestFolderServerId && pending.DestFolderServerId == PlaceholderId) {
-                    pending.DestFolderServerId = FinalServerId;
-                    action = McPending.DbActionEnum.Update;
-                }
-                if (null != pending.FolderServerId && pending.FolderServerId == PlaceholderId) {
-                    pending.FolderServerId = FinalServerId;
                     action = McPending.DbActionEnum.Update;
                 }
                 return null;
@@ -141,6 +137,7 @@ namespace NachoCore.ActiveSync
                 var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
                 if (null != target) {
                     target.ServerId = FinalServerId;
+                    target.IsAwatingCreate = false;
                     target.Update ();
                     var account = McAccount.QueryById<McAccount> (AccountId);
                     var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);

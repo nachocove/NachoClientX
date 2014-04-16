@@ -204,7 +204,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Email.Importance:
                     try {
-                        emailMessage.Importance = UInt32.Parse (child.Value);
+                        emailMessage.Importance = (NcImportance)uint.Parse (child.Value);
                     } catch {
                         // FIXME - just log it.
                     }

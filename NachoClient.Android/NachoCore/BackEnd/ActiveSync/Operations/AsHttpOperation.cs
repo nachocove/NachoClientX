@@ -399,6 +399,7 @@ namespace NachoCore.ActiveSync
                 // We've seen HttpClient barf due to Cancel().
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
+                    Log.Error (Log.LOG_AS, "Exception: {0}", ex.ToString ());
                     var nRefEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
                     nRefEvent.DropIfStopped = true;
                     HttpOpSm.PostEvent (nRefEvent);

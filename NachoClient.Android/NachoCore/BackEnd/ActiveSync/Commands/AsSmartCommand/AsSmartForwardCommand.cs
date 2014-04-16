@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
             CommandName = Xml.ComposeMail.SmartForward;
             PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailForward);
             PendingSingle.MarkDispached ();
-            EmailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.EmailMessageId);
+            EmailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }
     }
 }

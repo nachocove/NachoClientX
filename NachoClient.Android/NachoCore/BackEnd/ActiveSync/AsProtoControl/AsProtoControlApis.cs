@@ -49,8 +49,8 @@ namespace NachoCore.ActiveSync
             McPending.ResolvePendingSearchReqs (Account.Id, token, true);
             var newSearch = new McPending (Account.Id) {
                 Operation = McPending.Operations.ContactSearch,
-                Prefix = prefix,
-                MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
+                Search_Prefix = prefix,
+                Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
                 Token = token
             };
             newSearch.Insert ();
@@ -63,7 +63,7 @@ namespace NachoCore.ActiveSync
         {
             var sendUpdate = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailSend,
-                EmailMessageId = emailMessageId
+                ItemId = emailMessageId
             };
             sendUpdate.Insert ();
             Task.Run (delegate {
@@ -80,12 +80,12 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pendingCalCre = BackEnd.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.CalId);
+            var pendingCalCre = BackEnd.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
             var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailSend,
-                EmailMessageId = emailMessageId,
+                ItemId = emailMessageId,
             };
 
             // 0 means pending has already been completed & deleted.
@@ -137,10 +137,10 @@ namespace NachoCore.ActiveSync
 
             var smartUpdate = new McPending (Account.Id) {
                 Operation = Op,
-                EmailMessageId = newEmailMessageId,
+                ItemId = newEmailMessageId,
                 ServerId = refdEmailMessage.ServerId,
-                FolderServerId = folder.ServerId,
-                OriginalEmailIsEmbedded = originalEmailIsEmbedded,
+                ParentId = folder.ServerId,
+                Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
             };
             smartUpdate.Insert ();
             Task.Run (delegate {
@@ -180,7 +180,7 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailDelete,
-                FolderServerId = primeFolder.ServerId,
+                ParentId = primeFolder.ServerId,
                 ServerId = emailMessage.ServerId
             };   
             pending.Insert ();
@@ -224,10 +224,9 @@ namespace NachoCore.ActiveSync
             var srcFolder = srcFolders.First ();
             var moveUpdate = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailMove,
-                EmailMessageServerId = emailMessage.ServerId,
-                EmailMessageId = emailMessageId,
-                FolderServerId = srcFolder.ServerId,
-                DestFolderServerId = destFolder.ServerId,
+                ServerId = emailMessage.ServerId,
+                ParentId = srcFolder.ServerId,
+                DestParentId = destFolder.ServerId,
             };
 
             moveUpdate.Insert ();
@@ -277,7 +276,7 @@ namespace NachoCore.ActiveSync
             var markUpdate = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailMarkRead,
                 ServerId = emailMessage.ServerId,
-                FolderServerId = folder.ServerId,
+                ParentId = folder.ServerId,
             };   
             markUpdate.Insert ();
 
@@ -311,12 +310,12 @@ namespace NachoCore.ActiveSync
             var setFlag = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailSetFlag,
                 ServerId = emailMessage.ServerId,
-                FolderServerId = folder.ServerId,
-                FlagType = flagType,
-                Start = start,
-                UtcStart = utcStart,
-                Due = due,
-                UtcDue = utcDue,
+                ParentId = folder.ServerId,
+                EmailSetFlag_FlagType = flagType,
+                EmailSetFlag_Start = start,
+                EmailSetFlag_UtcStart = utcStart,
+                EmailSetFlag_Due = due,
+                EmailSetFlag_UtcDue = utcDue,
             };
             setFlag.Insert ();
 
@@ -345,7 +344,7 @@ namespace NachoCore.ActiveSync
             var clearFlag = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailClearFlag,
                 ServerId = emailMessage.ServerId,
-                FolderServerId = folder.ServerId,
+                ParentId = folder.ServerId,
             };
             clearFlag.Insert ();
 
@@ -369,9 +368,9 @@ namespace NachoCore.ActiveSync
             var markFlagDone = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailMarkFlagDone,
                 ServerId = emailMessage.ServerId,
-                FolderServerId = folder.ServerId,
-                CompleteTime = completeTime,
-                DateCompleted = dateCompleted,
+                ParentId = folder.ServerId,
+                EmailMarkFlagDone_CompleteTime = completeTime,
+                EmailMarkFlagDone_DateCompleted = dateCompleted,
             };
             markFlagDone.Insert ();
 
@@ -417,8 +416,8 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.CalCreate,
-                CalId = calId,
-                FolderServerId = folder.ServerId,
+                ItemId = calId,
+                ParentId = folder.ServerId,
                 ClientId = cal.ClientId,
             };
 
@@ -446,9 +445,9 @@ namespace NachoCore.ActiveSync
             var primeFolder = folders.First ();
 
             var pending = new McPending (Account.Id) {
-                CalId = calId,
+                ItemId = calId,
                 Operation = McPending.Operations.CalUpdate,
-                FolderServerId = primeFolder.ServerId,
+                ParentId = primeFolder.ServerId,
                 ServerId = cal.ServerId,
             };   
             pending.Insert ();
@@ -477,7 +476,7 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.CalDelete,
-                FolderServerId = primeFolder.ServerId,
+                ParentId = primeFolder.ServerId,
                 ServerId = cal.ServerId,
             };   
             pending.Insert ();
@@ -505,13 +504,13 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.ContactCreate,
-                ContactId = contactId,
-                FolderServerId = folder.ServerId,
+                ItemId = contactId,
+                ParentId = folder.ServerId,
                 ClientId = contact.ClientId,
             };
 
             pending.Insert ();
-
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECNT");
             });
@@ -535,13 +534,12 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.ContactUpdate,
-                ContactId = contactId,
-                FolderServerId = primeFolder.ServerId,
+                ItemId = contactId,
+                ParentId = primeFolder.ServerId,
                 ServerId = contact.ServerId,
             };   
             pending.Insert ();
 
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
             });
@@ -565,7 +563,7 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.ContactDelete,
-                FolderServerId = primeFolder.ServerId,
+                ParentId = primeFolder.ServerId,
                 ServerId = contact.ServerId,
             };   
             pending.Insert ();
@@ -579,6 +577,93 @@ namespace NachoCore.ActiveSync
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCTC");
+            });
+            return pending.Token;
+        }
+
+        public override string CreateTaskCmd (int taskId, int folderId)
+        {
+            McTask task;
+            McFolder folder;
+            if (!GetItemAndFolder<McTask> (taskId, out task, folderId, out folder)) {
+                return null;
+            }
+
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.TaskCreate,
+                ItemId = taskId,
+                ParentId = folder.ServerId,
+                ClientId = task.ClientId,
+            };
+
+            pending.Insert ();
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRETSK");
+            });
+            return pending.Token;
+        }
+
+        public override string UpdateTaskCmd (int taskId)
+        {
+            var task = McObject.QueryById<McTask> (taskId);
+            if (null == task) {
+                return null;
+            }
+
+            var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
+            if (null == folders || 0 == folders.Count) {
+                return null;
+            }
+
+            // FIXME - ensure not client-owned folder.
+            var primeFolder = folders.First ();
+
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.TaskUpdate,
+                ItemId = taskId,
+                ParentId = primeFolder.ServerId,
+                ServerId = task.ServerId,
+            };   
+            pending.Insert ();
+
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGTSK");
+            });
+            return pending.Token;
+        }
+
+        public override string DeleteTaskCmd (int taskId)
+        {
+            var task = McObject.QueryById<McTask> (taskId);
+            if (null == task) {
+                return null;
+            }
+
+            var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
+            if (null == folders || 0 == folders.Count) {
+                return null;
+            }
+
+            // FIXME - ensure not client-owned folder.
+            var primeFolder = folders.First ();
+
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.ContactDelete,
+                ParentId = primeFolder.ServerId,
+                ServerId = task.ServerId,
+            };   
+            pending.Insert ();
+
+            // Delete the actual item.
+            foreach (var folder in folders) {
+                folder.Unlink (task);
+            }
+            task.Delete ();
+
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
+            Task.Run (delegate {
+                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
             });
             return pending.Token;
         }
@@ -612,7 +697,7 @@ namespace NachoCore.ActiveSync
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.CalRespond,
                 ServerId = cal.ServerId,
-                FolderServerId = folder.ServerId,
+                ParentId = folder.ServerId,
                 CalResponse = apiResponse,
             };
 
@@ -658,6 +743,7 @@ namespace NachoCore.ActiveSync
                              serverId,
                              displayName,
                              folderType);
+            folder.IsAwatingCreate = !isClientOwned;
             folder.Insert ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
@@ -668,9 +754,9 @@ namespace NachoCore.ActiveSync
             var createFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderCreate,
                 ServerId = serverId,
-                DestFolderServerId = destFldServerId,
+                ParentId = destFldServerId,
                 DisplayName = displayName,
-                FolderType = folderType,
+                FolderCreate_Type = folderType,
                 // Epoch intentionally not set.
             };
 
@@ -700,6 +786,7 @@ namespace NachoCore.ActiveSync
             var delFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderDelete,
                 ServerId = folder.ServerId,
+                ParentId = folder.ParentId,
             };
 
             folder.Delete ();
@@ -733,7 +820,8 @@ namespace NachoCore.ActiveSync
             var upFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderUpdate,
                 ServerId = folder.ServerId,
-                DestFolderServerId = destFolder.ServerId,
+                ParentId = folder.ParentId,
+                DestParentId = destFolder.ServerId,
                 DisplayName = folder.DisplayName,
             };
 
@@ -761,7 +849,8 @@ namespace NachoCore.ActiveSync
             var upFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderUpdate,
                 ServerId = folder.ServerId,
-                DestFolderServerId = folder.ParentId,
+                ParentId = folder.ParentId,
+                DestParentId = folder.ParentId, // Set only because Move & Rename map to the same EAS command.
                 DisplayName = displayName,
             };
 

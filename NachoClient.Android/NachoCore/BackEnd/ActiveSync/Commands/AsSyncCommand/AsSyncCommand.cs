@@ -15,6 +15,7 @@ namespace NachoCore.ActiveSync
         private bool HadEmailMessageChanges;
         private bool HadContactChanges;
         private bool HadCalendarChanges;
+        private bool HadTaskChanges;
         private bool HadNewUnreadEmailMessageInInbox;
         private bool FolderSyncIsMandated;
         private Nullable<uint> Limit;
@@ -69,11 +70,11 @@ namespace NachoCore.ActiveSync
                 new XElement (m_ns + Xml.AirSync.ApplicationData,
                     new XElement (EmailNs + Xml.Email.Flag,
                         new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set_2),
-                        new XElement (EmailNs + Xml.Email.FlagType, pending.FlagType),
-                        new XElement (TasksNs + Xml.Tasks.StartDate, pending.Start.ToLocalTime ().ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.UtcStartDate, pending.UtcStart.ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.DueDate, pending.Due.ToLocalTime ().ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.UtcDueDate, pending.UtcDue.ToAsUtcString ()))));
+                        new XElement (EmailNs + Xml.Email.FlagType, pending.EmailSetFlag_FlagType),
+                        new XElement (TasksNs + Xml.Tasks.StartDate, pending.EmailSetFlag_Start.ToLocalTime ().ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.UtcStartDate, pending.EmailSetFlag_UtcStart.ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.DueDate, pending.EmailSetFlag_Due.ToLocalTime ().ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.UtcDueDate, pending.EmailSetFlag_UtcDue.ToAsUtcString ()))));
         }
 
         private XElement ToEmailClearFlag (McPending pending)
@@ -91,13 +92,13 @@ namespace NachoCore.ActiveSync
                 new XElement (m_ns + Xml.AirSync.ApplicationData,
                     new XElement (EmailNs + Xml.Email.Flag,
                         new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone_1),
-                        new XElement (EmailNs + Xml.Email.CompleteTime, pending.CompleteTime.ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.DateCompleted, pending.DateCompleted.ToAsUtcString ()))));
+                        new XElement (EmailNs + Xml.Email.CompleteTime, pending.EmailMarkFlagDone_CompleteTime.ToAsUtcString ()),
+                        new XElement (TasksNs + Xml.Tasks.DateCompleted, pending.EmailMarkFlagDone_DateCompleted.ToAsUtcString ()))));
         }
 
         private XElement ToCalCreate (McPending pending, McFolder folder)
         {
-            var cal = McCalendar.QueryById<McCalendar> (pending.CalId);
+            var cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
@@ -110,7 +111,7 @@ namespace NachoCore.ActiveSync
 
         private XElement ToCalUpdate (McPending pending, McFolder folder)
         {
-            var cal = McCalendar.QueryById<McCalendar> (pending.CalId);
+            var cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 AsHelpers.ToXmlApplicationData (cal));
@@ -124,7 +125,7 @@ namespace NachoCore.ActiveSync
 
         private XElement ToContactCreate (McPending pending, McFolder folder)
         {
-            var contact = McObject.QueryById<McContact> (pending.ContactId);
+            var contact = McObject.QueryById<McContact> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
@@ -137,13 +138,40 @@ namespace NachoCore.ActiveSync
 
         private XElement ToContactUpdate (McPending pending, McFolder folder)
         {
-            var contact = McObject.QueryById<McContact> (pending.ContactId);
+            var contact = McObject.QueryById<McContact> (pending.ItemId);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 contact.ToXmlApplicationData ());
         }
 
         private XElement ToContactDelete (McPending pending, McFolder folder)
+        {
+            return new XElement (m_ns + Xml.AirSync.Delete,
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+        }
+
+        private XElement ToTaskCreate (McPending pending, McFolder folder)
+        {
+            var task = McObject.QueryById<McTask> (pending.ItemId);
+            var add = new XElement (m_ns + Xml.AirSync.Add, 
+                new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
+            if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
+                McFolderEntry.ClassCodeEnum.Tasks) {
+                add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Tasks));
+            }
+            add.Add (task.ToXmlApplicationData ());
+            return add;
+        }
+
+        private XElement ToTaskUpdate (McPending pending, McFolder folder)
+        {
+            var task = McObject.QueryById<McTask> (pending.ItemId);
+            return new XElement (m_ns + Xml.AirSync.Change, 
+                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                task.ToXmlApplicationData ());
+        }
+
+        private XElement ToTaskDelete (McPending pending, McFolder folder)
         {
             return new XElement (m_ns + Xml.AirSync.Delete,
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
@@ -182,6 +210,7 @@ namespace NachoCore.ActiveSync
                             new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                             new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
                         break;
+                        // FIXME - Tasks bodypref.
                     }
                     if (options.HasElements) {
                         collection.Add (options);
@@ -223,6 +252,15 @@ namespace NachoCore.ActiveSync
                         break;
                     case McPending.Operations.ContactDelete:
                         commands.Add (ToContactDelete (pending, folder));
+                        break;
+                    case McPending.Operations.TaskCreate:
+                        commands.Add (ToTaskCreate (pending, folder));
+                        break;
+                    case McPending.Operations.TaskUpdate:
+                        commands.Add (ToTaskUpdate (pending, folder));
+                        break;
+                    case McPending.Operations.TaskDelete:
+                        commands.Add (ToTaskDelete (pending, folder));
                         break;
                     default:
                         NachoAssert.True (false);
@@ -373,7 +411,7 @@ namespace NachoCore.ActiveSync
                     ProcessCollectionResponses (folder, xmlResponses);
 
                     // Any pending not already resolved gets resolved as Success.
-                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                     foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
@@ -390,7 +428,7 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
                     folder.AsSyncMetaToClientExpected = true;
                     // Defer all the outbound commands until after ReSync.
-                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                     foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
@@ -400,7 +438,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.StatusCode.ProtocolError_4:
-                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
                     if (1 == pendingInFolder.Count ()) {
                         var pending = pendingInFolder.First ();
@@ -419,7 +457,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.FolderChange_12:
                     FolderSyncIsMandated = true;
-                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                     foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
@@ -430,7 +468,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.Retry_16:
                     folder.AsSyncMetaToClientExpected = true;
-                    pendingInFolder = PendingList.Where (x => x.FolderServerId == folder.ServerId).ToList ();
+                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                     foreach (var pending in pendingInFolder) {
                         PendingList.Remove (pending);
                         pending.ResolveAsDeferredForce ();
@@ -467,6 +505,9 @@ namespace NachoCore.ActiveSync
             }
             if (HadCalendarChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
+            }
+            if (HadTaskChanges) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             }
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
@@ -580,6 +621,10 @@ namespace NachoCore.ActiveSync
                         HadCalendarChanges = true;
                         ServerSaysAddCalendarItem (command, folder);
                         break;
+                    case Xml.AirSync.ClassCode.Tasks:
+                        HadTaskChanges = true;
+                        ServerSaysAddTask (command, folder);
+                        break;
                     default:
                         Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
@@ -595,6 +640,9 @@ namespace NachoCore.ActiveSync
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
                         ServerSaysChangeContact (command, folder);
+                        break;
+                    case Xml.AirSync.ClassCode.Tasks:
+                        ServerSaysChangeTask (command, folder);
                         break;
                     default:
                         Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
@@ -624,6 +672,13 @@ namespace NachoCore.ActiveSync
                         var contact = McFolderEntry.QueryByServerId<McContact> (BEContext.Account.Id, delServerId);
                         if (null != contact) {
                             contact.Delete ();
+                        }
+                        break;
+                    case Xml.AirSync.ClassCode.Tasks:
+                        HadTaskChanges = true;
+                        var task = McFolderEntry.QueryByServerId<McTask> (BEContext.Account.Id, delServerId);
+                        if (null != task) {
+                            task.Delete ();
                         }
                         break;
                     default:
@@ -757,6 +812,9 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.ClassCode.Calendar:
                 item = McItem.QueryByClientId<McCalendar> (BEContext.Account.Id, clientId);
                 break;
+            case Xml.AirSync.ClassCode.Tasks:
+                item = McItem.QueryByClientId<McTask> (BEContext.Account.Id, clientId);
+                break;
             default:
                 Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
                 return;
@@ -866,6 +924,9 @@ namespace NachoCore.ActiveSync
             case McPending.Operations.ContactCreate:
             case McPending.Operations.ContactUpdate:
             case McPending.Operations.ContactDelete:
+            case McPending.Operations.TaskCreate:
+            case McPending.Operations.TaskUpdate:
+            case McPending.Operations.TaskDelete:
                 return true;
             default:
                 return false;

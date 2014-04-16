@@ -35,7 +35,7 @@ namespace NachoCore.ActiveSync
                             McFolder.ClientOwned_LostAndFound,
                             pending.ServerId,
                             pending.DisplayName,
-                            pending.FolderType);
+                            pending.FolderCreate_Type);
                         folder.Insert ();
                         // Delete the FolderCreate.
                         action = McPending.DbActionEnum.Delete;

@@ -108,6 +108,7 @@ namespace NachoCore
             Db.CreateTable<McCalendarCategory> ();
             Db.CreateTable<McRecurrence> ();
             Db.CreateTable<McTimeZone> ();
+            Db.CreateTable<McTask> ();
             Db.CreateTable<McBody> ();
  
             // Adjust system settings.
@@ -341,6 +342,21 @@ namespace NachoCore
         public string DeleteContactCmd (int accountId, int contactId)
         {
             return ServiceFromAccountId (accountId).DeleteContactCmd (contactId);
+        }
+
+        public string CreateTaskCmd (int accountId, int taskId, int folderId)
+        {
+            return ServiceFromAccountId (accountId).CreateTaskCmd (taskId, folderId);
+        }
+
+        public string UpdateTaskCmd (int accountId, int taskId)
+        {
+            return ServiceFromAccountId (accountId).UpdateTaskCmd (taskId);
+        }
+
+        public string DeleteTaskCmd (int accountId, int taskId)
+        {
+            return ServiceFromAccountId (accountId).DeleteTaskCmd (taskId);
         }
 
         public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,

@@ -23,9 +23,9 @@ namespace NachoCore.ActiveSync
             // We can aggregate multiple move operations in one command if we want to.
             var move = new XElement (m_ns + Xml.Mov.MoveItems,
                            new XElement (m_ns + Xml.Mov.Move,
-                               new XElement (m_ns + Xml.Mov.SrcMsgId, PendingSingle.EmailMessageServerId),
-                               new XElement (m_ns + Xml.Mov.SrcFldId, PendingSingle.FolderServerId),
-                               new XElement (m_ns + Xml.Mov.DstFldId, PendingSingle.DestFolderServerId)));
+                               new XElement (m_ns + Xml.Mov.SrcMsgId, PendingSingle.ServerId),
+                               new XElement (m_ns + Xml.Mov.SrcFldId, PendingSingle.ParentId),
+                               new XElement (m_ns + Xml.Mov.DstFldId, PendingSingle.DestParentId)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (move);
             return doc;
@@ -57,7 +57,7 @@ namespace NachoCore.ActiveSync
                 var xmlDstMsgId = xmlResponse.Element (m_ns + Xml.Mov.DstMsgId);
                 if (null != xmlDstMsgId) {
                     var SrcMsgId = xmlResponse.Element (m_ns + Xml.Mov.SrcMsgId).Value;
-                    var emailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.EmailMessageId);
+                    var emailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
                     if (null != emailMessage) {
                         emailMessage.ServerId = xmlDstMsgId.Value;
                         emailMessage.Update ();

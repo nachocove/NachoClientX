@@ -1,3 +1,5 @@
+// Copyright (C) 2013, Nacho Cove, Inc.
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -20,6 +22,13 @@ namespace NachoCore.Model
         Forever,
         Meeting,
         Custom,
+    };
+
+    public enum NcImportance
+    {
+        Low_0 = 0,
+        Normal_1 = 1,
+        High_2 = 2,
     };
 
     public class McEmailMessage : McItem
@@ -53,7 +62,7 @@ namespace NachoCore.Model
         public string ThreadTopic { set; get; }
 
         /// 0..2, increasing priority (optional)
-        public uint Importance { set; get; }
+        public NcImportance Importance { set; get; }
 
         [Indexed]
         /// Has the message been read? (optional)

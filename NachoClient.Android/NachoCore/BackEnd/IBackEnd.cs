@@ -76,6 +76,9 @@ namespace NachoCore
         string CreateContactCmd (int accountId, int contactId, int folderId);
         string UpdateContactCmd (int accountId, int contactId);
         string DeleteContactCmd (int accountId, int contactId);
+        string CreateTaskCmd (int accountId, int taskId, int folderId);
+        string UpdateTaskCmd (int accountId, int taskId);
+        string DeleteTaskCmd (int accountId, int taskId);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
                           bool IsClientOwned, bool isHidden);

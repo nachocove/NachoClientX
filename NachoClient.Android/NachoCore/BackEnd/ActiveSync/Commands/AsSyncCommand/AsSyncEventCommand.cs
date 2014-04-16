@@ -25,7 +25,6 @@ namespace NachoCore.ActiveSync
         // This method is public for unit tests.
         public static void ServerSaysAddCalendarItem (XElement command, McFolder folder)
         {
-            Log.Info (Log.LOG_CALENDAR, "ServerSaysAddCalendarItem\n{0}", command);
             ProcessCalendarItem (command, folder, true);
         }
         // [MS-ASCMD]
@@ -43,7 +42,6 @@ namespace NachoCore.ActiveSync
         // This method is public for unit tests.
         public static void ServerSaysChangeCalendarItem (XElement command, McFolder folder)
         {
-            Log.Info (Log.LOG_CALENDAR, "ServerSaysChangeCalendarItem\n{0}", command);
             ProcessCalendarItem (command, folder, false);
         }
 

@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
             var folderUpdate = new XElement (m_ns + Xml.FolderHierarchy.FolderUpdate,
                                    new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),
                                    new XElement (m_ns + Xml.FolderHierarchy.ServerId, PendingSingle.ServerId),
-                                   new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.DestFolderServerId),
+                                   new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.DestParentId),
                                    new XElement (m_ns + Xml.FolderHierarchy.DisplayName, PendingSingle.DisplayName));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderUpdate);

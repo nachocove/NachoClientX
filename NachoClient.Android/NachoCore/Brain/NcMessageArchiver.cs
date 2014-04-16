@@ -20,8 +20,6 @@ namespace NachoCore
             var folder = McFolder.GetUserFolder (message.AccountId, type, 0, ArchiveFolderName);
             if (null == folder) {
                 BackEnd.Instance.CreateFolderCmd (message.AccountId, ArchiveFolderName, type, false, false);
-                // FIXME: After Move item is linked to Create Folder, remove this return
-                return;
             }
             folder = McFolder.GetUserFolder (message.AccountId, type, 0, ArchiveFolderName);
             NachoAssert.True (null != folder);

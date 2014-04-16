@@ -27,6 +27,10 @@ namespace NachoCore.ActiveSync
                 pending = McPending.GetOldestYoungerThanId (AccountId, PriorPendingId)) {
                 PriorPendingId = pending.Id;
 
+                if (McPending.StateEnum.Dispatched == pending.State) {
+                    continue;
+                }
+
                 // Apply all existing re-writes to the pending.
                 switch (pending.ApplyReWrites (ReWrites)) {
                 case McPending.DbActionEnum.DoNothing:

@@ -33,7 +33,7 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.FolderCreate:
                     if (pending.DisplayName == DisplayName &&
                         pending.ParentId == ParentId) {
-                        if (pending.FolderType == FolderType) {
+                        if (pending.FolderCreate_Type == FolderType) {
                             // Delete the pending folder create.
                             action = McPending.DbActionEnum.Delete;
                             // Add a re-write to replace the FolderCreate's GUID with the real ServerId henceforth.

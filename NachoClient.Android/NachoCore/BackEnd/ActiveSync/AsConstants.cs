@@ -1077,14 +1077,36 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Tasks";
             // Alpha order.
+            public const string CalendarType = "CalendarType";
+            public const string Categories = "Categories";
+            public const string Category = "Category";
+            public const string Complete = "Complete";
             public const string DateCompleted = "DateCompleted";
+            public const string DayOfMonth = "DayOfMonth";
+            public const string DayOfWeek = "DayOfWeek";
+            public const string DeadOccur = "DeadOccur";
             public const string DueDate = "DueDate";
+            public const string FirstDayOfWeek = "FirstDayOfWeek";
+            public const string Importance = "Importance";
+            public const string Interval = "Interval";
+            public const string IsLeapMonth = "IsLeapMonth";
+            public const string MonthOfYear = "MonthOfYear";
+            public const string Occurrences = "Occurrences";
+            public const string OrdinalDate = "OrdinalDate";
+            public const string Recurrence = "Recurrence";
+            public const string Regenerate = "Regenerate";
             public const string ReminderSet = "ReminderSet";
             public const string ReminderTime = "ReminderTime";
+            public const string Sensitivity = "Sensitivity";
+            public const string Start = "Start";
             public const string StartDate = "StartDate";
-            public const string Subject = Calendar.Subject;
+            public const string Subject = "Subject";
+            public const string SubOrdinalDate = "SubOrdinalDate";
+            public const string Type = "Type";
+            public const string Until = "Until";
             public const string UtcDueDate = "UtcDueDate";
             public const string UtcStartDate = "UtcStartDate";
+            public const string WeekOfMonth = "WeekOfMonth";
         }
     }
 }

@@ -323,6 +323,7 @@ namespace NachoCore.ActiveSync
                     TrySetBoolUintFromXml (policy, "MaxInactivityTimeDeviceLockEnabled",
                         "MaxInactivityTimeDeviceLockSeconds", elem, uint.MinValue, uint.MaxValue, 
                         SpecialMode.DisableThreshold, 9999);
+                    break;
 
                 case Xml.Provision.MinDevicePasswordComplexCharacters:
                     TrySetBoolUintFromXml (policy, "MinDevicePasswordComplexCharacterGroupsEnabled",

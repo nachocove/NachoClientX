@@ -148,6 +148,11 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
         }
 
+        public static McFolder GetDefaultTaskFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultTasks_7);
+        }
+
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +

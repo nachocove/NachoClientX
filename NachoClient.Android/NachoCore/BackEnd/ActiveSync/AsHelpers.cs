@@ -199,7 +199,7 @@ namespace NachoCore.ActiveSync
         /// </summary>
         /// <returns>The as date time.</returns>
         /// <param name="dateTime">Date time.</param>
-        public System.DateTime ParseAsDateTime (string dateTime)
+        public static System.DateTime ParseAsDateTime (string dateTime)
         {
             DateTime dateValue;
             DateTimeStyles styles = DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal;
@@ -325,7 +325,7 @@ namespace NachoCore.ActiveSync
         }
 
         /// <summary>
-        /// Parses the recurrence section of a calendar item.
+        /// Parses the recurrence section of a calendar item, or the recurrence section of a task item.
         /// </summary>
         /// <returns>The recurrence record</returns>
         /// <param name="ns">XML namespace to use to fetch elements</param>
@@ -339,6 +339,7 @@ namespace NachoCore.ActiveSync
 
             foreach (var child in recurrence.Elements()) {
                 switch (child.Name.LocalName) {
+                // Note: LocalNames and values are the same in the Calendar and Task namespaces.
                 case Xml.Calendar.Recurrence.CalendarType:
                     r.CalendarType = child.Value.ToEnum<NcCalendarType> ();
                     break;

@@ -48,6 +48,9 @@ namespace NachoCore.Model
             CalUpdate,
             CalDelete,
             CalRespond,
+            TaskCreate,
+            TaskUpdate,
+            TaskDelete,
         };
         // Lifecycle of McPening:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -142,6 +145,9 @@ namespace NachoCore.Model
         public NcResult.SubKindEnum ResultSubKind { set; get; }
         // Valid after a result has been created & status-ind'ed.
         public NcResult.WhyEnum ResultWhy { set; get; }
+
+        // ****************************************************
+        // GENERAL USE PROPERTIES
         // For FolderCreate, the value of ServerId is a provisional GUID.
         // The BE uses the GUID until the FolderCreate can be executed by the
         // server. After that, the GUID is then replaced by the server-supplied
@@ -150,62 +156,59 @@ namespace NachoCore.Model
         public string ServerId { set; get; }
 
         [Indexed]
+        // ParentId MUST be set for any Operation to be executed by Sync command!!!
+        // ParentId indicates the folder containing the referenced FolderEntry, and indicates the "source" folder
+        // in a move situation.
         public string ParentId { set; get; }
+
+        // ONLY valid in a move scenario.
+        public string DestParentId { set; get; }
 
         [Indexed]
         public string ClientId { set; get; }
 
-        public string FlagType { set; get; }
+        [Indexed]
+        // ONLY to be used when there is content that needs to be referenced at the time when the
+        // command is executed against the server (Create/Update/Send/Forward/Reply).
+        public int ItemId { set; get; }
 
-        public DateTime Start { set; get; }
+        // ****************************************************
+        // PROPERTIES SPECIFIC TO OPERATIONS (effectively subclasses)
 
-        public DateTime UtcStart { set; get; }
+        public string Search_Prefix { set; get; }
 
-        public DateTime Due { set; get; }
+        public uint Search_MaxResults { set; get; }
 
-        public DateTime UtcDue { get; set; }
+        public string EmailSetFlag_FlagType { set; get; }
 
-        public DateTime CompleteTime { get; set; }
+        public DateTime EmailSetFlag_Start { set; get; }
 
-        public DateTime DateCompleted { get; set; }
+        public DateTime EmailSetFlag_UtcStart { set; get; }
+
+        public DateTime EmailSetFlag_Due { set; get; }
+
+        public DateTime EmailSetFlag_UtcDue { get; set; }
+
+        public DateTime EmailMarkFlagDone_CompleteTime { get; set; }
+
+        public DateTime EmailMarkFlagDone_DateCompleted { get; set; }
 
         [Indexed]
         public string DisplayName { set; get; }
 
-        [Indexed]
-        // For use by SendMail & MoveItem ONLY!
-        public int EmailMessageId { set; get; }
-        // For use by CreateCal ONLY!
-        [Indexed]
-        public int CalId { set; get; }
-        // For use by CreateContact ONLY!
-        [Indexed]
-        public int ContactId { set; get; }
-
         public Xml.MeetingResp.UserResponseCode CalResponse { set; get; }
-
-        [Indexed]
-        // For use by any command.
-        public string EmailMessageServerId { set; get; }
-
-        [Indexed]
-        // FolderServerId MUST be set for any Operation to be executed by Sync command!!!
-        public string FolderServerId { set; get; }
 
         [Indexed]
         public int AttachmentId { set; get; }
 
-        public bool OriginalEmailIsEmbedded { set; get; }
+        public bool Smart_OriginalEmailIsEmbedded { set; get; }
 
-        public string Prefix { set; get; }
-
-        public uint MaxResults { set; get; }
-
-        public Xml.FolderHierarchy.TypeCode FolderType { set; get; }
+        public Xml.FolderHierarchy.TypeCode FolderCreate_Type { set; get; }
 
         public const string KSynchronouslyCompleted	= "synchronously completed";
 
-        public string DestFolderServerId { set; get; }
+
+
         // To be used by app/ui when dealing with McPending.
         // To be used by Commands when dealing with McPending.
         public void MarkDispached ()
@@ -264,6 +267,13 @@ namespace NachoCore.Model
             case Operations.ContactDelete:
                 subKind = NcResult.SubKindEnum.Info_ContactDeleteSucceeded;
                 break;
+
+            case Operations.TaskCreate:
+            case Operations.TaskUpdate:
+            case Operations.TaskDelete:
+                // FIXME!
+                break;
+
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
@@ -355,6 +365,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_ContactDeleteFailed;
             case Operations.ContactSearch:
                 return NcResult.SubKindEnum.Error_SearchCommandFailed;
+
+                // FIXME TASKS.
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
@@ -485,100 +497,6 @@ namespace NachoCore.Model
             });
         }
 
-        private void InsertFolderPath (string searchId, uint pathId)
-        {
-            uint orderValue = uint.MaxValue;
-            while (McFolder.AsRootServerId != searchId) {
-                var pathElem = new McPendingPath () {
-                    PendingId = Id,
-                    PathId = pathId,
-                    ServerId = searchId,
-                    Order = orderValue,
-                };
-                --orderValue;
-                pathElem.Insert ();
-                var parent = McFolder.QueryByServerId<McFolder> (AccountId, searchId);
-                searchId = parent.ParentId;
-            }
-            PathCount = 1;
-            Update ();
-        }
-
-        private void InsertItemPaths<T> (int itemId)
-        {
-            uint pathId = 0;
-            var containingFolders = McFolder.QueryByFolderEntryId<McFolder> (AccountId, itemId);
-            foreach (var folder in containingFolders.Where(x => false == x.IsClientOwned)) {
-                InsertFolderPath (folder.ServerId, pathId);
-                ++pathId;
-            }
-            PathCount = pathId;
-            Update ();
-        }
-
-        private void DeletePaths ()
-        {
-            var paths = BackEnd.Instance.Db.Table<McPendingPath> ().Where (x => Id == x.PendingId);
-            foreach (var path in paths) {
-                path.Delete ();
-            }
-        }
-
-        public bool FolderCompletelyDominates (string FolderServerId)
-        {
-            var dominatedPaths = BackEnd.Instance.Db.Table<McPendingPath> ()
-                .Where (y => Id == y.PendingId &&
-                    FolderServerId == y.ServerId).Count ();
-            NachoAssert.True (PathCount >= dominatedPaths);
-            return dominatedPaths == PathCount;
-        }
-
-        public override int Insert ()
-        {
-            // FIXME - one transaction.
-            var retval = base.Insert ();
-            switch (Operation) {
-            case Operations.FolderCreate:
-            case Operations.FolderUpdate:
-            case Operations.FolderDelete:
-                InsertFolderPath (ParentId, 0);
-                break;
-
-            case Operations.EmailForward:
-            case Operations.EmailReply:
-            case Operations.EmailMove:
-            case Operations.EmailDelete:
-            case Operations.EmailMarkRead:
-            case Operations.EmailSetFlag:
-            case Operations.EmailClearFlag:
-            case Operations.EmailMarkFlagDone:
-            case Operations.AttachmentDownload:
-                InsertItemPaths<McEmailMessage> (EmailMessageId);
-                break;
-
-            case Operations.CalCreate:
-            case Operations.CalUpdate:
-            case Operations.CalDelete:
-            case Operations.CalRespond:
-                InsertItemPaths<McCalendar> (EmailMessageId);
-                break;
-
-            case Operations.ContactCreate:
-            case Operations.ContactUpdate:
-            case Operations.ContactDelete:
-                InsertItemPaths<McContact> (EmailMessageId);
-                break;
-            }
-            return retval;
-        }
-
-        public override int Delete ()
-        {
-            // FIXME - one transaction.
-            DeletePaths ();
-            return base.Delete ();
-        }
-
         // Query APIs for any & all to call.
         public static List<McPending> Query (int accountId)
         {
@@ -674,7 +592,7 @@ namespace NachoCore.Model
             return BackEnd.Instance.Db.Table<McPending> ()
                     .Where (rec =>
                         rec.AccountId == accountId &&
-            rec.FolderServerId == folderServerId &&
+            rec.ParentId == folderServerId &&
             rec.State == StateEnum.Eligible).ToList ();
         }
 
@@ -742,10 +660,15 @@ namespace NachoCore.Model
             return (updateNeeded) ? DbActionEnum.Update : DbActionEnum.DoNothing;
         }
        
-
+        public bool FolderCompletelyDominates (string serverId)
+        {
+            // FIXME - build and check path.
+            return false;
+        }
     }
 
-    public class McPendingPath : McObjectPerAccount
+
+    public class McPendingPath : McObject
     {
         // Foreign key.
         [Indexed]
@@ -753,8 +676,6 @@ namespace NachoCore.Model
         // The path component.
         [Indexed]
         public string ServerId { set; get; }
-        // Which path (McItem can be in multiple folders). Unique only to the the PendingId value.
-        public uint PathId { set; get; }
         // The location within the path, where 0 is the top (child of root).
         public uint Order { set; get; }
     }

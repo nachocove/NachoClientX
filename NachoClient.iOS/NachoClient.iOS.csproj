@@ -602,6 +602,15 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageArchiver.cs">
       <Link>NachoCore\Brain\NcMessageArchiver.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McTask.cs">
+      <Link>NachoCore\Model\McTask.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McRecurrence.cs">
+      <Link>NachoCore\Model\McRecurrence.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\AsSyncTaskCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPad.storyboard" />

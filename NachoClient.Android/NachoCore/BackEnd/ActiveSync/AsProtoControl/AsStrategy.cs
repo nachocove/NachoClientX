@@ -28,16 +28,16 @@ namespace NachoCore.ActiveSync
 
         private const uint ECLstLast = (uint)ECLst.AllInf;
 
-        public enum CLst : uint
+        public enum CTLst : uint
         {
             None = (St.Last + 1),
             DefOnly,
             All,
         };
 
-        private const uint CLstLast = (uint)CLst.All;
+        private const uint CTLstLast = (uint)CTLst.All;
         private NcStateMachine EmailCalendarSm;
-        private NcStateMachine ContactsSm;
+        private NcStateMachine ContactsTasksSm;
         private IBEContext BEContext;
 
         private delegate List<McFolder> FolderList ();
@@ -171,9 +171,9 @@ namespace NachoCore.ActiveSync
             };
             EmailCalendarSm.Validate ();
 
-            ContactsSm = new NcStateMachine () {
+            ContactsTasksSm = new NcStateMachine () {
                 Name = string.Format ("ASSyncStratC({0})", BEContext.Account.Id),
-                LocalStateType = typeof(CLst),
+                LocalStateType = typeof(CTLst),
                 StateChangeIndication = UpdateSavedCState,
                 TransTable = new[] {
                     new Node {
@@ -184,11 +184,11 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)CLst.None },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)CTLst.None },
                         }
                     },
                     new Node {
-                        State = (uint)CLst.None,
+                        State = (uint)CTLst.None,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
                         },
@@ -197,11 +197,11 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CLst.DefOnly },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.DefOnly },
                         }
                     },
                     new Node {
-                        State = (uint)CLst.DefOnly,
+                        State = (uint)CTLst.DefOnly,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
                         },
@@ -209,12 +209,12 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Launch,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CLst.All },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CLst.None },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.All },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.None },
                         }
                     },
                     new Node {
-                        State = (uint)CLst.All,
+                        State = (uint)CTLst.All,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
                         },
@@ -223,14 +223,14 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CLst.None },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.None },
                         }
                     },
                 }
             };
-            ContactsSm.Validate ();
+            ContactsTasksSm.Validate ();
             RestoreSavedState ();
-            ContactsSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGOS");
+            ContactsTasksSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGOS");
             EmailCalendarSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGO");
         }
         // Almost actions for both SMs are DoNop.
@@ -241,12 +241,12 @@ namespace NachoCore.ActiveSync
 
         private void DoAvCon ()
         {
-            ContactsSm.PostEvent ((uint)SmEvt.E.Success, "DOSTCON");
+            ContactsTasksSm.PostEvent ((uint)SmEvt.E.Success, "DOSTCON");
         }
 
         private void DoSpCon ()
         {
-            ContactsSm.PostEvent ((uint)SmEvt.E.HardFail, "DOSPCON");
+            ContactsTasksSm.PostEvent ((uint)SmEvt.E.HardFail, "DOSPCON");
         }
 
         private List<McFolder> ECFolderListProvider ()
@@ -269,19 +269,20 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> CFolderListProvider ()
+        private List<McFolder> CTFolderListProvider ()
         {
-            switch ((CLst)ContactsSm.State) {
-            case CLst.None:
+            switch ((CTLst)ContactsTasksSm.State) {
+            case CTLst.None:
                 return new List<McFolder> ();
 
-            case CLst.DefOnly:
+            case CTLst.DefOnly:
                 return new List<McFolder> () { 
-                    McFolder.GetDefaultContactFolder (BEContext.Account.Id)
+                    McFolder.GetDefaultContactFolder (BEContext.Account.Id),
+                    McFolder.GetDefaultTaskFolder (BEContext.Account.Id),
                 };
 
-            case CLst.All:
-                return AllSyncedContactsFolders ();
+            case CTLst.All:
+                return AllSyncedContactsTasksFolders ();
 
             default:
                 throw new Exception ();
@@ -291,7 +292,7 @@ namespace NachoCore.ActiveSync
         private List<McFolder> FolderListProvider ()
         {
             List<McFolder> ecFolders = ECFolderListProvider ();
-            List<McFolder> cFolders = CFolderListProvider ();
+            List<McFolder> cFolders = CTFolderListProvider ();
             ecFolders.AddRange (cFolders);
             return ecFolders;
         }
@@ -359,15 +360,18 @@ namespace NachoCore.ActiveSync
                 }
 
             case McFolder.ClassCodeEnum.Contact:
-                switch ((CLst)ContactsSm.State) {
-                case CLst.None:
-                case CLst.DefOnly:
-                case CLst.All:
+                switch ((CTLst)ContactsTasksSm.State) {
+                case CTLst.None:
+                case CTLst.DefOnly:
+                case CTLst.All:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
 
                 default:
                     throw new Exception ();
                 }
+
+            case McFolder.ClassCodeEnum.Tasks:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
 
             default:
                 throw new Exception ();
@@ -392,9 +396,9 @@ namespace NachoCore.ActiveSync
         private void UpdateSavedCState ()
         {
             var protocolState = BEContext.ProtocolState;
-            protocolState.SyncStratContactsState = ContactsSm.State;
+            protocolState.SyncStratContactsState = ContactsTasksSm.State;
             protocolState.Update ();
-            foreach (var folder in CFolderListProvider ()) {
+            foreach (var folder in CTFolderListProvider ()) {
                 if (null != folder) {
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
@@ -406,7 +410,7 @@ namespace NachoCore.ActiveSync
         {
             var protocolState = BEContext.ProtocolState;
             EmailCalendarSm.State = protocolState.SyncStratEmailCalendarState;
-            ContactsSm.State = protocolState.SyncStratContactsState;
+            ContactsTasksSm.State = protocolState.SyncStratContactsState;
         }
 
         private List<McFolder> DefaultInboxAndDefaultCalendarFolders ()
@@ -419,7 +423,8 @@ namespace NachoCore.ActiveSync
 
         private List<McFolder> AllSyncedFolders ()
         {
-            return McFolder.QueryClientOwned (BEContext.Account.Id, false);
+            // A folder must be created on the server before it can be the subject of a Sync/Ping.
+            return McFolder.QueryClientOwned (BEContext.Account.Id, false).Where (x => !x.IsAwatingCreate).ToList ();
         }
 
         private List<McFolder> AllSyncedEmailAndCalendarFolders ()
@@ -429,10 +434,11 @@ namespace NachoCore.ActiveSync
             Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Calendar).ToList ();
         }
 
-        private List<McFolder> AllSyncedContactsFolders ()
+        private List<McFolder> AllSyncedContactsTasksFolders ()
         {
             return AllSyncedFolders ().Where (f => 
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Contact).ToList ();
+                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Contact ||
+                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Tasks).ToList ();
         }
 
         public void ReportSyncResult (List<McFolder> folders)
@@ -518,7 +524,7 @@ namespace NachoCore.ActiveSync
         public bool IsMoreSyncNeeded ()
         {
             // if we're not in the ultimate state(s), then true.
-            if (ECLstLast != EmailCalendarSm.State || CLstLast != ContactsSm.State) {
+            if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
                 return true;
             }
             // if a within-scope folder has to-client stuff waiting on the server, then true.
