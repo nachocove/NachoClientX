@@ -332,7 +332,7 @@ namespace NachoClient.iOS
         {
             var t = messageThreads.GetEmailThread (indexPath.Row);
             var m = t.First ();
-            BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
+            NcEmailArchiver.Delete (m);
         }
 
         public void ArchiveThisMessage(NSIndexPath indexPath)
