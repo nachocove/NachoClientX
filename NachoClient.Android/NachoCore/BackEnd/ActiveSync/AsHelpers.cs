@@ -159,8 +159,8 @@ namespace NachoCore.ActiveSync
             if (null != cal.UID) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.UID, cal.UID));
             }
-            if (0 != cal.NativeBodyType) {
-                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, cal.NativeBodyType));
+            if (0 != cal.BodyType) {
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, cal.BodyType));
             }
             return xmlAppData;
         }
@@ -554,7 +554,7 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
-                    c.NativeBodyType = child.Value.ToInt ();
+                    c.BodyType = child.Value.ToInt ();
                     break;
                 // Elements
                 case Xml.Calendar.AllDayEvent:

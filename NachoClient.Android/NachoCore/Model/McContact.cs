@@ -110,12 +110,6 @@ namespace NachoCore.Model
         /// Nickname for the contact
         public string NickName { get; set; }
 
-        /// Index of Body container
-        public int BodyId { get; set; }
-
-        /// How the body stored on the server.
-        public int NativeBodyType { get; set; }
-
         // "Hotness" of the contact. Currently, updated by the emails.
         public int Score { get; set; }
 
@@ -819,8 +813,8 @@ namespace NachoCore.Model
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
             }
 
-            if (0 != NativeBodyType) {
-                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, NativeBodyType));
+            if (0 != BodyType) {
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, BodyType));
             }
             if (null != Alias) {
                 xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Alias, Alias));

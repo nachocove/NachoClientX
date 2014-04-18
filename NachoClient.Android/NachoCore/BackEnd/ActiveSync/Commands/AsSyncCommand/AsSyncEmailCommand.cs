@@ -48,7 +48,7 @@ namespace NachoCore.ActiveSync
                     xmlAttachments = child.Elements (m_baseNs + Xml.AirSyncBase.Attachment);
                     break;
                 case Xml.AirSyncBase.Body:
-                    emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value;
+                    emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt();
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != bodyElement) {

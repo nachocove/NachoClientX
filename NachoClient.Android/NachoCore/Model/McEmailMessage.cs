@@ -137,15 +137,8 @@ namespace NachoCore.Model
 
         /// Attachments are separate
 
-        [Indexed]
-        /// Body data is in McBody
-        public int BodyId { set; get; }
-
         /// Summary is extracted in gleaner
         public string Summary { set; get; }
-
-        /// Integer -- plain test, html, rtf, mime
-        public string BodyType { set; get; }
 
         /// The score based on content. The current attribute that
         /// affects this value is the number of messages in the thread.
@@ -174,32 +167,10 @@ namespace NachoCore.Model
 
             return ContentScore + contactScore;
         }
-
         // TODO: Support other types besides mime!
         public string ToMime ()
         {
             return GetBody ();
-        }
-
-        public string GetBody ()
-        {
-            var body = BackEnd.Instance.Db.Get<McBody> (BodyId);
-            if (null == body) {
-                return null;
-            } else {
-                return body.Body;
-            }
-        }
-
-        private void DeleteBody ()
-        {
-            if (0 != BodyId) {
-                var body = new McBody ();
-                body.Id = BodyId;
-                BackEnd.Instance.Db.Delete (body);
-                BodyId = 0;
-                BackEnd.Instance.Db.Update (this);
-            }
         }
 
         public void DeleteAttachments ()
@@ -250,7 +221,7 @@ namespace NachoCore.Model
         {
             List<McContact> contactList = GetContactsFromEmailAddressString (From);
             NachoAssert.True (1 == contactList.Count);
-            return contactList[0];
+            return contactList [0];
         }
 
         public List<McContact> GetContactsFromEmailAddressString (string emailAddressString)
