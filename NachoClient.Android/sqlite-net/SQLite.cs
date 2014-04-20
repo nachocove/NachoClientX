@@ -146,6 +146,12 @@ namespace SQLite
 
 			DatabasePath = databasePath;
 
+            // NACHO
+            var rez = SQLite3.Config (SQLite3.ConfigOption.Log, SQLite3.LogCallback, IntPtr.Zero);
+            if (SQLite3.Result.OK != rez) {
+                throw new Exception ("Could not configure logging for SQLite.");
+            }
+            // NACHO
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 #endif
@@ -2731,7 +2737,8 @@ namespace SQLite
 		{
 			SingleThread = 1,
 			MultiThread = 2,
-			Serialized = 3
+            Serialized = 3,
+            Log = 16,
 		}
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE
@@ -2756,6 +2763,24 @@ namespace SQLite
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
 
+        // NACHO
+        public delegate void SetCallbackDelegate (IntPtr ptr, int code, string message);
+        public static void LogCallback (IntPtr ptr, int code, string message)
+        {
+            Console.WriteLine ("SQLITE_LOG: {0}/{1}", code, message);
+        }
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
+        public static extern Result Config (ConfigOption option, [MarshalAs(UnmanagedType.FunctionPtr)] SetCallbackDelegate callback, IntPtr ptr);
+
+        //SQLITE_API const char *sqlite3_sourceid(void);
+        [DllImport("sqlite3", EntryPoint = "sqlite3_sourceid", CallingConvention=CallingConvention.Cdecl)]
+        private static extern IntPtr _SourceId ();
+        public static string SourceId ()
+        {
+            return Marshal.PtrToStringAnsi (_SourceId ());
+        }
+        // NACHO
 		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
 
@@ -2772,6 +2797,9 @@ namespace SQLite
 		{
 			IntPtr stmt;
 			var r = Prepare2 (db, query, query.Length, out stmt, IntPtr.Zero);
+        // NACHO
+        // Console.WriteLine ("SQLITE: {0}/{1}", stmt.ToString (), query);
+        // NACHO
 			if (r != Result.OK) {
 				throw SQLiteException.New (r, GetErrmsg (db));
 			}

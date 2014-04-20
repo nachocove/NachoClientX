@@ -47,7 +47,7 @@ namespace NachoCore.ActiveSync
         public AsStrategy (IBEContext beContext)
         {
             BEContext = beContext;
-            EmailCalendarSm = new NcStateMachine () { 
+            EmailCalendarSm = new NcStateMachine ("ASSTRATEC") { 
                 Name = string.Format ("ASSyncStratEC({0})", BEContext.Account.Id),
                 LocalStateType = typeof(ECLst),
                 StateChangeIndication = UpdateSavedECState,
@@ -171,7 +171,7 @@ namespace NachoCore.ActiveSync
             };
             EmailCalendarSm.Validate ();
 
-            ContactsTasksSm = new NcStateMachine () {
+            ContactsTasksSm = new NcStateMachine ("ASSTRATCT") {
                 Name = string.Format ("ASSyncStratC({0})", BEContext.Account.Id),
                 LocalStateType = typeof(CTLst),
                 StateChangeIndication = UpdateSavedCState,
@@ -424,7 +424,7 @@ namespace NachoCore.ActiveSync
         private List<McFolder> AllSyncedFolders ()
         {
             // A folder must be created on the server before it can be the subject of a Sync/Ping.
-            return McFolder.QueryClientOwned (BEContext.Account.Id, false).Where (x => !x.IsAwatingCreate).ToList ();
+            return McFolder.ServerEndQueryAll (BEContext.Account.Id);
         }
 
         private List<McFolder> AllSyncedEmailAndCalendarFolders ()

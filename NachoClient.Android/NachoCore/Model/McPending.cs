@@ -113,8 +113,6 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
-        // The number of paths that are stored.
-        public uint PathCount { set; get; }
         // Valid when in PredBlocked state.
         [Indexed]
         public int PredPendingId { set; get; }

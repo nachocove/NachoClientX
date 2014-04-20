@@ -100,7 +100,7 @@ namespace NachoCore.ActiveSync
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
 
-                StepSm = new NcStateMachine () {
+                StepSm = new NcStateMachine ("AUTODSTEP") {
                     /* NOTE: There are three start states:
                      * PostWait - used for S1/S2,
                      * GetWait - used for S3,

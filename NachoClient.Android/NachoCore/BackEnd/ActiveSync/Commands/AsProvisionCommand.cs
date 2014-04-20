@@ -39,7 +39,7 @@ namespace NachoCore.ActiveSync
 
         public AsProvisionCommand (IBEContext dataSource) : base (Xml.Provision.Ns, Xml.Provision.Ns, dataSource)
         {
-            Sm = new NcStateMachine () { 
+            Sm = new NcStateMachine ("PROV") { 
                 LocalStateType = typeof(Lst),
                 LocalEventType = typeof(AsProtoControl.AsEvt),
                 TransTable = new[] {

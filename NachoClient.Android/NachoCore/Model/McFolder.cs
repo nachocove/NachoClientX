@@ -21,13 +21,15 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwatingCreate { get; set; }
 
+        [Indexed]
+        public bool IsAwaitingDelete { get; set; }
+
         public const string AsSyncKey_Initial = "0";
         public const string AsRootServerId = "0";
 
         public string AsSyncKey { get; set; }
 
         public uint AsFolderSyncEpoch { get; set; }
-
         // AsSyncMeta ONLY to be manipulated by sync strategy class.
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
         public bool AsSyncMetaToClientExpected { get; set; }
@@ -61,7 +63,7 @@ namespace NachoCore.Model
                                        string parentId,
                                        string serverId,
                                        string displayName,
-            Xml.FolderHierarchy.TypeCode folderType)
+                                       Xml.FolderHierarchy.TypeCode folderType)
         {
             var folder = new McFolder () {
                 AsSyncKey = AsSyncKey_Initial,
@@ -84,7 +86,15 @@ namespace NachoCore.Model
             serverId == x.ServerId &&
             true == x.IsClientOwned);
         }
-
+        /*
+         * SYNCED FOLDERS:
+         * Folder Get...Folder functions for distinguished folders that aren't going to 
+         * Be destroyed after creation. Server-end and App-end code can BOTH use them.
+         * Othere than these, Server-end code is restricted to using ServerEndQuery... or
+         * ServerEndGet... functions, and App-end code is prohibited from using them: XOR!
+         * CLIENT-OWNED FOLDERS:
+         * Any code can use them.
+         */
         public static McFolder GetOutboxFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
@@ -108,11 +118,11 @@ namespace NachoCore.Model
         public static McFolder GetUserFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.Type = ? AND " +
-                " f.ParentId = ? AND " +
-                " f.DisplayName = ?",
-                accountId, (uint)typeCode, parentId, name);
+                          " f.AccountId = ? AND " +
+                          " f.Type = ? AND " +
+                          " f.ParentId = ? AND " +
+                          " f.DisplayName = ?",
+                              accountId, (uint)typeCode, parentId, name);
             if (0 == folders.Count) {
                 return null;
             }
@@ -156,9 +166,9 @@ namespace NachoCore.Model
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.ParentId = ? ",
-                accountId, parentId);
+                          " f.AccountId = ? AND " +
+                          " f.ParentId = ? ",
+                              accountId, parentId);
             return folders.ToList ();
         }
 
@@ -170,6 +180,7 @@ namespace NachoCore.Model
             return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
             " m.AccountId = ? AND " +
             " m.FolderEntryId = ? AND " +
+            " f.IsAwaitingDelete = 0 AND " +
             " m.ClassCode = ? ",
                 accountId, folderEntryId, (uint)classCode);
         }
@@ -177,9 +188,22 @@ namespace NachoCore.Model
         public static List<McFolder> QueryClientOwned (int accountId, bool isClientOwned)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.IsClientOwned = ? ",
-                accountId, isClientOwned);
+                          " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
+                          " f.IsClientOwned = ? ",
+                              accountId, isClientOwned);
+            return folders.ToList ();
+        }
+        // ONLY TO BE USED BY SERVER-END CODE.
+        // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes
+        // IsAwatingCreate folders.
+        public static List<McFolder> ServerEndQueryAll (int accountId)
+        {
+            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          " f.AccountId = ? AND " +
+                          " f.IsClientOwned = 0 AND " +
+                          " f.IsAwatingCreate = 0 ",
+                              accountId);
             return folders.ToList ();
         }
 
@@ -200,7 +224,7 @@ namespace NachoCore.Model
 
         public NcResult Link (McFolderEntry obj)
         {
-            var getClassCode = obj.GetType().GetMethod ("GetClassCode");
+            var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
             NachoAssert.True (null != getClassCode);
             ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
@@ -219,7 +243,7 @@ namespace NachoCore.Model
 
         public NcResult Unlink (McFolderEntry obj)
         {
-            var getClassCode = obj.GetType().GetMethod ("GetClassCode");
+            var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
             NachoAssert.True (null != getClassCode);
             ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 

@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 
@@ -81,8 +82,8 @@ namespace NachoCore.Utils
         {
             return new Event () {
                 EventCode = SmEvt.Sequence,
-                Mnemonic = sequence[0].Mnemonic,
-                Sequence = (Event[])sequence.Clone(),
+                Mnemonic = sequence [0].Mnemonic,
+                Sequence = (Event[])sequence.Clone (),
             };
         }
 
@@ -128,19 +129,27 @@ namespace NachoCore.Utils
 
         public Cb StateChangeIndication { set; get; }
 
+        private string PseudoKlass;
         private Dictionary<string,uint> EventCode;
         private Dictionary<uint,string> EventName;
         private Queue EventQ;
+        private Object FireLockObj;
         private bool IsFiring;
+        // Static.
         private static int NextId = 0;
-        private static Object NextIdLockObj = new Object ();
+        private static Object StaticLockObj = new Object ();
+        private static ConcurrentDictionary<Type, Tuple<Dictionary<string,uint>, Dictionary<uint,string>>> CodeAndName =
+            new ConcurrentDictionary<Type, Tuple<Dictionary<string,uint>, Dictionary<uint,string>>> ();
+        private static ConcurrentDictionary<string, bool> IsValidated = new ConcurrentDictionary<string, bool> ();
 
-        public NcStateMachine ()
+        public NcStateMachine (string pseudoKlass)
         {
-            lock (NextIdLockObj) {
+            lock (StaticLockObj) {
                 Id = ++NextId;
             }
-            EventQ = new Queue ();
+            PseudoKlass = pseudoKlass;
+            FireLockObj = new Object ();
+            EventQ = Queue.Synchronized (new Queue ());
             State = (uint)St.Start;
         }
 
@@ -160,6 +169,11 @@ namespace NachoCore.Utils
             PostEvent ((uint)SmEvt.E.Launch, "SMSTART");
         }
 
+        /// <summary>
+        /// Posts at most one event (best effort - not a guarantee).
+        /// </summary>
+        /// <param name="eventCode">Event code.</param>
+        /// <param name="mnemonic">Mnemonic.</param>
         public void PostAtMostOneEvent (uint eventCode, string mnemonic)
         {
             foreach (var elem in EventQ) {
@@ -195,54 +209,62 @@ namespace NachoCore.Utils
                 NachoAssert.True (null == smEvent.Sequence);
                 EventQ.Enqueue (smEvent);
             }
-            if (IsFiring) {
-                return;
-            }
-            IsFiring = true;
-            while (0 != EventQ.Count) {
-                var fireEvent = (Event)EventQ.Dequeue ();
-                FireEventCode = fireEvent.EventCode;
-                Arg = fireEvent.Arg;
-                Message = fireEvent.Message;
-                if ((uint)St.Stop == State) {
-                    if (fireEvent.DropIfStopped) {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+
+            lock (FireLockObj) {
+                if (IsFiring) {
+                    // Don't want the same thread to re-enter execution loop. Do want the stack to unwind.
+                    // If we don't the state doesn't advance before the next event hits.
+                    return;
+                }
+                IsFiring = true;
+                while (0 != EventQ.Count) {
+                    var fireEvent = (Event)EventQ.Dequeue ();
+                    FireEventCode = fireEvent.EventCode;
+                    Arg = fireEvent.Arg;
+                    Message = fireEvent.Message;
+                    if ((uint)St.Stop == State) {
+                        if (fireEvent.DropIfStopped) {
+                            Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                                NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                            continue;
+                        } else {
+                            Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
+                                NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                            throw new Exception ();
+                        }
+                    }
+                    var hotNode = TransTable.Where (x => State == x.State).Single ();
+                    if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         continue;
-                    } else {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
+                    }
+                    if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         throw new Exception ();
                     }
+                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                    Action = hotTrans.Act;
+                    NextState = hotTrans.State;
+                    Action ();
+                    var oldState = State;
+                    State = NextState;
+                    if (oldState != State && null != StateChangeIndication) {
+                        StateChangeIndication ();
+                    }
                 }
-                var hotNode = TransTable.Where (x => State == x.State).Single ();
-                if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    continue;
-                }
-                if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    throw new Exception ();
-                }
-                var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
-                    NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
-                Action = hotTrans.Act;
-                NextState = hotTrans.State;
-                Action ();
-                var oldState = State;
-                State = NextState;
-                if (oldState != State && null != StateChangeIndication) {
-                    StateChangeIndication ();
-                }
+                IsFiring = false;
             }
-            IsFiring = false;
         }
 
         public void Validate ()
         {
+            if (IsValidated.ContainsKey (PseudoKlass)) {
+                return;
+            }
             BuildEventDicts ();
 
             var errors = new List<string> ();
@@ -298,6 +320,7 @@ namespace NachoCore.Utils
             if (0 != errors.Count) {
                 throw new Exception (string.Format ("State machine {0} needs to be rectified.", Name));
             }
+            IsValidated.TryAdd (PseudoKlass, true);
         }
 
         private string LogLine (string preString, string message)
@@ -321,31 +344,44 @@ namespace NachoCore.Utils
 
         private void BuildEventDicts ()
         {
-            if (null != EventCode) {
+            // Note assigning to EventName is the last step!
+            if (null != EventName) {
                 return;
             }
-            // NOTE: these could be cached based on the LocalEventType, rather than rebuilding for every instance.
-            EventCode = new Dictionary<string, uint> ();
-            EventName = new Dictionary<uint, string> ();
-            if (null == LocalEventType) {
-                LocalEventType = typeof(SmEvt);
-            }
-            var enumHolderType = LocalEventType;
+            lock (StaticLockObj) {
+                if (null == LocalEventType) {
+                    LocalEventType = typeof(SmEvt);
+                }
+                Tuple<Dictionary<string,uint>, Dictionary<uint,string>> tup;
+                if (CodeAndName.TryGetValue (LocalEventType, out tup)) {
+                    EventCode = tup.Item1;
+                    EventName = tup.Item2;
+                    return;
+                }
+                var enumHolderType = LocalEventType;
+                var eventCode = new Dictionary<string, uint> ();
+                var eventName = new Dictionary<uint, string> ();
 
-            while (typeof(System.Object) != enumHolderType) {
-                MemberInfo[] miArr = enumHolderType.GetMember ("E");
+                while (typeof(System.Object) != enumHolderType) {
+                    MemberInfo[] miArr = enumHolderType.GetMember ("E");
 
-                foreach (MemberInfo mi in miArr) {
-                    var enumType = System.Type.GetType (mi.DeclaringType.FullName + "+" + mi.Name);
-                    foreach (var enumMember in enumType.GetFields (BindingFlags.Public | BindingFlags.Static)) {
-                        if (!"Last".Equals (enumMember.Name)) {
-                            uint value = (uint)Convert.ChangeType (enumMember.GetValue (null), typeof(uint));
-                            EventCode.Add (enumMember.Name, value);
-                            EventName.Add (value, enumMember.Name);
+                    foreach (MemberInfo mi in miArr) {
+                        var enumType = System.Type.GetType (mi.DeclaringType.FullName + "+" + mi.Name);
+                        foreach (var enumMember in enumType.GetFields (BindingFlags.Public | BindingFlags.Static)) {
+                            if (!"Last".Equals (enumMember.Name)) {
+                                uint value = (uint)Convert.ChangeType (enumMember.GetValue (null), typeof(uint));
+                                eventCode.Add (enumMember.Name, value);
+                                eventName.Add (value, enumMember.Name);
+                            }
                         }
                     }
+                    enumHolderType = enumHolderType.BaseType;
                 }
-                enumHolderType = enumHolderType.BaseType;
+
+                CodeAndName.TryAdd (LocalEventType, Tuple.Create<Dictionary<string,uint>, Dictionary<uint,string>>
+                    (eventCode, eventName));
+                EventCode = eventCode;
+                EventName = eventName;
             }
         }
     }

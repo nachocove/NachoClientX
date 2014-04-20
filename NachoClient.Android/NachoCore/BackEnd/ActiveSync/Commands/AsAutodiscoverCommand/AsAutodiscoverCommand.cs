@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
         {
             ReDirsLeft = 10;
             DisposedJunk = new List<object> ();
-            Sm = new NcStateMachine () {
+            Sm = new NcStateMachine ("AUTOD") {
                 LocalEventType = typeof(TlEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {

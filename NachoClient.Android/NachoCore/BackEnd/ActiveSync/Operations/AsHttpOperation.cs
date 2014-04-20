@@ -103,7 +103,7 @@ namespace NachoCore.ActiveSync
             Owner = owner;
             BEContext = beContext;
 
-            HttpOpSm = new NcStateMachine () {
+            HttpOpSm = new NcStateMachine ("HTTPOP") {
                 Name = "as:http_op",
                 LocalEventType = typeof(HttpOpEvt),
                 LocalStateType = typeof(HttpOpLst),
