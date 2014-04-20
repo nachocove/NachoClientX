@@ -375,7 +375,7 @@ namespace NachoCore.ActiveSync
             n.ServerId = c.ServerId;
 
             n.BodyId = c.BodyId;
-            n.NativeBodyType = c.NativeBodyType;
+            n.NativeBodyType = c.BodyType;
 
             n.Alias = c.Alias;
             n.CompanyName = c.CompanyName;
@@ -473,7 +473,7 @@ namespace NachoCore.ActiveSync
             c.ServerId = ServerId;
 
             c.BodyId = BodyId;
-            c.NativeBodyType = NativeBodyType;
+            c.BodyType = NativeBodyType;
 
             c.Alias = Alias;
             c.CompanyName = CompanyName;

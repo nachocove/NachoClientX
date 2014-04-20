@@ -16,6 +16,12 @@ namespace NachoCore.Model
         [Indexed]
         public bool HasBeenGleaned { get; set; }
 
+        /// Index of Body container
+        public int BodyId { get; set; }
+
+        ///  AirSync.TypeCode; also NativeBodyType
+        public int BodyType { get; set; }
+
         public McItem ()
         {
             ClientId = DateTime.UtcNow.Ticks.ToString (); // FIXME - do better.
@@ -50,6 +56,27 @@ namespace NachoCore.Model
                     " m.FolderId = ? ",
                     typeof(T).Name),
                 accountId, accountId, folderId);
+        }
+
+        public string GetBody ()
+        {
+            var body = BackEnd.Instance.Db.Get<McBody> (BodyId);
+            if (null == body) {
+                return null;
+            } else {
+                return body.Body;
+            }
+        }
+
+        protected void DeleteBody ()
+        {
+            if (0 != BodyId) {
+                var body = new McBody ();
+                body.Id = BodyId;
+                BackEnd.Instance.Db.Delete (body);
+                BodyId = 0;
+                BackEnd.Instance.Db.Update (this);
+            }
         }
     }
 }

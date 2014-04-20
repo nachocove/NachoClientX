@@ -144,7 +144,7 @@ namespace NachoClient.iOS
         public void DeleteThisMessage ()
         {
             var m = thread.First ();
-            BackEnd.Instance.DeleteEmailCmd (m.AccountId, m.Id);
+            NcEmailArchiver.Delete (m);
             NavigationController.PopViewControllerAnimated (true);
         }
 

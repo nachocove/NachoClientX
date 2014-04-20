@@ -26,6 +26,11 @@ namespace NachoCore
 
             BackEnd.Instance.MoveItemCmd (message.AccountId, message.Id, folder.Id);
         }
+
+        public static void Delete(McEmailMessage message)
+        {
+            BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
+        }
     }
 }
 

@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         ///      "SidebarToDeferredMessages"
         ///      "SidebarToNachoNow"
         ///      "SidebarToHome"
+        ///      "SidebarToAttachments"
 
      
         protected class SidebarMenu
@@ -66,6 +67,7 @@ namespace NachoClient.iOS
         const string SidebarToHomeSegueId = "SidebarToHome";
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
+        const string SidebarToAttachmentsSegueId = "SidebarToAttachments";
 
         public UITableView tableview;
 
@@ -111,6 +113,7 @@ namespace NachoClient.iOS
 
             AddToTopMenu (new SidebarMenu (null, "Now!", SidebarToNachoNowSegueId, "Nacho-Cove-Icon"));
             AddToMenu (new SidebarMenu (null, "Tasks", SidebarToDeferredMessagesSegueId, "ic_action_time"));
+            AddToMenu (new SidebarMenu (null, "Attachments", SidebarToAttachmentsSegueId, "ic_action_attachment"));
 
             AddToMenu (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId, "ic_action_collection"));
 

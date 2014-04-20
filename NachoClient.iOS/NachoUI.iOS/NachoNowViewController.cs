@@ -38,6 +38,7 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
+
             // Multiple buttons on the left side
             using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
@@ -61,6 +62,14 @@ namespace NachoClient.iOS
                 return true;
             };
             currentEventView.AddGestureRecognizer (currentEventTouched);
+
+            var carouselTouched = new UITapGestureRecognizer ();
+            carouselTouched.NumberOfTapsRequired = 1;
+            carouselTouched.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CarouselTapSelector"));
+            carouselTouched.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            carouselView.AddGestureRecognizer (carouselTouched);
 
             // Toolbar buttons
             emailNowButton.Clicked += (object sender, EventArgs e) => {
@@ -113,8 +122,14 @@ namespace NachoClient.iOS
             });
         }
 
+        [MonoTouch.Foundation.Export ("CarouselTapSelector")]
+        public void OnDoubleTapCarousel (UIGestureRecognizer sender)
+        {
+            // FIXME: What to do on double tap?
+        }
+
         [MonoTouch.Foundation.Export ("CurrentEventTapSelector")]
-        public void OnDoubleTap (UIGestureRecognizer sender)
+        public void OnTapCurrentEvent(UIGestureRecognizer sender)
         {
             if (null != currentEvent) {
                 PerformSegue ("NachoNowToCalendarItem", new SegueHolder (currentEvent));

@@ -610,6 +610,13 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\AsSyncTaskCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\AttachmentViewController.cs" />
+    <Compile Include="NachoUI.iOS\AttachmentViewController.designer.cs">
+      <DependentUpon>AttachmentViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TnefEncoding.cs">
+      <Link>NachoCore\Utils\TnefEncoding.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
@@ -713,6 +720,7 @@
     <BundleResource Include="Resources\icon_chili.jpg" />
     <BundleResource Include="Resources\icon_chili.png" />
     <BundleResource Include="Resources\beer.png" />
+    <BundleResource Include="Resources\ic_action_attachment.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
