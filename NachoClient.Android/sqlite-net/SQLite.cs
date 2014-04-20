@@ -99,6 +99,9 @@ namespace SQLite
 		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
 
+        // NACHO
+        private static Object _lockObj = new Object ();
+        // NACHO
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 		internal static readonly Sqlite3DatabaseHandle NullHandle = default(Sqlite3DatabaseHandle);
 
@@ -1221,17 +1224,19 @@ namespace SQLite
 			for (var i = 0; i < vals.Length; i++) {
 				vals [i] = cols [i].GetValue (obj);
 			}
-			
-			var insertCmd = map.GetInsertCommand (this, extra);
-			var count = insertCmd.ExecuteNonQuery (vals);
 
-            if (map.HasAutoIncPK)
-            {
-				var id = SQLite3.LastInsertRowid (Handle);
-				map.SetAutoIncPK (obj, id);
-			}
+            lock (_lockObj) {
+                // NACHO - added the _lockObj to prevent conncurrent abuse of prepared stmt.
+                var insertCmd = map.GetInsertCommand (this, extra);
+                var count = insertCmd.ExecuteNonQuery (vals);
+
+                if (map.HasAutoIncPK) {
+                    var id = SQLite3.LastInsertRowid (Handle);
+                    map.SetAutoIncPK (obj, id);
+                }
 			
-			return count;
+                return count;
+            }
 		}
 
 		/// <summary>
