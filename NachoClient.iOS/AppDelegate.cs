@@ -14,6 +14,7 @@ using NachoCore.Utils;
 using NachoCore.Brain;
 using NachoClient.iOS;
 using SQLite;
+using CrashlyticsBinding;
 
 namespace NachoClient.iOS
 {
@@ -68,6 +69,12 @@ namespace NachoClient.iOS
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
 
             application.ApplicationIconBadgeNumber = 0;
+           
+            #if (!DEBUG)
+            Crashlytics crash = Crashlytics.SharedInstance ();
+            crash.DebugMode = true;
+            crash = Crashlytics.StartWithAPIKey ("5aff8dc5f7ff465089df2453cd07d6cd21880b74", 10.0);
+            #endif
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));

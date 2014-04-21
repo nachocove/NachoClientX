@@ -69,7 +69,9 @@
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <IpaPackageName>
+    </IpaPackageName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <DebugType>full</DebugType>
@@ -754,6 +756,10 @@
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Crashlytics\Crashlytics.iOS\Crashlytics.iOS.csproj">
+      <Project>{3A17C9D8-1191-49F1-871B-6F909D6AABA3}</Project>
+      <Name>Crashlytics.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
