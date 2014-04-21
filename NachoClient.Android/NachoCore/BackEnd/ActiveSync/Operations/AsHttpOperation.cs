@@ -23,13 +23,28 @@ namespace NachoCore.ActiveSync
 {
     public class AsHttpOperation : IAsOperation
     {
-        public enum HttpOpLst : uint
+        /* THREAD SAFETY:
+         * For the "owner" who created the object: 100% thread-safe, except that properties may only be set 
+         * between the creation and the first action with the object (e.g. Execute()).
+         * 
+         * W/r/t events from the system: 100% thread-safe.
+         * Any API/callback can be called on any thread at any time.
+         * Execute() must be called before Cancel() is called.
+         * 
+         * Events:
+         * - (API) Execute ().
+         * - (API) Cancel ().
+         * - Return from HttpClient (or Exception).
+         * - TimeoutTimer expiry.
+         * - DelayTimer expiry.
+         */
+        private enum HttpOpLst : uint
         {
             HttpWait = (St.Last + 1),
             DelayWait,
         };
 
-        public class HttpOpEvt : SmEvt
+        private class HttpOpEvt : SmEvt
         {
             new public enum E : uint
             {
@@ -61,14 +76,13 @@ namespace NachoCore.ActiveSync
         private IBEContext BEContext;
         private IAsHttpOperationOwner Owner;
         private CancellationTokenSource Cts;
+        private List<object> OldCrap;
         private NcTimer DelayTimer;
         private NcTimer TimeoutTimer;
-        // These DisposedXxx are used to avoid eliminating a reference while still in a callback (can cause crash).
+        // The OldXxxTimer lists is used to avoid eliminating a reference while still in a callback (can cause timer crash).
+        // Also to avoid God knows what kind of bad GC interaction with HttpClient that won't cancel, etc.
         // They don't leak - they are freed when this AsHttpOperation object is freed.
-        #pragma warning disable 414
-        private NcTimer DisposedDelayTimer;
-        private NcTimer DisposedTimeoutTimer;
-        #pragma warning restore 414
+        // Yes - if it isn't enough to hold onto these objects until then, we'd need a longer-term persistence plan.
         private NcStateMachine HttpOpSm;
         private NcStateMachine OwnerSm;
         private IHttpClient Client;
@@ -86,14 +100,13 @@ namespace NachoCore.ActiveSync
         public bool Allow451Follow { set; get; }
 
         public bool DontReportCommResult { set; get; }
-
-        public string Token { set; get; }
         /* Lifecycle:
          * AsHttpOperation object gets created.
          * obj.Execute(sm) called.
          */
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
+            OldCrap = new List<object> ();
             NcCapture.AddKind (KToXML);
             HttpClientType = typeof(MockableHttpClient);
             Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
@@ -206,7 +219,7 @@ namespace NachoCore.ActiveSync
         {
             if (null != DelayTimer) {
                 DelayTimer.Dispose ();
-                DisposedDelayTimer = DelayTimer;
+                OldCrap.Add (DelayTimer);
                 DelayTimer = null;
             }
         }
@@ -227,10 +240,16 @@ namespace NachoCore.ActiveSync
             CancelTimeoutTimer ();
             DoCancelDelayTimer ();
             if (null != Cts) {
-                Cts.Cancel ();
+                if (!Cts.IsCancellationRequested) {
+                    Cts.Cancel ();
+                }
+                OldCrap.Add (Cts);
+                Cts = null;
             }
-            Client = null;
-            Cts = null;
+            if (null != Client) {
+                OldCrap.Add (Client);
+                Client = null;
+            }
         }
 
         private void DoTimeoutHttp ()
@@ -263,7 +282,7 @@ namespace NachoCore.ActiveSync
         {
             if (null != TimeoutTimer) {
                 TimeoutTimer.Dispose ();
-                DisposedTimeoutTimer = TimeoutTimer;
+                OldCrap.Add (TimeoutTimer);
                 TimeoutTimer = null;
             }
         }
