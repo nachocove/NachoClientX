@@ -33,6 +33,7 @@ function doMake()
     popd
 }
 
+gitUpdate Crashlytics
 gitUpdate Reachability
 gitUpdate registered-domain-libs
 gitUpdate iCarousel
@@ -49,6 +50,7 @@ gitUpdate MimeKit
 gitUpdate DnDns
 gitUpdate DDay-iCal-Xamarin
 
+doMake Crashlytics
 doMake iCarouselBinding
 doMake UIImageEffects
 doMake SWRevealViewControllerBinding
