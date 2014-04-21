@@ -150,10 +150,7 @@ namespace SQLite
 			DatabasePath = databasePath;
 
             // NACHO
-            var rez = SQLite3.Config (SQLite3.ConfigOption.Log, SQLite3.LogCallback, IntPtr.Zero);
-            if (SQLite3.Result.OK != rez) {
-                throw new Exception ("Could not configure logging for SQLite.");
-            }
+            SQLite3.Config (SQLite3.ConfigOption.Log, SQLite3.LogCallback, IntPtr.Zero);
             // NACHO
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);

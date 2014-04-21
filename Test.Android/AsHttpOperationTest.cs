@@ -190,7 +190,7 @@ namespace Test.iOS
         public void BasicPhonyPing ()
         {
             bool setTrueBySuccessEvent = false;
-            var sm = new NcStateMachine () {
+            var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
                 LocalStateType = typeof(AsProtoControl.Lst),
