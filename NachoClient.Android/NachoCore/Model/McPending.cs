@@ -267,9 +267,13 @@ namespace NachoCore.Model
                 break;
 
             case Operations.TaskCreate:
+                subKind = NcResult.SubKindEnum.Info_TaskCreateSucceeded;
+                break;
             case Operations.TaskUpdate:
+                subKind = NcResult.SubKindEnum.Info_TaskUpdateSucceeded;
+                break;
             case Operations.TaskDelete:
-                // FIXME!
+                subKind = NcResult.SubKindEnum.Info_TaskDeleteSucceeded;
                 break;
 
             default:
