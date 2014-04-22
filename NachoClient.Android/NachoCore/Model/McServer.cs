@@ -8,7 +8,6 @@ namespace NachoCore.Model
 	{
 		public McServer ()
 		{
-			// FIXME - need a per-protocol subclass. This is AS-specific.
 			Path = "/Microsoft-Server-ActiveSync";
 			Scheme = "https";
 			Port = 443;
@@ -34,9 +33,8 @@ namespace NachoCore.Model
 			};
 		}
 
-		public void Update (McServer src)
+        public void CopyFrom (McServer src)
 		{
-			// FIXME Do we need a generic way to do this, using reflection?
 			Host = src.Host;
 			Path = src.Path;
 			Scheme = src.Scheme;

@@ -24,7 +24,8 @@ namespace NachoCore.Model
 
         public McItem ()
         {
-            ClientId = DateTime.UtcNow.Ticks.ToString (); // FIXME - do better.
+            // TODO - only really need to init ClientId for from-client creations.
+            ClientId = Guid.NewGuid ().ToString ("N");
         }
 
         public enum ItemSource

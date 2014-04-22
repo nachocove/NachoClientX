@@ -488,7 +488,7 @@ namespace NachoCore.ActiveSync
         {
             // Save validated server config in DB.
             var serverRecord = BEContext.Server;
-            serverRecord.Update (ServerCandidate);
+            serverRecord.CopyFrom (ServerCandidate);
             serverRecord.UsedBefore = true;
             serverRecord.Update ();
             // Signal that we are done and that we have a server config.

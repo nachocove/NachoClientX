@@ -15,7 +15,8 @@ namespace NachoCore.Model
         public McPending ()
         {
             DefersRemaining = KMaxDeferCount;
-            Token = DateTime.UtcNow.Ticks.ToString (); // FIXME - use Id?
+            // TODO: Perhaps Id suffices?
+            Token = Guid.NewGuid ().ToString ("N");
         }
 
         public McPending (int accountId) : this ()
@@ -365,10 +366,15 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_ContactUpdateFailed;
             case Operations.ContactDelete:
                 return NcResult.SubKindEnum.Error_ContactDeleteFailed;
+            case Operations.TaskCreate:
+                return NcResult.SubKindEnum.Error_TaskCreateFailed;
+            case Operations.TaskUpdate:
+                return NcResult.SubKindEnum.Error_TaskUpdateFailed;
+            case Operations.TaskDelete:
+                return NcResult.SubKindEnum.Error_TaskDeleteFailed;
             case Operations.ContactSearch:
                 return NcResult.SubKindEnum.Error_SearchCommandFailed;
 
-                // FIXME TASKS.
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
@@ -600,7 +606,6 @@ namespace NachoCore.Model
 
         public static McPending QueryByServerId (int accountId, string serverId)
         {
-            // FIXME - is FirstOrDefault correct here?
             return BackEnd.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&
