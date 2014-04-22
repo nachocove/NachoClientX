@@ -6,12 +6,15 @@
          <Folder>
             <no_redaction/>
             <Class>
+               <full_redaction/>
             </Class>
             <Id>
+               <full_redaction/>
             </Id>
          </Folder>
       </Folders>
       <HeartbeatInterval>
+         <full_redaction/>
       </HeartbeatInterval>
    </Ping>
 </xml>
