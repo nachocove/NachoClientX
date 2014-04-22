@@ -28,11 +28,18 @@ namespace NachoCore.Model
         }
 
         public static McMapFolderFolderEntry QueryByFolderIdFolderEntryIdClassCode (int accountId, int folderId, int folderEntryId,
-            McFolderEntry.ClassCodeEnum classCode)
+                                                                                    McFolderEntry.ClassCodeEnum classCode)
         {
-            return BackEnd.Instance.Db.Table<McMapFolderFolderEntry> ().SingleOrDefault (mm => 
-                accountId == mm.AccountId && folderId == mm.FolderId && folderEntryId == mm.FolderEntryId &&
-            classCode == mm.ClassCode);
+            //return BackEnd.Instance.Db.Table<McMapFolderFolderEntry> ().SingleOrDefault (mm => 
+            //    accountId == mm.AccountId && folderId == mm.FolderId && folderEntryId == mm.FolderEntryId &&
+            //classCode == mm.ClassCode);
+            var maps = BackEnd.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
+                       " mm.AccountId = ? AND " +
+                       " mm.FolderId = ? AND " +
+                       " mm.FolderEntryId = ? AND " +
+                       " mm.ClassCode = ?",
+                           accountId, folderId, folderEntryId, classCode);
+            return maps.SingleOrDefault ();
         }
     }
 }

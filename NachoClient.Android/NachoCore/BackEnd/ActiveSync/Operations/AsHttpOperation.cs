@@ -468,6 +468,9 @@ namespace NachoCore.ActiveSync
                         } catch (TaskCanceledException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
+                        } catch (WBXMLReadPastEndException) {
+                            // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
+                            return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
                         }
                         responseDoc = decoder.XmlDoc;
                         cap.Stop ();

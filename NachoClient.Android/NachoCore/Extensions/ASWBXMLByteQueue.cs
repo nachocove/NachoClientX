@@ -6,6 +6,10 @@ using System.Text;
 
 namespace NachoCore.Wbxml
 {
+    class WBXMLReadPastEndException : Exception
+    {
+    }
+
     class ASWBXMLByteQueue
     {
         private Stream ByteStream;
@@ -36,7 +40,7 @@ namespace NachoCore.Wbxml
                 PeekHolder = null;
             }
             if (-1 == value) {
-                throw new Exception ("ASWBXMLByteQueue: attempted read past end.");
+                throw new WBXMLReadPastEndException ();
             }
             return Convert.ToByte (value);
         }
