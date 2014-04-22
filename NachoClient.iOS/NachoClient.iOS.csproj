@@ -161,23 +161,8 @@
     <Compile Include="..\NachoClient.Android\sqlite-net\SQLiteAsync.cs">
       <Link>sqlite-net\SQLiteAsync.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXML.cs">
-      <Link>NachoCore\Extensions\ASWBXML.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXMLByteQueue.cs">
-      <Link>NachoCore\Extensions\ASWBXMLByteQueue.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ASWBXMLCodePage.cs">
-      <Link>NachoCore\Extensions\ASWBXMLCodePage.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\Helpers.cs">
-      <Link>NachoCore\Extensions\Helpers.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\ServerCertificatePeek.cs">
-      <Link>NachoCore\Extensions\ServerCertificatePeek.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\AccountViewController.cs" />
     <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
@@ -190,9 +175,6 @@
     <Compile Include="NachoUI.iOS\LaunchViewController.cs" />
     <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs">
       <DependentUpon>LaunchViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NcResult.cs">
-      <Link>NachoCore\Extensions\NcResult.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
@@ -275,9 +257,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NachoAssert.cs">
-      <Link>NachoCore\Extensions\NachoAssert.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
     <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
@@ -549,9 +528,6 @@
       <Link>NachoCore\Utils\Pretty.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\Elements.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\NcTimer.cs">
-      <Link>NachoCore\Extensions\NcTimer.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolderEntry.cs">
       <Link>NachoCore\Model\McFolderEntry.cs</Link>
     </Compile>
@@ -574,9 +550,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapFolderFolderEntry.cs">
       <Link>NachoCore\Model\McMapFolderFolderEntry.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\WBXML.cs">
-      <Link>NachoCore\Extensions\WBXML.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs</Link>
@@ -618,6 +591,33 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TnefEncoding.cs">
       <Link>NachoCore\Utils\TnefEncoding.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXML.cs">
+      <Link>NachoCore\Utils\ASWBXML.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXMLByteQueue.cs">
+      <Link>NachoCore\Utils\ASWBXMLByteQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXMLCodePage.cs">
+      <Link>NachoCore\Utils\ASWBXMLCodePage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Helpers.cs">
+      <Link>NachoCore\Utils\Helpers.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NachoAssert.cs">
+      <Link>NachoCore\Utils\NachoAssert.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcResult.cs">
+      <Link>NachoCore\Utils\NcResult.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimer.cs">
+      <Link>NachoCore\Utils\NcTimer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ServerCertificatePeek.cs">
+      <Link>NachoCore\Utils\ServerCertificatePeek.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\WBXML.cs">
+      <Link>NachoCore\Utils\WBXML.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
