@@ -458,7 +458,11 @@ namespace NachoCore.ActiveSync
             case HttpStatusCode.OK:
                 ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
-                if (0 < ContentData.Length) {
+                if (0 > ContentData.Length) {
+                    // We have seen this, but we've never see doc stating why possible.
+                    return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPZORNEG");
+                }
+                else if (0 < ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
