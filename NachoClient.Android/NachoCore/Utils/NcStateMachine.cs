@@ -168,6 +168,16 @@ namespace NachoCore.Utils
             State = StartState;
             PostEvent ((uint)SmEvt.E.Launch, "SMSTART");
         }
+        /// <summary>
+        /// Can be called from within an Action function to clear the event Q.
+        /// Don't call if not in an action function - it won't be effective all the time.
+        /// </summary>
+        public void ClearEventQueue ()
+        {
+            lock (FireLockObj) {
+                EventQ.Clear ();
+            }
+        }
 
         /// <summary>
         /// Posts at most one event (best effort - not a guarantee).

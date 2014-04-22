@@ -21,13 +21,18 @@ using NachoPlatform;
  * How this works:
  * AsAutodiscoverCommand (aka autod) is used by the protocol controller just like any other command.
  * Autod has to run quickly for UX, and there are potentially a TON of network accesses involved. Therefore:
- * Autod has a serial top level state machine that can be comprehended by humans.
+ * Autod has a serial-ish top level state machine that can be comprehended by humans.
  * Autod maintains a pool of robots that run in parallel, doing the network accesses for each "step" of the process. 
  * The robots either post results to the autod state machine, or they store their results - 
  *   depending on the state of the autod machine. If the results are stored, then the autod machine retrieves them
  *   when top level state machine is ready to consume them.
  * The robots are the owners of the DNS/HTTP operations - not the top level state machine - 
  *   this is atypical for subclasses of AsCommand.
+ * 
+ * TODO: Right now once a robot succeeds, all other robots are stopped. The resulting server config is tested.
+ * If the test passes, then good. If not, we declare auto-d failed, and ask the user for the server config.
+ * We can in the future push that test into the robot so that if more than one path yields server config, then
+ * the first working path can be selected.
  */
 namespace NachoCore.ActiveSync
 {
@@ -43,8 +48,8 @@ namespace NachoCore.ActiveSync
             CredW1,
             CredW2,
             SrvConfW,
-            TestW}
-        ;
+            TestW,
+        };
         // Event codes shared between TL and Robot SMs.
         public class SharedEvt : AsProtoControl.AsEvt
         {
@@ -56,8 +61,8 @@ namespace NachoCore.ActiveSync
                 SrvCertN,
                 // Protocol indicates that search must be restarted from step-1 (Robot or Top-Level).
                 ReStart,
-                Last = ReStart}
-            ;
+                Last = ReStart,
+            };
         }
 
         public class TlEvt : SharedEvt
@@ -335,15 +340,20 @@ namespace NachoCore.ActiveSync
             robot.Execute ();
         }
 
-        public override void Cancel ()
+        private void KillAllRobots ()
         {
             if (null != Robots) {
                 foreach (var robot in Robots) {
                     robot.Cancel ();
                     DisposedJunk.Add (robot);
                 }
+                Robots = null;
             }
-            Robots = null;
+        }
+
+        public override void Cancel ()
+        {
+            KillAllRobots ();
             AskingRobotQ = null;
             SuccessfulRobotQ = null;
             if (null != OptCmd) {
@@ -456,6 +466,10 @@ namespace NachoCore.ActiveSync
         {
             var robot = (StepRobot)Sm.Arg;
             ServerCandidate = McServer.Create (robot.SrServerUri);
+            // Must shut down any remaining robots so they don't post events to TL SM.
+            KillAllRobots ();
+            // Must clear event Q for TL SM of anything a robot may have posted (threads).
+            Sm.ClearEventQueue ();
             DoTest ();
         }
 
