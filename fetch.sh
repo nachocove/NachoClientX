@@ -20,6 +20,7 @@ function gitUpdate()
     popd
 }
 
+gitUpdate Crashlytics
 gitUpdate Reachability
 gitUpdate registered-domain-libs
 gitUpdate iCarousel
