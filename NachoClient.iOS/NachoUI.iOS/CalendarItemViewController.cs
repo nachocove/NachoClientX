@@ -17,6 +17,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using MimeKit;
 
 namespace NachoClient.iOS
 {
@@ -177,6 +178,9 @@ namespace NachoClient.iOS
                 section.Add (button3);
                 root.Add (section);
             }
+                
+            // TODO: Give section an icon
+            RenderBodyIfAvailable (root);
 
             if (null != c.Location) {
                 section = new ThinSection ();
@@ -210,6 +214,80 @@ namespace NachoClient.iOS
             root.Add (section);
 
             return root;
+        }
+
+        void RenderBodyIfAvailable (RootElement root)
+        {
+            if (0 == c.BodyId) {
+                return;
+            }
+
+            // FIXME: Make sure the body is mime
+
+            MimeMessage mimeMsg;
+            try {
+                string body = c.GetBody ();
+                if (null == body) {
+                    return;
+                }
+                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body))) {
+                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                    mimeMsg = bodyParser.ParseMessage ();
+                    MimeHelpers.DumpMessage (mimeMsg, 0);
+                    var list = new List<MimeEntity> ();
+                    MimeHelpers.MimeDisplayList (mimeMsg, ref list);
+                    RenderDisplayList (list, root);
+                }
+            } catch (Exception e) {
+                // TODO: Find root cause
+                NachoCore.Utils.Log.Error ("CalendarItemView exception ignored:\n{0}", e);
+                return;
+            }
+        }
+
+        protected void RenderDisplayList (List<MimeEntity> list, RootElement root)
+        {
+            for (var i = 0; i < list.Count; i++) {
+                var entity = list [i];
+                var part = (MimePart)entity;
+                if (part.ContentType.Matches ("text", "html")) {
+//                    RenderHtml (part);
+                    continue;
+                }
+                if (part.ContentType.Matches ("text", "calendar")) {
+//                    RenderCalendar (part);
+                    continue;
+                }
+                if (part.ContentType.Matches ("text", "*")) {
+//                    RenderText (part);
+                    continue;
+                }
+                if (part.ContentType.Matches ("image", "*")) {
+//                    RenderImage (part);
+                    continue;
+                }
+                if (part.ContentType.Matches ("application", "ms-tnef")) {
+                    // Gets the decoded text content.
+                    var decodedStream = new MemoryStream ();
+                    part.ContentObject.DecodeTo (decodedStream);
+                    decodedStream.Seek (0L, SeekOrigin.Begin);
+                    var tnef = new TnefEncoding (decodedStream.ToArray ());
+                    var nsError = new NSError ();
+                    var nsAttributes = new NSAttributedStringDocumentAttributes ();
+                    nsAttributes.DocumentType = NSDocumentType.RTF;
+                    var attributedString = new NSAttributedString (tnef.Body, nsAttributes, ref nsError);
+                    var tv = new UITextView (new RectangleF (0, 0, 320, 1));
+                    tv.AttributedText = attributedString;
+                    tv.AutoresizingMask = UIViewAutoresizing.FlexibleBottomMargin;
+                    tv.UserInteractionEnabled = false;
+                    tv.SizeToFit ();
+                    var e = new UIViewElement ("", tv, true);
+                    var s = new ThinSection ();
+                    s.Add (e);
+                    root.Add (s);
+                    continue;
+                }
+            }
         }
 
         EntryElementWithIcon subjectEntryElement;

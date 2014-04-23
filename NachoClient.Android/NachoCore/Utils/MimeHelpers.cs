@@ -243,6 +243,11 @@ namespace NachoCore.Utils
                 return;
             }
 
+            if (part.ContentType.Matches ("application", "ms-tnef")) {
+                list.Add (part);
+                return;
+            }
+
             if (entity.ContentType.Matches ("application", "ics")) {
                 NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
                 return;

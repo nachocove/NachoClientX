@@ -23,9 +23,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace OpaqueMail.Net
+namespace NachoCore.Utils
 {
     /// <summary>
     /// Represents an e-mail encoded using Microsoft's TNEF format.
