@@ -557,11 +557,14 @@ namespace NachoCore.Model
 
         private NcResult ReadAncillaryData (SQLiteConnection db)
         {
-            if (!HasReadAncillaryData) {
-                HasReadAncillaryData = true;
-                return ForceReadAncillaryData (db);
+            if (0 == Id) {
+                return NcResult.OK ();
             }
-            return NcResult.OK ();
+            if (HasReadAncillaryData) {
+                return NcResult.OK ();
+            }
+            HasReadAncillaryData = true;
+            return ForceReadAncillaryData (db);
         }
 
         private NcResult ReadAncillaryData ()
@@ -571,6 +574,7 @@ namespace NachoCore.Model
 
         public NcResult ForceReadAncillaryData (SQLiteConnection db)
         {
+            NachoCore.NachoAssert.True (0 < Id);
             DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbRelationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
@@ -586,6 +590,9 @@ namespace NachoCore.Model
         public NcResult InsertAncillaryData (SQLiteConnection db)
         {
             NachoCore.NachoAssert.True (0 < Id);
+
+            // Don't read what will be deleted
+            HasReadAncillaryData = true;
 
             // TODO: Fix this hammer?
             DeleteAncillaryData (db);
@@ -647,19 +654,9 @@ namespace NachoCore.Model
 
         private NcResult DeleteAncillaryData (SQLiteConnection db)
         {
-            var dates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            foreach (var d in dates) {
-                db.Delete (d);
-            }
-            var strings = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            foreach (var s in strings) {
-                db.Delete (s);
-            }
-            var addresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            foreach (var a in addresses) {
-                db.Delete (a);
-            }
-            // TODO: Add error processing
+            db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
+            db.Query<McContactStringAttribute> ("DELETE FROM McContactStringAttribute WHERE ContactId=?", Id);
+            db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
             return NcResult.OK ();
         }
 
