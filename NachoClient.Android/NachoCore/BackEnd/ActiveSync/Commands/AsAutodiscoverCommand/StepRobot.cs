@@ -30,18 +30,18 @@ namespace NachoCore.ActiveSync
                 DnsWait,
                 CertWait,
                 OkWait,
-                ReDirWait}
-            ;
+                ReDirWait,
+            };
 
             public class RobotEvt : SharedEvt
             {
                 new public enum E : uint
                 {
-                    ReDir = (SharedEvt.E.Last + 1),
                     // 302.
-                    NullCode}
-                    // Not a real event. A not-yet-set value.}
-                ;
+                    ReDir = (SharedEvt.E.Last + 1),
+                    // Not a real event. A not-yet-set value.
+                    NullCode,
+                };
             }
             // Pseudo-constants.
             public AsAutodiscoverCommand Command;
@@ -52,8 +52,8 @@ namespace NachoCore.ActiveSync
                 S1,
                 S2,
                 S3,
-                S4}
-            ;
+                S4,
+            };
 
             public Steps Step;
             public HttpMethod MethodToUse;
@@ -73,6 +73,7 @@ namespace NachoCore.ActiveSync
             public bool IsReDir;
             public Uri ReDirUri;
             private List<object> DisposedJunk;
+            private bool IsCancelled;
 
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
@@ -382,6 +383,7 @@ namespace NachoCore.ActiveSync
 
             public void Cancel ()
             {
+                IsCancelled = true;
                 if (null != HttpOp) {
                     HttpOp.Cancel ();
                     DisposedJunk.Add (HttpOp);
@@ -401,7 +403,9 @@ namespace NachoCore.ActiveSync
 
             private void ForTopLevel (Event Event)
             {
-                Command.Sm.PostEvent (Event);
+                if (!IsCancelled) {
+                    Command.Sm.PostEvent (Event);
+                }
             }
 
             public void ServerCertificateEventHandler (HttpWebRequest sender,
