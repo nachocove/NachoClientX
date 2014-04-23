@@ -5,6 +5,7 @@ using DnDns.Query;
 using DnDns.Records;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -12,6 +13,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -39,6 +41,7 @@ namespace NachoCore.ActiveSync
                 {
                     // 302.
                     ReDir = (SharedEvt.E.Last + 1),
+                    Cancel,
                     // Not a real event. A not-yet-set value.
                     NullCode,
                 };
@@ -72,13 +75,17 @@ namespace NachoCore.ActiveSync
             public uint RetriesLeft;
             public bool IsReDir;
             public Uri ReDirUri;
-            private List<object> DisposedJunk;
-            private bool IsCancelled;
-
+            private ConcurrentBag<object> DisposedJunk;
+            // Allocated at constructor, thereafter only accessed by Cancel.
+            private CancellationTokenSource Cts;
+            // Initialized at constructor, thereafter accessed anywhere.
+            private CancellationToken Ct;
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
             {
-                DisposedJunk = new List<object> ();
+                Cts = new CancellationTokenSource ();
+                Ct = Cts.Token;
+                DisposedJunk = new ConcurrentBag<object> ();
                 RefreshRetries ();
 
                 Command = command;
@@ -166,6 +173,7 @@ namespace NachoCore.ActiveSync
                                     Act = DoRobot302,
                                     State = (uint)RobotLst.ReDirWait
                                 },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                             }
                         },
 
@@ -214,6 +222,7 @@ namespace NachoCore.ActiveSync
                                     Act = DoRobotGet2ReDir,
                                     State = (uint)RobotLst.CertWait
                                 },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                             }
                         },
 
@@ -243,6 +252,7 @@ namespace NachoCore.ActiveSync
                                     Act = DoRobotHardFail,
                                     State = (uint)St.Stop
                                 },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                             }
                         },
 
@@ -272,6 +282,7 @@ namespace NachoCore.ActiveSync
                                     Act = DoRobotHardFail,
                                     State = (uint)St.Stop
                                 },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                             }
                         },
 
@@ -297,6 +308,7 @@ namespace NachoCore.ActiveSync
                                     Act = DoRobotHardFail,
                                     State = (uint)St.Stop
                                 },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                             }
                         },
 
@@ -355,6 +367,7 @@ namespace NachoCore.ActiveSync
                                     Act = DoRobot302,
                                     State = (uint)RobotLst.ReDirWait
                                 },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                             }
                         },
                     }
@@ -383,17 +396,14 @@ namespace NachoCore.ActiveSync
 
             public void Cancel ()
             {
-                IsCancelled = true;
-                if (null != HttpOp) {
-                    HttpOp.Cancel ();
-                    DisposedJunk.Add (HttpOp);
-                    HttpOp = null;
+                if (null != Cts) {
+                    Cts.Cancel ();
+                    DisposedJunk.Add (Cts);
+                    Cts = null;
                 }
-                if (null != DnsOp) {
-                    DnsOp.Cancel ();
-                    DisposedJunk.Add (HttpOp);
-                    DnsOp = null;
-                }
+                var cancelEvent = Event.Create ((uint)RobotEvt.E.Cancel, "SRCANCEL");
+                cancelEvent.DropIfStopped = true;
+                StepSm.PostEvent (cancelEvent);
             }
             // UTILITY METHODS.
             private void RefreshRetries ()
@@ -403,7 +413,8 @@ namespace NachoCore.ActiveSync
 
             private void ForTopLevel (Event Event)
             {
-                if (!IsCancelled) {
+                // Once cancelled, we must post NO event to TL SM.
+                if (!Ct.IsCancellationRequested) {
                     Command.Sm.PostEvent (Event);
                 }
             }
@@ -528,6 +539,20 @@ namespace NachoCore.ActiveSync
             private void DoRobotHardFail ()
             {
                 ForTopLevel (Event.Create ((uint)SmEvt.E.HardFail, "SRHARDFAIL", this));
+            }
+
+            private void DoCancel ()
+            {
+                if (null != HttpOp) {
+                    HttpOp.Cancel ();
+                    DisposedJunk.Add (HttpOp);
+                    HttpOp = null;
+                }
+                if (null != DnsOp) {
+                    DnsOp.Cancel ();
+                    DisposedJunk.Add (DnsOp);
+                    DnsOp = null;
+                }
             }
             // *********************************************************************************
             // AsHttpOperationOwner callbacks.

@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -77,6 +78,7 @@ namespace NachoCore.ActiveSync
                 ServerCertAsk,
                 // Pool of to-dos (asking about certs, waiting for robots, etc) is empty.
                 Empty,
+                Cancel,
             };
         };
 
@@ -86,7 +88,7 @@ namespace NachoCore.ActiveSync
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
         private AsOptionsCommand OptCmd;
-        private List<object> DisposedJunk;
+        private ConcurrentBag<object> DisposedJunk;
         private string Domain;
         private string BaseDomain;
         private McServer ServerCandidate;
@@ -95,11 +97,11 @@ namespace NachoCore.ActiveSync
         public NcStateMachine Sm { get; set; }
         // CALLABLE BY THE OWNER.
         public AsAutodiscoverCommand (IBEContext dataSource) : base ("Autodiscover", 
-                                                                        RequestSchema,
-                                                                        dataSource)
+                                                                     RequestSchema,
+                                                                     dataSource)
         {
             ReDirsLeft = 10;
-            DisposedJunk = new List<object> ();
+            DisposedJunk = new ConcurrentBag<object> ();
             Sm = new NcStateMachine ("AUTOD") {
                 LocalEventType = typeof(TlEvt),
                 LocalStateType = typeof(Lst),
@@ -119,6 +121,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // App just set the server so, go test it (skip robots).
                             new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
 
@@ -163,6 +166,7 @@ namespace NachoCore.ActiveSync
                                 Act = DoUiGetServer,
                                 State = (uint)Lst.SrvConfW
                             },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
 
@@ -202,6 +206,8 @@ namespace NachoCore.ActiveSync
                             },
                             // No more asks queued, apply 1st queued success if any, and go back to waiting on robots.
                             new Trans { Event = (uint)TlEvt.E.Empty, Act = DoNop, State = (uint)Lst.RobotW },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
+
                         }
                     },
 
@@ -259,6 +265,7 @@ namespace NachoCore.ActiveSync
                                 Act = DoTestFromUi,
                                 State = (uint)Lst.TestW
                             },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
 
@@ -277,6 +284,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // Got new server value. run-with it and test it.
                             new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
 
@@ -295,6 +303,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
                             // Got new server value. run-with it and test it.
                             new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
 
@@ -311,6 +320,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetServer, State = (uint)Lst.SrvConfW },
                             // Got server config, now test & wait.
                             new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
                 }
@@ -353,14 +363,9 @@ namespace NachoCore.ActiveSync
 
         public override void Cancel ()
         {
-            KillAllRobots ();
-            AskingRobotQ = null;
-            SuccessfulRobotQ = null;
-            if (null != OptCmd) {
-                OptCmd.Cancel ();
-                DisposedJunk.Add (OptCmd);
-                OptCmd = null;
-            }
+            var cancelEvent = Event.Create ((uint)TlEvt.E.Cancel, "AUTODCANCEL");
+            cancelEvent.DropIfStopped = true;
+            Sm.PostEvent (cancelEvent);
         }
 
         private static string DomainFromEmailAddr (string EmailAddr)
@@ -388,8 +393,20 @@ namespace NachoCore.ActiveSync
         // IMPLEMENTATION OF TOP-LEVEL STATE MACHINE.
         protected override void DoUiGetCred ()
         {
-            Cancel ();
+            DoCancel ();
             base.DoUiGetCred ();
+        }
+
+        private void DoCancel ()
+        {
+            KillAllRobots ();
+            AskingRobotQ = null;
+            SuccessfulRobotQ = null;
+            if (null != OptCmd) {
+                OptCmd.Cancel ();
+                DisposedJunk.Add (OptCmd);
+                OptCmd = null;
+            }
         }
 
         private void DoStepsPll ()
@@ -400,7 +417,7 @@ namespace NachoCore.ActiveSync
                 Sm.PostEvent ((uint)SmEvt.E.Success, "AUTODSREQ", winner, null);
                 return;
             }
-            Cancel ();
+            DoCancel ();
             Robots = new List<StepRobot> ();
             AskingRobotQ = new Queue<StepRobot> ();
             SuccessfulRobotQ = new Queue<StepRobot> ();
@@ -451,7 +468,7 @@ namespace NachoCore.ActiveSync
 
         private void DoTest ()
         {
-            Cancel ();
+            DoCancel ();
             OptCmd = new AsOptionsCommand (this);
             OptCmd.Execute (Sm);
         }
