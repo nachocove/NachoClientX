@@ -1,6 +1,7 @@
 # Build / clean everything
 
 all:
+	make -C ../Crashlytics
 	make -C ../iCarouselBinding
 	make -C ../UIImageEffects
 	make -C ../SWRevealViewControllerBinding
@@ -15,6 +16,7 @@ all:
 	make
 
 clean:
+	make -C ../Crashlytics clean
 	make -C ../iCarouselBinding clean
 	make -C ../UIImageEffects clean
 	make -C ../SWRevealViewControllerBinding clean
