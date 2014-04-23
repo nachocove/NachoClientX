@@ -135,6 +135,8 @@ namespace NachoClient.iOS
             AddIfSet (ref section, "Nickname", c.NickName);
             AddIfSet (ref section, "Job title", c.JobTitle);
 
+            RenderBodyIfAvailable (m, section);
+
             AddIfSet (ref section, "Alias", c.Alias);
             AddIfSet (ref section, "File As", c.FileAs);
             AddIfSet (ref section, "Account Name", c.AccountName);
@@ -233,6 +235,20 @@ namespace NachoClient.iOS
 //            public string YomiCompanyName { get; set; }
 
             return root;
+        }
+
+        // TODO: This is horrible!  Handle all body types
+        void RenderBodyIfAvailable(McContact m, Section section)
+        {
+            if (0 == m.BodyId) {
+                return;
+            }
+            if (1 != m.BodyType) {
+                return;
+            }
+            var body = m.GetBody ();
+            var e = new MultilineElement (body);
+            section.Add (e);
         }
     }
 }

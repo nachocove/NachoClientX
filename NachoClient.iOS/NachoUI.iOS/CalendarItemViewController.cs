@@ -17,7 +17,6 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
-using MimeKit;
 
 namespace NachoClient.iOS
 {

@@ -12,7 +12,6 @@ namespace NachoCore.Model
 {
     public class McTask : McItem
     {
-        public int BodyId { set; get; }
         // FIXME - add categories.
 
         public bool Complete { set; get; }
