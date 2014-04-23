@@ -183,6 +183,7 @@ namespace NachoCore.ActiveSync
             public const string FilterType = "FilterType";
             public const string GetChanges = "GetChanges";
             public const string Limit = "Limit";
+            public const string MaxItems = "MaxItems";
             public const string MimeSupport = "MIMESupport";
             public const string MoreAvailable = "MoreAvailable";
             public const string Options = "Options";
@@ -611,7 +612,7 @@ namespace NachoCore.ActiveSync
                 Unknown_11 = 11,
                 ServerFail_12 = 12,
             };
-            // FIXME: Ric is not supported for AS version 12.1.
+            // Note: Ric is not supported for AS version 12.1.
             public enum FolderCreateStatusCode : uint
             {
                 Success_1 = 1,
@@ -674,11 +675,9 @@ namespace NachoCore.ActiveSync
             public static McFolderEntry.ClassCodeEnum TypeCodeToAirSyncClassCodeEnum (TypeCode code)
             {
                 switch (code) {
-                case TypeCode.UserCreatedGeneric_1:
                 case TypeCode.DefaultJournal_11:
                 case TypeCode.UserCreatedJournal_16:
                 case TypeCode.Unknown_18:
-                case TypeCode.Ric_19:
                     //FIXME - we don't know what to do with these yet.
                     Log.Info (Log.LOG_AS, "TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
                     return McFolderEntry.ClassCodeEnum.Notes;
@@ -699,8 +698,10 @@ namespace NachoCore.ActiveSync
                 case TypeCode.UserCreatedCal_13:
                     return McFolderEntry.ClassCodeEnum.Calendar;
 
+                case TypeCode.UserCreatedGeneric_1:
                 case TypeCode.DefaultContacts_9:
                 case TypeCode.UserCreatedContacts_14:
+                case TypeCode.Ric_19:
                     return McFolderEntry.ClassCodeEnum.Contact;
 
                 case TypeCode.DefaultNotes_10:

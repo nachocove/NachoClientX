@@ -206,11 +206,19 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case McFolderEntry.ClassCodeEnum.Contact:
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
+                        if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
+                            // Expressing BodyPreference for RIC gets Protocol Error.
+                            options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "25"));
+                        } else {
+                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                                new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                                new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
+                        }
                         break;
-                        // FIXME - Tasks bodypref.
+
+                    case McFolderEntry.ClassCodeEnum.Tasks:
+                        // We don't express a preference for Tasks yet.
+                        break;
                     }
                     if (options.HasElements) {
                         collection.Add (options);

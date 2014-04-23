@@ -143,6 +143,11 @@ namespace NachoCore.Model
             return folders.First ();
         }
 
+        public static McFolder GetRicContactFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.Ric_19);
+        }
+
         public static McFolder GetDefaultInboxFolder (int accountId)
         {
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultInbox_2);

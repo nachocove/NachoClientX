@@ -30,8 +30,8 @@ namespace NachoCore.ActiveSync
 
         public enum CTLst : uint
         {
-            None = (St.Last + 1),
-            DefOnly,
+            RicOnly = (St.Last + 1),
+            DefNRic,
             All,
         };
 
@@ -184,11 +184,11 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)CTLst.None },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)CTLst.RicOnly },
                         }
                     },
                     new Node {
-                        State = (uint)CTLst.None,
+                        State = (uint)CTLst.RicOnly,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
                         },
@@ -197,11 +197,11 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.DefOnly },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.DefNRic },
                         }
                     },
                     new Node {
-                        State = (uint)CTLst.DefOnly,
+                        State = (uint)CTLst.DefNRic,
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
                         },
@@ -210,7 +210,7 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.All },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.None },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.RicOnly },
                         }
                     },
                     new Node {
@@ -223,7 +223,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.None },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.RicOnly },
                         }
                     },
                 }
@@ -271,15 +271,19 @@ namespace NachoCore.ActiveSync
 
         private List<McFolder> CTFolderListProvider ()
         {
+            var ric = McFolder.GetRicContactFolder (BEContext.Account.Id);
+            var retval = new List<McFolder> ();
+            if (null != ric) {
+                retval.Add (ric);
+            }
             switch ((CTLst)ContactsTasksSm.State) {
-            case CTLst.None:
-                return new List<McFolder> ();
+            case CTLst.RicOnly:
+                return retval;
 
-            case CTLst.DefOnly:
-                return new List<McFolder> () { 
-                    McFolder.GetDefaultContactFolder (BEContext.Account.Id),
-                    McFolder.GetDefaultTaskFolder (BEContext.Account.Id),
-                };
+            case CTLst.DefNRic:
+                retval.Add (McFolder.GetDefaultContactFolder (BEContext.Account.Id));
+                retval.Add (McFolder.GetDefaultTaskFolder (BEContext.Account.Id));
+                return retval; 
 
             case CTLst.All:
                 return AllSyncedContactsTasksFolders ();
@@ -361,8 +365,8 @@ namespace NachoCore.ActiveSync
 
             case McFolder.ClassCodeEnum.Contact:
                 switch ((CTLst)ContactsTasksSm.State) {
-                case CTLst.None:
-                case CTLst.DefOnly:
+                case CTLst.RicOnly:
+                case CTLst.DefNRic:
                 case CTLst.All:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
 
