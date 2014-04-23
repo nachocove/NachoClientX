@@ -109,7 +109,6 @@ namespace NachoCore.Model
 
         /// Nickname for the contact
         public string NickName { get; set; }
-
         // "Hotness" of the contact. Currently, updated by the emails.
         public int Score { get; set; }
 
@@ -226,8 +225,7 @@ namespace NachoCore.Model
         private string displayName;
 
         [Ignore]
-        public List<McContactDateAttribute> Dates
-        {
+        public List<McContactDateAttribute> Dates {
             get {
                 ReadAncillaryData ();
                 return DbDates;
@@ -239,8 +237,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactAddressAttribute> Addresses
-        {
+        public List<McContactAddressAttribute> Addresses {
             get {
                 ReadAncillaryData ();
                 return DbAddresses;
@@ -252,8 +249,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactStringAttribute> PhoneNumbers
-        {
+        public List<McContactStringAttribute> PhoneNumbers {
             get {
                 ReadAncillaryData ();
                 return DbPhoneNumbers;
@@ -265,8 +261,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactStringAttribute> EmailAddresses
-        {
+        public List<McContactStringAttribute> EmailAddresses {
             get {
                 ReadAncillaryData ();
                 return DbEmailAddresses;
@@ -278,8 +273,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactStringAttribute> IMAddresses
-        {
+        public List<McContactStringAttribute> IMAddresses {
             get {
                 ReadAncillaryData ();
                 return DbIMAddresses;
@@ -291,8 +285,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactStringAttribute> Relationships
-        {
+        public List<McContactStringAttribute> Relationships {
             get {
                 ReadAncillaryData ();
                 return DbRelationships;
@@ -304,8 +297,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactStringAttribute> Categories
-        {
+        public List<McContactStringAttribute> Categories {
             get {
                 ReadAncillaryData ();
                 return DbCategories;
@@ -936,53 +928,53 @@ namespace NachoCore.Model
 
         private List<McContactStringAttribute> QueryAncillaryString (McContactStringType type)
         {
-            return BackEnd.Instance.Db.Query<McContactStringAttribute> ("SELECT * FROM " + 
-                "McContactStringAttribute WHERE ContactId = ? AND Type = ?", 
-                Id, type).ToList();
+            return BackEnd.Instance.Db.Query<McContactStringAttribute> ("SELECT * FROM " +
+            "McContactStringAttribute WHERE ContactId = ? AND Type = ?", 
+                Id, type).ToList ();
         }
 
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
             List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c JOIN McContactStringAttribute AS s ON c.Id = s.ContactId WHERE " +
-            " c.AccountId = ? AND " +
-            " s.Type = ? AND " +
-            " s.Value = ? ",
-                accountId, McContactStringType.EmailAddress, emailAddress).ToList();
+                                          " c.AccountId = ? AND " +
+                                          " s.Type = ? AND " +
+                                          " s.Value = ? ",
+                                              accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
             return contactList;
         }
 
         public static List<McContact> QueryByEmailAddressInFolder (int accountId, int folderId, string emailAddress)
         {
             List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
-            " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-            " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-            " WHERE " +
-            " c.AccountId = m.AccountId AND " +
-            " c.AccountId = ? AND " +
-            " s.Type = ? AND " +
-            " s.Value = ? AND " +
-            " m.FolderId = ? ",
-                accountId, McContactStringType.EmailAddress, emailAddress, folderId).ToList ();
+                                          " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                          " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                          " WHERE " +
+                                          " c.AccountId = m.AccountId AND " +
+                                          " c.AccountId = ? AND " +
+                                          " s.Type = ? AND " +
+                                          " s.Value = ? AND " +
+                                          " m.FolderId = ? ",
+                                              accountId, McContactStringType.EmailAddress, emailAddress, folderId).ToList ();
             return contactList;
         }
 
         public static List<McContact> QueryByEmailAddressInSyncedFolder (int accountId, string emailAddress)
         {
             List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
-            " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-            " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-            " JOIN McFolder AS f ON f.Id = m.FolderId " +
-            " WHERE " +
-            " c.AccountId = m.AccountId AND " +
-            " c.AccountId = f.AccountId AND " +
-            " c.AccountId = ? AND " +
-            " s.Type = ? AND " +
-            " s.Value = ? AND " +
-            " f.IsClientOwned = false ",
-                accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
+                                          " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                          " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                          " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                                          " WHERE " +
+                                          " c.AccountId = m.AccountId AND " +
+                                          " c.AccountId = f.AccountId AND " +
+                                          " c.AccountId = ? AND " +
+                                          " s.Type = ? AND " +
+                                          " s.Value = ? AND " +
+                                          " f.IsClientOwned = false ",
+                                              accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
             return contactList;
         }
-       
+
         public void UpdateScore (string reason, int score)
         {
             Log.Info ("SCORE: {0} {1} {2}", DisplayName, score, reason);
