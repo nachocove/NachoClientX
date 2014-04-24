@@ -85,7 +85,7 @@ namespace NachoCore.ActiveSync
                 if (null != xmlDstMsgId) {
                     // We need to re-write the ServerId. TODO verify that SrcMsgId matches pending's ServerId.
                     var SrcMsgId = xmlResponse.Element (m_ns + Xml.Mov.SrcMsgId).Value;
-                    McItem item;
+                    McItem item = null;
                     switch (ClassCode) {
                     case McFolderEntry.ClassCodeEnum.Email:
                         item = McItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
