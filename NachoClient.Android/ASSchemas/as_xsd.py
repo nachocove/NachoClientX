@@ -45,9 +45,11 @@ class AsXsd(ContentHandler):
             s += indent + '<%s>\n' % key
             if len(element[key].keys()) > 0:
                 # Complex type is never redacted
-                s += indent + AsXsd.INDENTATION + '<no_redaction/>\n'
+                s += indent + AsXsd.INDENTATION + '<element_redaction>none</element_redaction>\n'
+                s += indent + AsXsd.INDENTATION + '<attribute_redaction>none</attribute_redaction>\n'
             else:
-                s += indent + AsXsd.INDENTATION + '<full_redaction/>\n'
+                s += indent + AsXsd.INDENTATION + '<element_redaction>full</element_redaction>\n'
+                s += indent + AsXsd.INDENTATION + '<attribute_redaction>full</attribute_redaction>\n'
             s += self._walk(element[key], level+1)
             s += indent + '</%s>\n' % key
         return s

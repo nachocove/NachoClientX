@@ -1,20 +1,26 @@
 <xml>
    <Ping>
-      <no_redaction/>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
       <Folders>
-         <no_redaction/>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
          <Folder>
-            <no_redaction/>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
             <Class>
-               <full_redaction/>
+               <element_redaction>full</element_redaction>
+               <attribute_redaction>full</attribute_redaction>
             </Class>
             <Id>
-               <full_redaction/>
+               <element_redaction>full</element_redaction>
+               <attribute_redaction>full</attribute_redaction>
             </Id>
          </Folder>
       </Folders>
       <HeartbeatInterval>
-         <full_redaction/>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
       </HeartbeatInterval>
    </Ping>
 </xml>
