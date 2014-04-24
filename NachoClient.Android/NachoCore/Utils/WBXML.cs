@@ -169,13 +169,18 @@ namespace NachoCore.Wbxml
                     break;
                 }
             }
+
+            // TODO - Need to feed the redacted XML into a storage that can hold and
+            // forward to the telemetry server.
+            Log.Info ("debug_XML = \n{0}", NcXmlFilterSet.Responses.Filter (XmlDoc));
         }
 
         public byte[] GetBytes ()
         {
             List<byte> byteList = new List<byte> ();
 
-            // XML redaction
+            // TODO - Need to feed the redacted XML into a storage that can hold and
+            // forward to the telemetry server.
             Log.Info ("debug_XML = \n{0}", NcXmlFilterSet.Requests.Filter (XmlDoc));
 
             byteList.Add (versionByte);
