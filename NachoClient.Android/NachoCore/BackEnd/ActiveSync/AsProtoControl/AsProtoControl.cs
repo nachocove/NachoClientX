@@ -1231,6 +1231,9 @@ namespace NachoCore.ActiveSync
                     return Event.Create ((uint)CtlEvt.E.SRplyMail, "ASPCDSR");
 
                 case McPending.Operations.EmailMove:
+                case McPending.Operations.CalMove:
+                case McPending.Operations.ContactMove:
+                case McPending.Operations.TaskMove:
                     return Event.Create ((uint)CtlEvt.E.Move, "ASPCDPM");
 
                 case McPending.Operations.AttachmentDownload:

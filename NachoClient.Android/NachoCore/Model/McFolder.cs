@@ -187,7 +187,7 @@ namespace NachoCore.Model
             " m.FolderEntryId = ? AND " +
             " f.IsAwaitingDelete = 0 AND " +
             " m.ClassCode = ? ",
-                accountId, folderEntryId, (uint)classCode);
+                accountId, folderEntryId, (uint)classCode).ToList ();
         }
 
         public static List<McFolder> QueryClientOwned (int accountId, bool isClientOwned)
@@ -215,14 +215,40 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             // Delete anything in the folder and any map entries (recursively).
-            // FIXME - query needs to find non-email items and sub-dirs.
-            var contents = McItem.QueryByFolderId<McEmailMessage> (AccountId, Id);
-            foreach (var item in contents) {
-                var map = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId, Id, item.Id,
-                              McItem.ClassCodeEnum.Email);
-                // FIXME capture result of ALL delete ops.
+            var contentMaps = McMapFolderFolderEntry.QueryByFolderId (AccountId, Id);
+            foreach (var map in contentMaps) {
                 map.Delete ();
-                item.Delete ();
+                switch (map.ClassCode) {
+                case McItem.ClassCodeEnum.Email:
+                    var emailMessage = McFolderEntry.QueryById<McEmailMessage> (map.FolderEntryId);
+                    emailMessage.Delete ();
+                    break;
+
+                case McItem.ClassCodeEnum.Calendar:
+                    var cal = McFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
+                    cal.Delete ();
+                    break;
+
+                case McItem.ClassCodeEnum.Contact:
+                    var contact = McFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
+                    contact.Delete ();
+                    break;
+
+                case McItem.ClassCodeEnum.Tasks:
+                    var task = McFolderEntry.QueryById<McTask> (map.FolderEntryId);
+                    task.Delete ();
+                    break;
+
+                case McItem.ClassCodeEnum.Folder:
+                    var folder = McFolderEntry.QueryById<McFolder> (map.FolderEntryId);
+                    // recursion.
+                    folder.Delete ();
+                    break;
+
+                default:
+                    NachoAssert.True (false);
+                    break;
+                }
             }
             return base.Delete ();
         }

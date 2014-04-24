@@ -24,7 +24,7 @@ namespace NachoCore
             folder = McFolder.GetUserFolder (message.AccountId, type, 0, ArchiveFolderName);
             NachoAssert.True (null != folder);
 
-            BackEnd.Instance.MoveItemCmd (message.AccountId, message.Id, folder.Id);
+            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
         }
 
         public static void Delete(McEmailMessage message)

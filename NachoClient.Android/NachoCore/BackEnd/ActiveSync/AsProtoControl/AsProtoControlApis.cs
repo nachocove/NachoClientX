@@ -206,39 +206,46 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
-        public override string MoveItemCmd (int emailMessageId, int destFolderId)
+        private string MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
+            McItem item, McFolder srcFolder, int destFolderId)
         {
-            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
-            if (null == emailMessage) {
+            if (null == srcFolder) {
                 return null;
             }
             var destFolder = McObject.QueryById<McFolder> (destFolderId);
             if (null == destFolder) {
                 return null;
             }
-            var srcFolders = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId);
-            if (null == srcFolders || 0 == srcFolders.Count) {
-                return null;
-            }
-            // FIXME - we should not be guessing on src-folder!
-            var srcFolder = srcFolders.First ();
-            var moveUpdate = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailMove,
-                ServerId = emailMessage.ServerId,
+
+            var move = new McPending (Account.Id) {
+                Operation = op,
+                ServerId = item.ServerId,
                 ParentId = srcFolder.ServerId,
                 DestParentId = destFolder.ServerId,
             };
 
-            moveUpdate.Insert ();
+            move.Insert ();
             // Move the actual item.
-            destFolder.Link (emailMessage);
-            srcFolder.Unlink (emailMessage);
+            destFolder.Link (item);
+            srcFolder.Unlink (item);
 
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            StatusInd (NcResult.Info (subKind));
             Task.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
             });
-            return moveUpdate.Token;
+            return move.Token;
+        }
+
+        public override string MoveEmailCmd (int emailMessageId, int destFolderId)
+        {
+            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            if (null == emailMessage) {
+                return null;
+            }
+            var srcFolder = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId).FirstOrDefault ();
+
+            return MoveItemCmd (McPending.Operations.EmailMove, NcResult.SubKindEnum.Info_EmailMessageSetChanged,
+                emailMessage, srcFolder, destFolderId);
         }
 
         private bool GetItemAndFolder<T> (int itemId, 
@@ -494,6 +501,18 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
+        public override string MoveCalCmd (int calId, int destFolderId)
+        {
+            var cal = McObject.QueryById<McCalendar> (calId);
+            if (null == cal) {
+                return null;
+            }
+            var srcFolder = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId).FirstOrDefault ();
+
+            return MoveItemCmd (McPending.Operations.CalMove, NcResult.SubKindEnum.Info_CalendarSetChanged,
+                cal, srcFolder, destFolderId);
+        }
+
         public override string CreateContactCmd (int contactId, int folderId)
         {
             McContact contact;
@@ -581,6 +600,18 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
+        public override string MoveContactCmd (int contactId, int destFolderId)
+        {
+            var contact = McObject.QueryById<McContact> (contactId);
+            if (null == contact) {
+                return null;
+            }
+            var srcFolder = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId).FirstOrDefault ();
+
+            return MoveItemCmd (McPending.Operations.ContactMove, NcResult.SubKindEnum.Info_ContactSetChanged,
+                contact, srcFolder, destFolderId);
+        }
+
         public override string CreateTaskCmd (int taskId, int folderId)
         {
             McTask task;
@@ -666,6 +697,18 @@ namespace NachoCore.ActiveSync
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
             });
             return pending.Token;
+        }
+
+        public override string MoveTaskCmd (int taskId, int destFolderId)
+        {
+            var task = McObject.QueryById<McTask> (taskId);
+            if (null == task) {
+                return null;
+            }
+            var srcFolder = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId).FirstOrDefault ();
+
+            return MoveItemCmd (McPending.Operations.TaskMove, NcResult.SubKindEnum.Info_TaskSetChanged,
+                task, srcFolder, destFolderId);
         }
 
         public override string RespondCalCmd (int calId, NcResponseType response)

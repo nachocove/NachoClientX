@@ -90,7 +90,7 @@ namespace NachoCore
 
         public abstract string MarkEmailReadCmd (int emailMessageId);
 
-        public abstract string MoveItemCmd (int emailMessageId, int destFolderId);
+        public abstract string MoveEmailCmd (int emailMessageId, int destFolderId);
 
         public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
@@ -108,6 +108,8 @@ namespace NachoCore
 
         public abstract string DeleteCalCmd (int calId);
 
+        public abstract string MoveCalCmd (int calId, int destFolderId);
+
         public abstract string RespondCalCmd (int calId, NcResponseType response);
 
         public abstract string CreateContactCmd (int contactId, int folderId);
@@ -116,11 +118,15 @@ namespace NachoCore
 
         public abstract string DeleteContactCmd (int contactId);
 
+        public abstract string MoveContactCmd (int contactId, int destFolderId);
+
         public abstract string CreateTaskCmd (int taskId, int folderId);
 
         public abstract string UpdateTaskCmd (int taskId);
 
         public abstract string DeleteTaskCmd (int taskId);
+
+        public abstract string MoveTaskCmd (int taskId, int destFolderId);
 
         public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
                                                 bool isClientOwned, bool isHidden);

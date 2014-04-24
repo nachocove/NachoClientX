@@ -275,9 +275,9 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).DeleteEmailCmd (emailMessageId);
         }
 
-        public string MoveItemCmd (int accountId, int emailMessageId, int destFolderId)
+        public string MoveEmailCmd (int accountId, int emailMessageId, int destFolderId)
         {
-            return ServiceFromAccountId (accountId).MoveItemCmd (emailMessageId, destFolderId);
+            return ServiceFromAccountId (accountId).MoveEmailCmd (emailMessageId, destFolderId);
         }
 
         public string DnldAttCmd (int accountId, int attId)
@@ -298,6 +298,11 @@ namespace NachoCore
         public string DeleteCalCmd (int accountId, int calId)
         {
             return ServiceFromAccountId (accountId).DeleteCalCmd (calId);
+        }
+
+        public string MoveCalCmd (int accountId, int calId, int destFolderId)
+        {
+            return ServiceFromAccountId (accountId).MoveCalCmd (calId, destFolderId);
         }
 
         public string RespondCalCmd (int accountId, int calId, NcResponseType response)
@@ -344,6 +349,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).DeleteContactCmd (contactId);
         }
 
+        public string MoveContactCmd (int accountId, int contactId, int destFolderId)
+        {
+            return ServiceFromAccountId (accountId).MoveContactCmd (contactId, destFolderId);
+        }
+
         public string CreateTaskCmd (int accountId, int taskId, int folderId)
         {
             return ServiceFromAccountId (accountId).CreateTaskCmd (taskId, folderId);
@@ -357,6 +367,11 @@ namespace NachoCore
         public string DeleteTaskCmd (int accountId, int taskId)
         {
             return ServiceFromAccountId (accountId).DeleteTaskCmd (taskId);
+        }
+
+        public string MoveTaskCmd (int accountId, int taskId, int destFolderId)
+        {
+            return ServiceFromAccountId (accountId).MoveTaskCmd (taskId, destFolderId);
         }
 
         public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,

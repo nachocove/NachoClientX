@@ -39,6 +39,7 @@ namespace NachoCore.Model
             ContactCreate,
             ContactUpdate,
             ContactDelete,
+            ContactMove,
             EmailDelete,
             EmailMove,
             EmailMarkRead,
@@ -48,10 +49,12 @@ namespace NachoCore.Model
             CalCreate,
             CalUpdate,
             CalDelete,
+            CalMove,
             CalRespond,
             TaskCreate,
             TaskUpdate,
             TaskDelete,
+            TaskMove,
         };
         // Lifecycle of McPening:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.

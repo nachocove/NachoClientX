@@ -56,7 +56,7 @@ namespace NachoCore
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
         string DeleteEmailCmd (int accountId, int emailMessageId);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
-        string MoveItemCmd (int accountId, int emailMessageId, int destFolderId);
+        string MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
         string MarkEmailReadCmd (int accountId, int emailMessageId);
         // set the flag value on the email.
@@ -72,13 +72,16 @@ namespace NachoCore
         string CreateCalCmd (int accountId, int calId, int folderId);
         string UpdateCalCmd (int accountId, int calId);
         string DeleteCalCmd (int accountId, int calId);
+        string MoveCalCmd (int accountId, int calId, int destFolderId);
         string RespondCalCmd (int accountId, int calId, NcResponseType response);
         string CreateContactCmd (int accountId, int contactId, int folderId);
         string UpdateContactCmd (int accountId, int contactId);
         string DeleteContactCmd (int accountId, int contactId);
+        string MoveContactCmd (int accountId, int contactId, int destFolderId);
         string CreateTaskCmd (int accountId, int taskId, int folderId);
         string UpdateTaskCmd (int accountId, int taskId);
         string DeleteTaskCmd (int accountId, int taskId);
+        string MoveTaskCmd (int accountId, int taskId, int destFolderId);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
                           bool IsClientOwned, bool isHidden);
