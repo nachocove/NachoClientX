@@ -2,6 +2,9 @@ using System;
 using System.Globalization;
 using System.Xml.Linq;
 using System.Xml;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.IO;
 
 namespace NachoCore.Utils
 {
@@ -20,48 +23,69 @@ namespace NachoCore.Utils
         public const int LOG_SYS = 1024;
         public const int LOG_XML = 2048;
         public static int logLevel = LOG_SYNC + LOG_TIMER + LOG_STATE + LOG_AS + LOG_XML;
+        // Determine if caller info (method, file name, line #) is included in log messages
+        // Set it to false if it is slowing things down too much.
+        public static Boolean CallerInfo = true;
 
         public Log ()
         {
         }
 
-        public static void Error (int when, string fmt, params object[] list)
+        private static string GetMethodShortName (string methodName)
+        {
+            int left = methodName.IndexOf ("(");
+            string methodName2 = methodName.Remove (left);
+            int space = methodName.LastIndexOf (" ");
+            return methodName2.Substring (space + 1);
+        }
+
+        private static void _Log (int when, string fmt, string level, params object[] list)
         {
             if ((when & logLevel) == 0) {
                 return;
             }
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), "Error: " + fmt, list));
+
+            // Get the caller information
+            StackTrace st = new StackTrace (true);
+            StackFrame sf = st.GetFrame(2);
+            string callInfo = "";
+            if (CallerInfo) {
+                callInfo = String.Format (" [{0}:{1}, {2}()]",  
+                    Path.GetFileName (sf.GetFileName ()), sf.GetFileLineNumber (), 
+                    sf.GetMethod ().Name);
+            }
+            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
+                level + callInfo + ": " + fmt, list));
+        }
+
+        public static void Error (int when, string fmt, params object[] list)
+        {
+            _Log (when, fmt, "Error", list);
         }
 
         public static void Warn (int when, string fmt, params object[] list)
         {
-            if ((when & logLevel) == 0) {
-                return;
-            }
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), "Warn: " + fmt, list));
+            _Log (when, fmt, "Warn", list);
         }
 
         public static void Info (int when, string fmt, params object[] list)
         {
-            if ((when & logLevel) == 0) {
-                return;
-            }
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), "Info: " + fmt, list));
+            _Log (when, fmt, "Info", list);
         }
 
         public static void Error (string fmt, params object[] list)
         {
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), "Error: " + fmt, list));
+            Error (logLevel, fmt, list);
         }
 
         public static void Warn (string fmt, params object[] list)
         {
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), "Warn: " + fmt, list));
+            Warn (logLevel, fmt, list);
         }
 
         public static void Info (string fmt, params object[] list)
         {
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), "Info: " + fmt, list));
+            Info (logLevel, fmt, list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
