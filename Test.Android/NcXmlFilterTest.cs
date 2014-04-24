@@ -1,0 +1,115 @@
+﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//
+using System;
+using System.Xml.Linq;
+using NUnit.Framework;
+using NachoCore.Utils;
+
+namespace Test.Android
+{
+    public class NcXmlFilterTest
+    {
+        public NcXmlFilterTest ()
+        {
+        }
+
+        public class Filter1 : NcXmlFilter
+        {
+            public Filter1 () : base ("Filter1")
+            {
+                NcXmlFilterNode node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
+                node0.Add (new NcXmlFilterNode ("full", RedactionType.FULL, RedactionType.FULL));
+                node0.Add (new NcXmlFilterNode ("partial", RedactionType.PARTIAL, RedactionType.PARTIAL));
+                node0.Add (new NcXmlFilterNode ("none", RedactionType.NONE, RedactionType.NONE));
+
+                Root = node0;
+            }
+        }
+
+        public class Filter2 : NcXmlFilter
+        {
+            public Filter2 () : base ("Filter2")
+            {
+                NcXmlFilterNode node0, node1, node2;
+
+                node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
+                node1 = new NcXmlFilterNode ("employee", RedactionType.NONE, RedactionType.NONE);
+                node0.Add (node1);
+                node1.Add (new NcXmlFilterNode ("name", RedactionType.NONE, RedactionType.NONE));
+                node1.Add (new NcXmlFilterNode ("salary", RedactionType.FULL, RedactionType.FULL));
+                node1.Add (new NcXmlFilterNode ("title", RedactionType.PARTIAL, RedactionType.PARTIAL));
+                node2 = new NcXmlFilterNode ("team", RedactionType.NONE, RedactionType.NONE);
+                node1.Add (node2);
+                node2.Add (new NcXmlFilterNode ("secret_member", RedactionType.PARTIAL, RedactionType.PARTIAL));
+                node2.Add (new NcXmlFilterNode ("member", RedactionType.NONE, RedactionType.NONE));
+                Root = node0;
+            }
+        }
+
+        [Test]
+        public void NcXmlFilterTest1 ()
+        {
+            string[] xml = {
+                // verify full redaction of both elements and attributes
+                "<full name1=\"Bob\" name2=\"John\">Hello, world</full>",
+                // verify partial redaction of elements and attributes
+                "<partial name1=\"Mark\" name2=\"Jim\">Hey, world</partial>",
+                // verify no redaction of elements and attributes
+                "<none name1=\"Kim\" name2=\"Mary\">Hi, world</none>",
+            };
+
+            string[] expected = {
+                "<full>-redacted-</full>",
+                "<partial redacted=\"name1,name2\">-redacted:10 bytes-</partial>",
+                "<none name1=\"Kim\" name2=\"Mary\">Hi, world</none>",
+            };
+
+            Filter1 filter = new Filter1();
+            for (int n = 0; n < xml.Length; n++) {
+                XDocument docIn = XDocument.Parse (xml [n]);
+                XDocument docOut = filter.Filter (docIn);
+                Assert.AreEqual (expected [n], docOut.ToString ());
+            }
+        }
+
+        [Test]
+        public void NcXmlFilterTest2 ()
+        {
+            string[] xml = {
+                "<employee status=\"active\">" +
+                "  <name>bob</name>" +
+                "  <title>Accountant</title>" +
+                "  <team>" +
+                "    <member>robert</member>" +
+                "    <member>robbie</member>" +
+                "    <secret_member>rob</secret_member>" +
+                "  </team>" +
+                "</employee>"
+            };
+
+            string[] expected = {
+                "<employee status=\"active\">\r\n" +
+                "  <name>bob</name>\r\n" +
+                "  <title>-redacted:10 bytes-</title>\r\n" +
+                "  <team>\r\n" +
+                "    <member>robert</member>\r\n" +
+                "    <member>robbie</member>\r\n" +
+                "    <secret_member>-redacted:3 bytes-</secret_member>\r\n" +
+                "  </team>\r\n" +
+                "</employee>"
+            };
+
+            Filter2 filter = new Filter2 ();
+            for (int n = 0; n < xml.Length; n++) {
+                XDocument docIn = XDocument.Parse (xml [n]);
+                XDocument docOut = filter.Filter (docIn);
+                Assert.AreEqual (expected [n], docOut.ToString ());
+            }
+        }
+    }
+
+ 
+
+
+}
+
