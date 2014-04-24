@@ -200,6 +200,9 @@
     <Compile Include="NachoCore\Utils\NcTimer.cs" />
     <Compile Include="NachoCore\Utils\WBXML.cs" />
     <Compile Include="NachoCore\Utils\ServerCertificatePeek.cs" />
+    <Compile Include="NachoCore\Utils\NcXmlFilter.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -358,6 +361,7 @@
     <Folder Include="NachoPlatform.Android\libs\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="NachoCore\Mockables\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

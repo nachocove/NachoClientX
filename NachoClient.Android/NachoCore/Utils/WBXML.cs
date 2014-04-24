@@ -11,6 +11,7 @@ using System.Xml;
 using System.Xml.Linq;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
 {
@@ -173,6 +174,9 @@ namespace NachoCore.Wbxml
         public byte[] GetBytes ()
         {
             List<byte> byteList = new List<byte> ();
+
+            // XML redaction
+            Log.Info ("debug_XML = \n{0}", NcXmlFilterSet.Requests.Filter (XmlDoc));
 
             byteList.Add (versionByte);
             byteList.Add (publicIdentifierByte);

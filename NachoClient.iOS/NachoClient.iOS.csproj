@@ -148,6 +148,7 @@
     <Folder Include="Content\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
     <Folder Include="NachoCore\Mockables\" />
+    <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -618,6 +619,15 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\WBXML.cs">
       <Link>NachoCore\Utils\WBXML.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcXmlFilter.cs">
+      <Link>NachoCore\Utils\NcXmlFilter.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

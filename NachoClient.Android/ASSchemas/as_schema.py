@@ -4,6 +4,7 @@ from object_stack import ObjectStack
 import sys
 import os
 
+
 class Output:
     def __init__(self, output):
         self.output = output
@@ -48,29 +49,21 @@ class AsSchemaElement:
     def generate_cs(self, output, level):
         # Create the node
         var_name = self.node(level)
-        output.line(2, '// %s', self.name)
-        if self.value is None:
-            output.line(2, '%s = new XElement ("%s");', var_name, self.name)
-        else:
-            output.line(2, '%s = new XElement ("%s", "%s");', var_name, self.name, self.value)
-
-        # Add all attributes
-        for (key, value) in self.attrs.items():
-            if key == 'redaction':
-                value = value.upper()
-            else:
-                value = '"%s"' % value
-            output.line(2, '%s.Add(new Attribute("%s", %s);', var_name, key, value)
+        element_redaction = 'RedactionType.' + self.attrs['element_redaction'].upper()
+        attribute_redaction = 'RedactionType.' + self.attrs['attribute_redaction'].upper()
+        output.line(3, '// %s', self.name)
+        output.line(3, '%s = new NcXmlFilterNode ("%s", %s, %s);', var_name, self.name,
+                    element_redaction, attribute_redaction)
 
         # Add all children nodes
         for child in self.children:
             assert isinstance(child, AsSchemaElement)
             child.generate_cs(output, level+1)
-            output.line(2, '%s.Add(%s); // %s -> %s', var_name, self.node(level+1), self.name, child.name)
+            output.line(3, '%s.Add(%s); // %s -> %s', var_name, self.node(level+1), self.name, child.name)
 
 
 class AsSchema(ContentHandler):
-    REDACTION_TYPES = ['no_redaction', 'full_redaction', 'redact_with_length']
+    REDACTION_TYPES = ['element_redaction', 'attribute_redaction']
     """
     This class represents an ActiveSync schema XML file. An AS schema XML
     file is a XML file that describes attributes of various ActiveSync XML
@@ -84,27 +77,30 @@ class AsSchema(ContentHandler):
         self.stack = ObjectStack()
         self.root = None
         self.class_suffix = class_suffix
+        self.name_space = os.path.splitext(os.path.basename(xml_file))[0]
+        self.value = ''
         xml.sax.parse(xml_file, self)
 
     def startElement(self, name, attrs):
         cur_element = self.stack.peek()
-        if name in AsSchema.REDACTION_TYPES:
-            # This is an attribute of the element
-            assert cur_element is not None
-            cur_element.set_attr('redaction', name)
-        else:
-            # This is a child element
-            child = AsSchemaElement(name)
-            if name == 'xml':
-                self.root = child
-            if cur_element:
-                cur_element.add_child(child)
-            self.stack.push(child)
+        child = AsSchemaElement(name)
+        if name == 'xml':
+            self.root = child
+        if cur_element and name not in AsSchema.REDACTION_TYPES:
+            cur_element.add_child(child)
+        self.value = ''
+        self.stack.push(child)
 
     def endElement(self, name):
-        if name not in AsSchema.REDACTION_TYPES:
-            node = self.stack.pop()
-            assert node.name == name
+        node = self.stack.pop()
+        assert node.name == name
+        if name in AsSchema.REDACTION_TYPES:
+            cur_element = self.stack.peek()
+            assert cur_element is not None
+            cur_element.set_attr(name, self.value)
+
+    def characters(self, content):
+        self.value += content
 
     @classmethod
     def line(cls, output, indent, fmt, *args):
@@ -118,36 +114,40 @@ class AsSchema(ContentHandler):
         Generate a C# class that provides XML filtering
         """
         output.line(0, 'using System.Xml.Linq;')
+        output.line(0, 'using NachoCore.Utils;')
         output.line(0, '')
         output.line(0, 'namespace NachoCore.Wbxml')
         output.line(0, '{')
-        output.line(1, 'class AsXmlFilter%s : XmlFilter', self.class_suffix)
+        output.line(1, 'public class AsXmlFilter%s : NcXmlFilter', self.class_suffix)
         output.line(1, '{')
+        output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.name_space)
+        output.line(2, '{')
         # Create all the variables
-        for n in range(self.stack.max_depth()-1):
-            output.line(2, 'XElement %s = null;', AsSchemaElement.node(n))
-        output.line(2, 'XAttribute attribute = null;\n')
+        for n in range(self.stack.max_depth()-1): # -1 for redaction tag
+            output.line(3, 'NcXmlFilterNode %s = null;', AsSchemaElement.node(n))
+        output.line(0, '')
+        output.line(3, 'node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);')
 
         # Create the code that sets up the tree
         for child in self.root.children:
-            child.generate_cs(output, 0)
+            child.generate_cs(output, 1)
 
-        output.line(2, '')
-        output.line(2, 'Root = node0;')
+        output.line(3, 'node0.Add(node1);')
+        output.line(3, '')
+        output.line(3, 'Root = node0;')
+        output.line(2, '}')
         output.line(1, '}')
         output.line(0, '}')
 
 
-def process(fname):
-    (base, ext) = os.path.splitext(os.path.basename(fname))
-    as_schema = AsSchema(fname, base)
-    output = Output(open(base + '.cs', 'w'))
+def process(fname, class_suffix):
+    as_schema = AsSchema(fname, class_suffix)
+    output = Output(open('AsXmlFilter' + class_suffix + '.cs', 'w'))
     as_schema.generate_xml_filter_cs(output)
 
 
 def main():
-    for fname in sys.argv[1:]:
-        process(fname)
+    process(sys.argv[1], sys.argv[2])
 
 
 if __name__ == '__main__':
