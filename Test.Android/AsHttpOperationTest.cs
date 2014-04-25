@@ -105,6 +105,11 @@ namespace Test.iOS
             return true;
         }
 
+        public virtual void StatusInd (NcResult result)
+        {
+            // Dummy.
+        }
+
         public virtual void StatusInd (bool didSucceed)
         {
             // Dummy.
