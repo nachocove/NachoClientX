@@ -69,8 +69,9 @@ namespace NachoCore.ActiveSync
         private const string KRequest = "request";
         private const string KResponse = "response";
         private const uint KDefaultDelaySeconds = 10;
-        private const int KDefaultTimeoutSeconds = 15;
-        private const uint KDefaultRetries = 15;
+        private const int KDefaultTimeoutSeconds = 10;
+        private const double KDefaultTimeoutExpander = 1.5;
+        private const uint KDefaultRetries = 8;
         private const string KToXML = "ToXML";
         private string CommandName;
         private IBEContext BEContext;
@@ -226,9 +227,13 @@ namespace NachoCore.ActiveSync
         {
             if (0 < TriesLeft) {
                 --TriesLeft;
+                if (TriesLeft != KDefaultRetries) {
+                    Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * KDefaultTimeoutExpander));
+                }
                 Log.Info (Log.LOG_AS, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
             } else {
+                Owner.ResoveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
             }
         }
@@ -421,6 +426,8 @@ namespace NachoCore.ActiveSync
                     HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
                 } catch (Exception ex) {
                     Log.Info ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                    // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
+                    Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
                     HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
                 }
             }
@@ -437,6 +444,7 @@ namespace NachoCore.ActiveSync
             }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
             if (null != preProcessEvent) {
+                // If the owner is returning an event, they MUST have resolved all pendings.
                 return Final (preProcessEvent);
             }
             XDocument responseDoc;
@@ -457,9 +465,12 @@ namespace NachoCore.ActiveSync
                             decoder.LoadBytes (ContentData);
                         } catch (TaskCanceledException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
+                            Owner.ResoveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
                         } catch (WBXMLReadPastEndException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
+                            // We are deferring because we think that a truncated WBXML string is likely transient.
+                            Owner.ResoveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
                         }
                         responseDoc = decoder.XmlDoc;
@@ -470,24 +481,29 @@ namespace NachoCore.ActiveSync
                             var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
                             if (null != statusEvent) {
                                 Log.Info (Log.LOG_AS, "Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
+                                // If owner is returning an event, then they MUST resolve all pending.
                                 return Final (statusEvent);
                             }
                         }
                         Log.Info (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
+                        // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
                         Log.Info (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
+                        // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:
                         if (null == ContentType) {
                             Log.Warn (Log.LOG_AS, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
                         }
+                        // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response));
                     }
                 } 
+                // Owner MUST resolve all pending.
                 return Final (Owner.ProcessResponse (this, response));
 
             // NOTE: ALWAYS resolve pending on Final, and ONLY resolve pending on Final.
