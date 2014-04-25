@@ -195,12 +195,21 @@ namespace NachoClient.iOS
         public override void DidEnterBackground (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Did Enter Background");
+            var imageView = new UIImageView (Window.Frame);
+            imageView.Tag = 101;    // Give some decent tagvalue or keep a reference of imageView in self
+            imageView.BackgroundColor = UIColor.Red;
+            UIApplication.SharedApplication.KeyWindow.AddSubview (imageView);
+            UIApplication.SharedApplication.KeyWindow.BringSubviewToFront (imageView);
         }
         // This method is called as part of the transiton from background to active state.
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Will Enter Foreground");
             BackEnd.Instance.ForceSync ();
+            var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (101);
+            if (null != imageView) {
+                imageView.RemoveFromSuperview ();
+            }
         }
         // Equivalent to applicationDidBecomeActive
         public override void OnActivated (UIApplication application)
