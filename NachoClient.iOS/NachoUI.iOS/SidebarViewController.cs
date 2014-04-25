@@ -68,7 +68,6 @@ namespace NachoClient.iOS
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
         const string SidebarToAttachmentsSegueId = "SidebarToAttachments";
-
         public UITableView tableview;
 
         public SidebarViewController (IntPtr handle) : base (handle)
@@ -78,8 +77,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            this.RevealViewController ().Delegate = new SWRevealDelegate ();
         }
 
         /// <summary>
@@ -160,7 +157,7 @@ namespace NachoClient.iOS
             View.SendSubviewToBack (tableview);
         }
 
-        protected StyledStringElement PrepareMenuElement(SidebarMenu m)
+        protected StyledStringElement PrepareMenuElement (SidebarMenu m)
         {
             StyledStringElement e;
             if (null == m.IconName) {
@@ -184,7 +181,7 @@ namespace NachoClient.iOS
 
         protected void AddToMenu (SidebarMenu m)
         {
-            menu.Add (PrepareMenuElement(m));
+            menu.Add (PrepareMenuElement (m));
         }
 
         protected void FireSegue (SidebarMenu m)
@@ -254,9 +251,9 @@ namespace NachoClient.iOS
             this.RevealViewController ().SetFrontViewPosition (FrontViewPosition.Left, true);
         }
 
-        public void AddWhiteGradient(UIView view)
+        public void AddWhiteGradient (UIView view)
         {
-            var layer = new CAGradientLayer();
+            var layer = new CAGradientLayer ();
             var colors = new CGColor[] {
                 UIColor.White.CGColor,
                 UIColor.Clear.CGColor,
@@ -264,33 +261,6 @@ namespace NachoClient.iOS
             layer.Colors = colors;
             layer.Frame = view.Frame;
             view.Layer.AddSublayer (layer);
-        }
-
-        public class SWRevealDelegate : SWRevealViewControllerDelegate
-        {
-            public override void WillMoveToPosition (SWRevealViewController revealController, FrontViewPosition position)
-            {
-                if (SWRevealViewControllerBinding.FrontViewPosition.Left == revealController.FrontViewPosition) {
-                    var lockingView = new UIView ();
-                    lockingView.Alpha = 0.5f;
-                    lockingView.BackgroundColor = UIColor.Black;
-                    lockingView.TranslatesAutoresizingMaskIntoConstraints = false;
-                    var tap = new UITapGestureRecognizer (revealController, new MonoTouch.ObjCRuntime.Selector ("revealToggle:"));
-                    lockingView.AddGestureRecognizer (tap);
-                    lockingView.AddGestureRecognizer (revealController.PanGestureRecognizer);
-                    lockingView.Tag = 1000;
-                    revealController.FrontViewController.View.AddSubview (lockingView);
-                    NSDictionary viewsDictionary = new NSDictionary ("lockingView", lockingView);
-                    revealController.FrontViewController.View.AddConstraints (NSLayoutConstraint.FromVisualFormat ("|[lockingView]|", 0, null, viewsDictionary));
-                    revealController.FrontViewController.View.AddConstraints (NSLayoutConstraint.FromVisualFormat ("V:|[lockingView]|", 0, null, viewsDictionary));
-                    lockingView.SizeToFit ();
-                } else {
-                    var lockingView = revealController.FrontViewController.View.ViewWithTag (1000);
-                    if (null != lockingView) {
-                        lockingView.RemoveFromSuperview ();
-                    }
-                }
-            }
         }
     }
 }
