@@ -72,6 +72,12 @@
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="cp bin/${ProjectConfigPlat}/${ProjectConfigName}/NachoClientiOS.app.dSYM/Contents/Resources/DWARF/NachoClientiOS bin/" />
+        <Command type="AfterBuild" command="xcodebuild build" workingdir="${ProjectDir}/UploadDSym/nachomail" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <DebugType>full</DebugType>
