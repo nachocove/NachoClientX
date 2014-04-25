@@ -94,6 +94,8 @@ namespace NachoCore.Utils
             Error_FolderSyncFailed,
             Error_MeetingResponseFailed,
             Error_SearchCommandFailed,
+            Error_AuthFailBlocked,
+            Error_AuthFailPasswordExpired,
         };
 
         public enum WhyEnum {

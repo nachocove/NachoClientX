@@ -167,6 +167,11 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
+        public virtual void StatusInd (NcResult result)
+        {
+            BEContext.Owner.StatusInd (BEContext.ProtoControl, result);
+        }
+
         public virtual void StatusInd (bool didSucceed)
         {
             if (didSucceed) {

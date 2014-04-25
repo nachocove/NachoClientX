@@ -23,7 +23,9 @@ namespace NachoCore.ActiveSync
         HttpMethod Method (AsHttpOperation Sender);
         bool UseWbxml (AsHttpOperation Sender);
         bool DoSendPolicyKey (AsHttpOperation Sender);
+        // TODO: is this really a good idea?
         void StatusInd (bool didSucceed);
+        void StatusInd (NcResult result);
         bool WasAbleToRephrase ();
         void ResoveAllFailed (NcResult.WhyEnum why);
         void ResoveAllDeferred ();

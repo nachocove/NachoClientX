@@ -176,7 +176,9 @@ namespace NachoClient.iOS
            
             FetchResult = UIBackgroundFetchResult.Failed;
             BackEnd.Instance.StatusIndEvent += StatusHandler;
+            Console.WriteLine ("ForceSync START 1");
             BackEnd.Instance.ForceSync ();
+            Console.WriteLine ("ForceSync END 1");
         }
         //
         // This method is invoked when the application is about to move from active to inactive state.
@@ -205,7 +207,9 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Will Enter Foreground");
+            Console.WriteLine ("ForceSync START 2");
             BackEnd.Instance.ForceSync ();
+            Console.WriteLine ("ForceSync END 2");
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (101);
             if (null != imageView) {
                 imageView.RemoveFromSuperview ();

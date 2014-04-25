@@ -363,9 +363,7 @@ namespace NachoCore.ActiveSync
 
         public override void Cancel ()
         {
-            var cancelEvent = Event.Create ((uint)TlEvt.E.Cancel, "AUTODCANCEL");
-            cancelEvent.DropIfStopped = true;
-            Sm.PostEvent (cancelEvent);
+            Sm.PostEvent ((uint)TlEvt.E.Cancel, "AUTODCANCEL");
         }
 
         private static string DomainFromEmailAddr (string EmailAddr)

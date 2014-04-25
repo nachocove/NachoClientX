@@ -74,8 +74,6 @@ namespace NachoCore.Utils
 
         public string Message { get; set; }
 
-        public bool DropIfStopped { get; set; }
-
         public Event[] Sequence { get; set; }
 
         public static Event Create (Event[] sequence)
@@ -168,6 +166,7 @@ namespace NachoCore.Utils
             State = StartState;
             PostEvent ((uint)SmEvt.E.Launch, "SMSTART");
         }
+
         /// <summary>
         /// Can be called from within an Action function to clear the event Q.
         /// Don't call if not in an action function - it won't be effective all the time.
@@ -233,15 +232,9 @@ namespace NachoCore.Utils
                     Arg = fireEvent.Arg;
                     Message = fireEvent.Message;
                     if ((uint)St.Stop == State) {
-                        if (fireEvent.DropIfStopped) {
-                            Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
-                                NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                            continue;
-                        } else {
-                            Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => EVENT WHILE IN St.Stop",
-                                NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                            throw new Exception ();
-                        }
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        continue;
                     }
                     var hotNode = TransTable.Where (x => State == x.State).Single ();
                     if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {

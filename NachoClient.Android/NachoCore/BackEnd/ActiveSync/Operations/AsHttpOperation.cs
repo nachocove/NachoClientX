@@ -204,9 +204,7 @@ namespace NachoCore.ActiveSync
 
         public void Cancel ()
         {
-            var cancelEvent = Event.Create ((uint)HttpOpEvt.E.Cancel, "HTTPOPCANCEL");
-            cancelEvent.DropIfStopped = true;
-            HttpOpSm.PostEvent (cancelEvent);
+            HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Cancel, "HTTPOPCANCEL");
         }
 
         private void DoDelay ()
@@ -273,9 +271,7 @@ namespace NachoCore.ActiveSync
         private void DelayTimerCallback (object State)
         {
             DoCancelDelayTimer ();
-            var timeoutEvent = Event.Create ((uint)SmEvt.E.Launch, "ASHTTPDTC");
-            timeoutEvent.DropIfStopped = true;
-            HttpOpSm.PostEvent (timeoutEvent);
+            HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "ASHTTPDTC");
         }
 
         private void CancelTimeoutTimer ()
@@ -290,9 +286,7 @@ namespace NachoCore.ActiveSync
         private void TimeoutTimerCallback (object State)
         {
             if ((IHttpClient)State == Client) {
-                var timeoutEvent = Event.Create ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
-                timeoutEvent.DropIfStopped = true;
-                HttpOpSm.PostEvent (timeoutEvent);
+                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
             }
         }
         // This method should only be called if the response indicates that the new server is a legit AS server.
@@ -387,9 +381,7 @@ namespace NachoCore.ActiveSync
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
-                        var timeoutEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
-                        timeoutEvent.DropIfStopped = true;
-                        HttpOpSm.PostEvent (timeoutEvent);
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                 }
                 return;
@@ -399,9 +391,7 @@ namespace NachoCore.ActiveSync
                     CancelTimeoutTimer ();
                     ReportCommResult (ServerUri.Host, true);
                     // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
-                    var webExEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
-                    webExEvent.DropIfStopped = true;
-                    HttpOpSm.PostEvent (webExEvent);
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
                 }
                 return;
             } catch (NullReferenceException ex) {
@@ -409,9 +399,7 @@ namespace NachoCore.ActiveSync
                 // As best I can tell, this may be driven by bug(s) in the Mono stack.
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
-                    var nRefEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
-                    nRefEvent.DropIfStopped = true;
-                    HttpOpSm.PostEvent (nRefEvent);
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                 }
                 return;
             } catch (Exception ex) {
@@ -419,9 +407,7 @@ namespace NachoCore.ActiveSync
                 if (myClient == Client) {
                     CancelTimeoutTimer ();
                     Log.Error (Log.LOG_AS, "Exception: {0}", ex.ToString ());
-                    var nRefEvent = Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
-                    nRefEvent.DropIfStopped = true;
-                    HttpOpSm.PostEvent (nRefEvent);
+                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
                 }
             }
 
@@ -594,6 +580,18 @@ namespace NachoCore.ActiveSync
                 }
                 // If no X-MS-Location, we are effed.
                 return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP451E", null, "HttpStatusCode.451 with no X-MS-Location.");
+
+            case (HttpStatusCode)456:
+                ReportCommResult (ServerUri.Host, false);
+                Owner.ResoveAllDeferred ();
+                Owner.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AuthFailBlocked));
+                return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP456");
+
+            case (HttpStatusCode)457:
+                ReportCommResult (ServerUri.Host, false);
+                Owner.ResoveAllDeferred ();
+                Owner.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AuthFailPasswordExpired));
+                return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP457");
 
             case HttpStatusCode.InternalServerError:
                 // FIXME: Have some way to detect big loops (e.g. 500->auto-d->500).

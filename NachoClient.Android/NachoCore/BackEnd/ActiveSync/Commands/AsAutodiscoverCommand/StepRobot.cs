@@ -401,9 +401,7 @@ namespace NachoCore.ActiveSync
                     DisposedJunk.Add (Cts);
                     Cts = null;
                 }
-                var cancelEvent = Event.Create ((uint)RobotEvt.E.Cancel, "SRCANCEL");
-                cancelEvent.DropIfStopped = true;
-                StepSm.PostEvent (cancelEvent);
+                StepSm.PostEvent ((uint)RobotEvt.E.Cancel, "SRCANCEL");
             }
             // UTILITY METHODS.
             private void RefreshRetries ()
@@ -616,6 +614,11 @@ namespace NachoCore.ActiveSync
             public HttpMethod Method (AsHttpOperation Sender)
             {
                 return MethodToUse;
+            }
+
+            public void StatusInd (NcResult result)
+            {
+                Command.BEContext.Owner.StatusInd (Command.BEContext.ProtoControl, result);
             }
 
             public void StatusInd (bool didSucceed)
