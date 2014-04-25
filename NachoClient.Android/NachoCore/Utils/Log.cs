@@ -5,6 +5,7 @@ using System.Xml;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.IO;
+using System.Reflection;
 
 namespace NachoCore.Utils
 {
@@ -48,11 +49,17 @@ namespace NachoCore.Utils
             // Get the caller information
             StackTrace st = new StackTrace (true);
             StackFrame sf = st.GetFrame(2);
+            MethodBase mb = sf.GetMethod ();
             string callInfo = "";
             if (CallerInfo) {
-                callInfo = String.Format (" [{0}:{1}, {2}()]",  
-                    Path.GetFileName (sf.GetFileName ()), sf.GetFileLineNumber (), 
-                    sf.GetMethod ().Name);
+                if (0 == sf.GetFileLineNumber ()) {
+                    // No line # info. Must be a release build
+                    callInfo = String.Format (" [{0}.{1}()]", mb.DeclaringType.Name, mb.Name);
+                } else {
+                    callInfo = String.Format (" [{0}:{1}, {2}.{3}()]",
+                        Path.GetFileName (sf.GetFileName ()), sf.GetFileLineNumber (),
+                        mb.DeclaringType.Name, mb.Name);
+                }
             }
             Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
                 level + callInfo + ": " + fmt, list));
@@ -75,17 +82,17 @@ namespace NachoCore.Utils
 
         public static void Error (string fmt, params object[] list)
         {
-            Error (logLevel, fmt, list);
+            _Log (logLevel, fmt, "Error", list);
         }
 
         public static void Warn (string fmt, params object[] list)
         {
-            Warn (logLevel, fmt, list);
+            _Log (logLevel, fmt, "Warn", list);
         }
 
         public static void Info (string fmt, params object[] list)
         {
-            Info (logLevel, fmt, list);
+            _Log (logLevel, fmt, "Info", list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
