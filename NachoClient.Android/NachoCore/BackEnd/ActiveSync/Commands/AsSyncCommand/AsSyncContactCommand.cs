@@ -14,15 +14,15 @@ namespace NachoCore.ActiveSync
     {
         public static void ServerSaysAddContact (XElement command, McFolder folder)
         {
-            ProcessContactItem (command, folder);
+            ProcessContactItem (command, folder, true);
         }
 
         public static void ServerSaysChangeContact (XElement command, McFolder folder)
         {
-            ProcessContactItem (command, folder);
+            ProcessContactItem (command, folder, false);
         }
 
-        public static void ProcessContactItem (XElement command, McFolder folder)
+        public static void ProcessContactItem (XElement command, McFolder folder, bool isAdd)
         {
             // Convert the XML to an AsContact
             var asResult = AsContact.FromXML (Ns, command);
@@ -36,11 +36,19 @@ namespace NachoCore.ActiveSync
             NachoCore.NachoAssert.True (mcResult.isOK ());
             NachoCore.NachoAssert.True (null != mcContact);
 
-            // TODO: Do we have to ghost or merge here?
             mcContact.AccountId = folder.AccountId;
-            var ur = mcContact.Insert();
-            folder.Link (mcContact);
-            NachoCore.NachoAssert.True (0 < ur);
+
+            var existingContact = McFolderEntry.QueryByServerId<McContact> (folder.AccountId, mcContact.ServerId);
+
+            if (null == existingContact) {
+                var ur = mcContact.Insert ();
+                folder.Link (mcContact);
+                NachoCore.NachoAssert.True (0 < ur);
+            } else {
+                mcContact.Id = existingContact.Id;
+                var ur = mcContact.Update ();
+                NachoCore.NachoAssert.True (0 < ur);
+            }
         }
     }
 }
