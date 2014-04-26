@@ -26,6 +26,8 @@ using System.Text;
 
 namespace NachoCore.Utils
 {
+    #pragma warning disable 219
+
     /// <summary>
     /// Represents an e-mail encoded using Microsoft's TNEF format.
     /// </summary>
