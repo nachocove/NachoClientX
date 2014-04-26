@@ -12,6 +12,10 @@ namespace NachoCore.ActiveSync
     public partial class AsSyncCommand : AsCommand
     {
         private List<McFolder> FoldersInRequest;
+        private bool HadEmailMessageSetChanges;
+        private bool HadContactSetChanges;
+        private bool HadCalendarSetChanges;
+        private bool HadTaskSetChanges;
         private bool HadEmailMessageChanges;
         private bool HadContactChanges;
         private bool HadCalendarChanges;
@@ -502,20 +506,33 @@ namespace NachoCore.ActiveSync
             }
             BEContext.ProtoControl.SyncStrategy.ReportSyncResult (reloadedFolders);
 
-            if (HadEmailMessageChanges) {
+            if (HadEmailMessageSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
             if (HadNewUnreadEmailMessageInInbox) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox));
             }
-            if (HadContactChanges) {
+            if (HadContactSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             }
-            if (HadCalendarChanges) {
+            if (HadCalendarSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             }
-            if (HadTaskChanges) {
+            if (HadTaskSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
+            }
+            // TODO: Should we sent these per-message?
+            if (HadEmailMessageChanges) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageChanged));
+            }
+            if (HadContactChanges) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactChanged));
+            }
+            if (HadCalendarChanges) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged));
+            }
+            if (HadTaskChanges) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskChanged));
             }
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
@@ -614,11 +631,11 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.Add:
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Contacts:
-                        HadContactChanges = true;
+                        HadContactSetChanges = true;
                         ServerSaysAddContact (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Email:
-                        HadEmailMessageChanges = true;
+                        HadEmailMessageSetChanges = true;
                         var emailMessage = ServerSaysAddEmail (command, folder);
                         if (null != emailMessage && Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
                             false == emailMessage.IsRead) {
@@ -626,11 +643,11 @@ namespace NachoCore.ActiveSync
                         }
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
-                        HadCalendarChanges = true;
+                        HadCalendarSetChanges = true;
                         ServerSaysAddCalendarItem (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
-                        HadTaskChanges = true;
+                        HadTaskSetChanges = true;
                         ServerSaysAddTask (command, folder);
                         break;
                     default:
@@ -641,15 +658,19 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.Change:
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
+                        HadEmailMessageChanges = true;
                         ServerSaysChangeEmail (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
+                        HadCalendarChanges = true;
                         ServerSaysChangeCalendarItem (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
+                        HadContactChanges = true;
                         ServerSaysChangeContact (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
+                        HadTaskChanges = true;
                         ServerSaysChangeTask (command, folder);
                         break;
                     default:
@@ -662,28 +683,28 @@ namespace NachoCore.ActiveSync
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
-                        HadEmailMessageChanges = true;
+                        HadEmailMessageSetChanges = true;
                         var emailMessage = McFolderEntry.QueryByServerId<McEmailMessage> (BEContext.Account.Id, delServerId);
                         if (null != emailMessage) {
                             emailMessage.Delete ();
                         }
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
-                        HadCalendarChanges = true;
+                        HadCalendarSetChanges = true;
                         var cal = McFolderEntry.QueryByServerId<McCalendar> (BEContext.Account.Id, delServerId);
                         if (null != cal) {
                             cal.Delete ();
                         }
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
-                        HadContactChanges = true;
+                        HadContactSetChanges = true;
                         var contact = McFolderEntry.QueryByServerId<McContact> (BEContext.Account.Id, delServerId);
                         if (null != contact) {
                             contact.Delete ();
                         }
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
-                        HadTaskChanges = true;
+                        HadTaskSetChanges = true;
                         var task = McFolderEntry.QueryByServerId<McTask> (BEContext.Account.Id, delServerId);
                         if (null != task) {
                             task.Delete ();

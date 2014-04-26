@@ -24,6 +24,10 @@ namespace NachoCore.Utils
             Info_ContactSetChanged,
             Info_CalendarSetChanged,
             Info_TaskSetChanged,
+            Info_EmailMessageChanged,
+            Info_ContactChanged,
+            Info_CalendarChanged,
+            Info_TaskChanged,
 
             Info_NewUnreadEmailMessageInInbox,
             Info_EmailMessageMarkedReadSucceeded,
