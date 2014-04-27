@@ -220,7 +220,8 @@ namespace NachoCore.Model
         public McContact GetFromContact ()
         {
             List<McContact> contactList = GetContactsFromEmailAddressString (From);
-            NachoAssert.True (1 == contactList.Count);
+            // TODO: Do we need to return just one?
+            // NachoAssert.True (1 == contactList.Count);
             return contactList [0];
         }
 
