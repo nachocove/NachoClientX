@@ -120,8 +120,7 @@ namespace NachoClient.iOS
             return From;
         }
 
-
-        public static NachoSwipeTableViewCell GetCell(UITableView tableView, List<McEmailMessage> messageThread )
+        public static NachoSwipeTableViewCell GetCell (UITableView tableView, List<McEmailMessage> messageThread)
         {
             const string CellIdentifier = "EmailMessageThreadCell";
 
@@ -157,17 +156,10 @@ namespace NachoClient.iOS
 
             return cell;
         }
-
-
     }
 
     public class MessageSummaryView : UIView
     {
-        static UIFont SenderFont = UIFont.SystemFontOfSize (19);
-        static UIFont SubjectFont = UIFont.SystemFontOfSize (14);
-        static UIFont TextFont = UIFont.SystemFontOfSize (13);
-        static UIFont CountFont = UIFont.BoldSystemFontOfSize (13);
-
         public string Sender { get; private set; }
 
         public string Summary { get; private set; }
@@ -215,45 +207,58 @@ namespace NachoClient.iOS
             using (var ctx = UIGraphics.GetCurrentContext ()) {
                 const int padright = 21;
                 float boxWidth;
-                SizeF ssize;
+                float dateSize ;
 
                 if (MessageCount > 0) {
-                    var ms = MessageCount.ToString ();
-                    ssize = StringSize (ms, CountFont);
-                    boxWidth = Math.Min (22 + ssize.Width, 18);
-                    var crect = new RectangleF (Bounds.Width - 20 - boxWidth, 32, boxWidth, 16);
-                    var rectPath = UIBezierPath.FromRoundedRect (crect, 3.0f);
-                    using (var context = UIGraphics.GetCurrentContext ()) {
-                        context.SaveState ();
-                        UIColor.LightGray.SetFill ();
-                        rectPath.Fill ();
-                        context.RestoreState ();
+                    using (var CountFont = UIFont.BoldSystemFontOfSize (13)) {
+                        var ms = MessageCount.ToString ();
+                        var ssize = StringSize (ms, CountFont);
+                        boxWidth = Math.Min (22 + ssize.Width, 18);
+                        var crect = new RectangleF (Bounds.Width - 20 - boxWidth, 32, boxWidth, 16);
+                        var rectPath = UIBezierPath.FromRoundedRect (crect, 3.0f);
+                        using (var context = UIGraphics.GetCurrentContext ()) {
+                            context.SaveState ();
+                            UIColor.LightGray.SetFill ();
+                            rectPath.Fill ();
+                            context.RestoreState ();
+                        }
+                        UIColor.White.SetColor ();
+                        crect.X += 5;
+                        DrawString (ms, crect, CountFont);
                     }
-                    UIColor.White.SetColor ();
-                    crect.X += 5;
-                    DrawString (ms, crect, CountFont);
                     boxWidth += padright;
                 } else {
                     boxWidth = 0;
                 }
 
                 UIColor.FromRGB (36, 112, 216).SetColor ();
-                var date = Pretty.CompactDateString (Date);
-                ssize = StringSize (date, SubjectFont);
-                float dateSize = ssize.Width + padright + 5;
-                DrawString (date, new RectangleF (Bounds.Width - dateSize, 6, dateSize, 14), SubjectFont, UILineBreakMode.Clip, UITextAlignment.Left);
+                using (var DateFont = UIFont.SystemFontOfSize (14)) {
+                    var date = Pretty.CompactDateString (Date);
+                    var ssize = StringSize (date, DateFont);
+                    dateSize = ssize.Width + padright + 5;
+                    DrawString (date, new RectangleF (Bounds.Width - dateSize, 6, dateSize, 14), DateFont, UILineBreakMode.Clip, UITextAlignment.Left);
+                }
 
                 const int offset = 33;
                 float bw = Bounds.Width - offset;
 
                 UIColor.Black.SetColor ();
-                var sender = Pretty.SenderString (Sender);
-                var subject = Pretty.SubjectString (Subject);
-                DrawString (sender, new PointF (offset, 2), bw - dateSize, SenderFont, UILineBreakMode.TailTruncation);
-                DrawString (subject, new PointF (offset, 23), bw - offset - boxWidth, SubjectFont, UILineBreakMode.TailTruncation);
+
+                using (var SenderFont = UIFont.SystemFontOfSize (19)) {
+                    var sender = Pretty.SenderString (Sender);
+                    DrawString (sender, new PointF (offset, 2), bw - dateSize, SenderFont, UILineBreakMode.TailTruncation);
+                }
+
+                using (var SubjectFont = UIFont.SystemFontOfSize (14)) {
+                    var subject = Pretty.SubjectString (Subject);
+                    DrawString (subject, new PointF (offset, 23), bw - offset - boxWidth, SubjectFont, UILineBreakMode.TailTruncation);
+                }
 
                 UIColor.Gray.SetColor ();
-                DrawString (Summary, new RectangleF (offset, 40, bw - boxWidth, 34), TextFont, UILineBreakMode.TailTruncation, UITextAlignment.Left);
+
+                using (var TextFont = UIFont.SystemFontOfSize (13)) {
+                    DrawString (Summary, new RectangleF (offset, 40, bw - boxWidth, 34), TextFont, UILineBreakMode.TailTruncation, UITextAlignment.Left);
+                }
 
                 if (NachoMessageIcon.Checked == Icon) {
                     drawRectChecked (new RectangleF (5, 27, 22, 22));
@@ -363,6 +368,5 @@ namespace NachoClient.iOS
                 bezierPath.Stroke ();
             }
         }
-
     }
 }
