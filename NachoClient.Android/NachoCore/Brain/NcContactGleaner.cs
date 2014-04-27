@@ -20,7 +20,7 @@ namespace NachoCore.Brain
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
-            var nextMsg = BackEnd.Instance.Db.Table<McEmailMessage> ().FirstOrDefault (x => x.HasBeenGleaned == false);
+            var nextMsg = BackEnd.Instance.Db.Table<McEmailMessage> ().Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
             if (null == nextMsg) {
                 return;
             }
@@ -36,7 +36,7 @@ namespace NachoCore.Brain
         {
         }
 
-        protected static void MarkAsGleaned(McEmailMessage emailMessage)
+        protected static void MarkAsGleaned (McEmailMessage emailMessage)
         {
             emailMessage.HasBeenGleaned = true;
             BackEnd.Instance.Db.Update (emailMessage);
@@ -50,9 +50,9 @@ namespace NachoCore.Brain
             }
             MimeMessage mimeMsg;
             try {
-                string body = emailMessage.GetBody();
-                if(null == body) {
-                    MarkAsGleaned(emailMessage);
+                string body = emailMessage.GetBody ();
+                if (null == body) {
+                    MarkAsGleaned (emailMessage);
                     return;
                 }
                 using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body))) {
@@ -122,16 +122,16 @@ namespace NachoCore.Brain
                             string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
                             switch (items.Length) {
                             case 2:
-                                if (0 < mbAddr.Name.IndexOf(',')) {
-                                        // Last name, First name
-                                        contact.LastName = items [0];
-                                        contact.FirstName = items [1];
-                                    } else {
-                                        // First name, Last name
-                                        contact.FirstName = items [0];
-                                        contact.LastName = items [1];
-                                    }
-                                    break;
+                                if (0 < mbAddr.Name.IndexOf (',')) {
+                                    // Last name, First name
+                                    contact.LastName = items [0];
+                                    contact.FirstName = items [1];
+                                } else {
+                                    // First name, Last name
+                                    contact.FirstName = items [0];
+                                    contact.LastName = items [1];
+                                }
+                                break;
                             case 3:
                                 if (-1 == mbAddr.Name.IndexOf (',')) {
                                     contact.FirstName = items [0];
