@@ -99,14 +99,6 @@ namespace NachoClient.iOS
                 ReloadDataMaintainingPosition (true);
             };
 
-            // Watch for changes from the back end
-            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
-                var s = (StatusIndEventArgs)e;
-                if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                    ReloadDataMaintainingPosition (false);
-                }
-            };
-
             UIView backgroundView = new UIView (new RectangleF (0, 0, 320, 480));
             backgroundView.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
             TableView.BackgroundView = backgroundView;
@@ -168,6 +160,8 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             this.NavigationController.ToolbarHidden = true;
 
+            BackEnd.Instance.StatusIndEvent += StatusIndicatorCallback;
+
             messageThreads.Refresh ();
             TableView.ReloadData ();
 
@@ -182,6 +176,20 @@ namespace NachoClient.iOS
 //                    Console.WriteLine ("    CID: {0}", msg.ConversationId);
 //                }
 //            }
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            BackEnd.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                ReloadDataMaintainingPosition (false);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -275,7 +283,7 @@ namespace NachoClient.iOS
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe Checkmark cell");
-                    ArchiveThisMessage(indexPath);
+                    ArchiveThisMessage (indexPath);
                 });
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
@@ -335,7 +343,7 @@ namespace NachoClient.iOS
             NcEmailArchiver.Delete (m);
         }
 
-        public void ArchiveThisMessage(NSIndexPath indexPath)
+        public void ArchiveThisMessage (NSIndexPath indexPath)
         {
             var t = messageThreads.GetEmailThread (indexPath.Row);
             var m = t.First ();
