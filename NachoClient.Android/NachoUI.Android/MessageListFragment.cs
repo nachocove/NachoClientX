@@ -46,7 +46,7 @@ namespace NachoClient.AndroidClient
                 var fragment = new MessageViewFragment ();
                 var bundle = new Bundle ();
                 var thread = messages.GetEmailThread (e.Position);
-                var message = thread.First ();
+                var message = thread.SingleMessageSpecialCase ();
                 bundle.PutInt ("accountId", message.AccountId);
                 bundle.PutInt ("messageId", message.Id);
                 bundle.PutInt ("folderId", folderId);
@@ -97,7 +97,7 @@ namespace NachoClient.AndroidClient
         }
 
         public override McEmailMessage this [int position] {  
-            get { return messages.GetEmailThread (position).First (); }
+            get { return messages.GetEmailThread (position).SingleMessageSpecialCase (); }
         }
 
         public override int Count {
@@ -118,7 +118,7 @@ namespace NachoClient.AndroidClient
             var received = view.FindViewById<TextView> (Resource.Id.received);
 
             var thread = messages.GetEmailThread (position);
-            var message = thread.First ();
+            var message = thread.SingleMessageSpecialCase ();
 
             sender.Text = message.From;
             subject.Text = Pretty.SubjectString (message.Subject);

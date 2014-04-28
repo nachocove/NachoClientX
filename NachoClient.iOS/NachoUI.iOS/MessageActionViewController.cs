@@ -11,7 +11,7 @@ namespace NachoClient.iOS
 {
     public partial class MessageActionViewController : BlurryViewController, IUITableViewDelegate, INachoMessageController
     {
-        public List<McEmailMessage> thread;
+        public McEmailMessageThread thread;
         protected INachoMessageControllerDelegate owner;
         protected INachoFolders folders = null;
 

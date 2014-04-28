@@ -114,7 +114,7 @@ namespace NachoClient.AndroidClient
             var fragment = new MessageListFragment ();
             var bundle = new Bundle ();
             var thread = messages.GetEmailThread (position);
-            var message = thread.First ();
+            var message = thread.SingleMessageSpecialCase ();
             bundle.PutInt ("accountId", message.AccountId);
             bundle.PutInt ("messageId", message.Id);
             bundle.PutInt ("folderId", folder.Id);

@@ -192,7 +192,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToMessageView") {
                 var indexPath = (NSIndexPath)sender;
                 var vc = (MessageViewController)segue.DestinationViewController;
-                vc.thread = (List<McEmailMessage>)hotList [indexPath.Row];
+                vc.thread = (McEmailMessageThread)hotList [indexPath.Row];
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
@@ -356,9 +356,9 @@ namespace NachoClient.iOS
 
                 var item = owner.hotList [(int)index];
 
-                var messageThread = item as List<McEmailMessage>;
+                var messageThread = item as McEmailMessageThread;
                 if (null != messageThread) {
-                    var message = messageThread.First ();
+                    var message = messageThread.SingleMessageSpecialCase ();
                     view.AddSubview (EmailView (message));
                 }
                 var calendarItem = item as McCalendar;
@@ -470,7 +470,7 @@ namespace NachoClient.iOS
 
                 var indexPath = NSIndexPath.FromItemSection (index, 0);
  
-                var messageThread = item as List<McEmailMessage>;
+                var messageThread = item as McEmailMessageThread;
                 if (null != messageThread) {
                     owner.PerformSegue ("NachoNowToMessageView", indexPath);
                     return;

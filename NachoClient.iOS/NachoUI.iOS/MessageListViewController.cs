@@ -128,7 +128,7 @@ namespace NachoClient.iOS
                 var idList = new int[messageThreads.Count ()];
                 for (var i = 0; i < messageThreads.Count (); i++) {
                     var m = messageThreads.GetEmailThread (i);
-                    idList [i] = m.First ().Id;
+                    idList [i] = m.GetEmailMessageIndex(i);
                 }
                 messageThreads.Refresh ();
                 InvokeOnMainThread (() => {
@@ -138,7 +138,7 @@ namespace NachoClient.iOS
                         var targetId = idList [row];
                         for (int i = 0; i < messageThreads.Count (); i++) {
                             var m = messageThreads.GetEmailThread (i);
-                            if (m.First ().Id == targetId) {
+                            if (m.GetEmailMessageIndex(i) == targetId) {
                                 p = NSIndexPath.FromItemSection (i, 0);
                                 break;
                             }
@@ -339,14 +339,14 @@ namespace NachoClient.iOS
         public void DeleteThisMessage (NSIndexPath indexPath)
         {
             var t = messageThreads.GetEmailThread (indexPath.Row);
-            var m = t.First ();
+            var m = t.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (m);
         }
 
         public void ArchiveThisMessage (NSIndexPath indexPath)
         {
             var t = messageThreads.GetEmailThread (indexPath.Row);
-            var m = t.First ();
+            var m = t.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (m);
         }
     }

@@ -21,7 +21,7 @@ namespace NachoClient.iOS
         public static readonly NSString ReplyAll = new NSString ("ReplyAll");
         public static readonly NSString Forward = new NSString ("Forward");
         public string Action;
-        public List<McEmailMessage> ActionThread;
+        public McEmailMessageThread ActionThread;
         public INachoMessageControllerDelegate owner;
 
         public ComposeViewController (IntPtr handle) : base (handle)
@@ -286,7 +286,7 @@ namespace NachoClient.iOS
                 return ""; // Creating a message
             }
 
-            var ActionMessage = ActionThread.First ();
+            var ActionMessage = ActionThread.SingleMessageSpecialCase ();
             NachoAssert.True (null != ActionMessage);
 
             if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
@@ -306,7 +306,7 @@ namespace NachoClient.iOS
         /// </summary>
         void InitializeMessageForAction ()
         {
-            var ActionMessage = ActionThread.First ();
+            var ActionMessage = ActionThread.SingleMessageSpecialCase ();
 
             if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
                 AddressList.Add (new NcEmailAddress (NcEmailAddress.Kind.To, ActionMessage.From));

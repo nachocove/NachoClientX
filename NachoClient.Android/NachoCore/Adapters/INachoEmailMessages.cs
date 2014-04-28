@@ -8,8 +8,10 @@ namespace NachoCore
 {
     public interface INachoEmailMessages
     {
-        int Count();
-        void Refresh();
-        List<McEmailMessage> GetEmailThread (int i);
+        int Count ();
+
+        void Refresh ();
+
+        McEmailMessageThread GetEmailThread (int i);
     }
 }

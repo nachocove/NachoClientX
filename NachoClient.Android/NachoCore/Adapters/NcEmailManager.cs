@@ -57,7 +57,7 @@ namespace NachoCore
             {
             }
 
-            public List<McEmailMessage> GetEmailThread (int i)
+            public McEmailMessageThread GetEmailThread (int i)
             {
                 NachoAssert.CaseError ();
                 return null;

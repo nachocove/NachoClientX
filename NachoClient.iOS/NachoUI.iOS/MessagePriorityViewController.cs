@@ -12,7 +12,7 @@ namespace NachoClient.iOS
 {
     public partial class MessagePriorityViewController : BlurryViewController, INachoMessageController
     {
-        public List<McEmailMessage> thread;
+        public McEmailMessageThread thread;
         protected INachoMessageControllerDelegate owner;
 
         public MessagePriorityViewController (IntPtr handle) : base (handle)

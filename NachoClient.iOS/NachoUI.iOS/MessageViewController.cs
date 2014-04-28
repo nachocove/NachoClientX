@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 {
     public partial class MessageViewController : UIViewController, INachoMessageControllerDelegate
     {
-        public List<McEmailMessage> thread;
+        public McEmailMessageThread thread;
         protected UIView view;
         protected UIView attachmentsView;
         protected List<McAttachment> attachments;
@@ -135,7 +135,7 @@ namespace NachoClient.iOS
         void MarkAsRead ()
         {
             var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
-            var message = thread.First ();
+            var message = thread.SingleMessageSpecialCase ();
             if (false == message.IsRead) {
                 BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
             }
@@ -143,14 +143,14 @@ namespace NachoClient.iOS
 
         public void DeleteThisMessage ()
         {
-            var m = thread.First ();
+            var m = thread.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (m);
             NavigationController.PopViewControllerAnimated (true);
         }
 
         protected void CreateView ()
         {
-            var m = thread.First ();
+            var m = thread.SingleMessageSpecialCase ();
 
             attachments = McAttachment.QueryByItemId<McEmailMessage> (m.AccountId, m.Id);
 
@@ -286,7 +286,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var m = thread.First ();
+            var m = thread.SingleMessageSpecialCase ();
             attachments = McAttachment.QueryByItemId<McEmailMessage> (m.AccountId, m.Id);
 
             for (int i = 0; i < attachments.Count; i++) {
@@ -404,7 +404,7 @@ namespace NachoClient.iOS
                     frame.Height = 1;
                     frame.Width = 320;
                     web.Frame = frame;
-                    frame.Height = web.ScrollView.ContentSize.Height;
+                    frame.Height = web.ScrollView.ContentSize.Height > View.Bounds.Height ? View.Bounds.Height : web.ScrollView.ContentSize.Height;
                     Log.Info ("frame = {0}", frame);
 
                     web.Frame = frame;

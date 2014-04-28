@@ -120,7 +120,7 @@ namespace NachoClient.iOS
             return From;
         }
 
-        public static NachoSwipeTableViewCell GetCell (UITableView tableView, List<McEmailMessage> messageThread)
+        public static NachoSwipeTableViewCell GetCell (UITableView tableView, McEmailMessageThread messageThread)
         {
             const string CellIdentifier = "EmailMessageThreadCell";
 
@@ -136,7 +136,7 @@ namespace NachoClient.iOS
                 cell.DefaultColor = UIColor.White;
             }
 
-            var message = messageThread.First ();
+            var message = messageThread.SingleMessageSpecialCase();
             var sender = message.From;
             var subject = message.Subject;
             if (null == message.Summary) {

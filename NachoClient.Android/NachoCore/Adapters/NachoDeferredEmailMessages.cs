@@ -11,7 +11,7 @@ namespace NachoCore
 {
     public class NachoDeferredEmailMessages : INachoEmailMessages
     {
-        List<List<McEmailMessage>> threadList;
+        List<McEmailMessageThread> threadList;
 
         public NachoDeferredEmailMessages ()
         {
@@ -20,9 +20,9 @@ namespace NachoCore
 
         public void Refresh ()
         {
-            List<McEmailMessage> list = McEmailMessage.QueryDeferredMessagesAllAccounts ().OrderByDescending (c => c.DateReceived).ToList ();
+            var list = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
             if (null == list) {
-                list = new List<McEmailMessage> ();
+                list = new List<McEmailMessageIndex> ();
             }
             threadList = NcMessageThreads.ThreadByConversation (list);
         }
@@ -32,7 +32,7 @@ namespace NachoCore
             return threadList.Count;
         }
 
-        public List<McEmailMessage> GetEmailThread (int i)
+        public McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
             return t;

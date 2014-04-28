@@ -31,6 +31,16 @@ namespace NachoCore.Model
         High_2 = 2,
     };
 
+    public class McEmailMessageIndex
+    {
+        public int Id { set; get; }
+
+        public McEmailMessage GetMessage ()
+        {
+            return BackEnd.Instance.Db.Get<McEmailMessage> (Id);
+        }
+    }
+
     public class McEmailMessage : McItem
     {
         private const string CrLf = "\r\n";
@@ -190,12 +200,34 @@ namespace NachoCore.Model
             " e.FlagUtcDeferUntil < ?",
                 accountId, accountId, folderId, DateTime.UtcNow);
         }
+
+        public static List<McEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
+        {
+            return BackEnd.Instance.Db.Query<McEmailMessageIndex> ("SELECT e.Id as Id FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
+            " e.AccountId = ? AND " +
+            " m.AccountId = ? AND " +
+            " m.FolderId = ? AND " +
+            " e.FlagUtcDeferUntil < ? " +
+            " ORDER BY e.DateReceived DESC",
+                accountId, accountId, folderId, DateTime.UtcNow);
+        }
+
+        public static List<McEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
+        {
+            return BackEnd.Instance.Db.Query<McEmailMessageIndex> ("SELECT e.Id as Id FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
+                " e.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.FolderId = ? AND " +
+                " e.FlagUtcDeferUntil < ? " +
+                " ORDER BY e.ContentScore DESC, e.DateReceived DESC",
+                accountId, accountId, folderId, DateTime.UtcNow);
+        }
         // TODO: Need account id
         // TODO: Delete needs to clean up deferred
-        public static List<McEmailMessage> QueryDeferredMessagesAllAccounts ()
+        public static List<McEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
         {
-            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e WHERE " +
-            " e.FlagUtcDeferUntil > ?",
+            return BackEnd.Instance.Db.Query<McEmailMessageIndex> ("SELECT e.Id as Id FROM McEmailMessage AS e WHERE " +
+            " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
         }
 
@@ -256,6 +288,51 @@ namespace NachoCore.Model
     {
         // FIXME - we should carry the encoding type (RTF, Mime, etc) here.
         public string Body { get; set; }
+    }
+
+    public class McEmailMessageThread
+    {
+        List<McEmailMessageIndex> thread;
+
+        public McEmailMessageThread ()
+        {
+            thread = new List<McEmailMessageIndex> ();
+        }
+
+        public void Add(McEmailMessageIndex index)
+        {
+            thread.Add (index);
+        }
+
+        public int GetEmailMessageIndex (int i)
+        {
+            return thread.ElementAt (i).Id;
+        }
+
+        public McEmailMessage GetEmailMessage (int i)
+        {
+            return thread.ElementAt (i).GetMessage ();
+        }
+
+        public McEmailMessage SingleMessageSpecialCase ()
+        {
+            return GetEmailMessage (0);
+        }
+
+        public int Count {
+            get {
+                return thread.Count;
+            }
+        }
+
+        public IEnumerator<McEmailMessage> GetEnumerator ()
+        {
+            using (IEnumerator<McEmailMessageIndex> ie = thread.GetEnumerator ()) {
+                while (ie.MoveNext ()) {
+                    yield return ie.Current.GetMessage ();
+                }
+            }
+        }
     }
 }
 

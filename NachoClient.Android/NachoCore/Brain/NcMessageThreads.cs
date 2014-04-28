@@ -12,12 +12,12 @@ namespace NachoCore.Brain
         {
         }
 
-        static public List<List<McEmailMessage>> ThreadByConversation (List<McEmailMessage> list)
+        static public List<McEmailMessageThread> ThreadByConversation (List<McEmailMessageIndex> list)
         {
             NachoAssert.True (null != list);
-            var conversationList = new List<List<McEmailMessage>> ();
+            var conversationList = new List<McEmailMessageThread> ();
             for (int i = 0; i < list.Count; i++) {
-                var singleMessageList = new List<McEmailMessage> ();
+                var singleMessageList = new McEmailMessageThread ();
                 singleMessageList.Add (list [i]);
                 conversationList.Add (singleMessageList);
             }
