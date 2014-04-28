@@ -90,9 +90,9 @@ namespace Test.iOS
             Assert.AreEqual (command02b.Name.LocalName, Xml.AirSync.Add);
             NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command02b, new MockNcFolder ());
 
-            var command03 = System.Xml.Linq.XElement.Parse (string_02b);
+            var command03 = System.Xml.Linq.XElement.Parse (string_03);
             Assert.IsNotNull (command03);
-            Assert.AreEqual (command03.Name.LocalName, Xml.AirSync.Add);
+            Assert.AreEqual (command03.Name.LocalName, Xml.AirSync.Change);
             NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command03, new MockNcFolder ());
         }
 
@@ -185,7 +185,7 @@ namespace Test.iOS
             ";
         public string string_03 = @"
                 <Change xmlns=""AirSync"">
-                  <ServerId>1734050566625401231</ServerId>
+                  <ServerId>1734050566625401233</ServerId>
                   <ApplicationData>
                     <Body xmlns=""AirSyncBase"">
                       <Type>1</Type>
@@ -235,7 +235,7 @@ namespace Test.iOS
             ";
         public const string string_05 = @"
              <Sync xmlns=""AirSync"">
-                      <ServerId>1734050566625401231</ServerId>
+                      <ServerId>1734050566625401236</ServerId>
                       <ApplicationData>
                         <Body xmlns=""AirSyncBase"">
                           <Type>1</Type>
