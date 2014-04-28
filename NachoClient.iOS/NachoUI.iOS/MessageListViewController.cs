@@ -128,7 +128,7 @@ namespace NachoClient.iOS
                 var idList = new int[messageThreads.Count ()];
                 for (var i = 0; i < messageThreads.Count (); i++) {
                     var m = messageThreads.GetEmailThread (i);
-                    idList [i] = m.GetEmailMessageIndex(i);
+                    idList [i] = m.GetEmailMessageIndex(0);
                 }
                 messageThreads.Refresh ();
                 InvokeOnMainThread (() => {
