@@ -23,6 +23,7 @@ namespace NachoClient.iOS
         // The cancel button on the search bar breaks
         // if the searchbar is hidden by a scrolled tableview.
         PointF savedContentOffset;
+        private static Object StaticLockObj = new Object ();
 
         public void SetEmailMessages (INachoEmailMessages l)
         {
@@ -125,33 +126,35 @@ namespace NachoClient.iOS
         {            
             // Refresh in background    
             System.Threading.ThreadPool.QueueUserWorkItem (delegate {
-                var idList = new int[messageThreads.Count ()];
-                for (var i = 0; i < messageThreads.Count (); i++) {
-                    var m = messageThreads.GetEmailThread (i);
-                    idList [i] = m.GetEmailMessageIndex(0);
-                }
-                messageThreads.Refresh ();
-                InvokeOnMainThread (() => {
-                    var row = GetFirstVisibleRow ();
-                    NSIndexPath p = null;
-                    if (-1 != row) {
-                        var targetId = idList [row];
-                        for (int i = 0; i < messageThreads.Count (); i++) {
-                            var m = messageThreads.GetEmailThread (i);
-                            if (m.GetEmailMessageIndex(i) == targetId) {
-                                p = NSIndexPath.FromItemSection (i, 0);
-                                break;
+                lock (StaticLockObj) {
+                    var idList = new int[messageThreads.Count ()];
+                    for (var i = 0; i < messageThreads.Count (); i++) {
+                        var m = messageThreads.GetEmailThread (i);
+                        idList [i] = m.GetEmailMessageIndex (0);
+                    }
+                    messageThreads.Refresh ();
+                    InvokeOnMainThread (() => {
+                        var row = GetFirstVisibleRow ();
+                        NSIndexPath p = null;
+                        if (-1 != row) {
+                            var targetId = idList [row];
+                            for (int i = 0; i < messageThreads.Count (); i++) {
+                                var m = messageThreads.GetEmailThread (i);
+                                if (m.GetEmailMessageIndex (0) == targetId) {
+                                    p = NSIndexPath.FromItemSection (i, 0);
+                                    break;
+                                }
                             }
                         }
-                    }
-                    TableView.ReloadData ();
-                    if (null != p) {
-                        TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
-                    }
-                    if (endRefreshing) {
-                        RefreshControl.EndRefreshing ();
-                    }
-                });
+                        TableView.ReloadData ();
+                        if (null != p) {
+                            TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
+                        }
+                        if (endRefreshing) {
+                            RefreshControl.EndRefreshing ();
+                        }
+                    });
+                }
             });
         }
 
@@ -162,8 +165,7 @@ namespace NachoClient.iOS
 
             BackEnd.Instance.StatusIndEvent += StatusIndicatorCallback;
 
-            messageThreads.Refresh ();
-            TableView.ReloadData ();
+            ReloadDataMaintainingPosition (false);
 
 //            for (int i = 0; i < messageThreads.Count (); i++) {
 //                Console.WriteLine ("Thread {0}", i); 
