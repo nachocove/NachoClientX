@@ -16,6 +16,7 @@ using NachoClient.iOS;
 using SQLite;
 using CrashlyticsBinding;
 using NachoCore.Wbxml;
+using MonoTouch.ObjCRuntime;
 
 namespace NachoClient.iOS
 {
@@ -69,17 +70,32 @@ namespace NachoClient.iOS
             return true;
         }
 
+        private void StartCrashReporting ()
+        {
+            if (Arch.SIMULATOR == Runtime.Arch) {
+                // Xaramin does not produce .dSYM files. So, there is nothing to
+                // upload to Crashlytics which does not show any crash report
+                // that it cannot symbolicate.
+                //
+                // For an explanation, see:
+                // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
+                Log.Info ("Crashlytics is disabled on simulator");
+                return;
+            }
+
+            // Start Crashlytics
+            Crashlytics crash = Crashlytics.SharedInstance ();
+            crash.DebugMode = true;
+            crash = Crashlytics.StartWithAPIKey ("5aff8dc5f7ff465089df2453cd07d6cd21880b74", 10.0);
+        }
+
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
 
             application.ApplicationIconBadgeNumber = 0;
            
-            #if (!DEBUG)
-            Crashlytics crash = Crashlytics.SharedInstance ();
-            crash.DebugMode = true;
-            crash = Crashlytics.StartWithAPIKey ("5aff8dc5f7ff465089df2453cd07d6cd21880b74", 10.0);
-            #endif
+            StartCrashReporting ();
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
