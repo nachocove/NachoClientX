@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace NachoCore.Utils
 {
@@ -130,9 +131,7 @@ namespace NachoCore.Utils
         private string PseudoKlass;
         private Dictionary<string,uint> EventCode;
         private Dictionary<uint,string> EventName;
-        private Queue EventQ;
-        private Object FireLockObj;
-        private bool IsFiring;
+        private BlockingCollection<Event> EventQ;
         // Static.
         private static int NextId = 0;
         private static Object StaticLockObj = new Object ();
@@ -146,9 +145,11 @@ namespace NachoCore.Utils
                 Id = ++NextId;
             }
             PseudoKlass = pseudoKlass;
-            FireLockObj = new Object ();
-            EventQ = Queue.Synchronized (new Queue ());
+            EventQ = new BlockingCollection<Event> ();
             State = (uint)St.Start;
+            Task.Run (delegate {
+                FireLoop ();
+            });
         }
 
         public string NameAndId ()
@@ -173,8 +174,9 @@ namespace NachoCore.Utils
         /// </summary>
         public void ClearEventQueue ()
         {
-            lock (FireLockObj) {
-                EventQ.Clear ();
+            Event dummy;
+            while (EventQ.TryTake (out dummy)) {
+                ;
             }
         }
 
@@ -212,54 +214,48 @@ namespace NachoCore.Utils
             if ((uint)SmEvt.Sequence == smEvent.EventCode) {
                 NachoAssert.True (null != smEvent.Sequence && 0 < smEvent.Sequence.Length);
                 foreach (var subSmEvent in smEvent.Sequence) {
-                    EventQ.Enqueue (subSmEvent);
+                    EventQ.Add (subSmEvent);
                 }
             } else {
                 NachoAssert.True (null == smEvent.Sequence);
-                EventQ.Enqueue (smEvent);
+                EventQ.Add (smEvent);
             }
+        }
 
-            lock (FireLockObj) {
-                if (IsFiring) {
-                    // Don't want the same thread to re-enter execution loop. Do want the stack to unwind.
-                    // If we don't the state doesn't advance before the next event hits.
-                    return;
+        private void FireLoop ()
+        {
+            while (true) {
+                var fireEvent = (Event)EventQ.Take ();
+                FireEventCode = fireEvent.EventCode;
+                Arg = fireEvent.Arg;
+                Message = fireEvent.Message;
+                if ((uint)St.Stop == State) {
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                    continue;
                 }
-                IsFiring = true;
-                while (0 != EventQ.Count) {
-                    var fireEvent = (Event)EventQ.Dequeue ();
-                    FireEventCode = fireEvent.EventCode;
-                    Arg = fireEvent.Arg;
-                    Message = fireEvent.Message;
-                    if ((uint)St.Stop == State) {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
-                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                        continue;
-                    }
-                    var hotNode = TransTable.Where (x => State == x.State).Single ();
-                    if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
-                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                        continue;
-                    }
-                    if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
-                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                        throw new Exception ();
-                    }
-                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
-                    Action = hotTrans.Act;
-                    NextState = hotTrans.State;
-                    Action ();
-                    var oldState = State;
-                    State = NextState;
-                    if (oldState != State && null != StateChangeIndication) {
-                        StateChangeIndication ();
-                    }
+                var hotNode = TransTable.Where (x => State == x.State).Single ();
+                if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                    continue;
                 }
-                IsFiring = false;
+                if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                    throw new Exception ();
+                }
+                var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
+                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                    NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                Action = hotTrans.Act;
+                NextState = hotTrans.State;
+                Action ();
+                var oldState = State;
+                State = NextState;
+                if (oldState != State && null != StateChangeIndication) {
+                    StateChangeIndication ();
+                }
             }
         }
 

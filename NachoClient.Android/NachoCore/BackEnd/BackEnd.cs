@@ -137,9 +137,10 @@ namespace NachoCore
 
         public void Stop (int accountId)
         {
-            // Don't Task.Run.
             var service = ServiceFromAccountId (accountId);
-            service.ForceStop ();
+            Task.Run (delegate {
+                service.ForceStop ();
+            });
         }
 
         public void Start (int accountId)

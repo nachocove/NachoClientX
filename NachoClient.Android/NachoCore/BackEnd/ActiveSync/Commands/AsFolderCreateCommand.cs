@@ -137,7 +137,7 @@ namespace NachoCore.ActiveSync
                 var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
                 if (null != target) {
                     target.ServerId = FinalServerId;
-                    target.IsAwatingCreate = false;
+                    target.IsAwaitingCreate = false;
                     target.Update ();
                     var account = McAccount.QueryById<McAccount> (AccountId);
                     var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);

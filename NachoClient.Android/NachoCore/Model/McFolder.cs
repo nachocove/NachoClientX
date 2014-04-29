@@ -19,7 +19,7 @@ namespace NachoCore.Model
         public string ParentId { get; set; }
 
         [Indexed]
-        public bool IsAwatingCreate { get; set; }
+        public bool IsAwaitingCreate { get; set; }
 
         [Indexed]
         public bool IsAwaitingDelete { get; set; }
@@ -201,13 +201,13 @@ namespace NachoCore.Model
         }
         // ONLY TO BE USED BY SERVER-END CODE.
         // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes
-        // IsAwatingCreate folders.
+        // IsAwaitingCreate folders.
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
             var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.IsClientOwned = 0 AND " +
-                          " f.IsAwatingCreate = 0 ",
+                          " f.IsAwaitingCreate = 0 ",
                               accountId);
             return folders.ToList ();
         }

@@ -786,7 +786,7 @@ namespace NachoCore.ActiveSync
                              serverId,
                              displayName,
                              folderType);
-            folder.IsAwatingCreate = !isClientOwned;
+            folder.IsAwaitingCreate = !isClientOwned;
             folder.Insert ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
