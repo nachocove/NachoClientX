@@ -46,8 +46,8 @@ namespace NachoClient.iOS
         private bool launchBe ()
         {
             // Initialize all Xml filters
-            NcXmlFilterSet.Requests.Add (new AsXmlFilterPingRequest ());
-            NcXmlFilterSet.Responses.Add (new AsXmlFilterPingResponse ());
+            AsXmlFilterSet.Requests.Add (new AsXmlFilterPingRequest ());
+            AsXmlFilterSet.Responses.Add (new AsXmlFilterPingResponse ());
 
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
