@@ -15,21 +15,21 @@ namespace NachoCore.Wbxml
             node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
             // Ping
             node1 = new NcXmlFilterNode ("Ping", RedactionType.NONE, RedactionType.NONE);
+            // Status
+            node2 = new NcXmlFilterNode ("Status", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Ping -> Status
             // Folders
             node2 = new NcXmlFilterNode ("Folders", RedactionType.NONE, RedactionType.NONE);
             // Folder
             node3 = new NcXmlFilterNode ("Folder", RedactionType.FULL, RedactionType.FULL);
             node2.Add(node3); // Folders -> Folder
             node1.Add(node2); // Ping -> Folders
-            // HeartbeatInterval
-            node2 = new NcXmlFilterNode ("HeartbeatInterval", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // Ping -> HeartbeatInterval
             // MaxFolders
             node2 = new NcXmlFilterNode ("MaxFolders", RedactionType.FULL, RedactionType.FULL);
             node1.Add(node2); // Ping -> MaxFolders
-            // Status
-            node2 = new NcXmlFilterNode ("Status", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // Ping -> Status
+            // HeartbeatInterval
+            node2 = new NcXmlFilterNode ("HeartbeatInterval", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Ping -> HeartbeatInterval
             node0.Add(node1);
             
             Root = node0;

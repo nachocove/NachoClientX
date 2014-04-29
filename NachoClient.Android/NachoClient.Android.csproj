@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -203,6 +203,17 @@
     <Compile Include="NachoCore\Utils\NcXmlFilter.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterAirSyncBase.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterCalendar.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts2.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterDocumentLibrary.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail2.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterItemOperations.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterProvision.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterRightsManagement.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterTasks.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

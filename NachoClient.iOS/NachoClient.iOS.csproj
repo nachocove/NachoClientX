@@ -635,6 +635,39 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterAirSyncBase.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterAirSyncBase.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterCalendar.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts2.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts2.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterDocumentLibrary.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterDocumentLibrary.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail2.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail2.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterItemOperations.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterItemOperations.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterProvision.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterProvision.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterRightsManagement.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterRightsManagement.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterTasks.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterTasks.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
