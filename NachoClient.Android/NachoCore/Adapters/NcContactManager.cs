@@ -12,9 +12,16 @@ namespace NachoCore
 {
     public class NcContactManager
     {
-        private const int hotness = 1;
         private static volatile NcContactManager instance;
         private static object syncRoot = new Object ();
+        bool mustRefreshContacts;
+        private static Object StaticLockObj = new Object ();
+
+        public event EventHandler ContactsChanged;
+
+        INachoContacts list;
+        INachoContacts hotList;
+        INachoContacts recentList;
 
         public static NcContactManager Instance {
             get {
@@ -28,147 +35,74 @@ namespace NachoCore
             }
         }
 
-        public event EventHandler ContactsChanged;
-
         protected NcContactManager ()
         {
+            mustRefreshContacts = true;
+            list = new NachoContacts (new List<McContactIndex> ());
+            hotList = new NachoContacts (new List<McContactIndex> ());
+            recentList = new NachoContacts (new List<McContactIndex> ());
             // Watch for changes from the back end
             BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
-                    LoadContacts ();
+                    MaybeLoadContacts ();
                 }
             };
         }
 
-        List<McContact> contactList;
-        List<McContactStringAttribute> addressList;
+        protected void MaybeLoadContacts ()
+        {
+            if (null == ContactsChanged) {
+                mustRefreshContacts = true;
+                return;
+            }
+            if (0 == ContactsChanged.GetInvocationList ().Count ()) {
+                mustRefreshContacts = true;
+                return;
+            }
+            if (false == mustRefreshContacts) {
+                return;
+            }
+            mustRefreshContacts = false;
+            LoadContacts ();
+        }
 
         protected void LoadContacts ()
         {
-            var hotList = BackEnd.Instance.Db.Table<McContact> ().Where (c => c.Score > hotness).OrderBy (c => c.Score).ToList ();
-            contactList = BackEnd.Instance.Db.Table<McContact> ().Where (c => c.Score <= hotness).OrderBy (c => c.FirstName).ToList ();
-            if (null == contactList) {
-                contactList = new List<McContact> ();
-            }
-            contactList.InsertRange (0, hotList);
-            addressList = BackEnd.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.Type == McContactStringType.EmailAddress).ToList ();
-            if (null == addressList) {
-                addressList = new List<McContactStringAttribute> ();
-            }
-            if (null != ContactsChanged) {
-                InvokeOnUIThread.Instance.Invoke (delegate() {  
-                    ContactsChanged.Invoke (this, null);
-                });
-            }
+            // Refresh in background    
+            System.Threading.ThreadPool.QueueUserWorkItem (delegate {
+                lock (StaticLockObj) {
+                    var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+                    var l = McContact.QueryAllContactItems (account.Id);
+                    list = new NachoContacts (l);
+                    var h = McContact.QueryAllHotContactItems (account.Id);
+                    hotList = new NachoContacts (h);
+                    // TODO: Recent contact folder
+                    if (null != ContactsChanged) {
+                        InvokeOnUIThread.Instance.Invoke (delegate() {  
+                            ContactsChanged.Invoke (this, null);
+                        });
+                    }
+                }
+            });
         }
 
-        public INachoContacts GetNachoContactsObject ()
+        public INachoContacts GetNachoContacts ()
         {
-            if ((null == contactList) || (null == addressList)) {
-                LoadContacts ();
-            }
-            return new InternalNachoContactsObject (contactList, addressList);
+            MaybeLoadContacts ();
+            return list;
         }
 
-        protected class InternalNachoContactsObject : INachoContacts
+        public INachoContacts GetHotNachoContacts ()
         {
-            List<Int64> searchResults;
-            List<McContact> contactList;
-            List<McContactStringAttribute> addressList;
+            MaybeLoadContacts ();
+            return hotList;
+        }
 
-            public InternalNachoContactsObject (List<McContact> contactList, List<McContactStringAttribute> addressList)
-            {
-                this.contactList = contactList;
-                this.addressList = addressList;
-                this.searchResults = new List<Int64> ();
-
-            }
-
-            public int Count ()
-            {
-                return contactList.Count;
-            }
-
-            public McContact GetContact (int i)
-            {
-                var c = contactList.ElementAt (i);
-                return c;
-            }
-
-            public void Search (string prefix)
-            {
-                searchResults = MatchesPrefix (prefix);
-            }
-
-            public int SearchResultsCount ()
-            {
-                return searchResults.Count;
-            }
-
-            public McContact GetSearchResult (int searchIndex)
-            {
-                var id = searchResults [searchIndex];
-                for (int i = 0; i < contactList.Count; i++) {
-                    if (id == contactList [i].Id) {
-                        return GetContact (i);
-                    }
-                }
-                return null;
-            }
-
-            /// <summary>
-            /// Returns a list of McContact.Ids.
-            /// </summary>
-            protected List<Int64> MatchesPrefix (string prefix)
-            {
-                var list = new HashSet<Int64> ();
-
-                // Empty (or null) means everyone
-                if (String.IsNullOrEmpty (prefix)) {
-                    foreach (var a in addressList) {
-                        list.Add (a.ContactId);
-                    }
-                    return list.ToList ();
-                }
-
-                for (int i = 0; i < contactList.Count; i++) {
-                    foreach (var c in contactList) {
-                        if (StartsWithIgnoringNull (prefix, c.FirstName)) {
-                            list.Add (c.Id);
-                        } else if (StartsWithIgnoringNull (prefix, c.LastName)) {
-                            list.Add (c.Id);
-                        }
-                    }
-                }
-                foreach (var a in addressList) {
-                    if (StartsWithIgnoringNull (prefix, a.Value)) {
-                        list.Add (a.ContactId);
-                    }
-                }
-                return list.ToList ();
-            }
-
-            protected bool StartsWithIgnoringNull (string prefix, string target)
-            {
-                NachoCore.NachoAssert.True (null != prefix);
-                // Can't match a field that doesn't exist
-                if (null == target) {
-                    return false;
-                }
-                // TODO: Verify that we really want InvariantCultureIgnoreCase
-                return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
-            }
-
-            public bool isVIP (McContact contact)
-            {
-                return (10000 < contact.Score);
-            }
-
-            public bool isHot (McContact contact)
-            {
-                return (hotness < contact.Score);
-            }
+        public INachoContacts GetRecentNachoContacts ()
+        {
+            MaybeLoadContacts ();
+            return recentList;
         }
     }
 }

@@ -14,6 +14,7 @@ using Xamarin.Contacts;
 using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -28,7 +29,7 @@ namespace NachoClient.iOS
     {
         public bool UseDeviceContacts;
         INachoContacts contacts;
-        List<McContact> searchResults = null;
+        List<McContactIndex> searchResults = null;
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>
@@ -67,8 +68,6 @@ namespace NachoClient.iOS
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("ContactsToNachoNow", this);
             };
-
-            contacts = NcContactManager.Instance.GetNachoContactsObject ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -77,6 +76,21 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcContactManager.Instance.ContactsChanged += ContactsChangedCallback;
+            contacts = NcContactManager.Instance.GetNachoContacts ();
+            TableView.ReloadData ();
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcContactManager.Instance.ContactsChanged -= ContactsChangedCallback;
+        }
+
+        public void ContactsChangedCallback (object sender, EventArgs e)
+        {
+            contacts = NcContactManager.Instance.GetNachoContacts ();
+            TableView.ReloadData ();
         }
 
         /// <summary>
@@ -93,10 +107,10 @@ namespace NachoClient.iOS
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = SearchDisplayController.SearchResultsTableView.IndexPathForCell (cell);
                 if (null != indexPath) {
-                    contact = searchResults.ElementAt (indexPath.Row);
+                    contact = searchResults.ElementAt (indexPath.Row).GetContact ();
                 } else {
                     indexPath = TableView.IndexPathForCell (cell);
-                    contact = contacts.GetContact (indexPath.Row);
+                    contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
@@ -128,16 +142,16 @@ namespace NachoClient.iOS
 
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
-                contact = searchResults.ElementAt (indexPath.Row);
+                contact = searchResults.ElementAt (indexPath.Row).GetContact ();
             } else {
-                contact = contacts.GetContact (indexPath.Row);
+                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
 
             cell.TextLabel.Text = contact.DisplayName;
             cell.DetailTextLabel.Text = contact.DisplayEmailAddress;
-            if (contacts.isVIP (contact)) {
+            if (contact.isVip ()) {
                 cell.ImageView.Image = UIImage.FromBundle ("beer");
-            } else if (contacts.isHot (contact)) {
+            } else if (contact.isHot ()) {
                 cell.ImageView.Image = UIImage.FromBundle ("icon_chili");
             } else {
                 cell.ImageView.Image = null;
@@ -157,36 +171,9 @@ namespace NachoClient.iOS
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
             // TODO: Make this work like EAS
-            searchResults = new List<McContact> ();
-            for (int i = 0; i < contacts.Count (); i++) {
-                McContact c = contacts.GetContact (i);
-                if (StartsWithIgnoringNull (forSearchString, c.FirstName)) {
-                    searchResults.Add (c);
-                    continue;
-                }
-                if (StartsWithIgnoringNull (forSearchString, c.LastName)) {
-                    searchResults.Add (c);
-                    continue;
-                }
-                foreach (var e in c.EmailAddresses) {
-                    if (StartsWithIgnoringNull (forSearchString, e.Value)) {
-                        searchResults.Add (c);
-                        break;
-                    }
-                }
-            }
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
             return true;
-        }
-
-        protected bool StartsWithIgnoringNull (string prefix, string target)
-        {
-            NachoCore.NachoAssert.True (null != prefix);
-            // Can't match a field that doesn't exist
-            if (null == target) {
-                return false;
-            }
-            // TODO: Verify that we really want InvariantCultureIgnoreCase
-            return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <summary>

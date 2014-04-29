@@ -8,6 +8,16 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
+    public class McContactIndex
+    {
+        public int Id { set; get; }
+
+        public McContact GetContact ()
+        {
+            return BackEnd.Instance.Db.Get<McContact> (Id);
+        }
+    }
+
     public partial class McContact : McItem
     {
         /// <summary>
@@ -16,6 +26,8 @@ namespace NachoCore.Model
         /// </summary>
         /// 
 
+        public const int minHotScore = 1;
+        public const int minVipScore = 1000000;
 
         /// ActiveSync or Device
         public McItem.ItemSource Source { get; set; }
@@ -972,11 +984,94 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContactIndex> QueryAllContactItems (int accountId)
+        {
+            return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
+            " ON c.Id = m.FolderEntryId " +
+            " WHERE " +
+            " c.AccountId = ? AND " +
+            " m.AccountId = ? " +
+            " ORDER BY c.FirstName",
+                accountId, accountId);
+        }
+
+        public static List<McContactIndex> QueryContactItems (int accountId, int folderId)
+        {
+            return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
+            " ON c.Id = m.FolderEntryId " +
+            " WHERE " +
+            " c.AccountId = ? AND " +
+            " m.AccountId = ? AND " +
+            " m.FolderId = ? " +
+            " ORDER BY c.FirstName",
+                accountId, accountId);
+        }
+
+        public static List<McContactIndex> QueryAllHotContactItems (int accountId)
+        {
+            return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
+            " ON c.Id = m.FolderEntryId " +
+            " WHERE " +
+            " c.AccountId = ? AND " +
+            " m.AccountId = ? AND " +
+            " c.Score > ? " +
+            " ORDER BY c.Score DESC, c.FirstName",
+                accountId, accountId, minHotScore);
+        }
+
+        public static List<McContactIndex> SearchAllContactItems(int accountId, string searchFor)
+        {
+            // TODO: Put this in the brain
+            if (String.IsNullOrEmpty (searchFor)) {
+                return new List<McContactIndex> ();
+            }
+            var target = searchFor.Split (new char[] { ' ' });
+            var firstName = target.First() + "%";
+            var lastName = target.Last () + "%";
+            if (1 == target.Count ()) {
+                return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
+                " ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " ( c.FirstName LIKE ? OR " +
+                "   c.LastName LIKE ? ) " +
+                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
+                    accountId, accountId, firstName, lastName);
+            } else {
+                return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
+                    " ON c.Id = m.FolderEntryId " +
+                    " WHERE " +
+                    " c.AccountId = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " ( c.FirstName LIKE ? AND " +
+                    "   c.LastName LIKE ? ) " +
+                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
+                    accountId, accountId, firstName, lastName);
+            }
+        }
+
         public void UpdateScore (string reason, int score)
         {
             Log.Info ("SCORE: {0} {1} {2}", DisplayName, score, reason);
             Score += score;
             Update ();
+        }
+
+        /// TODO: VIPness should be in its own member
+        public bool isHot ()
+        {
+            if (isVip ()) {
+                return ((Score - minVipScore) >= minHotScore);
+            } else {
+                return (Score >= minHotScore);
+            }
+        }
+
+        /// TODO: VIPness should be in its own member
+        public bool isVip ()
+        {
+            return (Score >= minVipScore);
         }
     }
 }

@@ -31,19 +31,19 @@ namespace NachoClient.AndroidClient
             var rootView = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
             var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
-            contacts = NcContactManager.Instance.GetNachoContactsObject ();
+            contacts = NcContactManager.Instance.GetNachoContacts ();
             adapter = new ContactListAdapter (this.Activity, contacts);
             listview.Adapter = adapter;
 
             NcContactManager.Instance.ContactsChanged += (object sender, EventArgs e) => {
-                contacts = NcContactManager.Instance.GetNachoContactsObject ();
+                contacts = NcContactManager.Instance.GetNachoContacts ();
                 adapter.NotifyDataSetChanged ();
             };
                 
             listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
                 var fragment = new ContactViewFragment ();
                 var bundle = new Bundle ();
-                var contact = contacts.GetContact (e.Position);
+                var contact = contacts.GetContactIndex (e.Position).GetContact ();
                 bundle.PutInt ("accountId", contact.AccountId);
                 bundle.PutInt ("contactId", contact.Id);
                 bundle.PutString ("segue", "ContactListToContactView");
@@ -87,7 +87,7 @@ namespace NachoClient.AndroidClient
         }
 
         public override McContact this [int position] {  
-            get { return contacts.GetContact (position); }
+            get { return contacts.GetContactIndex (position).GetContact (); }
         }
 
         public override int Count {
@@ -104,7 +104,7 @@ namespace NachoClient.AndroidClient
             var name = view.FindViewById<TextView> (Android.Resource.Id.Text1);
             var email = view.FindViewById<TextView> (Android.Resource.Id.Text2);
 
-            var contact = contacts.GetContact (position);
+            var contact = contacts.GetContactIndex (position).GetContact ();
             name.Text = contact.DisplayName;
             email.Text = contact.DisplayEmailAddress;
 

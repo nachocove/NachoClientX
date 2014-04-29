@@ -9,13 +9,6 @@ namespace NachoCore
     public interface INachoContacts
     {
         int Count ();
-        McContact GetContact (int i);
-
-        void Search (string prefix);
-        int SearchResultsCount ();
-        McContact GetSearchResult(int searchIndex);
-
-        bool isVIP(McContact contact);
-        bool isHot(McContact contact);
+        McContactIndex GetContactIndex (int i);
     }
 }

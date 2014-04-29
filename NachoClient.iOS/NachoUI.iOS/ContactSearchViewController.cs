@@ -31,7 +31,7 @@ namespace NachoClient.iOS
         // Internal state
         public bool UseDeviceContacts;
         INachoContacts contacts;
-        List<McContact> searchResults = null;
+        List<McContactIndex> searchResults = null;
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>
@@ -57,7 +57,7 @@ namespace NachoClient.iOS
             // Manages the search bar & auto-complete table.
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
 
-            contacts = NcContactManager.Instance.GetNachoContactsObject ();
+            contacts = NcContactManager.Instance.GetNachoContacts ();
             TableView.ReloadData ();
 
             // Let's be ready to search!
@@ -91,10 +91,10 @@ namespace NachoClient.iOS
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = SearchDisplayController.SearchResultsTableView.IndexPathForCell (cell);
                 if (null != indexPath) {
-                    contact = searchResults.ElementAt (indexPath.Row);
+                    contact = searchResults.ElementAt (indexPath.Row).GetContact ();
                 } else {
                     indexPath = TableView.IndexPathForCell (cell);
-                    contact = contacts.GetContact (indexPath.Row);
+                    contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
@@ -127,9 +127,9 @@ namespace NachoClient.iOS
 
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
-                contact = searchResults.ElementAt (indexPath.Row);
+                contact = searchResults.ElementAt (indexPath.Row).GetContact ();
             } else {
-                contact = contacts.GetContact (indexPath.Row);
+                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
 
             cell.TextLabel.Text = contact.DisplayName;
@@ -144,9 +144,9 @@ namespace NachoClient.iOS
 
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
-                contact = searchResults.ElementAt (indexPath.Row);
+                contact = searchResults.ElementAt (indexPath.Row).GetContact ();
             } else {
-                contact = contacts.GetContact (indexPath.Row);
+                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
             owner.DoublePop (this, contact);
         }
@@ -161,25 +161,8 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            // TODO: Make this work like EAS
-            searchResults = new List<McContact> ();
-            for (int i = 0; i < contacts.Count (); i++) {
-                McContact c = contacts.GetContact (i);
-                if (StartsWithIgnoringNull (forSearchString, c.FirstName)) {
-                    searchResults.Add (c);
-                    continue;
-                }
-                if (StartsWithIgnoringNull (forSearchString, c.LastName)) {
-                    searchResults.Add (c);
-                    continue;
-                }
-                foreach (var e in c.EmailAddresses) {
-                    if (StartsWithIgnoringNull (forSearchString, e.Value)) {
-                        searchResults.Add (c);
-                        break;
-                    }
-                }
-            }
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
             return true;
         }
 

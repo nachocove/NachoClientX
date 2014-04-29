@@ -22,7 +22,9 @@ namespace NachoClient.iOS
         protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
         // Internal state
-        INachoContacts contacts;
+        List<McContactIndex> searchResults;
+        INachoContacts firstList;
+        INachoContacts secondList;
 
         public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType contactType)
         {
@@ -91,7 +93,6 @@ namespace NachoClient.iOS
             TableView.WeakDelegate = this;
             TableView.DataSource = new ContactChooserDataSource (this);
 
-            contacts = NcContactManager.Instance.GetNachoContactsObject ();
 
             AutocompleteTextField.Text = address.address;
             UpdateAutocompleteResults (0, address.address);
@@ -106,6 +107,31 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcContactManager.Instance.ContactsChanged += ContactsChangedCallback;
+            firstList = NcContactManager.Instance.GetHotNachoContacts ();
+            secondList = NcContactManager.Instance.GetNachoContacts ();
+            if ((null == firstList) || (0 == firstList.Count ())) {
+                firstList = secondList;
+                secondList = null;
+            }
+            TableView.ReloadData ();
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcContactManager.Instance.ContactsChanged -= ContactsChangedCallback;
+        }
+
+        public void ContactsChangedCallback (object sender, EventArgs e)
+        {
+            firstList = NcContactManager.Instance.GetHotNachoContacts ();
+            secondList = NcContactManager.Instance.GetNachoContacts ();
+            if ((null == firstList) || (0 == firstList.Count ())) {
+                firstList = secondList;
+                secondList = null;
+            }
+            TableView.ReloadData ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -159,7 +185,17 @@ namespace NachoClient.iOS
         [Export ("tableView:didSelectRowAtIndexPath:")]
         public void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact = contacts.GetSearchResult (indexPath.Row);
+            McContact contact;
+
+            if (null != searchResults) {
+                contact = searchResults [indexPath.Row].GetContact ();
+            } else {
+                if (0 == indexPath.Section) {
+                    contact = firstList.GetContactIndex (indexPath.Row).GetContact ();
+                } else {
+                    contact = secondList.GetContactIndex (indexPath.Row).GetContact ();
+                }
+            }
 
             // TODO: require phone numbers in contact chooser
             NachoAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
@@ -215,20 +251,14 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateAutocompleteResults (int forSearchOption, string forSearchString)
         {
-            // TODO: Make this work like EAS
-            contacts.Search (forSearchString);
-            return true;
-        }
-
-        protected bool StartsWithIgnoringNull (string prefix, string target)
-        {
-            NachoCore.NachoAssert.True (null != prefix);
-            // Can't match a field that doesn't exist
-            if (null == target) {
-                return false;
+            if (null == forSearchString) {
+                searchResults = null;
+                return true;
             }
-            // TODO: Verify that we really want InvariantCultureIgnoreCase
-            return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
+            // TODO: Make this work like EAS
+            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
+            return true;
         }
 
         public void DoublePop (ContactSearchViewController vc, McContact contact)
@@ -250,17 +280,46 @@ namespace NachoClient.iOS
 
             public override int NumberOfSections (UITableView tableView)
             {
-                return 1;
+                if (null != Owner.searchResults) {
+                    return 1;
+                } else {
+                    if (null == Owner.secondList) {
+                        return 1;
+                    } else {
+                        return 2;
+                    }
+                }
+  
             }
 
             public override int RowsInSection (UITableView tableview, int section)
             {
-                return Owner.contacts.SearchResultsCount ();
+                if (null != Owner.searchResults) {
+                    NachoAssert.True (0 == section);
+                    return Owner.searchResults.Count;
+                }
+
+                if (0 == section) {
+                    return Owner.firstList.Count ();
+                } else {
+                    return Owner.secondList.Count ();
+                }  
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
-                var contact = Owner.contacts.GetSearchResult (indexPath.Row);
+                McContact contact;
+
+                if (null != Owner.searchResults) {
+                    contact = Owner.searchResults [indexPath.Row].GetContact ();
+                } else {
+                    if (0 == indexPath.Section) {
+                        contact = Owner.firstList.GetContactIndex (indexPath.Row).GetContact ();
+                    } else {
+                        contact = Owner.secondList.GetContactIndex (indexPath.Row).GetContact ();
+
+                    }
+                }
 
                 var displayName = contact.DisplayName;
                 var displayEmailAddress = contact.DisplayEmailAddress;

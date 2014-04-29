@@ -1,49 +1,44 @@
-////  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
-////
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using NachoCore;
-//using NachoCore.Model;
+//  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
-//namespace NachoCore
-//{
-//    public class NachoContacts : INachoContacts
-//    {
-//        List<McContact> list;
-//
-//        public NachoContacts ()
-//        {
-//            Refresh ();
-//        }
-//
-//        public void Refresh ()
-//        {
-//            list = BackEnd.Instance.Db.Table<McContact> ().OrderBy (c => c.LastName).ToList ();
-//            if (null == list) {
-//                list = new List<McContact> ();
-//            }
-//        }
-//
-//        public int Count ()
-//        {
-//            return list.Count;
-//        }
-//
-//        public McContact GetContact (int i)
-//        {
-//            var c = list.ElementAt (i);
-//            return c;
-//        }
-//
-//        public McContact GetContactById(Int64 id)
-//        {
-//            return null;
-//        }
-//
-//        public HashSet<Int64> MatchesPrefix (string prefix)
-//        {
-//            return null;
-//        }
-//    }
-//}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using NachoCore;
+using NachoCore.Model;
+
+namespace NachoCore
+{
+    public class NachoContacts : INachoContacts
+    {
+        List<McContactIndex> list;
+
+        public NachoContacts (List<McContactIndex> list)
+        {
+            this.list = list;
+        }
+            
+        public int Count ()
+        {
+            return list.Count;
+        }
+
+        public McContactIndex GetContactIndex(int i)
+        {
+            return list.ElementAt (i);
+        }
+
+        public void Search (string prefix)
+        {
+        }
+
+        public int SearchResultsCount ()
+        {
+            return 0;
+        }
+
+        public McContactIndex GetSearchResult(int searchIndex)
+        {
+            return null;
+        }
+    }
+}
