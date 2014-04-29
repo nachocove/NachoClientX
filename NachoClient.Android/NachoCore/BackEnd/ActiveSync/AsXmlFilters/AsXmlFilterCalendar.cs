@@ -3,9 +3,9 @@ using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
 {
-    public class AsXmlFilterAsXmlFilterCalendar : NcXmlFilter
+    public class AsXmlFilterCalendar : NcXmlFilter
     {
-        public AsXmlFilterAsXmlFilterCalendar () : base ("Calendar")
+        public AsXmlFilterCalendar () : base ("Calendar")
         {
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;

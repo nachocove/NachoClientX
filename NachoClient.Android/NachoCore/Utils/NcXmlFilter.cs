@@ -169,27 +169,6 @@ namespace NachoCore.Utils
 
     public class NcXmlFilterSet
     {
-        private static NcXmlFilterSet _Requests = null;
-        private static NcXmlFilterSet _Responses = null;
-
-        public  static NcXmlFilterSet Requests {
-            get {
-                if (null == _Requests) {
-                    _Requests = new NcXmlFilterSet ();
-                }
-                return _Requests;
-            }
-        }
-
-        public static NcXmlFilterSet Responses {
-            get {
-                if (null == _Responses) {
-                    _Responses = new NcXmlFilterSet ();
-                }
-                return _Responses;
-            }
-        }
-
         private List<NcXmlFilter> FilterList;
 
         public NcXmlFilterSet ()

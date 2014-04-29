@@ -3,9 +3,9 @@ using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
 {
-    public class AsXmlFilterAsXmlFilterEmail2 : NcXmlFilter
+    public class AsXmlFilterEmail2 : NcXmlFilter
     {
-        public AsXmlFilterAsXmlFilterEmail2 () : base ("Email2")
+        public AsXmlFilterEmail2 () : base ("Email2")
         {
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;

@@ -3,9 +3,9 @@ using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
 {
-    public class AsXmlFilterAsXmlFilterAirSyncBase : NcXmlFilter
+    public class AsXmlFilterAirSyncBase : NcXmlFilter
     {
-        public AsXmlFilterAsXmlFilterAirSyncBase () : base ("AirSyncBase")
+        public AsXmlFilterAirSyncBase () : base ("AirSyncBase")
         {
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;

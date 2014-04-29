@@ -44,7 +44,7 @@ AsXmlFilterPingResponse.cs : xsd/Response/Ping.xml $(AS_SCHEMA_FILES)
 	$(AS_SCHEMA) $< PingResponse
 
 AsXmlFilter%.cs : xsd/common/%.xml $(AS_SCHEMA_FILES)
-	$(AS_SCHEMA) $< $(basename $@)
+	$(AS_SCHEMA) $< $(basename $(notdir $<))
 
 clean:
 	rm -f $(AS_XML_FILTER_FILES)

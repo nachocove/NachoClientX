@@ -203,17 +203,18 @@
     <Compile Include="NachoCore\Utils\NcXmlFilter.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterAirSyncBase.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterCalendar.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterContacts2.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterDocumentLibrary.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterEmail2.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterItemOperations.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterProvision.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterRightsManagement.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAsXmlFilterTasks.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncBase.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterCalendar.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts2.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterDocumentLibrary.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail2.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperations.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvision.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

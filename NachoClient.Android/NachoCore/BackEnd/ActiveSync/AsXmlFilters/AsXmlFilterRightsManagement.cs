@@ -3,9 +3,9 @@ using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
 {
-    public class AsXmlFilterAsXmlFilterRightsManagement : NcXmlFilter
+    public class AsXmlFilterRightsManagement : NcXmlFilter
     {
-        public AsXmlFilterAsXmlFilterRightsManagement () : base ("RightsManagement")
+        public AsXmlFilterRightsManagement () : base ("RightsManagement")
         {
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;

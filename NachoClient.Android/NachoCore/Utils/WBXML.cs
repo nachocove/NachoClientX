@@ -12,6 +12,7 @@ using System.Xml.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Wbxml;
 
 namespace NachoCore.Wbxml
 {
@@ -172,7 +173,7 @@ namespace NachoCore.Wbxml
 
             // TODO - Need to feed the redacted XML into a storage that can hold and
             // forward to the telemetry server.
-            Log.Info ("debug_XML = \n{0}", NcXmlFilterSet.Responses.Filter (XmlDoc));
+            Log.Info ("debug_XML = \n{0}", AsXmlFilterSet.Responses.Filter (XmlDoc));
         }
 
         public byte[] GetBytes ()
@@ -181,7 +182,7 @@ namespace NachoCore.Wbxml
 
             // TODO - Need to feed the redacted XML into a storage that can hold and
             // forward to the telemetry server.
-            Log.Info ("debug_XML = \n{0}", NcXmlFilterSet.Requests.Filter (XmlDoc));
+            Log.Info ("debug_XML = \n{0}", AsXmlFilterSet.Requests.Filter (XmlDoc));
 
             byteList.Add (versionByte);
             byteList.Add (publicIdentifierByte);
