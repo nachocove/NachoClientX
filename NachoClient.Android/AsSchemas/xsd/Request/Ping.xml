@@ -2,25 +2,25 @@
    <Ping>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
+      <HeartbeatInterval>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </HeartbeatInterval>
       <Folders>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <Folder>
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
-            <Class>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
-            </Class>
             <Id>
                <element_redaction>full</element_redaction>
                <attribute_redaction>full</attribute_redaction>
             </Id>
+            <Class>
+               <element_redaction>full</element_redaction>
+               <attribute_redaction>full</attribute_redaction>
+            </Class>
          </Folder>
       </Folders>
-      <HeartbeatInterval>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </HeartbeatInterval>
    </Ping>
 </xml>

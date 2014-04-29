@@ -3,17 +3,11 @@ import xml.sax
 from object_stack import ObjectStack
 import sys
 import os
+from as_xml import AsXmlElement
+from output import Output
 
 
-class Output:
-    def __init__(self, output):
-        self.output = output
-
-    def line(self, indent, fmt, *arg):
-        print >> self.output, (' ' * 4 * indent) + fmt % arg
-
-
-class AsSchemaElement:
+class AsSchemaElement(AsXmlElement):
     INDENTATION = ' ' * 4
 
     @staticmethod
@@ -22,25 +16,7 @@ class AsSchemaElement:
         return '\n'.join([AsSchemaElement.INDENTATION + l for l in lines])
 
     def __init__(self, name):
-        self.name = name
-        self.children = []
-        self.attrs = {}
-        self.value = None
-
-    def set_attr(self, attr, value):
-        self.attrs[attr] = value
-
-    def add_child(self, child):
-        self.children.append(child)
-
-    def __str__(self):
-        s = '<element name="%s">\n' % self.name
-        for key in sorted(self.attrs.keys()):
-            s += AsSchemaElement.INDENTATION + '<%s>%s</%s>\n' % (key, self.attrs[key], key)
-        for child in self.children:
-            s += AsSchemaElement._indent(str(child))
-        s += '</element>\n'
-        return s
+        AsXmlElement.__init__(self, name)
 
     @classmethod
     def node(cls, level):
@@ -123,7 +99,7 @@ class AsSchema(ContentHandler):
         output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.name_space)
         output.line(2, '{')
         # Create all the variables
-        for n in range(self.stack.max_depth()-1): # -1 for redaction tag
+        for n in range(self.stack.max_depth()-1):  # -1 for redaction tag
             output.line(3, 'NcXmlFilterNode %s = null;', AsSchemaElement.node(n))
         output.line(0, '')
         output.line(3, 'node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);')
@@ -142,7 +118,7 @@ class AsSchema(ContentHandler):
 
 def process(fname, class_suffix):
     as_schema = AsSchema(fname, class_suffix)
-    output = Output(open('AsXmlFilter' + class_suffix + '.cs', 'w'))
+    output = Output('AsXmlFilter' + class_suffix + '.cs')
     as_schema.generate_xml_filter_cs(output)
 
 

@@ -2,6 +2,10 @@
    <Ping>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
+      <Status>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </Status>
       <Folders>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
@@ -10,17 +14,13 @@
             <attribute_redaction>full</attribute_redaction>
          </Folder>
       </Folders>
-      <HeartbeatInterval>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </HeartbeatInterval>
       <MaxFolders>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </MaxFolders>
-      <Status>
+      <HeartbeatInterval>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </Status>
+      </HeartbeatInterval>
    </Ping>
 </xml>

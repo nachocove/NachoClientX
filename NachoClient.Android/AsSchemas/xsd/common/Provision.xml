@@ -1,99 +1,55 @@
 <xml>
+   <PolicyType>
+      <element_redaction>full</element_redaction>
+      <attribute_redaction>full</attribute_redaction>
+   </PolicyType>
+   <PolicyKey>
+      <element_redaction>full</element_redaction>
+      <attribute_redaction>full</attribute_redaction>
+   </PolicyKey>
    <EASProvisionDoc>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
-      <AllowBluetooth>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowBluetooth>
-      <AllowBrowser>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowBrowser>
-      <AllowCamera>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowCamera>
-      <AllowConsumerEmail>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowConsumerEmail>
-      <AllowDesktopSync>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowDesktopSync>
-      <AllowHTMLEmail>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowHTMLEmail>
-      <AllowInternetSharing>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowInternetSharing>
-      <AllowIrDA>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowIrDA>
-      <AllowPOPIMAPEmail>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowPOPIMAPEmail>
-      <AllowRemoteDesktop>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowRemoteDesktop>
-      <AllowSMIMEEncryptionAlgorithmNegotiation>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowSMIMEEncryptionAlgorithmNegotiation>
-      <AllowSMIMESoftCerts>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowSMIMESoftCerts>
-      <AllowSimpleDevicePassword>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowSimpleDevicePassword>
-      <AllowStorageCard>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowStorageCard>
-      <AllowTextMessaging>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowTextMessaging>
-      <AllowUnsignedApplications>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowUnsignedApplications>
-      <AllowUnsignedInstallationPackages>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowUnsignedInstallationPackages>
-      <AllowWiFi>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AllowWiFi>
-      <AlphanumericDevicePasswordRequired>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AlphanumericDevicePasswordRequired>
-      <ApprovedApplicationList>
-         <element_redaction>none</element_redaction>
-         <attribute_redaction>none</attribute_redaction>
-         <Hash>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
-         </Hash>
-      </ApprovedApplicationList>
-      <AttachmentsEnabled>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </AttachmentsEnabled>
       <DevicePasswordEnabled>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </DevicePasswordEnabled>
+      <AlphanumericDevicePasswordRequired>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AlphanumericDevicePasswordRequired>
+      <PasswordRecoveryEnabled>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </PasswordRecoveryEnabled>
+      <RequireStorageCardEncryption>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </RequireStorageCardEncryption>
+      <AttachmentsEnabled>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AttachmentsEnabled>
+      <MinDevicePasswordLength>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </MinDevicePasswordLength>
+      <MaxInactivityTimeDeviceLock>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </MaxInactivityTimeDeviceLock>
+      <MaxDevicePasswordFailedAttempts>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </MaxDevicePasswordFailedAttempts>
+      <MaxAttachmentSize>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </MaxAttachmentSize>
+      <AllowSimpleDevicePassword>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowSimpleDevicePassword>
       <DevicePasswordExpiration>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
@@ -102,18 +58,66 @@
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </DevicePasswordHistory>
-      <MaxAttachmentSize>
+      <AllowStorageCard>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </MaxAttachmentSize>
+      </AllowStorageCard>
+      <AllowCamera>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowCamera>
+      <RequireDeviceEncryption>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </RequireDeviceEncryption>
+      <AllowUnsignedApplications>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowUnsignedApplications>
+      <AllowUnsignedInstallationPackages>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowUnsignedInstallationPackages>
+      <MinDevicePasswordComplexCharacters>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </MinDevicePasswordComplexCharacters>
+      <AllowWiFi>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowWiFi>
+      <AllowTextMessaging>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowTextMessaging>
+      <AllowPOPIMAPEmail>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowPOPIMAPEmail>
+      <AllowBluetooth>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowBluetooth>
+      <AllowIrDA>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowIrDA>
+      <RequireManualSyncWhenRoaming>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </RequireManualSyncWhenRoaming>
+      <AllowDesktopSync>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowDesktopSync>
       <MaxCalendarAgeFilter>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </MaxCalendarAgeFilter>
-      <MaxDevicePasswordFailedAttempts>
+      <AllowHTMLEmail>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </MaxDevicePasswordFailedAttempts>
+      </AllowHTMLEmail>
       <MaxEmailAgeFilter>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
@@ -126,50 +130,46 @@
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </MaxEmailHTMLBodyTruncationSize>
-      <MaxInactivityTimeDeviceLock>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </MaxInactivityTimeDeviceLock>
-      <MinDevicePasswordComplexCharacters>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </MinDevicePasswordComplexCharacters>
-      <MinDevicePasswordLength>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </MinDevicePasswordLength>
-      <PasswordRecoveryEnabled>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </PasswordRecoveryEnabled>
-      <RequireDeviceEncryption>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </RequireDeviceEncryption>
-      <RequireEncryptedSMIMEMessages>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </RequireEncryptedSMIMEMessages>
-      <RequireEncryptionSMIMEAlgorithm>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </RequireEncryptionSMIMEAlgorithm>
-      <RequireManualSyncWhenRoaming>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </RequireManualSyncWhenRoaming>
-      <RequireSignedSMIMEAlgorithm>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
-      </RequireSignedSMIMEAlgorithm>
       <RequireSignedSMIMEMessages>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </RequireSignedSMIMEMessages>
-      <RequireStorageCardEncryption>
+      <RequireEncryptedSMIMEMessages>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </RequireStorageCardEncryption>
+      </RequireEncryptedSMIMEMessages>
+      <RequireSignedSMIMEAlgorithm>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </RequireSignedSMIMEAlgorithm>
+      <RequireEncryptionSMIMEAlgorithm>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </RequireEncryptionSMIMEAlgorithm>
+      <AllowSMIMEEncryptionAlgorithmNegotiation>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowSMIMEEncryptionAlgorithmNegotiation>
+      <AllowSMIMESoftCerts>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowSMIMESoftCerts>
+      <AllowBrowser>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowBrowser>
+      <AllowConsumerEmail>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowConsumerEmail>
+      <AllowRemoteDesktop>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowRemoteDesktop>
+      <AllowInternetSharing>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </AllowInternetSharing>
       <UnapprovedInROMApplicationList>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
@@ -178,13 +178,13 @@
             <attribute_redaction>full</attribute_redaction>
          </ApplicationName>
       </UnapprovedInROMApplicationList>
+      <ApprovedApplicationList>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
+         <Hash>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </Hash>
+      </ApprovedApplicationList>
    </EASProvisionDoc>
-   <PolicyKey>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </PolicyKey>
-   <PolicyType>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </PolicyType>
 </xml>

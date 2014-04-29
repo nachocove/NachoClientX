@@ -1,63 +1,137 @@
 import sys
 import os
-import xml.sax
-from xml.sax.handler import ContentHandler
+from as_xml import AsXmlElement
+from as_xml import AsXmlParser
+from output import Output
 
 
-class AsXsd(ContentHandler):
+class AsXsdOutput:
+    """
+    A class for handling output the generated XML file.
+    """
     INDENTATION = '   '
 
-    def __init__(self, xsd_fname):
-        ContentHandler.__init__(self)
-        self.elements = {}
-        self.stack = []
-        self._push(self.elements)
-        xml.sax.parse(xsd_fname, self)
+    def __init__(self):
+        self.output = ''
 
-    def _push(self, obj):
-        self.stack.insert(0, obj)
-
-    def _pop(self):
-        return self.stack.pop(0)
-
-    def _peek(self):
-        return self.stack[0]
-
-    def startElement(self, name, attrs):
-        if name == 'xs:element':
-            assert 'name' in attrs
-            element_name = attrs['name']
-            tos = self._peek()
-            tos[element_name] = {}
-            self._push(tos[element_name])
-
-    def endElement(self, name):
-        if name == 'xs:element':
-            self._pop()
-
-    def generate_xml(self):
-        return '<xml>\n' + self._walk(self.elements, 1) + '</xml>\n'
-
-    def _walk(self, element, level):
-        s = ''
-        indent = AsXsd.INDENTATION * level
-        for key in sorted(element.keys()):
-            s += indent + '<%s>\n' % key
-            if len(element[key].keys()) > 0:
-                # Complex type is never redacted
-                s += indent + AsXsd.INDENTATION + '<element_redaction>none</element_redaction>\n'
-                s += indent + AsXsd.INDENTATION + '<attribute_redaction>none</attribute_redaction>\n'
-            else:
-                s += indent + AsXsd.INDENTATION + '<element_redaction>full</element_redaction>\n'
-                s += indent + AsXsd.INDENTATION + '<attribute_redaction>full</attribute_redaction>\n'
-            s += self._walk(element[key], level+1)
-            s += indent + '</%s>\n' % key
-        return s
+    def line(self, indent_level, fmt, *params):
+        indent = indent_level * AsXsdOutput.INDENTATION
+        self.output += indent + fmt % tuple(params) + '\n'
 
     def write_xml(self, fname):
         with open(fname, 'w') as f:
-            f.write(self.generate_xml())
+            f.write(self.output)
             f.close()
+
+
+class AsXsdElement(AsXmlElement):
+    def __init__(self, name, is_ref=False):
+        AsXmlElement.__init__(self, name)
+        assert isinstance(is_ref, bool)
+        self.is_ref = is_ref
+
+    def _ref_has_namespace(self):
+        assert self.is_ref
+        return self.name.find(':') >= 0
+
+    @staticmethod
+    def generate_xml_start(obj, indent_level, output, root):
+        if obj.is_ref:
+            # This is a reference. If it is in a different namespace, ignore it
+            if obj._ref_has_namespace():
+                return
+            new_obj = None
+
+            # Resolve the reference. Use only global elements as per XML schema convention
+            for child in root.children:
+                if child.name == obj.name:
+                    new_obj = child
+                    break
+            assert new_obj is not None
+            new_obj.walk(indent_level, AsXsdElement.generate_xml_start,
+                         AsXsdElement.generate_xml_end, output, root)
+            return
+
+        output.line(indent_level, '<%s>', obj.name)
+        if obj.name == 'xml':
+            return
+        if obj.has_children():
+            # Complex type is never redacted
+            element_redaction = 'none'
+            attribute_redaction = 'none'
+        else:
+            element_redaction = 'full'
+            attribute_redaction = 'full'
+        output.line(indent_level+1, '<element_redaction>%s</element_redaction>', element_redaction)
+        output.line(indent_level+1, '<attribute_redaction>%s</attribute_redaction>', attribute_redaction)
+
+    @staticmethod
+    def generate_xml_end(obj, indent_level, output, root):
+        if obj.is_ref:
+            return
+        output.line(indent_level, '</%s>', obj.name)
+
+
+class AsXsd(AsXmlParser):
+    INDENTATION = '   '
+
+    def __init__(self, xsd_fname):
+        AsXmlParser.__init__(self)
+        self.namespace = ''
+        self.root = None
+        self.start_handlers = {
+            u'xs:schema': self.schema_start_handler,
+            u'xs:element': self.element_start_handler,
+            None: AsXsd.default_start_handler,
+        }
+        self.end_handlers = {
+            u'xs:schema': self.schema_end_handler,
+            u'xs:element': AsXsd.element_end_handler,
+            None: AsXsd.default_end_handler,
+        }
+        self.parse(xsd_fname)
+
+    def schema_start_handler(self, name, attrs):
+        assert name == u'xs:schema'
+        self.root = AsXsdElement('xml')
+        return self.root
+
+    def schema_end_handler(self, obj, content):
+        return
+
+    def element_start_handler(self, name, attrs):
+        assert name == u'xs:element'
+        if u'ref' in attrs:
+            obj = AsXsdElement(attrs[u'ref'], True)
+            obj.is_ref = True
+        else:
+            assert u'name' in attrs
+            obj = AsXsdElement(attrs[u'name'], False)
+        self.current_element().add_child(obj)
+        return obj
+
+    @staticmethod
+    def element_end_handler(obj, content):
+        # XML schema does not really have value for any element.
+        pass
+
+    @staticmethod
+    def default_start_handler(name, attrs):
+        # Do not throw exception for unhandled elements. We ignore a
+        # lot of elements in XML schema.
+        return None
+
+    @staticmethod
+    def default_end_handler(name, content):
+        # Do not throw exception for unhandled elements. We ignore a
+        # lot of elements in XML schema.
+        return
+
+    def generate_xml(self, xml_fname):
+        output = Output(indent=3)
+        self.root.walk(0, AsXsdElement.generate_xml_start,
+                       AsXsdElement.generate_xml_end, output, self.root)
+        output.write(xml_fname)
 
 
 def main():
@@ -65,7 +139,7 @@ def main():
         (base, ext) = os.path.splitext(in_fname)
         out_fname = base + '.xml'
         print '%s -> %s' % (in_fname, out_fname)
-        AsXsd(in_fname).write_xml(out_fname)
+        AsXsd(in_fname).generate_xml(out_fname)
 
 if __name__ == '__main__':
     main()
