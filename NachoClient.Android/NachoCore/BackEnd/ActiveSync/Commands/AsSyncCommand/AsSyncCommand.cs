@@ -183,6 +183,10 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
+            if (0 == SyncKitList.Count) {
+                // Abort if there are no folders to Sync.
+                return null;
+            }
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
             foreach (var tup in SyncKitList) {
                 var folder = tup.Item1;

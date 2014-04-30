@@ -361,6 +361,13 @@ namespace NachoCore.ActiveSync
             if (null != mime) {
                 request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
             }
+            if (null == request.Content) {
+                // Note that this "Abort" mechanism will need to change if we start using the server-cached
+                // request capability.
+                Log.Warn (Log.LOG_AS, "No Content to send to server, aborting HTTP operation.");
+                HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
+                return;
+            }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             if (BEContext.ProtocolState.InitialProvisionCompleted && Owner.DoSendPolicyKey (this)) {
                 request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);

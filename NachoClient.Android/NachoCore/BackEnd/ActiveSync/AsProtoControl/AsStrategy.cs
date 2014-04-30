@@ -161,10 +161,10 @@ namespace NachoCore.ActiveSync
                         },
                         Drop = new [] {
                             (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.Success,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoAvCon, State = (uint)ECLst.DefI1dC2w },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.AllInf },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
                         }
                     },
                 }
@@ -174,7 +174,7 @@ namespace NachoCore.ActiveSync
             ContactsTasksSm = new NcStateMachine ("ASSTRATCT") {
                 Name = string.Format ("ASSyncStratC({0})", BEContext.Account.Id),
                 LocalStateType = typeof(CTLst),
-                StateChangeIndication = UpdateSavedCState,
+                StateChangeIndication = UpdateSavedCTState,
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
@@ -397,7 +397,7 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
-        private void UpdateSavedCState ()
+        private void UpdateSavedCTState ()
         {
             var protocolState = BEContext.ProtocolState;
             protocolState.SyncStratContactsState = ContactsTasksSm.State;
@@ -527,15 +527,19 @@ namespace NachoCore.ActiveSync
 
         public bool IsMoreSyncNeeded ()
         {
+            // Are there any AsSyncMetaToClientExpected folders available?
+             bool areExpecting = FolderListProvider ().Any (f => f.AsSyncMetaToClientExpected);
+
             // if we're not in the ultimate state(s), then true.
             if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
+                if (!areExpecting) {
+                    EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
+                }
                 return true;
             }
             // if a within-scope folder has to-client stuff waiting on the server, then true.
-            foreach (var folder in FolderListProvider ()) {
-                if (folder.AsSyncMetaToClientExpected) {
-                    return true;
-                }
+            if (areExpecting) {
+                return true;
             }
             // if there is a sync-based operation pending, then true.
             var waiting = McPending.QueryEligible (BEContext.Account.Id)
