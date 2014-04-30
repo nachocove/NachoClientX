@@ -600,6 +600,7 @@ namespace NachoClient.iOS
             evt.LastModified = new iCalDateTime (DateTime.UtcNow);
             evt.Start = new iCalDateTime (c.StartTime.ToLocalTime (), localTimeZone.TZID);
             evt.End = new iCalDateTime (c.EndTime.ToLocalTime (), localTimeZone.TZID);
+            NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
             evt.IsAllDay = c.AllDayEvent;
             evt.Priority = 5;
             if (c.AllDayEvent) {

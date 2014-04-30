@@ -446,7 +446,8 @@ namespace NachoClient.iOS
             var decodedText = GetText (textPart);
             var stringReader = new StringReader (decodedText);
             IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
-            IEvent evt = iCal.Events.First ();
+            var evt = iCal.Events.First () as DDay.iCal.Event;
+            NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
 
             var root = new RootElement ("");
             var section = new ThinSection ();
