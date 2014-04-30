@@ -321,21 +321,29 @@ namespace NachoClient.iOS
                     }
                 }
 
+                UITableViewCell cell = null;
                 var displayName = contact.DisplayName;
                 var displayEmailAddress = contact.DisplayEmailAddress;
 
+                if (null == displayName) {
+                    cell = tableView.DequeueReusableCell ("Basic");
+                    NachoCore.NachoAssert.True (null != cell);
+                    cell.TextLabel.Text = "";
+                    return cell;
+                }
+
                 if (displayName.Equals (displayEmailAddress)) {
-                    UITableViewCell cell = tableView.DequeueReusableCell ("Basic");
+                    cell = tableView.DequeueReusableCell ("Basic");
                     NachoCore.NachoAssert.True (null != cell);
                     cell.TextLabel.Text = displayName;
                     return cell;
-                } else {
-                    UITableViewCell cell = tableView.DequeueReusableCell ("Subtitle");
-                    NachoCore.NachoAssert.True (null != cell);
-                    cell.TextLabel.Text = displayName;
-                    cell.DetailTextLabel.Text = displayEmailAddress;
-                    return cell;  
                 }
+
+                cell = tableView.DequeueReusableCell ("Subtitle");
+                NachoCore.NachoAssert.True (null != cell);
+                cell.TextLabel.Text = displayName;
+                cell.DetailTextLabel.Text = displayEmailAddress;
+                return cell;  
             }
         }
 
