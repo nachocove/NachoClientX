@@ -26,6 +26,13 @@ namespace NachoClient.iOS
     [Register ("AppDelegate")]
     public partial class AppDelegate : UIApplicationDelegate, IBackEndOwner
     {
+        [DllImport ("libc")]private static extern int sigaction (Signal sig, IntPtr act, IntPtr oact);
+
+        enum Signal {
+            SIGBUS = 10,
+            SIGSEGV = 11
+        }
+
         // class-level declarations
         public override UIWindow Window { get; set; }
 
@@ -83,10 +90,26 @@ namespace NachoClient.iOS
                 return;
             }
 
+            // Debugger is causing Crashlytics to crash the app. See the following as a solution
+            // http://stackoverflow.com/questions/14499334/how-to-prevent-ios-crash-reporters-from-crashing-monotouch-apps
+            IntPtr sigbus = Marshal.AllocHGlobal (512);
+            IntPtr sigsegv = Marshal.AllocHGlobal (512);
+
+            // Store Mono SIGSEGV and SIGBUS handlers
+            sigaction (Signal.SIGBUS, IntPtr.Zero, sigbus);
+            sigaction (Signal.SIGSEGV, IntPtr.Zero, sigsegv);
+
             // Start Crashlytics
             Crashlytics crash = Crashlytics.SharedInstance ();
             crash.DebugMode = true;
             crash = Crashlytics.StartWithAPIKey ("5aff8dc5f7ff465089df2453cd07d6cd21880b74", 10.0);
+
+            // Restore Mono SIGSEGV and SIGBUS handlers
+            sigaction (Signal.SIGBUS, sigbus, IntPtr.Zero);
+            sigaction (Signal.SIGSEGV, sigsegv, IntPtr.Zero);
+
+            Marshal.FreeHGlobal (sigbus);
+            Marshal.FreeHGlobal (sigsegv);
         }
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
