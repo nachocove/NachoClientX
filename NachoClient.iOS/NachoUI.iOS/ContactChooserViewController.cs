@@ -222,7 +222,7 @@ namespace NachoClient.iOS
         }
 
         [Export ("scrollViewWillBeginDragging:")]
-        public void ScrollViewWillBeginDragging ()
+        public void ScrollViewWillBeginDragging (UIScrollView scrollView)
         {
             AutocompleteTextField.ResignFirstResponder ();
         }

@@ -123,13 +123,13 @@ namespace NachoClient.iOS
             });
         }
 
-        [MonoTouch.Foundation.Export ("CarouselTapSelector")]
+        [MonoTouch.Foundation.Export ("CarouselTapSelector:")]
         public void OnDoubleTapCarousel (UIGestureRecognizer sender)
         {
             // FIXME: What to do on double tap?
         }
 
-        [MonoTouch.Foundation.Export ("CurrentEventTapSelector")]
+        [MonoTouch.Foundation.Export ("CurrentEventTapSelector:")]
         public void OnTapCurrentEvent(UIGestureRecognizer sender)
         {
             if (null != currentEvent) {

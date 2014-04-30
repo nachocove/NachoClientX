@@ -208,7 +208,7 @@ namespace NachoClient.iOS
 
         }
 
-        [MonoTouch.Foundation.Export ("DoubleTapSelector")]
+        [MonoTouch.Foundation.Export ("DoubleTapSelector:")]
         public void OnDoubleTap (UIGestureRecognizer sender)
         {
             if (scrollView.ZoomScale == 1.0f) {
