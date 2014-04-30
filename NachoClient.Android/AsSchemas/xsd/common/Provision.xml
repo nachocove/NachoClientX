@@ -1,4 +1,4 @@
-<xml>
+<xml namespace="Provision">
    <PolicyType>
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>

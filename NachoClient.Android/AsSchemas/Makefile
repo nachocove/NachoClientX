@@ -38,13 +38,13 @@ $(AS_XML_FILTER_FILES) : $(XML_SCHEMA_FILES)
 	python as_xsd.py $<
 
 AsXmlFilterPingRequest.cs : xsd/Request/Ping.xml $(AS_SCHEMA_FILES)
-	$(AS_SCHEMA) $< PingRequest
+	$(AS_SCHEMA) --class-suffix PingRequest --out-dir ../NachoCore/BackEnd/ActiveSync/AsXmlFilters $<
 
 AsXmlFilterPingResponse.cs : xsd/Response/Ping.xml $(AS_SCHEMA_FILES)
-	$(AS_SCHEMA) $< PingResponse
+	$(AS_SCHEMA) --class-suffix PingResponse --out-dir ../NachoCore/BackEnd/ActiveSync/AsXmlFilters $<
 
 AsXmlFilter%.cs : xsd/common/%.xml $(AS_SCHEMA_FILES)
-	$(AS_SCHEMA) $< $(basename $(notdir $<))
+	$(AS_SCHEMA) --out-dir ../NachoCore/BackEnd/ActiveSync/AsXmlFilters $<
 
 clean:
 	rm -f $(AS_XML_FILTER_FILES)

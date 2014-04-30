@@ -52,9 +52,10 @@ class AsXsdElement(AsXmlElement):
                          AsXsdElement.generate_xml_end, output, root)
             return
 
-        output.line(indent_level, '<%s>', obj.name)
         if obj.name == 'xml':
+            output.line(indent_level, '<%s namespace="%s">', obj.name, root.namespace)
             return
+        output.line(indent_level, '<%s>', obj.name)
         if obj.has_children():
             # Complex type is never redacted
             element_redaction = 'none'
@@ -77,7 +78,6 @@ class AsXsd(AsXmlParser):
 
     def __init__(self, xsd_fname):
         AsXmlParser.__init__(self)
-        self.namespace = ''
         self.root = None
         self.start_handlers = {
             u'xs:schema': self.schema_start_handler,
@@ -94,6 +94,8 @@ class AsXsd(AsXmlParser):
     def schema_start_handler(self, name, attrs):
         assert name == u'xs:schema'
         self.root = AsXsdElement('xml')
+        assert u'xmlns' in attrs
+        self.root.namespace = attrs[u'xmlns']
         return self.root
 
     def schema_end_handler(self, obj, content):

@@ -1,20 +1,13 @@
-from xml.sax.handler import ContentHandler
-import xml.sax
-from object_stack import ObjectStack
-import sys
 import os
+from xml.sax.handler import ContentHandler
+from object_stack import ObjectStack
 from as_xml import AsXmlElement
+from as_xml import AsXmlParser
 from output import Output
+from argparse import ArgumentParser
 
 
 class AsSchemaElement(AsXmlElement):
-    INDENTATION = ' ' * 4
-
-    @staticmethod
-    def _indent(xml_str):
-        lines = xml_str.split('\n')
-        return '\n'.join([AsSchemaElement.INDENTATION + l for l in lines])
-
     def __init__(self, name):
         AsXmlElement.__init__(self, name)
 
@@ -38,7 +31,7 @@ class AsSchemaElement(AsXmlElement):
             output.line(3, '%s.Add(%s); // %s -> %s', var_name, self.node(level+1), self.name, child.name)
 
 
-class AsSchema(ContentHandler):
+class AsSchema(AsXmlParser):
     REDACTION_TYPES = ['element_redaction', 'attribute_redaction']
     """
     This class represents an ActiveSync schema XML file. An AS schema XML
@@ -48,42 +41,53 @@ class AsSchema(ContentHandler):
     Currently, we only support redaction filtering. But we can extend it to
     support other features in the future.
     """
-    def __init__(self, xml_file, class_suffix):
+    def __init__(self, xml_file, class_suffix=None):
         ContentHandler.__init__(self)
         self.stack = ObjectStack()
         self.root = None
         self.class_suffix = class_suffix
-        self.name_space = os.path.splitext(os.path.basename(xml_file))[0]
+        self.namespace = ''
         self.value = ''
-        xml.sax.parse(xml_file, self)
+        self.start_handlers = {
+            u'xml': self.xml_start_handler,
+            u'element_redaction': self.redaction_start_handler,
+            u'attribute_redaction': self.redaction_start_handler,
+            None: self.default_start_handler
+        }
+        self.end_handlers = {
+            u'xml': self.xml_end_handler,
+            u'element_redaction': self.redaction_end_handler,
+            u'attribute_redaction': self.redaction_end_handler,
+            None: self.default_end_handler
+        }
+        self.parse(xml_file)
 
-    def startElement(self, name, attrs):
-        cur_element = self.stack.peek()
-        child = AsSchemaElement(name)
-        if name == 'xml':
-            self.root = child
-        if cur_element and name not in AsSchema.REDACTION_TYPES:
-            cur_element.add_child(child)
-        self.value = ''
-        self.stack.push(child)
+    def xml_start_handler(self, name, attrs):
+        obj = AsSchemaElement(name)
+        self.root = obj
+        assert u'namespace' in attrs
+        self.namespace = attrs[u'namespace']
+        if self.class_suffix is None:
+            self.class_suffix = str(self.namespace)
+        return obj
 
-    def endElement(self, name):
-        node = self.stack.pop()
-        assert node.name == name
-        if name in AsSchema.REDACTION_TYPES:
-            cur_element = self.stack.peek()
-            assert cur_element is not None
-            cur_element.set_attr(name, self.value)
+    def redaction_start_handler(self, name, attrs):
+        obj = AsSchemaElement(name)
+        return obj
 
-    def characters(self, content):
-        self.value += content
+    def default_start_handler(self, name, attrs):
+        obj = AsSchemaElement(name)
+        self.current_element().add_child(obj)
+        return obj
 
-    @classmethod
-    def line(cls, output, indent, fmt, *args):
-        """
-        Generate one line of C# code.
-        """
-        print >> output, (' ' * indent) + fmt % args
+    def xml_end_handler(self, obj, content):
+        return
+
+    def redaction_end_handler(self, obj, content):
+        self.current_element().set_attr(obj.name, content)
+
+    def default_end_handler(self, name, attrs):
+        return True
 
     def generate_xml_filter_cs(self, output):
         """
@@ -96,7 +100,7 @@ class AsSchema(ContentHandler):
         output.line(0, '{')
         output.line(1, 'public class AsXmlFilter%s : NcXmlFilter', self.class_suffix)
         output.line(1, '{')
-        output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.name_space)
+        output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.namespace)
         output.line(2, '{')
         # Create all the variables
         for n in range(self.stack.max_depth()-1):  # -1 for redaction tag
@@ -116,14 +120,21 @@ class AsSchema(ContentHandler):
         output.line(0, '}')
 
 
-def process(fname, class_suffix):
+def process(fname, class_suffix=None, out_dir='.'):
     as_schema = AsSchema(fname, class_suffix)
-    output = Output('AsXmlFilter' + class_suffix + '.cs')
+    output = Output(os.path.join(out_dir, 'AsXmlFilter' + as_schema.class_suffix + '.cs'))
     as_schema.generate_xml_filter_cs(output)
 
 
 def main():
-    process(sys.argv[1], sys.argv[2])
+    parser = ArgumentParser()
+    parser.add_argument('--class-suffix',
+                        help='Specify the generated C# class suffix. [Default to namespace]',
+                        default=None)
+    parser.add_argument('--out-dir', help='Output directory', default='.')
+    parser.add_argument('xml_file', nargs=1, help='XML configuration file')
+    options = parser.parse_args()
+    process(fname=options.xml_file[0], class_suffix=options.class_suffix, out_dir=options.out_dir)
 
 
 if __name__ == '__main__':

@@ -221,8 +221,8 @@ namespace NachoClient.iOS
             owner.UpdateEmailAddress (this.address);
         }
 
-        [Export ("scrollViewWillBeginDragging")]
-        public void ScrollViewWillBeginDragging ()
+        [Export ("scrollViewWillBeginDragging:")]
+        public void ScrollViewWillBeginDragging (UIScrollView scrollView)
         {
             AutocompleteTextField.ResignFirstResponder ();
         }

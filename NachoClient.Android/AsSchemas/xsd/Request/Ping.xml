@@ -1,4 +1,4 @@
-<xml>
+<xml namespace="Ping">
    <Ping>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>

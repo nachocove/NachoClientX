@@ -98,8 +98,10 @@ class AsXmlParser(ContentHandler):
         if name not in self.end_handlers:
             if None not in self.end_handlers:
                 raise ValueError()
+            obj = self.stack.pop()
             if not self.end_handlers[None](name, self.value):
-                return  # this element was ignored in startElement
+                self.stack.push(obj)  # this element was ignored in startElement
+            return
         obj = self.stack.pop()
         #print 'END[%d]: %s' % (self.stack.depth(), name)
         self.end_handlers[name](obj, self.value)
