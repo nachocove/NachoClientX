@@ -57,7 +57,7 @@ namespace NachoClient.iOS
 
             var currentEventTouched = new UITapGestureRecognizer ();
             currentEventTouched.NumberOfTapsRequired = 1;
-            currentEventTouched.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CurrentEventTapSelector"));
+            currentEventTouched.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CurrentEventTapSelector:"));
             currentEventTouched.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
@@ -65,7 +65,7 @@ namespace NachoClient.iOS
 
             var carouselTouched = new UITapGestureRecognizer ();
             carouselTouched.NumberOfTapsRequired = 1;
-            carouselTouched.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CarouselTapSelector"));
+            carouselTouched.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CarouselTapSelector:"));
             carouselTouched.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
@@ -123,13 +123,13 @@ namespace NachoClient.iOS
             });
         }
 
-        [MonoTouch.Foundation.Export ("CarouselTapSelector")]
+        [MonoTouch.Foundation.Export ("CarouselTapSelector:")]
         public void OnDoubleTapCarousel (UIGestureRecognizer sender)
         {
             // FIXME: What to do on double tap?
         }
 
-        [MonoTouch.Foundation.Export ("CurrentEventTapSelector")]
+        [MonoTouch.Foundation.Export ("CurrentEventTapSelector:")]
         public void OnTapCurrentEvent(UIGestureRecognizer sender)
         {
             if (null != currentEvent) {

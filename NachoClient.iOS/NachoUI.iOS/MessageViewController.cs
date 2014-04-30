@@ -176,7 +176,7 @@ namespace NachoClient.iOS
 
             var doubletap = new UITapGestureRecognizer ();
             doubletap.NumberOfTapsRequired = 2;
-            doubletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("DoubleTapSelector"));
+            doubletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("DoubleTapSelector:"));
             doubletap.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
@@ -208,7 +208,7 @@ namespace NachoClient.iOS
 
         }
 
-        [MonoTouch.Foundation.Export ("DoubleTapSelector")]
+        [MonoTouch.Foundation.Export ("DoubleTapSelector:")]
         public void OnDoubleTap (UIGestureRecognizer sender)
         {
             if (scrollView.ZoomScale == 1.0f) {
