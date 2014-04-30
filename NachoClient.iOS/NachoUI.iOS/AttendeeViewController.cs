@@ -163,6 +163,11 @@ namespace NachoClient.iOS
 
             var mailboxAddress = address.ToMailboxAddress ();
 
+            // FIXME: Deal with bad email address
+            if (null == mailboxAddress) {
+                return;
+            }
+
             var name = mailboxAddress.Name;
             if (String.IsNullOrEmpty (name)) {
                 name = mailboxAddress.Address;
