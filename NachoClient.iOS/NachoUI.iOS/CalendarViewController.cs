@@ -73,6 +73,9 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
 
             if (adjustScrollPosition && (calendar.NumberOfDays () > 0)) {
                 adjustScrollPosition = false;
@@ -82,7 +85,6 @@ namespace NachoClient.iOS
                     TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
                 }
             }
-            this.NavigationController.ToolbarHidden = true;
         }
 
         /// <summary>

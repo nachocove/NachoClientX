@@ -87,8 +87,9 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            NavigationController.ToolbarHidden = false;
-
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = false;
+            }
             CreateView ();
             MyLayout ();
         }
@@ -96,8 +97,9 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NavigationController.ToolbarHidden = true;
-        }
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }        }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {

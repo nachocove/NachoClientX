@@ -98,8 +98,9 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            this.NavigationController.ToolbarHidden = false;
-
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = false;
+            }
             EmailHotList ();
             carouselView.ReloadData ();
         }
