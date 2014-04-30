@@ -70,6 +70,11 @@ namespace NachoClient.iOS
             };
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 DeleteThisMessage ();
+                NavigationController.PopViewControllerAnimated (true);
+            };
+            checkButton.Clicked += (object sender, EventArgs e) => {
+                ArchiveThisMessage ();
+                NavigationController.PopViewControllerAnimated (true);
             };
 
             // Watch for changes from the back end
@@ -99,7 +104,8 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-            }        }
+            }
+        }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
@@ -147,7 +153,12 @@ namespace NachoClient.iOS
         {
             var m = thread.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (m);
-            NavigationController.PopViewControllerAnimated (true);
+        }
+
+        public void ArchiveThisMessage()
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            NcEmailArchiver.Archive(m);
         }
 
         protected void CreateView ()
