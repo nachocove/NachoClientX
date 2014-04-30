@@ -54,12 +54,15 @@ namespace NachoCore.Utils
 
     public class NcXmlFilter
     {
+        public NcXmlFilterSet ParentSet { set; get; }
+
         protected NcXmlFilterNode Root { set; get; }
 
         public string NameSpace { set; get; }
 
         public NcXmlFilter (string nameSpace)
         {
+            ParentSet = null;
             Root = null;
             NameSpace = nameSpace;
         }
@@ -119,10 +122,37 @@ namespace NachoCore.Utils
             }
         }
 
-        private void FilterNode (XElement doc, NcXmlFilterNode filter)
+        private Boolean FilterNode (XElement doc, NcXmlFilter filter, NcXmlFilterNode parentFilterNode,
+            out NcXmlFilter newFilter, out NcXmlFilterNode newFilterNode)
         {
+            newFilter = null;
+            newFilterNode = null;
+
+            if (null == filter) {
+                NachoAssert.True (null == parentFilterNode);
+                return false;
+            }
+
             if (System.Xml.XmlNodeType.Element != doc.NodeType) {
-                return;
+                return false;
+            }
+                
+            if (doc.Name.NamespaceName != filter.NameSpace) {
+                // There is a namespace switch. We need to find a new filter.
+                NachoAssert.True (null != filter.ParentSet);
+                newFilter = filter.ParentSet.FindFilter (doc.Name.NamespaceName);
+                if (null == newFilter) {
+                    // Somehow we are missing a filter for a namespace. Return false to stop
+                    // the walk into this XML subtree and redact the entire thing.
+                    Log.Error ("Unknown namespace {0}", doc.Name.NamespaceName);
+                    RedactElement (doc, RedactionType.FULL);
+                    RedactAttributes (doc, RedactionType.FULL);
+                    return false;
+                }
+                filter = newFilter;
+                parentFilterNode = filter.Root;
+            } else {
+                newFilter = filter;
             }
 
             // Determine the filtering action of this node
@@ -130,13 +160,20 @@ namespace NachoCore.Utils
             RedactionType attributeAction = RedactionType.FULL;
             Boolean doRecurse = false;
 
-            NcXmlFilterNode filterNode = filter.FindChildNode (doc);
-            if (null == filterNode) {
+            if (null != parentFilterNode) {
+                newFilterNode = parentFilterNode.FindChildNode (doc);
+  
+            } else {
+                if (filter.Root.Name.LocalName == doc.Name.LocalName) {
+                    newFilterNode = filter.Root;
+                }
+            }
+            if (null == newFilterNode) {
                 // Unknown tag
-                Log.Warn("Unknown tag {0}", doc.Name);
-            }  else {
-                elementAction = filterNode.ElementRedaction;
-                attributeAction = filterNode.AttributeRedaction;
+                Log.Warn ("Unknown tag {0}", doc.Name);
+            } else {
+                elementAction = newFilterNode.ElementRedaction;
+                attributeAction = newFilterNode.AttributeRedaction;
                 doRecurse = (RedactionType.NONE == elementAction);
             }
 
@@ -146,14 +183,11 @@ namespace NachoCore.Utils
 
             // Recurse into children nodes if necessary
             if (!doRecurse) {
-                return;
+                newFilter = null;
+                newFilterNode = null;
+                return false;
             }
-            for (XNode docNode = doc.FirstNode; null != docNode; docNode = docNode.NextNode) {
-                if (XmlNodeType.Element != docNode.NodeType) {
-                    continue;
-                }
-                FilterNode((XElement)docNode, (NcXmlFilterNode)filterNode);
-            }
+            return true;
         }
 
         public XDocument Filter (XDocument doc)
@@ -162,8 +196,21 @@ namespace NachoCore.Utils
             // redact a lot of the elements we clone. Will optimize later if needed
             XDocument docOut = new XDocument (doc);
 
-            FilterNode (docOut.Root, Root);
+            Walk (docOut.Root, this, null);
             return docOut;
+        }
+
+        protected void Walk (XElement doc, NcXmlFilter filter, NcXmlFilterNode parentFilterNode)
+        {
+            NcXmlFilter newFilter = null;
+            NcXmlFilterNode newFilterNode = null;
+            FilterNode (doc, filter, parentFilterNode, out newFilter, out newFilterNode);
+            for (XNode docNode = doc.FirstNode; null != docNode; docNode = docNode.NextNode) {
+                if (System.Xml.XmlNodeType.Element != docNode.NodeType) {
+                    continue;
+                }
+                Walk ((XElement)docNode, newFilter, newFilterNode);
+            }
         }
     }
 
@@ -176,7 +223,7 @@ namespace NachoCore.Utils
             FilterList = new List<NcXmlFilter> ();
         }
 
-        private NcXmlFilter FindFilter (string nameSpace)
+        public NcXmlFilter FindFilter (string nameSpace)
         {
             foreach (NcXmlFilter filter in FilterList) {
                 if (filter.NameSpace == nameSpace) {
@@ -199,6 +246,7 @@ namespace NachoCore.Utils
         {
             NachoAssert.True (null == FindFilter (filter.NameSpace));
             FilterList.Add (filter);
+            filter.ParentSet = this;
         }
     }
 }

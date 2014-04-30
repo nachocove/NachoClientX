@@ -12,11 +12,14 @@ namespace NachoCore.Wbxml
             NcXmlFilterNode node2 = null;
             NcXmlFilterNode node3 = null;
 
-            node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
+            // Provision
+            node0 = new NcXmlFilterNode ("Provision", RedactionType.NONE, RedactionType.NONE);
             // PolicyType
             node1 = new NcXmlFilterNode ("PolicyType", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // Provision -> PolicyType
             // PolicyKey
             node1 = new NcXmlFilterNode ("PolicyKey", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // Provision -> PolicyKey
             // EASProvisionDoc
             node1 = new NcXmlFilterNode ("EASProvisionDoc", RedactionType.NONE, RedactionType.NONE);
             // DevicePasswordEnabled
@@ -151,7 +154,7 @@ namespace NachoCore.Wbxml
             node3 = new NcXmlFilterNode ("Hash", RedactionType.FULL, RedactionType.FULL);
             node2.Add(node3); // ApprovedApplicationList -> Hash
             node1.Add(node2); // EASProvisionDoc -> ApprovedApplicationList
-            node0.Add(node1);
+            node0.Add(node1); // Provision -> EASProvisionDoc
             
             Root = node0;
         }

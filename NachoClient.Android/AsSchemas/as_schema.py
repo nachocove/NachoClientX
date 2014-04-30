@@ -103,16 +103,14 @@ class AsSchema(AsXmlParser):
         output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.namespace)
         output.line(2, '{')
         # Create all the variables
-        for n in range(self.stack.max_depth()-1):  # -1 for redaction tag
+        for n in range(self.stack.max_depth()-2):  # -1 for redaction tag; -1 for not generating a node for <xml>
             output.line(3, 'NcXmlFilterNode %s = null;', AsSchemaElement.node(n))
         output.line(0, '')
-        output.line(3, 'node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);')
 
         # Create the code that sets up the tree
         for child in self.root.children:
-            child.generate_cs(output, 1)
+            child.generate_cs(output, 0)
 
-        output.line(3, 'node0.Add(node1);')
         output.line(3, '')
         output.line(3, 'Root = node0;')
         output.line(2, '}')
