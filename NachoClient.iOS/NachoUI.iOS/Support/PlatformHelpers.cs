@@ -29,14 +29,23 @@ namespace NachoClient
         static public UIImage RenderContentId (string value)
         {
             MimeEntity e = MimeHelpers.SearchMessage (value, motd);
-
-            MimePart part = (MimePart)e;
-            var image = RenderImage (part);
-            if (null != image) {
-                return image;
+            if (null == e) {
+                Log.Error ("RenderContentId: MimeEntity is null: {0}", value);
+                return RenderStringToImage (value);
             }
-            // TODO: Handle case where we cannot convert
-            return RenderStringToImage (value);
+
+            var part = e as MimePart;
+            if (null == part) {
+                Log.Error ("RenderContentId: MimePart is null: {0}", value);
+                return RenderStringToImage (value);
+            }
+
+            var image = RenderImage (part);
+            if (null == image) {
+                Log.Error ("RenderContentId: image is null: {0}", value);
+                return RenderStringToImage (value);
+            }
+            return image;
         }
 
         /// <summary>
