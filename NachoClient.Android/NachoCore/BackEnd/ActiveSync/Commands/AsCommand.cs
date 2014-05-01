@@ -46,6 +46,9 @@ namespace NachoCore.ActiveSync
         protected Object LockObj = new Object ();
 
         public TimeSpan Timeout { set; get; }
+
+        public bool DontReportCommResult { set; get; }
+
         // Initializers.
         public AsCommand (string commandName, string nsName, IBEContext beContext) : this (commandName, beContext)
         {
@@ -64,7 +67,9 @@ namespace NachoCore.ActiveSync
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
         {
             lock (LockObj) {
-                Op = new AsHttpOperation (CommandName, this, BEContext);
+                Op = new AsHttpOperation (CommandName, this, BEContext) {
+                    DontReportCommResult = DontReportCommResult,
+                };
                 if (TimeSpan.Zero != Timeout) {
                     Op.Timeout = Timeout;
                 }

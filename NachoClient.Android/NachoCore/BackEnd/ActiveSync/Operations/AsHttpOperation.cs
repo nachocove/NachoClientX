@@ -70,7 +70,7 @@ namespace NachoCore.ActiveSync
         private const string KResponse = "response";
         private const uint KDefaultDelaySeconds = 10;
         private const int KDefaultTimeoutSeconds = 10;
-        private const double KDefaultTimeoutExpander = 1.5;
+        private const double KDefaultTimeoutExpander = 1.2;
         private const uint KDefaultRetries = 8;
         private const string KToXML = "ToXML";
         private string CommandName;

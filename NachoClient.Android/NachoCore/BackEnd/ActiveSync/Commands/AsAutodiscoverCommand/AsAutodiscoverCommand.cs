@@ -225,9 +225,12 @@ namespace NachoCore.ActiveSync
                                 Act = DoAcceptServerConf,
                                 State = (uint)St.Stop
                             },
-                            // It failed. Try again (FIXME - do we need this? TempFail now handled by AsHttpOp).
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoTest, State = (uint)Lst.TestW },
                             // It failed. Ask app for server config again.
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = DoUiGetServer,
+                                State = (uint)Lst.SrvConfW
+                            },
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = DoUiGetServer,
@@ -467,7 +470,9 @@ namespace NachoCore.ActiveSync
         private void DoTest ()
         {
             DoCancel ();
-            OptCmd = new AsOptionsCommand (this);
+            OptCmd = new AsOptionsCommand (this) {
+                DontReportCommResult = true,
+            };
             OptCmd.Execute (Sm);
         }
 
