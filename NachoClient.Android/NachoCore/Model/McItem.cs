@@ -61,6 +61,9 @@ namespace NachoCore.Model
 
         public string GetBody ()
         {
+            if (0 == BodyId) {
+                return null;
+            }
             var body = BackEnd.Instance.Db.Get<McBody> (BodyId);
             if (null == body) {
                 return null;
