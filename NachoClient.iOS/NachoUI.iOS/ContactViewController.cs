@@ -247,8 +247,10 @@ namespace NachoClient.iOS
                 return;
             }
             var body = m.GetBody ();
-            var e = new MultilineElement (body);
-            section.Add (e);
+            if (null != body) {
+                var e = new MultilineElement (body);
+                section.Add (e);
+            }
         }
     }
 }
