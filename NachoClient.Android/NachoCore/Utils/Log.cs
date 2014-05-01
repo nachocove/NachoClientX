@@ -26,7 +26,7 @@ namespace NachoCore.Utils
         public static int logLevel = LOG_SYNC + LOG_TIMER + LOG_STATE + LOG_AS + LOG_XML;
         // Determine if caller info (method, file name, line #) is included in log messages
         // Set it to false if it is slowing things down too much.
-        public static Boolean CallerInfo = true;
+        public static Boolean CallerInfo = false;
 
         public Log ()
         {
