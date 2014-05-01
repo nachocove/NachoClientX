@@ -185,7 +185,7 @@ namespace NachoCore.ActiveSync
         {
             if (0 == SyncKitList.Count) {
                 // Abort if there are no folders to Sync.
-                return null;
+                throw new AsCommand.AbortCommandException ();
             }
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
             foreach (var tup in SyncKitList) {

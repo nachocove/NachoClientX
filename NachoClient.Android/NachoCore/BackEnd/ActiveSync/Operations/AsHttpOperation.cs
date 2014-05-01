@@ -339,7 +339,14 @@ namespace NachoCore.ActiveSync
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
             Client.Timeout = this.Timeout;
             var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
-            var doc = Owner.ToXDocument (this);
+            XDocument doc;
+            try {
+                doc = Owner.ToXDocument (this);
+            } catch (AsCommand.AbortCommandException) {
+                Log.Warn (Log.LOG_AS, "Intentionally aborting HTTP operation.");
+                HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
+                return;
+            }
             if (null != doc) {
                 Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 // Sadly, Xamarin does not support schema-based XML validation APIs.
@@ -360,13 +367,6 @@ namespace NachoCore.ActiveSync
             var mime = Owner.ToMime (this);
             if (null != mime) {
                 request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
-            }
-            if (null == request.Content) {
-                // Note that this "Abort" mechanism will need to change if we start using the server-cached
-                // request capability.
-                Log.Warn (Log.LOG_AS, "No Content to send to server, aborting HTTP operation.");
-                HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
-                return;
             }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             if (BEContext.ProtocolState.InitialProvisionCompleted && Owner.DoSendPolicyKey (this)) {

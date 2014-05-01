@@ -156,6 +156,11 @@ namespace NachoCore.ActiveSync
             // Updates the value in the DB.
             BEContext.Server = server;
         }
+        // This exception is the way to say "don't bother to do this command" during ToXDocument().
+        public class AbortCommandException : Exception
+        {
+        }
+
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
         public virtual XDocument ToXDocument (AsHttpOperation Sender)
         {
