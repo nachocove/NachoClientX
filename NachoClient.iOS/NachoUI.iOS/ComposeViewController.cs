@@ -257,6 +257,8 @@ namespace NachoClient.iOS
                 UpdateScore (account.Id, "send to", +3);
             } else if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
                 UpdateScore (account.Id, "reply", +2);
+            }else if (Action.Equals (Forward)) {
+                UpdateScore (account.Id, "forward", +1);
             }
 
             // Might want to defer until BE says message is queued.
@@ -340,7 +342,9 @@ namespace NachoClient.iOS
             }
             if (Action.Equals (Forward)) {
                 // TODO: Compose needs to be smart about MIME messages.
-                bodyElement = new MultilineEntryElement ("Enter your message...", null, 120.0f, true);
+                string fwdText = MimeHelpers.FetchSomeText (body);
+                string fwdquotedText = QuoteForReply (fwdText);
+                bodyElement = new MultilineEntryElement ("Enter your message...", fwdquotedText, 120.0f, true);
                 return;
             }
             string someText = MimeHelpers.FetchSomeText (body);
