@@ -1,6 +1,7 @@
 // # Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -24,6 +25,7 @@ namespace NachoCore.Utils
         }
 
         public event ServerCertificateEventHandler ValidationEvent;
+        public ConcurrentDictionary<string, X509Certificate2> Cache;
 
         public static ServerCertificatePeek Instance {
             get {
@@ -31,6 +33,7 @@ namespace NachoCore.Utils
                     lock (syncRoot) {
                         if (instance == null) {
                             instance = new ServerCertificatePeek ();
+                            instance.Cache = new ConcurrentDictionary<string, X509Certificate2> ();
                             ServicePointManager.ServerCertificateValidationCallback = CertificateValidationCallback;
                         }
                     }
@@ -44,13 +47,17 @@ namespace NachoCore.Utils
                                                            X509Chain chain,
                                                            SslPolicyErrors sslPolicyErrors)
         {
+            HttpWebRequest request = (HttpWebRequest)sender;
+            X509Certificate2 certificate2 = new X509Certificate2 (certificate);
             if (null != Instance.ValidationEvent) {
-                // NOTE: the cast to HttpWebRequest is evil. We could use reflection.
-                Instance.ValidationEvent ((HttpWebRequest)sender, 
-                    new X509Certificate2 (certificate), 
-                    chain, sslPolicyErrors, EventArgs.Empty);
+                Instance.ValidationEvent (request, certificate2, chain, sslPolicyErrors, EventArgs.Empty);
             }
-            return SslPolicyErrors.None == sslPolicyErrors;
+            if (SslPolicyErrors.None == sslPolicyErrors) {
+                var host = request.Address.Host;
+                Instance.Cache.AddOrUpdate (host, certificate2, (k, v) => certificate2);
+                return true;
+            }
+            return false;
         }
     }
 }

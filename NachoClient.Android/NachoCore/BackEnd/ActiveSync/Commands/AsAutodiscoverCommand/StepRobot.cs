@@ -490,6 +490,11 @@ namespace NachoCore.ActiveSync
 
             private async void DoRobotGetServerCert ()
             {
+                X509Certificate2 cached;
+                if (ServerCertificatePeek.Instance.Cache.TryGetValue (ReDirUri.Host, out cached)) {
+                    ServerCertificate = cached;
+                    StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSCC");
+                }
                 // FIXME: need to set & handle timeout.
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
