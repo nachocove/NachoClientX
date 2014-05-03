@@ -155,6 +155,24 @@ namespace NachoCore.Wbxml
             node2.Add(node3); // ApprovedApplicationList -> Hash
             node1.Add(node2); // EASProvisionDoc -> ApprovedApplicationList
             node0.Add(node1); // Provision -> EASProvisionDoc
+            // Policies
+            node1 = new NcXmlFilterNode ("Policies", RedactionType.NONE, RedactionType.NONE);
+            // Policy
+            node2 = new NcXmlFilterNode ("Policy", RedactionType.NONE, RedactionType.NONE);
+            // PolicyType
+            node3 = new NcXmlFilterNode ("PolicyType", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // Policy -> PolicyType
+            // PolicyKey
+            node3 = new NcXmlFilterNode ("PolicyKey", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // Policy -> PolicyKey
+            // Status
+            node3 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.FULL);
+            node2.Add(node3); // Policy -> Status
+            // Data
+            node3 = new NcXmlFilterNode ("Data", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // Policy -> Data
+            node1.Add(node2); // Policies -> Policy
+            node0.Add(node1); // Provision -> Policies
             
             Root = node0;
         }

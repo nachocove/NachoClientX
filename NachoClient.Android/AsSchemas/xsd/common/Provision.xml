@@ -190,5 +190,29 @@
             </Hash>
          </ApprovedApplicationList>
       </EASProvisionDoc>
+      <Policies>
+        <element_redaction>none</element_redaction>
+        <attribute_redaction>none</attribute_redaction>
+        <Policy>
+          <element_redaction>none</element_redaction>
+          <attribute_redaction>none</attribute_redaction>
+          <PolicyType>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+          </PolicyType>
+          <PolicyKey>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+          </PolicyKey>
+          <Status>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+          </Status>
+          <Data>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+          </Data>
+        </Policy>
+      </Policies>
    </Provision>
 </xml>
