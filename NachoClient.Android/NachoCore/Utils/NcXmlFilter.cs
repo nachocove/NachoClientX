@@ -56,161 +56,21 @@ namespace NachoCore.Utils
     {
         public NcXmlFilterSet ParentSet { set; get; }
 
-        protected NcXmlFilterNode Root { set; get; }
+        public NcXmlFilterNode Root { set; get; }
 
         public string NameSpace { set; get; }
+
+        // Filtered XDocument
+        private XDocument DocOut { get; set; }
+
+        // Current filter node
+        private NcXmlFilterNode CurrentFilterNode { get; set; }
 
         public NcXmlFilter (string nameSpace)
         {
             ParentSet = null;
             Root = null;
             NameSpace = nameSpace;
-        }
-
-        private void RedactElement (XElement docElement, RedactionType type)
-        {
-            if (RedactionType.NONE == type) {
-                return;
-            }
-
-            // Redact the element's content
-            if (null != docElement.Value) {
-                if (RedactionType.FULL == type) {
-                    docElement.Value = "-redacted-";
-                } else if (RedactionType.PARTIAL == type) {
-                    int contentLen = docElement.Value.Length;
-                    docElement.Value = String.Format ("-redacted:{0} bytes-", contentLen);
-                } else {
-                    NachoAssert.True (false);
-                }
-            }
-
-            // Remove all children nodes                
-            while (docElement.HasElements) {
-                docElement.FirstNode.Remove ();
-            }
-            NachoAssert.True (!docElement.HasElements);
-        }
-
-        private void RedactAttributes (XElement docElement, RedactionType type)
-        {
-            if (RedactionType.NONE == type) {
-                return;
-            }
-
-            if (RedactionType.FULL == type) {
-                // Just delete all attributes
-                while (null != docElement.FirstAttribute) {
-                    docElement.FirstAttribute.Remove ();
-                }
-                NachoAssert.True (!docElement.HasAttributes);
-                return;
-            }
-
-            // Partial redaction for attributes means, it will form a list of attributes
-            if (docElement.HasAttributes) {
-                string attrList = null;
-                while (docElement.HasAttributes) {
-                    if (null == attrList) {
-                        attrList = docElement.FirstAttribute.Name.ToString ();
-                    } else {
-                        attrList += "," + docElement.FirstAttribute.Name.ToString ();
-                    }
-                    docElement.FirstAttribute.Remove ();
-                }
-                docElement.Add (new XAttribute ("redacted", attrList.ToString ()));
-            }
-        }
-
-        private Boolean FilterNode (XElement doc, NcXmlFilter filter, NcXmlFilterNode parentFilterNode,
-            out NcXmlFilter newFilter, out NcXmlFilterNode newFilterNode)
-        {
-            newFilter = null;
-            newFilterNode = null;
-
-            if (null == filter) {
-                NachoAssert.True (null == parentFilterNode);
-                return false;
-            }
-
-            if (System.Xml.XmlNodeType.Element != doc.NodeType) {
-                return false;
-            }
-                
-            if (doc.Name.NamespaceName != filter.NameSpace) {
-                // There is a namespace switch. We need to find a new filter.
-                NachoAssert.True (null != filter.ParentSet);
-                newFilter = filter.ParentSet.FindFilter (doc.Name.NamespaceName);
-                if (null == newFilter) {
-                    // Somehow we are missing a filter for a namespace. Return false to stop
-                    // the walk into this XML subtree and redact the entire thing.
-                    Log.Error ("Unknown namespace {0}", doc.Name.NamespaceName);
-                    RedactElement (doc, RedactionType.FULL);
-                    RedactAttributes (doc, RedactionType.FULL);
-                    return false;
-                }
-                filter = newFilter;
-                parentFilterNode = filter.Root;
-            } else {
-                newFilter = filter;
-            }
-
-            // Determine the filtering action of this node
-            RedactionType elementAction = RedactionType.FULL;
-            RedactionType attributeAction = RedactionType.FULL;
-            Boolean doRecurse = false;
-
-            if (null != parentFilterNode) {
-                newFilterNode = parentFilterNode.FindChildNode (doc);
-  
-            } else {
-                if (filter.Root.Name.LocalName == doc.Name.LocalName) {
-                    newFilterNode = filter.Root;
-                }
-            }
-            if (null == newFilterNode) {
-                // Unknown tag
-                Log.Warn ("Unknown tag {0}", doc.Name);
-            } else {
-                elementAction = newFilterNode.ElementRedaction;
-                attributeAction = newFilterNode.AttributeRedaction;
-                doRecurse = (RedactionType.NONE == elementAction);
-            }
-
-            // Filter if necessary
-            RedactAttributes (doc, attributeAction);
-            RedactElement (doc, elementAction);
-
-            // Recurse into children nodes if necessary
-            if (!doRecurse) {
-                newFilter = null;
-                newFilterNode = null;
-                return false;
-            }
-            return true;
-        }
-
-        public XDocument Filter (XDocument doc)
-        {
-            // Clone the entire XDocument. This is not efficient since we may
-            // redact a lot of the elements we clone. Will optimize later if needed
-            XDocument docOut = new XDocument (doc);
-
-            Walk (docOut.Root, this, null);
-            return docOut;
-        }
-
-        protected void Walk (XElement doc, NcXmlFilter filter, NcXmlFilterNode parentFilterNode)
-        {
-            NcXmlFilter newFilter = null;
-            NcXmlFilterNode newFilterNode = null;
-            FilterNode (doc, filter, parentFilterNode, out newFilter, out newFilterNode);
-            for (XNode docNode = doc.FirstNode; null != docNode; docNode = docNode.NextNode) {
-                if (System.Xml.XmlNodeType.Element != docNode.NodeType) {
-                    continue;
-                }
-                Walk ((XElement)docNode, newFilter, newFilterNode);
-            }
         }
     }
 
@@ -233,13 +93,23 @@ namespace NachoCore.Utils
             return null;
         }
 
+        private void Walk (XNode node, NcXmlFilterState filterState, int level)
+        {
+            filterState.Update (level, node, null);
+            if (XmlNodeType.Element == node.NodeType) {
+                XElement element = (XElement)node;
+                for (XNode child = element.FirstNode; child != null; child = child.NextNode) {
+                    Walk (child, filterState, level+1);
+                }
+            }
+        }
+
         public XDocument Filter (XDocument doc)
         {
-            NcXmlFilter filter = FindFilter (doc.Root.Name.NamespaceName);
-            if (null == filter) {
-                return null;
-            }
-            return filter.Filter (doc);
+            NcXmlFilterState filterState = new NcXmlFilterState (this);
+            filterState.Start ();
+            Walk (doc.Root, filterState, 0);
+            return filterState.FinalizeXml ();
         }
 
         public void Add (NcXmlFilter filter)
@@ -247,6 +117,271 @@ namespace NachoCore.Utils
             NachoAssert.True (null == FindFilter (filter.NameSpace));
             FilterList.Add (filter);
             filter.ParentSet = this;
+        }
+    }
+
+    public class NcXmlFilterState {
+        public class Frame {
+            public NcXmlFilter Filter;
+            public NcXmlFilterNode ParentNode;
+            public XNode XmlNode;
+            public RedactionType ElementRedaction {
+                get {
+                    if (null == ParentNode) {
+                        return RedactionType.FULL;
+                    }
+                    return ParentNode.ElementRedaction;
+                }
+            }
+            public RedactionType AttributeRedaction {
+                get {
+                    if (null == ParentNode) {
+                        return RedactionType.FULL;
+                    }
+                    return ParentNode.AttributeRedaction;
+                }
+            }
+
+            public Frame ()
+            {
+                Filter = null;
+                ParentNode = null;
+                XmlNode = null;
+            }
+
+            // Copy constructor
+            public Frame (Frame frame)
+            {
+                Filter = frame.Filter;
+                ParentNode = frame.ParentNode;
+                XmlNode = null;
+            }
+
+            // A frame is "redacted" if it has no valid ParentNode.
+            // In this case, we cannot get redaction policy.
+            public Boolean IsRedacted ()
+            {
+                return (null == ParentNode);
+            }
+        }
+
+        private NcXmlFilterSet FilterSet;
+
+        private Stack<Frame> FilterStack;
+
+        private Boolean GenerateWbxml;
+
+        private List<byte> Wbxml;
+
+        private XDocument XmlDoc;
+
+        private const Boolean DEFAULT_GENERATE_WBXML = false;
+
+        public NcXmlFilterState (NcXmlFilterSet filterSet, Boolean? generateWbxml = null)
+        {
+            FilterSet = filterSet;
+            FilterStack = new Stack<Frame> ();
+            GenerateWbxml = generateWbxml ?? DEFAULT_GENERATE_WBXML;
+            if (GenerateWbxml) {
+                // Output Wbxml
+                Wbxml = new List<byte> ();
+                XmlDoc = null;
+            } else {
+                // Output XML
+                Wbxml = null;
+                XmlDoc = new XDocument ();
+            }
+        }
+
+        private Boolean IsElement (XNode node)
+        {
+            return (XmlNodeType.Element == node.NodeType);
+        }
+
+        private Boolean IsContent (XNode node)
+        {
+            return ((XmlNodeType.Text == node.NodeType) || (XmlNodeType.CDATA == node.NodeType));
+        }
+
+        public void Start ()
+        {
+            if (0 < FilterStack.Count) {
+                Log.Warn ("Has previous state. Reset");
+            }
+            FilterStack.Clear ();
+        }
+
+        private Frame InitializeFrame (XNode node)
+        {
+            Frame current = null;
+
+            if (0 == FilterStack.Count) {
+                current = new Frame ();
+
+                NachoAssert.True (IsElement (node));
+                XElement element = (XElement)node;
+                current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
+                if (null == current.Filter) {
+                    Log.Warn ("No filter for namespace {0}", element.Name.NamespaceName);
+                } else {
+                    if (current.Filter.Root.Name.LocalName == element.Name.LocalName) {
+                        current.ParentNode = current.Filter.Root;
+                    } else {
+                        Log.Warn ("Unexpected root element {0}", element.Name);
+                    }
+                }
+            } else {
+                current = new Frame (FilterStack.Peek ());
+
+                if (IsElement(node)) {
+                    XElement element = (XElement)node;
+
+                    // Is there a namespace switch?
+                    if (null != current.Filter) {
+                        if (current.Filter.NameSpace != element.Name.NamespaceName) {
+                            current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
+                            if (null != current.Filter) {
+                                current.ParentNode = current.Filter.Root;
+                            } else {
+                                Log.Warn ("Switching to an unknown namespace {0}", element.Name.NamespaceName);
+                                current.ParentNode = null;
+                            }
+                        }
+                    }
+
+                    // Look for the filter node for this element
+                    if (null != current.ParentNode) {
+                        current.ParentNode = current.ParentNode.FindChildNode (element);
+                        if (null == current.ParentNode) {
+                            Log.Warn ("Unknown element tag {0}", element.Name);
+                        }
+                    }
+                }
+            }
+            return current;
+        }
+
+        private XElement AddElement (XElement element, byte [] wbxml, Frame frame)
+        {
+            XElement newElement = null;
+            if (GenerateWbxml) {
+                Wbxml.AddRange (wbxml);
+            } else {
+                newElement = new XElement (element.Name);
+                if (0 == FilterStack.Count) {
+                    NachoAssert.True (null == XmlDoc.Root);
+                    XmlDoc.Add (newElement);
+                } else {
+                    Frame current = FilterStack.Peek ();
+                    NachoAssert.True (null != current.XmlNode);
+                    NachoAssert.True (IsElement(current.XmlNode));
+                    XElement parentElement = (XElement)current.XmlNode;
+                    parentElement.Add(newElement);
+                }
+                frame.XmlNode = newElement;
+            }
+            return newElement;
+        }
+
+        private void RedactElement (XElement newElement, XElement origElement, RedactionType type)
+        {
+            if (RedactionType.NONE == type) {
+                return;
+            }
+            if (GenerateWbxml) {
+                NachoAssert.True (false); // TODO
+            } else {
+                // Change the value of the element
+                if (null != origElement.Value) {
+                    if (RedactionType.FULL == type) {
+                        newElement.Value = "-redacted-";
+                    } else if (RedactionType.PARTIAL == type) {
+                        int contentLen = origElement.Value.Length;
+                        newElement.Value = String.Format ("-redacted:{0} bytes-", contentLen);
+                    } else {
+                        Log.Error ("Unknown redaction type {0}", type);
+                        NachoAssert.True (false);
+                    }
+                }
+            }
+        }
+
+        private void AddContent (XNode node, byte[] wbxml)
+        {
+            // Check the latest redaction policy. That should be the parent element
+            Frame current = FilterStack.Peek ();
+            NachoAssert.True (!IsElement(node));
+            if (RedactionType.NONE != current.ParentNode.ElementRedaction) {
+                return;
+            }
+
+            if (GenerateWbxml) {
+                Wbxml.AddRange (wbxml);
+            } else {
+                XElement element = (XElement)current.XmlNode;
+                if (XmlNodeType.Text == node.NodeType) {
+                    element.Add (new XText ((XText)node));
+                } else if (XmlNodeType.CDATA == node.NodeType) {
+                    element.Add (new XCData ((XCData)node));
+                }
+            }
+        }
+
+        public void Update (int level, XNode node, byte[] wbxml)
+        {
+            if ((XmlNodeType.Element != node.NodeType) && 
+                (XmlNodeType.Text != node.NodeType) && 
+                (XmlNodeType.CDATA != node.NodeType)) {
+                return;
+            }
+
+            // We previously return from a level but did pop the stack. Do it now.
+            while (level < FilterStack.Count) {
+                FilterStack.Pop ();
+            }
+
+            Frame current = InitializeFrame (node);
+            if (current.IsRedacted ()) {
+                // Two cases - Either the parent frame is also redacted or it is not
+                // If the parent is redacted, the redaction should occur in one of 
+                // the ancestors. So, no action is taken here. If the parent is not
+                // redacted, this is the first frame and we redact this.
+                if ((0 == FilterStack.Count) || !FilterStack.Peek ().IsRedacted ()) {
+                    if (IsElement (node)) {
+                        XElement element = (XElement)node;
+                        XElement newElement = AddElement (element, wbxml, current);
+                        RedactElement (newElement, element, RedactionType.FULL);
+                    }
+                }
+            } else {
+                if (IsElement(node)) {
+                    // Element - Find the redaction policy of this node from parent
+                    XElement element = (XElement)node;
+
+                    // Regardless of redaction policy. Always add the tag itself.
+                    XElement newElement = AddElement (element, wbxml, current);
+
+                    // If there is redaction of some kind, add the text here.
+                    // The reason is that if this is a xs:complexType, there will not 
+                    // be a Text or CDATA node for us to insert anything.
+                    RedactElement (newElement, element, current.ElementRedaction);
+                } else if ((XmlNodeType.Text == node.NodeType) ||
+                           (XmlNodeType.CDATA == node.NodeType)) {
+                    AddContent (node, wbxml);
+                }
+            }
+
+            FilterStack.Push (current);
+        }
+
+        public byte[] Finalize ()
+        {
+            return Wbxml.ToArray ();
+        }
+
+        public XDocument FinalizeXml ()
+        {
+            return new XDocument (XmlDoc);
         }
     }
 }
