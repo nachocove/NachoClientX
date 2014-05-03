@@ -254,6 +254,9 @@ namespace NachoCore.Model
             List<McContact> contactList = GetContactsFromEmailAddressString (From);
             // TODO: Do we need to return just one?
             // NachoAssert.True (1 == contactList.Count);
+            if ((null == contactList) || (0 == contactList.Count)) {
+                return null;
+            }
             return contactList [0];
         }
 
