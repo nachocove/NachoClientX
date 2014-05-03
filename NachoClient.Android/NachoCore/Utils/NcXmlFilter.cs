@@ -7,7 +7,7 @@ using NachoCore;
 using NachoCore.Utils;
 using System.Collections.Generic;
 
-namespace NachoCore.Utils
+namespace NachoCore.Wbxml
 {
     // RedactionType describes the extend of redaction for XML
     // elements and attributes. Some interpretation is slightly
@@ -195,7 +195,7 @@ namespace NachoCore.Utils
 
         private Boolean IsElement (XNode node)
         {
-            return (XmlNodeType.Element == node.NodeType);
+            return ((null != node) && (XmlNodeType.Element == node.NodeType));
         }
 
         private Boolean IsContent (XNode node)
@@ -288,20 +288,27 @@ namespace NachoCore.Utils
             if (RedactionType.NONE == type) {
                 return;
             }
+
+            // Determine the redaction string
+            string value = null;
+            if (RedactionType.FULL == type) {
+                value = "-redacted-";
+            } else if (RedactionType.FULL == type) {
+                int contentLen = origElement.Value.Length;
+                value = String.Format ("-redacted:{0} bytes-", contentLen);
+            } else {
+                Log.Error ("Unknown redaction type {0}", type);
+                NachoAssert.True (false);
+            }
+
+            // Encode the redaction string
             if (GenerateWbxml) {
-                NachoAssert.True (false); // TODO
+                Wbxml.Add ((byte)GlobalTokens.STR_I);
+                Wbxml.AddRange (WBXML.EncodeString (value));
             } else {
                 // Change the value of the element
                 if (null != origElement.Value) {
-                    if (RedactionType.FULL == type) {
-                        newElement.Value = "-redacted-";
-                    } else if (RedactionType.PARTIAL == type) {
-                        int contentLen = origElement.Value.Length;
-                        newElement.Value = String.Format ("-redacted:{0} bytes-", contentLen);
-                    } else {
-                        Log.Error ("Unknown redaction type {0}", type);
-                        NachoAssert.True (false);
-                    }
+                    newElement.Value = value;
                 }
             }
         }
@@ -329,6 +336,12 @@ namespace NachoCore.Utils
 
         public void Update (int level, XNode node, byte[] wbxml)
         {
+            if (null == FilterSet) {
+                // If the constructor is not given a valid filter set,
+                // the state machine is disabled. We 
+                return;
+            }
+
             if ((XmlNodeType.Element != node.NodeType) && 
                 (XmlNodeType.Text != node.NodeType) && 
                 (XmlNodeType.CDATA != node.NodeType)) {
@@ -337,7 +350,12 @@ namespace NachoCore.Utils
 
             // We previously return from a level but did pop the stack. Do it now.
             while (level < FilterStack.Count) {
-                FilterStack.Pop ();
+                Frame frame = FilterStack.Pop ();
+                if (IsElement (frame.XmlNode)) {
+                    if (GenerateWbxml) {
+                        Wbxml.Add ((byte)GlobalTokens.END);
+                    }
+                }
             }
 
             Frame current = InitializeFrame (node);

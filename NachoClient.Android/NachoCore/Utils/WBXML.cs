@@ -23,6 +23,7 @@ namespace NachoCore.Wbxml
         const byte characterSetByte = 0x6A;
         // UTF-8
         const byte stringTableLengthByte = 0x00;
+        const Boolean DEFAULT_FILTERING = true;
 
         public XDocument XmlDoc { set; get; }
 
@@ -41,11 +42,20 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (Stream byteWBXML)
+        public void LoadBytes (Stream byteWBXML, Boolean? doFiltering = null)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
+            int level = 0;
 
             ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML);
+
+            NcXmlFilterState filter = null;
+            if (doFiltering ?? DEFAULT_FILTERING) {
+                filter = new NcXmlFilterState (AsXmlFilterSet.Responses);
+            } else {
+                filter = new NcXmlFilterState (null);
+            }
+            filter.Start ();
 
             // Version is ignored
             bytes.Dequeue ();
@@ -88,6 +98,8 @@ namespace NachoCore.Wbxml
                 case GlobalTokens.END:
                     if (currentNode.Parent != null) {
                         currentNode = currentNode.Parent;
+                        NachoAssert.True (0 < level);
+                        level--;
                     } else {
                         //throw new InvalidDataException("END global token encountered out of sequence");
                     }
@@ -99,9 +111,11 @@ namespace NachoCore.Wbxml
                     if (codePages [currentCodePage].GetIsOpaqueBase64 (currentNode.Name.LocalName)) {
                         newOpaqueNode = new XText (Convert.ToBase64String (OpaqueBytes));
                     } else {
-                        newOpaqueNode = new XText (System.Text.Encoding.UTF8.GetString(OpaqueBytes));
+                        newOpaqueNode = new XText (System.Text.Encoding.UTF8.GetString (OpaqueBytes));
                     }
                     currentNode.Add (newOpaqueNode);
+                    filter.Update (level, newOpaqueNode, null);
+
                     //XmlCDataSection newOpaqueNode = xmlDoc.CreateCDataSection(bytes.DequeueString(CDATALength));
                     //currentNode.AppendChild(newOpaqueNode);
                     break;
@@ -117,6 +131,7 @@ namespace NachoCore.Wbxml
                         newTextNode = new XText (bytes.DequeueString ());
                     }
                     currentNode.Add (newTextNode);
+                    filter.Update (level, newTextNode, null);
                     break;
                     // According to MS-ASWBXML, these features aren't used
                 case GlobalTokens.ENTITY:
@@ -161,39 +176,54 @@ namespace NachoCore.Wbxml
                     //newNode.Prefix = codePages[currentCodePage].Xmlns;
                     if (null == currentNode) {
                         XmlDoc.Add (newNode);
+                        filter.Update (level, newNode, null);
                     } else {
                         currentNode.Add (newNode);
+                        filter.Update (level + 1, newNode, null);
                     }
                     if (hasContent) {
                         currentNode = newNode;
+                        level++;
                     }
                     break;
                 }
             }
 
-            // TODO - Need to feed the redacted XML into a storage that can hold and
-            // forward to the telemetry server.
-            Log.Info ("debug_XML = \n{0}", AsXmlFilterSet.Responses.Filter (XmlDoc));
+            if (doFiltering ?? DEFAULT_FILTERING) {
+                // TODO - Need to feed the redacted XML into a storage that can hold and
+                // forward to the telemetry server.
+                Log.Info ("debug_XML = \n{0}", filter.FinalizeXml ());
+            }
         }
 
-        public byte[] GetBytes ()
+        public byte[] GetBytes (Boolean? doFiltering = null)
         {
             List<byte> byteList = new List<byte> ();
 
-            // TODO - Need to feed the redacted XML into a storage that can hold and
-            // forward to the telemetry server.
-            Log.Info ("debug_XML = \n{0}", AsXmlFilterSet.Requests.Filter (XmlDoc));
+            NcXmlFilterState filter = null;
+            if (doFiltering ?? DEFAULT_FILTERING) {
+                filter = new NcXmlFilterState (AsXmlFilterSet.Requests);
+            } else {
+                filter = new NcXmlFilterState (null);
+            }
+            filter.Start ();
 
             byteList.Add (versionByte);
             byteList.Add (publicIdentifierByte);
             byteList.Add (characterSetByte);
             byteList.Add (stringTableLengthByte);
-            byteList.AddRange (EncodeNode (XmlDoc.Root));
+            byteList.AddRange (EncodeNode (XmlDoc.Root, 0, filter));
+
+            if (doFiltering ?? DEFAULT_FILTERING) {
+                // TODO - Need to feed the redacted XML into a storage that
+                // can hold and forward to the telemetry server.
+                Log.Info ("debug_XML = \n{0}", filter.FinalizeXml ());
+            }
 
             return byteList.ToArray ();
         }
 
-        private byte[] EncodeNode (XNode node)
+        private byte[] EncodeNode (XNode node, int level, NcXmlFilterState filter)
         {
             List<byte> byteList = new List<byte> ();
 
@@ -217,9 +247,13 @@ namespace NachoCore.Wbxml
 
                 byteList.Add (token);
 
+                if (null != filter) {
+                    filter.Update (level, node, byteList.ToArray ());
+                }
+
                 if (element.HasElements || !element.IsEmpty) {
                     foreach (XNode child in element.Nodes()) {
-                        byteList.AddRange (EncodeNode (child));
+                        byteList.AddRange (EncodeNode (child, level + 1, filter));
                     }
 
                     byteList.Add ((byte)GlobalTokens.END);
@@ -314,7 +348,7 @@ namespace NachoCore.Wbxml
             }
         }
 
-        private byte[] EncodeString (string value)
+        public static byte[] EncodeString (string value)
         {
             List<byte> byteList = new List<byte> ();
 
