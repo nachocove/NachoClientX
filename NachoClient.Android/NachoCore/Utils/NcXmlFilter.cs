@@ -177,6 +177,16 @@ namespace NachoCore.Wbxml
 
         private const Boolean DEFAULT_GENERATE_WBXML = false;
 
+        public RedactionType ElementRedaction {
+            get {
+                if (0 == FilterStack.Count) {
+                    return RedactionType.NONE;
+                }
+                Frame current = FilterStack.Peek ();
+                return current.ElementRedaction;
+            }
+        }
+
         public NcXmlFilterState (NcXmlFilterSet filterSet, Boolean? generateWbxml = null)
         {
             FilterSet = filterSet;

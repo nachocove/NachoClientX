@@ -15,11 +15,34 @@ namespace NachoCore.Wbxml
     {
         private Stream ByteStream;
         private int? PeekHolder;
+        private MemoryStream RedactCopy;
+        private Boolean _RedactCopyEnabled;
+        public Boolean RedactCopyEnabled {
+            set {
+                if (null == RedactCopy) {
+                    _RedactCopyEnabled = false;
+                }
+                _RedactCopyEnabled = value;
+            }
+            get {
+                if (null == RedactCopy) {
+                    return false;
+                }
+                return _RedactCopyEnabled;
+            }
+        }
 
-        public ASWBXMLByteQueue (Stream bytes)
+        public ASWBXMLByteQueue (Stream bytes, Boolean? hasRedactCopy = null)
         {
             PeekHolder = null;
             ByteStream = bytes;
+            if (hasRedactCopy ?? true) {
+                RedactCopy = new MemoryStream ();
+                RedactCopyEnabled = true;
+            } else {
+                RedactCopy = null;
+                RedactCopyEnabled = false;
+            }
         }
 
         public int Peek ()
@@ -43,7 +66,11 @@ namespace NachoCore.Wbxml
             if (-1 == value) {
                 throw new WBXMLReadPastEndException ();
             }
-            return Convert.ToByte (value);
+            byte aByte = Convert.ToByte (value);
+            if ((null != RedactCopy) && RedactCopyEnabled) {
+                RedactCopy.WriteByte (aByte);
+            }
+            return aByte;
         }
 
         public int DequeueMultibyteInt ()
@@ -115,6 +142,16 @@ namespace NachoCore.Wbxml
                 bStream.WriteByte (currentByte);
             }
             return bStream.ToArray ();
+        }
+
+        public byte[] GetRedactCopy ()
+        {
+            if (null == RedactCopy) {
+                return null;
+            }
+            byte[] bytes = RedactCopy.ToArray ();
+            RedactCopy.SetLength (0);
+            return bytes;
         }
     }
 }

@@ -48,7 +48,7 @@ namespace NachoCore.Wbxml
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
             int level = 0;
 
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML);
+            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML, doFiltering ?? DEFAULT_FILTERING);
 
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
@@ -59,7 +59,11 @@ namespace NachoCore.Wbxml
             filter.Start ();
 
             // Version is ignored
-            bytes.Dequeue ();
+            byte version = bytes.Dequeue ();
+            if (versionByte != version) {
+                Log.Warn ("Unexpected version {0}", (int)version);
+            }
+
 
             // Public Identifier is ignored
             bytes.DequeueMultibyteInt ();
@@ -75,6 +79,8 @@ namespace NachoCore.Wbxml
             int stringTableLength = bytes.DequeueMultibyteInt ();
             if (stringTableLength != 0)
                 throw new InvalidDataException ("WBXML data contains a string table.");
+
+            bytes.GetRedactCopy ();
 
             // Now we should be at the body of the data.
             // Add the declaration
@@ -101,6 +107,8 @@ namespace NachoCore.Wbxml
                         currentNode = currentNode.Parent;
                         NachoAssert.True (0 < level);
                         level--;
+                        bytes.RedactCopyEnabled = true;
+                        bytes.GetRedactCopy ();
                     } else {
                         //throw new InvalidDataException("END global token encountered out of sequence");
                     }
@@ -115,7 +123,7 @@ namespace NachoCore.Wbxml
                         newOpaqueNode = new XText (System.Text.Encoding.UTF8.GetString (OpaqueBytes));
                     }
                     currentNode.Add (newOpaqueNode);
-                    filter.Update (level, newOpaqueNode, null);
+                    filter.Update (level, newOpaqueNode, bytes.GetRedactCopy ());
 
                     //XmlCDataSection newOpaqueNode = xmlDoc.CreateCDataSection(bytes.DequeueString(CDATALength));
                     //currentNode.AppendChild(newOpaqueNode);
@@ -158,7 +166,7 @@ namespace NachoCore.Wbxml
                         newTextNode = new XText (bytes.DequeueString ());
                     }
                     currentNode.Add (newTextNode);
-                    filter.Update (level, newTextNode, null);
+                    filter.Update (level, newTextNode, bytes.GetRedactCopy ());
                     break;
                 // According to MS-ASWBXML, these features aren't used
                 case GlobalTokens.ENTITY:
@@ -203,11 +211,19 @@ namespace NachoCore.Wbxml
                     //newNode.Prefix = codePages[currentCodePage].Xmlns;
                     if (null == currentNode) {
                         XmlDoc.Add (newNode);
-                        filter.Update (level, newNode, null);
+                        filter.Update (level, newNode, bytes.GetRedactCopy ());
                     } else {
                         currentNode.Add (newNode);
-                        filter.Update (level + 1, newNode, null);
+                        filter.Update (level + 1, newNode, bytes.GetRedactCopy ());
                     }
+                    // TODO - Currently, we create a copy of all dequeued bytes for XML filter state update.
+                    // The problem is that XText or XCDATA node may have a lot of bytes. Creating a 
+                    // temporary copy of a 100 MB .pdf file in memory just to have it redacted away is not
+                    // efficient. So, we should check the result after an update and disable redact copy if the result is full.
+                    //if (RedactionType.NONE != filter.ElementRedaction) {
+                    //    bytes.RedactCopyEnabled = false;
+                    //}
+
                     if (hasContent) {
                         currentNode = newNode;
                         level++;
@@ -291,19 +307,23 @@ namespace NachoCore.Wbxml
                 if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
                     byteList.AddRange (EncodeOpaque (text.Value));
+                    filter.Update (level, node, byteList.ToArray ());
                 } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
                     byteList.AddRange (EncodeOpaque (Convert.ToBase64String 
                         (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value))));
+                    filter.Update (level, node, byteList.ToArray ());
                 } else {
                     byteList.Add ((byte)GlobalTokens.STR_I);
                     byteList.AddRange (EncodeString (text.Value));
+                    filter.Update (level, node, byteList.ToArray ());
                 }
                 break;
             case XmlNodeType.CDATA:
                 var cdata = (XCData)node;
                 byteList.Add ((byte)GlobalTokens.OPAQUE);
                 byteList.AddRange (EncodeOpaque (cdata.Value));
+                filter.Update (level, node, byteList.ToArray ());
                 break;
             default:
                 break;
