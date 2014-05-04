@@ -1,4 +1,4 @@
-AS_SCHEMA_FILES := as_schema.py object_stack.py
+AS_SCHEMA_FILES := as_schema.py as_xml.py object_stack.py output.py
 AS_SCHEMA := python as_schema.py
 
 XML_REQUEST_FILES := \
