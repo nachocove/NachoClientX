@@ -10,10 +10,19 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
+    public class McTaskIndex
+    {
+        public int Id { set; get; }
+
+        public McTask GetTask ()
+        {
+            return BackEnd.Instance.Db.Get<McTask> (Id);
+        }
+    }
+
     public class McTask : McItem
     {
         // FIXME - add categories.
-
         public bool Complete { set; get; }
 
         public DateTime DateCompleted { set; get; }
@@ -35,13 +44,11 @@ namespace NachoCore.Model
         public DateTime UtcDueDate { get; set; }
 
         public DateTime UtcStartDate { get; set; }
-
         /* FIXME - figure out how these work.
         public uint Recurrence_DeadOccur { set; get; }
 
         public bool Recurrence_Regenerate { get; set; }
          */
-
         public McTask ()
         {
             DateCompleted = DateTime.MinValue;
@@ -206,6 +213,31 @@ namespace NachoCore.Model
                 return NcResult.Error ("Need XML Complete, and if Complete need DateCompleted.");
             }
             return NcResult.OK ();
+        }
+
+        public static List<McTaskIndex> QueryAllTaskItems (int accountId)
+        {
+            return BackEnd.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
+            " ON t.Id = m.FolderEntryId " +
+            " WHERE " +
+            " t.AccountId = ? AND " +
+            " m.AccountId = ? AND " +
+            " m.ClassCode = ? " +
+            " ORDER BY t.UtcDueDate",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Tasks);
+        }
+
+        public static List<McTaskIndex> QueryTaskItems (int accountId, int folderId)
+        {
+            return BackEnd.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
+            " ON t.Id = m.FolderEntryId " +
+            " WHERE " +
+            " t.AccountId = ? AND " +
+            " m.AccountId = ? AND " +
+            " m.FolderId = ? AND " +
+            " m.ClassCode = ? " +
+            " ORDER BY t.UtcDueDate",
+                accountId, accountId, folderId, McFolderEntry.ClassCodeEnum.Tasks);
         }
     }
 }

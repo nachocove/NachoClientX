@@ -1,14 +1,13 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿//  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using NachoCore.Model;
 
-namespace NachoClient.iOS
+namespace NachoCore
 {
-    public class INachoTasks
+    public interface INachoTasks
     {
-        public INachoTasks ()
-        {
-        }
+        int Count ();
+        McTaskIndex GetTaskIndex (int i);
     }
 }
-

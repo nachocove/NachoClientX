@@ -68,6 +68,8 @@ namespace NachoClient.iOS
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
         const string SidebarToAttachmentsSegueId = "SidebarToAttachments";
+        const string SidebarToTasksSegueId = "SidebarToTasks";
+
         public UITableView tableview;
 
         public SidebarViewController (IntPtr handle) : base (handle)
@@ -110,7 +112,8 @@ namespace NachoClient.iOS
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             AddToTopMenu (new SidebarMenu (null, "Now!", SidebarToNachoNowSegueId, "Nacho-Cove-Icon"));
-            AddToMenu (new SidebarMenu (null, "Tasks", SidebarToDeferredMessagesSegueId, "ic_action_time"));
+            AddToMenu (new SidebarMenu (null, "Tasks", SidebarToTasksSegueId, "ic_action_time"));
+            AddToMenu (new SidebarMenu (null, "Deferred", SidebarToDeferredMessagesSegueId, "ic_action_time"));
             AddToMenu (new SidebarMenu (null, "Attachments", SidebarToAttachmentsSegueId, "ic_action_attachment"));
 
             AddToMenu (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId, "ic_action_collection"));
