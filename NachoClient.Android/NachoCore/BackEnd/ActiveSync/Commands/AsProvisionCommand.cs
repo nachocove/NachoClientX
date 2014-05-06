@@ -67,8 +67,8 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReProv,
-                                Act = DoHardFail,
-                                State = (uint)St.Stop
+                                Act = DoSquare1,
+                                State = (uint)Lst.GetWait
                             },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReSync,
@@ -252,6 +252,14 @@ namespace NachoCore.ActiveSync
         private void DoAck ()
         {
             base.Execute (Sm, ref AckOp);
+        }
+
+        private void DoSquare1 ()
+        {
+            var protocolState = BEContext.ProtocolState;
+            protocolState.InitialProvisionCompleted = false;
+            protocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+            DoGet ();
         }
 
         private void ApplyEasProvisionDocToPolicy (XElement xmlEASProvisionDoc, McPolicy policy)
