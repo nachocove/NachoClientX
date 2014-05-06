@@ -82,13 +82,16 @@ class AsXsd(AsXmlParser):
         self.start_handlers = {
             u'xs:schema': self.schema_start_handler,
             u'xs:element': self.element_start_handler,
+            u'xs:include': self.include_start_handler,
             None: AsXsd.default_start_handler,
         }
         self.end_handlers = {
             u'xs:schema': self.schema_end_handler,
             u'xs:element': AsXsd.element_end_handler,
+            u'xs:include': self.include_end_handler,
             None: AsXsd.default_end_handler,
         }
+        self.xsd_fname = xsd_fname
         self.parse(xsd_fname)
 
     def schema_start_handler(self, name, attrs):
@@ -117,6 +120,23 @@ class AsXsd(AsXmlParser):
         # XML schema does not really have value for any element.
         pass
 
+    def include_start_handler(self, name, attrs):
+        # Make sure the file exists
+        assert u'schemaLocation' in attrs
+        xsd_fname = os.path.join(os.path.dirname(self.xsd_fname), attrs[u'schemaLocation'])
+        assert os.path.exists(xsd_fname)
+
+        # Create a new AsXsd object and glue it into the existing one
+        xsd = AsXsd(xsd_fname)
+        assert xsd.root.namespace == self.root.namespace
+        for child in xsd.root.children:
+            self.root.add_child(child)
+
+        return xsd.root
+
+    def include_end_handler(self, obj, content):
+        return
+
     @staticmethod
     def default_start_handler(name, attrs):
         # Do not throw exception for unhandled elements. We ignore a
@@ -124,7 +144,7 @@ class AsXsd(AsXmlParser):
         return None
 
     @staticmethod
-    def default_end_handler(name, content):
+    def default_end_handler(obj, content):
         # Do not throw exception for unhandled elements. We ignore a
         # lot of elements in XML schema.
         return
