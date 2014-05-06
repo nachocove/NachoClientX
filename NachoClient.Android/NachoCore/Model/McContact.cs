@@ -1004,7 +1004,7 @@ namespace NachoCore.Model
             " m.AccountId = ? AND " +
             " m.FolderId = ? " +
             " ORDER BY c.FirstName",
-                accountId, accountId);
+                accountId, accountId, folderId);
         }
 
         public static List<McContactIndex> QueryAllHotContactItems (int accountId)
