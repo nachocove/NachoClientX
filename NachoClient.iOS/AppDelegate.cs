@@ -288,7 +288,7 @@ namespace NachoClient.iOS
                 switch (status.SubKind) {
                 case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
 
-                    notification.AlertAction = "Taco Mail";
+                    notification.AlertAction = "Nacho Mail";
                     notification.AlertBody = "You have new mail.";
 
                     notification.ApplicationIconBadgeNumber = countunread;
@@ -300,7 +300,7 @@ namespace NachoClient.iOS
                     break;
                 case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
 
-                    notification.AlertAction = "Taco Mail"; 
+                    notification.AlertAction = "Nacho Mail"; 
                     // no AlertBody should prevent message form being shown            
                     notification.HasAction = false;  // no alert to show on screen
                     notification.SoundName = UILocalNotification.DefaultSoundName;
@@ -310,7 +310,7 @@ namespace NachoClient.iOS
                     break;
                 case NcResult.SubKindEnum.Info_CalendarSetChanged:
                     //UILocalNotification notification = new UILocalNotification ();
-                    notification.AlertAction = "Taco Mail";
+                    notification.AlertAction = "Nacho Mail";
                     notification.AlertBody = "Your Calendar has Changed";
                     notification.FireDate = DateTime.Now;
                     UIApplication.SharedApplication.ScheduleLocalNotification (notification);
@@ -319,7 +319,7 @@ namespace NachoClient.iOS
                 case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
                     // need to find way to pop badge number without alert on app popping up
                     badgeNotification = new UILocalNotification ();
-                    badgeNotification.AlertAction = "Taco Mail";
+                    badgeNotification.AlertAction = "Nacho Mail";
                     //badgeNotification.AlertBody = "Message Read"; // null body means don't show
                     badgeNotification.HasAction = false;  // no alert to show on screen
                     badgeNotification.FireDate = DateTime.Now;
