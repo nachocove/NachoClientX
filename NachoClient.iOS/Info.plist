@@ -39,5 +39,27 @@
 	<string>com.nachocove.nachomail</string>
 	<key>CFBundleDisplayName</key>
 	<string>Nacho Mail</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>All Files</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+			<key>CFBundleTypeIconFiles</key>
+			<array>
+				<string>Icon</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict/>
+	</array>
 </dict>
 </plist>
