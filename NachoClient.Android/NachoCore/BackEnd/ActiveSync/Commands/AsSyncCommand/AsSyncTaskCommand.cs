@@ -21,6 +21,7 @@ namespace NachoCore.ActiveSync
             if (result.isOK ()) {
                 task.ServerId = xmlServerId.Value;
                 task.Insert ();
+                folder.Link (task);
             } else {
                 Log.Error (Log.LOG_AS, "Parse of Task failed. Task not added, ServerId {0}", xmlServerId.Value);
             }
