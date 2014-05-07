@@ -4,6 +4,7 @@ using System;
 using System.Xml.Linq;
 using NUnit.Framework;
 using NachoCore.Utils;
+using NachoCore.Wbxml;
 
 namespace Test.Android
 {
@@ -51,23 +52,24 @@ namespace Test.Android
         {
             string[] xml = {
                 // verify full redaction of both elements and attributes
-                "<full name1=\"Bob\" name2=\"John\">Hello, world</full>",
+                "<full xmlns=\"Filter1\" name1=\"Bob\" name2=\"John\">Hello, world</full>",
                 // verify partial redaction of elements and attributes
-                "<partial name1=\"Mark\" name2=\"Jim\">Hey, world</partial>",
+                "<partial xmlns=\"Filter1\" name1=\"Mark\" name2=\"Jim\">Hey, world</partial>",
                 // verify no redaction of elements and attributes
-                "<none name1=\"Kim\" name2=\"Mary\">Hi, world</none>",
+                "<none xmlns=\"Filter1\" name1=\"Kim\" name2=\"Mary\">Hi, world</none>",
             };
 
             string[] expected = {
-                "<full>-redacted-</full>",
-                "<partial redacted=\"name1,name2\">-redacted:10 bytes-</partial>",
-                "<none name1=\"Kim\" name2=\"Mary\">Hi, world</none>",
+                "<full xmlns=\"Filter1\">-redacted-</full>",
+                "<partial xmlns=\"Filter1\" redacted=\"name1,name2\">-redacted:10 bytes-</partial>",
+                "<none xmlns=\"Filter1\" name1=\"Kim\" name2=\"Mary\">Hi, world</none>",
             };
 
-            Filter1 filter = new Filter1();
+            NcXmlFilterSet filterSet = new NcXmlFilterSet ();
+            filterSet.Add (new Filter1 ());
             for (int n = 0; n < xml.Length; n++) {
                 XDocument docIn = XDocument.Parse (xml [n]);
-                XDocument docOut = filter.Filter (docIn);
+                XDocument docOut = filterSet.Filter (docIn);
                 Assert.AreEqual (expected [n], docOut.ToString ());
             }
         }
@@ -99,10 +101,11 @@ namespace Test.Android
                 "</employee>"
             };
 
-            Filter2 filter = new Filter2 ();
+            NcXmlFilterSet filterSet = new NcXmlFilterSet ();
+            filterSet.Add (new Filter2 ());
             for (int n = 0; n < xml.Length; n++) {
                 XDocument docIn = XDocument.Parse (xml [n]);
-                XDocument docOut = filter.Filter (docIn);
+                XDocument docOut = filterSet.Filter (docIn);
                 Assert.AreEqual (expected [n], docOut.ToString ());
             }
         }
