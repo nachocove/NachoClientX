@@ -100,7 +100,7 @@ namespace NachoClient.iOS
 
         void DisplayAttachment (McAttachment attachment)
         {
-            var path = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName);
+            var path = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString(), attachment.LocalFileName);
             UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
             Preview.Delegate = new DocumentInteractionControllerDelegate (this);
             Preview.PresentPreview (true);

@@ -43,13 +43,14 @@ namespace NachoCore.ActiveSync
                 // TODO: move the file-manip stuff to McAttachment.
                 var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
-                // Add file extension
-
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
+                var saveAttr = xmlData.Attributes ().SingleOrDefault (x => x.Name == "nacho-attachment-file");
+                var savePath = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString ());
+                Directory.CreateDirectory (savePath);
                 try {
                     attachment.LocalFileName = attachment.DisplayName.SantizeFileName ();
-                    File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName),
-                        Convert.FromBase64String (xmlData.Value));
+                    File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
+                        Path.Combine (savePath, attachment.LocalFileName));
                 } catch {
                     attachment.LocalFileName = attachment.Id.ToString ();
                     try {
@@ -60,8 +61,8 @@ namespace NachoCore.ActiveSync
                     } catch {
                         // Give up on extension. TODO - generate correct extension based on ContentType.
                     }
-                    File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName),
-                        Convert.FromBase64String (xmlData.Value));
+                    File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
+                        Path.Combine (savePath, attachment.LocalFileName));
                 }
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;

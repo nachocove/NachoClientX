@@ -37,6 +37,9 @@ namespace NachoCore.Wbxml
 
     class ASWBXML : WBXML
     {
+        public const int KCodePage_AirSyncBase = 17;
+        public const int KCodePage_ItemOperations = 20;
+
         public ASWBXML (CancellationToken cToken) : base(cToken)
         {
             // Load up code pages
@@ -677,7 +680,7 @@ namespace NachoCore.Wbxml
             codePages [20].AddToken (0x09, "Range");
             codePages [20].AddToken (0x0A, "Total");
             codePages [20].AddToken (0x0B, "Properties");
-            codePages [20].AddToken (0x0C, "Data");
+            codePages [20].AddPeelOffToken (0x0C, "Data");
             codePages [20].AddToken (0x0D, "Status");
             codePages [20].AddToken (0x0E, "Response");
             codePages [20].AddToken (0x0F, "Version");

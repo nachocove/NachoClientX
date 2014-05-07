@@ -123,17 +123,34 @@ namespace NachoCore.Wbxml
                     XText newTextNode;
                     if (codePages [currentCodePage].GetIsPeelOff (currentNode.Name.LocalName)) {
                         newTextNode = new XText ("");
-                        var data = new McBody ();
-                        data.IsValid = false;
-                        data.Insert ();
-                        var content = bytes.DequeueString ();
-                        File.WriteAllText (Path.Combine (BackEnd.Instance.BodiesDir, data.Id.ToString()),
-                            content);
-                        // FIXME - eliminate Body property and this string assignment.
-                        data.Body = content;
-                        data.IsValid = true;
-                        data.Update ();
-                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                        switch (currentCodePage) {
+                        case ASWBXML.KCodePage_AirSyncBase:
+                            var data = new McBody ();
+                            data.IsValid = false;
+                            data.Insert ();
+                            var content = bytes.DequeueString ();
+                            File.WriteAllText (Path.Combine (BackEnd.Instance.BodiesDir, data.Id.ToString ()),
+                                content);
+                            // FIXME - eliminate Body property and this string assignment.
+                            data.Body = content;
+                            data.IsValid = true;
+                            data.Update ();
+                            currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                            break;
+
+                        case ASWBXML.KCodePage_ItemOperations:
+                            var guidString = Guid.NewGuid ().ToString ("N");
+                            var b64String = bytes.DequeueString ();
+                            var decodedString = Convert.FromBase64String (b64String);
+                            File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, guidString),
+                                decodedString);
+                            currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
+                            break;
+
+                        default:
+                            NachoAssert.True (false);
+                            break;
+                        }
                     } else {
                         newTextNode = new XText (bytes.DequeueString ());
                     }
