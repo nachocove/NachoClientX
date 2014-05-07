@@ -682,7 +682,17 @@
       <DependentUpon>TaskListViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Tables\TaskTableSource.cs" />
-    <Compile Include="NachoCore\Adapters\INachoTasks.cs" />
+    <Compile Include="NachoUI.iOS\FileListViewController.cs" />
+    <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
+      <DependentUpon>FileListViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoTasks.cs">
+      <Link>NachoCore\Adapters\INachoTasks.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFile.cs">
+      <Link>NachoCore\Model\McFile.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Tables\FileTableSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
@@ -787,6 +797,7 @@
     <BundleResource Include="Resources\icon_chili.png" />
     <BundleResource Include="Resources\beer.png" />
     <BundleResource Include="Resources\ic_action_attachment.png" />
+    <BundleResource Include="Resources\ic_action_import_export.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

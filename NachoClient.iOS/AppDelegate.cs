@@ -28,17 +28,15 @@ namespace NachoClient.iOS
     {
         [DllImport ("libc")]private static extern int sigaction (Signal sig, IntPtr act, IntPtr oact);
 
-        enum Signal {
+        enum Signal
+        {
             SIGBUS = 10,
             SIGSEGV = 11
         }
-
         // class-level declarations
         public override UIWindow Window { get; set; }
 
         public McAccount Account { get; set; }
-
-
         // constants for managing timers
         private const uint KDefaultDelaySeconds = 10;
         private const int KDefaultTimeoutSeconds = 25;
@@ -145,9 +143,30 @@ namespace NachoClient.iOS
             return true;
 
         }
-        /* 
-         * Code to implement iOS-7 background-fetch.
-         */
+
+        /// <Docs>Reference to the UIApplication that invoked this delegate method.</Docs>
+        /// <summary>
+        ///  Called when another app opens-in a document to nacho mail
+        /// </summary>
+        public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
+        {
+            if (!url.IsFileUrl) {
+                return false;
+            }
+            var file = new McFile ();
+            file.DisplayName = Path.GetFileName (url.Path);
+            file.SourceApplication = sourceApplication;
+            file.Insert ();
+            var destDirectory = Path.Combine (BackEnd.Instance.FilesDir, file.Id.ToString ());
+            Directory.CreateDirectory (destDirectory);
+            var destFile = Path.Combine (destDirectory, Path.GetFileName (url.Path));
+            File.Move (url.Path, destFile);
+            return true;
+        }
+
+        /// <summary>
+        /// Code to implement iOS-7 background-fetch.
+        /// </summary>/
         private Action<UIBackgroundFetchResult> CompletionHandler;
         private UIBackgroundFetchResult FetchResult;
 

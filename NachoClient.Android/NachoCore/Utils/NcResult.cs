@@ -24,6 +24,7 @@ namespace NachoCore.Utils
             Info_ContactSetChanged,
             Info_CalendarSetChanged,
             Info_TaskSetChanged,
+            Info_FileSetChanged,
             Info_EmailMessageChanged,
             Info_ContactChanged,
             Info_CalendarChanged,

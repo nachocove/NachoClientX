@@ -61,6 +61,7 @@ namespace NachoCore
 
         public SQLiteConnection Db { set; get; }
 
+        public string FilesDir { set; get; }
         public string AttachmentsDir { set; get; }
 
         private List<ProtoControl> Services;
@@ -81,6 +82,8 @@ namespace NachoCore
         {
             // Make sure DB is setup.
             var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            FilesDir = Path.Combine (documents, "files");
+            Directory.CreateDirectory (Path.Combine (documents, FilesDir));
             AttachmentsDir = Path.Combine (documents, "attachments");
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
             DbFileName = Path.Combine (documents, "db");
@@ -110,6 +113,7 @@ namespace NachoCore
             Db.CreateTable<McTimeZone> ();
             Db.CreateTable<McTask> ();
             Db.CreateTable<McBody> ();
+            Db.CreateTable<McFile> ();
  
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 8;

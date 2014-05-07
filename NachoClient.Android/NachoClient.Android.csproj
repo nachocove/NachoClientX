@@ -215,6 +215,9 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvision.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs" />
+    <Compile Include="NachoCore\Adapters\INachoTasks.cs" />
+    <Compile Include="NachoCore\Adapters\INachoFiles.cs" />
+    <Compile Include="NachoCore\Model\McFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
