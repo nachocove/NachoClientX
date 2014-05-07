@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -139,12 +140,22 @@ namespace NachoCore.Wbxml
                             break;
 
                         case ASWBXML.KCodePage_ItemOperations:
-                            var guidString = Guid.NewGuid ().ToString ("N");
-                            var b64String = bytes.DequeueString ();
-                            var decodedString = Convert.FromBase64String (b64String);
-                            File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, guidString),
-                                decodedString);
-                            currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
+                            try {
+                                var guidString = Guid.NewGuid ().ToString ("N");
+                                using (var fileStream = File.OpenWrite (Path.Combine (BackEnd.Instance.AttachmentsDir, guidString))) {
+                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
+                                        new FromBase64Transform (), CryptoStreamMode.Write)) {
+                                        if (bytes.DequeueStringToStream (cryptoStream)) {
+                                            currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
+                                        } else {
+                                            Log.Error (Log.LOG_AS, "Failure while trying to write attachment.");
+                                        }
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                // If we can't write the file, don't add the attr.
+                                Log.Error (Log.LOG_AS, "Exception while trying to write attachment {0}", ex.ToString ());
+                            }
                             break;
 
                         default:
@@ -157,7 +168,7 @@ namespace NachoCore.Wbxml
                     currentNode.Add (newTextNode);
                     filter.Update (level, newTextNode, null);
                     break;
-                    // According to MS-ASWBXML, these features aren't used
+                // According to MS-ASWBXML, these features aren't used
                 case GlobalTokens.ENTITY:
                 case GlobalTokens.EXT_0:
                 case GlobalTokens.EXT_1:
@@ -176,7 +187,7 @@ namespace NachoCore.Wbxml
                 case GlobalTokens.STR_T:
                     throw new InvalidDataException (string.Format ("Encountered unknown global token 0x{0:X}.", currentByte));
 
-                    // If it's not a global token, it should be a tag
+                // If it's not a global token, it should be a tag
                 default:
                     bool hasAttributes = false;
                     bool hasContent = false;

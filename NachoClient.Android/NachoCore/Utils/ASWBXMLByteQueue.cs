@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
 {
@@ -66,6 +67,24 @@ namespace NachoCore.Wbxml
             return (continuationBitmask & byteval) != 0;
         }
 
+        public bool DequeueStringToStream (Stream stream)
+        {
+            try {
+                byte currentByte = 0x00;
+                do {
+                    currentByte = this.Dequeue ();
+                    if (currentByte != 0x00) {
+                        stream.WriteByte (currentByte);
+                    }
+                } while (currentByte != 0x00);
+                stream.Flush();
+                return true;
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_AS, "Exception in DequeueStringToStream {0}", ex.ToString ());
+                return false;
+            }
+        }
+
         public string DequeueString ()
         {
             StringBuilder strReturn = new StringBuilder ();
@@ -85,7 +104,7 @@ namespace NachoCore.Wbxml
 
         public byte[] DequeueOpaque (int length)
         {
-            MemoryStream bStream = new MemoryStream();
+            MemoryStream bStream = new MemoryStream ();
 
             byte currentByte;
             for (int i = 0; i < length; i++) {

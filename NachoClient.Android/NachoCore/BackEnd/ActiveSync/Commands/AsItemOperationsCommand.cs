@@ -45,30 +45,35 @@ namespace NachoCore.ActiveSync
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
                 var saveAttr = xmlData.Attributes ().SingleOrDefault (x => x.Name == "nacho-attachment-file");
-                var savePath = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString ());
-                Directory.CreateDirectory (savePath);
-                try {
-                    attachment.LocalFileName = attachment.DisplayName.SantizeFileName ();
-                    File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
-                        Path.Combine (savePath, attachment.LocalFileName));
-                } catch {
-                    attachment.LocalFileName = attachment.Id.ToString ();
+                if (null != saveAttr) {
+                    var savePath = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString ());
+                    Directory.CreateDirectory (savePath);
                     try {
-                        var ext = Path.GetExtension (attachment.DisplayName);
-                        if (null != ext) {
-                            attachment.LocalFileName += ext;
-                        }
+                        attachment.LocalFileName = attachment.DisplayName.SantizeFileName ();
+                        File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
+                            Path.Combine (savePath, attachment.LocalFileName));
                     } catch {
-                        // Give up on extension. TODO - generate correct extension based on ContentType.
+                        attachment.LocalFileName = attachment.Id.ToString ();
+                        try {
+                            var ext = Path.GetExtension (attachment.DisplayName);
+                            if (null != ext) {
+                                attachment.LocalFileName += ext;
+                            }
+                        } catch {
+                            // Give up on extension. TODO - generate correct extension based on ContentType.
+                        }
+                        File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
+                            Path.Combine (savePath, attachment.LocalFileName));
                     }
-                    File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
-                        Path.Combine (savePath, attachment.LocalFileName));
+                    attachment.PercentDownloaded = 100;
+                    attachment.IsDownloaded = true;
+                    attachment.Update ();
+                    PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
+                    return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
+                } else {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IOHARDU");
                 }
-                attachment.PercentDownloaded = 100;
-                attachment.IsDownloaded = true;
-                attachment.Update ();
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
-                return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
 
             case Xml.ItemOperations.StatusCode.ProtocolError_2:
             case Xml.ItemOperations.StatusCode.ByteRangeInvalidOrTooLarge_8:
