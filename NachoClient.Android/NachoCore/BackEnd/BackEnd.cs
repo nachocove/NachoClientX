@@ -63,6 +63,8 @@ namespace NachoCore
 
         public string AttachmentsDir { set; get; }
 
+        public string BodiesDir { set; get; }
+
         private List<ProtoControl> Services;
         private string DbFileName;
 
@@ -83,6 +85,8 @@ namespace NachoCore
             var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             AttachmentsDir = Path.Combine (documents, "attachments");
             Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
+            BodiesDir = Path.Combine (documents, "bodies");
+            Directory.CreateDirectory (Path.Combine (documents, BodiesDir));
             DbFileName = Path.Combine (documents, "db");
             Db = new SQLiteConnection (DbFileName, 
                 SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, 

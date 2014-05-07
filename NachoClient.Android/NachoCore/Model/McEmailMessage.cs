@@ -289,8 +289,8 @@ namespace NachoCore.Model
 
     public class McBody : McObject
     {
-        // TODO: Evaluate whether body should be in a file instead of db.
         // FIXME - we should carry the encoding type (RTF, Mime, etc) here.
+        public bool IsValid { get; set; }
         public string Body { get; set; }
     }
 

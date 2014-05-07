@@ -124,8 +124,15 @@ namespace NachoCore.Wbxml
                     if (codePages [currentCodePage].GetIsPeelOff (currentNode.Name.LocalName)) {
                         newTextNode = new XText ("");
                         var data = new McBody ();
-                        data.Body = bytes.DequeueString ();
+                        data.IsValid = false;
                         data.Insert ();
+                        var content = bytes.DequeueString ();
+                        File.WriteAllText (Path.Combine (BackEnd.Instance.BodiesDir, data.Id.ToString()),
+                            content);
+                        // FIXME - eliminate Body property and this string assignment.
+                        data.Body = content;
+                        data.IsValid = true;
+                        data.Update ();
                         currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
                     } else {
                         newTextNode = new XText (bytes.DequeueString ());
