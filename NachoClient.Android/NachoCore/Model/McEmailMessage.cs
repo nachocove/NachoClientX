@@ -108,7 +108,8 @@ namespace NachoCore.Model
         /// data in the model. Otherwise, it won't work right in another 
         /// NachoClient.
         public MessageDeferralType DeferralType { set; get; }
-        // NOTE: These values ARE the AS values.
+
+        /// NOTE: These values ARE the AS values.
         public enum FlagStatusValue : uint
         {
             Cleared = 0,
@@ -117,7 +118,8 @@ namespace NachoCore.Model
         };
 
         public uint FlagStatus { set; get; }
-        // This is the string associated with the flag.
+
+        /// This is the string associated with the flag.
         public string FlagType { set; get; }
 
         /// User has asked to hide the message for a while
@@ -177,7 +179,8 @@ namespace NachoCore.Model
 
             return ContentScore + contactScore;
         }
-        // TODO: Support other types besides mime!
+
+        /// TODO: Support other types besides mime!
         public string ToMime ()
         {
             return GetBody ();
@@ -193,41 +196,56 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessage> ("SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
-            " e.AccountId = ? AND " +
-            " m.AccountId = ? AND " +
-            " m.FolderId = ? AND " +
-            " e.FlagUtcDeferUntil < ?",
-                accountId, accountId, folderId, DateTime.UtcNow);
+            return BackEnd.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                " e.FlagUtcDeferUntil < ?",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
         public static List<McEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessageIndex> ("SELECT e.Id as Id FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
-            " e.AccountId = ? AND " +
-            " m.AccountId = ? AND " +
-            " m.FolderId = ? AND " +
-            " e.FlagUtcDeferUntil < ? " +
-            " ORDER BY e.DateReceived DESC",
-                accountId, accountId, folderId, DateTime.UtcNow);
+            return BackEnd.Instance.Db.Query<McEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                " e.FlagUtcDeferUntil < ? " +
+                " ORDER BY e.DateReceived DESC",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
         public static List<McEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessageIndex> ("SELECT e.Id as Id FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
+            return BackEnd.Instance.Db.Query<McEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
                 " e.AccountId = ? AND " +
                 " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcDeferUntil < ? " +
                 " ORDER BY e.ContentScore DESC, e.DateReceived DESC",
-                accountId, accountId, folderId, DateTime.UtcNow);
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
-        // TODO: Need account id
-        // TODO: Delete needs to clean up deferred
+
+        /// TODO: Need account id
+        /// TODO: Delete needs to clean up deferred
         public static List<McEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
         {
-            return BackEnd.Instance.Db.Query<McEmailMessageIndex> ("SELECT e.Id as Id FROM McEmailMessage AS e WHERE " +
-            " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
+            return BackEnd.Instance.Db.Query<McEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " WHERE " +
+                " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
         }
 
@@ -296,7 +314,7 @@ namespace NachoCore.Model
             thread = new List<McEmailMessageIndex> ();
         }
 
-        public void Add(McEmailMessageIndex index)
+        public void Add (McEmailMessageIndex index)
         {
             thread.Add (index);
         }

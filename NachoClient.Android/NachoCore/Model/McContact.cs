@@ -937,86 +937,101 @@ namespace NachoCore.Model
 
         private List<McContactStringAttribute> QueryAncillaryString (McContactStringType type)
         {
-            return BackEnd.Instance.Db.Query<McContactStringAttribute> ("SELECT * FROM " +
-            "McContactStringAttribute WHERE ContactId = ? AND Type = ?", 
+            return BackEnd.Instance.Db.Query<McContactStringAttribute> (
+                "SELECT * FROM McContactStringAttribute " +
+                " WHERE " +
+                " ContactId = ? AND Type = ?", 
                 Id, type).ToList ();
         }
 
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
-            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c JOIN McContactStringAttribute AS s ON c.Id = s.ContactId WHERE " +
-                                          " c.AccountId = ? AND " +
-                                          " s.Type = ? AND " +
-                                          " s.Value = ? ",
+            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                              " WHERE " +
+                                              " c.AccountId = ? AND " +
+                                              " s.Type = ? AND " +
+                                              " s.Value = ? ",
                                               accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
             return contactList;
         }
 
         public static List<McContact> QueryByEmailAddressInFolder (int accountId, int folderId, string emailAddress)
         {
-            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
-                                          " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-                                          " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                                          " WHERE " +
-                                          " c.AccountId = m.AccountId AND " +
-                                          " c.AccountId = ? AND " +
-                                          " s.Type = ? AND " +
-                                          " s.Value = ? AND " +
-                                          " m.FolderId = ? ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress, folderId).ToList ();
+            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                              " WHERE " +
+                                              " c.AccountId = m.AccountId AND " +
+                                              " c.AccountId = ? AND " +
+                                              " s.Type = ? AND " +
+                                              " s.Value = ? AND " +
+                                              " m.ClassCode = ? AND " +
+                                              " m.FolderId = ? ",
+                                              accountId, McContactStringType.EmailAddress, emailAddress, McFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
             return contactList;
         }
 
         public static List<McContact> QueryByEmailAddressInSyncedFolder (int accountId, string emailAddress)
         {
-            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
-                                          " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-                                          " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                                          " JOIN McFolder AS f ON f.Id = m.FolderId " +
-                                          " WHERE " +
-                                          " c.AccountId = m.AccountId AND " +
-                                          " c.AccountId = f.AccountId AND " +
-                                          " c.AccountId = ? AND " +
-                                          " s.Type = ? AND " +
-                                          " s.Value = ? AND " +
-                                          " f.IsClientOwned = false ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
+            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                              " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                                              " WHERE " +
+                                              " c.AccountId = m.AccountId AND " +
+                                              " c.AccountId = f.AccountId AND " +
+                                              " c.AccountId = ? AND " +
+                                              " s.Type = ? AND " +
+                                              " s.Value = ? AND " +
+                                              " m.ClassCode = ? AND " +
+                                              " f.IsClientOwned = false ",
+                                              accountId, McContactStringType.EmailAddress, emailAddress, McFolderEntry.ClassCodeEnum.Contact).ToList ();
             return contactList;
         }
 
         public static List<McContactIndex> QueryAllContactItems (int accountId)
         {
-            return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
-            " ON c.Id = m.FolderEntryId " +
-            " WHERE " +
-            " c.AccountId = ? AND " +
-            " m.AccountId = ? " +
-            " ORDER BY c.FirstName",
-                accountId, accountId);
+            return BackEnd.Instance.Db.Query<McContactIndex> (
+                "SELECT c.Id as Id FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ?  " +
+                " ORDER BY c.FirstName",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<McContactIndex> QueryContactItems (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
-            " ON c.Id = m.FolderEntryId " +
-            " WHERE " +
-            " c.AccountId = ? AND " +
-            " m.AccountId = ? AND " +
-            " m.FolderId = ? " +
-            " ORDER BY c.FirstName",
-                accountId, accountId, folderId);
+            return BackEnd.Instance.Db.Query<McContactIndex> (
+                "SELECT c.Id as Id FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? " +
+                " ORDER BY c.FirstName",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, folderId);
         }
 
         public static List<McContactIndex> QueryAllHotContactItems (int accountId)
         {
-            return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
-            " ON c.Id = m.FolderEntryId " +
-            " WHERE " +
-            " c.AccountId = ? AND " +
-            " m.AccountId = ? AND " +
-            " c.Score > ? " +
-            " ORDER BY c.Score DESC, c.FirstName",
-                accountId, accountId, minHotScore);
+            return BackEnd.Instance.Db.Query<McContactIndex> (
+                "SELECT c.Id as Id FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " c.Score > ? " +
+                " ORDER BY c.Score DESC, c.FirstName",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, minHotScore);
         }
 
         public static List<McContactIndex> SearchAllContactItems (int accountId, string searchFor)
@@ -1029,25 +1044,29 @@ namespace NachoCore.Model
             var firstName = target.First () + "%";
             var lastName = target.Last () + "%";
             if (1 == target.Count ()) {
-                return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
-                " ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.AccountId = ? AND " +
-                " m.AccountId = ? AND " +
-                " ( c.FirstName LIKE ? OR " +
-                "   c.LastName LIKE ? ) " +
-                " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
-                    accountId, accountId, firstName, lastName);
+                return BackEnd.Instance.Db.Query<McContactIndex> (
+                    "SELECT c.Id as Id FROM McContact AS c " +
+                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                    " WHERE " +
+                    " c.AccountId = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " m.ClassCode = ? AND " +
+                    " ( c.FirstName LIKE ? OR " +
+                    "   c.LastName LIKE ? ) " +
+                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
+                    accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, firstName, lastName);
             } else {
-                return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
-                " ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.AccountId = ? AND " +
-                " m.AccountId = ? AND " +
-                " ( c.FirstName LIKE ? AND " +
-                "   c.LastName LIKE ? ) " +
-                " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
-                    accountId, accountId, firstName, lastName);
+                return BackEnd.Instance.Db.Query<McContactIndex> (
+                    "SELECT c.Id as Id FROM McContact AS c  " +
+                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                    " WHERE " +
+                    " c.AccountId = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " m.ClassCode = ? AND " +
+                    " ( c.FirstName LIKE ? AND " +
+                    "   c.LastName LIKE ? ) " +
+                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
+                    accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, firstName, lastName);
             }
         }
 
