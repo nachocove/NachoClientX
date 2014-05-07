@@ -58,7 +58,7 @@ namespace NachoCore.ActiveSync
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGet, State = (uint)Lst.GetWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoAck, State = (uint)Lst.AckWait },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoHardFail, State = (uint)St.Stop },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoReDisc, State = (uint)St.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGet, State = (uint)Lst.GetWait },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -259,6 +259,7 @@ namespace NachoCore.ActiveSync
             var protocolState = BEContext.ProtocolState;
             protocolState.InitialProvisionCompleted = false;
             protocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+            protocolState.Update ();
             DoGet ();
         }
 

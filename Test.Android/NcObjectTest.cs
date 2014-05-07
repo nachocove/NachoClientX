@@ -12,10 +12,6 @@ namespace Test.Android
     [TestFixture]
     public class NcObjectTest
     {
-        public NcObjectTest ()
-        {
-        }
-
         public class TestDb : SQLiteConnection
         {
             public TestDb () : base (System.IO.Path.GetTempFileName (), true)
