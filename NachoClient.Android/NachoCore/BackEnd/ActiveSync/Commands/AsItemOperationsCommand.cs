@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -42,17 +43,26 @@ namespace NachoCore.ActiveSync
                 // TODO: move the file-manip stuff to McAttachment.
                 var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
-                attachment.LocalFileName = attachment.Id.ToString ();
                 // Add file extension
-                if (null != attachment.DisplayName) {
-                    var ext = Path.GetExtension (attachment.DisplayName);
-                    if (null != ext) {
-                        attachment.LocalFileName += ext;
-                    }
-                }
+
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
-                File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName),
-                    Convert.FromBase64String (xmlData.Value));
+                try {
+                    attachment.LocalFileName = attachment.DisplayName.SantizeFileName ();
+                    File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName),
+                        Convert.FromBase64String (xmlData.Value));
+                } catch {
+                    attachment.LocalFileName = attachment.Id.ToString ();
+                    try {
+                        var ext = Path.GetExtension (attachment.DisplayName);
+                        if (null != ext) {
+                            attachment.LocalFileName += ext;
+                        }
+                    } catch {
+                        // Give up on extension. TODO - generate correct extension based on ContentType.
+                    }
+                    File.WriteAllBytes (Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.LocalFileName),
+                        Convert.FromBase64String (xmlData.Value));
+                }
                 attachment.PercentDownloaded = 100;
                 attachment.IsDownloaded = true;
                 attachment.Update ();

@@ -218,6 +218,7 @@
     <Compile Include="NachoCore\Adapters\INachoTasks.cs" />
     <Compile Include="NachoCore\Adapters\INachoFiles.cs" />
     <Compile Include="NachoCore\Model\McFile.cs" />
+    <Compile Include="NachoCore\Extensions\String+SanitizeFileName.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
