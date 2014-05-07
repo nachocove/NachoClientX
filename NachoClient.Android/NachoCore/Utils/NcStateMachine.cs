@@ -256,6 +256,10 @@ namespace NachoCore.Utils
                 if (oldState != State && null != StateChangeIndication) {
                     StateChangeIndication ();
                 }
+                if ((uint)St.Stop == State) {
+                    // If we are done, then quit the loop.
+                    return;
+                }
             }
         }
 
