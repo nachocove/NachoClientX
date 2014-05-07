@@ -693,7 +693,6 @@
       <Link>NachoCore\Model\McFile.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Tables\FileTableSource.cs" />
-    <Compile Include="NachoCore\Adapters\INachoTasks.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+SanitizeFileName.cs">
       <Link>NachoCore\Extensions\String+SanitizeFileName.cs</Link>
     </Compile>
