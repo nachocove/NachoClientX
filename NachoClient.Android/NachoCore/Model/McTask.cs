@@ -141,14 +141,11 @@ namespace NachoCore.Model
                         if (null != saveAttr) {
                             BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = new McBody ();
-                            body.Body = bodyElement.Value; 
-                            body.Insert ();
+                            var body = McBody.Save(bodyElement.Value); 
                             BodyId = body.Id;
                         }
                     } else {
                         BodyId = 0;
-                        Console.WriteLine ("Task: Truncated message from server.");
                     }
                     break;
 

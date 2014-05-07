@@ -269,14 +269,12 @@ namespace NachoCore.ActiveSync
                         if (null != saveAttr) {
                             c.BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = new McBody ();
-                            body.Body = bodyElement.Value; 
-                            body.Insert ();
+                            var body = McBody.Save (bodyElement.Value);
                             c.BodyId = body.Id;
                         }
                     } else {
                         c.BodyId = 0;
-                        Log.Info(Log.LOG_AS, "Truncated message or zero-length body from server.");
+                        Log.Info (Log.LOG_AS, "Truncated message or zero-length body from server.");
                     }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:

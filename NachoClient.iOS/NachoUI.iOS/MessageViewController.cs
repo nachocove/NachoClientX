@@ -155,10 +155,10 @@ namespace NachoClient.iOS
             NcEmailArchiver.Delete (m);
         }
 
-        public void ArchiveThisMessage()
+        public void ArchiveThisMessage ()
         {
             var m = thread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Archive(m);
+            NcEmailArchiver.Archive (m);
         }
 
         protected void CreateView ()
@@ -203,16 +203,17 @@ namespace NachoClient.iOS
                 view.AddSubview (subject);
             }
 
-            var body = m.GetBody ();
-            if (null != body) {
-                var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
-                var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                var message = bodyParser.ParseMessage ();
-                PlatformHelpers.motd = message; // for cid handler
-                MimeHelpers.DumpMessage (message, 0);
-                var list = new List<MimeEntity> ();
-                MimeHelpers.MimeDisplayList (message, ref list);
-                RenderDisplayList (list);
+            var bodyPath = m.GetBodyPath ();
+            if (null != bodyPath) {
+                using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                    var message = bodyParser.ParseMessage ();
+                    PlatformHelpers.motd = message; // for cid handler
+                    MimeHelpers.DumpMessage (message, 0);
+                    var list = new List<MimeEntity> ();
+                    MimeHelpers.MimeDisplayList (message, ref list);
+                    RenderDisplayList (list);
+                }
             }
 
             CreateAttachmentSection ();

@@ -61,26 +61,17 @@ namespace NachoCore.Model
 
         public string GetBody ()
         {
-            if (0 == BodyId) {
-                return null;
-            }
-            var body = BackEnd.Instance.Db.Get<McBody> (BodyId);
-            if (null == body) {
-                return null;
-            } else {
-                return body.Body;
-            }
+            return McBody.Get (BodyId);
+        }
+
+        public string GetBodyPath ()
+        {
+            return McBody.GetBodyPath (BodyId);
         }
 
         protected void DeleteBody ()
         {
-            if (0 != BodyId) {
-                var body = new McBody ();
-                body.Id = BodyId;
-                BackEnd.Instance.Db.Delete (body);
-                BodyId = 0;
-                BackEnd.Instance.Db.Update (this);
-            }
+            McBody.Delete (BodyId);
         }
     }
 }

@@ -1019,14 +1019,14 @@ namespace NachoCore.Model
                 accountId, accountId, minHotScore);
         }
 
-        public static List<McContactIndex> SearchAllContactItems(int accountId, string searchFor)
+        public static List<McContactIndex> SearchAllContactItems (int accountId, string searchFor)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
                 return new List<McContactIndex> ();
             }
             var target = searchFor.Split (new char[] { ' ' });
-            var firstName = target.First() + "%";
+            var firstName = target.First () + "%";
             var lastName = target.Last () + "%";
             if (1 == target.Count ()) {
                 return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
@@ -1036,17 +1036,17 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " ( c.FirstName LIKE ? OR " +
                 "   c.LastName LIKE ? ) " +
-                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
+                " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
                     accountId, accountId, firstName, lastName);
             } else {
                 return BackEnd.Instance.Db.Query<McContactIndex> ("SELECT c.Id as Id FROM McContact AS c JOIN McMapFolderFolderEntry AS m " +
-                    " ON c.Id = m.FolderEntryId " +
-                    " WHERE " +
-                    " c.AccountId = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " ( c.FirstName LIKE ? AND " +
-                    "   c.LastName LIKE ? ) " +
-                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
+                " ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " ( c.FirstName LIKE ? AND " +
+                "   c.LastName LIKE ? ) " +
+                " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
                     accountId, accountId, firstName, lastName);
             }
         }

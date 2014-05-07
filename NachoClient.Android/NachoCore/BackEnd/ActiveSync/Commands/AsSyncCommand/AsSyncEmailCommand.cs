@@ -56,9 +56,7 @@ namespace NachoCore.ActiveSync
                         if (null != saveAttr) {
                             emailMessage.BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = new McBody ();
-                            body.Body = bodyElement.Value; 
-                            body.Insert ();
+                            var body = McBody.Save(bodyElement.Value); 
                             emailMessage.BodyId = body.Id;
                         }
                     } else {

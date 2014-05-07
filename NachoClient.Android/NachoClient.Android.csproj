@@ -219,6 +219,7 @@
     <Compile Include="NachoCore\Adapters\INachoFiles.cs" />
     <Compile Include="NachoCore\Model\McFile.cs" />
     <Compile Include="NachoCore\Extensions\String+SanitizeFileName.cs" />
+    <Compile Include="NachoCore\Model\McBody.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

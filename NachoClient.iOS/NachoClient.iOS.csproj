@@ -696,6 +696,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+SanitizeFileName.cs">
       <Link>NachoCore\Extensions\String+SanitizeFileName.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBody.cs">
+      <Link>NachoCore\Model\McBody.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

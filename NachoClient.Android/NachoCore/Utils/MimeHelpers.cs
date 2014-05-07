@@ -174,13 +174,12 @@ namespace NachoCore.Utils
             msg.From = CommaSeparatedList (mimeMessage.From);
             msg.Subject = mimeMessage.Subject;
 
-            var body = new McBody ();
             var bodyStream = new System.IO.MemoryStream ();
             mimeMessage.WriteTo (bodyStream);
             bodyStream.Seek (0, SeekOrigin.Begin);
             var textStream = new StreamReader (bodyStream);
 
-            body.Body = textStream.ReadToEnd ();
+            var body = McBody.Save (textStream.ReadToEnd ());
 
             BackEnd.Instance.Db.Insert (body);
             msg.BodyId = body.Id;
