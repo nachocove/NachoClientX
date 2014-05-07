@@ -48,8 +48,8 @@
       <attribute_redaction>full</attribute_redaction>
    </DeletesAsMoves>
    <Supported>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Supported>
    <SoftDelete>
       <element_redaction>none</element_redaction>
@@ -137,8 +137,8 @@
                <attribute_redaction>full</attribute_redaction>
             </CollectionId>
             <Supported>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Supported>
             <DeletesAsMoves>
                <element_redaction>full</element_redaction>

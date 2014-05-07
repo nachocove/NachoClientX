@@ -48,8 +48,8 @@
       <attribute_redaction>full</attribute_redaction>
    </Version>
    <Schema>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Schema>
    <Part>
       <element_redaction>full</element_redaction>

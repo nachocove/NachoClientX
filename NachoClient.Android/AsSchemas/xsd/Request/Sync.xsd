@@ -5,13 +5,13 @@
            xmlns:tasks="Tasks" xmlns="AirSync" targetNamespace="AirSync"
            elementFormDefault="qualified" attributeFormDefault="unqualified">
   <xs:include schemaLocation="../common/AirSync.xsd"/>
-  <xs:import namespace="AirSyncBase" schemaLocation="AirSyncBase.xsd"/>
-  <xs:import namespace="Calendar" schemaLocation="Calendar.xsd"/>
-  <xs:import namespace="Contacts" schemaLocation="Contacts.xsd"/>
-  <xs:import namespace="Contacts2" schemaLocation="Contacts2.xsd"/>
-  <xs:import namespace="Email" schemaLocation="Email.xsd"/>
-  <xs:import namespace="Notes" schemaLocation="Notes.xsd"/>
-  <xs:import namespace="Tasks" schemaLocation="Tasks.xsd"/>
+  <xs:import namespace="AirSyncBase" schemaLocation="../common/AirSyncBase.xsd"/>
+  <xs:import namespace="Calendar" schemaLocation="../common/Calendar.xsd"/>
+  <xs:import namespace="Contacts" schemaLocation="../common/Contacts.xsd"/>
+  <xs:import namespace="Contacts2" schemaLocation="../common/Contacts2.xsd"/>
+  <xs:import namespace="Email" schemaLocation="../common/Email.xsd"/>
+  <xs:import namespace="Notes" schemaLocation="../common/Notes.xsd"/>
+  <xs:import namespace="Tasks" schemaLocation="../common/Tasks.xsd"/>
   <xs:element name="Sync">
     <xs:complexType>
       <xs:sequence>

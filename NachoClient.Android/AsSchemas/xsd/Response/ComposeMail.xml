@@ -43,7 +43,23 @@
          <attribute_redaction>full</attribute_redaction>
       </InstanceId>
    </Source>
+   <SendMail>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <Status>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </Status>
+   </SendMail>
    <SmartForward>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <Status>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </Status>
+   </SmartForward>
+   <SmartReply>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <ClientId>
@@ -86,5 +102,5 @@
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </Mime>
-   </SmartForward>
+   </SmartReply>
 </xml>

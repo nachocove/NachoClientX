@@ -1,66 +1,78 @@
-<xml namespace="ComposeMail">
-   <ClientId>
+<xml namespace="FolderHierarchy">
+   <ServerId>
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>
-   </ClientId>
-   <AccountId>
+   </ServerId>
+   <ParentId>
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>
-   </AccountId>
-   <SaveInSentItems>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </SaveInSentItems>
-   <ReplaceMime>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </ReplaceMime>
-   <Mime>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </Mime>
+   </ParentId>
    <Status>
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>
    </Status>
-   <Source>
+   <SyncKey>
+      <element_redaction>full</element_redaction>
+      <attribute_redaction>full</attribute_redaction>
+   </SyncKey>
+   <FolderCreate>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
-      <FolderId>
+      <SyncKey>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </FolderId>
-      <ItemId>
+      </SyncKey>
+      <ParentId>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </ItemId>
-      <LongId>
+      </ParentId>
+      <DisplayName>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </LongId>
-      <InstanceId>
+      </DisplayName>
+      <Type>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </InstanceId>
-   </Source>
-   <SendMail>
+      </Type>
+   </FolderCreate>
+   <FolderUpdate>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
-      <ClientId>
+      <SyncKey>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </ClientId>
-      <AccountId>
+      </SyncKey>
+      <ServerId>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </AccountId>
-      <SaveInSentItems>
+      </ServerId>
+      <ParentId>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </SaveInSentItems>
-      <Mime>
+      </ParentId>
+      <DisplayName>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
-      </Mime>
-   </SendMail>
+      </DisplayName>
+   </FolderUpdate>
+   <FolderDelete>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <SyncKey>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </SyncKey>
+      <ServerId>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </ServerId>
+   </FolderDelete>
+   <FolderSync>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <SyncKey>
+         <element_redaction>full</element_redaction>
+         <attribute_redaction>full</attribute_redaction>
+      </SyncKey>
+   </FolderSync>
 </xml>

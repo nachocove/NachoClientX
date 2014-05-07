@@ -31,36 +31,4 @@
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>
    </ContentType>
-   <LinkId>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </LinkId>
-   <DisplayName>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </DisplayName>
-   <IsFolder>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </IsFolder>
-   <CreationDate>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </CreationDate>
-   <LastModifiedDate>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </LastModifiedDate>
-   <IsHidden>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </IsHidden>
-   <ContentLength>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </ContentLength>
-   <ContentType>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
-   </ContentType>
 </xml>
