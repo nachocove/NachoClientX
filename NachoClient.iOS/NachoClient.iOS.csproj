@@ -695,6 +695,7 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McBody.cs">
       <Link>NachoCore\Model\McBody.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs</Link>
     </Compile>
