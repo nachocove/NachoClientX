@@ -180,8 +180,6 @@ namespace NachoCore.Utils
             var textStream = new StreamReader (bodyStream);
 
             var body = McBody.Save (textStream.ReadToEnd ());
-
-            BackEnd.Instance.Db.Insert (body);
             msg.BodyId = body.Id;
 
             msg.AccountId = AccountId;
