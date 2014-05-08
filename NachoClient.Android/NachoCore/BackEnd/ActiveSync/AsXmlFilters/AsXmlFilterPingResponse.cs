@@ -10,24 +10,28 @@ namespace NachoCore.Wbxml
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;
             NcXmlFilterNode node2 = null;
+            NcXmlFilterNode node3 = null;
 
+            // xml
+            node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
             // Ping
-            node0 = new NcXmlFilterNode ("Ping", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("Ping", RedactionType.NONE, RedactionType.NONE);
             // Status
-            node1 = new NcXmlFilterNode ("Status", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Ping -> Status
+            node2 = new NcXmlFilterNode ("Status", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Ping -> Status
             // Folders
-            node1 = new NcXmlFilterNode ("Folders", RedactionType.NONE, RedactionType.NONE);
+            node2 = new NcXmlFilterNode ("Folders", RedactionType.NONE, RedactionType.NONE);
             // Folder
-            node2 = new NcXmlFilterNode ("Folder", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // Folders -> Folder
-            node0.Add(node1); // Ping -> Folders
+            node3 = new NcXmlFilterNode ("Folder", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // Folders -> Folder
+            node1.Add(node2); // Ping -> Folders
             // MaxFolders
-            node1 = new NcXmlFilterNode ("MaxFolders", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Ping -> MaxFolders
+            node2 = new NcXmlFilterNode ("MaxFolders", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Ping -> MaxFolders
             // HeartbeatInterval
-            node1 = new NcXmlFilterNode ("HeartbeatInterval", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Ping -> HeartbeatInterval
+            node2 = new NcXmlFilterNode ("HeartbeatInterval", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Ping -> HeartbeatInterval
+            node0.Add(node1); // xml -> Ping
             
             Root = node0;
         }

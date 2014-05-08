@@ -38,9 +38,11 @@ class AsXmlElement:
 
     def walk(self, level, start_fn, end_fn, *params):
         assert callable(start_fn) and callable(end_fn)
-        start_fn(self, level, *params)
-        for child in self.children:
-            child.walk(level+1, start_fn, end_fn, *params)
+        walk_children = start_fn(self, level, *params)
+        assert isinstance(walk_children, bool)
+        if walk_children:
+            for child in self.children:
+                child.walk(level+1, start_fn, end_fn, *params)
         end_fn(self, level, *params)
 
 

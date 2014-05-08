@@ -11,168 +11,172 @@ namespace NachoCore.Wbxml
             NcXmlFilterNode node1 = null;
             NcXmlFilterNode node2 = null;
             NcXmlFilterNode node3 = null;
+            NcXmlFilterNode node4 = null;
 
+            // xml
+            node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
             // Provision
-            node0 = new NcXmlFilterNode ("Provision", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("Provision", RedactionType.NONE, RedactionType.NONE);
             // PolicyType
-            node1 = new NcXmlFilterNode ("PolicyType", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Provision -> PolicyType
+            node2 = new NcXmlFilterNode ("PolicyType", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Provision -> PolicyType
             // PolicyKey
-            node1 = new NcXmlFilterNode ("PolicyKey", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Provision -> PolicyKey
+            node2 = new NcXmlFilterNode ("PolicyKey", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Provision -> PolicyKey
             // EASProvisionDoc
-            node1 = new NcXmlFilterNode ("EASProvisionDoc", RedactionType.NONE, RedactionType.NONE);
+            node2 = new NcXmlFilterNode ("EASProvisionDoc", RedactionType.NONE, RedactionType.NONE);
             // DevicePasswordEnabled
-            node2 = new NcXmlFilterNode ("DevicePasswordEnabled", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> DevicePasswordEnabled
+            node3 = new NcXmlFilterNode ("DevicePasswordEnabled", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> DevicePasswordEnabled
             // AlphanumericDevicePasswordRequired
-            node2 = new NcXmlFilterNode ("AlphanumericDevicePasswordRequired", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AlphanumericDevicePasswordRequired
+            node3 = new NcXmlFilterNode ("AlphanumericDevicePasswordRequired", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AlphanumericDevicePasswordRequired
             // PasswordRecoveryEnabled
-            node2 = new NcXmlFilterNode ("PasswordRecoveryEnabled", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> PasswordRecoveryEnabled
+            node3 = new NcXmlFilterNode ("PasswordRecoveryEnabled", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> PasswordRecoveryEnabled
             // RequireStorageCardEncryption
-            node2 = new NcXmlFilterNode ("RequireStorageCardEncryption", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireStorageCardEncryption
+            node3 = new NcXmlFilterNode ("RequireStorageCardEncryption", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireStorageCardEncryption
             // AttachmentsEnabled
-            node2 = new NcXmlFilterNode ("AttachmentsEnabled", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AttachmentsEnabled
+            node3 = new NcXmlFilterNode ("AttachmentsEnabled", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AttachmentsEnabled
             // MinDevicePasswordLength
-            node2 = new NcXmlFilterNode ("MinDevicePasswordLength", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MinDevicePasswordLength
+            node3 = new NcXmlFilterNode ("MinDevicePasswordLength", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MinDevicePasswordLength
             // MaxInactivityTimeDeviceLock
-            node2 = new NcXmlFilterNode ("MaxInactivityTimeDeviceLock", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxInactivityTimeDeviceLock
+            node3 = new NcXmlFilterNode ("MaxInactivityTimeDeviceLock", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxInactivityTimeDeviceLock
             // MaxDevicePasswordFailedAttempts
-            node2 = new NcXmlFilterNode ("MaxDevicePasswordFailedAttempts", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxDevicePasswordFailedAttempts
+            node3 = new NcXmlFilterNode ("MaxDevicePasswordFailedAttempts", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxDevicePasswordFailedAttempts
             // MaxAttachmentSize
-            node2 = new NcXmlFilterNode ("MaxAttachmentSize", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxAttachmentSize
+            node3 = new NcXmlFilterNode ("MaxAttachmentSize", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxAttachmentSize
             // AllowSimpleDevicePassword
-            node2 = new NcXmlFilterNode ("AllowSimpleDevicePassword", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowSimpleDevicePassword
+            node3 = new NcXmlFilterNode ("AllowSimpleDevicePassword", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowSimpleDevicePassword
             // DevicePasswordExpiration
-            node2 = new NcXmlFilterNode ("DevicePasswordExpiration", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> DevicePasswordExpiration
+            node3 = new NcXmlFilterNode ("DevicePasswordExpiration", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> DevicePasswordExpiration
             // DevicePasswordHistory
-            node2 = new NcXmlFilterNode ("DevicePasswordHistory", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> DevicePasswordHistory
+            node3 = new NcXmlFilterNode ("DevicePasswordHistory", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> DevicePasswordHistory
             // AllowStorageCard
-            node2 = new NcXmlFilterNode ("AllowStorageCard", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowStorageCard
+            node3 = new NcXmlFilterNode ("AllowStorageCard", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowStorageCard
             // AllowCamera
-            node2 = new NcXmlFilterNode ("AllowCamera", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowCamera
+            node3 = new NcXmlFilterNode ("AllowCamera", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowCamera
             // RequireDeviceEncryption
-            node2 = new NcXmlFilterNode ("RequireDeviceEncryption", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireDeviceEncryption
+            node3 = new NcXmlFilterNode ("RequireDeviceEncryption", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireDeviceEncryption
             // AllowUnsignedApplications
-            node2 = new NcXmlFilterNode ("AllowUnsignedApplications", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowUnsignedApplications
+            node3 = new NcXmlFilterNode ("AllowUnsignedApplications", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowUnsignedApplications
             // AllowUnsignedInstallationPackages
-            node2 = new NcXmlFilterNode ("AllowUnsignedInstallationPackages", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowUnsignedInstallationPackages
+            node3 = new NcXmlFilterNode ("AllowUnsignedInstallationPackages", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowUnsignedInstallationPackages
             // MinDevicePasswordComplexCharacters
-            node2 = new NcXmlFilterNode ("MinDevicePasswordComplexCharacters", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MinDevicePasswordComplexCharacters
+            node3 = new NcXmlFilterNode ("MinDevicePasswordComplexCharacters", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MinDevicePasswordComplexCharacters
             // AllowWiFi
-            node2 = new NcXmlFilterNode ("AllowWiFi", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowWiFi
+            node3 = new NcXmlFilterNode ("AllowWiFi", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowWiFi
             // AllowTextMessaging
-            node2 = new NcXmlFilterNode ("AllowTextMessaging", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowTextMessaging
+            node3 = new NcXmlFilterNode ("AllowTextMessaging", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowTextMessaging
             // AllowPOPIMAPEmail
-            node2 = new NcXmlFilterNode ("AllowPOPIMAPEmail", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowPOPIMAPEmail
+            node3 = new NcXmlFilterNode ("AllowPOPIMAPEmail", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowPOPIMAPEmail
             // AllowBluetooth
-            node2 = new NcXmlFilterNode ("AllowBluetooth", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowBluetooth
+            node3 = new NcXmlFilterNode ("AllowBluetooth", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowBluetooth
             // AllowIrDA
-            node2 = new NcXmlFilterNode ("AllowIrDA", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowIrDA
+            node3 = new NcXmlFilterNode ("AllowIrDA", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowIrDA
             // RequireManualSyncWhenRoaming
-            node2 = new NcXmlFilterNode ("RequireManualSyncWhenRoaming", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireManualSyncWhenRoaming
+            node3 = new NcXmlFilterNode ("RequireManualSyncWhenRoaming", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireManualSyncWhenRoaming
             // AllowDesktopSync
-            node2 = new NcXmlFilterNode ("AllowDesktopSync", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowDesktopSync
+            node3 = new NcXmlFilterNode ("AllowDesktopSync", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowDesktopSync
             // MaxCalendarAgeFilter
-            node2 = new NcXmlFilterNode ("MaxCalendarAgeFilter", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxCalendarAgeFilter
+            node3 = new NcXmlFilterNode ("MaxCalendarAgeFilter", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxCalendarAgeFilter
             // AllowHTMLEmail
-            node2 = new NcXmlFilterNode ("AllowHTMLEmail", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowHTMLEmail
+            node3 = new NcXmlFilterNode ("AllowHTMLEmail", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowHTMLEmail
             // MaxEmailAgeFilter
-            node2 = new NcXmlFilterNode ("MaxEmailAgeFilter", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxEmailAgeFilter
+            node3 = new NcXmlFilterNode ("MaxEmailAgeFilter", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxEmailAgeFilter
             // MaxEmailBodyTruncationSize
-            node2 = new NcXmlFilterNode ("MaxEmailBodyTruncationSize", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxEmailBodyTruncationSize
+            node3 = new NcXmlFilterNode ("MaxEmailBodyTruncationSize", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxEmailBodyTruncationSize
             // MaxEmailHTMLBodyTruncationSize
-            node2 = new NcXmlFilterNode ("MaxEmailHTMLBodyTruncationSize", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> MaxEmailHTMLBodyTruncationSize
+            node3 = new NcXmlFilterNode ("MaxEmailHTMLBodyTruncationSize", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> MaxEmailHTMLBodyTruncationSize
             // RequireSignedSMIMEMessages
-            node2 = new NcXmlFilterNode ("RequireSignedSMIMEMessages", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireSignedSMIMEMessages
+            node3 = new NcXmlFilterNode ("RequireSignedSMIMEMessages", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireSignedSMIMEMessages
             // RequireEncryptedSMIMEMessages
-            node2 = new NcXmlFilterNode ("RequireEncryptedSMIMEMessages", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireEncryptedSMIMEMessages
+            node3 = new NcXmlFilterNode ("RequireEncryptedSMIMEMessages", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireEncryptedSMIMEMessages
             // RequireSignedSMIMEAlgorithm
-            node2 = new NcXmlFilterNode ("RequireSignedSMIMEAlgorithm", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireSignedSMIMEAlgorithm
+            node3 = new NcXmlFilterNode ("RequireSignedSMIMEAlgorithm", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireSignedSMIMEAlgorithm
             // RequireEncryptionSMIMEAlgorithm
-            node2 = new NcXmlFilterNode ("RequireEncryptionSMIMEAlgorithm", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> RequireEncryptionSMIMEAlgorithm
+            node3 = new NcXmlFilterNode ("RequireEncryptionSMIMEAlgorithm", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> RequireEncryptionSMIMEAlgorithm
             // AllowSMIMEEncryptionAlgorithmNegotiation
-            node2 = new NcXmlFilterNode ("AllowSMIMEEncryptionAlgorithmNegotiation", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowSMIMEEncryptionAlgorithmNegotiation
+            node3 = new NcXmlFilterNode ("AllowSMIMEEncryptionAlgorithmNegotiation", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowSMIMEEncryptionAlgorithmNegotiation
             // AllowSMIMESoftCerts
-            node2 = new NcXmlFilterNode ("AllowSMIMESoftCerts", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowSMIMESoftCerts
+            node3 = new NcXmlFilterNode ("AllowSMIMESoftCerts", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowSMIMESoftCerts
             // AllowBrowser
-            node2 = new NcXmlFilterNode ("AllowBrowser", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowBrowser
+            node3 = new NcXmlFilterNode ("AllowBrowser", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowBrowser
             // AllowConsumerEmail
-            node2 = new NcXmlFilterNode ("AllowConsumerEmail", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowConsumerEmail
+            node3 = new NcXmlFilterNode ("AllowConsumerEmail", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowConsumerEmail
             // AllowRemoteDesktop
-            node2 = new NcXmlFilterNode ("AllowRemoteDesktop", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowRemoteDesktop
+            node3 = new NcXmlFilterNode ("AllowRemoteDesktop", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowRemoteDesktop
             // AllowInternetSharing
-            node2 = new NcXmlFilterNode ("AllowInternetSharing", RedactionType.FULL, RedactionType.FULL);
-            node1.Add(node2); // EASProvisionDoc -> AllowInternetSharing
+            node3 = new NcXmlFilterNode ("AllowInternetSharing", RedactionType.FULL, RedactionType.FULL);
+            node2.Add(node3); // EASProvisionDoc -> AllowInternetSharing
             // UnapprovedInROMApplicationList
-            node2 = new NcXmlFilterNode ("UnapprovedInROMApplicationList", RedactionType.NONE, RedactionType.NONE);
+            node3 = new NcXmlFilterNode ("UnapprovedInROMApplicationList", RedactionType.NONE, RedactionType.NONE);
             // ApplicationName
-            node3 = new NcXmlFilterNode ("ApplicationName", RedactionType.FULL, RedactionType.FULL);
-            node2.Add(node3); // UnapprovedInROMApplicationList -> ApplicationName
-            node1.Add(node2); // EASProvisionDoc -> UnapprovedInROMApplicationList
+            node4 = new NcXmlFilterNode ("ApplicationName", RedactionType.FULL, RedactionType.FULL);
+            node3.Add(node4); // UnapprovedInROMApplicationList -> ApplicationName
+            node2.Add(node3); // EASProvisionDoc -> UnapprovedInROMApplicationList
             // ApprovedApplicationList
-            node2 = new NcXmlFilterNode ("ApprovedApplicationList", RedactionType.NONE, RedactionType.NONE);
+            node3 = new NcXmlFilterNode ("ApprovedApplicationList", RedactionType.NONE, RedactionType.NONE);
             // Hash
-            node3 = new NcXmlFilterNode ("Hash", RedactionType.FULL, RedactionType.FULL);
-            node2.Add(node3); // ApprovedApplicationList -> Hash
-            node1.Add(node2); // EASProvisionDoc -> ApprovedApplicationList
-            node0.Add(node1); // Provision -> EASProvisionDoc
+            node4 = new NcXmlFilterNode ("Hash", RedactionType.FULL, RedactionType.FULL);
+            node3.Add(node4); // ApprovedApplicationList -> Hash
+            node2.Add(node3); // EASProvisionDoc -> ApprovedApplicationList
+            node1.Add(node2); // Provision -> EASProvisionDoc
             // Policies
-            node1 = new NcXmlFilterNode ("Policies", RedactionType.NONE, RedactionType.NONE);
+            node2 = new NcXmlFilterNode ("Policies", RedactionType.NONE, RedactionType.NONE);
             // Policy
-            node2 = new NcXmlFilterNode ("Policy", RedactionType.NONE, RedactionType.NONE);
+            node3 = new NcXmlFilterNode ("Policy", RedactionType.NONE, RedactionType.NONE);
             // PolicyType
-            node3 = new NcXmlFilterNode ("PolicyType", RedactionType.FULL, RedactionType.FULL);
-            node2.Add(node3); // Policy -> PolicyType
+            node4 = new NcXmlFilterNode ("PolicyType", RedactionType.FULL, RedactionType.FULL);
+            node3.Add(node4); // Policy -> PolicyType
             // PolicyKey
-            node3 = new NcXmlFilterNode ("PolicyKey", RedactionType.FULL, RedactionType.FULL);
-            node2.Add(node3); // Policy -> PolicyKey
+            node4 = new NcXmlFilterNode ("PolicyKey", RedactionType.FULL, RedactionType.FULL);
+            node3.Add(node4); // Policy -> PolicyKey
             // Status
-            node3 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.FULL);
-            node2.Add(node3); // Policy -> Status
+            node4 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.FULL);
+            node3.Add(node4); // Policy -> Status
             // Data
-            node3 = new NcXmlFilterNode ("Data", RedactionType.FULL, RedactionType.FULL);
-            node2.Add(node3); // Policy -> Data
-            node1.Add(node2); // Policies -> Policy
-            node0.Add(node1); // Provision -> Policies
+            node4 = new NcXmlFilterNode ("Data", RedactionType.FULL, RedactionType.FULL);
+            node3.Add(node4); // Policy -> Data
+            node2.Add(node3); // Policies -> Policy
+            node1.Add(node2); // Provision -> Policies
+            node0.Add(node1); // xml -> Provision
             
             Root = node0;
         }

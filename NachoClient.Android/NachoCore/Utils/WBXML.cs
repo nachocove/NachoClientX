@@ -24,7 +24,7 @@ namespace NachoCore.Wbxml
         const byte characterSetByte = 0x6A;
         // UTF-8
         const byte stringTableLengthByte = 0x00;
-        const Boolean DEFAULT_FILTERING = true;
+        const Boolean DEFAULT_FILTERING = false;
 
         public XDocument XmlDoc { set; get; }
 
@@ -214,7 +214,7 @@ namespace NachoCore.Wbxml
                         filter.Update (level, newNode, bytes.GetRedactCopy ());
                     } else {
                         currentNode.Add (newNode);
-                        filter.Update (level + 1, newNode, bytes.GetRedactCopy ());
+                        filter.Update (level, newNode, bytes.GetRedactCopy ());
                     }
                     // TODO - Currently, we create a copy of all dequeued bytes for XML filter state update.
                     // The problem is that XText or XCDATA node may have a lot of bytes. Creating a 
@@ -235,7 +235,7 @@ namespace NachoCore.Wbxml
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that can hold and
                 // forward to the telemetry server.
-                Log.Info ("debug_XML = \n{0}", filter.FinalizeXml ());
+                Log.Info ("response_debug_XML = \n{0}", filter.FinalizeXml ());
             }
         }
 
@@ -260,7 +260,7 @@ namespace NachoCore.Wbxml
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
-                Log.Info ("debug_XML = \n{0}", filter.FinalizeXml ());
+                Log.Info ("request_debug_XML = \n{0}", filter.FinalizeXml ());
             }
 
             return byteList.ToArray ();

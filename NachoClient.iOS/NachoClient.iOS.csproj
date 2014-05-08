@@ -664,9 +664,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperations.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperations.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvision.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvision.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs</Link>
     </Compile>
@@ -698,6 +695,35 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McBody.cs">
       <Link>NachoCore\Model\McBody.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

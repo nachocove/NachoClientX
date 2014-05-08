@@ -234,9 +234,8 @@ namespace NachoCore.Wbxml
                 if (null == current.Filter) {
                     Log.Warn ("No filter for namespace {0}", element.Name.NamespaceName);
                 } else {
-                    if (current.Filter.Root.Name.LocalName == element.Name.LocalName) {
-                        current.ParentNode = current.Filter.Root;
-                    } else {
+                    current.ParentNode = current.Filter.Root.FindChildNode (element);
+                    if (null == current.ParentNode) {
                         Log.Warn ("Unexpected root element {0}", element.Name);
                     }
                 }
@@ -252,6 +251,7 @@ namespace NachoCore.Wbxml
                             current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
                             if (null != current.Filter) {
                                 current.ParentNode = current.Filter.Root;
+                                NachoAssert.True (null != current.ParentNode);
                             } else {
                                 Log.Warn ("Switching to an unknown namespace {0}", element.Name.NamespaceName);
                                 current.ParentNode = null;
@@ -261,6 +261,7 @@ namespace NachoCore.Wbxml
 
                     // Look for the filter node for this element
                     if (null != current.ParentNode) {
+                        XNode origNode = current.ParentNode; // for debugging
                         current.ParentNode = current.ParentNode.FindChildNode (element);
                         if (null == current.ParentNode) {
                             Log.Warn ("Unknown element tag {0}", element.Name);
@@ -296,6 +297,10 @@ namespace NachoCore.Wbxml
         private void RedactElement (XElement newElement, XElement origElement, RedactionType type)
         {
             if (RedactionType.NONE == type) {
+                return;
+            }
+
+            if (origElement.Value == "") {
                 return;
             }
 

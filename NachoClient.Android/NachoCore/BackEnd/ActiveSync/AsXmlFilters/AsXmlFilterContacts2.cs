@@ -8,87 +8,40 @@ namespace NachoCore.Wbxml
         public AsXmlFilterContacts2 () : base ("Contacts2")
         {
             NcXmlFilterNode node0 = null;
+            NcXmlFilterNode node1 = null;
 
+            // xml
+            node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
             // CustomerId
-            node0 = new NcXmlFilterNode ("CustomerId", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("CustomerId", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> CustomerId
             // GovernmentId
-            node0 = new NcXmlFilterNode ("GovernmentId", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("GovernmentId", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> GovernmentId
             // IMAddress
-            node0 = new NcXmlFilterNode ("IMAddress", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("IMAddress", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> IMAddress
             // IMAddress2
-            node0 = new NcXmlFilterNode ("IMAddress2", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("IMAddress2", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> IMAddress2
             // IMAddress3
-            node0 = new NcXmlFilterNode ("IMAddress3", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("IMAddress3", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> IMAddress3
             // ManagerName
-            node0 = new NcXmlFilterNode ("ManagerName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("ManagerName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> ManagerName
             // CompanyMainPhone
-            node0 = new NcXmlFilterNode ("CompanyMainPhone", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("CompanyMainPhone", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> CompanyMainPhone
             // AccountName
-            node0 = new NcXmlFilterNode ("AccountName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("AccountName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> AccountName
             // NickName
-            node0 = new NcXmlFilterNode ("NickName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("NickName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> NickName
             // MMS
-            node0 = new NcXmlFilterNode ("MMS", RedactionType.FULL, RedactionType.FULL);
-            // CustomerId
-            node0 = new NcXmlFilterNode ("CustomerId", RedactionType.FULL, RedactionType.FULL);
-            // GovernmentId
-            node0 = new NcXmlFilterNode ("GovernmentId", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress
-            node0 = new NcXmlFilterNode ("IMAddress", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress2
-            node0 = new NcXmlFilterNode ("IMAddress2", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress3
-            node0 = new NcXmlFilterNode ("IMAddress3", RedactionType.FULL, RedactionType.FULL);
-            // ManagerName
-            node0 = new NcXmlFilterNode ("ManagerName", RedactionType.FULL, RedactionType.FULL);
-            // CompanyMainPhone
-            node0 = new NcXmlFilterNode ("CompanyMainPhone", RedactionType.FULL, RedactionType.FULL);
-            // AccountName
-            node0 = new NcXmlFilterNode ("AccountName", RedactionType.FULL, RedactionType.FULL);
-            // NickName
-            node0 = new NcXmlFilterNode ("NickName", RedactionType.FULL, RedactionType.FULL);
-            // MMS
-            node0 = new NcXmlFilterNode ("MMS", RedactionType.FULL, RedactionType.FULL);
-            // CustomerId
-            node0 = new NcXmlFilterNode ("CustomerId", RedactionType.FULL, RedactionType.FULL);
-            // GovernmentId
-            node0 = new NcXmlFilterNode ("GovernmentId", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress
-            node0 = new NcXmlFilterNode ("IMAddress", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress2
-            node0 = new NcXmlFilterNode ("IMAddress2", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress3
-            node0 = new NcXmlFilterNode ("IMAddress3", RedactionType.FULL, RedactionType.FULL);
-            // ManagerName
-            node0 = new NcXmlFilterNode ("ManagerName", RedactionType.FULL, RedactionType.FULL);
-            // CompanyMainPhone
-            node0 = new NcXmlFilterNode ("CompanyMainPhone", RedactionType.FULL, RedactionType.FULL);
-            // AccountName
-            node0 = new NcXmlFilterNode ("AccountName", RedactionType.FULL, RedactionType.FULL);
-            // NickName
-            node0 = new NcXmlFilterNode ("NickName", RedactionType.FULL, RedactionType.FULL);
-            // MMS
-            node0 = new NcXmlFilterNode ("MMS", RedactionType.FULL, RedactionType.FULL);
-            // CustomerId
-            node0 = new NcXmlFilterNode ("CustomerId", RedactionType.FULL, RedactionType.FULL);
-            // GovernmentId
-            node0 = new NcXmlFilterNode ("GovernmentId", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress
-            node0 = new NcXmlFilterNode ("IMAddress", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress2
-            node0 = new NcXmlFilterNode ("IMAddress2", RedactionType.FULL, RedactionType.FULL);
-            // IMAddress3
-            node0 = new NcXmlFilterNode ("IMAddress3", RedactionType.FULL, RedactionType.FULL);
-            // ManagerName
-            node0 = new NcXmlFilterNode ("ManagerName", RedactionType.FULL, RedactionType.FULL);
-            // CompanyMainPhone
-            node0 = new NcXmlFilterNode ("CompanyMainPhone", RedactionType.FULL, RedactionType.FULL);
-            // AccountName
-            node0 = new NcXmlFilterNode ("AccountName", RedactionType.FULL, RedactionType.FULL);
-            // NickName
-            node0 = new NcXmlFilterNode ("NickName", RedactionType.FULL, RedactionType.FULL);
-            // MMS
-            node0 = new NcXmlFilterNode ("MMS", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("MMS", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> MMS
             
             Root = node0;
         }

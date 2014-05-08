@@ -9,157 +9,100 @@ namespace NachoCore.Wbxml
         {
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;
+            NcXmlFilterNode node2 = null;
 
+            // xml
+            node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
             // Subject
-            node0 = new NcXmlFilterNode ("Subject", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Subject", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Subject
             // Importance
-            node0 = new NcXmlFilterNode ("Importance", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Importance", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Importance
             // UtcStartDate
-            node0 = new NcXmlFilterNode ("UtcStartDate", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("UtcStartDate", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> UtcStartDate
             // StartDate
-            node0 = new NcXmlFilterNode ("StartDate", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("StartDate", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> StartDate
             // UtcDueDate
-            node0 = new NcXmlFilterNode ("UtcDueDate", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("UtcDueDate", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> UtcDueDate
             // DueDate
-            node0 = new NcXmlFilterNode ("DueDate", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("DueDate", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> DueDate
             // Categories
-            node0 = new NcXmlFilterNode ("Categories", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("Categories", RedactionType.NONE, RedactionType.NONE);
             // Category
-            node1 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Categories -> Category
+            node2 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Categories -> Category
+            node0.Add(node1); // xml -> Categories
             // Recurrence
-            node0 = new NcXmlFilterNode ("Recurrence", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("Recurrence", RedactionType.NONE, RedactionType.NONE);
             // Type
-            node1 = new NcXmlFilterNode ("Type", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Type
+            node2 = new NcXmlFilterNode ("Type", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> Type
             // Start
-            node1 = new NcXmlFilterNode ("Start", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Start
+            node2 = new NcXmlFilterNode ("Start", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> Start
             // Until
-            node1 = new NcXmlFilterNode ("Until", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Until
+            node2 = new NcXmlFilterNode ("Until", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> Until
             // Occurrences
-            node1 = new NcXmlFilterNode ("Occurrences", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Occurrences
+            node2 = new NcXmlFilterNode ("Occurrences", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> Occurrences
             // Interval
-            node1 = new NcXmlFilterNode ("Interval", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Interval
+            node2 = new NcXmlFilterNode ("Interval", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> Interval
             // DayOfWeek
-            node1 = new NcXmlFilterNode ("DayOfWeek", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> DayOfWeek
+            node2 = new NcXmlFilterNode ("DayOfWeek", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> DayOfWeek
             // DayOfMonth
-            node1 = new NcXmlFilterNode ("DayOfMonth", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> DayOfMonth
+            node2 = new NcXmlFilterNode ("DayOfMonth", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> DayOfMonth
             // WeekOfMonth
-            node1 = new NcXmlFilterNode ("WeekOfMonth", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> WeekOfMonth
+            node2 = new NcXmlFilterNode ("WeekOfMonth", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> WeekOfMonth
             // MonthOfYear
-            node1 = new NcXmlFilterNode ("MonthOfYear", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> MonthOfYear
+            node2 = new NcXmlFilterNode ("MonthOfYear", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> MonthOfYear
             // Regenerate
-            node1 = new NcXmlFilterNode ("Regenerate", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Regenerate
+            node2 = new NcXmlFilterNode ("Regenerate", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> Regenerate
             // DeadOccur
-            node1 = new NcXmlFilterNode ("DeadOccur", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> DeadOccur
+            node2 = new NcXmlFilterNode ("DeadOccur", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> DeadOccur
             // CalendarType
-            node1 = new NcXmlFilterNode ("CalendarType", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> CalendarType
+            node2 = new NcXmlFilterNode ("CalendarType", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> CalendarType
             // IsLeapMonth
-            node1 = new NcXmlFilterNode ("IsLeapMonth", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> IsLeapMonth
+            node2 = new NcXmlFilterNode ("IsLeapMonth", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> IsLeapMonth
             // FirstDayOfWeek
-            node1 = new NcXmlFilterNode ("FirstDayOfWeek", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> FirstDayOfWeek
+            node2 = new NcXmlFilterNode ("FirstDayOfWeek", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Recurrence -> FirstDayOfWeek
+            node0.Add(node1); // xml -> Recurrence
             // Complete
-            node0 = new NcXmlFilterNode ("Complete", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Complete", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Complete
             // DateCompleted
-            node0 = new NcXmlFilterNode ("DateCompleted", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("DateCompleted", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> DateCompleted
             // Sensitivity
-            node0 = new NcXmlFilterNode ("Sensitivity", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Sensitivity", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Sensitivity
             // ReminderTime
-            node0 = new NcXmlFilterNode ("ReminderTime", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("ReminderTime", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> ReminderTime
             // ReminderSet
-            node0 = new NcXmlFilterNode ("ReminderSet", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("ReminderSet", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> ReminderSet
             // OrdinalDate
-            node0 = new NcXmlFilterNode ("OrdinalDate", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OrdinalDate", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OrdinalDate
             // SubOrdinalDate
-            node0 = new NcXmlFilterNode ("SubOrdinalDate", RedactionType.FULL, RedactionType.FULL);
-            // Subject
-            node0 = new NcXmlFilterNode ("Subject", RedactionType.FULL, RedactionType.FULL);
-            // Importance
-            node0 = new NcXmlFilterNode ("Importance", RedactionType.FULL, RedactionType.FULL);
-            // UtcStartDate
-            node0 = new NcXmlFilterNode ("UtcStartDate", RedactionType.FULL, RedactionType.FULL);
-            // StartDate
-            node0 = new NcXmlFilterNode ("StartDate", RedactionType.FULL, RedactionType.FULL);
-            // UtcDueDate
-            node0 = new NcXmlFilterNode ("UtcDueDate", RedactionType.FULL, RedactionType.FULL);
-            // DueDate
-            node0 = new NcXmlFilterNode ("DueDate", RedactionType.FULL, RedactionType.FULL);
-            // Categories
-            node0 = new NcXmlFilterNode ("Categories", RedactionType.NONE, RedactionType.NONE);
-            // Category
-            node1 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Categories -> Category
-            // Recurrence
-            node0 = new NcXmlFilterNode ("Recurrence", RedactionType.NONE, RedactionType.NONE);
-            // Type
-            node1 = new NcXmlFilterNode ("Type", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Type
-            // Start
-            node1 = new NcXmlFilterNode ("Start", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Start
-            // Until
-            node1 = new NcXmlFilterNode ("Until", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Until
-            // Occurrences
-            node1 = new NcXmlFilterNode ("Occurrences", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Occurrences
-            // Interval
-            node1 = new NcXmlFilterNode ("Interval", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Interval
-            // DayOfWeek
-            node1 = new NcXmlFilterNode ("DayOfWeek", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> DayOfWeek
-            // DayOfMonth
-            node1 = new NcXmlFilterNode ("DayOfMonth", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> DayOfMonth
-            // WeekOfMonth
-            node1 = new NcXmlFilterNode ("WeekOfMonth", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> WeekOfMonth
-            // MonthOfYear
-            node1 = new NcXmlFilterNode ("MonthOfYear", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> MonthOfYear
-            // Regenerate
-            node1 = new NcXmlFilterNode ("Regenerate", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> Regenerate
-            // DeadOccur
-            node1 = new NcXmlFilterNode ("DeadOccur", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> DeadOccur
-            // CalendarType
-            node1 = new NcXmlFilterNode ("CalendarType", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> CalendarType
-            // IsLeapMonth
-            node1 = new NcXmlFilterNode ("IsLeapMonth", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> IsLeapMonth
-            // FirstDayOfWeek
-            node1 = new NcXmlFilterNode ("FirstDayOfWeek", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Recurrence -> FirstDayOfWeek
-            // Complete
-            node0 = new NcXmlFilterNode ("Complete", RedactionType.FULL, RedactionType.FULL);
-            // DateCompleted
-            node0 = new NcXmlFilterNode ("DateCompleted", RedactionType.FULL, RedactionType.FULL);
-            // Sensitivity
-            node0 = new NcXmlFilterNode ("Sensitivity", RedactionType.FULL, RedactionType.FULL);
-            // ReminderTime
-            node0 = new NcXmlFilterNode ("ReminderTime", RedactionType.FULL, RedactionType.FULL);
-            // ReminderSet
-            node0 = new NcXmlFilterNode ("ReminderSet", RedactionType.FULL, RedactionType.FULL);
-            // OrdinalDate
-            node0 = new NcXmlFilterNode ("OrdinalDate", RedactionType.FULL, RedactionType.FULL);
-            // SubOrdinalDate
-            node0 = new NcXmlFilterNode ("SubOrdinalDate", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("SubOrdinalDate", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> SubOrdinalDate
             
             Root = node0;
         }

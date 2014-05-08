@@ -1,8 +1,8 @@
-import sys
 import os
 from as_xml import AsXmlElement
 from as_xml import AsXmlParser
 from output import Output
+from argparse import ArgumentParser
 
 
 class AsXsdOutput:
@@ -29,6 +29,7 @@ class AsXsdElement(AsXmlElement):
         AsXmlElement.__init__(self, name)
         assert isinstance(is_ref, bool)
         self.is_ref = is_ref
+        self.is_group = False
 
     def _ref_has_namespace(self):
         assert self.is_ref
@@ -36,10 +37,14 @@ class AsXsdElement(AsXmlElement):
 
     @staticmethod
     def generate_xml_start(obj, indent_level, output, root):
+        if obj.is_group:
+            # xs:group is a macro. Generate nothing
+            return False
+
         if obj.is_ref:
             # This is a reference. If it is in a different namespace, ignore it
             if obj._ref_has_namespace():
-                return
+                return False
             new_obj = None
 
             # Resolve the reference. Use only global elements as per XML schema convention
@@ -50,11 +55,11 @@ class AsXsdElement(AsXmlElement):
             assert new_obj is not None
             new_obj.walk(indent_level, AsXsdElement.generate_xml_start,
                          AsXsdElement.generate_xml_end, output, root)
-            return
+            return True
 
         if obj.name == 'xml':
             output.line(indent_level, '<%s namespace="%s">', obj.name, root.namespace)
-            return
+            return True
         output.line(indent_level, '<%s>', obj.name)
         if obj.has_children():
             # Complex type is never redacted
@@ -65,9 +70,12 @@ class AsXsdElement(AsXmlElement):
             attribute_redaction = 'full'
         output.line(indent_level+1, '<element_redaction>%s</element_redaction>', element_redaction)
         output.line(indent_level+1, '<attribute_redaction>%s</attribute_redaction>', attribute_redaction)
+        return True
 
     @staticmethod
     def generate_xml_end(obj, indent_level, output, root):
+        if obj.is_group:
+            return
         if obj.is_ref:
             return
         output.line(indent_level, '</%s>', obj.name)
@@ -76,36 +84,46 @@ class AsXsdElement(AsXmlElement):
 class AsXsd(AsXmlParser):
     INDENTATION = '   '
 
-    def __init__(self, xsd_fname):
+    def __init__(self, xsd_fname=None):
         AsXmlParser.__init__(self)
         self.root = None
         self.start_handlers = {
             u'xs:schema': self.schema_start_handler,
             u'xs:element': self.element_start_handler,
             u'xs:include': self.include_start_handler,
+            u'xs:group': self.group_start_handler,
             None: AsXsd.default_start_handler,
         }
         self.end_handlers = {
             u'xs:schema': self.schema_end_handler,
             u'xs:element': AsXsd.element_end_handler,
             u'xs:include': self.include_end_handler,
+            u'xs:group': self.group_end_handler,
             None: AsXsd.default_end_handler,
         }
+        self.included = []
         self.xsd_fname = xsd_fname
-        self.parse(xsd_fname)
+        if self.xsd_fname is not None:
+            self.parse(xsd_fname)
+
+    def parse(self, xsd_fname):
+        self.xsd_fname = xsd_fname
+        AsXmlParser.parse(self, self.xsd_fname)
 
     def schema_start_handler(self, name, attrs):
         assert name == u'xs:schema'
-        self.root = AsXsdElement('xml')
-        assert u'xmlns' in attrs
-        self.root.namespace = attrs[u'xmlns']
+        if self.root is None:
+            self.root = AsXsdElement('xml')
+            assert u'xmlns' in attrs
+            self.root.namespace = attrs[u'xmlns']
+        else:
+            assert self.root.namespace == attrs[u'xmlns']
         return self.root
 
     def schema_end_handler(self, obj, content):
         return
 
-    def element_start_handler(self, name, attrs):
-        assert name == u'xs:element'
+    def _element_handler(self, name, attrs):
         if u'ref' in attrs:
             obj = AsXsdElement(attrs[u'ref'], True)
             obj.is_ref = True
@@ -114,6 +132,10 @@ class AsXsd(AsXmlParser):
             obj = AsXsdElement(attrs[u'name'], False)
         self.current_element().add_child(obj)
         return obj
+
+    def element_start_handler(self, name, attrs):
+        assert name == u'xs:element'
+        return self._element_handler(name, attrs)
 
     @staticmethod
     def element_end_handler(obj, content):
@@ -129,12 +151,23 @@ class AsXsd(AsXmlParser):
         # Create a new AsXsd object and glue it into the existing one
         xsd = AsXsd(xsd_fname)
         assert xsd.root.namespace == self.root.namespace
-        for child in xsd.root.children:
-            self.root.add_child(child)
+        if xsd_fname not in self.included:
+            self.included.append(xsd_fname)
+            for child in xsd.root.children:
+                self.root.add_child(child)
 
         return xsd.root
 
     def include_end_handler(self, obj, content):
+        return
+
+    def group_start_handler(self, name, attrs):
+        assert name == u'xs:group'
+        obj = self._element_handler(name, attrs)
+        obj.is_group = True
+        return obj
+
+    def group_end_handler(self, obj, content):
         return
 
     @staticmethod
@@ -157,11 +190,18 @@ class AsXsd(AsXmlParser):
 
 
 def main():
-    for in_fname in sys.argv[1:]:
-        (base, ext) = os.path.splitext(in_fname)
-        out_fname = base + '.xml'
-        print '%s -> %s' % (in_fname, out_fname)
-        AsXsd(in_fname).generate_xml(out_fname)
+    parser = ArgumentParser()
+    parser.add_argument('--out-file', help='Output file')
+    parser.add_argument('xsd_files', nargs='+', help='ActiveSync .xsd files')
+    options = parser.parse_args()
+
+    xsd = AsXsd()
+    for in_fname in options.xsd_files:
+        print '%s ->' % in_fname
+        xsd.parse(in_fname)
+
+    print '    -> %s' % options.out_file
+    xsd.generate_xml(options.out_file)
 
 if __name__ == '__main__':
     main()

@@ -18,9 +18,9 @@ class AsSchemaElement(AsXmlElement):
     def generate_cs(self, output, level):
         # Create the node
         var_name = self.node(level)
+        output.line(3, '// %s', self.name)
         element_redaction = 'RedactionType.' + self.attrs['element_redaction'].upper()
         attribute_redaction = 'RedactionType.' + self.attrs['attribute_redaction'].upper()
-        output.line(3, '// %s', self.name)
         output.line(3, '%s = new NcXmlFilterNode ("%s", %s, %s);', var_name, self.name,
                     element_redaction, attribute_redaction)
 
@@ -65,6 +65,8 @@ class AsSchema(AsXmlParser):
     def xml_start_handler(self, name, attrs):
         obj = AsSchemaElement(name)
         self.root = obj
+        obj.set_attr(u'element_redaction', u'none')
+        obj.set_attr(u'attribute_redaction', u'none')
         assert u'namespace' in attrs
         self.namespace = attrs[u'namespace']
         if self.class_suffix is None:
@@ -103,13 +105,12 @@ class AsSchema(AsXmlParser):
         output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.namespace)
         output.line(2, '{')
         # Create all the variables
-        for n in range(self.stack.max_depth()-2):  # -1 for redaction tag; -1 for not generating a node for <xml>
+        for n in range(self.stack.max_depth()-1):  # -1 for redaction tag
             output.line(3, 'NcXmlFilterNode %s = null;', AsSchemaElement.node(n))
         output.line(0, '')
 
         # Create the code that sets up the tree
-        for child in self.root.children:
-            child.generate_cs(output, 0)
+        self.root.generate_cs(output, 0)
 
         output.line(3, '')
         output.line(3, 'Root = node0;')

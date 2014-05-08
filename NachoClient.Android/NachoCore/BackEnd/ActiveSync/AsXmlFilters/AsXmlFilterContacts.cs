@@ -9,429 +9,172 @@ namespace NachoCore.Wbxml
         {
             NcXmlFilterNode node0 = null;
             NcXmlFilterNode node1 = null;
+            NcXmlFilterNode node2 = null;
 
+            // xml
+            node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
             // Anniversary
-            node0 = new NcXmlFilterNode ("Anniversary", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Anniversary", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Anniversary
             // AssistantName
-            node0 = new NcXmlFilterNode ("AssistantName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("AssistantName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> AssistantName
             // AssistantPhoneNumber
-            node0 = new NcXmlFilterNode ("AssistantPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("AssistantPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> AssistantPhoneNumber
             // Birthday
-            node0 = new NcXmlFilterNode ("Birthday", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Birthday", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Birthday
             // Business2PhoneNumber
-            node0 = new NcXmlFilterNode ("Business2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Business2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Business2PhoneNumber
             // BusinessAddressCity
-            node0 = new NcXmlFilterNode ("BusinessAddressCity", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessAddressCity", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessAddressCity
             // BusinessPhoneNumber
-            node0 = new NcXmlFilterNode ("BusinessPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessPhoneNumber
             // WebPage
-            node0 = new NcXmlFilterNode ("WebPage", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("WebPage", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> WebPage
             // BusinessAddressCountry
-            node0 = new NcXmlFilterNode ("BusinessAddressCountry", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessAddressCountry", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessAddressCountry
             // Department
-            node0 = new NcXmlFilterNode ("Department", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Department", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Department
             // Email1Address
-            node0 = new NcXmlFilterNode ("Email1Address", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Email1Address", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Email1Address
             // Email2Address
-            node0 = new NcXmlFilterNode ("Email2Address", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Email2Address", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Email2Address
             // Email3Address
-            node0 = new NcXmlFilterNode ("Email3Address", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Email3Address", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Email3Address
             // BusinessFaxNumber
-            node0 = new NcXmlFilterNode ("BusinessFaxNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessFaxNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessFaxNumber
             // FileAs
-            node0 = new NcXmlFilterNode ("FileAs", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("FileAs", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> FileAs
             // Alias
-            node0 = new NcXmlFilterNode ("Alias", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Alias", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Alias
             // WeightedRank
-            node0 = new NcXmlFilterNode ("WeightedRank", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("WeightedRank", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> WeightedRank
             // FirstName
-            node0 = new NcXmlFilterNode ("FirstName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("FirstName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> FirstName
             // MiddleName
-            node0 = new NcXmlFilterNode ("MiddleName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("MiddleName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> MiddleName
             // HomeAddressCity
-            node0 = new NcXmlFilterNode ("HomeAddressCity", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomeAddressCity", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomeAddressCity
             // HomeAddressCountry
-            node0 = new NcXmlFilterNode ("HomeAddressCountry", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomeAddressCountry", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomeAddressCountry
             // HomeFaxNumber
-            node0 = new NcXmlFilterNode ("HomeFaxNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomeFaxNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomeFaxNumber
             // HomePhoneNumber
-            node0 = new NcXmlFilterNode ("HomePhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomePhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomePhoneNumber
             // Home2PhoneNumber
-            node0 = new NcXmlFilterNode ("Home2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Home2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Home2PhoneNumber
             // HomeAddressPostalCode
-            node0 = new NcXmlFilterNode ("HomeAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomeAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomeAddressPostalCode
             // HomeAddressState
-            node0 = new NcXmlFilterNode ("HomeAddressState", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomeAddressState", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomeAddressState
             // HomeAddressStreet
-            node0 = new NcXmlFilterNode ("HomeAddressStreet", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("HomeAddressStreet", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> HomeAddressStreet
             // MobilePhoneNumber
-            node0 = new NcXmlFilterNode ("MobilePhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("MobilePhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> MobilePhoneNumber
             // Suffix
-            node0 = new NcXmlFilterNode ("Suffix", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Suffix", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Suffix
             // CompanyName
-            node0 = new NcXmlFilterNode ("CompanyName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("CompanyName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> CompanyName
             // OtherAddressCity
-            node0 = new NcXmlFilterNode ("OtherAddressCity", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OtherAddressCity", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OtherAddressCity
             // OtherAddressCountry
-            node0 = new NcXmlFilterNode ("OtherAddressCountry", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OtherAddressCountry", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OtherAddressCountry
             // CarPhoneNumber
-            node0 = new NcXmlFilterNode ("CarPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("CarPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> CarPhoneNumber
             // OtherAddressPostalCode
-            node0 = new NcXmlFilterNode ("OtherAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OtherAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OtherAddressPostalCode
             // OtherAddressState
-            node0 = new NcXmlFilterNode ("OtherAddressState", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OtherAddressState", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OtherAddressState
             // OtherAddressStreet
-            node0 = new NcXmlFilterNode ("OtherAddressStreet", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OtherAddressStreet", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OtherAddressStreet
             // PagerNumber
-            node0 = new NcXmlFilterNode ("PagerNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("PagerNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> PagerNumber
             // Title
-            node0 = new NcXmlFilterNode ("Title", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Title", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Title
             // BusinessAddressPostalCode
-            node0 = new NcXmlFilterNode ("BusinessAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessAddressPostalCode
             // LastName
-            node0 = new NcXmlFilterNode ("LastName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("LastName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> LastName
             // Spouse
-            node0 = new NcXmlFilterNode ("Spouse", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Spouse", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Spouse
             // BusinessAddressState
-            node0 = new NcXmlFilterNode ("BusinessAddressState", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessAddressState", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessAddressState
             // BusinessAddressStreet
-            node0 = new NcXmlFilterNode ("BusinessAddressStreet", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("BusinessAddressStreet", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> BusinessAddressStreet
             // JobTitle
-            node0 = new NcXmlFilterNode ("JobTitle", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("JobTitle", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> JobTitle
             // YomiFirstName
-            node0 = new NcXmlFilterNode ("YomiFirstName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("YomiFirstName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> YomiFirstName
             // YomiLastName
-            node0 = new NcXmlFilterNode ("YomiLastName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("YomiLastName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> YomiLastName
             // YomiCompanyName
-            node0 = new NcXmlFilterNode ("YomiCompanyName", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("YomiCompanyName", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> YomiCompanyName
             // OfficeLocation
-            node0 = new NcXmlFilterNode ("OfficeLocation", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("OfficeLocation", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> OfficeLocation
             // RadioPhoneNumber
-            node0 = new NcXmlFilterNode ("RadioPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("RadioPhoneNumber", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> RadioPhoneNumber
             // Picture
-            node0 = new NcXmlFilterNode ("Picture", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Picture", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> Picture
             // Categories
-            node0 = new NcXmlFilterNode ("Categories", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("Categories", RedactionType.NONE, RedactionType.NONE);
             // Category
-            node1 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Categories -> Category
+            node2 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Categories -> Category
+            node0.Add(node1); // xml -> Categories
             // Children
-            node0 = new NcXmlFilterNode ("Children", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("Children", RedactionType.NONE, RedactionType.NONE);
             // Child
-            node1 = new NcXmlFilterNode ("Child", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Children -> Child
-            // Anniversary
-            node0 = new NcXmlFilterNode ("Anniversary", RedactionType.FULL, RedactionType.FULL);
-            // AssistantName
-            node0 = new NcXmlFilterNode ("AssistantName", RedactionType.FULL, RedactionType.FULL);
-            // AssistantPhoneNumber
-            node0 = new NcXmlFilterNode ("AssistantPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Birthday
-            node0 = new NcXmlFilterNode ("Birthday", RedactionType.FULL, RedactionType.FULL);
-            // Business2PhoneNumber
-            node0 = new NcXmlFilterNode ("Business2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressCity
-            node0 = new NcXmlFilterNode ("BusinessAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // BusinessPhoneNumber
-            node0 = new NcXmlFilterNode ("BusinessPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // WebPage
-            node0 = new NcXmlFilterNode ("WebPage", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressCountry
-            node0 = new NcXmlFilterNode ("BusinessAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // Department
-            node0 = new NcXmlFilterNode ("Department", RedactionType.FULL, RedactionType.FULL);
-            // Email1Address
-            node0 = new NcXmlFilterNode ("Email1Address", RedactionType.FULL, RedactionType.FULL);
-            // Email2Address
-            node0 = new NcXmlFilterNode ("Email2Address", RedactionType.FULL, RedactionType.FULL);
-            // Email3Address
-            node0 = new NcXmlFilterNode ("Email3Address", RedactionType.FULL, RedactionType.FULL);
-            // BusinessFaxNumber
-            node0 = new NcXmlFilterNode ("BusinessFaxNumber", RedactionType.FULL, RedactionType.FULL);
-            // FileAs
-            node0 = new NcXmlFilterNode ("FileAs", RedactionType.FULL, RedactionType.FULL);
-            // Alias
-            node0 = new NcXmlFilterNode ("Alias", RedactionType.FULL, RedactionType.FULL);
-            // WeightedRank
-            node0 = new NcXmlFilterNode ("WeightedRank", RedactionType.FULL, RedactionType.FULL);
-            // FirstName
-            node0 = new NcXmlFilterNode ("FirstName", RedactionType.FULL, RedactionType.FULL);
-            // MiddleName
-            node0 = new NcXmlFilterNode ("MiddleName", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressCity
-            node0 = new NcXmlFilterNode ("HomeAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressCountry
-            node0 = new NcXmlFilterNode ("HomeAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // HomeFaxNumber
-            node0 = new NcXmlFilterNode ("HomeFaxNumber", RedactionType.FULL, RedactionType.FULL);
-            // HomePhoneNumber
-            node0 = new NcXmlFilterNode ("HomePhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Home2PhoneNumber
-            node0 = new NcXmlFilterNode ("Home2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressPostalCode
-            node0 = new NcXmlFilterNode ("HomeAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressState
-            node0 = new NcXmlFilterNode ("HomeAddressState", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressStreet
-            node0 = new NcXmlFilterNode ("HomeAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // MobilePhoneNumber
-            node0 = new NcXmlFilterNode ("MobilePhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Suffix
-            node0 = new NcXmlFilterNode ("Suffix", RedactionType.FULL, RedactionType.FULL);
-            // CompanyName
-            node0 = new NcXmlFilterNode ("CompanyName", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressCity
-            node0 = new NcXmlFilterNode ("OtherAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressCountry
-            node0 = new NcXmlFilterNode ("OtherAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // CarPhoneNumber
-            node0 = new NcXmlFilterNode ("CarPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressPostalCode
-            node0 = new NcXmlFilterNode ("OtherAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressState
-            node0 = new NcXmlFilterNode ("OtherAddressState", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressStreet
-            node0 = new NcXmlFilterNode ("OtherAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // PagerNumber
-            node0 = new NcXmlFilterNode ("PagerNumber", RedactionType.FULL, RedactionType.FULL);
-            // Title
-            node0 = new NcXmlFilterNode ("Title", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressPostalCode
-            node0 = new NcXmlFilterNode ("BusinessAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // LastName
-            node0 = new NcXmlFilterNode ("LastName", RedactionType.FULL, RedactionType.FULL);
-            // Spouse
-            node0 = new NcXmlFilterNode ("Spouse", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressState
-            node0 = new NcXmlFilterNode ("BusinessAddressState", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressStreet
-            node0 = new NcXmlFilterNode ("BusinessAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // JobTitle
-            node0 = new NcXmlFilterNode ("JobTitle", RedactionType.FULL, RedactionType.FULL);
-            // YomiFirstName
-            node0 = new NcXmlFilterNode ("YomiFirstName", RedactionType.FULL, RedactionType.FULL);
-            // YomiLastName
-            node0 = new NcXmlFilterNode ("YomiLastName", RedactionType.FULL, RedactionType.FULL);
-            // YomiCompanyName
-            node0 = new NcXmlFilterNode ("YomiCompanyName", RedactionType.FULL, RedactionType.FULL);
-            // OfficeLocation
-            node0 = new NcXmlFilterNode ("OfficeLocation", RedactionType.FULL, RedactionType.FULL);
-            // RadioPhoneNumber
-            node0 = new NcXmlFilterNode ("RadioPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Picture
-            node0 = new NcXmlFilterNode ("Picture", RedactionType.FULL, RedactionType.FULL);
-            // Categories
-            node0 = new NcXmlFilterNode ("Categories", RedactionType.NONE, RedactionType.NONE);
-            // Category
-            node1 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Categories -> Category
-            // Children
-            node0 = new NcXmlFilterNode ("Children", RedactionType.NONE, RedactionType.NONE);
-            // Child
-            node1 = new NcXmlFilterNode ("Child", RedactionType.FULL, RedactionType.FULL);
-            node0.Add(node1); // Children -> Child
-            // Anniversary
-            node0 = new NcXmlFilterNode ("Anniversary", RedactionType.FULL, RedactionType.FULL);
-            // Birthday
-            node0 = new NcXmlFilterNode ("Birthday", RedactionType.FULL, RedactionType.FULL);
-            // WebPage
-            node0 = new NcXmlFilterNode ("WebPage", RedactionType.FULL, RedactionType.FULL);
-            // Children
-            node0 = new NcXmlFilterNode ("Children", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressCountry
-            node0 = new NcXmlFilterNode ("BusinessAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // Department
-            node0 = new NcXmlFilterNode ("Department", RedactionType.FULL, RedactionType.FULL);
-            // Email1Address
-            node0 = new NcXmlFilterNode ("Email1Address", RedactionType.FULL, RedactionType.FULL);
-            // Email2Address
-            node0 = new NcXmlFilterNode ("Email2Address", RedactionType.FULL, RedactionType.FULL);
-            // Email3Address
-            node0 = new NcXmlFilterNode ("Email3Address", RedactionType.FULL, RedactionType.FULL);
-            // BusinessFaxNumber
-            node0 = new NcXmlFilterNode ("BusinessFaxNumber", RedactionType.FULL, RedactionType.FULL);
-            // FileAs
-            node0 = new NcXmlFilterNode ("FileAs", RedactionType.FULL, RedactionType.FULL);
-            // FirstName
-            node0 = new NcXmlFilterNode ("FirstName", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressCity
-            node0 = new NcXmlFilterNode ("HomeAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressCountry
-            node0 = new NcXmlFilterNode ("HomeAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // HomeFaxNumber
-            node0 = new NcXmlFilterNode ("HomeFaxNumber", RedactionType.FULL, RedactionType.FULL);
-            // HomePhoneNumber
-            node0 = new NcXmlFilterNode ("HomePhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Home2PhoneNumber
-            node0 = new NcXmlFilterNode ("Home2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressPostalCode
-            node0 = new NcXmlFilterNode ("HomeAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressState
-            node0 = new NcXmlFilterNode ("HomeAddressState", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressStreet
-            node0 = new NcXmlFilterNode ("HomeAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressCity
-            node0 = new NcXmlFilterNode ("BusinessAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // MiddleName
-            node0 = new NcXmlFilterNode ("MiddleName", RedactionType.FULL, RedactionType.FULL);
-            // MobilePhoneNumber
-            node0 = new NcXmlFilterNode ("MobilePhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Suffix
-            node0 = new NcXmlFilterNode ("Suffix", RedactionType.FULL, RedactionType.FULL);
-            // CompanyName
-            node0 = new NcXmlFilterNode ("CompanyName", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressCity
-            node0 = new NcXmlFilterNode ("OtherAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressCountry
-            node0 = new NcXmlFilterNode ("OtherAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // CarPhoneNumber
-            node0 = new NcXmlFilterNode ("CarPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressPostalCode
-            node0 = new NcXmlFilterNode ("OtherAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressState
-            node0 = new NcXmlFilterNode ("OtherAddressState", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressStreet
-            node0 = new NcXmlFilterNode ("OtherAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // PagerNumber
-            node0 = new NcXmlFilterNode ("PagerNumber", RedactionType.FULL, RedactionType.FULL);
-            // Title
-            node0 = new NcXmlFilterNode ("Title", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressPostalCode
-            node0 = new NcXmlFilterNode ("BusinessAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // AssistantName
-            node0 = new NcXmlFilterNode ("AssistantName", RedactionType.FULL, RedactionType.FULL);
-            // AssistantPhoneNumber
-            node0 = new NcXmlFilterNode ("AssistantPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // AssistnamePhoneNumber
-            node0 = new NcXmlFilterNode ("AssistnamePhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // LastName
-            node0 = new NcXmlFilterNode ("LastName", RedactionType.FULL, RedactionType.FULL);
-            // Spouse
-            node0 = new NcXmlFilterNode ("Spouse", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressState
-            node0 = new NcXmlFilterNode ("BusinessAddressState", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressStreet
-            node0 = new NcXmlFilterNode ("BusinessAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // BusinessPhoneNumber
-            node0 = new NcXmlFilterNode ("BusinessPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Business2PhoneNumber
-            node0 = new NcXmlFilterNode ("Business2PhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // JobTitle
-            node0 = new NcXmlFilterNode ("JobTitle", RedactionType.FULL, RedactionType.FULL);
-            // YomiFirstName
-            node0 = new NcXmlFilterNode ("YomiFirstName", RedactionType.FULL, RedactionType.FULL);
-            // YomiLastName
-            node0 = new NcXmlFilterNode ("YomiLastName", RedactionType.FULL, RedactionType.FULL);
-            // YomiCompanyName
-            node0 = new NcXmlFilterNode ("YomiCompanyName", RedactionType.FULL, RedactionType.FULL);
-            // OfficeLocation
-            node0 = new NcXmlFilterNode ("OfficeLocation", RedactionType.FULL, RedactionType.FULL);
-            // RadioPhoneNumber
-            node0 = new NcXmlFilterNode ("RadioPhoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Picture
-            node0 = new NcXmlFilterNode ("Picture", RedactionType.FULL, RedactionType.FULL);
-            // Categories
-            node0 = new NcXmlFilterNode ("Categories", RedactionType.FULL, RedactionType.FULL);
-            // Anniversary
-            node0 = new NcXmlFilterNode ("Anniversary", RedactionType.FULL, RedactionType.FULL);
-            // Birthday
-            node0 = new NcXmlFilterNode ("Birthday", RedactionType.FULL, RedactionType.FULL);
-            // Webpage
-            node0 = new NcXmlFilterNode ("Webpage", RedactionType.FULL, RedactionType.FULL);
-            // Children
-            node0 = new NcXmlFilterNode ("Children", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressCountry
-            node0 = new NcXmlFilterNode ("BusinessAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // Department
-            node0 = new NcXmlFilterNode ("Department", RedactionType.FULL, RedactionType.FULL);
-            // Email1Address
-            node0 = new NcXmlFilterNode ("Email1Address", RedactionType.FULL, RedactionType.FULL);
-            // Email2Address
-            node0 = new NcXmlFilterNode ("Email2Address", RedactionType.FULL, RedactionType.FULL);
-            // Email3Address
-            node0 = new NcXmlFilterNode ("Email3Address", RedactionType.FULL, RedactionType.FULL);
-            // BusinessFaxNumber
-            node0 = new NcXmlFilterNode ("BusinessFaxNumber", RedactionType.FULL, RedactionType.FULL);
-            // FileAs
-            node0 = new NcXmlFilterNode ("FileAs", RedactionType.FULL, RedactionType.FULL);
-            // FirstName
-            node0 = new NcXmlFilterNode ("FirstName", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressCity
-            node0 = new NcXmlFilterNode ("HomeAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressCountry
-            node0 = new NcXmlFilterNode ("HomeAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // HomeFaxNumber
-            node0 = new NcXmlFilterNode ("HomeFaxNumber", RedactionType.FULL, RedactionType.FULL);
-            // HomeTelephoneNumber
-            node0 = new NcXmlFilterNode ("HomeTelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Home2TelephoneNumber
-            node0 = new NcXmlFilterNode ("Home2TelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressPostalCode
-            node0 = new NcXmlFilterNode ("HomeAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressState
-            node0 = new NcXmlFilterNode ("HomeAddressState", RedactionType.FULL, RedactionType.FULL);
-            // HomeAddressStreet
-            node0 = new NcXmlFilterNode ("HomeAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressCity
-            node0 = new NcXmlFilterNode ("BusinessAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // MiddleName
-            node0 = new NcXmlFilterNode ("MiddleName", RedactionType.FULL, RedactionType.FULL);
-            // MobileTelephoneNumber
-            node0 = new NcXmlFilterNode ("MobileTelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Suffix
-            node0 = new NcXmlFilterNode ("Suffix", RedactionType.FULL, RedactionType.FULL);
-            // CompanyName
-            node0 = new NcXmlFilterNode ("CompanyName", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressCity
-            node0 = new NcXmlFilterNode ("OtherAddressCity", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressCountry
-            node0 = new NcXmlFilterNode ("OtherAddressCountry", RedactionType.FULL, RedactionType.FULL);
-            // CarTelephoneNumber
-            node0 = new NcXmlFilterNode ("CarTelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressPostalCode
-            node0 = new NcXmlFilterNode ("OtherAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressState
-            node0 = new NcXmlFilterNode ("OtherAddressState", RedactionType.FULL, RedactionType.FULL);
-            // OtherAddressStreet
-            node0 = new NcXmlFilterNode ("OtherAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // PagerNumber
-            node0 = new NcXmlFilterNode ("PagerNumber", RedactionType.FULL, RedactionType.FULL);
-            // Title
-            node0 = new NcXmlFilterNode ("Title", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressPostalCode
-            node0 = new NcXmlFilterNode ("BusinessAddressPostalCode", RedactionType.FULL, RedactionType.FULL);
-            // AssistantName
-            node0 = new NcXmlFilterNode ("AssistantName", RedactionType.FULL, RedactionType.FULL);
-            // AssistantTelephoneNumber
-            node0 = new NcXmlFilterNode ("AssistantTelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // LastName
-            node0 = new NcXmlFilterNode ("LastName", RedactionType.FULL, RedactionType.FULL);
-            // Spouse
-            node0 = new NcXmlFilterNode ("Spouse", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressState
-            node0 = new NcXmlFilterNode ("BusinessAddressState", RedactionType.FULL, RedactionType.FULL);
-            // BusinessAddressStreet
-            node0 = new NcXmlFilterNode ("BusinessAddressStreet", RedactionType.FULL, RedactionType.FULL);
-            // BusinessTelephoneNumber
-            node0 = new NcXmlFilterNode ("BusinessTelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Business2TelephoneNumber
-            node0 = new NcXmlFilterNode ("Business2TelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // JobTitle
-            node0 = new NcXmlFilterNode ("JobTitle", RedactionType.FULL, RedactionType.FULL);
-            // YomiFirstName
-            node0 = new NcXmlFilterNode ("YomiFirstName", RedactionType.FULL, RedactionType.FULL);
-            // YomiLastName
-            node0 = new NcXmlFilterNode ("YomiLastName", RedactionType.FULL, RedactionType.FULL);
-            // YomiCompanyName
-            node0 = new NcXmlFilterNode ("YomiCompanyName", RedactionType.FULL, RedactionType.FULL);
-            // OfficeLocation
-            node0 = new NcXmlFilterNode ("OfficeLocation", RedactionType.FULL, RedactionType.FULL);
-            // RadioTelephoneNumber
-            node0 = new NcXmlFilterNode ("RadioTelephoneNumber", RedactionType.FULL, RedactionType.FULL);
-            // Categories
-            node0 = new NcXmlFilterNode ("Categories", RedactionType.FULL, RedactionType.FULL);
-            // Picture
-            node0 = new NcXmlFilterNode ("Picture", RedactionType.FULL, RedactionType.FULL);
+            node2 = new NcXmlFilterNode ("Child", RedactionType.FULL, RedactionType.FULL);
+            node1.Add(node2); // Children -> Child
+            node0.Add(node1); // xml -> Children
             
             Root = node0;
         }

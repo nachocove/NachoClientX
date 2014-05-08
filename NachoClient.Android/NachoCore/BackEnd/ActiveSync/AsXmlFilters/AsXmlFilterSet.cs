@@ -30,6 +30,12 @@ namespace NachoCore.Wbxml
 
         public static void Initialize ()
         {
+            AsXmlFilterSet.Requests.Add (new AsXmlFilterAirSyncRequest ());
+            AsXmlFilterSet.Requests.Add (new AsXmlFilterComposeMailRequest ());
+            AsXmlFilterSet.Requests.Add (new AsXmlFilterFolderHierarchyRequest ());
+            AsXmlFilterSet.Requests.Add (new AsXmlFilterProvisionRequest ());
+            AsXmlFilterSet.Requests.Add (new AsXmlFilterSettingsRequest ());
+
             AsXmlFilterSet.Requests.Add (new AsXmlFilterAirSyncBase ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterCalendar ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterContacts ());
@@ -39,9 +45,14 @@ namespace NachoCore.Wbxml
             AsXmlFilterSet.Requests.Add (new AsXmlFilterEmail2 ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterItemOperations ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterPingRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterProvision ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterRightsManagement ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterTasks ());
+
+            AsXmlFilterSet.Responses.Add (new AsXmlFilterAirSyncResponse ());
+            AsXmlFilterSet.Responses.Add (new AsXmlFilterComposeMailResponse ());
+            AsXmlFilterSet.Responses.Add (new AsXmlFilterFolderHierarchyResponse ());
+            AsXmlFilterSet.Responses.Add (new AsXmlFilterProvisionResponse ());
+            AsXmlFilterSet.Responses.Add (new AsXmlFilterSettingsResponse ());
 
             AsXmlFilterSet.Responses.Add (new AsXmlFilterAirSyncBase ());
             AsXmlFilterSet.Responses.Add (new AsXmlFilterCalendar ());
@@ -52,7 +63,6 @@ namespace NachoCore.Wbxml
             AsXmlFilterSet.Responses.Add (new AsXmlFilterEmail2 ());
             AsXmlFilterSet.Responses.Add (new AsXmlFilterItemOperations ());          
             AsXmlFilterSet.Responses.Add (new AsXmlFilterPingResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterProvision ());
             AsXmlFilterSet.Responses.Add (new AsXmlFilterRightsManagement ());
             AsXmlFilterSet.Responses.Add (new AsXmlFilterTasks ());
         }
