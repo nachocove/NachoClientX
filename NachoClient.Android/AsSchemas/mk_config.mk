@@ -58,43 +58,7 @@ SETTINGS_CMD := Settings
 SETTINGS_REQUEST_FILES := $(call request_xsd,$(SETTINGS_CMD))
 SETTINGS_RESPONSE_FILES := $(call response_xsd,$(SETTINGS_CMD))
 
-REQUEST_NAMESPACES := \
-	AirSync \
-	ComposeMail \
-	FolderHierarchy \
-	GetItemEstimate \
-	ItemOperations \
-	MeetingResponse \
-	Move \
-	Ping \
-	Provision \
-	ResolveRecipients \
-	Search \
-	Settings \
-
-RESPONSE_NAMESPACES := $(REQUEST_NAMESPACES)
-
-COMMON_NAMESPACES := \
-	AirSyncBase \
-	Calendar \
-	Contacts \
-	Contacts2 \
-	DocumentLibrary \
-	Email \
-	Email2 \
-	GAL \
-	RightsManagement \
-	Tasks \
-
-# These common namespace do not produce its own XML config files because
-# they are included into requests / responses
-#
-# AirSync
-# ComposeMail
-# FolderHierarchy
-# ItemOperations
-# Provision
-# Settings
+include namespaces.mk
 
 COMMON_XML_FILES := $(addprefix xsd/common/,$(addsuffix .xml,$(COMMON_NAMESPACES)))
 
