@@ -294,23 +294,35 @@ namespace NachoCore.Wbxml
             return newElement;
         }
 
-        private void RedactElement (XElement newElement, XElement origElement, RedactionType type)
+        private int GetContentLength (XNode content)
+        {
+            int contentLen = -1;
+            NachoAssert.True (IsContent(content));
+            if (XmlNodeType.Text == content.NodeType) {
+                XText text = (XText)content;
+                contentLen = text.Value.Length;
+            } else if (XmlNodeType.CDATA == content.NodeType) {
+                XCData data = (XCData)content;
+                contentLen = data.Value.Length;
+            } else {
+                NachoAssert.True (false);
+            }
+            return contentLen;
+        }
+
+        private void RedactElement (XElement newElement, XNode origContent, RedactionType type)
         {
             if (RedactionType.NONE == type) {
                 return;
             }
-
-            if (origElement.Value == "") {
-                return;
-            }
+            NachoAssert.True (IsElement (newElement));
 
             // Determine the redaction string
             string value = null;
             if (RedactionType.FULL == type) {
-                value = "-redacted-";
-            } else if (RedactionType.FULL == type) {
-                int contentLen = origElement.Value.Length;
-                value = String.Format ("-redacted:{0} bytes-", contentLen);
+                return; // Full redaction has no content at all
+            } else if (RedactionType.PARTIAL == type) {
+                value = String.Format ("-redacted:{0} bytes-", GetContentLength(origContent));
             } else {
                 Log.Error ("Unknown redaction type {0}", type);
                 NachoAssert.True (false);
@@ -321,30 +333,33 @@ namespace NachoCore.Wbxml
                 Wbxml.Add ((byte)GlobalTokens.STR_I);
                 Wbxml.AddRange (WBXML.EncodeString (value));
             } else {
-                // Change the value of the element
-                if (null != origElement.Value) {
-                    newElement.Value = value;
-                }
+                newElement.Value = value;
             }
         }
 
-        private void AddContent (XNode node, byte[] wbxml)
+        private void AddContent (XNode node, byte[] wbxml, RedactionType type)
         {
             // Check the latest redaction policy. That should be the parent element
             Frame current = FilterStack.Peek ();
-            NachoAssert.True (!IsElement(node));
+            NachoAssert.True (IsContent(node));
+            NachoAssert.True (null != current);
+            NachoAssert.True (IsElement(current.XmlNode));
+            XElement element = (XElement)current.XmlNode;
+
             if (RedactionType.NONE != current.ParentNode.ElementRedaction) {
+                RedactElement (element, node, type);
                 return;
             }
 
             if (GenerateWbxml) {
                 Wbxml.AddRange (wbxml);
             } else {
-                XElement element = (XElement)current.XmlNode;
                 if (XmlNodeType.Text == node.NodeType) {
                     element.Add (new XText ((XText)node));
                 } else if (XmlNodeType.CDATA == node.NodeType) {
                     element.Add (new XCData ((XCData)node));
+                } else {
+                    NachoAssert.True (false);
                 }
             }
         }
@@ -383,7 +398,7 @@ namespace NachoCore.Wbxml
                     if (IsElement (node)) {
                         XElement element = (XElement)node;
                         XElement newElement = AddElement (element, wbxml, current);
-                        RedactElement (newElement, element, RedactionType.FULL);
+                        NachoAssert.True (null != newElement);
                     }
                 }
             } else {
@@ -393,14 +408,10 @@ namespace NachoCore.Wbxml
 
                     // Regardless of redaction policy. Always add the tag itself.
                     XElement newElement = AddElement (element, wbxml, current);
-
-                    // If there is redaction of some kind, add the text here.
-                    // The reason is that if this is a xs:complexType, there will not 
-                    // be a Text or CDATA node for us to insert anything.
-                    RedactElement (newElement, element, current.ElementRedaction);
+                    NachoAssert.True (null != newElement);
                 } else if ((XmlNodeType.Text == node.NodeType) ||
                            (XmlNodeType.CDATA == node.NodeType)) {
-                    AddContent (node, wbxml);
+                    AddContent (node, wbxml, current.ElementRedaction);
                 }
             }
 

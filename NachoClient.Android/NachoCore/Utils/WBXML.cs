@@ -24,7 +24,7 @@ namespace NachoCore.Wbxml
         const byte characterSetByte = 0x6A;
         // UTF-8
         const byte stringTableLengthByte = 0x00;
-        const Boolean DEFAULT_FILTERING = false;
+        const Boolean DEFAULT_FILTERING = true;
 
         public XDocument XmlDoc { set; get; }
 
