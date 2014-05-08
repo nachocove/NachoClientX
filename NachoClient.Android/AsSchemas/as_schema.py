@@ -105,7 +105,7 @@ class AsSchema(AsXmlParser):
         output.line(2, 'public AsXmlFilter%s () : base ("%s")', self.class_suffix, self.namespace)
         output.line(2, '{')
         # Create all the variables
-        for n in range(self.stack.max_depth()-1):  # -1 for redaction tag
+        for n in range(max(1, self.stack.max_depth()-1)):  # -1 for redaction tag
             output.line(3, 'NcXmlFilterNode %s = null;', AsSchemaElement.node(n))
         output.line(0, '')
 

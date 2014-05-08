@@ -7,6 +7,7 @@ namespace NachoCore.Wbxml
     {
         public AsXmlFilterGAL () : base ("GAL")
         {
+            NcXmlFilterNode node0 = null;
 
             // xml
             node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);

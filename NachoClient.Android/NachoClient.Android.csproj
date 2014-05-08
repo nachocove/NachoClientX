@@ -211,7 +211,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterDocumentLibrary.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail2.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperations.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs" />
     <Compile Include="NachoCore\Adapters\INachoTasks.cs" />
@@ -229,6 +228,19 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGAL.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsResponse.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchRequest.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
