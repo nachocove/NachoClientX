@@ -432,7 +432,7 @@ namespace NachoCore.ActiveSync
                 try {
                     HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
                 } catch (Exception ex) {
-                    Log.Info ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                    Log.Error ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                     // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
                     Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
                     HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
