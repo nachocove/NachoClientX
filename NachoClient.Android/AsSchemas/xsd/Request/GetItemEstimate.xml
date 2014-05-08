@@ -1,0 +1,18 @@
+<xml namespace="GetItemEstimate">
+   <GetItemEstimate>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <Collections>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
+         <Collection>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
+            <CollectionId>
+               <element_redaction>full</element_redaction>
+               <attribute_redaction>full</attribute_redaction>
+            </CollectionId>
+         </Collection>
+      </Collections>
+   </GetItemEstimate>
+</xml>

@@ -22,6 +22,22 @@ FOLDERHIERARCHY_CMD := FolderCreate FolderUpdate FolderDelete FolderSync
 FOLDERHIERARCHY_REQUEST_FILES := $(call request_xsd,$(FOLDERHIERARCHY_CMD))
 FOLDERHIERARCHY_RESPONSE_FILES := $(call response_xsd,$(FOLDERHIERARCHY_CMD))
 
+GETITEMESTIMATE_CMD := GetItemEstimate
+GETITEMESTIMATE_REQUEST_FILES := $(call request_xsd,$(GETITEMESTIMATE_CMD))
+GETITEMESTIMATE_RESPONSE_FILES := $(call response_xsd,$(GETITEMESTIMATE_CMD))
+
+ITEMOPERATIONS_CMD := ItemOperations
+ITEMOPERATIONS_REQUEST_FILES := $(call request_xsd,$(ITEMOPERATIONS_CMD))
+ITEMOPERATIONS_RESPONSE_FILES := $(call response_xsd,$(ITEMOPERATIONS_CMD))
+
+MEETINGRESPONSE_CMD := MeetingResponse
+MEETINGRESPONSE_REQUEST_FILES := $(call request_xsd,$(MEETINGRESPONSE_CMD))
+MEETINGRESPONSE_RESPONSE_FILES := $(call response_xsd,$(MEETINGRESPONSE_CMD))
+
+MOVE_CMD := MoveItems
+MOVE_REQUEST_FILES := $(call request_xsd,$(MOVE_CMD))
+MOVE_RESPONSE_FILES := $(call response_xsd,$(MOVE_CMD))
+
 PING_CMD := Ping
 PING_REQUEST_FILES := $(call request_xsd,$(PING_CMD))
 PING_RESPONSE_FILES := $(call response_xsd,$(PING_CMD))
@@ -29,6 +45,14 @@ PING_RESPONSE_FILES := $(call response_xsd,$(PING_CMD))
 PROVISION_CMD := Provision
 PROVISION_REQUEST_FILES := $(call request_xsd,$(PROVISION_CMD))
 PROVISION_RESPONSE_FILES := $(call response_xsd,$(PROVISION_CMD))
+
+RESOLVERECIPIENTS_CMD := ResolveRecipients
+RESOLVERECIPIENTS_REQUEST_FILES := $(call request_xsd,$(RESOLVERECIPIENTS_CMD))
+RESOLVERECIPIENTS_RESPONSE_FILES := $(call response_xsd,$(RESOLVERECIPIENTS_CMD))
+
+SEARCH_CMD := Search
+SEARCH_REQUEST_FILES := $(call request_xsd,$(SEARCH_CMD))
+SEARCH_RESPONSE_FILES := $(call response_xsd,$(SEARCH_CMD))
 
 SETTINGS_CMD := Settings
 SETTINGS_REQUEST_FILES := $(call request_xsd,$(SETTINGS_CMD))
@@ -38,8 +62,14 @@ REQUEST_NAMESPACES := \
 	AirSync \
 	ComposeMail \
 	FolderHierarchy \
+	GetItemEstimate \
+	ItemOperations \
+	MeetingResponse \
+	Move \
 	Ping \
 	Provision \
+	ResolveRecipients \
+	Search \
 	Settings \
 
 RESPONSE_NAMESPACES := $(REQUEST_NAMESPACES)
@@ -52,14 +82,19 @@ COMMON_NAMESPACES := \
 	DocumentLibrary \
 	Email \
 	Email2 \
-	ItemOperations \
+	GAL \
 	RightsManagement \
 	Tasks \
 
 # These common namespace do not produce its own XML config files because
 # they are included into requests / responses
 #
+# AirSync
+# ComposeMail
+# FolderHierarchy
+# ItemOperations
 # Provision
+# Settings
 
 COMMON_XML_FILES := $(addprefix xsd/common/,$(addsuffix .xml,$(COMMON_NAMESPACES)))
 
@@ -88,11 +123,37 @@ xsd/Request/FolderHierarchy.xml : $(FOLDERHIERARCHY_REQUEST_FILES) xsd/common/Fo
 xsd/Response/FolderHierarchy.xml : $(FOLDERHIERARCHY_RESPONSE_FILES) xsd/common/FolderHierarchy.xsd
 	$(AS_XSD) --out-file $@ $(FOLDERHIERARCHY_RESPONSE_FILES)
 
+# GetItemEstimate is handled by the default rule
+
+xsd/Request/ItemOperations.xml : $(ITEMOPERATIONS_REQUEST_FILES) xsd/common/ItemOperations.xsd
+	$(AS_XSD) --out-file $@ $(ITEMOPERATIONS_REQUEST_FILES)
+
+xsd/Response/ItemOperations.xml : $(ITEMOPERATIONS_RESPONSE_FILES) xsd/common/ItemOperations.xsd
+	$(AS_XSD) --out-file $@ $(ITEMOPERATIONS_RESPONSE_FILES)
+
+# MeetingResponse is handled by the default rule
+
+xsd/Request/Move.xml : $(MOVE_REQUEST_FILES) 
+	$(AS_XSD) --out-file $@ $(MOVE_REQUEST_FILES)
+
+xsd/Response/Move.xml : $(MOVE_RESPONSE_FILES) 
+	$(AS_XSD) --out-file $@ $(MOVE_RESPONSE_FILES)
+
+# Ping is handled by the default rule
+
 xsd/Request/Provision.xml : $(PROVISION_REQUEST_FILES) xsd/common/Provision.xsd
 	$(AS_XSD) --out-file $@ $(PROVISION_REQUEST_FILES)
 
 xsd/Response/Provision.xml : $(PROVISION_RESPONSE_FILES) xsd/common/Provision.xsd
 	$(AS_XSD) --out-file $@ $(PROVISION_RESPONSE_FILES)
+
+# ResolveRecipients is handled by the default rule
+
+xsd/Request/Search.xml : $(SEARCH_REQUEST_FILES) xsd/common/Search.xsd
+	$(AS_XSD) --out-file $@ $(SEARCH_REQUEST_FILES)
+
+xsd/Response/Search.xml : $(SEARCH_RESPONSE_FILES) xsd/common/Search.xsd
+	$(AS_XSD) --out-file $@ $(SEARCH_RESPONSE_FILES)
 
 xsd/Request/Settings.xml : $(SETTINGS_REQUEST_FILES) xsd/common/Settings.xsd
 	$(AS_XSD) --out-file $@ $(SETTINGS_REQUEST_FILES)
@@ -100,6 +161,8 @@ xsd/Request/Settings.xml : $(SETTINGS_REQUEST_FILES) xsd/common/Settings.xsd
 xsd/Response/Settings.xml : $(SETTINGS_RESPONSE_FILES) xsd/common/Settings.xsd
 	$(AS_XSD) --out-file $@ $(SETTINGS_RESPONSE_FILES)
 
+# Default rule for XML file that does not depend on common .xsd files.
+# And for request / response, the command has the same name as the namespace.
 %.xml : %.xsd 
 	$(AS_XSD) --out-file $@ $<
 

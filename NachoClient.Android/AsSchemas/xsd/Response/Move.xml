@@ -1,0 +1,22 @@
+<xml namespace="Move">
+   <MoveItems>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <Response>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
+         <SrcMsgId>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </SrcMsgId>
+         <Status>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </Status>
+         <DstMsgId>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </DstMsgId>
+      </Response>
+   </MoveItems>
+</xml>

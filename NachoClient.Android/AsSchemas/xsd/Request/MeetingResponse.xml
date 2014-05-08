@@ -1,0 +1,26 @@
+<xml namespace="MeetingResponse">
+   <MeetingResponse>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
+      <Request>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
+         <UserResponse>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </UserResponse>
+         <CollectionId>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </CollectionId>
+         <RequestId>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </RequestId>
+         <InstanceId>
+            <element_redaction>full</element_redaction>
+            <attribute_redaction>full</attribute_redaction>
+         </InstanceId>
+      </Request>
+   </MeetingResponse>
+</xml>
