@@ -189,7 +189,7 @@ namespace Test.iOS
         }
     }
 
-    // Request/Response data
+    // reusable request/response data
     class MockData
     {
         public static Uri MockUri = new Uri ("https://contoso.com");
@@ -208,47 +208,12 @@ namespace Test.iOS
         [Test]
         public void BasicPhonyPing ()
         {
-            bool setTrueBySuccessEvent = false;
-            NcStateMachine sm = CreatePhonySM (val => {
-                setTrueBySuccessEvent = val;
-            });
+            // header settings (get passed into CreateMockResponseWithHeaders ())
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = MockData.Wbxml.Length.ToString ();
 
-            sm.PostEvent ((uint)SmEvt.E.Launch, "BasicPhonyPing");
-            var mockUri = new Uri ("https://contoso.com");
-            var mockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
-            var mockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
-            var wbxml = mockResponseXml.ToWbxml ();
-            var mockResponse = new HttpResponseMessage () {
-                StatusCode = System.Net.HttpStatusCode.OK,
-                Content = new ByteArrayContent (wbxml),
-            };
-            // TODO Add appropriate headers.
-            mockResponse.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
-            mockResponse.Content.Headers.Add ("Content-Type", "application/vnd.ms-sync.wbxml");
-
-    
-            BaseMockOwner owner = CreateMockOwner (mockUri, mockRequestXml);
-
-            var context = new MockContext ();
-            MockHttpClient.ExamineHttpRequestMessage = (request) => {
-                Assert.AreEqual (request.RequestUri, mockUri);
-                Assert.AreEqual (request.Method, HttpMethod.Post);
-                // TODO Check appropriate headers.
-                // TODO Check correct Query-parms.
-                // TODO Check correct WBXML.
-            };
-            MockHttpClient.ProvideHttpResponseMessage = () => {
-                return mockResponse;
-            };
-            var op = new AsHttpOperation ("Ping", owner, context);
-            op.HttpClientType = typeof (MockHttpClient);
-            owner.ProcessResponseStandin = (sender, response, doc) => {
-                Assert.AreSame (op, sender);
-                Assert.AreSame (mockResponse, response);
-                return Event.Create ((uint)SmEvt.E.Success, "BasicPhonyPingSuccess");
-            };
-            op.Execute (sm);
-            Assert.IsTrue (setTrueBySuccessEvent);
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength);
         }
 
         [Test]
@@ -286,9 +251,7 @@ namespace Test.iOS
 
         }
 
-        // Content-Type is not required if Content-Length is missing or zero
-        [Test]
-        public void ContentTypeNotRequired ()
+        public void PerformHttpOperationWithSettings (string contentType, string mockRequestLength, string mockResponseLength)
         {
             var interlock = new BlockingCollection<bool> ();
             // setup
@@ -300,24 +263,20 @@ namespace Test.iOS
 
             sm.PostEvent ((uint)SmEvt.E.Launch, "BasicPhonyPing");
 
-            // provides the mockRequest
-            BaseMockOwner owner = CreateMockOwner (MockData.MockUri, MockData.MockRequestXml);   
+            var mockResponse = CreateMockResponseWithHeaders (MockData.Wbxml, contentType, mockResponseLength);
 
-            // header settings (get passed into CreateMockResponseWithHeaders ())
-            string contentType = "application/vnd.ms-sync.wbxml";
-            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
-
-            var mockResponse = CreateMockResponseWithHeaders (MockData.Wbxml, contentType);
-
-            var context = new MockContext ();
-
-            // common assertions
+            // do some common assertions
             ExamineRequestMessageOnMockClient (MockData.MockUri, contentType, mockRequestLength);
-        
+
             // provides the mock response
             MockHttpClient.ProvideHttpResponseMessage = () => {
                 return mockResponse;
             };
+
+            var context = new MockContext ();
+
+            // provides the mockRequest
+            BaseMockOwner owner = CreateMockOwner (MockData.MockUri, MockData.MockRequestXml);
 
             var op = new AsHttpOperation ("Ping", owner, context);
             op.HttpClientType = typeof (MockHttpClient);
@@ -326,13 +285,25 @@ namespace Test.iOS
                 Assert.AreSame (mockResponse, response, "Response should match mock response");
                 return Event.Create ((uint)SmEvt.E.Success, "BasicPhonyPingSuccess");
             };
-               
+
             op.Execute (sm);
 
             bool didFinish = false;
             Assert.IsTrue (interlock.TryTake (out didFinish, 2000));
             Assert.IsTrue (didFinish);
             Assert.IsTrue (setTrueBySuccessEvent);
+        }
+
+        // Content-Type is not required if Content-Length is missing or zero
+        [Test]
+        public void ContentTypeNotRequired ()
+        {
+            // header settings (get passed into CreateMockResponseWithHeaders ())
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = MockData.Wbxml.Length.ToString ();
+
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength);
         }
 
         // Action Delegate for creating a state machine
@@ -377,7 +348,7 @@ namespace Test.iOS
             return owner;
         }
 
-        private HttpResponseMessage CreateMockResponseWithHeaders (byte[] wbxml, string contentType)
+        private HttpResponseMessage CreateMockResponseWithHeaders (byte[] wbxml, string contentType, string mockResponseLength)
         {
             var mockResponse = new HttpResponseMessage () {
                 StatusCode = System.Net.HttpStatusCode.OK,
@@ -385,7 +356,7 @@ namespace Test.iOS
             };
 
             // TODO Add appropriate headers.
-            mockResponse.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
+            mockResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
             mockResponse.Content.Headers.Add ("Content-Type", contentType);
 
             return mockResponse;
@@ -403,6 +374,6 @@ namespace Test.iOS
                 // TODO Check correct WBXML.
             };
         }
-
+    
     }
 }
