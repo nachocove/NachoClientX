@@ -2,6 +2,7 @@ using SQLite;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -42,20 +43,58 @@ namespace NachoCore.Model
 
         public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
         {
+            // ActiveSync only supports email attachments.
             NachoAssert.True (typeof(T) == typeof(McEmailMessage));
-            // FIXME: support attachments in other items (e.g. Calendar).
             return BackEnd.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
-                " a.AccountId = ? AND " +
-                " a.EmailMessageId = ? ",
+            " a.AccountId = ? AND " +
+            " a.EmailMessageId = ? ",
                 accountId, itemId);
         }
 
         public override int Delete ()
         {
             if (IsDownloaded) {
-                File.Delete (Path.Combine (BackEnd.Instance.AttachmentsDir, LocalFileName));
+                File.Delete (FilePath ());
             }
             return base.Delete ();
+        }
+
+        public static FileStream TempFileStream (string guidString)
+        {
+            // Intentionally above all the Id-dirs.
+            return File.OpenWrite (TempPath (guidString));
+        }
+
+        private static string TempPath (string guidString)
+        {
+            return Path.Combine (BackEnd.Instance.AttachmentsDir, guidString);
+        }
+
+        private string FilePath ()
+        {
+            NachoAssert.True (0 != Id);
+            return Path.Combine (BackEnd.Instance.AttachmentsDir, Id.ToString (), LocalFileName);
+        }
+
+        public void SaveFromTemp (string guidString)
+        {
+            var savePath = Path.Combine (BackEnd.Instance.AttachmentsDir, Id.ToString ());
+            Directory.CreateDirectory (savePath);
+            try {
+                LocalFileName = DisplayName.SantizeFileName ();
+                File.Move (TempPath (guidString), FilePath ());
+            } catch {
+                LocalFileName = Id.ToString ();
+                try {
+                    var ext = Path.GetExtension (DisplayName);
+                    if (null != ext) {
+                        LocalFileName += ext;
+                    }
+                } catch {
+                    // Give up on extension. TODO - generate correct extension based on ContentType.
+                }
+                File.Move (TempPath (guidString), FilePath ());
+            }
         }
     }
 }

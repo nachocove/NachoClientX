@@ -47,8 +47,6 @@ namespace NachoCore.Model
 
         public uint SyncStratContactsState { get; set; }
 
-        public bool InitialProvisionCompleted { get; set; }
-
         public string KludgeSimulatorIdentity { get; set; }
 
         public void IncrementAsFolderSyncEpoch ()

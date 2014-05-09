@@ -142,7 +142,7 @@ namespace NachoCore.Wbxml
                         case ASWBXML.KCodePage_ItemOperations:
                             try {
                                 var guidString = Guid.NewGuid ().ToString ("N");
-                                using (var fileStream = File.OpenWrite (Path.Combine (BackEnd.Instance.AttachmentsDir, guidString))) {
+                                using (var fileStream = McAttachment.TempFileStream (guidString)) {
                                     using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
                                         new FromBase64Transform (), CryptoStreamMode.Write)) {
                                         if (bytes.DequeueStringToStream (cryptoStream)) {

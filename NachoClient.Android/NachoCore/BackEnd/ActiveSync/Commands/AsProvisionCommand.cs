@@ -45,8 +45,14 @@ namespace NachoCore.ActiveSync
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc,
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail,
                             (uint)ProvEvt.E.Wipe
                         },
                         On = new [] {
@@ -67,7 +73,7 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReProv,
-                                Act = DoSquare1,
+                                Act = DoGet,
                                 State = (uint)Lst.GetWait
                             },
                             new Trans {
@@ -129,23 +135,24 @@ namespace NachoCore.ActiveSync
         {
             var provision = new XElement (m_ns + Xml.Provision.Ns);
             if (MustWipe) {
+                // For GetOp, send empty <Provision />.
                 if (AckOp == Sender) {
                     provision.Add (new XElement (m_ns + Xml.Provision.RemoteWipe,
                         (WipeSucceeded) ? Xml.Provision.RemoteWipeStatusCode.Success_1 :
                         Xml.Provision.RemoteWipeStatusCode.Failure_2));
                 }
             } else {
-                if ((!BEContext.ProtocolState.InitialProvisionCompleted) &&
-                    GetOp == Sender &&
-                    "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
-                    provision.Add (AsSettingsCommand.DeviceInformation ());
-                }
+                // Non-Wipe sceanrio.
                 var policy = new XElement (m_ns + Xml.Provision.Policy, 
-                                 new XElement (m_ns + Xml.Provision.PolicyType, Xml.Provision.PolicyTypeValue));
-                if (BEContext.ProtocolState.InitialProvisionCompleted) {
+                    new XElement (m_ns + Xml.Provision.PolicyType, Xml.Provision.PolicyTypeValue));
+                if (GetOp == Sender) {
+                    if (McProtocolState.AsPolicyKey_Initial == BEContext.ProtocolState.AsPolicyKey &&
+                        "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
+                        provision.Add (AsSettingsCommand.DeviceInformation ());
+                    }
+                } else {
+                    NachoAssert.True (AckOp == Sender);
                     policy.Add (new XElement (m_ns + Xml.Provision.PolicyKey, BEContext.ProtocolState.AsPolicyKey));
-                }
-                if (AckOp == Sender) {
                     policy.Add (new XElement (m_ns + Xml.Provision.Status,
                         ((uint)NcEnforcer.Instance.Compliance (BEContext.Account)).ToString ()));
                 }
@@ -161,12 +168,6 @@ namespace NachoCore.ActiveSync
             var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
             switch ((Xml.Provision.ProvisionStatusCode)uint.Parse (xmlStatus.Value)) {
             case Xml.Provision.ProvisionStatusCode.Success_1:
-                if ((!BEContext.ProtocolState.InitialProvisionCompleted) &&
-                    GetOp == Sender) {
-                    var protocolState = BEContext.ProtocolState;
-                    protocolState.InitialProvisionCompleted = true;
-                    protocolState.Update ();
-                }
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
                     WipeSucceeded = NcEnforcer.Instance.Wipe (BEContext.Account);
@@ -246,21 +247,16 @@ namespace NachoCore.ActiveSync
 
         private void DoGet ()
         {
+            // Need to reset PolicyKey even when we are forced here via status code.
+            var protocolState = BEContext.ProtocolState;
+            protocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+            protocolState.Update ();
             base.Execute (Sm, ref GetOp);
         }
 
         private void DoAck ()
         {
             base.Execute (Sm, ref AckOp);
-        }
-
-        private void DoSquare1 ()
-        {
-            var protocolState = BEContext.ProtocolState;
-            protocolState.InitialProvisionCompleted = false;
-            protocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
-            protocolState.Update ();
-            DoGet ();
         }
 
         private void ApplyEasProvisionDocToPolicy (XElement xmlEASProvisionDoc, McPolicy policy)

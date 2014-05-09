@@ -46,25 +46,7 @@ namespace NachoCore.ActiveSync
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
                 var saveAttr = xmlData.Attributes ().SingleOrDefault (x => x.Name == "nacho-attachment-file");
                 if (null != saveAttr) {
-                    var savePath = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString ());
-                    Directory.CreateDirectory (savePath);
-                    try {
-                        attachment.LocalFileName = attachment.DisplayName.SantizeFileName ();
-                        File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
-                            Path.Combine (savePath, attachment.LocalFileName));
-                    } catch {
-                        attachment.LocalFileName = attachment.Id.ToString ();
-                        try {
-                            var ext = Path.GetExtension (attachment.DisplayName);
-                            if (null != ext) {
-                                attachment.LocalFileName += ext;
-                            }
-                        } catch {
-                            // Give up on extension. TODO - generate correct extension based on ContentType.
-                        }
-                        File.Move (Path.Combine (BackEnd.Instance.AttachmentsDir, saveAttr.Value), 
-                            Path.Combine (savePath, attachment.LocalFileName));
-                    }
+                    attachment.SaveFromTemp (saveAttr.Value);
                     attachment.PercentDownloaded = 100;
                     attachment.IsDownloaded = true;
                     attachment.Update ();
