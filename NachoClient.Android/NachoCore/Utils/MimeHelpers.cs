@@ -155,7 +155,7 @@ namespace NachoCore.Utils
             var list = new List<string> ();
 
             foreach (var a in addresses) {
-                list.Add (a.Name);
+                list.Add (a.ToString());
             }
             return String.Join (",", list);
         }

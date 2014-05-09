@@ -108,18 +108,6 @@ namespace NachoClient.iOS
             base.Dispose (disposing);
         }
 
-        string FancyFromString (string From)
-        {
-            System.Net.Mail.MailAddress address = new System.Net.Mail.MailAddress (From);
-            if (null != address.DisplayName) {
-                return address.DisplayName;
-            }
-            if (null != address.User) {
-                return address.User;
-            }
-            return From;
-        }
-
         public static NachoSwipeTableViewCell GetCell (UITableView tableView, McEmailMessageThread messageThread)
         {
             const string CellIdentifier = "EmailMessageThreadCell";
@@ -136,7 +124,7 @@ namespace NachoClient.iOS
                 cell.DefaultColor = UIColor.White;
             }
 
-            var message = messageThread.SingleMessageSpecialCase();
+            var message = messageThread.SingleMessageSpecialCase ();
             var sender = message.From;
             var subject = message.Subject;
             if (null == message.Summary) {
@@ -207,7 +195,7 @@ namespace NachoClient.iOS
             using (var ctx = UIGraphics.GetCurrentContext ()) {
                 const int padright = 21;
                 float boxWidth;
-                float dateSize ;
+                float dateSize;
 
                 if (MessageCount > 0) {
                     using (var CountFont = UIFont.BoldSystemFontOfSize (13)) {

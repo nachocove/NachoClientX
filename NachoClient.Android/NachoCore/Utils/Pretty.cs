@@ -3,6 +3,7 @@
 using System;
 using NachoCore;
 using NachoCore.Model;
+using MimeKit;
 
 namespace NachoClient
 {
@@ -79,9 +80,9 @@ namespace NachoClient
             return String.Format ("All day ({0} days)", d.Days);
         }
 
-        static DateTime LocalT(DateTime d)
+        static DateTime LocalT (DateTime d)
         {
-            switch(d.Kind) {
+            switch (d.Kind) {
             case DateTimeKind.Utc:
                 {
                     var l = d.ToLocalTime ();
@@ -107,7 +108,7 @@ namespace NachoClient
             NachoAssert.True (DateTimeKind.Local != startTime.Kind);
             NachoAssert.True (DateTimeKind.Local != endTime.Kind);
 
-            var startString = LocalT(startTime).ToString ("t");
+            var startString = LocalT (startTime).ToString ("t");
 
             if (startTime == endTime) {
                 return startString;
@@ -127,7 +128,7 @@ namespace NachoClient
         static public string FullDateString (DateTime d)
         {
             NachoAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT(d).ToString ("D");
+            return LocalT (d).ToString ("D");
         }
 
         /// <summary>
@@ -182,14 +183,15 @@ namespace NachoClient
             if (null == Sender) {
                 return "";
             }
-            System.Net.Mail.MailAddress address = new System.Net.Mail.MailAddress (Sender);
-            if (null != address.DisplayName) {
-                return address.DisplayName;
+            InternetAddress address;
+            if (false == MailboxAddress.TryParse (Sender, out address)) {
+                return Sender;
             }
-            if (null != address.User) {
-                return address.User;
+            if (String.IsNullOrEmpty (address.Name)) {
+                return Sender;
+            } else {
+                return address.Name;
             }
-            return Sender;
         }
 
         /// <summary>
@@ -209,12 +211,12 @@ namespace NachoClient
                 return "Yesterday";
             }
             if (diff < TimeSpan.FromDays (6)) {
-                return LocalT(Date).ToString ("dddd");
+                return LocalT (Date).ToString ("dddd");
             }
-            return LocalT(Date).ToShortDateString ();
+            return LocalT (Date).ToShortDateString ();
         }
 
-        static public string ShortTimeString(DateTime Date)
+        static public string ShortTimeString (DateTime Date)
         {
             return LocalT (Date).ToString ("t");
         }

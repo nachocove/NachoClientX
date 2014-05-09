@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using SQLite;
+using NachoCore;
 using NachoCore.Utils;
-using System.Net.Mail;
+using MimeKit;
 
 namespace NachoCore.Model
 {
@@ -156,14 +157,18 @@ namespace NachoCore.Model
         /// affects this value is the number of messages in the thread.
         public int ContentScore { set; get; }
 
-        private int GetMaxContactScore (string addressString)
+        private int GetMaxContactScore (string emailAddressString)
         {
-            List<MailAddress> emailAddressList = EmailAddressHelper.ParseString (addressString);
+            // TODO: Test this
             int score = int.MinValue;
-            foreach (MailAddress emailAddress in emailAddressList) {
-                List<McContact> contactList = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
-                foreach (McContact contact in contactList) {
-                    score = Math.Max (score, contact.Score);
+            var addresses = NcEmailAddress.ParseString (emailAddressString);
+            foreach (var address in addresses) {
+                var emailAddress = address as MailboxAddress;
+                if (null != emailAddress) {
+                    List<McContact> contactList = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
+                    foreach (McContact contact in contactList) {
+                        score = Math.Max (score, contact.Score);
+                    }
                 }
             }
             return score;
@@ -280,19 +285,24 @@ namespace NachoCore.Model
 
         public List<McContact> GetContactsFromEmailAddressString (string emailAddressString)
         {
-            List<MailAddress> emailAddresses = EmailAddressHelper.ParseString (emailAddressString);
+            //TODO: Test this
+            var addresses = NcEmailAddress.ParseString (emailAddressString);
+
             // Use a set to eliminate duplicates
             HashSet<McContact> contactSet = new HashSet<McContact> ();
 
             Log.Info ("SCORE: emailAddressString={0}", emailAddressString);
-            foreach (MailAddress emailAddress in emailAddresses) {
-                Log.Info ("SCORE: emailAddress={0}", emailAddress.Address);
-                List<McContact> queryResult = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
-                if (0 == queryResult.Count) {
-                    Log.Warn ("Unknown email address {0}", emailAddress);
-                }
-                foreach (McContact contact in queryResult) {
-                    contactSet.Add (contact);
+            foreach (var address in addresses) {
+                var emailAddress = address as MailboxAddress;
+                if (null != emailAddress) {
+                    Log.Info ("SCORE: emailAddress={0}", emailAddress.Address);
+                    List<McContact> queryResult = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
+                    if (0 == queryResult.Count) {
+                        Log.Warn ("Unknown email address {0}", emailAddress);
+                    }
+                    foreach (McContact contact in queryResult) {
+                        contactSet.Add (contact);
+                    }
                 }
             }
 

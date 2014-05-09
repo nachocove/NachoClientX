@@ -257,7 +257,7 @@ namespace NachoClient.iOS
                 UpdateScore (account.Id, "send to", +3);
             } else if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
                 UpdateScore (account.Id, "reply", +2);
-            }else if (Action.Equals (Forward)) {
+            } else if (Action.Equals (Forward)) {
                 UpdateScore (account.Id, "forward", +1);
             }
 

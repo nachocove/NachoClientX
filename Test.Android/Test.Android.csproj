@@ -55,6 +55,12 @@
     <Reference Include="Xamarin.Android.Support.v7.AppCompat">
       <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
     </Reference>
+    <Reference Include="MimeKit">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\MimeKit.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Android">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />

@@ -162,7 +162,7 @@ namespace NachoCore
             }
         }
 
-        public MailboxAddress ToMailboxAddress()
+        public MailboxAddress ToMailboxAddress ()
         {
             // Must have a contact or an address
             NachoAssert.True ((null != this.contact) || (null != this.address));
@@ -191,6 +191,16 @@ namespace NachoCore
             }
 
             return mailbox;
+        }
+
+        public static InternetAddressList ParseString (string emailAddressString)
+        {
+            InternetAddressList addresses;
+            if (InternetAddressList.TryParse (emailAddressString, out addresses)) {
+                return addresses;
+            } else {
+                return new InternetAddressList ();
+            }
         }
     }
 }
