@@ -1,9 +1,9 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using NachoCore.Utils;
 using NachoCore.Brain;
 using NachoCore.Model;
+using NachoCore.Utils;
 using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore
