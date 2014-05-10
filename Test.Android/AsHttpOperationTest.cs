@@ -263,7 +263,10 @@ namespace Test.iOS
 
             sm.PostEvent ((uint)SmEvt.E.Launch, "BasicPhonyPing");
 
-            var mockResponse = CreateMockResponseWithHeaders (MockData.Wbxml, contentType, mockResponseLength);
+            var mockResponse = CreateMockResponse (MockData.Wbxml, contentType, mockResponseLength, val => {
+                val.Content.Headers.Add ("Content-Length", mockResponseLength);
+                val.Content.Headers.Add ("Content-Type", contentType);
+            });
 
             // do some common assertions
             ExamineRequestMessageOnMockClient (MockData.MockUri, contentType, mockRequestLength);
@@ -298,12 +301,15 @@ namespace Test.iOS
         [Test]
         public void ContentTypeNotRequired ()
         {
+            /* Content-Length is zero */
             // header settings (get passed into CreateMockResponseWithHeaders ())
             string contentType = "application/vnd.ms-sync.wbxml";
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = MockData.Wbxml.Length.ToString ();
 
             PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength);
+
+            /* Content-Length is missing */
         }
 
         // Action Delegate for creating a state machine
@@ -348,16 +354,15 @@ namespace Test.iOS
             return owner;
         }
 
-        private HttpResponseMessage CreateMockResponseWithHeaders (byte[] wbxml, string contentType, string mockResponseLength)
+        private HttpResponseMessage CreateMockResponse (byte[] wbxml, string contentType, string mockResponseLength, Action<HttpResponseMessage> action)
         {
             var mockResponse = new HttpResponseMessage () {
                 StatusCode = System.Net.HttpStatusCode.OK,
                 Content = new ByteArrayContent (wbxml),
             };
-
-            // TODO Add appropriate headers.
-            mockResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-            mockResponse.Content.Headers.Add ("Content-Type", contentType);
+     
+            // allow the caller to modify the mockResponse object (esp. headers)
+            action (mockResponse);
 
             return mockResponse;
         }
