@@ -36,7 +36,7 @@ namespace NachoClient.AndroidClient
             var messageId = this.Arguments.GetInt ("messageId", 0);
 //            var accountId = this.Arguments.GetInt ("accountId", 0);
 
-            var message = BackEnd.Instance.Db.Get<McEmailMessage> (messageId);
+            var message = NcModel.Instance.Db.Get<McEmailMessage> (messageId);
 
             MarkAsRead (message);
 
@@ -68,7 +68,7 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            var attachments = BackEnd.Instance.Db.Table<McAttachment> ().Where (a => a.EmailMessageId == message.Id).ToList ();
+            var attachments = NcModel.Instance.Db.Table<McAttachment> ().Where (a => a.EmailMessageId == message.Id).ToList ();
 
             if (0 < attachments.Count) {
                 foreach (var a in attachments) {
@@ -285,7 +285,7 @@ namespace NachoClient.AndroidClient
         void DownloadAttachment (McAttachment attachment)
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+                var account = NcModel.Instance.Db.Table<McAccount> ().First ();
                 BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
 //                ReloadRoot ();
             }

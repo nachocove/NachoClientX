@@ -30,7 +30,7 @@ namespace NachoCore.Model
         // Gives all the map entries for this folder's contents (not deep).
         public static List<McMapFolderFolderEntry> QueryByFolderId (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
+            return NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
                 " mm.AccountId = ? AND " +
                 " mm.FolderId = ? ",
                 accountId, folderId).ToList();
@@ -39,7 +39,7 @@ namespace NachoCore.Model
         public static McMapFolderFolderEntry QueryByFolderIdFolderEntryIdClassCode (int accountId, int folderId, int folderEntryId,
                                                                                     McFolderEntry.ClassCodeEnum classCode)
         {
-            var maps = BackEnd.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
+            var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
                        " mm.AccountId = ? AND " +
                        " mm.FolderId = ? AND " +
                        " mm.FolderEntryId = ? AND " +

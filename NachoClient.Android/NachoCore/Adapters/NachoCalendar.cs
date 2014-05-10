@@ -12,7 +12,7 @@ namespace NachoCore
     {
         protected override void Reload ()
         {
-            list = BackEnd.Instance.Db.Table<McCalendar> ().ToList ();
+            list = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
         }
     }
 }

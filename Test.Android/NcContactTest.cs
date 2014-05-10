@@ -32,7 +32,7 @@ namespace Test.iOS
             public MockDataSource ()
             {
                 Owner = new MockProtoControlOwner ();
-                BackEnd.Instance.Db = new TestDb ();
+                NcModel.Instance.Db = new TestDb ();
                 Account = new McAccount ();
                 Account.Id = 1;
             }
@@ -81,7 +81,7 @@ namespace Test.iOS
             Assert.AreEqual (command02a.Name.LocalName, Xml.AirSync.Add);
             NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command02a, new MockNcFolder ());
 
-            var c02a = BackEnd.Instance.Db.Get<McContact> (x => x.LastName == "Steve");
+            var c02a = NcModel.Instance.Db.Get<McContact> (x => x.LastName == "Steve");
             Assert.IsNotNull (c02a);
             Assert.AreEqual ("Steve", c02a.LastName);
 

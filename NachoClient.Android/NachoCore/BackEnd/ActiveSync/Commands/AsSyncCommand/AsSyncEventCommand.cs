@@ -101,7 +101,7 @@ namespace NachoCore.ActiveSync
         {
             NachoCore.NachoAssert.True (r.Id > 0);
             string query = "select * from McAttendee where parentType = ? and parentId = ?";
-            var l = BackEnd.Instance.Db.Query<McAttendee> (query, McAttendee.GetParentType (r), r.Id);
+            var l = NcModel.Instance.Db.Query<McAttendee> (query, McAttendee.GetParentType (r), r.Id);
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -112,7 +112,7 @@ namespace NachoCore.ActiveSync
         {
             NachoCore.NachoAssert.True (r.Id > 0);
             string query = "select * from McCalendarCategory where parentType = ? and parentId = ?";
-            var l = BackEnd.Instance.Db.Query<McCalendarCategory> (query, McCalendarCategory.GetParentType (r), r.Id);
+            var l = NcModel.Instance.Db.Query<McCalendarCategory> (query, McCalendarCategory.GetParentType (r), r.Id);
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -125,7 +125,7 @@ namespace NachoCore.ActiveSync
         public static List<McException> GetExceptions (McCalendar calendar)
         {
             NachoCore.NachoAssert.True (calendar.Id > 0);
-            var l = BackEnd.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendar.Id).ToList ();
+            var l = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendar.Id).ToList ();
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }
@@ -138,7 +138,7 @@ namespace NachoCore.ActiveSync
         public static List<McRecurrence> GetRecurrences (McCalendar calendar)
         {
             NachoCore.NachoAssert.True (calendar.Id > 0);
-            var l = BackEnd.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == calendar.Id).ToList ();
+            var l = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == calendar.Id).ToList ();
             NachoCore.NachoAssert.True (l.Count >= 0);
             return l;
         }

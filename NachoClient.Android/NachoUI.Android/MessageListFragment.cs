@@ -27,7 +27,7 @@ namespace NachoClient.AndroidClient
 
             var folderId = this.Arguments.GetInt ("folderId", 0);
             var accountId = this.Arguments.GetInt ("accountId", 0);
-            var folder = BackEnd.Instance.Db.Table<McFolder> ().Where (x => folderId == x.Id).Single ();
+            var folder = NcModel.Instance.Db.Table<McFolder> ().Where (x => folderId == x.Id).Single ();
 
             messages = new NachoEmailMessages (folder);
             adapter = new MessageListAdapter (this.Activity, messages);
@@ -143,7 +143,7 @@ namespace NachoClient.AndroidClient
             var body = message.GetBody ();
             var summary = MimeHelpers.CreateSummary (body);
             message.Summary = summary;
-            BackEnd.Instance.Db.Update (message);
+            NcModel.Instance.Db.Update (message);
         }
     }
 }

@@ -31,7 +31,7 @@ namespace NachoClient.AndroidClient
 
             var contactId = this.Arguments.GetInt ("contactId", 0);
 
-            var contact = BackEnd.Instance.Db.Get<McContact> (contactId);
+            var contact = NcModel.Instance.Db.Get<McContact> (contactId);
 
             var valueField = rootView.FindViewById<TextView> (Resource.Id.value);
             valueField.Text = contact.DisplayName;

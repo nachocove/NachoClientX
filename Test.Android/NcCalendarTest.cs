@@ -132,7 +132,7 @@ namespace Test.iOS
             Owner = new MockProtoControlOwner ();
             Account = new McAccount ();
             Account.Id = 1;
-            BackEnd.Instance.Db = new TestDb ();
+            NcModel.Instance.Db = new TestDb ();
         }
     }
 

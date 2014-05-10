@@ -215,7 +215,7 @@ namespace NachoCore.ActiveSync
                     var xmlData = xmlPolicy.Element (m_ns + Xml.Provision.Data);
                     if (null != xmlData) {
                         var policyId = BEContext.Account.PolicyId;
-                        var policy = BackEnd.Instance.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
+                        var policy = NcModel.Instance.Db.Table<McPolicy> ().Where (x => x.Id == policyId).Single ();
                         foreach (var xmlEASProvisionDoc in xmlData.Elements(m_ns+Xml.Provision.EASProvisionDoc)) {
                             // Right now, we serially apply EASProvisionDoc elements against the policy. It is not clear
                             // that there is ever really more than one EASProvisionDoc. Maybe someday we are required to

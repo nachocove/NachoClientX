@@ -96,7 +96,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
             var folderId = Arguments.GetInt ("folderId");
-            folder = BackEnd.Instance.Db.Get<McFolder> (folderId);
+            folder = NcModel.Instance.Db.Get<McFolder> (folderId);
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)

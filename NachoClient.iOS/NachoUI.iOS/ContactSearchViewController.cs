@@ -161,7 +161,7 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
             searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
             return true;
         }

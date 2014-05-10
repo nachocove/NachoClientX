@@ -61,7 +61,7 @@ namespace NachoClient.iOS
             var root = new RootElement ("Attachments");
             var section = new Section ();
 
-            var attachmentList = BackEnd.Instance.Db.Table<McAttachment> ().ToList ();
+            var attachmentList = NcModel.Instance.Db.Table<McAttachment> ().ToList ();
             foreach (var a in attachmentList) {
                 StyledStringElement s;
                 if (a.IsInline) {
@@ -100,7 +100,8 @@ namespace NachoClient.iOS
 
         void DisplayAttachment (McAttachment attachment)
         {
-            var path = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString(), attachment.LocalFileName);
+            // FIXME - dont compute path here.
+            var path = Path.Combine (NcModel.Instance.AttachmentsDir, attachment.Id.ToString(), attachment.LocalFileName);
             UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
             Preview.Delegate = new DocumentInteractionControllerDelegate (this);
             Preview.PresentPreview (true);
@@ -109,7 +110,7 @@ namespace NachoClient.iOS
         void DownloadAttachment (McAttachment attachment)
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+                var account = NcModel.Instance.Db.Table<McAccount> ().First ();
                 BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
                 RefreshAttachmentSection ();
             }

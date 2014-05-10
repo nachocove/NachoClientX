@@ -39,7 +39,7 @@ namespace NachoCore.Model
 
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McItem, new()
         {
-            return BackEnd.Instance.Db.Query<T> (
+            return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                 " f.AccountId = ? AND " +
                 " f.ClientId = ? ", 
@@ -49,7 +49,7 @@ namespace NachoCore.Model
 
         public static List<T> QueryByFolderId<T> (int accountId, int folderId) where T : McItem, new()
         {
-            return BackEnd.Instance.Db.Query<T> (
+            return NcModel.Instance.Db.Query<T> (
                 string.Format (
                     "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
                     " e.AccountId = ? AND " +

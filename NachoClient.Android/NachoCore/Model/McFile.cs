@@ -16,13 +16,13 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            File.Delete (Path.Combine (BackEnd.Instance.AttachmentsDir, LocalFileName));
+            File.Delete (Path.Combine (NcModel.Instance.AttachmentsDir, LocalFileName));
             return base.Delete ();
         }
 
         public static List<McFile> QueryAllFiles ()
         {
-            return BackEnd.Instance.Db.Query<McFile> ("SELECT * FROM McFile ORDER BY DisplayName");
+            return NcModel.Instance.Db.Query<McFile> ("SELECT * FROM McFile ORDER BY DisplayName");
         }
     }
 }

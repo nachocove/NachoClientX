@@ -28,7 +28,7 @@ namespace NachoClient.iOS
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
             // Initial view
-            if (0 == BackEnd.Instance.Db.Table<McAccount> ().Count ()) {
+            if (0 == NcModel.Instance.Db.Table<McAccount> ().Count ()) {
                 PerformSegue ("StartupToLaunch", this); // modal
                 PerformSegue ("StartupToHome", this);  // launch the documentation
             } else {

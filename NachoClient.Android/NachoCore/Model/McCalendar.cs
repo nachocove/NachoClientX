@@ -396,7 +396,7 @@ namespace NachoCore.Model
 
         private NcResult ForceReadAncillaryData ()
         {
-            SQLiteConnection db = BackEnd.Instance.Db;
+            SQLiteConnection db = NcModel.Instance.Db;
             // FIXME: Parent types
             DbAttendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
             // FIXME: Parent types
@@ -454,9 +454,8 @@ namespace NachoCore.Model
         public NcResult ForceReadAncillaryData ()
         {
             HasReadAncillaryData = true;
-            var db = BackEnd.Instance.Db;
-            DbExceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
-            DbRecurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
+            DbExceptions = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
             return NcResult.OK ();
         }
 
@@ -486,21 +485,21 @@ namespace NachoCore.Model
         {
             // FIXME db transaction.
             int retval = base.Insert ();
-            InsertAncillaryData (BackEnd.Instance.Db);
+            InsertAncillaryData (NcModel.Instance.Db);
             return retval;
         }
 
         public override int Update ()
         {
             int retval = base.Update ();
-            InsertAncillaryData (BackEnd.Instance.Db);
+            InsertAncillaryData (NcModel.Instance.Db);
             return retval;
         }
 
         public override int Delete ()
         {
             int retval = base.Delete ();
-            DeleteAncillaryData (BackEnd.Instance.Db);
+            DeleteAncillaryData (NcModel.Instance.Db);
             return retval;
         }
 

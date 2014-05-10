@@ -111,17 +111,17 @@ namespace NachoClient.AndroidClient
                 }
             };
 
-            if (0 == BackEnd.Instance.Db.Table<McAccount> ().Count ()) {
+            if (0 == NcModel.Instance.Db.Table<McAccount> ().Count ()) {
                 var fragment = new CredentialsFragment ();
                 this.SupportFragmentManager.BeginTransaction ()
                     .Replace (Resource.Id.content_frame, fragment)
                     .Commit ();
             } else {
-                NcBackendOwner.Instance.Account = BackEnd.Instance.Db.Table<McAccount> ().ElementAt (0);
+                NcApplication.Instance.Account = NcModel.Instance.Db.Table<McAccount> ().ElementAt (0);
                 if (null == savedInstanceState) {
                     ItemSelected (0);
                 }
-                NcBackendOwner.Instance.LaunchBackEnd ();
+                NcApplication.Instance.LaunchBackEnd ();
             }
 
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);

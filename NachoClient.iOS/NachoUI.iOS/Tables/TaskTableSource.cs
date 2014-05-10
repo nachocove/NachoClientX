@@ -16,7 +16,7 @@ namespace NachoClient.iOS
 
         public TaskTableSource ()
         {
-            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
             tasks = McTask.QueryAllTaskItems (account.Id);
         }
 

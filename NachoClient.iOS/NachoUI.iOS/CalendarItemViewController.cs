@@ -84,7 +84,7 @@ namespace NachoClient.iOS
 
             // TODO: Need account manager.
             // We only have one account, for now.
-            account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            account = NcModel.Instance.Db.Table<McAccount> ().First ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             // Set up view

@@ -8,23 +8,24 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore
 {
-    public class NcBackendOwner : IBackEndOwner
+    public sealed class NcApplication : IBackEndOwner
     {
         public McAccount Account { get; set; }
 
-        public NcBackendOwner ()
+        private NcApplication ()
         {
         }
 
-        private static volatile NcBackendOwner instance;
+        private static volatile NcApplication instance;
         private static object syncRoot = new Object ();
 
-        public static NcBackendOwner Instance {
+        public static NcApplication Instance {
             get {
                 if (instance == null) {
                     lock (syncRoot) {
-                        if (instance == null)
-                            instance = new NcBackendOwner ();
+                        if (instance == null) {
+                            instance = new NcApplication ();
+                        }
                     }
                 }
                 return instance; 

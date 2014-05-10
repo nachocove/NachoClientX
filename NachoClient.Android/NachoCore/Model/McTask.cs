@@ -16,7 +16,7 @@ namespace NachoCore.Model
 
         public McTask GetTask ()
         {
-            return BackEnd.Instance.Db.Get<McTask> (Id);
+            return NcModel.Instance.Db.Get<McTask> (Id);
         }
     }
 
@@ -61,7 +61,7 @@ namespace NachoCore.Model
 
         public McRecurrence GetRecurrence ()
         {
-            return BackEnd.Instance.Db.Table<McRecurrence> ().SingleOrDefault (x => x.TaskId == Id);
+            return NcModel.Instance.Db.Table<McRecurrence> ().SingleOrDefault (x => x.TaskId == Id);
         }
 
         public static ClassCodeEnum GetClassCode ()
@@ -214,7 +214,7 @@ namespace NachoCore.Model
 
         public static List<McTaskIndex> QueryAllTaskItems (int accountId)
         {
-            return BackEnd.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
+            return NcModel.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
             " ON t.Id = m.FolderEntryId " +
             " WHERE " +
             " t.AccountId = ? AND " +
@@ -226,7 +226,7 @@ namespace NachoCore.Model
 
         public static List<McTaskIndex> QueryTaskItems (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
+            return NcModel.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
             " ON t.Id = m.FolderEntryId " +
             " WHERE " +
             " t.AccountId = ? AND " +

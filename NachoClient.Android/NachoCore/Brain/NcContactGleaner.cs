@@ -20,7 +20,7 @@ namespace NachoCore.Brain
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
-            var nextMsg = BackEnd.Instance.Db.Table<McEmailMessage> ().Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
+            var nextMsg = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
             if (null == nextMsg) {
                 return;
             }
@@ -39,7 +39,7 @@ namespace NachoCore.Brain
         protected static void MarkAsGleaned (McEmailMessage emailMessage)
         {
             emailMessage.HasBeenGleaned = true;
-            BackEnd.Instance.Db.Update (emailMessage);
+            NcModel.Instance.Db.Update (emailMessage);
         }
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
@@ -141,7 +141,7 @@ namespace NachoCore.Brain
                                 break;
                             }
 
-                            BackEnd.Instance.Db.Insert (contact);
+                            NcModel.Instance.Db.Insert (contact);
                             gleanedFolder.Link (contact);
 
                             var strattr = new McContactStringAttribute () {
@@ -150,13 +150,13 @@ namespace NachoCore.Brain
                                 Type = McContactStringType.EmailAddress,
                                 ContactId = contact.Id,
                             };
-                            BackEnd.Instance.Db.Insert (strattr);
+                            NcModel.Instance.Db.Insert (strattr);
                         } else {
                             // Update the refcount on the existing contact.
                             foreach (var contact in contacts) {
                                 // TODO: need update count using timestamp check.
                                 contact.RefCount += 1;
-                                BackEnd.Instance.Db.Update (contact);
+                                NcModel.Instance.Db.Update (contact);
                             }
                         }
                     }

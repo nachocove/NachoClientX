@@ -246,7 +246,7 @@ namespace NachoClient.iOS
 
             // TODO: Push account in UI
             // We only have one account, for now.
-            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
 
             MimeHelpers.SendEmail (account.Id, mimeMessage);
 

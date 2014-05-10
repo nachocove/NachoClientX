@@ -983,7 +983,7 @@ namespace NachoCore.ActiveSync
             if (forceAutodiscovery) {
                 Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
             } else {
-                Server = BackEnd.Instance.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
+                Server = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
             }
         }

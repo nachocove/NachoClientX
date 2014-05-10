@@ -72,7 +72,7 @@ namespace NachoCore
             // Refresh in background    
             System.Threading.ThreadPool.QueueUserWorkItem (delegate {
                 lock (StaticLockObj) {
-                    var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+                    var account = NcModel.Instance.Db.Table<McAccount> ().First ();
                     var l = McContact.QueryAllContactItems (account.Id);
                     list = new NachoContacts (l);
                     var h = McContact.QueryAllHotContactItems (account.Id);

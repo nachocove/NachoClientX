@@ -80,7 +80,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pendingCalCre = BackEnd.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
+            var pendingCalCre = NcModel.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
             var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
 
             var pending = new McPending (Account.Id) {

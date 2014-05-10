@@ -18,15 +18,15 @@ namespace NachoClient.iOS
         private void EnterFullConfiguration () {
             // You will always need to supply user credentials (until certs, for sure).
             var cred = new McCred () { Username = txtUserName.Text, Password = txtPassword.Text };
-            BackEnd.Instance.Db.Insert (cred);
+            NcModel.Instance.Db.Insert (cred);
             // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
             var server = new McServer () { Host = txtServerName.Text };
-            BackEnd.Instance.Db.Insert (server);
+            NcModel.Instance.Db.Insert (server);
             // In the near future, you won't need to create this protocol state object.
             var protocolState = new McProtocolState ();
-            BackEnd.Instance.Db.Insert (protocolState);
+            NcModel.Instance.Db.Insert (protocolState);
             var policy = new McPolicy ();
-            BackEnd.Instance.Db.Insert (policy);
+            NcModel.Instance.Db.Insert (policy);
             // You will always need to supply the user's email address.
             appDelegate.Account = new McAccount () { EmailAddr = txtUserName.Text };
             // The account object is the "top", pointing to credential, server, and opaque protocol state.
@@ -34,7 +34,7 @@ namespace NachoClient.iOS
             appDelegate.Account.ServerId = server.Id;
             appDelegate.Account.ProtocolStateId = protocolState.Id;
             appDelegate.Account.PolicyId = policy.Id;
-            BackEnd.Instance.Db.Insert (appDelegate.Account);
+            NcModel.Instance.Db.Insert (appDelegate.Account);
         }
 
         public override void ViewDidLoad()

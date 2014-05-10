@@ -56,6 +56,7 @@ namespace NachoClient.iOS
 
             // There is one back-end object covering all protocols and accounts. It does not go in the DB.
             // It manages everything while the app is running.
+            var model = NcModel.Instance;
             var Be = BackEnd.Instance;
             Be.Owner = this;
             Be.StatusIndEvent += (object sender, EventArgs e) => {
@@ -63,11 +64,11 @@ namespace NachoClient.iOS
                 var s = (StatusIndEventArgs)e;
                 this.StatusInd (s.Account.Id, s.Status, s.Tokens);
             };
-            if (0 == Be.Db.Table<McAccount> ().Count ()) {
+            if (0 == model.Db.Table<McAccount> ().Count ()) {
                 Log.Info (Log.LOG_UI, "Empty Table");
             } else {
                 // FIXME - this is wrong. Need to handle multiple accounts in future
-                this.Account = Be.Db.Table<McAccount> ().ElementAt (0);
+                this.Account = model.Db.Table<McAccount> ().ElementAt (0);
             }
             Be.Start ();
             NcContactGleaner.Start ();
@@ -157,7 +158,7 @@ namespace NachoClient.iOS
             file.DisplayName = Path.GetFileName (url.Path);
             file.SourceApplication = sourceApplication;
             file.Insert ();
-            var destDirectory = Path.Combine (BackEnd.Instance.FilesDir, file.Id.ToString ());
+            var destDirectory = Path.Combine (NcModel.Instance.FilesDir, file.Id.ToString ());
             Directory.CreateDirectory (destDirectory);
             var destFile = Path.Combine (destDirectory, Path.GetFileName (url.Path));
             File.Move (url.Path, destFile);
@@ -301,7 +302,7 @@ namespace NachoClient.iOS
                 // with code change - what is  corect access to DB?
                 UILocalNotification badgeNotification;
                 UILocalNotification notification = new UILocalNotification ();
-                var countunread = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
+                var countunread = NcModel.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
 
 
                 switch (status.SubKind) {
@@ -342,7 +343,7 @@ namespace NachoClient.iOS
                     //badgeNotification.AlertBody = "Message Read"; // null body means don't show
                     badgeNotification.HasAction = false;  // no alert to show on screen
                     badgeNotification.FireDate = DateTime.Now;
-                    var count2 = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
+                    var count2 = NcModel.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
                     badgeNotification.ApplicationIconBadgeNumber = count2;
 
                     UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
@@ -353,13 +354,14 @@ namespace NachoClient.iOS
 
         public void CredReq (int accountId)
         {
+            var Mo = NcModel.Instance;
             var Be = BackEnd.Instance;
 
             Log.Info (Log.LOG_UI, "Asking for Credentials");
             InvokeOnMainThread (delegate {
                 var credView = new UIAlertView ();
-                var account = Be.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-                var tmpCred = Be.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
+                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
+                var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
                 credView.Title = "Need to update Login Credentials";
                 credView.AddButton ("Update");
@@ -374,7 +376,7 @@ namespace NachoClient.iOS
                     if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
                         tmpCred.Username = (string)tmplog;
                         tmpCred.Password = (string)tmppwd;
-                        Be.Db.Update (tmpCred); //  update with new username/password
+                        Mo.Db.Update (tmpCred); //  update with new username/password
 
                         Be.CredResp (accountId);
                         credView.ResignFirstResponder ();
@@ -406,12 +408,13 @@ namespace NachoClient.iOS
         {
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
+            var Mo = NcModel.Instance;
             var Be = BackEnd.Instance;
 
             Log.Info (Log.LOG_UI, "Asking for Config Info");
             InvokeOnMainThread (delegate {  // lock on main thread
-                var account = Be.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-                var tmpServer = Be.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
+                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
+                var tmpServer = Mo.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
 
                 var credView = new UIAlertView ();
 

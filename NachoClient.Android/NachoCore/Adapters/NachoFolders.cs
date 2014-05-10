@@ -62,7 +62,7 @@ namespace NachoCore
         {
             // TODO: Fix this
             list = new List<McFolder> ();
-            var temp = BackEnd.Instance.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
+            var temp = NcModel.Instance.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
                 if (!l.IsHidden) {
                     // TODO: Need a matching enumeration

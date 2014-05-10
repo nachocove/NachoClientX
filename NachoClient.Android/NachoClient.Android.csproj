@@ -111,7 +111,6 @@
     <Compile Include="NachoCore\Adapters\NachoContacts.cs" />
     <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
-    <Compile Include="NachoCore\NcBackendOwner.cs" />
     <Compile Include="NachoUI.Android\MessageListFragment.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerDelta.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsConstants.cs" />
@@ -240,6 +239,8 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsResponse.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchRequest.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs" />
+    <Compile Include="NachoCore\NcApplication.cs" />
+    <Compile Include="NachoCore\Model\NcModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

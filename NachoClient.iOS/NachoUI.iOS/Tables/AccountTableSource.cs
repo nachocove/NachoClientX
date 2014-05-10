@@ -17,19 +17,19 @@ namespace NachoClient.iOS
         {
             // NOTE: Don't call the base implementation on a Model class
             // see http://docs.xamarin.com/ios/tutorials/Events%2c_Protocols_and_Delegates 
-            return BackEnd.Instance.Db.Table<McAccount> ().Count ();
+            return NcModel.Instance.Db.Table<McAccount> ().Count ();
         }
         public override UITableViewCell GetCell (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
             // NOTE: Don't call the base implementation on a Model class
             // see http://docs.xamarin.com/ios/tutorials/Events%2c_Protocols_and_Delegates 
             UITableViewCell cell = tableView.DequeueReusableCell ("dorkknob");
-            var account= BackEnd.Instance.Db.Table<McAccount> ().ElementAt (indexPath.Row);
+            var account= NcModel.Instance.Db.Table<McAccount> ().ElementAt (indexPath.Row);
             cell.TextLabel.Text = account.EmailAddr;
             return cell;
         }
         public McAccount GetAccount(NSIndexPath id) {
-            return BackEnd.Instance.Db.Table<McAccount>().ElementAt (id.Row);
+            return NcModel.Instance.Db.Table<McAccount>().ElementAt (id.Row);
         }
         /*public int curAccountID() {
 

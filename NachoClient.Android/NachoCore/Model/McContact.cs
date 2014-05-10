@@ -14,7 +14,7 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return BackEnd.Instance.Db.Get<McContact> (Id);
+            return NcModel.Instance.Db.Get<McContact> (Id);
         }
     }
 
@@ -581,7 +581,7 @@ namespace NachoCore.Model
 
         private NcResult ReadAncillaryData ()
         {
-            return ReadAncillaryData (BackEnd.Instance.Db);
+            return ReadAncillaryData (NcModel.Instance.Db);
         }
 
         public NcResult ForceReadAncillaryData (SQLiteConnection db)
@@ -646,21 +646,21 @@ namespace NachoCore.Model
         {
             // FIXME db transaction.
             int retval = base.Insert ();
-            InsertAncillaryData (BackEnd.Instance.Db);
+            InsertAncillaryData (NcModel.Instance.Db);
             return retval;
         }
 
         public override int Update ()
         {
             int retval = base.Update ();
-            InsertAncillaryData (BackEnd.Instance.Db);
+            InsertAncillaryData (NcModel.Instance.Db);
             return retval;
         }
 
         public override int Delete ()
         {
             int retval = base.Delete ();
-            DeleteAncillaryData (BackEnd.Instance.Db);
+            DeleteAncillaryData (NcModel.Instance.Db);
             return retval;
         }
 
@@ -937,7 +937,7 @@ namespace NachoCore.Model
 
         private List<McContactStringAttribute> QueryAncillaryString (McContactStringType type)
         {
-            return BackEnd.Instance.Db.Query<McContactStringAttribute> (
+            return NcModel.Instance.Db.Query<McContactStringAttribute> (
                 "SELECT * FROM McContactStringAttribute " +
                 " WHERE " +
                 " ContactId = ? AND Type = ?", 
@@ -946,7 +946,7 @@ namespace NachoCore.Model
 
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
-            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> (
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
                                               "SELECT c.* FROM McContact AS c " +
                                               " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
                                               " WHERE " +
@@ -959,7 +959,7 @@ namespace NachoCore.Model
 
         public static List<McContact> QueryByEmailAddressInFolder (int accountId, int folderId, string emailAddress)
         {
-            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> (
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
                                               "SELECT c.* FROM McContact AS c " +
                                               " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
                                               " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
@@ -976,7 +976,7 @@ namespace NachoCore.Model
 
         public static List<McContact> QueryByEmailAddressInSyncedFolder (int accountId, string emailAddress)
         {
-            List<McContact> contactList = BackEnd.Instance.Db.Query<McContact> (
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
                                               "SELECT c.* FROM McContact AS c " +
                                               " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
                                               " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
@@ -995,7 +995,7 @@ namespace NachoCore.Model
 
         public static List<McContactIndex> QueryAllContactItems (int accountId)
         {
-            return BackEnd.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<McContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1008,7 +1008,7 @@ namespace NachoCore.Model
 
         public static List<McContactIndex> QueryContactItems (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<McContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1022,7 +1022,7 @@ namespace NachoCore.Model
 
         public static List<McContactIndex> QueryAllHotContactItems (int accountId)
         {
-            return BackEnd.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<McContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1044,7 +1044,7 @@ namespace NachoCore.Model
             var firstName = target.First () + "%";
             var lastName = target.Last () + "%";
             if (1 == target.Count ()) {
-                return BackEnd.Instance.Db.Query<McContactIndex> (
+                return NcModel.Instance.Db.Query<McContactIndex> (
                     "SELECT c.Id as Id FROM McContact AS c " +
                     " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                     " WHERE " +
@@ -1056,7 +1056,7 @@ namespace NachoCore.Model
                     " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
                     accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, firstName, lastName);
             } else {
-                return BackEnd.Instance.Db.Query<McContactIndex> (
+                return NcModel.Instance.Db.Query<McContactIndex> (
                     "SELECT c.Id as Id FROM McContact AS c  " +
                     " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                     " WHERE " +

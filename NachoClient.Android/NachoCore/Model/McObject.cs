@@ -28,24 +28,24 @@ namespace NachoCore.Model
         public virtual int Insert ()
         {
             NachoAssert.True (0 == Id);
-            return BackEnd.Instance.Db.Insert (this);
+            return NcModel.Instance.Db.Insert (this);
         }
 
         public virtual int Delete ()
         {
             NachoAssert.True (0 != Id);
-            return BackEnd.Instance.Db.Delete (this);
+            return NcModel.Instance.Db.Delete (this);
         }
 
         public virtual int Update ()
         {
             NachoAssert.True (0 != Id);
-            return BackEnd.Instance.Db.Update (this);
+            return NcModel.Instance.Db.Update (this);
         }
 
         public static T QueryById<T> (int id) where T : McObject, new()
         {
-            return BackEnd.Instance.Db.Query<T> (
+            return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                     " f.Id = ? ", 
                     typeof(T).Name), 

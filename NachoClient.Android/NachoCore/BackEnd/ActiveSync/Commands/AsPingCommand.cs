@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
                 // FIXME - move to Strat.
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
-                    var folder = BackEnd.Instance.Db.Table<McFolder> ().Single (
+                    var folder = NcModel.Instance.Db.Table<McFolder> ().Single (
                                      rec => BEContext.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId);
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();

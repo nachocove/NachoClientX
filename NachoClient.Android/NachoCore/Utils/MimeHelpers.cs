@@ -147,7 +147,7 @@ namespace NachoCore.Utils
             var body = message.GetBody ();
             var summary = MimeHelpers.CreateSummary (body);
             message.Summary = summary;
-            BackEnd.Instance.Db.Update (message);
+            NcModel.Instance.Db.Update (message);
         }
 
         static protected string CommaSeparatedList (InternetAddressList addresses)
@@ -183,7 +183,7 @@ namespace NachoCore.Utils
             msg.BodyId = body.Id;
 
             msg.AccountId = AccountId;
-            BackEnd.Instance.Db.Insert (msg);
+            NcModel.Instance.Db.Insert (msg);
 
             if (0 == CalendarId) {
                 BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id);

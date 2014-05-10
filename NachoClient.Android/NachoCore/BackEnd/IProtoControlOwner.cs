@@ -7,8 +7,6 @@ namespace NachoCore
 {
     public interface IProtoControlOwner
     {
-        string AttachmentsDir { set; get; }
-
         void StatusInd (ProtoControl sender, NcResult status);
         void StatusInd (ProtoControl sender, NcResult status, string[] tokens);
         void CredReq (ProtoControl sender);

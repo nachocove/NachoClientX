@@ -27,7 +27,7 @@ namespace NachoCore.Model
 
         public static T QueryByServerId<T> (int accountId, string serverId) where T : McFolderEntry, new()
         {
-            return BackEnd.Instance.Db.Query<T> (
+            return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                     " f.AccountId = ? AND " + 
                     " f.ServerId = ? ", 

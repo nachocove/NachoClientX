@@ -485,7 +485,7 @@ namespace NachoCore.Model
         // Special-purpose resolve APIs for commands.
         public static void ResolvePendingSearchReqs (int accountId, string token, bool ignoreDispatched)
         {
-            var query = BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
+            var query = NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
                         rec.Token == token);
             if (ignoreDispatched) {
@@ -499,7 +499,7 @@ namespace NachoCore.Model
 
         public static void ResolveAllDispatchedAsDeferred (int accountId)
         {
-            BackEnd.Instance.Db.Table<McPending> ()
+            NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
             rec.State == StateEnum.Dispatched).All (y => {
@@ -511,7 +511,7 @@ namespace NachoCore.Model
         // Query APIs for any & all to call.
         public static List<McPending> Query (int accountId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .Where (x => x.AccountId == accountId)
                     .OrderBy (x => x.Id).ToList ();
         }
@@ -523,7 +523,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QueryEligible (int accountId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Eligible
             ).OrderBy (x => x.Id).ToList ();
@@ -531,7 +531,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QuerySuccessors (int accountId, int predId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.PredBlocked &&
             rec.PredPendingId == predId
@@ -540,7 +540,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QueryDeferredFSync (int accountId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             (rec.DeferredReason == DeferredEnum.UntilFSync ||
@@ -549,7 +549,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QueryDeferredSync (int accountId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             rec.DeferredReason == DeferredEnum.UntilSync).OrderBy (x => x.Id).ToList ();
@@ -557,7 +557,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QueryDeferredUntilNow (int accountId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ().Where (rec => 
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             rec.DeferredReason == DeferredEnum.UntilTime &&
@@ -567,7 +567,7 @@ namespace NachoCore.Model
 
         public static McPending QueryByToken (int accountId, string token)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .SingleOrDefault (x => 
                         x.AccountId == accountId &&
             x.Token == token);
@@ -575,7 +575,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .Where (rec =>
                         rec.AccountId == accountId &&
             rec.Operation == operation).ToList ();
@@ -583,7 +583,7 @@ namespace NachoCore.Model
 
         public static McPending QueryFirstEligibleByOperation (int accountId, McPending.Operations operation)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&
             rec.Operation == operation &&
@@ -592,7 +592,7 @@ namespace NachoCore.Model
 
         public static McPending QueryByClientId (int accountId, string clientId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&
             rec.ClientId == clientId);
@@ -600,7 +600,7 @@ namespace NachoCore.Model
 
         public static List<McPending> QueryEligibleByFolderServerId (int accountId, string folderServerId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .Where (rec =>
                         rec.AccountId == accountId &&
             rec.ParentId == folderServerId &&
@@ -609,7 +609,7 @@ namespace NachoCore.Model
 
         public static McPending QueryByServerId (int accountId, string serverId)
         {
-            return BackEnd.Instance.Db.Table<McPending> ()
+            return NcModel.Instance.Db.Table<McPending> ()
                     .FirstOrDefault (rec =>
                         rec.AccountId == accountId &&
             rec.ServerId == serverId);

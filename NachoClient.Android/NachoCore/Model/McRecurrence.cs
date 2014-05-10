@@ -66,7 +66,7 @@ namespace NachoCore.Model
 
         public static McRecurrence QueryByTaskId (int taskId)
         {
-            return BackEnd.Instance.Db.Table<McRecurrence> ().SingleOrDefault (x => x.TaskId == taskId);
+            return NcModel.Instance.Db.Table<McRecurrence> ().SingleOrDefault (x => x.TaskId == taskId);
         }
     }
 }

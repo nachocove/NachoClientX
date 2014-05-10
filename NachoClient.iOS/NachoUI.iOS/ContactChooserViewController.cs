@@ -256,7 +256,7 @@ namespace NachoClient.iOS
                 return true;
             }
             // TODO: Make this work like EAS
-            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
             searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
             return true;
         }

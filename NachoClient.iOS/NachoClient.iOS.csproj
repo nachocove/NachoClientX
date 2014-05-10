@@ -759,6 +759,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\NcModel.cs">
+      <Link>NachoCore\Model\NcModel.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

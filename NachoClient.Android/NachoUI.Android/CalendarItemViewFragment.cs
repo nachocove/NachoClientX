@@ -31,7 +31,7 @@ namespace NachoClient.AndroidClient
 
             var calendarItemId = this.Arguments.GetInt ("calendarItemId", 0);
 
-            var calendarItem = BackEnd.Instance.Db.Get<McCalendar> (calendarItemId);
+            var calendarItem = NcModel.Instance.Db.Get<McCalendar> (calendarItemId);
 
             var valueField = rootView.FindViewById<TextView> (Resource.Id.value);
             valueField.Text = calendarItem.Subject;

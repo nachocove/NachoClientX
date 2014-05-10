@@ -16,7 +16,7 @@ namespace NachoCore
 
         public McAccount Account {
             get {
-                return BackEnd.Instance.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
+                return NcModel.Instance.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
             }
         }
 
@@ -24,14 +24,14 @@ namespace NachoCore
             get {
                 // Note the lack of join :-(.
                 var account = Account;
-                return BackEnd.Instance.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).Single ();
+                return NcModel.Instance.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).Single ();
             }
         }
 
         public McServer Server { 
             get {
                 var account = Account;
-                return BackEnd.Instance.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
+                return NcModel.Instance.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
             }
             set {
                 var update = value;
@@ -43,7 +43,7 @@ namespace NachoCore
         public McProtocolState ProtocolState { 
             get {
                 var account = Account;
-                return BackEnd.Instance.Db.Table<McProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
+                return NcModel.Instance.Db.Table<McProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
             }
             set {
                 var update = value;

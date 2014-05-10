@@ -142,7 +142,7 @@ namespace NachoClient.iOS
 
         void MarkAsRead ()
         {
-            var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
             var message = thread.SingleMessageSpecialCase ();
             if (false == message.IsRead) {
                 BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
@@ -538,7 +538,8 @@ namespace NachoClient.iOS
 
         void DisplayAttachment (McAttachment attachment)
         {
-            var path = Path.Combine (BackEnd.Instance.AttachmentsDir, attachment.Id.ToString (), attachment.LocalFileName);
+            // FIXME - don't compute file name here.
+            var path = Path.Combine (NcModel.Instance.AttachmentsDir, attachment.Id.ToString (), attachment.LocalFileName);
             UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
             Preview.Delegate = new DocumentInteractionControllerDelegate (this);
             Preview.PresentPreview (true);
@@ -547,7 +548,7 @@ namespace NachoClient.iOS
         void DownloadAttachment (McAttachment attachment)
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                var account = BackEnd.Instance.Db.Table<McAccount> ().First ();
+                var account = NcModel.Instance.Db.Table<McAccount> ().First ();
                 BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
                 RefreshAttachmentSection ();
             }

@@ -21,7 +21,7 @@ namespace NachoCore.Model
             if (0 == id) {
                 return null;
             }
-            return Path.Combine (BackEnd.Instance.BodiesDir, id.ToString ());
+            return Path.Combine (NcModel.Instance.BodiesDir, id.ToString ());
         }
 
         public static McBody Save (string content)
@@ -40,7 +40,7 @@ namespace NachoCore.Model
             if (0 == id) {
                 return null;
             }
-            var body = BackEnd.Instance.Db.Get<McBody> (id);
+            var body = NcModel.Instance.Db.Get<McBody> (id);
             if (!body.IsValid) {
                 return null;
             }
@@ -52,7 +52,7 @@ namespace NachoCore.Model
             if (0 == id) {
                 return;
             }
-            var body = BackEnd.Instance.Db.Get<McBody> (id);
+            var body = NcModel.Instance.Db.Get<McBody> (id);
             body.IsValid = false;
             body.Update ();
             File.Delete (GetBodyPath (id));

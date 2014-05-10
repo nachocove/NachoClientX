@@ -45,7 +45,7 @@ namespace NachoCore.Model
         {
             // ActiveSync only supports email attachments.
             NachoAssert.True (typeof(T) == typeof(McEmailMessage));
-            return BackEnd.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
+            return NcModel.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
             " a.AccountId = ? AND " +
             " a.EmailMessageId = ? ",
                 accountId, itemId);
@@ -67,18 +67,18 @@ namespace NachoCore.Model
 
         private static string TempPath (string guidString)
         {
-            return Path.Combine (BackEnd.Instance.AttachmentsDir, guidString);
+            return Path.Combine (NcModel.Instance.AttachmentsDir, guidString);
         }
 
         private string FilePath ()
         {
             NachoAssert.True (0 != Id);
-            return Path.Combine (BackEnd.Instance.AttachmentsDir, Id.ToString (), LocalFileName);
+            return Path.Combine (NcModel.Instance.AttachmentsDir, Id.ToString (), LocalFileName);
         }
 
         public void SaveFromTemp (string guidString)
         {
-            var savePath = Path.Combine (BackEnd.Instance.AttachmentsDir, Id.ToString ());
+            var savePath = Path.Combine (NcModel.Instance.AttachmentsDir, Id.ToString ());
             Directory.CreateDirectory (savePath);
             try {
                 LocalFileName = DisplayName.SantizeFileName ();

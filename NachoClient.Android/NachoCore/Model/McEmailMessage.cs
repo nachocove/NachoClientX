@@ -38,7 +38,7 @@ namespace NachoCore.Model
 
         public McEmailMessage GetMessage ()
         {
-            return BackEnd.Instance.Db.Get<McEmailMessage> (Id);
+            return NcModel.Instance.Db.Get<McEmailMessage> (Id);
         }
     }
 
@@ -201,7 +201,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessage> (
+            return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -215,7 +215,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessageIndex> (
+            return NcModel.Instance.Db.Query<McEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -230,7 +230,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
-            return BackEnd.Instance.Db.Query<McEmailMessageIndex> (
+            return NcModel.Instance.Db.Query<McEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -247,7 +247,7 @@ namespace NachoCore.Model
         /// TODO: Delete needs to clean up deferred
         public static List<McEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
         {
-            return BackEnd.Instance.Db.Query<McEmailMessageIndex> (
+            return NcModel.Instance.Db.Query<McEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
@@ -256,7 +256,7 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
-            return BackEnd.Instance.Db.Table<McEmailMessage> ().Where (
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (
                 x => x.AccountId == accountId && x.ThreadTopic == topic).ToList ();
         }
 

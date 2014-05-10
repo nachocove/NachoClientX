@@ -81,7 +81,7 @@ namespace NachoCore.Model
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
         {
-            return BackEnd.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+            return NcModel.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
                 accountId == x.AccountId &&
             serverId == x.ServerId &&
             true == x.IsClientOwned);
@@ -117,7 +117,7 @@ namespace NachoCore.Model
 
         public static McFolder GetUserFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
-            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.Type = ? AND " +
                           " f.ParentId = ? AND " +
@@ -132,7 +132,7 @@ namespace NachoCore.Model
 
         private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
-            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.Type = ? ",
                               accountId, (uint)typeCode);
@@ -170,7 +170,7 @@ namespace NachoCore.Model
 
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
-            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.ParentId = ? ",
                               accountId, parentId);
@@ -182,7 +182,7 @@ namespace NachoCore.Model
             var getClassCode = typeof(T).GetMethod ("GetClassCode");
             NachoAssert.True (null != getClassCode);
             ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
-            return BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
+            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
             " m.AccountId = ? AND " +
             " m.FolderEntryId = ? AND " +
             " f.IsAwaitingDelete = 0 AND " +
@@ -192,7 +192,7 @@ namespace NachoCore.Model
 
         public static List<McFolder> QueryClientOwned (int accountId, bool isClientOwned)
         {
-            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.IsAwaitingDelete = 0 AND " +
                           " f.IsClientOwned = ? ",
@@ -204,7 +204,7 @@ namespace NachoCore.Model
         // IsAwaitingCreate folders.
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
-            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.IsClientOwned = 0 AND " +
                           " f.IsAwaitingCreate = 0 ",
@@ -289,7 +289,7 @@ namespace NachoCore.Model
         public static void AsResetState (int accountId)
         {
             // TODO: USE SQL UPDATE.
-            var folders = BackEnd.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           "f.AccountId = ? ",
                               accountId);
             foreach (var folder in folders) {

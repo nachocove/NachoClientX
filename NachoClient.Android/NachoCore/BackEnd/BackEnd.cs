@@ -37,8 +37,9 @@ namespace NachoCore
             get {
                 if (instance == null) {
                     lock (syncRoot) {
-                        if (instance == null)
+                        if (instance == null) {
                             instance = new BackEnd ();
+                        }
                     }
                 }
                 return instance; 
@@ -59,15 +60,10 @@ namespace NachoCore
 
         public event EventHandler StatusIndEvent;
 
-        public SQLiteConnection Db { set; get; }
 
-        public string FilesDir { set; get; }
-        public string AttachmentsDir { set; get; }
 
-        public string BodiesDir { set; get; }
 
         private List<ProtoControl> Services;
-        private string DbFileName;
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -82,43 +78,6 @@ namespace NachoCore
         // For IBackEnd.
         private BackEnd ()
         {
-            // Make sure DB is setup.
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            FilesDir = Path.Combine (documents, "files");
-            Directory.CreateDirectory (Path.Combine (documents, FilesDir));
-            AttachmentsDir = Path.Combine (documents, "attachments");
-            Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
-            BodiesDir = Path.Combine (documents, "bodies");
-            Directory.CreateDirectory (Path.Combine (documents, BodiesDir));
-            DbFileName = Path.Combine (documents, "db");
-            Db = new SQLiteConnection (DbFileName, 
-                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, 
-                storeDateTimeAsTicks: true);
-            Db.CreateTable<McAccount> ();
-            Db.CreateTable<McCred> ();
-            Db.CreateTable<McMapFolderFolderEntry> ();
-            Db.CreateTable<McFolder> ();
-            Db.CreateTable<McEmailMessage> ();
-            Db.CreateTable<McAttachment> ();
-            Db.CreateTable<McContact> ();
-            Db.CreateTable<McContactDateAttribute> ();
-            Db.CreateTable<McContactStringAttribute> ();
-            Db.CreateTable<McContactAddressAttribute> ();
-            Db.CreateTable<McPolicy> ();
-            Db.CreateTable<McProtocolState> ();
-            Db.CreateTable<McServer> ();
-            Db.CreateTable<McPending> ();
-            Db.CreateTable<McPendingPath> ();
-            Db.CreateTable<McCalendar> ();
-            Db.CreateTable<McException> ();
-            Db.CreateTable<McAttendee> ();
-            Db.CreateTable<McCalendarCategory> ();
-            Db.CreateTable<McRecurrence> ();
-            Db.CreateTable<McTimeZone> ();
-            Db.CreateTable<McTask> ();
-            Db.CreateTable<McBody> ();
-            Db.CreateTable<McFile> ();
- 
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 8;
 
@@ -128,7 +87,7 @@ namespace NachoCore
         public void Start ()
         {
             // The callee does Task.Run.
-            var accounts = Db.Table<McAccount> ();
+            var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Start (account.Id);
             }
@@ -137,7 +96,7 @@ namespace NachoCore
         public void Stop ()
         {
             // Don't Task.Run.
-            var accounts = Db.Table<McAccount> ();
+            var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Stop (account.Id);
             }
@@ -194,7 +153,7 @@ namespace NachoCore
         public void ForceSync ()
         {
             // The callee does Task.Run.
-            var accounts = Db.Table<McAccount> ();
+            var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 ForceSync (account.Id);
             }
