@@ -11,6 +11,7 @@ using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoPlatform;
 
 /*
  * Use a mock HttpClient.
@@ -213,7 +214,10 @@ namespace Test.iOS
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = MockData.Wbxml.Length.ToString ();
 
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength);
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, val => {
+                val.Content.Headers.Add ("Content-Length", mockResponseLength);
+                val.Content.Headers.Add ("Content-Type", contentType);
+            });
         }
 
         [Test]
@@ -251,7 +255,29 @@ namespace Test.iOS
 
         }
 
-        public void PerformHttpOperationWithSettings (string contentType, string mockRequestLength, string mockResponseLength)
+        // Content-Type is not required if Content-Length is missing or zero
+        /* TODO: Both of these tests currently fail. An exception is thrown in AsHttpOperation.cs
+         * Need to inspect */
+        [Test]
+        public void ContentTypeNotRequired ()
+        {
+            /* Content-Length is zero --> must not require content type */
+            // header settings (get passed into CreateMockResponseWithHeaders ())
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = 0.ToString ();
+
+            // TODO Should the xml itself be empty as well, or does just the header Content-Length
+            // need to equal 0?
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, val => {
+                val.Content.Headers.Add ("Content-Length", mockResponseLength);
+            });
+
+            /* Content-Length is missing --> must not require content type */
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, val => {});
+        }
+
+        public void PerformHttpOperationWithSettings (string contentType, string mockRequestLength, string mockResponseLength, Action<HttpResponseMessage> action)
         {
             var interlock = new BlockingCollection<bool> ();
             // setup
@@ -263,9 +289,10 @@ namespace Test.iOS
 
             sm.PostEvent ((uint)SmEvt.E.Launch, "BasicPhonyPing");
 
+            // create the response, then allow caller to set headers,
+            // then return response and assign to mockResponse
             var mockResponse = CreateMockResponse (MockData.Wbxml, contentType, mockResponseLength, val => {
-                val.Content.Headers.Add ("Content-Length", mockResponseLength);
-                val.Content.Headers.Add ("Content-Type", contentType);
+                action (val);
             });
 
             // do some common assertions
@@ -278,7 +305,7 @@ namespace Test.iOS
 
             var context = new MockContext ();
 
-            // provides the mockRequest
+            // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (MockData.MockUri, MockData.MockRequestXml);
 
             var op = new AsHttpOperation ("Ping", owner, context);
@@ -295,21 +322,6 @@ namespace Test.iOS
             Assert.IsTrue (interlock.TryTake (out didFinish, 2000));
             Assert.IsTrue (didFinish);
             Assert.IsTrue (setTrueBySuccessEvent);
-        }
-
-        // Content-Type is not required if Content-Length is missing or zero
-        [Test]
-        public void ContentTypeNotRequired ()
-        {
-            /* Content-Length is zero */
-            // header settings (get passed into CreateMockResponseWithHeaders ())
-            string contentType = "application/vnd.ms-sync.wbxml";
-            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
-            string mockResponseLength = MockData.Wbxml.Length.ToString ();
-
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength);
-
-            /* Content-Length is missing */
         }
 
         // Action Delegate for creating a state machine
@@ -372,9 +384,22 @@ namespace Test.iOS
             MockHttpClient.ExamineHttpRequestMessage = (request) => {
                 Assert.AreEqual (mockUri, request.RequestUri, "Uri's should match");
                 Assert.AreEqual (HttpMethod.Post, request.Method, "HttpMethod's should match");
-                // TODO Check appropriate headers.
+
+                /* TODO Check appropriate headers. */
                 Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+
+                // test that user agent is correct
+                Assert.AreEqual (Device.Instance.UserAgent ().ToString (), request.Headers.UserAgent, "request User-Agent should be set to correct UserAgent");
+
+                // test that the protocol version is correctly set
+                McProtocolState protocol = new McProtocolState ();
+                System.Reflection.PropertyInfo info = request.GetType().GetProperty("MS-ASProtocolVersion", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (info == null) {
+                    Assert.Fail ("MS-ASProtocolVersion not found on request object");
+                }
+                Assert.AreEqual (protocol.AsProtocolVersion, info.GetValue ("MS-ASProtocolVersion", null), "MS-ASProtocolVersion is incorrect");
+
                 // TODO Check correct Query-params.
                 // TODO Check correct WBXML.
             };
