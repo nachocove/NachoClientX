@@ -10,8 +10,9 @@ using System.Threading.Tasks;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using Xamarin.Contacts;
-using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore;
 
 namespace NachoClient.iOS
 {

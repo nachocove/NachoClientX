@@ -283,9 +283,6 @@
     <Compile Include="NachoUI.iOS\ContactSearchViewController.designer.cs">
       <DependentUpon>ContactSearchViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\NcEmailAddress.cs">
-      <Link>NachoCore\NcEmailAddress.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcContactGleaner.cs">
       <Link>NachoCore\Brain\NcContactGleaner.cs</Link>
     </Compile>
@@ -575,7 +572,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsTimeZone.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsTimeZone.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Adapters\NcCalendarManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEmailManager.cs">
       <Link>NachoCore\Adapters\NcEmailManager.cs</Link>
     </Compile>
@@ -667,7 +663,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Utils\CalendarHelper.cs" />
     <Compile Include="NachoUI.iOS\TaskListViewController.cs" />
     <Compile Include="NachoUI.iOS\TaskListViewController.designer.cs">
       <DependentUpon>TaskListViewController.cs</DependentUpon>
@@ -762,6 +757,13 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\NcModel.cs">
       <Link>NachoCore\Model\NcModel.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailAddress.cs">
+      <Link>NachoCore\Utils\NcEmailAddress.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcCalendarManager.cs">
+      <Link>NachoCore\Adapters\NcCalendarManager.cs</Link>
+    </Compile>
+    <Compile Include="NachoCore\Utils\CalendarHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

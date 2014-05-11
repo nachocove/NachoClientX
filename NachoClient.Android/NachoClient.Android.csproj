@@ -87,7 +87,6 @@
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
     <Compile Include="NachoCore\Model\McServer.cs" />
     <Compile Include="NachoCore\NcEnforcer.cs" />
-    <Compile Include="NachoCore\NcEmailAddress.cs" />
     <Compile Include="NachoCore\Brain\NcContactGleaner.cs" />
     <Compile Include="NachoCore\Utils\NcCapture.cs" />
     <Compile Include="NachoCore\Utils\NcStateMachine.cs" />
@@ -241,6 +240,8 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs" />
     <Compile Include="NachoCore\NcApplication.cs" />
     <Compile Include="NachoCore\Model\NcModel.cs" />
+    <Compile Include="NachoCore\Utils\NcEmailAddress.cs" />
+    <Compile Include="NachoCore\Adapters\NcCalendarManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -2,7 +2,7 @@
 //
 using System;
 using MonoTouch.Foundation;
-using NachoCore;
+using NachoCore.Utils;
 
 
 namespace NachoClient.iOS

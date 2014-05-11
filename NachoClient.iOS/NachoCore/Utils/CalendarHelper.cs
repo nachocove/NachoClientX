@@ -1,22 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Drawing;
-using System.IO;
-using System.Text;
 using DDay.iCal;
-using DDay.iCal.Serialization.iCalendar;
-using MimeKit;
-using MonoTouch.Dialog;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using NachoCore;
-using NachoCore.Model;
-using NachoCore.Utils;
-using NachoCore.ActiveSync;
 
 namespace NachoCore.Utils
 {

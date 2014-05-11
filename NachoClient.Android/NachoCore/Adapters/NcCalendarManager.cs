@@ -5,7 +5,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 
-namespace NachoClient
+namespace NachoCore
 {
     public class NcCalendarManager : NachoCalendarCommon
     {

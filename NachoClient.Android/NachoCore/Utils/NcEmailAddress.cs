@@ -3,10 +3,9 @@
 using System;
 using MimeKit;
 using NachoCore;
-using NachoCore.Utils;
 using NachoCore.Model;
 
-namespace NachoCore
+namespace NachoCore.Utils
 {
     /// <summary>
     /// An email address is represented by the string
