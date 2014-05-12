@@ -338,7 +338,6 @@ namespace NachoCore.ActiveSync
             }
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
             Client.Timeout = this.Timeout;
-            var request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             XDocument doc;
             try {
                 doc = Owner.ToXDocument (this);
@@ -347,95 +346,107 @@ namespace NachoCore.ActiveSync
                 HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
                 return;
             }
-            if (null != doc) {
-                Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
-                // Sadly, Xamarin does not support schema-based XML validation APIs.
-                if (Owner.UseWbxml (this)) {
-                    var wbxml = doc.ToWbxml ();
-                    var content = new ByteArrayContent (wbxml);
-                    request.Content = content;
-                    request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
-                    request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
-                } else {
-                    // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
-                    // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
-                    // Method once bug is fixed.
-                    var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
-                    request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
-                }
-            }
-            var mime = Owner.ToMime (this);
-            if (null != mime) {
-                request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
-            }
-            request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
-            if (Owner.DoSendPolicyKey (this)) {
-                request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
-            }
-            request.Headers.Add ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
-            Cts = new CancellationTokenSource ();
-            CancellationToken cToken = Cts.Token;
+            HttpRequestMessage request = null;
             HttpResponseMessage response = null;
 
-            // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
-            // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
-            // assume the IHttpClient instance has been abandoned.
-            var myClient = Client;
-            TimeoutTimer = new NcTimer (TimeoutTimerCallback, myClient, Timeout, 
-                System.Threading.Timeout.InfiniteTimeSpan);
             try {
-                Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
-                response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
-            } catch (OperationCanceledException ex) {
-                Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
-                if (myClient == Client) {
-                    CancelTimeoutTimer ();
-                    if (!cToken.IsCancellationRequested) {
-                        // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
-                        ReportCommResult (ServerUri.Host, true);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                request = new HttpRequestMessage (Owner.Method (this), ServerUri);
+                if (null != doc) {
+                    Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
+                    // Sadly, Xamarin does not support schema-based XML validation APIs.
+                    if (Owner.UseWbxml (this)) {
+                        var wbxml = doc.ToWbxml ();
+                        var content = new ByteArrayContent (wbxml);
+                        request.Content = content;
+                        request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
+                        request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
+                    } else {
+                        // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
+                        // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
+                        // Method once bug is fixed.
+                        var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
+                        request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
                     }
                 }
-                return;
-            } catch (WebException ex) {
-                Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
-                if (myClient == Client) {
-                    CancelTimeoutTimer ();
-                    ReportCommResult (ServerUri.Host, true);
-                    // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                var mime = Owner.ToMime (this);
+                if (null != mime) {
+                    request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
                 }
-                return;
-            } catch (NullReferenceException ex) {
-                Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
-                // As best I can tell, this may be driven by bug(s) in the Mono stack.
-                if (myClient == Client) {
-                    CancelTimeoutTimer ();
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
+                if (Owner.DoSendPolicyKey (this)) {
+                    request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
                 }
-                return;
-            } catch (Exception ex) {
-                // We've seen HttpClient barf due to Cancel().
-                if (myClient == Client) {
-                    CancelTimeoutTimer ();
-                    Log.Error (Log.LOG_AS, "Exception: {0}", ex.ToString ());
-                    HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
-                }
-            }
+                request.Headers.Add ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
+                Cts = new CancellationTokenSource ();
+                CancellationToken cToken = Cts.Token;
 
-            if (myClient == Client) {
-                CancelTimeoutTimer ();
-                var contentType = response.Content.Headers.ContentType;
-                ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
-                ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
-
+                // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+                // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
+                // assume the IHttpClient instance has been abandoned.
+                var myClient = Client;
+                TimeoutTimer = new NcTimer (TimeoutTimerCallback, myClient, Timeout, 
+                    System.Threading.Timeout.InfiniteTimeSpan);
                 try {
-                    HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
+                    Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
+                    response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
+                } catch (OperationCanceledException ex) {
+                    Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
+                    if (myClient == Client) {
+                        CancelTimeoutTimer ();
+                        if (!cToken.IsCancellationRequested) {
+                            // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
+                            ReportCommResult (ServerUri.Host, true);
+                            HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        }
+                    }
+                    return;
+                } catch (WebException ex) {
+                    Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
+                    if (myClient == Client) {
+                        CancelTimeoutTimer ();
+                        ReportCommResult (ServerUri.Host, true);
+                        // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                    }
+                    return;
+                } catch (NullReferenceException ex) {
+                    Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
+                    // As best I can tell, this may be driven by bug(s) in the Mono stack.
+                    if (myClient == Client) {
+                        CancelTimeoutTimer ();
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                    }
+                    return;
                 } catch (Exception ex) {
-                    Log.Error ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
-                    // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
-                    Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
-                    HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
+                    // We've seen HttpClient barf due to Cancel().
+                    if (myClient == Client) {
+                        CancelTimeoutTimer ();
+                        Log.Error (Log.LOG_AS, "Exception: {0}", ex.ToString ());
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
+                    }
+                }
+
+                if (myClient == Client) {
+                    CancelTimeoutTimer ();
+                    var contentType = response.Content.Headers.ContentType;
+                    ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
+                    ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+
+                    try {
+                        HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
+                    } catch (Exception ex) {
+                        Log.Error ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                        // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
+                        Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
+                        HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
+                    }
+                }
+            } finally {
+                if (null != request) {
+                    request.Dispose ();
+                }
+                if (null != response) {
+                    response.Dispose ();
                 }
             }
         }
@@ -462,8 +473,7 @@ namespace NachoCore.ActiveSync
                 if (0 > ContentData.Length) {
                     // We have seen this, but we've never see doc stating why possible.
                     return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPZORNEG");
-                }
-                else if (0 < ContentData.Length) {
+                } else if (0 < ContentData.Length) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
