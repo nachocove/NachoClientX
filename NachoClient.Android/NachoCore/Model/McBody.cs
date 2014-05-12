@@ -24,15 +24,31 @@ namespace NachoCore.Model
             return Path.Combine (NcModel.Instance.BodiesDir, id.ToString ());
         }
 
-        public static McBody Save (string content)
+        public static McBody SaveStart ()
         {
             var body = new McBody ();
             body.IsValid = false;
             body.Insert ();
-            File.WriteAllText (GetBodyPath (body.Id), content);
-            body.IsValid = true;
-            body.Update ();
             return body;
+        }
+
+        public void SaveDone ()
+        {
+            IsValid = true;
+            Update ();
+        }
+
+        public static McBody Save (string content)
+        {
+            var body = SaveStart ();
+            File.WriteAllText (GetBodyPath (body.Id), content);
+            body.SaveDone ();
+            return body;
+        }
+
+        public FileStream SaveFileStream ()
+        {
+            return File.OpenWrite (GetBodyPath (Id));
         }
 
         public static string Get (int id)

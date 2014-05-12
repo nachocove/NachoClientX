@@ -134,9 +134,20 @@ namespace NachoCore.Wbxml
                         newTextNode = new XText ("");
                         switch (currentCodePage) {
                         case ASWBXML.KCodePage_AirSyncBase:
-                            var content = bytes.DequeueString ();
-                            var data = McBody.Save(content);
-                            currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                            try {
+                                var data = McBody.SaveStart ();
+                                using (var fileStream = data.SaveFileStream ()) {
+                                    if (bytes.DequeueStringToStream (fileStream)) {
+                                        data.SaveDone ();
+                                        fileStream.Dispose();
+                                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                                    } else {
+                                        Log.Error (Log.LOG_AS, "Failure while trying to write body.");
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                Log.Error (Log.LOG_AS, "Exception while trying to write body {0}", ex.ToString ());
+                            }
                             break;
 
                         case ASWBXML.KCodePage_ItemOperations:
@@ -144,8 +155,9 @@ namespace NachoCore.Wbxml
                                 var guidString = Guid.NewGuid ().ToString ("N");
                                 using (var fileStream = McAttachment.TempFileStream (guidString)) {
                                     using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
-                                        new FromBase64Transform (), CryptoStreamMode.Write)) {
+                                                                  new FromBase64Transform (), CryptoStreamMode.Write)) {
                                         if (bytes.DequeueStringToStream (cryptoStream)) {
+                                            cryptoStream.Dispose ();
                                             currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
                                         } else {
                                             Log.Error (Log.LOG_AS, "Failure while trying to write attachment.");
