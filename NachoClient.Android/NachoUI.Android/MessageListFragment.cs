@@ -140,10 +140,8 @@ namespace NachoClient.AndroidClient
 
         void UpdateDbWithSummary (McEmailMessage message)
         {
-            var body = message.GetBody ();
-            var summary = MimeHelpers.CreateSummary (body);
-            message.Summary = summary;
-            NcModel.Instance.Db.Update (message);
+            message.Summary = MimeHelpers.ExtractSummary (message);
+            message.Update ();
         }
     }
 }
