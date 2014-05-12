@@ -6,6 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Linq;
 using NUnit.Framework;
 using NachoCore;
 using NachoCore.ActiveSync;
@@ -214,9 +215,12 @@ namespace Test.iOS
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = MockData.Wbxml.Length.ToString ();
 
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, val => {
-                val.Content.Headers.Add ("Content-Length", mockResponseLength);
-                val.Content.Headers.Add ("Content-Type", contentType);
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, response => {
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", contentType);
+            }, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+                Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
             });
         }
 
@@ -267,17 +271,18 @@ namespace Test.iOS
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = 0.ToString ();
 
-            // TODO Should the xml itself be empty as well, or does just the header Content-Length
-            // need to equal 0?
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, val => {
-                val.Content.Headers.Add ("Content-Length", mockResponseLength);
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, response => {
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+            }, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
             });
 
             /* Content-Length is missing --> must not require content type */
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, val => {});
+            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, response => {}, request => {});
         }
 
-        public void PerformHttpOperationWithSettings (string contentType, string mockRequestLength, string mockResponseLength, Action<HttpResponseMessage> action)
+        public void PerformHttpOperationWithSettings (string contentType, string mockRequestLength, string mockResponseLength, 
+            Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var interlock = new BlockingCollection<bool> ();
             // setup
@@ -291,12 +296,14 @@ namespace Test.iOS
 
             // create the response, then allow caller to set headers,
             // then return response and assign to mockResponse
-            var mockResponse = CreateMockResponse (MockData.Wbxml, contentType, mockResponseLength, val => {
-                action (val);
+            var mockResponse = CreateMockResponse (MockData.Wbxml, mockResponseLength, response => {
+                provideResponse (response);
             });
 
             // do some common assertions
-            ExamineRequestMessageOnMockClient (MockData.MockUri, contentType, mockRequestLength);
+            ExamineRequestMessageOnMockClient (MockData.MockUri, contentType, mockRequestLength, request => {
+                provideRequest (request);
+            });
 
             // provides the mock response
             MockHttpClient.ProvideHttpResponseMessage = () => {
@@ -366,7 +373,7 @@ namespace Test.iOS
             return owner;
         }
 
-        private HttpResponseMessage CreateMockResponse (byte[] wbxml, string contentType, string mockResponseLength, Action<HttpResponseMessage> action)
+        private HttpResponseMessage CreateMockResponse (byte[] wbxml, string mockResponseLength, Action<HttpResponseMessage> provideResponse)
         {
             var mockResponse = new HttpResponseMessage () {
                 StatusCode = System.Net.HttpStatusCode.OK,
@@ -374,32 +381,33 @@ namespace Test.iOS
             };
      
             // allow the caller to modify the mockResponse object (esp. headers)
-            action (mockResponse);
+            provideResponse (mockResponse);
 
             return mockResponse;
         }
 
-        private void ExamineRequestMessageOnMockClient (Uri mockUri, string contentType, string mockRequestLength)
+        private void ExamineRequestMessageOnMockClient (Uri mockUri, string contentType, string mockRequestLength, 
+            Action<HttpRequestMessage> requestAction)
         {
             MockHttpClient.ExamineHttpRequestMessage = (request) => {
                 Assert.AreEqual (mockUri, request.RequestUri, "Uri's should match");
                 Assert.AreEqual (HttpMethod.Post, request.Method, "HttpMethod's should match");
 
                 /* TODO Check appropriate headers. */
-                Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
-                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
 
                 // test that user agent is correct
-                Assert.AreEqual (Device.Instance.UserAgent ().ToString (), request.Headers.UserAgent, "request User-Agent should be set to correct UserAgent");
+                Assert.AreEqual (Device.Instance.UserAgent ().ToString (), request.Headers.UserAgent.ToString (), 
+                    "request User-Agent should be set to correct UserAgent");
 
                 // test that the protocol version is correctly set
                 McProtocolState protocol = new McProtocolState ();
-                System.Reflection.PropertyInfo info = request.GetType().GetProperty("MS-ASProtocolVersion", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (info == null) {
-                    Assert.Fail ("MS-ASProtocolVersion not found on request object");
-                }
-                Assert.AreEqual (protocol.AsProtocolVersion, info.GetValue ("MS-ASProtocolVersion", null), "MS-ASProtocolVersion is incorrect");
+                var expectedVersion = protocol.AsProtocolVersion;
+                string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
+                Assert.AreEqual (expectedVersion, protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
 
+                // perform any checks that are specific to a test case
+                requestAction(request);
+        
                 // TODO Check correct Query-params.
                 // TODO Check correct WBXML.
             };
