@@ -207,15 +207,28 @@ namespace Test.iOS
     [TestFixture]
     public class AsHttpOperationTest
     {
+        private class HttpOpEvt : SmEvt
+        {
+            new public enum E : uint
+            {
+                Cancel = (SmEvt.E.Last + 1),
+                Delay,
+                Timeout,
+                Rephrase,
+                Final,
+            };
+        }
+
         [Test]
         public void BasicPhonyPing ()
         {
-            // header settings (get passed into CreateMockResponseWithHeaders ())
+            // header settings
             string contentType = "application/vnd.ms-sync.wbxml";
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = MockData.Wbxml.Length.ToString ();
 
             PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
                 response.Content.Headers.Add ("Content-Type", contentType);
             }, request => {
@@ -224,27 +237,12 @@ namespace Test.iOS
             });
         }
 
-        [Test]
-        public void BadTextHeaderValues ()
-        {
-            // Expected behavior is not crashing
-        }
-
-        [Test]
-        public void LargeNumberHeaderValues ()
-        {
-            // Expected behavior is not crashing
-        }
 
         [Test]
         public void MismatchHeaderSizeValues ()
         {
             /* Response Content-Length header does not match actual content length.
                Should not crash on bad or unexpected values */
-
-            // Setup
-            string contentType = "application/vnd.ms-sync.wbxml";
-            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
             // content length is smaller than header
             int halfLength = MockData.Wbxml.Length / 2;  // make the test length < actual length
@@ -267,6 +265,7 @@ namespace Test.iOS
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
             PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", responseLength);
                 response.Content.Headers.Add ("Content-Type", contentType);
             }, request => {
@@ -283,23 +282,115 @@ namespace Test.iOS
         {
             /* Content-Length is zero --> must not require content type */
             // header settings (get passed into CreateMockResponseWithHeaders ())
-            string contentType = "application/vnd.ms-sync.wbxml";
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = 0.ToString ();
 
             PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
             });
 
             /* Content-Length is missing --> must not require content type */
-            PerformHttpOperationWithSettings (response => {}, request => {
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+            }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
             });
         }
 
-        public void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
+        [Test]
+        public void StatusCodeFound ()
+        {
+            // Status Code -- Found (200)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.Found;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCodeBadRequest ()
+        {
+            // Status Code -- Bad Request (400)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.BadRequest;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCodeUnauthorized ()
+        {
+            // Status Code -- Unauthorized (401)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.Unauthorized;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCodeForbidden ()
+        {
+            // Status Code -- Forbidden (403)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.Forbidden;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCodeNotFound ()
+        {
+            // Status Code -- NotFound (404)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.NotFound;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCode449 ()
+        {
+            // Status Code -- Retry With Status Code (449)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = (System.Net.HttpStatusCode)449;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCodeInternalServerError ()
+        {
+            // Status Code -- Internal Server Error (500)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCode501 ()
+        {
+            // Status Code -- Command Not Implemented (501)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = (System.Net.HttpStatusCode)501;
+            }, request => {
+            });
+        }
+
+        [Test]
+        public void StatusCode507 ()
+        {
+            // Status Code -- Server out of Space (507)
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = (System.Net.HttpStatusCode)507;
+            }, request => {
+            });
+        }
+
+        private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var interlock = new BlockingCollection<bool> ();
             // setup
@@ -314,7 +405,7 @@ namespace Test.iOS
             // create the response, then allow caller to set headers,
             // then return response and assign to mockResponse
             var mockResponse = CreateMockResponse (MockData.Wbxml, response => {
-                provideResponse (response);
+                provideResponse (response);   
             });
 
             // do some common assertions
@@ -370,6 +461,48 @@ namespace Test.iOS
                                     action(setTrueBySuccessEvent);
                                 }, 
                                 State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReProv,
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)HttpOpEvt.E.Rephrase,
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
                         }
                     },
                 }
@@ -393,11 +526,10 @@ namespace Test.iOS
         private HttpResponseMessage CreateMockResponse (byte[] wbxml, Action<HttpResponseMessage> provideResponse)
         {
             var mockResponse = new HttpResponseMessage () {
-                StatusCode = System.Net.HttpStatusCode.OK,
                 Content = new ByteArrayContent (wbxml),
             };
      
-            // allow the caller to modify the mockResponse object (esp. headers)
+            // allow the caller to modify the mockResponse object (esp. headers and StatusCode)
             provideResponse (mockResponse);
 
             return mockResponse;
