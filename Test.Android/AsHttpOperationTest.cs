@@ -215,7 +215,7 @@ namespace Test.iOS
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = MockData.Wbxml.Length.ToString ();
 
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, response => {
+            PerformHttpOperationWithSettings (response => {
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
                 response.Content.Headers.Add ("Content-Type", contentType);
             }, request => {
@@ -239,24 +239,40 @@ namespace Test.iOS
         [Test]
         public void MismatchHeaderSizeValues ()
         {
-            /* Content-Length header does not match actual content length */
+            /* Response Content-Length header does not match actual content length.
+               Should not crash on bad or unexpected values */
 
             // Setup
-            bool setTrueBySuccessEvent = false;
-            NcStateMachine sm = CreatePhonySM (val => {
-                setTrueBySuccessEvent = val;
-            });
-            Assert.False (setTrueBySuccessEvent);
-            sm.PostEvent ((uint)SmEvt.E.Launch, "BasicPhonyPing");
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
             // content length is smaller than header
+            int halfLength = MockData.Wbxml.Length / 2;  // make the test length < actual length
+            string responseLengthHalf = halfLength.ToString ();
+            PerformHttpOperationWithResponseLength (responseLengthHalf);
 
             // content length is 0
+            string responseLengthZero = 0.ToString ();
+            PerformHttpOperationWithResponseLength (responseLengthZero);
 
-            // content length is gigantic number
+            // content length is a large number
+            string responseLengthLarge = 9000.ToString ();
+            PerformHttpOperationWithResponseLength (responseLengthLarge);
+        }
 
-            // actual content length is 0 and header says it is longer than that
+        // Helper function for MismatchHeaderSizeValues Test
+        private void PerformHttpOperationWithResponseLength (string responseLength)
+        {
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
+            PerformHttpOperationWithSettings (response => {
+                response.Content.Headers.Add ("Content-Length", responseLength);
+                response.Content.Headers.Add ("Content-Type", contentType);
+            }, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+                Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
+            });
         }
 
         // Content-Type is not required if Content-Length is missing or zero
@@ -271,18 +287,19 @@ namespace Test.iOS
             string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = 0.ToString ();
 
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, response => {
+            PerformHttpOperationWithSettings (response => {
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
             });
 
             /* Content-Length is missing --> must not require content type */
-            PerformHttpOperationWithSettings (contentType, mockRequestLength, mockResponseLength, response => {}, request => {});
+            PerformHttpOperationWithSettings (response => {}, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+            });
         }
 
-        public void PerformHttpOperationWithSettings (string contentType, string mockRequestLength, string mockResponseLength, 
-            Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
+        public void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var interlock = new BlockingCollection<bool> ();
             // setup
@@ -296,12 +313,12 @@ namespace Test.iOS
 
             // create the response, then allow caller to set headers,
             // then return response and assign to mockResponse
-            var mockResponse = CreateMockResponse (MockData.Wbxml, mockResponseLength, response => {
+            var mockResponse = CreateMockResponse (MockData.Wbxml, response => {
                 provideResponse (response);
             });
 
             // do some common assertions
-            ExamineRequestMessageOnMockClient (MockData.MockUri, contentType, mockRequestLength, request => {
+            ExamineRequestMessageOnMockClient (MockData.MockUri, request => {
                 provideRequest (request);
             });
 
@@ -373,7 +390,7 @@ namespace Test.iOS
             return owner;
         }
 
-        private HttpResponseMessage CreateMockResponse (byte[] wbxml, string mockResponseLength, Action<HttpResponseMessage> provideResponse)
+        private HttpResponseMessage CreateMockResponse (byte[] wbxml, Action<HttpResponseMessage> provideResponse)
         {
             var mockResponse = new HttpResponseMessage () {
                 StatusCode = System.Net.HttpStatusCode.OK,
@@ -386,8 +403,7 @@ namespace Test.iOS
             return mockResponse;
         }
 
-        private void ExamineRequestMessageOnMockClient (Uri mockUri, string contentType, string mockRequestLength, 
-            Action<HttpRequestMessage> requestAction)
+        private void ExamineRequestMessageOnMockClient (Uri mockUri, Action<HttpRequestMessage> requestAction)
         {
             MockHttpClient.ExamineHttpRequestMessage = (request) => {
                 Assert.AreEqual (mockUri, request.RequestUri, "Uri's should match");
