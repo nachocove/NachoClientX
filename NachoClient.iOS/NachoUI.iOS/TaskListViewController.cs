@@ -36,7 +36,7 @@ namespace NachoClient.iOS
                 PerformSegue ("TasksToNachoNow", this);
             };
             // Watch for changes from the back end
-            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_TaskSetChanged == s.Status.SubKind) {
                     RefreshTaskList ();

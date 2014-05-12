@@ -24,7 +24,7 @@ namespace NachoClient.iOS
     // User Interface of the application, as well as listening (and optionally responding) to
     // application events from iOS.
     [Register ("AppDelegate")]
-    public partial class AppDelegate : UIApplicationDelegate, IBackEndOwner
+    public partial class AppDelegate : UIApplicationDelegate
     {
         [DllImport ("libc")]private static extern int sigaction (Signal sig, IntPtr act, IntPtr oact);
 
@@ -38,42 +38,8 @@ namespace NachoClient.iOS
 
         public McAccount Account { get; set; }
         // constants for managing timers
-        private const uint KDefaultDelaySeconds = 10;
-        private const int KDefaultTimeoutSeconds = 25;
         // iOS kills us after 30, so make sure we dont get there
-        private TimeSpan Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
-        private NcTimer TimeoutTimer;
-        // These DisposedXxx are used to avoid eliminating a reference while still in a callback.
-        #pragma warning disable 414
-
-        private NcTimer DisposedTimeoutTimer;
-        #pragma warning restore 414
-        // end timer constants
-        private bool launchBe ()
-        {
-            // Initialize all Xml filters
-            AsXmlFilterSet.Initialize ();
-
-            // There is one back-end object covering all protocols and accounts. It does not go in the DB.
-            // It manages everything while the app is running.
-            var model = NcModel.Instance;
-            var Be = BackEnd.Instance;
-            Be.Owner = this;
-            Be.StatusIndEvent += (object sender, EventArgs e) => {
-                // Watch for changes from the back end
-                var s = (StatusIndEventArgs)e;
-                this.StatusInd (s.Account.Id, s.Status, s.Tokens);
-            };
-            if (0 == model.Db.Table<McAccount> ().Count ()) {
-                Log.Info (Log.LOG_UI, "Empty Table");
-            } else {
-                // FIXME - this is wrong. Need to handle multiple accounts in future
-                this.Account = model.Db.Table<McAccount> ().ElementAt (0);
-            }
-            Be.Start ();
-            NcContactGleaner.Start ();
-            return true;
-        }
+        private const int KDefaultTimeoutSeconds = 25;
 
         private void StartCrashReporting ()
         {
@@ -112,11 +78,22 @@ namespace NachoClient.iOS
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
         {
+            NcApplication.Instance.CredReqCallback = CredReqCallback;
+            NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
+            NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
 
             application.ApplicationIconBadgeNumber = 0;
            
             StartCrashReporting ();
+
+            Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
+
+            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                // Watch for changes from the back end
+                var s = (StatusIndEventArgs)e;
+                this.StatusInd (s.Account.Id, s.Status, s.Tokens);
+            };
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
@@ -137,12 +114,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            // FIXME - should this get started before AlertView above, to ensure the BE is active?
-            launchBe ();
             Log.Info (Log.LOG_UI, "AppDelegate FinishedLaunching done.");
-
             return true;
-
         }
 
         /// <Docs>Reference to the UIApplication that invoked this delegate method.</Docs>
@@ -171,72 +144,56 @@ namespace NachoClient.iOS
         private Action<UIBackgroundFetchResult> CompletionHandler;
         private UIBackgroundFetchResult FetchResult;
 
-        private void StatusHandler (object sender, EventArgs e)
+        private void UnhookFetchStatusHandler ()
+        {
+            NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
+        }
+
+        private void FetchStatusHandler (object sender, EventArgs e)
         {
             // FIXME - need to wait for ALL accounts to complete, not just 1st!
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Log.Info (Log.LOG_UI, "StatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info (Log.LOG_UI, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
                 FetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Log.Info (Log.LOG_UI, "StatusHandler:Info_SyncSucceeded");
+                Log.Info (Log.LOG_UI, "FetchStatusHandler:Info_SyncSucceeded");
                 if (UIBackgroundFetchResult.Failed == FetchResult) {
                     FetchResult = UIBackgroundFetchResult.NoData;
                 }
                 // We rely on the fact that Info_NewUnreadEmailMessageInInbox will
                 // preceed Info_SyncSucceeded.
                 BackEnd.Instance.Stop ();
-                BackEnd.Instance.StatusIndEvent -= StatusHandler;
+                UnhookFetchStatusHandler ();
                 CompletionHandler (FetchResult);
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
-                Log.Info (Log.LOG_UI, "StatusHandler:Error_SyncFailed");
+                Log.Info (Log.LOG_UI, "FetchStatusHandler:Error_SyncFailed");
                 BackEnd.Instance.Stop ();
-                BackEnd.Instance.StatusIndEvent -= StatusHandler;
+                UnhookFetchStatusHandler ();
                 CompletionHandler (FetchResult);
                 break;
-            }
-        }
 
-        private void CancelFetchCallback (object State)
-        {
-            // here's where we check to see if any status
-            // * kill backgroundfetch
-            Log.Info (Log.LOG_UI, "Cancel BackgroundFetch");
-           
-            BackEnd.Instance.StatusIndEvent -= StatusHandler;
-            CompletionHandler (UIBackgroundFetchResult.Failed); // should stop fetch occuring
-            CancelTimeoutTimer ();
-        }
-
-        private void CancelTimeoutTimer ()
-        {
-            if (null != TimeoutTimer) {
-                TimeoutTimer.Dispose ();
-                DisposedTimeoutTimer = TimeoutTimer;
-                TimeoutTimer = null;
+            case NcResult.SubKindEnum.Error_SyncFailedToComplete:
+                Log.Info (Log.LOG_UI, "FetchStatusHandler:Error_SyncFailedToComplete");
+                // BE calls Stop () itself.
+                UnhookFetchStatusHandler ();
+                CompletionHandler (FetchResult);
+                break;
             }
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_UI, "PerformFetch Called");
-            // Set up a Timer to kill BG after 25 Secs
-            TimeoutTimer = new NcTimer (CancelFetchCallback, null, Timeout, System.Threading.Timeout.InfiniteTimeSpan);
             CompletionHandler = completionHandler;
-            // DEBUG - comment this if you want to just return as soon as we enter BG
-            // completion handler call to just immediately return from BG perform fetch call
-            // CompletionHandler (UIBackgroundFetchResult.NewData);
-           
             FetchResult = UIBackgroundFetchResult.Failed;
-            BackEnd.Instance.StatusIndEvent += StatusHandler;
-            Console.WriteLine ("ForceSync START 1");
-            BackEnd.Instance.ForceSync ();
-            Console.WriteLine ("ForceSync END 1");
+            NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
+            NcApplication.Instance.QuickCheck (KDefaultTimeoutSeconds);
         }
         //
         // This method is invoked when the application is about to move from active to inactive state.
@@ -245,9 +202,7 @@ namespace NachoClient.iOS
         //
         public override void OnResignActivation (UIApplication application)
         {
-
             Log.Info (Log.LOG_UI, "App Resign Activation: time remaining: " + application.BackgroundTimeRemaining);
-            BackEnd.Instance.Stop ();
         }
         // This method should be used to release shared resources and it should store the application state.
         // If your application supports background exection this method is called instead of WillTerminate
@@ -255,6 +210,7 @@ namespace NachoClient.iOS
         public override void DidEnterBackground (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Did Enter Background");
+            NcApplication.Instance.Stop ();
             var imageView = new UIImageView (Window.Frame);
             imageView.Tag = 101;    // Give some decent tagvalue or keep a reference of imageView in self
             imageView.BackgroundColor = UIColor.Red;
@@ -265,9 +221,6 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Will Enter Foreground");
-            Console.WriteLine ("ForceSync START 2");
-            BackEnd.Instance.ForceSync ();
-            Console.WriteLine ("ForceSync END 2");
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (101);
             if (null != imageView) {
                 imageView.RemoveFromSuperview ();
@@ -277,11 +230,14 @@ namespace NachoClient.iOS
         public override void OnActivated (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Did Become Active");
+            UnhookFetchStatusHandler ();
+            NcApplication.Instance.Start ();
         }
         // This method is called when the application is about to terminate. Save data, if needed.
         public override void WillTerminate (UIApplication application)
         {
             Log.Info (Log.LOG_UI, "App Will Terminate");
+            NcApplication.Instance.Stop ();
         }
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
@@ -297,7 +253,6 @@ namespace NachoClient.iOS
         public void StatusInd (int accountId, NcResult status, string[] tokens)
         {
             {
-
                 //Assert MCAccount != null;
                 // with code change - what is  corect access to DB?
                 UILocalNotification badgeNotification;
@@ -352,125 +307,111 @@ namespace NachoClient.iOS
             }
         }
 
-        public void CredReq (int accountId)
+        public void CredReqCallback (int accountId)
         {
             var Mo = NcModel.Instance;
             var Be = BackEnd.Instance;
 
-            Log.Info (Log.LOG_UI, "Asking for Credentials");
-            InvokeOnMainThread (delegate {
-                var credView = new UIAlertView ();
-                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-                var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
+            var credView = new UIAlertView ();
+            var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
+            var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
-                credView.Title = "Need to update Login Credentials";
-                credView.AddButton ("Update");
-                credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
-                credView.Show ();
-          
-                credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    var parent = (UIAlertView)sender;
-                    // FIXME - need  to display the login id they used in first login attempt
-                    var tmplog = parent.GetTextField (0).Text; // login id
-                    var tmppwd = parent.GetTextField (1).Text; // password
-                    if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
-                        tmpCred.Username = (string)tmplog;
-                        tmpCred.Password = (string)tmppwd;
-                        Mo.Db.Update (tmpCred); //  update with new username/password
+            credView.Title = "Need to update Login Credentials";
+            credView.AddButton ("Update");
+            credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
+            credView.Show ();
 
-                        Be.CredResp (accountId);
-                        credView.ResignFirstResponder ();
-                    } else {
-                        var DoitYadummy = new UIAlertView ();
-                        DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                        DoitYadummy.AddButton ("Go Back");
-                        DoitYadummy.AddButton ("Exit - Do Not Care");
-                        DoitYadummy.CancelButtonIndex = 1;
-                        DoitYadummy.Show ();
-                        DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
+            credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                var parent = (UIAlertView)sender;
+                // FIXME - need  to display the login id they used in first login attempt
+                var tmplog = parent.GetTextField (0).Text; // login id
+                var tmppwd = parent.GetTextField (1).Text; // password
+                if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
+                    tmpCred.Username = (string)tmplog;
+                    tmpCred.Password = (string)tmppwd;
+                    Mo.Db.Update (tmpCred); //  update with new username/password
 
-                            if (e.ButtonIndex == 0) { // I want to actually enter login data
-                                CredReq (accountId);    // call to get credentials
-                            }
-                            ;
+                    Be.CredResp (accountId);
+                    credView.ResignFirstResponder ();
+                } else {
+                    var DoitYadummy = new UIAlertView ();
+                    DoitYadummy.Title = "You need to enter fields for Login ID and Password";
+                    DoitYadummy.AddButton ("Go Back");
+                    DoitYadummy.AddButton ("Exit - Do Not Care");
+                    DoitYadummy.CancelButtonIndex = 1;
+                    DoitYadummy.Show ();
+                    DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
 
-                            DoitYadummy.ResignFirstResponder ();
-                           
-                        };
-                    }
-                    ;
-                    credView.ResignFirstResponder (); // might want this moved
-                };
-            }); // end invokeonMain
+                        if (e.ButtonIndex == 0) { // I want to actually enter login data
+                            CredReqCallback (accountId);    // call to get credentials
+                        }
+
+                        DoitYadummy.ResignFirstResponder ();
+
+                    };
+                }
+                ;
+                credView.ResignFirstResponder (); // might want this moved
+            };
         }
 
-        public void ServConfReq (int accountId)
+        public void ServConfReqCallback (int accountId)
         {
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
             var Mo = NcModel.Instance;
             var Be = BackEnd.Instance;
 
-            Log.Info (Log.LOG_UI, "Asking for Config Info");
-            InvokeOnMainThread (delegate {  // lock on main thread
-                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-                var tmpServer = Mo.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
+            var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
+            var tmpServer = Mo.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
 
-                var credView = new UIAlertView ();
+            var credView = new UIAlertView ();
 
-                credView.Title = "Need Correct Server Name";
-                credView.AddButton ("Update");
-                credView.AddButton ("Cancel");
-                credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-                credView.Show ();
-                credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                    var parent = (UIAlertView)a;
-                    if (b.ButtonIndex == 0) {
-                        var txt = parent.GetTextField (0).Text;
-                        // FIXME need to scan string to make sure it is of right format
-                        if (txt != null) {
-                            Log.Info (Log.LOG_UI, " New Server Name = " + txt);
-                            tmpServer.Host = txt;
-                            tmpServer.Update ();
-                            Be.ServerConfResp (accountId, false); 
-                            credView.ResignFirstResponder ();
+            credView.Title = "Need Correct Server Name";
+            credView.AddButton ("Update");
+            credView.AddButton ("Cancel");
+            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
+            credView.Show ();
+            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
+                var parent = (UIAlertView)a;
+                if (b.ButtonIndex == 0) {
+                    var txt = parent.GetTextField (0).Text;
+                    // FIXME need to scan string to make sure it is of right format
+                    if (txt != null) {
+                        Log.Info (Log.LOG_UI, " New Server Name = " + txt);
+                        tmpServer.Host = txt;
+                        tmpServer.Update ();
+                        Be.ServerConfResp (accountId, false); 
+                        credView.ResignFirstResponder ();
+                    }
+                    ;
+
+                }
+                ;
+
+                if (b.ButtonIndex == 1) {
+                    var gonnaquit = new UIAlertView ();
+                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
+
+                    gonnaquit.AddButton ("Ok"); // continue exiting
+                    gonnaquit.AddButton ("Go Back"); // enter info
+                    gonnaquit.CancelButtonIndex = 1;
+                    gonnaquit.Show ();
+                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
+                        if (e.ButtonIndex == 1) {
+                            ServConfReqCallback (accountId); // go again
                         }
-                        ;
-
-                    }
-                    ;
-                  
-                    if (b.ButtonIndex == 1) {
-                        var gonnaquit = new UIAlertView ();
-                        gonnaquit.Title = "Are You Sure? \n No account information will be updated";
-
-                        gonnaquit.AddButton ("Ok"); // continue exiting
-                        gonnaquit.AddButton ("Go Back"); // enter info
-                        gonnaquit.CancelButtonIndex = 1;
-                        gonnaquit.Show ();
-                        gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                            if (e.ButtonIndex == 1) {
-                                ServConfReq (accountId); // go again
-                            }
-                            gonnaquit.ResignFirstResponder ();
-                        };
-                    }
-                    ;
-                };
-            }); // end invoke MainThread
+                        gonnaquit.ResignFirstResponder ();
+                    };
+                }
+                ;
+            };
         }
 
-        public void CertAskReq (int accountId, X509Certificate2 certificate)
+        public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
-            var Be = BackEnd.Instance;
-
             // UI FIXME - ask user and call CertAskResp async'ly.
-            Be.CertAskResp (accountId, true);
-        }
-
-        public void SearchContactsResp (int accountId, string prefix, string token)
-        {
-            // FIXME.
+            NcApplication.Instance.CertAskResp (accountId, true);
         }
     }
 }

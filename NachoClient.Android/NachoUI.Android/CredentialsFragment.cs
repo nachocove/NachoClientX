@@ -47,8 +47,7 @@ namespace NachoClient.AndroidClient
                 Account.ProtocolStateId = protocolState.Id;
                 Account.PolicyId = policy.Id;
                 NcModel.Instance.Db.Insert (Account);
-                NcApplication.Instance.Account = Account;
-                NcApplication.Instance.LaunchBackEnd();
+                NcApplication.Instance.Start();
                 // Clean up UI
                 Activity.SupportFragmentManager.BeginTransaction().Remove(this).Commit();
             };

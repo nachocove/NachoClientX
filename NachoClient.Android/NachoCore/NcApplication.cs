@@ -4,16 +4,54 @@ using System;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Wbxml;
+
 using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore
 {
     public sealed class NcApplication : IBackEndOwner
     {
-        public McAccount Account { get; set; }
+        public delegate void CredReqCallbackDele (int accountId);
 
+        /// <summary>
+        /// CredRequest: When called, the callee must gather the credential for the specified 
+        /// account and add/update it to/in the DB. The callee must then update
+        /// the account record. The BE will act based on the update event for the
+        /// account record.
+        /// </summary>
+        public CredReqCallbackDele CredReqCallback { set; get; }
+
+        public delegate void ServConfReqCallbackDele (int accountId);
+
+        /// <summary>
+        /// ServConfRequest: When called the callee must gather the server information for the 
+        /// specified account and nd add/update it to/in the DB. The callee must then update
+        /// the account record. The BE will act based on the update event for the
+        /// account record.                
+        /// </summary>
+        public ServConfReqCallbackDele ServConfReqCallback { set; get; }
+
+        public delegate void CertAskReqCallbackDele (int accountId, X509Certificate2 certificate);
+
+        /// <summary>
+        /// CertAskReq: When called the callee must ask the user whether the passed server cert can
+        /// be trusted for the specified account. 
+        /// </summary>
+        public CertAskReqCallbackDele CertAskReqCallback { set; get; }
+
+        public delegate void SearchContactsRespCallbackDele (int accountId, string prefix, string token);
+
+        public SearchContactsRespCallbackDele SearchContactsRespCallback { set; get; }
+        // event can be used to register for status indications.
+        public event EventHandler StatusIndEvent;
+        // method can be used to post to StatusIndEvent from outside NcApplication.
         private NcApplication ()
         {
+            // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
+            NcModel.Instance.Nop ();
+            AsXmlFilterSet.Initialize ();
+            BackEnd.Instance.Owner = this;
         }
 
         private static volatile NcApplication instance;
@@ -32,64 +70,77 @@ namespace NachoCore
             }
         }
 
-        public void LaunchBackEnd ()
+        public void Nop ()
         {
-            BackEnd.Instance.Owner = this;
+        }
+
+        public void Start ()
+        {
+            // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();
         }
 
-        public void StatusInd (NcResult status)
+        public void Stop ()
         {
-            // Ignore, we'll use events when we care.
+            // THIS IS THE BEST PLADE TO PUT Stop FUNCTIONS - WHEN SERVICE NEEDS TO BE SHUTDOWN BEFORE SLEEP/EXIT.
+            BackEnd.Instance.Stop ();
+            NcContactGleaner.Stop ();
         }
 
-        public void StatusInd (int accountId, NcResult status)
+        public void QuickCheck (uint seconds)
         {
-            // Ignore, we'll use events when we care.
+            // Typically called after Stop(). Cause accounts to do a quick check for new messages.
+            // If start is called while wating for the QuickCheck, the system keeps going after the QuickCheck completes.
+            BackEnd.Instance.QuickCheck (seconds);
         }
 
-        public void StatusInd (int accountId, NcResult status, string[] tokens)
+        public void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
-            // Ignore, we'll use events when we care.
+            if (null != StatusIndEvent) {
+                StatusIndEvent.Invoke (this, e);
+            }
         }
-
-        /// <summary>
-        /// CredRequest: When called, the callee must gather the credential for the specified 
-        /// account and add/update it to/in the DB. The callee must then update
-        /// the account record. The BE will act based on the update event for the
-        /// account record.
-        /// </summary>
+        // IBackEndOwner methods below.
         public void CredReq (int accountId)
         {
-            Console.WriteLine ("CredReq");
-            BackEnd.Instance.CredResp (Account.Id);
+            if (null != CredReqCallback) {
+                CredReqCallback (accountId);
+            } else {
+                Log.Error (Log.LOG_UI, "Nothing registered for NcApplication CredReqCallback.");
+            }
         }
 
-        /// <summary>
-        /// ServConfRequest: When called the callee must gather the server information for the 
-        /// specified account and nd add/update it to/in the DB. The callee must then update
-        /// the account record. The BE will act based on the update event for the
-        /// account record.                
-        /// </summary>
         public void ServConfReq (int accountId)
         {
-            Console.WriteLine ("ServConfReq");
-            BackEnd.Instance.ServerConfResp (Account.Id, false); 
+            if (null != ServConfReqCallback) {
+                ServConfReqCallback (accountId);
+            } else {
+                Log.Error (Log.LOG_UI, "Nothing registered for NcApplication ServConfReqCallback.");
+            }
         }
 
-        /// <summary>
-        /// CertAskReq: When called the callee must ask the user whether the passed server cert can
-        /// be trusted for the specified account. 
-        /// </summary>
         public void CertAskReq (int accountId, X509Certificate2 certificate)
         {
-            Console.WriteLine ("CertAskReq");
-            BackEnd.Instance.CertAskResp (accountId, true);
+            if (null != CertAskReqCallback) {
+                CertAskReqCallback (accountId, certificate);
+            } else {
+                Log.Error (Log.LOG_UI, "Nothing registered for NcApplication CertAskReqCallback.");
+            }
         }
 
         public void SearchContactsResp (int accountId, string prefix, string token)
         {
+            if (null != SearchContactsRespCallback) {
+                SearchContactsRespCallback (accountId, prefix, token);
+            } else {
+                Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SearchContactsRespCallback.");
+            }
+        }
+
+        public void CertAskResp (int accountId, bool isOkay)
+        {
+            BackEnd.Instance.CertAskResp (accountId, isOkay);
         }
     }
 }

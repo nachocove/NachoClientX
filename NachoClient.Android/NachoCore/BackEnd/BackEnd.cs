@@ -58,12 +58,8 @@ namespace NachoCore
             WillDelete,
         };
 
-        public event EventHandler StatusIndEvent;
-
-
-
-
         private List<ProtoControl> Services;
+        private NcTimer QuickTimeoutTimer;
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -86,6 +82,10 @@ namespace NachoCore
 
         public void Start ()
         {
+            if (null != QuickTimeoutTimer) {
+                QuickTimeoutTimer.Dispose ();
+                QuickTimeoutTimer = null;
+            }
             // The callee does Task.Run.
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
@@ -95,6 +95,10 @@ namespace NachoCore
 
         public void Stop ()
         {
+            if (null != QuickTimeoutTimer) {
+                QuickTimeoutTimer.Dispose ();
+                QuickTimeoutTimer = null;
+            }
             // Don't Task.Run.
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
@@ -108,6 +112,32 @@ namespace NachoCore
             Task.Run (delegate {
                 service.ForceStop ();
             });
+        }
+
+        public void QuickCheck (uint seconds)
+        {
+            var accounts = NcModel.Instance.Db.Table<McAccount> ();
+
+            QuickTimeoutTimer = new NcTimer (
+                (object state) => { 
+                    var result = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete);
+                    foreach (var account in accounts) {
+                        // TODO: need to report account-by-account. Some accounts may have
+                        // returned result already. need a scoreboard.
+                        InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                            Account = account,
+                            Status = result,
+                        });
+                        Stop (account.Id);
+                    }
+                }, 
+                null, 
+                new TimeSpan (0, 0, (int)seconds),
+                System.Threading.Timeout.InfiniteTimeSpan);
+
+            foreach (var account in accounts) {
+                ForceSync (account.Id);
+            }
         }
 
         public void Start (int accountId)
@@ -376,36 +406,26 @@ namespace NachoCore
         //
         private void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
-            if (null != StatusIndEvent) {
-                InvokeOnUIThread.Instance.Invoke (delegate() {
-                    StatusIndEvent.Invoke (this, e);
-                });
-            }
+            InvokeOnUIThread.Instance.Invoke (delegate() {
+                NcApplication.Instance.InvokeStatusIndEvent (e);
+            });
         }
 
         public void StatusInd (ProtoControl sender, NcResult status)
         {
-            try {
-                InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Account = sender.Account,
-                    Status = status,
-                });
-            } catch (Exception e) {
-                Log.Error (Log.LOG_AS, "Exception in status recipient: {0}", e.ToString ());
-            }
+            InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Account = sender.Account,
+                Status = status,
+            });
         }
 
         public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
-            try {
-                InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Account = sender.Account,
-                    Status = status,
-                    Tokens = tokens,
-                });
-            } catch (Exception e) {
-                Log.Error (Log.LOG_AS, "Exception in status recipient: {0}", e.ToString ());
-            }
+            InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = sender.Account,
+                Status = status,
+                Tokens = tokens,
+            });
         }
 
         public void CredReq (ProtoControl sender)

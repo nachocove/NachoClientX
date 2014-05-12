@@ -164,7 +164,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            BackEnd.Instance.StatusIndEvent += StatusIndicatorCallback;
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             ReloadDataMaintainingPosition (false);
 
@@ -184,7 +184,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            BackEnd.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

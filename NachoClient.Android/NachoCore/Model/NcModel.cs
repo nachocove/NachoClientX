@@ -69,6 +69,10 @@ namespace NachoCore.Model
                 return instance; 
             }
         }
+
+        public void Nop ()
+        {
+        }
     }
 }
 

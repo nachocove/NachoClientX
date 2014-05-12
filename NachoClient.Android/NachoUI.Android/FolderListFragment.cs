@@ -30,7 +30,7 @@ namespace NachoClient.AndroidClient
             listview.Adapter = adapter;
 
             // Watch for changes from the back end
-            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
                     folders.Refresh();

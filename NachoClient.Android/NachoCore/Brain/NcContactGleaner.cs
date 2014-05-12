@@ -16,7 +16,7 @@ namespace NachoCore.Brain
     {
         private const uint MaxSaneAddressLength = 40;
         #pragma warning disable 414
-        private static Timer Invoker;
+        private static NcTimer Invoker;
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
@@ -29,7 +29,14 @@ namespace NachoCore.Brain
 
         public static void Start ()
         {
-            Invoker = new Timer (InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 1));
+            Invoker = new NcTimer (InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 1));
+            Invoker.Stfu = true;
+        }
+
+        public static void Stop ()
+        {
+            Invoker.Dispose ();
+            Invoker = null;
         }
 
         public NcContactGleaner ()

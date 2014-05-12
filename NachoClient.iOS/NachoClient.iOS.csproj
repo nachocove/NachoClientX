@@ -764,6 +764,9 @@
       <Link>NachoCore\Adapters\NcCalendarManager.cs</Link>
     </Compile>
     <Compile Include="NachoCore\Utils\CalendarHelper.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
+      <Link>NachoCore\NcApplication.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

@@ -32,8 +32,6 @@ namespace NachoCore
         void CredResp (int accountId);
         // cancel command/request associated with this token (if possible).
         void Cancel (int accountId, string token);
-        // event can be used to register for status indications.
-        event EventHandler StatusIndEvent;
         // user-block issue is resolved, try again.
         void UnblockPendingCmd (int accountId, int pendingId);
         // accept the fail. delete the pending obj.
@@ -94,10 +92,6 @@ namespace NachoCore
         string MoveFolderCmd (int accountId, int folderId, int destFolderId);
         // rename a folder.
         string RenameFolderCmd (int accountId, int folderId, string displayName);
-        //
-        // in the BE for now, but moving to middleware/app-land someday:
-        //
-
     }
 }
 

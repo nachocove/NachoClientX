@@ -104,7 +104,7 @@ namespace NachoClient.AndroidClient
             drawer.SetDrawerListener (drawerToggle);
 
             // Watch for changes from the back end
-            BackEnd.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
                     PopulateSidebarMenu ();
@@ -117,11 +117,10 @@ namespace NachoClient.AndroidClient
                     .Replace (Resource.Id.content_frame, fragment)
                     .Commit ();
             } else {
-                NcApplication.Instance.Account = NcModel.Instance.Db.Table<McAccount> ().ElementAt (0);
                 if (null == savedInstanceState) {
                     ItemSelected (0);
                 }
-                NcApplication.Instance.LaunchBackEnd ();
+                NcApplication.Instance.Start ();
             }
 
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);
