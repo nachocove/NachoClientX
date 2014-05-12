@@ -82,18 +82,7 @@ namespace NachoCore.Utils
             Log.Info ("{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
         }
 
-        static public string FetchSomeText (string body)
-        {
-            if (null == body) {
-                return null;
-            }
-            var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
-            var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-            var message = bodyParser.ParseMessage ();
-            return FetchSomeText (message.Body);
-        }
-
-        static public string FetchSomeText (MimeEntity entity)
+        static protected TextPart FindTextPart (MimeEntity entity)
         {
             if (null == entity) {
                 return null;
@@ -101,7 +90,7 @@ namespace NachoCore.Utils
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
                 foreach (var subpart in multipart) {
-                    var s = FetchSomeText (subpart);
+                    var s = FindTextPart (subpart);
                     if (null != s) {
                         return s;
                     }
@@ -114,40 +103,61 @@ namespace NachoCore.Utils
                 if (part is TextPart) {
                     var text = (TextPart)part;
                     if (text.ContentType.Matches ("text", "plain")) {
-                        return text.Text;
+                        return text;
                     }
                 }
             }
             return null;
         }
 
-        static public string CreateSummary (string body)
+        /// <summary>
+        /// Return a text summary of the message.
+        /// </summary>
+        /// <returns>The summary.</returns>
+        /// <param name="message">Message.</param>
+        static public string ExtractSummary (McEmailMessage message)
         {
-            var text = FetchSomeText (body);
-            if (null == text) {
-                return " ";
-            } else {
-                return text.Substring (0, Math.Min (text.Length, 180));
+            var path = message.GetBodyPath ();
+            if (null == path) {
+                return null;
+            }
+            using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
+                var mimeParser = new MimeParser (fileStream, true);
+                var mimeMessage = mimeParser.ParseMessage ();
+                return ExtractSummary (mimeMessage);
             }
         }
 
-        static public string CreateSummary (MimeMessage message)
+        static public string ExtractSummary (MimeMessage mimeMessage)
         {
-            NachoAssert.True (null != message);
-            var text = FetchSomeText (message.Body);
-            if (null == text) {
-                return " ";
-            } else {
-                return text.Substring (0, Math.Min (text.Length, 180));
+            var textPart = FindTextPart (mimeMessage.Body);
+            if (null == textPart) {
+                return null;
             }
+            if (null == textPart.Text) {
+                return null;
+            }
+            return textPart.Text.Substring (0, Math.Min (textPart.Text.Length, 1000));
         }
 
-        static public void UpdateDbWithSummary (McEmailMessage message)
+        static public string ExtractTextPart (McEmailMessage message)
         {
-            var body = message.GetBody ();
-            var summary = MimeHelpers.CreateSummary (body);
-            message.Summary = summary;
-            NcModel.Instance.Db.Update (message);
+            var path = message.GetBodyPath ();
+            if (null == path) {
+                return null;
+            }
+            using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
+                var mimeParser = new MimeParser (fileStream, true);
+                var mimeMessage = mimeParser.ParseMessage ();
+                var textPart = FindTextPart (mimeMessage.Body);
+                if (null == textPart) {
+                    return null;
+                }
+                if (null == textPart.Text) {
+                    return null;
+                }
+                return textPart.Text;
+            }
         }
 
         static protected string CommaSeparatedList (InternetAddressList addresses)
@@ -155,7 +165,7 @@ namespace NachoCore.Utils
             var list = new List<string> ();
 
             foreach (var a in addresses) {
-                list.Add (a.ToString());
+                list.Add (a.ToString ());
             }
             return String.Join (",", list);
         }

@@ -336,18 +336,14 @@ namespace NachoClient.iOS
             }
             // TODO: Setup message id, etc etc.
             // Handle body
-            var body = ActionMessage.GetBody ();
-            if (null == body) {
-                return;
-            }
             if (Action.Equals (Forward)) {
                 // TODO: Compose needs to be smart about MIME messages.
-                string fwdText = MimeHelpers.FetchSomeText (body);
+                string fwdText = MimeHelpers.ExtractTextPart(ActionMessage);
                 string fwdquotedText = QuoteForReply (fwdText);
                 bodyElement = new MultilineEntryElement ("Enter your message...", fwdquotedText, 120.0f, true);
                 return;
             }
-            string someText = MimeHelpers.FetchSomeText (body);
+            string someText = MimeHelpers.ExtractTextPart(ActionMessage);
             string quotedText = QuoteForReply (someText);
             bodyElement = new MultilineEntryElement ("Enter your message...", quotedText, 120.0f, true);
         }

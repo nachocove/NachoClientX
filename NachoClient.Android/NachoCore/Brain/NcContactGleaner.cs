@@ -51,127 +51,122 @@ namespace NachoCore.Brain
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
-            if (0 == emailMessage.BodyId) {
+            var path = emailMessage.GetBodyPath ();
+            if (null == path) {
                 MarkAsGleaned (emailMessage);
                 return;
             }
-            MimeMessage mimeMsg;
-            try {
-                string body = emailMessage.GetBody ();
-                if (null == body) {
+            using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
+                MimeMessage mimeMsg;
+                try {
+                    var mimeParser = new MimeParser (fileStream, true);
+                    mimeMsg = mimeParser.ParseMessage ();
+                } catch (Exception e) {
+                    // TODO: Find root cause
+                    MarkAsGleaned (emailMessage);
+                    NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
+                    return;
+                }
+                var gleanedFolder = McFolder.GetGleanedFolder (accountId);
+                if (null == gleanedFolder) {
+                    NachoCore.Utils.Log.Error ("GleanContacts gleandedFolder is null for account id {0}", accountId);
                     MarkAsGleaned (emailMessage);
                     return;
                 }
-                using (var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body))) {
-                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                    mimeMsg = bodyParser.ParseMessage ();
+                List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
+                if (null != mimeMsg.To) {
+                    addrsLists.Add (mimeMsg.To);
                 }
-            } catch (Exception e) {
-                // TODO: Find root cause
-                MarkAsGleaned (emailMessage);
-                NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
-                return;
-            }
-            var gleanedFolder = McFolder.GetGleanedFolder (accountId);
-            if (null == gleanedFolder) {
-                NachoCore.Utils.Log.Error ("GleanContacts gleandedFolder is null for account id {0}", accountId);
-                MarkAsGleaned (emailMessage);
-                return;
-            }
-            List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
-            if (null != mimeMsg.To) {
-                addrsLists.Add (mimeMsg.To);
-            }
-            if (null != mimeMsg.From) {
-                addrsLists.Add (mimeMsg.From);
-            }
-            if (null != mimeMsg.Cc) {
-                addrsLists.Add (mimeMsg.Cc);
-            }
-            if (null != mimeMsg.Bcc) {
-                addrsLists.Add (mimeMsg.Bcc);
-            }
-            if (null != mimeMsg.ReplyTo) {
-                addrsLists.Add (mimeMsg.ReplyTo);
-            }
-            if (null != mimeMsg.Sender) {
-                var senderAsList = new InternetAddressList ();
-                senderAsList.Add (mimeMsg.Sender);
-                addrsLists.Add (senderAsList);
-            }
-            if (null != mimeMsg.MessageId) {
-                emailMessage.MessageID = mimeMsg.MessageId;
-            }
-            if (null != mimeMsg.InReplyTo) {
-                emailMessage.InReplyTo = mimeMsg.InReplyTo;
-            }
-            if (null != mimeMsg.References) {
-                emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
-            }
-            foreach (var addrsList in addrsLists) {
-                foreach (var addr in addrsList) {
-                    if (addr is MailboxAddress) {
-                        MailboxAddress mbAddr = addr as MailboxAddress;
-                        var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
-                        if (0 == contacts.Count &&
-                            MaxSaneAddressLength >= mbAddr.Address.Length &&
-                            !mbAddr.Address.Contains ("noreply") &&
-                            !mbAddr.Address.Contains ("no-reply") &&
-                            !mbAddr.Address.Contains ("donotreply")) {
-                            // Create a new gleaned contact.
-                            var contact = new McContact () {
-                                AccountId = accountId,
-                                Source = McItem.ItemSource.Internal,
-                                RefCount = 1,
-                            };
+                if (null != mimeMsg.From) {
+                    addrsLists.Add (mimeMsg.From);
+                }
+                if (null != mimeMsg.Cc) {
+                    addrsLists.Add (mimeMsg.Cc);
+                }
+                if (null != mimeMsg.Bcc) {
+                    addrsLists.Add (mimeMsg.Bcc);
+                }
+                if (null != mimeMsg.ReplyTo) {
+                    addrsLists.Add (mimeMsg.ReplyTo);
+                }
+                if (null != mimeMsg.Sender) {
+                    var senderAsList = new InternetAddressList ();
+                    senderAsList.Add (mimeMsg.Sender);
+                    addrsLists.Add (senderAsList);
+                }
+                if (null != mimeMsg.MessageId) {
+                    emailMessage.MessageID = mimeMsg.MessageId;
+                }
+                if (null != mimeMsg.InReplyTo) {
+                    emailMessage.InReplyTo = mimeMsg.InReplyTo;
+                }
+                if (null != mimeMsg.References) {
+                    emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
+                }
+                if (null == emailMessage.Summary) {
+                    emailMessage.Summary = MimeHelpers.ExtractSummary (mimeMsg);
+                }
+                foreach (var addrsList in addrsLists) {
+                    foreach (var addr in addrsList) {
+                        if (addr is MailboxAddress) {
+                            MailboxAddress mbAddr = addr as MailboxAddress;
+                            var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
+                            if (0 == contacts.Count &&
+                                MaxSaneAddressLength >= mbAddr.Address.Length &&
+                                !mbAddr.Address.Contains ("noreply") &&
+                                !mbAddr.Address.Contains ("no-reply") &&
+                                !mbAddr.Address.Contains ("donotreply")) {
+                                // Create a new gleaned contact.
+                                var contact = new McContact () {
+                                    AccountId = accountId,
+                                    Source = McItem.ItemSource.Internal,
+                                    RefCount = 1,
+                                };
 
-                            // Try to parse the display name into first / middle / last name
-                            string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
-                            switch (items.Length) {
-                            case 2:
-                                if (0 < mbAddr.Name.IndexOf (',')) {
-                                    // Last name, First name
-                                    contact.LastName = items [0];
-                                    contact.FirstName = items [1];
-                                } else {
-                                    // First name, Last name
-                                    contact.FirstName = items [0];
-                                    contact.LastName = items [1];
+                                // Try to parse the display name into first / middle / last name
+                                string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
+                                switch (items.Length) {
+                                case 2:
+                                    if (0 < mbAddr.Name.IndexOf (',')) {
+                                        // Last name, First name
+                                        contact.LastName = items [0];
+                                        contact.FirstName = items [1];
+                                    } else {
+                                        // First name, Last name
+                                        contact.FirstName = items [0];
+                                        contact.LastName = items [1];
+                                    }
+                                    break;
+                                case 3:
+                                    if (-1 == mbAddr.Name.IndexOf (',')) {
+                                        contact.FirstName = items [0];
+                                        contact.MiddleName = items [1];
+                                        contact.LastName = items [2];
+                                    }
+                                    break;
                                 }
-                                break;
-                            case 3:
-                                if (-1 == mbAddr.Name.IndexOf (',')) {
-                                    contact.FirstName = items [0];
-                                    contact.MiddleName = items [1];
-                                    contact.LastName = items [2];
+
+                                NcModel.Instance.Db.Insert (contact);
+                                gleanedFolder.Link (contact);
+
+                                var strattr = new McContactStringAttribute () {
+                                    Name = "Email1Address",
+                                    Value = mbAddr.Address,
+                                    Type = McContactStringType.EmailAddress,
+                                    ContactId = contact.Id,
+                                };
+                                NcModel.Instance.Db.Insert (strattr);
+                            } else {
+                                // Update the refcount on the existing contact.
+                                foreach (var contact in contacts) {
+                                    // TODO: need update count using timestamp check.
+                                    contact.RefCount += 1;
+                                    NcModel.Instance.Db.Update (contact);
                                 }
-                                break;
-                            }
-
-                            NcModel.Instance.Db.Insert (contact);
-                            gleanedFolder.Link (contact);
-
-                            var strattr = new McContactStringAttribute () {
-                                Name = "Email1Address",
-                                Value = mbAddr.Address,
-                                Type = McContactStringType.EmailAddress,
-                                ContactId = contact.Id,
-                            };
-                            NcModel.Instance.Db.Insert (strattr);
-                        } else {
-                            // Update the refcount on the existing contact.
-                            foreach (var contact in contacts) {
-                                // TODO: need update count using timestamp check.
-                                contact.RefCount += 1;
-                                NcModel.Instance.Db.Update (contact);
                             }
                         }
                     }
                 }
-            }
-            // Create summary if needed
-            if (null == emailMessage.Summary) {
-                emailMessage.Summary = MimeHelpers.CreateSummary (mimeMsg);
             }
             MarkAsGleaned (emailMessage);
         }

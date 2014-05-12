@@ -373,7 +373,7 @@ namespace NachoClient.iOS
             protected UIView EmailView (McEmailMessage m)
             {
                 if (null == m.Summary) {
-                    MimeHelpers.UpdateDbWithSummary (m);
+                    m.Summarize ();
                 }
 
                 var root = new RootElement (m.Subject);

@@ -199,6 +199,15 @@ namespace NachoCore.Model
             }
         }
 
+        public void Summarize()
+        {
+            Summary = MimeHelpers.ExtractSummary (this);
+            if(null == Summary) {
+                Summary = " ";
+            }
+            this.Update ();
+        }
+ 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (

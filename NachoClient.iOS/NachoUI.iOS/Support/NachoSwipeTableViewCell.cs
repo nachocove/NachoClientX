@@ -128,7 +128,7 @@ namespace NachoClient.iOS
             var sender = message.From;
             var subject = message.Subject;
             if (null == message.Summary) {
-                MimeHelpers.UpdateDbWithSummary (message);
+                message.Summarize ();
             }
             NachoAssert.True (null != message.Summary);
             var summary = message.Summary;
