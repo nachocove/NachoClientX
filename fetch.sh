@@ -20,6 +20,7 @@ function gitUpdate()
     popd
 }
 
+gitUpdate Parse
 gitUpdate Crashlytics
 gitUpdate Reachability
 gitUpdate registered-domain-libs
