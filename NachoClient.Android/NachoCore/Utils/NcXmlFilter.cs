@@ -261,7 +261,9 @@ namespace NachoCore.Wbxml
 
                     // Look for the filter node for this element
                     if (null != current.ParentNode) {
+                        #pragma warning disable 219
                         XNode origNode = current.ParentNode; // for debugging
+                        #pragma warning restore 219
                         current.ParentNode = current.ParentNode.FindChildNode (element);
                         if (null == current.ParentNode) {
                             Log.Warn ("Unknown element tag {0}", element.Name);
