@@ -242,6 +242,8 @@
     <Compile Include="NachoCore\Model\NcModel.cs" />
     <Compile Include="NachoCore\Utils\NcEmailAddress.cs" />
     <Compile Include="NachoCore\Adapters\NcCalendarManager.cs" />
+    <Compile Include="NachoCore\Utils\Telemetry.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryParse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
