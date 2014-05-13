@@ -8,7 +8,7 @@ using NachoPlatform;
 
 namespace NachoCore.Utils
 {
-    public class NcCommStatus
+    public class NcCommStatus : INcCommStatus
     {
         private List<ServerTracker> Trackers;
 
@@ -37,7 +37,6 @@ namespace NachoCore.Utils
             Trackers = new List<ServerTracker> ();
             Status = NetStatusStatusEnum.Up;
             Speed = NetStatusSpeedEnum.WiFi;
-            UserInterventionIsRequired = false;
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
             TrackerMonitorTimer = new NcTimer (status => {
@@ -65,7 +64,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        private void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
             UpdateState (e.Status, e.Speed);
         }
@@ -80,10 +79,6 @@ namespace NachoCore.Utils
         public NetStatusStatusEnum Status { get; set; }
 
         public NetStatusSpeedEnum Speed { get; set; }
-
-        public bool UserInterventionIsRequired { get; set; }
-
-        public delegate void NcCommStatusServerEventHandler (Object sender, NcCommStatusServerEventArgs e);
 
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
 

@@ -92,10 +92,13 @@ namespace NachoCore.ActiveSync
         private Stream ContentData;
         private string ContentType;
         // Properties.
+        // Used for mocking.
         public Type HttpClientType { set; get; }
-
+        // User for mocking.
+        public INcCommStatus NcCommStatusSingleton { set; get; }
+        // Timer for timing out a single access.
         public TimeSpan Timeout { set; get; }
-
+        // Numer of times we'll try again (remaining).
         public uint TriesLeft { set; get; }
 
         public bool Allow451Follow { set; get; }
@@ -110,6 +113,7 @@ namespace NachoCore.ActiveSync
             OldCrap = new List<object> ();
             NcCapture.AddKind (KToXML);
             HttpClientType = typeof(MockableHttpClient);
+            NcCommStatusSingleton = NcCommStatus.Instance;
             Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
             TriesLeft = KDefaultRetries + 1;
             Allow451Follow = true;
@@ -306,7 +310,7 @@ namespace NachoCore.ActiveSync
         private void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatus.Instance.ReportCommResult (host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (host, didFailGenerally);
             }
         }
         // Final is how to pass the ultimate Event back to OwnerSm.
