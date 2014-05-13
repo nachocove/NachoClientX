@@ -36,6 +36,19 @@ namespace NachoPlatform
         public string Model () {
             return Build.Model;
         }
+
+        public string UserAgentModel () {
+            return Build.Model;
+        }
+
+        public string OsType () {
+            return "Android";
+        }
+
+        public string OsVersion () {
+            return Build.VERSION.Release;
+        }
+
         public string Type () {
             // NOTE: The native email client uses "Android". The NitroDesk client uses "Touchdown".
             return "Android";

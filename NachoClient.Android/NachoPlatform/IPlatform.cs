@@ -17,9 +17,15 @@ namespace NachoPlatform
 
     public interface IPlatformDevice
     {
+        // For iOS, model usually is described like 'iPhone6,1'. But for some earlier 
+        // version of iOS, the user agent string has 'C' instead of ','. So, we define
+        // a separate UserAgentModel().
+        string UserAgentModel ();
         string Model ();
         string Type ();
         string Identity ();
+        string OsType (); // iOS, Android, MacOS, etc
+        string OsVersion (); // 7.1, 4.2.2, ...
         string Os ();
         OsCode BaseOs (); 
         string OsLanguage ();

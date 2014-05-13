@@ -117,7 +117,7 @@ namespace NachoCore.ActiveSync
             XNamespace Ns = Xml.Settings.Ns;
             return new XElement (Ns + Xml.Settings.DeviceInformation, 
                 new XElement (Ns + Xml.Settings.Set,
-                    new XElement (Ns + Xml.Settings.Model, Device.Instance.Model ()),
+                    new XElement (Ns + Xml.Settings.Model, Device.Instance.UserAgentModel ()),
                     new XElement (Ns + Xml.Settings.UserAgent, Device.Instance.UserAgent ()),
                     new XElement (Ns + Xml.Settings.OS, Device.Instance.Os ()),
                     new XElement (Ns + Xml.Settings.OSLanguage, Device.Instance.OsLanguage ()),

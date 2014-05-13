@@ -57,15 +57,20 @@ namespace NachoPlatform
         {
             return UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Phone;
         }
-
-        public string Model ()
+            
+        public string UserAgentModel ()
         {
             return Platform ().Replace (',', 'C');
         }
 
+        public string Model ()
+        {
+            return Platform ();
+        }
+
         public string Type ()
         {
-            return Model ().Split (null) [0];
+            return UserAgentModel ().Split (null) [0];
         }
 
         public string Identity ()
@@ -77,6 +82,16 @@ namespace NachoPlatform
             // For now, use 'Ncho' + the identifierForVendor, which can change on delete & re-install.
             // We current truncate the string to 28 bytes, but we could by spec go for 32 bytes.
             return "Ncho" + UIDevice.CurrentDevice.IdentifierForVendor.AsString ().Replace ('-', 'X').Substring (0, 24);
+        }
+
+        public string OsType ()
+        {
+            return UIDevice.CurrentDevice.SystemName;
+        }
+
+        public string OsVersion ()
+        {
+            return UIDevice.CurrentDevice.SystemVersion;
         }
 
         public string Os ()
@@ -108,7 +123,7 @@ namespace NachoPlatform
         public string UserAgent ()
         {
             if (IsSimulator ()) {
-                return string.Format ("Apple-{0}/1002.350", Model ());
+                return string.Format ("Apple-{0}/1002.350", UserAgentModel ());
             }
             var rawBuild = Build ();
             string letter = Regex.Match (rawBuild, "[A-Z]").Value;

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using MonoTouch.Foundation;
 using ParseBinding;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
@@ -84,6 +85,9 @@ namespace NachoCore.Utils
 
             kvList.AddString ("client", CurrentUser.Username);
             kvList.AddDate ("timestamp", tEvent.Timestamp);
+            kvList.AddString ("os_type", Device.Instance.OsType ());
+            kvList.AddString ("os_version", Device.Instance.OsVersion ());
+            kvList.AddString ("device_model", Device.Instance.Model ());
 
             if (tEvent.IsLogEvent ()) {
                 switch (tEvent.Type) {
