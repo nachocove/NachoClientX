@@ -7,27 +7,27 @@ using DnDns.Query;
 using DnDns.Enums;
 using NachoCore.Utils;
 
-// FIXME - push Timeout logic into DnDns.
-
 namespace NachoCore.ActiveSync
 {
     public class AsDnsOperation : IAsOperation
     {
-        public TimeSpan Timeout;
+        public TimeSpan Timeout { set; get; }
+        public Type DnsQueryRequestType { set; get; }
 
         private bool wasKilledByTimer;
         private bool wasCancelled;
         private IAsDnsOperationOwner m_owner;
         private NcTimer TimeoutTimer;
-        private DnsQueryRequest Request;
+        private IDnsQueryRequest Request;
 
         public AsDnsOperation(IAsDnsOperationOwner owner) {
             Timeout = TimeSpan.Zero;
+            DnsQueryRequestType = typeof(MockableDnsQueryRequest);
             m_owner = owner;
         }
 
         public async void Execute (NcStateMachine sm) {
-            Request = new DnsQueryRequest ();
+            Request = (IDnsQueryRequest)Activator.CreateInstance (DnsQueryRequestType);
             TimeoutTimer = new NcTimer (TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
                 System.Threading.Timeout.Infinite);
             try {
