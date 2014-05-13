@@ -90,14 +90,14 @@ namespace NachoCore.Utils
                 }
 
                 _Queue.Enqueue (obj);
-                ProducedCount.Release ();
             }
+            ProducedCount.Release ();
         }
 
         public T Dequeue ()
         {
+            ProducedCount.WaitOne ();
             lock (Lock) {
-                ProducedCount.WaitOne ();
                 T obj = (T)_Queue.Dequeue ();
                 _NumDequeueBytes += obj.GetSize ();
                 _NumDequeue++;
