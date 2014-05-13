@@ -779,6 +779,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoCalendarController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

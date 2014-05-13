@@ -8,6 +8,7 @@ using MonoTouch.Dialog;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Model;
+using NachoCore.Utils;
 using NachoCore;
 
 namespace NachoClient.iOS

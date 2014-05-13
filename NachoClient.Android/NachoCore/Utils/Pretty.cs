@@ -5,7 +5,7 @@ using NachoCore;
 using NachoCore.Model;
 using MimeKit;
 
-namespace NachoClient
+namespace NachoCore.Utils
 {
     public class Pretty
     {
