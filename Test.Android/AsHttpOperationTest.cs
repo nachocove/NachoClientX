@@ -14,6 +14,78 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
 
+namespace NachoCore.Utils
+{
+    public class NcCommStatus
+    {
+        private List<ServerTracker> Trackers;
+
+        #pragma warning disable 414
+        private NcTimer TrackerMonitorTimer;
+        #pragma warning restore 414
+
+        private ServerTracker GetTracker (int serverId) {
+            return new ServerTracker (serverId);
+        }
+
+        private static volatile NcCommStatus instance;
+        private static object syncRoot = new Object ();
+
+        private NcCommStatus () {}
+
+        public static NcCommStatus Instance { 
+            get {
+                if (instance == null) {
+                    instance = new NcCommStatus ();
+                }
+                return instance;
+            }
+        }
+
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
+
+        public enum CommQualityEnum
+        {
+            OK,
+            Degraded,
+            Unusable,
+        };
+
+        public NetStatusStatusEnum Status { get; set; }
+
+        public NetStatusSpeedEnum Speed { get; set; }
+
+        public bool UserInterventionIsRequired { get; set; }
+
+        public delegate void NcCommStatusServerEventHandler (Object sender, NcCommStatusServerEventArgs e);
+
+        public event NcCommStatusServerEventHandler CommStatusServerEvent;
+
+        public event NetStatusEventHandler CommStatusNetEvent;
+
+        private void MaybeEvent (CommQualityEnum oldQ, ServerTracker tracker) {}
+
+        public void ReportCommResult (int serverId, bool didFailGenerally) {}
+
+        public void ReportCommResult (string host, bool didFailGenerally)
+        {
+            Host = host;
+            DidFailGenerally = didFailGenerally;
+        }
+
+        public string Host { get; set; }
+        public bool DidFailGenerally { get; set; }
+
+        private int GetServerId (string host) {
+            return 0;
+        }
+        public void Reset (int serverId) {}
+        public void Refresh () {}
+        private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed) {}
+    }
+}
+
+
 /*
  * Use a mock HttpClient.
  * BEContext?
@@ -190,6 +262,7 @@ namespace Test.iOS
             };
         }
     }
+        
 
     // reusable request/response data
     class MockData
@@ -308,6 +381,8 @@ namespace Test.iOS
                 response.StatusCode = System.Net.HttpStatusCode.Found;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         [Test]
@@ -318,6 +393,8 @@ namespace Test.iOS
                 response.StatusCode = System.Net.HttpStatusCode.BadRequest;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         [Test]
@@ -328,6 +405,8 @@ namespace Test.iOS
                 response.StatusCode = System.Net.HttpStatusCode.Unauthorized;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         [Test]
@@ -338,6 +417,8 @@ namespace Test.iOS
                 response.StatusCode = System.Net.HttpStatusCode.Forbidden;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         [Test]
@@ -348,6 +429,8 @@ namespace Test.iOS
                 response.StatusCode = System.Net.HttpStatusCode.NotFound;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         [Test]
@@ -358,6 +441,9 @@ namespace Test.iOS
                 response.StatusCode = (System.Net.HttpStatusCode)449;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Log.Warn ("Status host: {0}", NcCommStatus.Instance.Host);
         }
 
         [Test]
@@ -368,6 +454,9 @@ namespace Test.iOS
                 response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Log.Warn ("Status host: {0}", NcCommStatus.Instance.Host);
         }
 
         [Test]
@@ -378,6 +467,8 @@ namespace Test.iOS
                 response.StatusCode = (System.Net.HttpStatusCode)501;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         [Test]
@@ -388,6 +479,8 @@ namespace Test.iOS
                 response.StatusCode = (System.Net.HttpStatusCode)507;
             }, request => {
             });
+
+            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
         }
 
         private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
