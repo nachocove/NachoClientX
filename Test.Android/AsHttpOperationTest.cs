@@ -14,77 +14,6 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
 
-namespace NachoCore.Utils
-{
-    public class NcCommStatus
-    {
-        private List<ServerTracker> Trackers;
-
-        #pragma warning disable 414
-        private NcTimer TrackerMonitorTimer;
-        #pragma warning restore 414
-
-        private ServerTracker GetTracker (int serverId) {
-            return new ServerTracker (serverId);
-        }
-
-        private static volatile NcCommStatus instance;
-        private static object syncRoot = new Object ();
-
-        private NcCommStatus () {}
-
-        public static NcCommStatus Instance { 
-            get {
-                if (instance == null) {
-                    instance = new NcCommStatus ();
-                }
-                return instance;
-            }
-        }
-
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
-
-        public enum CommQualityEnum
-        {
-            OK,
-            Degraded,
-            Unusable,
-        };
-
-        public NetStatusStatusEnum Status { get; set; }
-
-        public NetStatusSpeedEnum Speed { get; set; }
-
-        public bool UserInterventionIsRequired { get; set; }
-
-        public delegate void NcCommStatusServerEventHandler (Object sender, NcCommStatusServerEventArgs e);
-
-        public event NcCommStatusServerEventHandler CommStatusServerEvent;
-
-        public event NetStatusEventHandler CommStatusNetEvent;
-
-        private void MaybeEvent (CommQualityEnum oldQ, ServerTracker tracker) {}
-
-        public void ReportCommResult (int serverId, bool didFailGenerally) {}
-
-        public void ReportCommResult (string host, bool didFailGenerally)
-        {
-            Host = host;
-            DidFailGenerally = didFailGenerally;
-        }
-
-        public string Host { get; set; }
-        public bool DidFailGenerally { get; set; }
-
-        private int GetServerId (string host) {
-            return 0;
-        }
-        public void Reset (int serverId) {}
-        public void Refresh () {}
-        private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed) {}
-    }
-}
-
 
 /*
  * Use a mock HttpClient.
@@ -262,6 +191,40 @@ namespace Test.iOS
             };
         }
     }
+
+    public class MockNcCommStatus : INcCommStatus
+    {
+        private static volatile MockNcCommStatus instance;
+
+        private MockNcCommStatus () {}
+
+        public static MockNcCommStatus Instance { 
+            get {
+                if (instance == null) {
+                    instance = new MockNcCommStatus ();
+                }
+                return instance;
+            }
+        }
+
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
+
+        public event NcCommStatusServerEventHandler CommStatusServerEvent;
+        public event NetStatusEventHandler CommStatusNetEvent;
+   
+        public void ReportCommResult (int serverId, bool didFailGenerally) {}
+        public void ReportCommResult (string host, bool didFailGenerally)
+        {
+            Host = host;
+            DidFailGenerally = didFailGenerally;
+        }
+
+        public string Host { get; set; }
+        public bool DidFailGenerally { get; set; }
+
+        public void Reset (int serverId) {}
+        public void Refresh () {}
+    }
         
 
     // reusable request/response data
@@ -382,7 +345,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         [Test]
@@ -394,7 +357,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         [Test]
@@ -406,7 +369,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         [Test]
@@ -418,7 +381,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         [Test]
@@ -430,7 +393,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         [Test]
@@ -442,8 +405,8 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
-            Log.Warn ("Status host: {0}", NcCommStatus.Instance.Host);
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            Log.Warn ("Status host: {0}", MockNcCommStatus.Instance.Host);
         }
 
         [Test]
@@ -455,8 +418,8 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
-            Log.Warn ("Status host: {0}", NcCommStatus.Instance.Host);
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            Log.Warn ("Status host: {0}", MockNcCommStatus.Instance.Host);
         }
 
         [Test]
@@ -468,7 +431,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         [Test]
@@ -480,7 +443,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, NcCommStatus.Instance.DidFailGenerally, "Should set NcCommStatus Correctly");
+            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
         }
 
         private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
@@ -517,6 +480,9 @@ namespace Test.iOS
             BaseMockOwner owner = CreateMockOwner (MockData.MockUri, MockData.MockRequestXml);
 
             var op = new AsHttpOperation ("Ping", owner, context);
+
+            var mockCommStatusInstance = MockNcCommStatus.Instance;
+            op.NcCommStatusSingleton = mockCommStatusInstance;
             op.HttpClientType = typeof (MockHttpClient);
             owner.ProcessResponseStandin = (sender, response, doc) => {
                 Assert.AreSame (op, sender, "Owner's sender and AsHttpOperation should match when response is processed");

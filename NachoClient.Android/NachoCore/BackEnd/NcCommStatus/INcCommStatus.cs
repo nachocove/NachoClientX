@@ -6,7 +6,6 @@ using NachoPlatform;
 namespace NachoCore.Utils
 {
     public delegate void NcCommStatusServerEventHandler (Object sender, NcCommStatusServerEventArgs e);
-    public delegate void NetStatusEventHandler (Object sender, NetStatusEventArgs e);
     public interface INcCommStatus
     {
         event NcCommStatusServerEventHandler CommStatusServerEvent;
