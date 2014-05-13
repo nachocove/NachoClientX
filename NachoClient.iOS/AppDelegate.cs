@@ -17,6 +17,7 @@ using SQLite;
 using CrashlyticsBinding;
 using NachoCore.Wbxml;
 using MonoTouch.ObjCRuntime;
+using ParseBinding;
 
 namespace NachoClient.iOS
 {
@@ -86,6 +87,8 @@ namespace NachoClient.iOS
             application.ApplicationIconBadgeNumber = 0;
            
             StartCrashReporting ();
+
+            Telemetry.SharedInstance.Start (new TelemetryBEParse ());
 
             Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
 

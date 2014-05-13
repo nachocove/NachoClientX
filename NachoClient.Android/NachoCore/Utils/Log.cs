@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.IO;
 using System.Reflection;
+using NachoCore.Utils;
 
 namespace NachoCore.Utils
 {
@@ -68,31 +69,37 @@ namespace NachoCore.Utils
         public static void Error (int when, string fmt, params object[] list)
         {
             _Log (when, fmt, "Error", list);
+            Telemetry.RecordLogEvent (TelemetryEventType.ERROR, fmt, list);
         }
 
         public static void Warn (int when, string fmt, params object[] list)
         {
             _Log (when, fmt, "Warn", list);
+            Telemetry.RecordLogEvent (TelemetryEventType.WARN, fmt, list);
         }
 
         public static void Info (int when, string fmt, params object[] list)
         {
             _Log (when, fmt, "Info", list);
+            Telemetry.RecordLogEvent (TelemetryEventType.INFO, fmt, list);
         }
 
         public static void Error (string fmt, params object[] list)
         {
             _Log (logLevel, fmt, "Error", list);
+            Telemetry.RecordLogEvent (TelemetryEventType.ERROR, fmt, list);
         }
 
         public static void Warn (string fmt, params object[] list)
         {
             _Log (logLevel, fmt, "Warn", list);
+            Telemetry.RecordLogEvent (TelemetryEventType.WARN, fmt, list);
         }
 
         public static void Info (string fmt, params object[] list)
         {
             _Log (logLevel, fmt, "Info", list);
+            Telemetry.RecordLogEvent (TelemetryEventType.INFO, fmt, list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
@@ -169,6 +176,37 @@ namespace NachoCore.Utils
                 }
                 return stringWriter.ToString ();
             }
+        }
+
+        public static string BytesDump (byte[] bytes, int bytesPerLine = 16, int bytesPerExtraSpace = 8)
+        {
+            string output = "";
+            int n = 0;
+
+            for (n = 0; n < (bytes.Length - bytesPerLine); n += bytesPerLine) {
+                output += String.Format ("{0:D8}:", n);
+                for (int m = 0; m < bytesPerLine; m++) {
+                    if ((0 != m) && (0 == (m % bytesPerExtraSpace))) {
+                        output += " ";
+                    }
+                    output += String.Format (" {0:X2}", (int)bytes [n+m]);
+                }
+                output += "\n";
+            }
+
+            // Handle the last line
+            if (n < bytes.Length) {
+                output += String.Format ("{0:D8}:", n);
+                for (int m = 0; n < bytes.Length; n++, m++) {
+                    if ((0 != m) && (0 == (m % bytesPerExtraSpace))) {
+                        output += " ";
+                    }
+                    output += String.Format (" {0:X2}", (int)bytes [n]);
+                }
+                output += "\n";
+            }
+
+            return output;
         }
     }
 }

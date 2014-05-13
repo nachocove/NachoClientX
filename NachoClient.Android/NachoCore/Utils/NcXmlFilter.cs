@@ -3,6 +3,8 @@
 using System;
 using System.Xml;
 using System.Xml.Linq;
+using System.Threading;
+using System.IO;
 using NachoCore;
 using NachoCore.Utils;
 using System.Collections.Generic;
@@ -261,9 +263,6 @@ namespace NachoCore.Wbxml
 
                     // Look for the filter node for this element
                     if (null != current.ParentNode) {
-                        #pragma warning disable 219
-                        XNode origNode = current.ParentNode; // for debugging
-                        #pragma warning restore 219
                         current.ParentNode = current.ParentNode.FindChildNode (element);
                         if (null == current.ParentNode) {
                             Log.Warn ("Unknown element tag {0}", element.Name);
@@ -422,12 +421,29 @@ namespace NachoCore.Wbxml
 
         public byte[] Finalize ()
         {
-            return Wbxml.ToArray ();
+            if (GenerateWbxml) {
+                return Wbxml.ToArray ();
+            }
+
+            // Cheating!! Use ASWBXML class to encode. This is less efficient
+            // because it walks the tree twice.
+            ASWBXML wbxml = new ASWBXML (new CancellationToken (false));
+            wbxml.XmlDoc = XmlDoc;
+            return wbxml.GetBytes (false);
         }
 
         public XDocument FinalizeXml ()
         {
-            return new XDocument (XmlDoc);
+            if (!GenerateWbxml) {
+                return new XDocument (XmlDoc);
+            }
+
+            // Cheating!! Use ASWBXL class to decode. This is less efficient
+            // because it walks the tree twice.
+            ASWBXML wbxml = new ASWBXML (new CancellationToken (false));
+            MemoryStream byteStream = new MemoryStream (Wbxml.ToArray (), false);
+            wbxml.LoadBytes (byteStream);
+            return new XDocument (wbxml.XmlDoc);
         }
     }
 }

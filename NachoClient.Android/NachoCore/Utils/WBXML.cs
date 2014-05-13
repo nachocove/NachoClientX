@@ -248,6 +248,8 @@ namespace NachoCore.Wbxml
                 // TODO - Need to feed the redacted XML into a storage that can hold and
                 // forward to the telemetry server.
                 Log.Info ("response_debug_XML = \n{0}", filter.FinalizeXml ());
+                //Log.Info ("response_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
+                Telemetry.RecordWbxmlEvent (false, filter.Finalize ());
             }
         }
 
@@ -273,6 +275,8 @@ namespace NachoCore.Wbxml
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
                 Log.Info ("request_debug_XML = \n{0}", filter.FinalizeXml ());
+                //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
+                Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }
 
             return byteList.ToArray ();

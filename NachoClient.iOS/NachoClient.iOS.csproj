@@ -772,6 +772,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryParse.cs">
       <Link>NachoCore\Utils\TelemetryParse.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcQueue.cs">
+      <Link>NachoCore\Utils\NcQueue.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
