@@ -38,7 +38,7 @@
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,7 +56,7 @@
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
     <EnvironmentVariables>
       <EnvironmentVariables>
         <Variable name="CA_DEBUG_TRANSACTIONS" value="1" />
@@ -74,7 +74,7 @@
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
     <CustomCommands>
@@ -98,7 +98,7 @@
     <MtouchArch>ARMv7</MtouchArch>
     <IpaPackageName>
     </IpaPackageName>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -109,7 +109,7 @@
     <CodesignKey>iPhone Distribution</CodesignKey>
     <ConsolePause>false</ConsolePause>
     <CodesignProvision>Automatic:AppStore</CodesignProvision>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
