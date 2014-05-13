@@ -75,6 +75,11 @@ namespace NachoCore.ActiveSync
             public uint RetriesLeft;
             public bool IsReDir;
             public Uri ReDirUri;
+
+            public Type DnsQueryRequestType { set; get; }
+
+            public Type HttpClientType { set; get; }
+
             private ConcurrentBag<object> DisposedJunk;
             // Allocated at constructor, thereafter only accessed by Cancel.
             private CancellationTokenSource Cts;
@@ -435,6 +440,7 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
+                        HttpClientType = HttpClientType,
                         Allow451Follow = false,
                         DontReportCommResult = true,
                         TriesLeft = 3,
@@ -448,7 +454,9 @@ namespace NachoCore.ActiveSync
             private void DoRobotDns ()
             {
                 if (0 < RetriesLeft--) {
-                    DnsOp = new AsDnsOperation (this);
+                    DnsOp = new AsDnsOperation (this) {
+                        DnsQueryRequestType = DnsQueryRequestType,
+                    };
                     DnsOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRDHARD");
@@ -462,6 +470,7 @@ namespace NachoCore.ActiveSync
                 if (0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
                     HttpOp = new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
+                        HttpClientType = HttpClientType,
                         Allow451Follow = false,
                         DontReportCommResult = true,
                         TriesLeft = 3,

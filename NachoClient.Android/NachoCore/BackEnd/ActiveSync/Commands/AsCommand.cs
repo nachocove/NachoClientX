@@ -49,6 +49,10 @@ namespace NachoCore.ActiveSync
 
         public bool DontReportCommResult { set; get; }
 
+        public Type DnsQueryRequestType { set; get; }
+
+        public Type HttpClientType { set; get; }
+
         // Initializers.
         public AsCommand (string commandName, string nsName, IBEContext beContext) : this (commandName, beContext)
         {
@@ -57,6 +61,8 @@ namespace NachoCore.ActiveSync
 
         public AsCommand (string commandName, IBEContext beContext)
         {
+            DnsQueryRequestType = typeof(MockableDnsQueryRequest);
+            HttpClientType = typeof(MockableHttpClient);
             Timeout = TimeSpan.Zero;
             CommandName = commandName;
             BEContext = beContext;
@@ -68,6 +74,7 @@ namespace NachoCore.ActiveSync
         {
             lock (LockObj) {
                 Op = new AsHttpOperation (CommandName, this, BEContext) {
+                    HttpClientType = HttpClientType,
                     DontReportCommResult = DontReportCommResult,
                 };
                 if (TimeSpan.Zero != Timeout) {
