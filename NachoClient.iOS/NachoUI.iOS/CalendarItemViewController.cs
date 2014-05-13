@@ -502,13 +502,16 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
+            // TODO: If calendar changes folders
             if (0 == c.Id) {
                 c.Insert (); // new entry
+                folder.Link (c);
+                BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
             } else {
                 c.Update ();
+                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
-            folder.Link (c);
-            BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
+
         }
 
         /// <summary>
