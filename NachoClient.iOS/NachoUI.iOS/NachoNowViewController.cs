@@ -16,7 +16,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : UIViewController, INachoMessageControllerDelegate
+    public partial class NachoNowViewController : UIViewController, INachoMessageControllerDelegate, INachoCalendarItemEditorParent
     {
         List<object> hotList;
         INachoEmailMessages messageThreads;
@@ -158,16 +158,10 @@ namespace NachoClient.iOS
                     var c = holder.value as McCalendar;
                     if (null != c) {
                         CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-                        dvc.calendarItem = c;
-                        dvc.Title = Pretty.SubjectString (c.Subject);
+                        dvc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                        dvc.SetOwner (this);
                     }
-                    return;
                 }
-                var indexPath = (NSIndexPath)sender;
-                McCalendar calendarItem = (McCalendar)hotList [indexPath.Row];
-                CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
-                destinationController.calendarItem = calendarItem;
-                destinationController.Title = Pretty.SubjectString (calendarItem.Subject);
                 return;
             }
             if (segue.Identifier == "NachoNowToCompose") {
@@ -212,6 +206,12 @@ namespace NachoClient.iOS
         {
             vc.SetOwner (null);
             vc.DismissViewController (false, null);
+        }
+
+        public void DismissCalendarCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner(null);
+            vc.DismissCalendarItemEditor(false, null);
         }
 
         protected void UpdateHotLists ()
@@ -479,7 +479,7 @@ namespace NachoClient.iOS
 
                 var calendarItem = item as McCalendar;
                 if (null != calendarItem) {
-                    owner.PerformSegue ("NachoNowToCalendarItem", indexPath);
+                    owner.PerformSegue ("NachoNowToCalendarItem", new SegueHolder(calendarItem));
                     return;
                 }
 

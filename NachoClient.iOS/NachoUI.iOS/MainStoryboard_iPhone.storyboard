@@ -1211,8 +1211,8 @@
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="oWU-CJ-c3n" customClass="LabeledIconButton">
-                                <rect key="frame" x="13" y="61" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES"/>
+                                <rect key="frame" x="13" y="204" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <color key="tintColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <state key="normal" title="Later" image="clock-3-48.png">
@@ -1220,8 +1220,8 @@
                                 </state>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="VP3-X6-7ef" customClass="LabeledIconButton">
-                                <rect key="frame" x="116" y="61" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask"/>
+                                <rect key="frame" x="115" y="204" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <color key="tintColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <state key="normal" title="Tonight" image="clock-3-48.png">
@@ -1229,8 +1229,8 @@
                                 </state>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="ld0-fN-S41" customClass="LabeledIconButton">
-                                <rect key="frame" x="218" y="61" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES"/>
+                                <rect key="frame" x="218" y="204" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <state key="normal" title="Tomorrow" image="clock-3-48.png">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -1238,34 +1238,25 @@
                                 </state>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="FQo-ye-tmV" customClass="LabeledIconButton">
-                                <rect key="frame" x="13" y="174" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES"/>
+                                <rect key="frame" x="13" y="317" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <state key="normal" title="Next Week" image="calendar-3-48.png">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="Clz-i3-RS1" customClass="LabeledIconButton">
-                                <rect key="frame" x="116" y="174" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                <state key="normal" title="Month End" image="calendar-3-48.png">
-                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                            </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="sjz-Wu-Tsk" customClass="LabeledIconButton">
-                                <rect key="frame" x="218" y="174" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES"/>
+                                <rect key="frame" x="116" y="317" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <state key="normal" title="Next Month" image="calendar-3-48.png">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="KLe-Al-1Wg" customClass="LabeledIconButton">
-                                <rect key="frame" x="218" y="287" width="90" height="90"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="KLe-Al-1Wg" userLabel="Button - Defer Date Picker" customClass="LabeledIconButton">
+                                <rect key="frame" x="218" y="317" width="90" height="90"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <state key="normal" title="Pick Date" image="calendar-3-48.png">
@@ -1273,35 +1264,35 @@
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="2hj-Tj-CGc" customClass="LabeledIconButton">
-                                <rect key="frame" x="218" y="388" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                <state key="normal" title="Now" image="clock-3-48.png">
-                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                            </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="JYc-uW-qx2" customClass="LabeledIconButton">
-                                <rect key="frame" x="116" y="287" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
+                                <rect key="frame" x="13" y="72" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                 <state key="normal" title="Meeting" image="calendar-3-48.png">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="pC9-d2-kbk" customClass="LabeledIconButton">
-                                <rect key="frame" x="13" y="287" width="90" height="90"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="Lhi-D3-oq2" userLabel="Button - Task" customClass="LabeledIconButton">
+                                <rect key="frame" x="116" y="72" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                <state key="normal" title="Forever" image="calendar-3-48.png">
+                                <state key="normal" title="New Task" image="calendar-3-48.png">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="yyB-xi-JKa" userLabel="Button - Deadline" customClass="LabeledIconButton">
+                                <rect key="frame" x="218" y="70" width="90" height="90"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                <state key="normal" title="Deadline" image="calendar-3-48.png">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="kXN-Av-NgS">
-                                <rect key="frame" x="116" y="418" width="90" height="30"/>
+                                <rect key="frame" x="116" y="430" width="90" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <state key="normal" title="Dismiss">
@@ -1309,10 +1300,17 @@
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                             </button>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Deferred until ...." lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Tlm-3U-Ipe">
-                                <rect key="frame" x="13" y="30" width="295" height="21"/>
+                            <label opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Or, hide this message until..." lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Tlm-3U-Ipe">
+                                <rect key="frame" x="13" y="173" width="295" height="21"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Create a meeting, task, or a deadline..." lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="NEu-OX-Dxc">
+                                <rect key="frame" x="13" y="41" width="297" height="21"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
@@ -1322,15 +1320,14 @@
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <connections>
                         <outlet property="currentDelayLabel" destination="Tlm-3U-Ipe" id="84G-Tn-zOK"/>
-                        <outlet property="customDateButton" destination="KLe-Al-1Wg" id="KhV-lL-hHT"/>
+                        <outlet property="deadlineButton" destination="yyB-xi-JKa" id="Tcl-yQ-bPC"/>
+                        <outlet property="deferDatePicker" destination="KLe-Al-1Wg" id="x6O-LP-dIt"/>
                         <outlet property="dismissButton" destination="kXN-Av-NgS" id="CNW-9N-Bwb"/>
-                        <outlet property="foreverButton" destination="pC9-d2-kbk" id="1VS-7b-ic1"/>
                         <outlet property="laterButton" destination="oWU-CJ-c3n" id="I4u-hh-Zk8"/>
-                        <outlet property="monthEndButton" destination="Clz-i3-RS1" id="nDx-Rp-Pgb"/>
+                        <outlet property="meetingButton" destination="JYc-uW-qx2" id="tKN-bc-X2W"/>
                         <outlet property="nextMonthButton" destination="sjz-Wu-Tsk" id="qIj-K5-V9B"/>
                         <outlet property="nextWeekButton" destination="FQo-ye-tmV" id="tIw-lk-PsI"/>
-                        <outlet property="nowButton" destination="2hj-Tj-CGc" id="dqL-Qd-xz6"/>
-                        <outlet property="scheduleMeetingButton" destination="JYc-uW-qx2" id="rng-G8-flI"/>
+                        <outlet property="taskButton" destination="Lhi-D3-oq2" id="VOB-2a-DRM"/>
                         <outlet property="tomorrowButton" destination="ld0-fN-S41" id="f99-jB-bbg"/>
                         <outlet property="tonightButton" destination="VP3-X6-7ef" id="1Pu-8b-WLE"/>
                         <segue destination="zX3-wE-NUY" kind="modal" identifier="MessagePriorityToDatePicker" modalTransitionStyle="crossDissolve" id="B5b-jg-ZNg"/>
@@ -1492,19 +1489,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="Oi3-nV-lAC"/>
         <segue reference="JJM-dg-rMA"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="vRC-Oi-s8D"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="Oi3-nV-lAC"/>
-        <segue reference="wdd-u9-GeA"/>
-        <segue reference="X0Z-QM-gfH"/>
-        <segue reference="nAp-rc-bND"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="JWi-mA-RVD"/>
-        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="P1C-rg-Luy"/>
         <segue reference="Q8y-4K-BAb"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="RaB-9o-azo"/>
+        <segue reference="JWi-mA-RVD"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="nAp-rc-bND"/>
+        <segue reference="5fj-Ta-mc9"/>
     </inferredMetricsTieBreakers>
 </document>

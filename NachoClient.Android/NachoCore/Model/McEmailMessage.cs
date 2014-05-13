@@ -21,7 +21,6 @@ namespace NachoCore.Model
         MonthEnd,
         NextMonth,
         Forever,
-        Meeting,
         Custom,
     };
 
@@ -199,15 +198,15 @@ namespace NachoCore.Model
             }
         }
 
-        public void Summarize()
+        public void Summarize ()
         {
             Summary = MimeHelpers.ExtractSummary (this);
-            if(null == Summary) {
+            if (null == Summary) {
                 Summary = " ";
             }
             this.Update ();
         }
- 
+
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (

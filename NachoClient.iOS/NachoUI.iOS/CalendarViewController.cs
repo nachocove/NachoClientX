@@ -11,7 +11,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : UITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate
+    public partial class CalendarViewController : UITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent
     {
         INachoCalendar calendar;
         public bool UseDeviceCalendar;
@@ -100,10 +100,28 @@ namespace NachoClient.iOS
                 UITableViewCell cell = (UITableViewCell)sender;
                 NSIndexPath indexPath = TableView.IndexPathForCell (cell);
                 McCalendar calendarItem = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
-                CalendarItemViewController destinationController = (CalendarItemViewController)segue.DestinationViewController;
-                destinationController.calendarItem = calendarItem;
-                destinationController.Title = Pretty.SubjectString (calendarItem.Subject);
+                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
+                dvc.SetCalendarItem (calendarItem, CalendarItemEditorAction.view);
+                dvc.SetOwner (this);
+                return;
             }
+            if (segue.Identifier.Equals ("CalendarToNewCalendarItem")) {
+                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
+                dvc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                dvc.SetOwner (this);
+                return;
+            }
+            if (segue.Identifier.Equals ("CalendarToNachoNow")) {
+                // Nothing to do
+                return;
+            }
+            NachoAssert.CaseError ();
+        }
+
+        public void DismissCalendarCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (true, null);
         }
 
         public override int NumberOfSections (UITableView tableView)
@@ -152,12 +170,6 @@ namespace NachoClient.iOS
             titleLabel.SizeToFit ();
 
             return cell;
-        }
-
-        public override string TitleForHeader (UITableView tableView, int section)
-        {
-            DateTime d = calendar.GetDateUsingDayIndex (section);
-            return Pretty.FullDateString (d).ToUpper ();
         }
     }
 }

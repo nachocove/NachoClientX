@@ -15,11 +15,20 @@ namespace NachoClient.iOS
         public McEmailMessageThread thread;
         protected INachoMessageControllerDelegate owner;
 
+        enum DatePickerActionType
+        {
+            None,
+            Defer,
+            Deadline,
+        };
+
+        DatePickerActionType datePickerAction = DatePickerActionType.None;
+
         public MessagePriorityViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void SetOwner(INachoMessageControllerDelegate o)
+        public void SetOwner (INachoMessageControllerDelegate o)
         {
             owner = o;
         }
@@ -36,50 +45,42 @@ namespace NachoClient.iOS
             }
 
             if (DateTime.UtcNow > earliestDelay) {
-                nowButton.Hidden = true;
-                currentDelayLabel.Text = ""; // Delay period has ended
+                ;
             } else if (1 == thread.Count) {
-                nowButton.Hidden = false;
                 currentDelayLabel.Text = String.Format ("Deferred until {0}.", earliestDelay);
             } else {
-                nowButton.Hidden = false;
                 currentDelayLabel.Text = String.Format ("Visible after {0}.", earliestDelay);
             }
 
-            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (true, null);
+            meetingButton.TouchUpInside += (object sender, EventArgs e) => {
+                CreateMeeting ();
             };
-            nowButton.TouchUpInside += (object sender, EventArgs e) => {
-                NcMessageDeferral.UndeferThread (thread);
-                owner.DismissMessageViewController (this);
+            taskButton.TouchUpInside += (object sender, EventArgs e) => {
+                CreateTask ();
             };
-
-            customDateButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Custom);
-            };
-            foreverButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Forever);
+            deadlineButton.TouchUpInside += (object sender, EventArgs e) => {
+                CreateDeadline ();
             };
             laterButton.TouchUpInside += (object sender, EventArgs e) => {
                 DelayRequest (MessageDeferralType.Later);
             };
-            monthEndButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.MonthEnd);
-            };
-            nextMonthButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.NextMonth);
-            };
-            nextWeekButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.NextWeek);
-            };
-            scheduleMeetingButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Meeting);
+            tonightButton.TouchUpInside += (object sender, EventArgs e) => {
+                DelayRequest (MessageDeferralType.Tonight);
             };
             tomorrowButton.TouchUpInside += (object sender, EventArgs e) => {
                 DelayRequest (MessageDeferralType.Tomorrow);
             };
-            tonightButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Tonight);
+            nextWeekButton.TouchUpInside += (object sender, EventArgs e) => {
+                DelayRequest (MessageDeferralType.NextWeek);
+            };
+            nextMonthButton.TouchUpInside += (object sender, EventArgs e) => {
+                DelayRequest (MessageDeferralType.NextMonth);
+            };
+            deferDatePicker.TouchUpInside += (object sender, EventArgs e) => {
+                DelayRequest (MessageDeferralType.Custom);
+            };
+            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
+                DismissViewController (true, null);
             };
 
         }
@@ -103,13 +104,21 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DismissDatePicker (DatePickerViewController vc, DateTime deferUntil)
+        // TODO: Do we need to worry about local vs. utc time?
+        public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
         {
-            if (DateTime.UtcNow > deferUntil) {
-                // TODO -- Can go back in time
+            if (DateTime.UtcNow > chosenDateTime) {
+                // TODO -- Confirm that the user wants to go back in time.
                 return;
             } 
-            NcMessageDeferral.DeferThread (thread, deferUntil);
+            switch (datePickerAction) {
+            case DatePickerActionType.Defer:
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Custom, chosenDateTime);
+                break;
+            case DatePickerActionType.Deadline:
+                NcMessageDeferral.SetDueDate (thread, chosenDateTime);
+                break;
+            }
             vc.owner = null;
             vc.DismissViewController (false, new NSAction (delegate {
                 owner.DismissMessageViewController (this);
@@ -131,10 +140,8 @@ namespace NachoClient.iOS
                 NcMessageDeferral.DeferThread (thread, request);
                 owner.DismissMessageViewController (this);
                 return;
-            case MessageDeferralType.Meeting:
-                new UIAlertView ("Meeting Scheduler", "Calendar is not yet implemented.", null, "Bummer").Show ();
-                break;
             case MessageDeferralType.Custom:
+                datePickerAction = DatePickerActionType.Defer;
                 PerformSegue ("MessagePriorityToDatePicker", this);
                 break;
             case MessageDeferralType.None:
@@ -142,6 +149,20 @@ namespace NachoClient.iOS
                 NachoCore.NachoAssert.CaseError ();
                 return;
             }
+        }
+
+        void CreateMeeting ()
+        {
+        }
+
+        void CreateTask ()
+        {
+        }
+
+        void CreateDeadline ()
+        {
+            datePickerAction = DatePickerActionType.Deadline;
+            PerformSegue ("MessagePriorityToDatePicker", this);
         }
     }
 }

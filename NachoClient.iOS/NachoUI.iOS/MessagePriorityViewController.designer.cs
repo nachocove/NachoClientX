@@ -16,37 +16,34 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UILabel currentDelayLabel { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton customDateButton { get; set; }
+		NachoClient.iOS.LabeledIconButton deadlineButton { get; set; }
+
+		[Outlet]
+		NachoClient.iOS.LabeledIconButton deferDatePicker { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIButton dismissButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton foreverButton { get; set; }
+		NachoClient.iOS.LabeledIconButton laterButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton laterButton { get; set; }
+		NachoClient.iOS.LabeledIconButton meetingButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton monthEndButton { get; set; }
+		NachoClient.iOS.LabeledIconButton nextMonthButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton nextMonthButton { get; set; }
+		NachoClient.iOS.LabeledIconButton nextWeekButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton nextWeekButton { get; set; }
+		NachoClient.iOS.LabeledIconButton taskButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton nowButton { get; set; }
+		NachoClient.iOS.LabeledIconButton tomorrowButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton scheduleMeetingButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIButton tomorrowButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIButton tonightButton { get; set; }
+		NachoClient.iOS.LabeledIconButton tonightButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
@@ -55,19 +52,19 @@ namespace NachoClient.iOS
 				currentDelayLabel = null;
 			}
 
-			if (customDateButton != null) {
-				customDateButton.Dispose ();
-				customDateButton = null;
+			if (meetingButton != null) {
+				meetingButton.Dispose ();
+				meetingButton = null;
 			}
 
-			if (dismissButton != null) {
-				dismissButton.Dispose ();
-				dismissButton = null;
+			if (taskButton != null) {
+				taskButton.Dispose ();
+				taskButton = null;
 			}
 
-			if (foreverButton != null) {
-				foreverButton.Dispose ();
-				foreverButton = null;
+			if (deadlineButton != null) {
+				deadlineButton.Dispose ();
+				deadlineButton = null;
 			}
 
 			if (laterButton != null) {
@@ -75,24 +72,9 @@ namespace NachoClient.iOS
 				laterButton = null;
 			}
 
-			if (monthEndButton != null) {
-				monthEndButton.Dispose ();
-				monthEndButton = null;
-			}
-
-			if (nextMonthButton != null) {
-				nextMonthButton.Dispose ();
-				nextMonthButton = null;
-			}
-
-			if (nextWeekButton != null) {
-				nextWeekButton.Dispose ();
-				nextWeekButton = null;
-			}
-
-			if (scheduleMeetingButton != null) {
-				scheduleMeetingButton.Dispose ();
-				scheduleMeetingButton = null;
+			if (tonightButton != null) {
+				tonightButton.Dispose ();
+				tonightButton = null;
 			}
 
 			if (tomorrowButton != null) {
@@ -100,14 +82,24 @@ namespace NachoClient.iOS
 				tomorrowButton = null;
 			}
 
-			if (tonightButton != null) {
-				tonightButton.Dispose ();
-				tonightButton = null;
+			if (nextWeekButton != null) {
+				nextWeekButton.Dispose ();
+				nextWeekButton = null;
 			}
 
-			if (nowButton != null) {
-				nowButton.Dispose ();
-				nowButton = null;
+			if (nextMonthButton != null) {
+				nextMonthButton.Dispose ();
+				nextMonthButton = null;
+			}
+
+			if (deferDatePicker != null) {
+				deferDatePicker.Dispose ();
+				deferDatePicker = null;
+			}
+
+			if (dismissButton != null) {
+				dismissButton.Dispose ();
+				dismissButton = null;
 			}
 		}
 	}

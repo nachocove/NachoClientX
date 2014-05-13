@@ -37,30 +37,40 @@ namespace NachoCore.Brain
             if (r.isError ()) {
                 return r;
             }
+            var deferUntil = r.GetValue<DateTime> ();
+            return DeferThread (thread, deferralType, deferUntil);
+        }
+
+        static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
+        {
             foreach (var message in thread) {
                 message.DeferralType = deferralType;
-                message.FlagUtcDeferUntil = r.GetValue<DateTime> ();
-                NcModel.Instance.Db.Update (message);
+                message.Update ();
+                var utc = deferUntil;
+                var local = deferUntil.ToLocalTime ();
+                BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
             }
             return NcResult.OK ();
         }
 
-        static public NcResult DeferThread (McEmailMessageThread thread, DateTime deferUntil)
+        static public NcResult ClearMessageFlags (McEmailMessageThread thread)
         {
             foreach (var message in thread) {
-                message.DeferralType = MessageDeferralType.Custom;
-                message.FlagUtcDeferUntil = deferUntil;
-                NcModel.Instance.Db.Update (message);
+                BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
             }
             return NcResult.OK ();
         }
 
-        static public NcResult UndeferThread(McEmailMessageThread thread)
+        static public NcResult UndeferThread (McEmailMessageThread thread)
+        {
+            return ClearMessageFlags (thread);
+        }
+
+        static public NcResult SetDueDate (McEmailMessageThread thread, DateTime dueOn)
         {
             foreach (var message in thread) {
-                message.DeferralType = MessageDeferralType.None;
-                message.FlagUtcDeferUntil = DateTime.MinValue;
-                NcModel.Instance.Db.Update (message);
+                var start = DateTime.UtcNow;
+                BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.ToLocalTime (), start, dueOn.ToLocalTime (), dueOn);
             }
             return NcResult.OK ();
         }
@@ -112,12 +122,11 @@ namespace NachoCore.Brain
             case MessageDeferralType.Forever:
                 from = DateTime.MaxValue;
                 break;
-            case MessageDeferralType.Meeting:
             case MessageDeferralType.Custom:
             case MessageDeferralType.None:
             default:
                 NachoCore.NachoAssert.CaseError ();
-                return NcResult.Error (String.Format("ComputeDeferral; {0} was unexpected", deferralType));
+                return NcResult.Error (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
             }
             return NcResult.OK (from.ToUniversalTime ());
         }

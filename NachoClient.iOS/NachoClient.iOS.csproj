@@ -785,6 +785,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableDnsQueryRequest.cs">
       <Link>NachoCore\Mockables\MockableDnsQueryRequest.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoCalendarController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
