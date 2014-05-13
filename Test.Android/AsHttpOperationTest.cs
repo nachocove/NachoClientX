@@ -204,6 +204,9 @@ namespace Test.iOS
                     instance = new MockNcCommStatus ();
                 }
                 return instance;
+            } set {
+                // allow MockNcCommStatus to be reset to null between tests
+                instance = value;
             }
         }
 
@@ -345,7 +348,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -357,7 +360,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -369,7 +372,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -381,7 +384,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -393,7 +396,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -405,8 +408,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
-            Log.Warn ("Status host: {0}", MockNcCommStatus.Instance.Host);
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -418,8 +420,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
-            Log.Warn ("Status host: {0}", MockNcCommStatus.Instance.Host);
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -431,7 +432,7 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
         }
 
         [Test]
@@ -443,7 +444,43 @@ namespace Test.iOS
             }, request => {
             });
 
-            Assert.AreEqual (false, MockNcCommStatus.Instance.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            DoReportCommResultWithNonGeneralFailure ();
+        }
+
+        [Test]
+        public void StatusCodeUnknown ()
+        {
+            // Unknown status code
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = (System.Net.HttpStatusCode)8035;
+            }, request => {
+            });
+
+            DoReportCommResultWithFailureType (() => {
+                return true;
+            });
+        }
+
+        private void DoReportCommResultWithNonGeneralFailure ()
+        {
+            DoReportCommResultWithFailureType (() => {
+                return false;
+            });
+        }
+
+        // Test that comm status' are reported correctly by each status code method
+        // Allow the type of failure (general/non-general) to be set by the caller
+        private void DoReportCommResultWithFailureType (Func <bool> failureAction)
+        {
+            var mockCommStatus = MockNcCommStatus.Instance;
+
+            bool didFailGenerally = failureAction ();
+
+            Assert.AreEqual (didFailGenerally, mockCommStatus.DidFailGenerally, "Should set MockNcCommStatus Correctly");
+            Assert.AreEqual ("contoso.com", mockCommStatus.Host);
+
+            // teardown -- reset the comm status singleton before each test
+            MockNcCommStatus.Instance = null;
         }
 
         private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
