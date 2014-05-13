@@ -276,6 +276,93 @@ namespace Test.iOS
             });
         }
 
+        [Test]
+        public void NegativeContentLength ()
+        {
+            // use this to test timeout values once they can be set
+//            string contentType = "application/vnd.ms-sync.wbxml";
+//            string mockResponseLength = -15.ToString ();
+//
+//            PerformHttpOperationWithSettings (response => {
+//                response.StatusCode = System.Net.HttpStatusCode.OK;
+//                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+//                response.Content.Headers.Add ("Content-Type", contentType);
+//            }, request => {
+//            });
+        }
+
+        // TODO finish this test -- not sure where the commresult method should be called in the exceptions
+        [Test]
+        public void BadWbxmlShouldFailCommResult ()
+        {
+            // use this to test timeout values once they can be set
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockResponseLength = 10.ToString ();
+
+            PerformHttpOperationWithSettings (response => {
+                string badWbxml = "wbxml bad wbxml";
+                byte[] bytes = new byte[badWbxml.Length * sizeof(char)];
+                System.Buffer.BlockCopy(badWbxml.ToCharArray(), 0, bytes, 0, bytes.Length);
+                response.Content = new ByteArrayContent(bytes);  
+
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", contentType);
+            }, request => {
+            });
+
+            DoReportCommResultWithFailureType (() => {
+                return true;
+            });
+        }
+
+        [Test]
+        public void BadXmlShouldFailCommResult ()
+        {
+            // use this to test timeout values once they can be set
+            string contentType = "text/xml";
+            string mockResponseLength = 10.ToString ();
+
+            PerformHttpOperationWithSettings (response => {
+                string badXml = "xml bad xml";
+                byte[] bytes = new byte[badXml.Length * sizeof(char)];
+                System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
+                response.Content = new ByteArrayContent(bytes);  
+
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", contentType);
+            }, request => {
+            });
+
+            DoReportCommResultWithFailureType (() => {
+                return true;
+            });
+        }
+
+        [Test]
+        public void GoodXmlShouldReportSuccessfulCommResult ()
+        {
+            // use this to test timeout values once they can be set
+            string contentType = "text/xml";
+            string mockResponseLength = 10.ToString ();
+
+            PerformHttpOperationWithSettings (response => {
+                string badXml = MockData.BasicPhonyPingRequestXml;
+                byte[] bytes = new byte[badXml.Length * sizeof(char)];
+                System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
+                response.Content = new ByteArrayContent(bytes);  
+
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", contentType);
+            }, request => {
+            });
+
+            DoReportCommResultWithFailureType (() => {
+                return false;
+            });
+        }
 
         [Test]
         public void MismatchHeaderSizeValues ()
@@ -480,6 +567,7 @@ namespace Test.iOS
             Assert.AreEqual ("contoso.com", mockCommStatus.Host);
 
             // teardown -- reset the comm status singleton before each test
+            // TODO move this into a teardown method
             MockNcCommStatus.Instance = null;
         }
 
@@ -530,7 +618,9 @@ namespace Test.iOS
             op.Execute (sm);
 
             bool didFinish = false;
-            Assert.IsTrue (interlock.TryTake (out didFinish, 2000));
+            if (!interlock.TryTake (out didFinish, 2000)) {
+                Assert.Inconclusive ("Failed in TryTake clause");
+            }
             Assert.IsTrue (didFinish);
             Assert.IsTrue (setTrueBySuccessEvent);
         }

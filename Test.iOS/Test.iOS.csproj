@@ -140,6 +140,7 @@
     <Compile Include="..\Test.Android\ExtensionTest.cs">
       <Link>ExtensionTest.cs</Link>
     </Compile>
+    <Compile Include="AsAutodiscoverCommandTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
