@@ -146,7 +146,7 @@
     <Compile Include="..\Test.Android\AsAutodiscoverCommandTest.cs">
       <Link>AsAutodiscoverCommandTest.cs</Link>
     </Compile>
-    <Compile Include="..\Test.Android\CommonMocks.cs">
+    <Compile Include="..\Test.Android\Common\CommonMocks.cs">
       <Link>CommonMocks.cs</Link>
     </Compile>
   </ItemGroup>
