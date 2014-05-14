@@ -9,19 +9,24 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageActionViewController : BlurryViewController, IUITableViewDelegate, INachoMessageController
+    public partial class MessageActionViewController : BlurryViewController, IUITableViewDelegate, INachoMessageEditor
     {
         public McEmailMessageThread thread;
-        protected INachoMessageControllerDelegate owner;
+        protected INachoMessageEditorParent owner;
         protected INachoFolders folders = null;
 
         public MessageActionViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void SetOwner(INachoMessageControllerDelegate o)
+        public void SetOwner(INachoMessageEditorParent o)
         {
             owner = o;
+        }
+
+        public void DismissMessageEditor (bool animated, NSAction action)
+        {
+            owner = null;
         }
 
         public override void ViewDidLoad ()
@@ -63,7 +68,7 @@ namespace NachoClient.iOS
                 }
                 var o = owner;
                 owner = null;
-                o.DismissViewController (true, null);
+                o.DismissMessageEditor (true, null);
             }
         }
     }

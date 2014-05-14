@@ -16,7 +16,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : UIViewController, INachoMessageControllerDelegate, INachoCalendarItemEditorParent
+    public partial class NachoNowViewController : UIViewController, INachoMessageEditorParent, INachoCalendarItemEditorParent
     {
         List<object> hotList;
         INachoEmailMessages messageThreads;
@@ -202,13 +202,40 @@ namespace NachoClient.iOS
             NachoAssert.CaseError ();
         }
 
-        public void DismissMessageViewController (INachoMessageController vc)
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
         {
             vc.SetOwner (null);
-            vc.DismissViewController (false, null);
+            vc.DismissMessageEditor (false, null);
         }
 
-        public void DismissCalendarCalendarItemEditor (INachoCalendarItemEditor vc)
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var t = CalendarHelper.CreateTask (m);
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue("", new SegueHolder(t));
+            }));
+        }
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var c = CalendarHelper.CreateMeeting (m);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue("", new SegueHolder(c));
+            }));
+        }
+
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
         {
             vc.SetOwner(null);
             vc.DismissCalendarItemEditor(false, null);

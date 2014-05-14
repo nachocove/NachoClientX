@@ -115,6 +115,7 @@
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="ciI-Ve-Wsq"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" id="Q8y-4K-BAb"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItemEdit" id="wNy-ed-w10"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -258,7 +259,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -434,7 +435,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="AttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="PUz-nc-h33" customClass="AttendeeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="CVB-up-ERg">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -557,7 +558,7 @@
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -807,7 +808,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -845,7 +846,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -929,7 +930,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -939,7 +940,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="378"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="334"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -1055,6 +1056,7 @@
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="MessageListToMessageView" id="c79-xS-Npa"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="MessageListToNachoNow" id="gkM-dU-I3K"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="MessageListToCalendarItemEdit" id="lVj-NH-yQq"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1111,6 +1113,7 @@
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" id="qB9-ce-7gT"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageViewToMessageAction" id="G1z-aV-19B"/>
                         <segue destination="lOe-mG-VS5" kind="push" identifier="MessageViewToComposeView" id="P29-wJ-GoN"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="MessageViewToCalendarItemEdit" id="qvr-mL-sd9"/>
                     </connections>
                 </viewController>
                 <barButtonItem image="clock.png" id="IfT-j6-Bb4" userLabel="Bar Button Item - Clock"/>
@@ -1490,18 +1493,18 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
         <segue reference="Oi3-nV-lAC"/>
-        <segue reference="JJM-dg-rMA"/>
-        <segue reference="p6V-c0-caL"/>
-        <segue reference="vRC-Oi-s8D"/>
-        <segue reference="DSB-SJ-fIa"/>
         <segue reference="ebP-h4-BhC"/>
-        <segue reference="P1C-rg-Luy"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="JWi-mA-RVD"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="gkM-dU-I3K"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="8JW-bP-0Qw"/>
         <segue reference="PxE-UU-EfC"/>
+        <segue reference="lVj-NH-yQq"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="c79-xS-Npa"/>
         <segue reference="nAp-rc-bND"/>
-        <segue reference="5fj-Ta-mc9"/>
+        <segue reference="6LT-Zj-XeH"/>
     </inferredMetricsTieBreakers>
 </document>

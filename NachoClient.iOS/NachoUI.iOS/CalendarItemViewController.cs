@@ -175,7 +175,7 @@ namespace NachoClient.iOS
             Section section = null;
 
             section = new ThinSection ();
-            section.Add (new SubjectElement (c.Subject));
+            section.Add (new SubjectElement (Pretty.SubjectString(c.Subject)));
             section.Add (new StartTimeElementWithIconIndent (Pretty.FullDateString (c.StartTime)));
             if (c.AllDayEvent) {
                 section.Add (new DurationElement (Pretty.AllDayStartToEnd (c.StartTime, c.EndTime)));
@@ -527,7 +527,11 @@ namespace NachoClient.iOS
         protected string MyCalendarName (McCalendar c)
         {
             var candidates = McFolder.QueryByFolderEntryId<McCalendar> (account.Id, c.Id);
-            return candidates.First ().DisplayName;
+            if ((null == candidates) || (0 == candidates.Count)) {
+                return "None";
+            } else {
+                return candidates.First ().DisplayName;
+            }
         }
 
         protected void UpdateStatus (NcResponseType status)

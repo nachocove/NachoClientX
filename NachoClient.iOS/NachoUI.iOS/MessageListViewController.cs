@@ -16,7 +16,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate, INachoMessageControllerDelegate
+    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent
     {
         INachoEmailMessages messageThreads;
         // iOS Bug Workaround
@@ -218,14 +218,56 @@ namespace NachoClient.iOS
                 vc.thread = messageThreads.GetEmailThread (indexPath.Row);
                 vc.SetOwner (this);
             }
+            if (segue.Identifier == "MessageListToCalendarItemEdit") {
+                var vc = (CalendarItemViewController)segue.DestinationViewController;
+                var h = sender as SegueHolder;
+                var c = h.value as McCalendar;
+                vc.SetOwner (this);
+                vc.SetCalendarItem (c, CalendarItemEditorAction.edit);
+            }
         }
 
-        public void DismissMessageViewController (INachoMessageController vc)
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
         {
             vc.SetOwner (null);
-            vc.DismissViewController (false, new NSAction (delegate {
+            vc.DismissMessageEditor (false, new NSAction (delegate {
                 this.DismissViewController (true, null);
             }));
+        }
+
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var t = CalendarHelper.CreateTask (m);
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue("", new SegueHolder(t));
+            }));
+        }
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var c = CalendarHelper.CreateMeeting (m);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue("MessageListToCalendarItemEdit", new SegueHolder(c));
+            }));
+        }
+        /// <summary>
+        /// INachoCalendarItemEditorParent Delegate
+        /// </summary>
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (true, null);
         }
 
         public override int NumberOfSections (UITableView tableView)

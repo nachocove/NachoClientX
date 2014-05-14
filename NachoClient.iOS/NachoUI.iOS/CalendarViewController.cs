@@ -118,7 +118,7 @@ namespace NachoClient.iOS
             NachoAssert.CaseError ();
         }
 
-        public void DismissCalendarCalendarItemEditor (INachoCalendarItemEditor vc)
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
         {
             vc.SetOwner (null);
             vc.DismissCalendarItemEditor (true, null);

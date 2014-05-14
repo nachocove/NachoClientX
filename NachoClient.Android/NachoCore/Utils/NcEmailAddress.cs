@@ -194,6 +194,9 @@ namespace NachoCore.Utils
 
         public static InternetAddressList ParseString (string emailAddressString)
         {
+            if (null == emailAddressString) {
+                return new InternetAddressList ();
+            }
             InternetAddressList addresses;
             if (InternetAddressList.TryParse (emailAddressString, out addresses)) {
                 return addresses;

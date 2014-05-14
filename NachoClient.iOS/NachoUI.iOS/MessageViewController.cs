@@ -19,7 +19,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : UIViewController, INachoMessageControllerDelegate
+    public partial class MessageViewController : UIViewController, INachoMessageEditorParent, INachoCalendarItemEditorParent
     {
         public McEmailMessageThread thread;
         protected UIView view;
@@ -130,16 +130,57 @@ namespace NachoClient.iOS
                 vc.ActionThread = thread;
                 vc.SetOwner (this);
             }
+            if (segue.Identifier == "MessageViewToCalendarItemEdit") {
+                var vc = (CalendarItemViewController)segue.DestinationViewController;
+                var h = sender as SegueHolder;
+                var c = h.value as McCalendar;
+                vc.SetOwner (this);
+                vc.SetCalendarItem (c, CalendarItemEditorAction.edit);
+            }
         }
 
-        public void DismissMessageViewController (INachoMessageController vc)
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
         {
             vc.SetOwner (null);
-            vc.DismissViewController (false, new NSAction (delegate {
+            vc.DismissMessageEditor (false, new NSAction (delegate {
                 NavigationController.PopViewControllerAnimated (true);
             }));
         }
 
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var t = CalendarHelper.CreateTask (m);
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue ("", new SegueHolder (t));
+            }));
+        }
+
+        /// <summary>
+        /// INachoMessageControl delegate
+        /// </summary>
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var c = CalendarHelper.CreateMeeting (m);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue ("MessageViewToCalendarItemEdit", new SegueHolder (c));
+            }));
+        }
+
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (true, null);
+        }
+       
         void MarkAsRead ()
         {
             var account = NcModel.Instance.Db.Table<McAccount> ().First ();

@@ -14,7 +14,7 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class ComposeViewController : DialogViewController, INachoMessageController, INachoContactChooserDelegate
+    public partial class ComposeViewController : DialogViewController, INachoContactChooserDelegate
     {
         List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
         public static readonly NSString Reply = new NSString ("Reply");
@@ -22,14 +22,14 @@ namespace NachoClient.iOS
         public static readonly NSString Forward = new NSString ("Forward");
         public string Action;
         public McEmailMessageThread ActionThread;
-        public INachoMessageControllerDelegate owner;
+        public INachoMessageEditorParent owner;
 
         public ComposeViewController (IntPtr handle) : base (handle)
         {
     
         }
 
-        public void SetOwner (INachoMessageControllerDelegate o)
+        public void SetOwner (INachoMessageEditorParent o)
         {
             owner = o;
         }

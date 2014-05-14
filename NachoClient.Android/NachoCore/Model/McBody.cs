@@ -45,10 +45,21 @@ namespace NachoCore.Model
             body.SaveDone ();
             return body;
         }
-
+            
         public FileStream SaveFileStream ()
         {
             return File.OpenWrite (GetBodyPath (Id));
+        }
+
+        public static int Duplicate(int id)
+        {
+            if (0 == id) {
+                return 0;
+            }
+            var body = SaveStart();
+            File.Copy(GetBodyPath(id), GetBodyPath(body.Id));
+            body.SaveDone ();
+            return body.Id;
         }
 
         public static string Get (int id)

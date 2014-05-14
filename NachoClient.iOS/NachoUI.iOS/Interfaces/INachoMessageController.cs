@@ -2,18 +2,21 @@
 //
 using System;
 using MonoTouch.Foundation;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public interface INachoMessageController
+    public interface INachoMessageEditor
     {
-        void SetOwner (INachoMessageControllerDelegate o);
-        void DismissViewController (bool animated, NSAction action);
+        void SetOwner (INachoMessageEditorParent o);
+        void DismissMessageEditor (bool animated, NSAction action);
     }
 
-    public interface INachoMessageControllerDelegate
+    public interface INachoMessageEditorParent
     {
-        void DismissMessageViewController (INachoMessageController vc);
+        void DismissChildMessageEditor (INachoMessageEditor vc);
+        void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread);
+        void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread);
     }
 }
 

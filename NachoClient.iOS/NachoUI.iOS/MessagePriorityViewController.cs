@@ -10,10 +10,10 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessagePriorityViewController : BlurryViewController, INachoMessageController
+    public partial class MessagePriorityViewController : BlurryViewController, INachoMessageEditor
     {
         public McEmailMessageThread thread;
-        protected INachoMessageControllerDelegate owner;
+        protected INachoMessageEditorParent owner;
 
         enum DatePickerActionType
         {
@@ -28,9 +28,15 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetOwner (INachoMessageControllerDelegate o)
+        public void SetOwner (INachoMessageEditorParent o)
         {
             owner = o;
+        }
+
+        public void DismissMessageEditor (bool animated, NSAction action)
+        {
+            owner = null;
+            DismissViewController (animated, action);
         }
 
         public override void ViewDidLoad ()
@@ -88,7 +94,7 @@ namespace NachoClient.iOS
         /// Touch anywhere else, and we'll close this view
         public override void TouchesBegan (NSSet touches, UIEvent evt)
         {
-            DismissViewController (true, null);
+            owner.DismissChildMessageEditor (this);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -103,7 +109,6 @@ namespace NachoClient.iOS
                 vc.owner = this;
             }
         }
-
         // TODO: Do we need to worry about local vs. utc time?
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
         {
@@ -121,7 +126,7 @@ namespace NachoClient.iOS
             }
             vc.owner = null;
             vc.DismissViewController (false, new NSAction (delegate {
-                owner.DismissMessageViewController (this);
+                owner.DismissChildMessageEditor (this);
             }));
         }
 
@@ -138,7 +143,7 @@ namespace NachoClient.iOS
             case MessageDeferralType.NextMonth:
             case MessageDeferralType.Forever:
                 NcMessageDeferral.DeferThread (thread, request);
-                owner.DismissMessageViewController (this);
+                owner.DismissChildMessageEditor (this);
                 return;
             case MessageDeferralType.Custom:
                 datePickerAction = DatePickerActionType.Defer;
@@ -153,10 +158,12 @@ namespace NachoClient.iOS
 
         void CreateMeeting ()
         {
+            owner.CreateMeetingEmailForMessage (this, thread);
         }
 
         void CreateTask ()
         {
+            owner.CreateTaskForEmailMessage (this, thread);
         }
 
         void CreateDeadline ()

@@ -2,6 +2,7 @@
 //
 using System;
 using System.IO;
+using System.Collections.Generic;
 using DDay.iCal;
 using DDay.iCal.Serialization.iCalendar;
 using MimeKit;
@@ -27,19 +28,25 @@ namespace NachoCore.Utils
 //            }
         }
 
-        public static McCalendar DefaultMeeting()
+        public static McCalendar DefaultMeeting ()
         {
             var c = new McCalendar ();
-            var start = DateTime.Now.AddMinutes (30.0);
+            var start = DateTime.UtcNow.AddMinutes (30.0);
             if (start.Minute >= 30.0) {
-                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 30, 0, DateTimeKind.Local);
+                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 30, 0, DateTimeKind.Utc);
             } else {
-                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Local);
+                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Utc);
             }
             c.EndTime = c.StartTime.AddMinutes (30.0);
+
             return c;
         }
 
+        public static McTask DefaultTask ()
+        {
+            var t = new McTask ();
+            return t;
+        }
 
         public static IICalendar iCalendarFromMcCalendar (McAccount account, McCalendar c, string tzid)
         {
@@ -106,7 +113,6 @@ namespace NachoCore.Utils
             return iCal;
         }
 
-
         private static void PopulateiCalTimeZoneInfo (ITimeZoneInfo tzi, System.TimeZoneInfo.TransitionTime transition, int year)
         {
             //            Calendar c = CultureInfo.CurrentCulture.Calendar;
@@ -139,7 +145,6 @@ namespace NachoCore.Utils
 
             tzi.RecurrenceRules.Add (recurrence);
         }
-
 
         protected static iCalTimeZone FromSystemTimeZone (System.TimeZoneInfo tzinfo, DateTime earlistDateTimeToSupport, bool includeHistoricalData)
         {
@@ -203,8 +208,7 @@ namespace NachoCore.Utils
             return dday_tz;
         }
 
-
-        public static void SendInvites(McAccount account, McCalendar c, string tzid)
+        public static void SendInvites (McAccount account, McCalendar c, string tzid)
         {
 
             IICalendar iCal = CalendarHelper.iCalendarFromMcCalendar (account, c, tzid);
@@ -247,7 +251,51 @@ namespace NachoCore.Utils
             MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
         }
 
-    }
+        protected static McAttendee CreateAttendee (InternetAddress address, NcAttendeeType attendeeType)
+        {
+            var mailboxAddress = address as MailboxAddress;
 
+            if(null == mailboxAddress) {
+                return null;
+            }
+
+            var attendee = new McAttendee ();
+            attendee.Name = mailboxAddress.Name;
+            attendee.Email = mailboxAddress.Address;
+            attendee.AttendeeType = attendeeType;
+            attendee.AttendeeTypeIsSet = true;
+            return attendee;
+        }
+
+        protected static List<McAttendee> CreateAttendeeList(string addressLine, NcAttendeeType attendeeType)
+        {
+            var addressList = NcEmailAddress.ParseString (addressLine);
+            var attendeeList = new List<McAttendee> ();
+            foreach (var address in addressList) {
+                var addendee = CreateAttendee (address, attendeeType);
+                if (null != addendee) {
+                    attendeeList.Add (addendee);
+                }
+            }
+            return attendeeList;
+        }
+
+        public static McCalendar CreateMeeting (McEmailMessage message)
+        {
+            var c = DefaultMeeting ();
+            c.Subject = message.Subject;
+            c.BodyId = McBody.Duplicate (message.BodyId);
+            c.attendees = new System.Collections.Generic.List<McAttendee> ();
+            c.attendees.AddRange(CreateAttendeeList(message.From, NcAttendeeType.Required));
+            c.attendees.AddRange(CreateAttendeeList(message.To, NcAttendeeType.Required));
+            c.attendees.AddRange(CreateAttendeeList(message.Cc, NcAttendeeType.Optional));
+            return c;
+        }
+
+        public static McTask CreateTask (McEmailMessage message)
+        {
+            return DefaultTask ();
+        }
+    }
 }
 
