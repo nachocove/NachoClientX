@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -18,6 +19,7 @@ namespace NachoCore.Utils
         COUNTERS,
     };
 
+    [Serializable]
     public class TelemetryEvent : NcQueueElement
     {
         public DateTime Timestamp { set; get; }
@@ -38,18 +40,6 @@ namespace NachoCore.Utils
             set {
                 NachoAssert.True (IsLogEvent());
                 _Message = value;
-            }
-        }
-
-        // Optional parameters that go with the log message.
-        private object[] _Parameters;
-        public object[] Parameters {
-            get {
-                return _Parameters;
-            }
-            set {
-                NachoAssert.True (IsLogEvent ());
-                _Parameters = value;
             }
         }
 
@@ -94,7 +84,6 @@ namespace NachoCore.Utils
             Timestamp = DateTime.UtcNow;
             _Type = type;
             _Message = null;
-            _Parameters = null;
             _Wbxml = null;
         }
 
@@ -107,6 +96,7 @@ namespace NachoCore.Utils
     public class Telemetry
     {
         private static bool ENABLED = true;
+        private static bool PERSISTED = true;
 
         private static Telemetry _SharedInstance;
         public static Telemetry SharedInstance {
@@ -121,6 +111,8 @@ namespace NachoCore.Utils
 
         private NcQueue<TelemetryEvent> EventQueue;
 
+        private AutoResetEvent DbUpdated;
+
         private ITelemetryBE BackEnd;
 
         private Thread ProcessThread;
@@ -129,6 +121,7 @@ namespace NachoCore.Utils
         {
             EventQueue = new NcQueue<TelemetryEvent> ();
             BackEnd = null;
+            DbUpdated = new AutoResetEvent (false);
         }
 
         public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
@@ -139,10 +132,15 @@ namespace NachoCore.Utils
 
             NachoAssert.True (TelemetryEvent.IsLogEvent (type));
             TelemetryEvent tEvent = new TelemetryEvent (type);
-            tEvent.Message = fmt;
-            tEvent.Parameters = list;
+            tEvent.Message = String.Format(fmt, list);
 
-            SharedInstance.EventQueue.Enqueue (tEvent);
+            if (!PERSISTED) {
+                SharedInstance.EventQueue.Enqueue (tEvent);
+            } else {
+                McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
+                dbEvent.Insert ();
+                Telemetry.SharedInstance.DbUpdated.Set ();
+            }
         }
 
         public static void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
@@ -158,7 +156,14 @@ namespace NachoCore.Utils
                 tEvent = new TelemetryEvent (TelemetryEventType.WBXML_RESPONSE);
             }
             tEvent.Wbxml = wbxml;
-            SharedInstance.EventQueue.Enqueue (tEvent);
+
+            if (!PERSISTED) {
+                SharedInstance.EventQueue.Enqueue (tEvent);
+            } else {
+                McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
+                dbEvent.Insert ();
+                Telemetry.SharedInstance.DbUpdated.Set ();
+            }
         }
 
         public void Start (ITelemetryBE backEnd)
@@ -174,8 +179,22 @@ namespace NachoCore.Utils
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good
                 // idea to upload a lot of data. The exact algorithm is TBD.
-                TelemetryEvent tEvent = EventQueue.Dequeue ();
+                TelemetryEvent tEvent = null;
+                McTelemetryEvent dbEvent = null;
+                if (!PERSISTED) {
+                    tEvent = EventQueue.Dequeue ();
+                } else {
+                    dbEvent = McTelemetryEvent.QueryOne ();
+                    if (null == dbEvent) {
+                        DbUpdated.WaitOne ();
+                        continue;
+                    }
+                    tEvent = dbEvent.GetTelemetryEvent ();
+                }
                 BackEnd.SendEvent (tEvent);
+                if (null != dbEvent) {
+                    dbEvent.Delete ();
+                }
             }
         }
     }

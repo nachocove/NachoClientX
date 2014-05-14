@@ -107,8 +107,7 @@ namespace NachoCore.Utils
                     NachoAssert.True (false);
                     break;
                 }
-                string mesg = String.Format (tEvent.Message, tEvent.Parameters);
-                kvList.AddString ("message", mesg);
+                kvList.AddString ("message", tEvent.Message);
             } else if (tEvent.IsWbxmlEvent ()) {
                 switch (tEvent.Type) {
                 case TelemetryEventType.WBXML_REQUEST:
