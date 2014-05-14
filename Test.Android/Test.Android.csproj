@@ -80,7 +80,7 @@
     <Compile Include="NcXmlFilterTest.cs" />
     <Compile Include="ExtensionTest.cs" />
     <Compile Include="AsAutodiscoverCommandTest.cs" />
-    <Compile Include="CommonMocks.cs" />
+    <Compile Include="Common\CommonMocks.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\xsd\" />
+    <Folder Include="Common\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">
