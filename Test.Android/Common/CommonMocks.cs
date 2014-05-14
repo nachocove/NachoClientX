@@ -57,16 +57,21 @@ namespace Test.iOS
         {
             Owner = null; // Should not be accessed.
             ProtoControl = null; // Should not be accessed.
-            ProtocolState = new McProtocolState ();
+            ProtocolState = new McProtocolState () {
+                AsPolicyKey = "5",
+            };
             // READ AsPolicyKey
             // R/W AsProtocolVersion
             // READ InitialProvisionCompleted
             Server = null; // Should not be accessed.
             Account = new McAccount () {
-                Id = 1,
+                Id = 2,
+                CredId = 2,
+                EmailAddr = "john_doe@example.com",
             };
+
             Cred = new McCred () {
-                Username = "dummy",
+                Username = "dummy2",
                 Password = "password",
             };
         }

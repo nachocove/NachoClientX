@@ -42,7 +42,39 @@ namespace Test.iOS
         [Test]
         public void Pass ()
         {
+            bool setTrueBySuccess = false;
+            var sm = CreatePhonySM (val => {
+                setTrueBySuccess = val;
+            });
 
+            var mockContext = new MockContext ();
+            var autod = new AsAutodiscoverCommand (mockContext);
+            autod.DnsQueryRequestType = typeof(MockDnsQueryRequest);
+            autod.HttpClientType = typeof(MockHttpClient);
+
+            autod.Execute (sm);
+        }
+
+        private NcStateMachine CreatePhonySM (Action<bool> action)
+        {
+            bool setTrueBySuccessEvent = false;
+            var sm = new NcStateMachine ("PHONY") {
+                Name = "BasicPhonyPing",
+                LocalEventType = typeof(AsProtoControl.CtlEvt),
+                LocalStateType = typeof(AsProtoControl.Lst),
+                TransTable = new [] {
+                    new Node {State = (uint)St.Start,
+                        On = new [] {
+                            new Trans { 
+                                Event = (uint)SmEvt.E.Launch, 
+                                Act = delegate () {},
+                                State = (uint)St.Start },
+                        }
+                    },
+                }
+            };
+
+            return sm;
         }
     }
 }
