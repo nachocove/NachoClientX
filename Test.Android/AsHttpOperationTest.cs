@@ -191,7 +191,7 @@ namespace Test.iOS
             };
         }
     }
-
+        
     public class MockNcCommStatus : INcCommStatus
     {
         private static volatile MockNcCommStatus instance;

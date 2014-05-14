@@ -76,6 +76,7 @@
     <Compile Include="EmailAddressHelperTest.cs" />
     <Compile Include="NcXmlFilterTest.cs" />
     <Compile Include="ExtensionTest.cs" />
+    <Compile Include="AsAutodiscoverCommandTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
