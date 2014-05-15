@@ -134,12 +134,10 @@ namespace Test.iOS
             // Dummy.
         }
     }
-        
 
     // reusable request/response data
     class MockData
     {
-        public static Uri MockUri = new Uri ("https://contoso.com");
         public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
         public static XDocument MockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
         public static byte[] Wbxml = MockResponseXml.ToWbxml ();
@@ -183,22 +181,24 @@ namespace Test.iOS
         }
 
         [Test]
+        [Ignore]
         public void NegativeContentLength ()
         {
             // use this to test timeout values once they can be set
-//            string contentType = "application/vnd.ms-sync.wbxml";
-//            string mockResponseLength = -15.ToString ();
-//
-//            PerformHttpOperationWithSettings (response => {
-//                response.StatusCode = System.Net.HttpStatusCode.OK;
-//                response.Content.Headers.Add ("Content-Length", mockResponseLength);
-//                response.Content.Headers.Add ("Content-Type", contentType);
-//            }, request => {
-//            });
+            string contentType = "application/vnd.ms-sync.wbxml";
+            string mockResponseLength = "-15";
+
+            PerformHttpOperationWithSettings (response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", contentType);
+            }, request => {
+            });
         }
 
         // TODO finish this test -- not sure where the commresult method should be called in the exceptions
         [Test]
+        [Ignore]
         public void BadWbxmlShouldFailCommResult ()
         {
             // use this to test timeout values once they can be set
@@ -254,9 +254,9 @@ namespace Test.iOS
             string mockResponseLength = 10.ToString ();
 
             PerformHttpOperationWithSettings (response => {
-                string badXml = MockData.BasicPhonyPingRequestXml;
-                byte[] bytes = new byte[badXml.Length * sizeof(char)];
-                System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
+                string goodXml = MockData.BasicPhonyPingRequestXml;
+                byte[] bytes = new byte[goodXml.Length * sizeof(char)];
+                System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, bytes, 0, bytes.Length);
                 response.Content = new ByteArrayContent(bytes);  
 
                 response.StatusCode = System.Net.HttpStatusCode.OK;
@@ -356,6 +356,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
+        // I don't see any reason this test should be failing. TODO Investigate further.
         [Test]
         public void StatusCodeUnauthorized ()
         {
@@ -487,8 +488,6 @@ namespace Test.iOS
                 interlock.Add(true);
             });
 
-            sm.PostEvent ((uint)SmEvt.E.Launch, "BasicPhonyPing");
-
             // create the response, then allow caller to set headers,
             // then return response and assign to mockResponse
             var mockResponse = CreateMockResponse (MockData.Wbxml, response => {
@@ -496,7 +495,7 @@ namespace Test.iOS
             });
 
             // do some common assertions
-            ExamineRequestMessageOnMockClient (MockData.MockUri, request => {
+            ExamineRequestMessageOnMockClient (CommonMockData.MockUri, request => {
                 provideRequest (request);
             });
 
@@ -508,7 +507,7 @@ namespace Test.iOS
             var context = new MockContext ();
 
             // provides the mock owner
-            BaseMockOwner owner = CreateMockOwner (MockData.MockUri, MockData.MockRequestXml);
+            BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, MockData.MockRequestXml);
 
             var op = new AsHttpOperation ("Ping", owner, context);
 

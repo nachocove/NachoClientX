@@ -15,6 +15,12 @@ using NachoPlatform;
 
 namespace Test.iOS
 {
+    // reusable request/response data
+    public class CommonMockData
+    {
+        public static Uri MockUri = new Uri ("https://contoso.com");
+    }
+
     public class MockHttpClient : IHttpClient
     {
         // TODO: do we need to go the factory route and get rid of the statics?
