@@ -96,10 +96,6 @@
       <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
       <Name>NachoClient.Android</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NachoClient.iOS\NachoClient.iOS.csproj">
-      <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>
-      <Name>NachoClient.iOS</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\xsd\" />
