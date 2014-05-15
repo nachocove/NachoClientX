@@ -106,7 +106,7 @@
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
     </Reference>
     <Reference Include="DnDns.iOS">
-      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Debug\DnDns.iOS.dll</HintPath>
+      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
