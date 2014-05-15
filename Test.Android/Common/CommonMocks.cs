@@ -18,7 +18,7 @@ namespace Test.iOS
     // reusable request/response data
     public class CommonMockData
     {
-        public static Uri MockUri = new Uri ("https://contoso.com");
+        public static Uri MockUri = new Uri ("https://gmail.com");
     }
 
     public class MockHttpClient : IHttpClient
@@ -70,7 +70,7 @@ namespace Test.iOS
             Server = null; // Should not be accessed.
             Account = new McAccount () {
                 Id = 1,
-                EmailAddr = "john_doe@example.com",
+                EmailAddr = "john_doe@gmail.com",
             };
 
             Cred = new McCred () {
