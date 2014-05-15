@@ -19,6 +19,7 @@ namespace Test.iOS
     public class CommonMockData
     {
         public static Uri MockUri = new Uri ("https://gmail.com");
+        public static string Host = "gmail.com";
     }
 
     public class MockHttpClient : IHttpClient
