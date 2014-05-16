@@ -496,26 +496,66 @@ namespace NachoCore.ActiveSync
             c.MMS = MMS;
             c.NickName = NickName;
 
-            c.AddDateAttribute ("Anniversary", null, Anniversary);
-            c.AddDateAttribute ("Birthday", null, Birthday);
-            c.AddEmailAddressAttribute ("Email1Address", null, Email1Address);
-            c.AddEmailAddressAttribute ("Email2Address", null, Email2Address);
-            c.AddEmailAddressAttribute ("Email3Address", null, Email3Address);
-            c.AddPhoneNumberAttribute ("AssistantPhoneNumber", null, AssistantPhoneNumber);
-            c.AddPhoneNumberAttribute ("BusinessFaxNumber", null, BusinessFaxNumber);
-            c.AddPhoneNumberAttribute ("BusinessPhoneNumber", null, BusinessPhoneNumber);
-            c.AddPhoneNumberAttribute ("Business2PhoneNumber", null, Business2PhoneNumber);
-            c.AddPhoneNumberAttribute ("CarPhoneNumber", null, CarPhoneNumber);
-            c.AddPhoneNumberAttribute ("HomeFaxNumber", null, HomeFaxNumber);
-            c.AddPhoneNumberAttribute ("HomePhoneNumber", null, HomePhoneNumber);
-            c.AddPhoneNumberAttribute ("Home2PhoneNumber", null, Home2PhoneNumber);
-            c.AddPhoneNumberAttribute ("MobilePhoneNumber", null, MobilePhoneNumber);
-            c.AddPhoneNumberAttribute ("PagerNumber", null, PagerNumber);
-            c.AddPhoneNumberAttribute ("RadioPhoneNumber", null, RadioPhoneNumber);
-            c.AddPhoneNumberAttribute ("CompanyMainPhone", null, CompanyMainPhone);
-            c.AddIMAddressAttribute ("IMAddress", null, IMAddress);
-            c.AddIMAddressAttribute ("IMAddress2", null, IMAddress2);
-            c.AddIMAddressAttribute ("IMAddress3", null, IMAddress3);
+            if (DateTime.MinValue != Anniversary) {
+                c.AddDateAttribute ("Anniversary", null, Anniversary);
+            }
+            if (DateTime.MinValue != Birthday) {
+                c.AddDateAttribute ("Birthday", null, Birthday);
+            }
+            if (null != Email1Address) {
+                c.AddEmailAddressAttribute ("Email1Address", null, Email1Address);
+            }
+            if (null != Email2Address) {
+                c.AddEmailAddressAttribute ("Email2Address", null, Email2Address);
+            }
+            if (null != Email3Address) {
+                c.AddEmailAddressAttribute ("Email3Address", null, Email3Address);
+            }
+            if (null != AssistantPhoneNumber) {
+                c.AddPhoneNumberAttribute ("AssistantPhoneNumber", null, AssistantPhoneNumber);
+            }
+            if (null != BusinessFaxNumber) {
+                c.AddPhoneNumberAttribute ("BusinessFaxNumber", null, BusinessFaxNumber);
+            }
+            if (null != BusinessPhoneNumber) {
+                c.AddPhoneNumberAttribute ("BusinessPhoneNumber", null, BusinessPhoneNumber);
+            }
+            if (null != Business2PhoneNumber) {
+                c.AddPhoneNumberAttribute ("Business2PhoneNumber", null, Business2PhoneNumber);
+            }
+            if (null != CarPhoneNumber) {
+                c.AddPhoneNumberAttribute ("CarPhoneNumber", null, CarPhoneNumber);
+            }
+            if (null != HomeFaxNumber) {
+                c.AddPhoneNumberAttribute ("HomeFaxNumber", null, HomeFaxNumber);
+            }
+            if (null != HomePhoneNumber) {
+                c.AddPhoneNumberAttribute ("HomePhoneNumber", null, HomePhoneNumber);
+            }
+            if (null != Home2PhoneNumber) {
+                c.AddPhoneNumberAttribute ("Home2PhoneNumber", null, Home2PhoneNumber);
+            }
+            if (null != MobilePhoneNumber) {
+                c.AddPhoneNumberAttribute ("MobilePhoneNumber", null, MobilePhoneNumber);
+            }
+            if (null != PagerNumber) {
+                c.AddPhoneNumberAttribute ("PagerNumber", null, PagerNumber);
+            }
+            if (null != RadioPhoneNumber) {
+                c.AddPhoneNumberAttribute ("RadioPhoneNumber", null, RadioPhoneNumber);
+            }
+            if (null != CompanyMainPhone) {
+                c.AddPhoneNumberAttribute ("CompanyMainPhone", null, CompanyMainPhone);
+            }
+            if (null != IMAddress) {
+                c.AddIMAddressAttribute ("IMAddress", null, IMAddress);
+            }
+            if (null != IMAddress2) {
+                c.AddIMAddressAttribute ("IMAddress2", null, IMAddress2);
+            }
+            if (null != IMAddress3) {
+                c.AddIMAddressAttribute ("IMAddress3", null, IMAddress3);
+            }
 
             McContactAddressAttribute home = null;
 
@@ -602,9 +642,15 @@ namespace NachoCore.ActiveSync
                 c.AddCategoryAttribute (s);
             }
 
-            c.AddRelationshipAttribute ("AssistantName", null, AssistantName);
-            c.AddRelationshipAttribute ("ManagerName", null, ManagerName);
-            c.AddRelationshipAttribute ("Spouse", null, Spouse);
+            if (null != AssistantName) {
+                c.AddRelationshipAttribute ("AssistantName", null, AssistantName);
+            }
+            if (null != ManagerName) {
+                c.AddRelationshipAttribute ("ManagerName", null, ManagerName);
+            }
+            if (null != Spouse) {
+                c.AddRelationshipAttribute ("Spouse", null, Spouse);
+            }
             foreach (var s in Children) {
                 c.AddRelationshipAttribute ("Child", null, s);
             }

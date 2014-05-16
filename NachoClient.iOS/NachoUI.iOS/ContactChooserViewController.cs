@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
         // Internal state
-        List<McContactIndex> searchResults;
+        List<McContactStringAttribute> searchResults;
         INachoContacts firstList;
         INachoContacts secondList;
 
