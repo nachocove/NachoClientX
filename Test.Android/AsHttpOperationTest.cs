@@ -135,17 +135,6 @@ namespace Test.iOS
         }
     }
 
-    // reusable request/response data
-    class MockData
-    {
-        public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
-        public static XDocument MockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
-        public static byte[] Wbxml = MockResponseXml.ToWbxml ();
-
-        public const string BasicPhonyPingRequestXml = "<?xml version=\"1.0\" encoding=\"utf-16\" standalone=\"no\"?>\n<Ping xmlns=\"Ping\">\n  <HeartbeatInterval>600</HeartbeatInterval>\n  <Folders>\n    <Folder>\n      <Id>1</Id>\n      <Class>Calendar</Class>\n    </Folder>\n    <Folder>\n      <Id>3</Id>\n      <Class>Email</Class>\n    </Folder>\n    <Folder>\n      <Id>4</Id>\n      <Class>Email</Class>\n    </Folder>\n    <Folder>\n      <Id>5</Id>\n      <Class>Email</Class>\n    </Folder>\n    <Folder>\n      <Id>7</Id>\n      <Class>Email</Class>\n    </Folder>\n    <Folder>\n      <Id>9</Id>\n      <Class>Email</Class>\n    </Folder>\n    <Folder>\n      <Id>10</Id>\n      <Class>Email</Class>\n    </Folder>\n    <Folder>\n      <Id>2</Id>\n      <Class>Contacts</Class>\n    </Folder>\n  </Folders>\n</Ping>";
-        public const string BasicPhonyPingResponseXml = "<?xml version=\"1.0\" encoding=\"utf-16\" standalone=\"yes\"?>\n<Ping xmlns=\"Ping\">\n  <Status>2</Status>\n  <Folders>\n    <Folder>3</Folder>\n  </Folders>\n</Ping>";
-    }
-
 
     [TestFixture]
     public class AsHttpOperationTest
@@ -167,8 +156,8 @@ namespace Test.iOS
         {
             // header settings
             string contentType = "application/vnd.ms-sync.wbxml";
-            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
-            string mockResponseLength = MockData.Wbxml.Length.ToString ();
+            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
 
             PerformHttpOperationWithSettings (response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
@@ -255,7 +244,7 @@ namespace Test.iOS
             string mockResponseLength = 10.ToString ();
 
             PerformHttpOperationWithSettings (response => {
-                string goodXml = MockData.BasicPhonyPingRequestXml;
+                string goodXml = CommonMockData.BasicPhonyPingRequestXml;
                 byte[] bytes = new byte[goodXml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, bytes, 0, bytes.Length);
                 response.Content = new ByteArrayContent(bytes);  
@@ -278,7 +267,7 @@ namespace Test.iOS
                Should not crash on bad or unexpected values */
 
             // content length is smaller than header
-            int halfLength = MockData.Wbxml.Length / 2;  // make the test length < actual length
+            int halfLength = CommonMockData.Wbxml.Length / 2;  // make the test length < actual length
             string responseLengthHalf = halfLength.ToString ();
             PerformHttpOperationWithResponseLength (responseLengthHalf);
 
@@ -295,7 +284,7 @@ namespace Test.iOS
         private void PerformHttpOperationWithResponseLength (string responseLength)
         {
             string contentType = "application/vnd.ms-sync.wbxml";
-            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
             PerformHttpOperationWithSettings (response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
@@ -315,7 +304,7 @@ namespace Test.iOS
         {
             /* Content-Length is zero --> must not require content type */
             // header settings (get passed into CreateMockResponseWithHeaders ())
-            string mockRequestLength = MockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = 0.ToString ();
 
             PerformHttpOperationWithSettings (response => {
@@ -491,7 +480,7 @@ namespace Test.iOS
 
             // create the response, then allow caller to set headers,
             // then return response and assign to mockResponse
-            var mockResponse = CreateMockResponse (MockData.Wbxml, response => {
+            var mockResponse = CreateMockResponse (CommonMockData.Wbxml, response => {
                 provideResponse (response);   
             });
 
@@ -508,7 +497,7 @@ namespace Test.iOS
             var context = new MockContext ();
 
             // provides the mock owner
-            BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, MockData.MockRequestXml);
+            BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);
 
             var op = new AsHttpOperation ("Ping", owner, context);
 

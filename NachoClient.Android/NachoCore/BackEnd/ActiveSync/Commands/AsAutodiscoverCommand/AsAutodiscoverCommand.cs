@@ -474,6 +474,7 @@ namespace NachoCore.ActiveSync
         {
             DoCancel ();
             OptCmd = new AsOptionsCommand (this) {
+                HttpClientType = HttpClientType,
                 DontReportCommResult = true,
             };
             OptCmd.Execute (Sm);
