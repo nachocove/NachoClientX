@@ -100,6 +100,7 @@ namespace NachoClient.iOS
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
+
             if (launcOptions != null) {
                 // we got some launch options from the OS, probably launched from a localNotification
                 if (launcOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
@@ -110,7 +111,8 @@ namespace NachoClient.iOS
                         //FIXME - for now we'll pop up an alert saying we got new mail
                         // what we will do in future is show the email or calendar invite body
                         localNotification.ApplicationIconBadgeNumber = 0;
-                        new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null).Show ();
+                        var alert = new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null);
+                        alert.PerformSelector (new Selector ("show"), null, 0.1); // http://stackoverflow.com/questions/9040896
                    
                         //localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);// need to find accountID here
                     }
