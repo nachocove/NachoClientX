@@ -179,20 +179,20 @@ namespace NachoCore.Utils
             NachoAssert.True (AccountId > 0);
 
             var msg = new McEmailMessage ();
+            msg.AccountId = AccountId;
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);
             msg.From = CommaSeparatedList (mimeMessage.From);
             msg.Subject = mimeMessage.Subject;
 
-            var bodyStream = new System.IO.MemoryStream ();
-            mimeMessage.WriteTo (bodyStream);
-            bodyStream.Seek (0, SeekOrigin.Begin);
-            var textStream = new StreamReader (bodyStream);
-
-            var body = McBody.Save (textStream.ReadToEnd ());
+            // Create body
+            var body = McBody.SaveStart ();
+            using (var fileStream = body.SaveFileStream ()) {
+                mimeMessage.WriteTo (fileStream);
+            }
+            body.SaveDone ();
             msg.BodyId = body.Id;
 
-            msg.AccountId = AccountId;
             NcModel.Instance.Db.Insert (msg);
 
             if (0 == CalendarId) {
