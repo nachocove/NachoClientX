@@ -16,7 +16,7 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            File.Delete (Path.Combine (NcModel.Instance.AttachmentsDir, LocalFileName));
+            File.Delete (Path.Combine (NcModel.Instance.FilesDir, LocalFileName));
             return base.Delete ();
         }
 
