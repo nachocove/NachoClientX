@@ -579,8 +579,7 @@ namespace NachoClient.iOS
 
         void DisplayAttachment (McAttachment attachment)
         {
-            // FIXME - don't compute file name here.
-            var path = Path.Combine (NcModel.Instance.AttachmentsDir, attachment.Id.ToString (), attachment.LocalFileName);
+            var path = attachment.FilePath ();
             UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
             Preview.Delegate = new DocumentInteractionControllerDelegate (this);
             Preview.PresentPreview (true);
