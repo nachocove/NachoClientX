@@ -10,7 +10,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class FolderViewController : UITableViewController
+    public partial class FolderViewController : UITableViewController, IUITableViewDelegate
     {
 
         McAccount currentAccount { get; set; }

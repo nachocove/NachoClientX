@@ -815,6 +815,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McTelemetryEvent.cs">
       <Link>NachoCore\Model\McTelemetryEvent.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoFileChooser.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

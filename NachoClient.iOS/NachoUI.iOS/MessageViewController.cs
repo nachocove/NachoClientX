@@ -571,52 +571,11 @@ namespace NachoClient.iOS
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
             if (a.IsDownloaded) {
-                DisplayAttachment (a);
+                PlatformHelpers.DisplayAttachment (this, a);
             } else {
-                DownloadAttachment (a);
+                PlatformHelpers.DownloadAttachment (a);
             }
         }
 
-        void DisplayAttachment (McAttachment attachment)
-        {
-            var path = attachment.FilePath ();
-            UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
-            Preview.Delegate = new DocumentInteractionControllerDelegate (this);
-            Preview.PresentPreview (true);
-        }
-
-        void DownloadAttachment (McAttachment attachment)
-        {
-            if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                var account = NcModel.Instance.Db.Table<McAccount> ().First ();
-                BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
-                RefreshAttachmentSection ();
-            }
-        }
-
-        public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
-        {
-            UIViewController viewC;
-
-            public DocumentInteractionControllerDelegate (UIViewController controller)
-            {
-                viewC = controller;
-            }
-
-            public override UIViewController ViewControllerForPreview (UIDocumentInteractionController controller)
-            {
-                return viewC;
-            }
-
-            public override UIView ViewForPreview (UIDocumentInteractionController controller)
-            {
-                return viewC.View;
-            }
-
-            public override RectangleF RectangleForPreview (UIDocumentInteractionController controller)
-            {
-                return viewC.View.Frame;
-            }
-        }
     }
 }

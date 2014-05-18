@@ -65,7 +65,7 @@ namespace NachoCore.Model
             return File.OpenWrite (TempPath (guidString));
         }
 
-        private static string TempPath (string guidString)
+        public static string TempPath (string guidString)
         {
             return Path.Combine (NcModel.Instance.AttachmentsDir, guidString);
         }

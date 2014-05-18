@@ -15,7 +15,7 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class ComposeViewController : DialogViewController, INachoContactChooserDelegate
+    public partial class ComposeViewController : DialogViewController, INachoContactChooserDelegate, INachoFileChooserParent
     {
         List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
         List<int> attachmentList = new List<int> ();
@@ -81,6 +81,14 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 var address = (NcEmailAddress)holder.value;
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
+            }
+            if (segue.Identifier.Equals ("ComposeToAttachments")) {
+                var dc = (INachoFileChooser)segue.DestinationViewController;
+                dc.SetOwner (this);
+            }
+            if (segue.Identifier.Equals ("ComposeToFiles")) {
+                var dc = (INachoFileChooser)segue.DestinationViewController;
+                dc.SetOwner (this);
             }
         }
 
@@ -199,8 +207,9 @@ namespace NachoClient.iOS
          
             // List of Attachments, index 1..N
             for (int i = 0; i < attachmentList.Count; i++) {
-                var a = attachmentList [i];
-                var e = new StringElement (a.ToString ());
+                var attachmentIndex = attachmentList [i];
+                var attachment = McAttachment.QueryById<McAttachment> (attachmentIndex);
+                var e = new StringElement (attachment.DisplayName);
                 var index = i;
                 e.Tapped += () => {
                     AttachmentActionSheet (index);
@@ -211,13 +220,26 @@ namespace NachoClient.iOS
 
         protected void AttachmentActionSheet (int i)
         {
-            var actionSheet = new UIActionSheet ("Attachment Manager", null, "Cancel", "Delete", null);
+            var actionSheet = new UIActionSheet ("Attachment Manager");
+            actionSheet.Add ("Cancel");
+            actionSheet.Add ("Remove Attachment");
+            actionSheet.Add ("Preview Attachment");
 
             actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                if (0 == b.ButtonIndex) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    break; // Cancel
+                case 1:
                     attachmentList.RemoveAt (i);
                     ReloadAttachments ();
                     Root.Reload (attachments, UITableViewRowAnimation.Automatic);
+                    break;
+                case 2:
+                    var attachmentIndex = attachmentList [i];
+                    var attachment = McAttachment.QueryById<McAttachment> (attachmentIndex);
+                    PlatformHelpers.DisplayAttachment (this, attachment);
+                    break;
+
                 }
             };
 
@@ -234,17 +256,22 @@ namespace NachoClient.iOS
             actionSheet.CancelButtonIndex = 0;
 
             actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                if (0 == b.ButtonIndex) {
-                    return; // Cancel
-                }
-                if (1 == b.ButtonIndex) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    break; // Cancel
+                case 1:
                     SetupPhotoPicker ();
-                    return;
+                    break;
+                case 2:
+                    PerformSegue ("ComposeToFiles", new SegueHolder (null));
+                    break;
+                case 3:
+                    PerformSegue ("ComposeToAttachments", new SegueHolder (null));
+                    break;
+                default:
+                    NachoAssert.CaseError ();
+                    break;
                 }
-                // TODO: Other attachment types
-                attachmentList.Add (b.ButtonIndex);
-                ReloadAttachments ();
-                Root.Reload (attachments, UITableViewRowAnimation.Automatic);
             };
 
             actionSheet.ShowInView (this.View);
@@ -312,6 +339,42 @@ namespace NachoClient.iOS
 
             e.Info.Dispose ();
             imagePicker.DismissViewController (true, null);
+        }
+
+        /// <summary>
+        /// INachoFileChooserParent delegate
+        /// </summary>
+        public void SelectFile (INachoFileChooser vc, McObject obj)
+        {
+            var a = obj as McAttachment;
+            if (null != a) {
+                attachmentList.Add (a.Id);
+            }
+            var file = obj as McFile;
+            if (null != file) {
+                var attachment = new McAttachment ();
+                attachment.DisplayName = file.DisplayName;
+                attachment.AccountId = account.Id;
+                attachment.Insert ();
+                var guidString = Guid.NewGuid ().ToString ("N");
+                // TODO: Decide on copy, move, delete, etc
+                File.Copy (file.FilePath (), McAttachment.TempPath (guidString));
+//                File.Move (file.FilePath (), McAttachment.TempPath (guidString));
+//                file.Delete ();
+                attachment.SaveFromTemp (guidString);
+                attachment.Update ();
+                attachmentList.Add (attachment.Id);
+            }
+
+            vc.DismissFileChooser (true, null);
+        }
+
+        /// <summary>
+        /// INachoFileChooserParent delegate
+        /// </summary>
+        public void DismissChildFileChooser (INachoFileChooser vc)
+        {
+            vc.DismissFileChooser (true, null);
         }
 
         /// <summary>
@@ -386,8 +449,6 @@ namespace NachoClient.iOS
             }
 
             mimeMessage.Body = body.ToMessageBody ();
-
-
 
             MimeHelpers.SendEmail (account.Id, mimeMessage);
 
