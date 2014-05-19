@@ -16,6 +16,14 @@ using System.Xml.Linq;
 
 namespace Test.iOS
 {
+    public enum MockSteps
+    {
+        S1,
+        S2,
+        S3,
+        S4,
+    };
+
     // reusable request/response data
     public class CommonMockData
     {
@@ -37,6 +45,8 @@ namespace Test.iOS
         public const string AutodPhonyPingResponseXmlv2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Autodiscover xmlns:autodiscover=\"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006\"><autodiscover:Response><autodiscover:Culture>en:us</autodiscover:Culture><autodiscover:User><autodiscover:DisplayName>John Doe</autodiscover:DisplayName><autodiscover:EMailAddress>johnd@utopiasystems.net</autodiscover:EMailAddress></autodiscover:User><autodiscover:Action><autodiscover:Settings><autodiscover:Server><autodiscover:Type>MobileSync</autodiscover:Type><autodiscover:Url>https://loandept.woodgrovebank.com/Microsoft-Server-ActiveSync</autodiscover:Url><autodiscover:Name>https://loandept.woodgrovebank.com/Microsoft-Server-ActiveSync</autodiscover:Name></autodiscover:Server><autodiscover:Server><autodiscover:Type>CertEnroll</autodiscover:Type><autodiscover:Url>https://cert.woodgrovebank.com/CertEnroll</autodiscover:Url><autodiscover:Name /><autodiscover:ServerData>CertEnrollTemplate</autodiscover:ServerData></autodiscover:Server></autodiscover:Settings></autodiscover:Action></autodiscover:Response></Autodiscover>";
         // This response is a real response from the nachocove.com domain
         public const string AutodOffice365ResponseXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006\"><Response xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006\"><Culture>en:us</Culture><User><DisplayName>John Doe</DisplayName><EMailAddress>johnd@utopiasystems.net</EMailAddress></User><Action><Settings><Server><Type>MobileSync</Type><Url>https://outlook.office365.com/Microsoft-Server-ActiveSync</Url><Name>https://outlook.office365.com/Microsoft-Server-ActiveSync</Name></Server></Settings></Action></Response></Autodiscover>";
+
+        public const string AutodPhonyErrorResponse = "<Autodiscover xmlns:autodiscover=\"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006\">\n    <autodiscover:Response>\n        <autodiscover:Culture>en:us</autodiscover:Culture>\n        <autodiscover:User>\n           <autodiscover:EMailAddress>chris@woodgrovebank.com</autodiscover:EMailAddress>\n       </autodiscover:User>\n       <autodiscover:Action>\n           <autodiscover:Error>\n               <Status>1</Status>\n               <Message>The directory service could not be reached</Message>\n               <DebugData>MailUser</DebugData>\n           </autodiscover:Error>\n       </autodiscover:Action>\n    </autodiscover:Response>\n</Autodiscover>";
     }
 
     public class MockHttpClient : IHttpClient
@@ -45,7 +55,8 @@ namespace Test.iOS
         public delegate void ExamineHttpRequestMessageDelegate (HttpRequestMessage request);
         public static ExamineHttpRequestMessageDelegate ExamineHttpRequestMessage { set; get; }
 
-        public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate ();
+        // Provide the request message so that the type of auto-d can be checked
+        public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate (HttpRequestMessage request);
         public static ProvideHttpResponseMessageDelegate ProvideHttpResponseMessage { set; get; }
 
         public TimeSpan Timeout { get; set; }
@@ -63,7 +74,7 @@ namespace Test.iOS
             }
 
             return Task.Run<HttpResponseMessage> (delegate {
-                return ProvideHttpResponseMessage ();
+                return ProvideHttpResponseMessage (request);
             });
         }
     }
@@ -88,7 +99,7 @@ namespace Test.iOS
             Server = null; // Should not be accessed.
             Account = new McAccount () {
                 Id = 1,
-                EmailAddr = "john_doe@gmail.com",
+                EmailAddr = "johnd@utopiasystems.net",
             };
 
             Cred = new McCred () {

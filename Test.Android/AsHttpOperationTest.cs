@@ -495,7 +495,7 @@ namespace Test.iOS
             });
 
             // provides the mock response
-            MockHttpClient.ProvideHttpResponseMessage = () => {
+            MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 return mockResponse;
             };
 

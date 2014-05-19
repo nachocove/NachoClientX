@@ -53,11 +53,10 @@ namespace Test.iOS
     [TestFixture]
     public class AsAutodiscoverCommandTest
     {
-//        [Test]
+        [Test]
         public void ServerNotConfigured ()
         {
             // header settings
-            string contentType = "text/xml";
             string xml = CommonMockData.AutodOffice365ResponseXml;
             string mockResponseLength = xml.Length.ToString ();
 
@@ -69,24 +68,26 @@ namespace Test.iOS
                 httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
             }, provideDnsResponse => {
 
+            }, httpRequest => {
+                return true;
             });
         }
 
-//        [Test]
+        [Test]
         public void TestFirstMicrosoftDocResponse ()
         {
             string xml = CommonMockData.AutodPhonyPingResponseXmlv1;
             TestAutodPingWithXmlResponse (xml);
         }
 
-//        [Test]
+        [Test]
         public void TestSecondMicrosoftDocResponse ()
         {
             string xml = CommonMockData.AutodPhonyPingResponseXmlv2;
             TestAutodPingWithXmlResponse (xml);
         }
 
-//        [Test]
+        [Test]
         public void TestOffice365Response ()
         {
             string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -96,7 +97,6 @@ namespace Test.iOS
         private void TestAutodPingWithXmlResponse (string xml)
         {
             // header settings
-            string contentType = "text/xml";
             string mockResponseLength = xml.Length.ToString ();
 
             PerformAutoDiscoveryWithSettings (xml, mockContext => {
@@ -106,11 +106,40 @@ namespace Test.iOS
                 httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
             }, provideDnsResponse => {
 
+            }, httpRequest => {
+                // return true if the robot should fail, false otherwise
+                return PassRobotForStep(MockSteps.S1, httpRequest);
             });
         }
 
+        private bool PassRobotForStep (MockSteps step, HttpRequestMessage request)
+        {
+            string requestUri = request.RequestUri;
+            string s1Uri = "https://" + CommonMockData.Host;
+            string s2Uri = "https://autodiscover." + CommonMockData.Host;
+            string getUri = "http://autodiscover." + CommonMockData.Host;
+            switch (request.Method) {
+            case "POST":
+                if (step == MockSteps.S1 && requestUri.slice(0, s1Uri.Length) == s1Uri) {
+                    return true;
+                } else if (step == MockSteps.S2 && requestUri.slice(0, s2Uri.Length) == s2Uri) {
+                    return true;
+                }
+                return false;
+                break;
+            case "GET":
+                if (request.Method == "GET" && requestUri.slice(0, getUri.Length) == getUri) {
+                    return true;
+                }
+                break;
+            default:
+                return false;
+            }
+        }
+
         public void PerformAutoDiscoveryWithSettings (string xml, Action<MockContext> provideContext, 
-            Action<HttpResponseMessage> provideHttpResponse, Action<DnsQueryResponse> provideDnsResponse)
+            Action<HttpResponseMessage> exposeHttpResponse, Action<DnsQueryResponse> exposeDnsResponse, 
+            Func<HttpRequestMessage, bool> exposeHttpRequest)
         {
             var interlock = new BlockingCollection<bool> ();
 
@@ -126,22 +155,29 @@ namespace Test.iOS
                 };
 
                 mockDnsQueryResponse.ParseResponse (dnsByteArray);
-                provideDnsResponse (mockDnsQueryResponse);
+                exposeDnsResponse (mockDnsQueryResponse);
                 return mockDnsQueryResponse;
             };
-
+                
             // create the response, then allow caller to set headers,
             // then return response and assign to mockResponse
             var mockResponse = CreateMockResponse (xml, response => {
-                provideHttpResponse (response);
+                exposeHttpResponse (response);
             });
 
             MockHttpClient.ExamineHttpRequestMessage = (request) => {
 
             };
 
-            MockHttpClient.ProvideHttpResponseMessage = () => {
-                return mockResponse;
+            MockHttpClient.ProvideHttpResponseMessage = (request) => {
+                // check for the type of response and decide to fail the robot or not
+                bool shouldFailRobot = exposeHttpRequest(request);
+                if (!shouldFailRobot) {
+                    return mockResponse;
+                } else {
+                    // return an empty (invalid) response message to fail the robot
+                    return new HttpResponseMessage ();
+                }
             };
 
             var mockContext = new MockContext ();
