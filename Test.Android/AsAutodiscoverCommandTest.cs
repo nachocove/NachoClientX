@@ -107,33 +107,33 @@ namespace Test.iOS
             }, provideDnsResponse => {
 
             }, httpRequest => {
-                // return true if the robot should fail, false otherwise
+                // return true if the robot should pass, false otherwise
                 return PassRobotForStep(MockSteps.S1, httpRequest);
             });
         }
 
         private bool PassRobotForStep (MockSteps step, HttpRequestMessage request)
         {
-            string requestUri = request.RequestUri;
+            string requestUri = request.RequestUri.ToString ();
             string s1Uri = "https://" + CommonMockData.Host;
             string s2Uri = "https://autodiscover." + CommonMockData.Host;
             string getUri = "http://autodiscover." + CommonMockData.Host;
-            switch (request.Method) {
+            switch (request.Method.ToString ()) {
             case "POST":
-                if (step == MockSteps.S1 && requestUri.slice(0, s1Uri.Length) == s1Uri) {
+                if (step == MockSteps.S1 && requestUri.Substring(0, s1Uri.Length) == s1Uri) {
                     return true;
-                } else if (step == MockSteps.S2 && requestUri.slice(0, s2Uri.Length) == s2Uri) {
+                } else if (step == MockSteps.S2 && requestUri.Substring(0, s2Uri.Length) == s2Uri) {
                     return true;
                 }
                 return false;
-                break;
             case "GET":
-                if (request.Method == "GET" && requestUri.slice(0, getUri.Length) == getUri) {
+                if (request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri) {
                     return true;
                 }
-                break;
+                return false;;
             default:
-                return false;
+                // this catches the OPTIONS cases
+                return true;
             }
         }
 
@@ -158,12 +158,6 @@ namespace Test.iOS
                 exposeDnsResponse (mockDnsQueryResponse);
                 return mockDnsQueryResponse;
             };
-                
-            // create the response, then allow caller to set headers,
-            // then return response and assign to mockResponse
-            var mockResponse = CreateMockResponse (xml, response => {
-                exposeHttpResponse (response);
-            });
 
             MockHttpClient.ExamineHttpRequestMessage = (request) => {
 
@@ -171,12 +165,20 @@ namespace Test.iOS
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 // check for the type of response and decide to fail the robot or not
-                bool shouldFailRobot = exposeHttpRequest(request);
-                if (!shouldFailRobot) {
+                bool shouldPassRobot = exposeHttpRequest(request);
+                if (shouldPassRobot) {
+                    // create the response, then allow caller to set headers,
+                    // then return response and assign to mockResponse
+                    var mockResponse = CreateMockResponse (xml, response => {
+                        exposeHttpResponse (response);
+                    });
+
                     return mockResponse;
                 } else {
                     // return an empty (invalid) response message to fail the robot
-                    return new HttpResponseMessage ();
+                    return CreateMockResponse (CommonMockData.AutodPhonyErrorResponse, response => {
+
+                    });
                 }
             };
 
