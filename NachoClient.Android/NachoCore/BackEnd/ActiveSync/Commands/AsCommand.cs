@@ -137,7 +137,7 @@ namespace NachoCore.ActiveSync
         // Override if the subclass wants total control over the query string.
         public virtual string QueryString (AsHttpOperation Sender)
         {
-            var ident = (Device.Instance.IsSimulator ()) ? BEContext.ProtocolState.KludgeSimulatorIdentity : Device.Instance.Identity ();
+            var ident = Device.Instance.Identity ();
             return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
                 CommandName, 
                 BEContext.Cred.Username,
@@ -422,6 +422,9 @@ namespace NachoCore.ActiveSync
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 
             case Xml.StatusCode.RemoteWipeRequested_140:
+                var protocolState = BEContext.ProtocolState;
+                protocolState.IsWipeRequired = true;
+                protocolState.Update ();
                 PendingApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });

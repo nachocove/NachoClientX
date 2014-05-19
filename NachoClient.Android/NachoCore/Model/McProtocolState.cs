@@ -19,7 +19,6 @@ namespace NachoCore.Model
             AsFolderSyncEpoch = 1; // So that just-created McFolders aren't presumed from current epoch.
             HeartbeatInterval = 600;
             MaxFolders = 200;
-            KludgeSimulatorIdentity = Guid.NewGuid ().ToString ("N").Substring (0, 20);
             ProtoControlState = (uint)St.Start;
             SyncStratEmailCalendarState = (uint)St.Start;
             SyncStratContactsState = (uint)St.Start;
@@ -47,7 +46,7 @@ namespace NachoCore.Model
 
         public uint SyncStratContactsState { get; set; }
 
-        public string KludgeSimulatorIdentity { get; set; }
+        public bool IsWipeRequired { get; set; }
 
         public void IncrementAsFolderSyncEpoch ()
         {

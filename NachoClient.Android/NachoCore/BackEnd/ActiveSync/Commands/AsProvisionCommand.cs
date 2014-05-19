@@ -32,7 +32,6 @@ namespace NachoCore.ActiveSync
             };
         }
 
-        public bool MustWipe;
         public bool WipeSucceeded;
         private NcStateMachine Sm;
         private AsHttpOperation GetOp, AckOp;
@@ -134,12 +133,14 @@ namespace NachoCore.ActiveSync
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var provision = new XElement (m_ns + Xml.Provision.Ns);
-            if (MustWipe) {
+            if (BEContext.ProtocolState.IsWipeRequired) {
                 // For GetOp, send empty <Provision />.
                 if (AckOp == Sender) {
                     provision.Add (new XElement (m_ns + Xml.Provision.RemoteWipe,
-                        (WipeSucceeded) ? Xml.Provision.RemoteWipeStatusCode.Success_1 :
-                        Xml.Provision.RemoteWipeStatusCode.Failure_2));
+                        new XElement (m_ns + Xml.Provision.Status,
+                            (WipeSucceeded) ? 
+                            (uint)Xml.Provision.RemoteWipeStatusCode.Success_1 :
+                            (uint)Xml.Provision.RemoteWipeStatusCode.Failure_2)));
                 }
             } else {
                 // Non-Wipe sceanrio.
@@ -170,9 +171,13 @@ namespace NachoCore.ActiveSync
             case Xml.Provision.ProvisionStatusCode.Success_1:
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
-                    WipeSucceeded = NcEnforcer.Instance.Wipe (BEContext.Account);
-                    if (!MustWipe) {
-                        MustWipe = true;
+                    // The way that wipe is implemented now, the following will not return - it will cause SIGBUS.
+                    WipeSucceeded = NcEnforcer.Instance.Wipe (BEContext.Account, 
+                        ServerUri (Op).ToString (), BEContext.ProtocolState.AsProtocolVersion);
+                    if (! BEContext.ProtocolState.IsWipeRequired) {
+                    var protocolState = BEContext.ProtocolState;
+                        protocolState.IsWipeRequired = true;
+                        protocolState.Update ();
                         return Event.Create ((uint)ProvEvt.E.Wipe, "PROVWIPE", null, "RemoteWipe element in Provision.");
                     }
                 }

@@ -12,6 +12,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using NachoPlatform;
 using NachoClient.iOS;
 using SQLite;
 using CrashlyticsBinding;

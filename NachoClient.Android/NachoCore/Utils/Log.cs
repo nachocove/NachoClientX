@@ -24,7 +24,7 @@ namespace NachoCore.Utils
         public const int LOG_AS = 512;
         public const int LOG_SYS = 1024;
         public const int LOG_XML = 2048;
-        public static int logLevel = LOG_SYNC + LOG_TIMER + LOG_STATE + LOG_AS + LOG_XML;
+        public static int logLevel = LOG_SYNC + LOG_TIMER + LOG_STATE + LOG_AS + LOG_XML + LOG_AS + LOG_HTTP;
         // Determine if caller info (method, file name, line #) is included in log messages
         // Set it to false if it is slowing things down too much.
         public static Boolean CallerInfo = false;

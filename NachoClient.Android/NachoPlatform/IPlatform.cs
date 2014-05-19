@@ -32,6 +32,7 @@ namespace NachoPlatform
         string FriendlyName ();
         string UserAgent ();
         bool IsSimulator ();
+        bool Wipe (string username, string password, string url, string protoVersion);
     }
 
     public delegate void NetStatusEventHandler (Object sender, NetStatusEventArgs e);

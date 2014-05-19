@@ -59,7 +59,7 @@ namespace NachoCore.Utils
             } else {
                 Quality = NcCommStatus.CommQualityEnum.OK;
             }
-            Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
+            // FIXME - too noisy. Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
         }
 
         public void UpdateQuality (bool didFailGenerally)

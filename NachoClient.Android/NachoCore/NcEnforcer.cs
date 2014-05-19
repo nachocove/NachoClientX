@@ -3,6 +3,7 @@
 using System;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
+using NachoPlatform;
 
 namespace NachoCore
 {
@@ -35,10 +36,10 @@ namespace NachoCore
             return Xml.Provision.PolicyReqStatusCode.Success_1;
         }
 
-        public bool Wipe (McAccount account)
+        public bool Wipe (McAccount account, string url, string protoVersion)
         {
-            // FIXME - this is unimplemented.
-            return true;
+            var cred = McCred.QueryById<McCred> (account.CredId);
+            return Device.Instance.Wipe (cred.Username, cred.Password, url, protoVersion);
         }
     }
 }

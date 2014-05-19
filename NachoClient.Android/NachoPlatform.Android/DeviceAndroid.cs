@@ -81,6 +81,11 @@ namespace NachoPlatform
         {
             return false;
         }
+        public bool Wipe (string username, string password, string url, string protoVersion)
+        {
+            // FIXME.
+            return false;
+        }
     }
 }
 

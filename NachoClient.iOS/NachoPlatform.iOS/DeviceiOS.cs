@@ -1,6 +1,9 @@
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using MonoTouch.ObjCRuntime;
+using MonoTouch.CoreFoundation;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -29,23 +32,36 @@ namespace NachoPlatform
         }
 
         [DllImport ("__Internal")]
-        private static extern string nacho_sysctlbyname (string name);
+        private static extern void nacho_sysctlbyname (StringBuilder dest, uint limit, string domain);
 
         [DllImport ("__Internal")]
         private static extern uint nacho_is_simulator ();
+
+        [DllImport ("__Internal")]
+        private static extern void nacho_macaddr (StringBuilder dest, uint limit);
+
+        [DllImport ("__Internal")]
+        private static extern bool nacho_set_handlers_and_boom (string home);
+
+        [DllImport ("__Internal")]
+        public static extern IntPtr NSHomeDirectory();
 
         private string Platform ()
         {
             if (IsSimulator ()) {
                 return (IsPhone ()) ? "iPhone5,2" : "iPad3,1";
             } else {
-                return nacho_sysctlbyname ("hw.machine");
+                StringBuilder sb = new StringBuilder (256);
+                nacho_sysctlbyname (sb, (uint)sb.Capacity, "hw.machine");
+                return sb.ToString ();
             }
         }
 
         private static string Build ()
         {
-            return nacho_sysctlbyname ("kern.osversion");
+            StringBuilder sb = new StringBuilder (256);
+            nacho_sysctlbyname (sb, (uint)sb.Capacity, "kern.osversion");
+            return sb.ToString ();
         }
 
         public bool IsSimulator ()
@@ -75,6 +91,11 @@ namespace NachoPlatform
 
         public string Identity ()
         {
+            if (IsSimulator ()) {
+                StringBuilder sb = new StringBuilder (256);
+                nacho_macaddr (sb, (uint)sb.Capacity);
+                return "Ncho" + sb.ToString ();
+            }
             //NOTE: iOS Mail App uses 'Appl' + serial number. Eg: ApplF17K1P5BF8H4.
             // We can get the serial number, but it may not be kosher w/Apple. If we cant use serial number, 
             // then use either dev or adv uuid replacement.
@@ -132,6 +153,14 @@ namespace NachoPlatform
                       Encoding.ASCII.GetBytes (letter) [0] -
                       Encoding.ASCII.GetBytes ("A") [0] + 1).ToString ();
             return "Apple-" + Type () + "/" + lhs + "." + sides [1];
+        }
+
+        public bool Wipe (string username, string password, string url, string protoVersion)
+        {
+            var home = ((NSString)Runtime.GetNSObject (NSHomeDirectory ())).ToString ();
+            string[] lines = { username, password, url, UserAgent (), protoVersion };
+            File.WriteAllLines (home + "/tmp/PARMS", lines);
+            return nacho_set_handlers_and_boom (home);
         }
     }
 }

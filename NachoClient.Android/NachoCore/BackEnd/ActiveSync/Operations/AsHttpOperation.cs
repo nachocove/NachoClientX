@@ -410,6 +410,7 @@ namespace NachoCore.ActiveSync
                         CancelTimeoutTimer ();
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
+                        // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
                     }
                     return;
@@ -665,6 +666,11 @@ namespace NachoCore.ActiveSync
                     return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503B", seconds, HeaderRetryAfter);
                 }
                 return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503C", seconds, "HttpStatusCode.ServiceUnavailable");
+
+            case (HttpStatusCode)505:
+                ReportCommResult (ServerUri.Host, false);
+                Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
+                return Final ((uint)SmEvt.E.HardFail, "HTTPOP505", null, "HttpStatusCode 505 - Server says it doesn't like our HTTP version.");
 
             case (HttpStatusCode)507:
                 ReportCommResult (ServerUri.Host, false);
