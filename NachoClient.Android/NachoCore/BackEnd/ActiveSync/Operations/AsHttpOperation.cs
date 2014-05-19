@@ -435,7 +435,16 @@ namespace NachoCore.ActiveSync
                     CancelTimeoutTimer ();
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
-                    ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+                    try {
+                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+                    } catch (ObjectDisposedException ex) {
+                        // Seems like a runtime bug. We've seen the Dispose(es) in the outer finally block
+                        // execute and then have the ReadAsStreamAsync crash on the response being disposed.
+                        // Execution of ReadAsStreamAsync should be complete before finally runs.
+                        // We return because if the finally is run, then we shouldn't even be here!
+                        Log.Warn ("AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                        return;
+                    }
 
                     try {
                         HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
@@ -657,11 +666,19 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, true);
                 uint seconds = KDefaultDelaySeconds;
                 if (response.Headers.Contains (HeaderRetryAfter)) {
+                    string value;
                     try {
-                        seconds = uint.Parse (response.Headers.GetValues (HeaderRetryAfter).First ());
-                    } catch (Exception ex) {
-                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                        return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", seconds, "Could not parse Retry-After value.");
+                        value = response.Headers.GetValues (HeaderRetryAfter).First ();
+                        seconds = uint.Parse (value);
+                    } catch {
+                        try {
+                            var when = DateTime.Parse (value);
+                            var maybe_secs = when.Subtract(DateTime.UtcNow).Seconds;
+                            seconds = ((maybe_secs > 0) ? (uint)maybe_secs : KDefaultDelaySeconds);
+                        } catch (Exception ex) {
+                            Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
+                            return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", seconds, "Could not parse Retry-After value.");
+                        }
                     }
                     return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503B", seconds, HeaderRetryAfter);
                 }
