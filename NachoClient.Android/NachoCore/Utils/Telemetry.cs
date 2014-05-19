@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using System.Diagnostics;
 using NachoCore.Model;
 
 namespace NachoCore.Utils
@@ -97,6 +98,11 @@ namespace NachoCore.Utils
     {
         private static bool ENABLED = true;
         private static bool PERSISTED = false;
+        // Parse has a maximum data size of 128K for PFObject. But the 
+        // exact definition of data size of an object with multiple
+        // fields is not clear. So, we just limit the log messages and 
+        // redacted WBXML to 120 KB to leave some headroom for other fields.
+        private const int MAX_PARSE_LEN = 120 * 1024;
 
         private static Telemetry _SharedInstance;
         public static Telemetry SharedInstance {
@@ -134,6 +140,12 @@ namespace NachoCore.Utils
             TelemetryEvent tEvent = new TelemetryEvent (type);
             tEvent.Message = String.Format(fmt, list);
 
+            if (MAX_PARSE_LEN < tEvent.Message.Length) {
+                // Truncate the message
+                tEvent.Message = tEvent.Message.Substring (0, MAX_PARSE_LEN - 4);
+                tEvent.Message += " ...";
+            }
+
             if (!PERSISTED) {
                 SharedInstance.EventQueue.Enqueue (tEvent);
             } else {
@@ -155,6 +167,14 @@ namespace NachoCore.Utils
             } else {
                 tEvent = new TelemetryEvent (TelemetryEventType.WBXML_RESPONSE);
             }
+            if (MAX_PARSE_LEN < wbxml.Length) {
+                Console.WriteLine ("Redacted WBXML too long (length={0})", wbxml.Length);
+                StackTrace st = new StackTrace ();
+                Console.WriteLine ("{0}", st.ToString ());
+                // Can't truncate the WBXML and still have it remain valid.
+                // TODO - Need to think of a better solution
+            }
+
             tEvent.Wbxml = wbxml;
 
             if (!PERSISTED) {
