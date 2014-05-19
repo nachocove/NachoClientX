@@ -258,6 +258,7 @@
     <Compile Include="NachoCore\Mockables\IDnsQueryRequest.cs" />
     <Compile Include="NachoCore\Mockables\MockableDnsQueryRequest.cs" />
     <Compile Include="NachoCore\Model\McTelemetryEvent.cs" />
+    <Compile Include="BuildInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

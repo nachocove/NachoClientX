@@ -6,6 +6,7 @@ using System.Threading;
 using MonoTouch.Foundation;
 using ParseBinding;
 using NachoPlatform;
+using NachoClient.Build;
 
 namespace NachoCore.Utils
 {
@@ -88,6 +89,7 @@ namespace NachoCore.Utils
             kvList.AddString ("os_type", Device.Instance.OsType ());
             kvList.AddString ("os_version", Device.Instance.OsVersion ());
             kvList.AddString ("device_model", Device.Instance.Model ());
+            kvList.AddString ("build_version", BuildInfo.Version);
 
             if (tEvent.IsLogEvent ()) {
                 switch (tEvent.Type) {

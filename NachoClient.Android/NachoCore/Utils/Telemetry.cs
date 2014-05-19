@@ -96,7 +96,7 @@ namespace NachoCore.Utils
     public class Telemetry
     {
         private static bool ENABLED = true;
-        private static bool PERSISTED = true;
+        private static bool PERSISTED = false;
 
         private static Telemetry _SharedInstance;
         public static Telemetry SharedInstance {
@@ -166,15 +166,18 @@ namespace NachoCore.Utils
             }
         }
 
-        public void Start (ITelemetryBE backEnd)
+        public void Start<T> () where T : ITelemetryBE, new()
         {
-            BackEnd = backEnd;
-            ProcessThread = new Thread (new ThreadStart (this.Process));
+            if (!ENABLED) {
+                return;
+            }
+            ProcessThread = new Thread (new ThreadStart (this.Process<T>));
             ProcessThread.Start ();
         }
 
-        private void Process ()
+        private void Process<T> () where T : ITelemetryBE, new()
         {
+            BackEnd = new T ();
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good

@@ -816,6 +816,7 @@
       <Link>NachoCore\Model\McTelemetryEvent.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoFileChooser.cs" />
+    <Compile Include="BuildInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
