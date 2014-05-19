@@ -61,6 +61,9 @@
     <Reference Include="BouncyCastle.Android">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
     </Reference>
+    <Reference Include="DnDns.Android">
+      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.Android\bin\Release\DnDns.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
@@ -77,6 +80,7 @@
     <Compile Include="NcXmlFilterTest.cs" />
     <Compile Include="ExtensionTest.cs" />
     <Compile Include="AsAutodiscoverCommandTest.cs" />
+    <Compile Include="Common\CommonMocks.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -95,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\xsd\" />
+    <Folder Include="Common\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">

@@ -14,9 +14,14 @@ namespace NachoCore.Model
 
         public string LocalFileName { get; set; }
 
+        public string FilePath ()
+        {
+            return Path.Combine (NcModel.Instance.FilesDir, Id.ToString(), DisplayName);
+        }
+
         public override int Delete ()
         {
-            File.Delete (Path.Combine (NcModel.Instance.AttachmentsDir, LocalFileName));
+            File.Delete (FilePath ());
             return base.Delete ();
         }
 

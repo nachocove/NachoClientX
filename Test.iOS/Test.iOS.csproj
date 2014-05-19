@@ -105,6 +105,9 @@
     <Reference Include="MimeKit">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
     </Reference>
+    <Reference Include="DnDns.iOS">
+      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -140,7 +143,12 @@
     <Compile Include="..\Test.Android\ExtensionTest.cs">
       <Link>ExtensionTest.cs</Link>
     </Compile>
-    <Compile Include="CommonMocks.cs" />
+    <Compile Include="..\Test.Android\AsAutodiscoverCommandTest.cs">
+      <Link>AsAutodiscoverCommandTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\Common\CommonMocks.cs">
+      <Link>CommonMocks.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

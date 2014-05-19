@@ -14,10 +14,29 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentViewController : DialogViewController
+    public partial class AttachmentViewController : DialogViewController, INachoFileChooser
     {
+        INachoFileChooserParent owner;
+
         public AttachmentViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        /// <summary>
+        /// INachoFileChooser delegate
+        /// </summary>
+        public void SetOwner (INachoFileChooserParent owner)
+        {
+            this.owner = owner;
+        }
+
+        /// <summary>
+        /// INachoFileChooser delegate
+        /// </summary>
+        public void DismissFileChooser (bool animated, NSAction action)
+        {
+            owner = null;
+            NavigationController.PopViewControllerAnimated (true);
         }
 
         public override void ViewDidLoad ()
@@ -56,7 +75,7 @@ namespace NachoClient.iOS
             RefreshAttachmentSection ();
         }
 
-        public void RefreshAttachmentSection()
+        public void RefreshAttachmentSection ()
         {
             var root = new RootElement ("Attachments");
             var section = new Section ();
@@ -91,54 +110,40 @@ namespace NachoClient.iOS
         void attachmentAction (int attachmentId)
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
-            if (a.IsDownloaded) {
-                DisplayAttachment (a);
-            } else {
-                DownloadAttachment (a);
-            }
-        }
-
-        void DisplayAttachment (McAttachment attachment)
-        {
-            // FIXME - dont compute path here.
-            var path = Path.Combine (NcModel.Instance.AttachmentsDir, attachment.Id.ToString(), attachment.LocalFileName);
-            UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
-            Preview.Delegate = new DocumentInteractionControllerDelegate (this);
-            Preview.PresentPreview (true);
-        }
-
-        void DownloadAttachment (McAttachment attachment)
-        {
-            if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                var account = NcModel.Instance.Db.Table<McAccount> ().First ();
-                BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
-                RefreshAttachmentSection ();
-            }
-        }
-
-        public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
-        {
-            UIViewController viewC;
-
-            public DocumentInteractionControllerDelegate (UIViewController controller)
-            {
-                viewC = controller;
+            if (false == a.IsDownloaded) {
+                PlatformHelpers.DownloadAttachment (a);
+                return;
             }
 
-            public override UIViewController ViewControllerForPreview (UIDocumentInteractionController controller)
-            {
-                return viewC;
+            if (null == owner) {
+                PlatformHelpers.DisplayAttachment (this, a);
+                return;
             }
 
-            public override UIView ViewForPreview (UIDocumentInteractionController controller)
-            {
-                return viewC.View;
-            }
+            // We're in "chooser' mode & the attachment is downloaded
+            var actionSheet = new UIActionSheet ("Attachment Selection");
+            actionSheet.Add ("Cancel");
+            actionSheet.Add ("Preview");
+            actionSheet.Add ("Select Attachment");
+            actionSheet.CancelButtonIndex = 0;
 
-            public override RectangleF RectangleForPreview (UIDocumentInteractionController controller)
-            {
-                return viewC.View.Frame;
-            }
+            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    break; // Cancel
+                case 1:
+                    PlatformHelpers.DisplayAttachment (this, a);
+                    break;
+                case 2:
+                    owner.SelectFile (this, a);
+                    break;
+                default:
+                    NachoAssert.CaseError ();
+                    break;
+                }
+            };
+
+            actionSheet.ShowInView (this.View);
         }
     }
 }

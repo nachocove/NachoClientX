@@ -31,6 +31,11 @@
     <ConsolePause>false</ConsolePause>
     <AndroidSupportedAbis>armeabi;x86</AndroidSupportedAbis>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -40,6 +45,11 @@
     <WarningLevel>4</WarningLevel>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
     <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

@@ -11,6 +11,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MimeKit;
 using NachoCore;
+using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoClient
@@ -114,6 +115,58 @@ namespace NachoClient
             UIGraphics.EndImageContext ();
 
             return image;
+        }
+
+
+        public static void DisplayAttachment (UIViewController vc, McAttachment attachment)
+        {
+            var path = attachment.FilePath ();
+            DisplayFile (vc, path);
+        }
+
+        public static void DisplayFile (UIViewController vc, McFile file)
+        {
+            var path = file.FilePath ();
+            DisplayFile (vc, path);
+        }
+
+        protected static void DisplayFile (UIViewController vc, string path)
+        {
+            UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (path));
+            Preview.Delegate = new DocumentInteractionControllerDelegate (vc);
+            Preview.PresentPreview (true);
+        }
+
+        public static void DownloadAttachment (McAttachment attachment)
+        {
+            if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
+                BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
+            }
+        }
+
+        public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
+        {
+            UIViewController viewC;
+
+            public DocumentInteractionControllerDelegate (UIViewController controller)
+            {
+                viewC = controller;
+            }
+
+            public override UIViewController ViewControllerForPreview (UIDocumentInteractionController controller)
+            {
+                return viewC;
+            }
+
+            public override UIView ViewForPreview (UIDocumentInteractionController controller)
+            {
+                return viewC.View;
+            }
+
+            public override RectangleF RectangleForPreview (UIDocumentInteractionController controller)
+            {
+                return viewC.View.Frame;
+            }
         }
     }
 }

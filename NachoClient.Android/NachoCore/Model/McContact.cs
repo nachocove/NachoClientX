@@ -18,6 +18,18 @@ namespace NachoCore.Model
         }
     }
 
+    public class McContactStringIndex
+    {
+        public int Id { set; get; }
+        public int ContactId { set; get; }
+        public string Value { set; get; }
+
+        public McContact GetContact ()
+        {
+            return NcModel.Instance.Db.Get<McContact> (ContactId);
+        }
+    }
+
     public partial class McContact : McItem
     {
         /// <summary>
@@ -154,6 +166,11 @@ namespace NachoCore.Model
 
         /// User-defined label if one exists
         public string Label { get; set; }
+
+        public McContact GetContact()
+        {
+            return NcModel.Instance.Db.Get<McContact> (ContactId);
+        }
     }
 
     /// <summary>
@@ -553,21 +570,7 @@ namespace NachoCore.Model
       
         protected bool HasReadAncillaryData;
 
-        /// <summary>
-        /// Read the specified db and pk.
-        /// </summary>
-        /// <param name="db">Db.</param>
-        /// <param name="pk">Pk.</param>
-        public static NcResult Read (SQLiteConnection db, Int64 pk)
-        {
-            var c = db.Table<McContact> ().Where (x => x.Id == pk).SingleOrDefault ();
-            NachoCore.NachoAssert.True (null != c);
-            c.ReadAncillaryData (db);
-            // TODO: Error handling
-            return NcResult.OK (c);
-        }
-
-        private NcResult ReadAncillaryData (SQLiteConnection db)
+        private NcResult ReadAncillaryData ()
         {
             if (0 == Id) {
                 return NcResult.OK ();
@@ -576,16 +579,12 @@ namespace NachoCore.Model
                 return NcResult.OK ();
             }
             HasReadAncillaryData = true;
-            return ForceReadAncillaryData (db);
+            return ForceReadAncillaryData ();
         }
-
-        private NcResult ReadAncillaryData ()
+           
+        public NcResult ForceReadAncillaryData ()
         {
-            return ReadAncillaryData (NcModel.Instance.Db);
-        }
-
-        public NcResult ForceReadAncillaryData (SQLiteConnection db)
-        {
+            var db = NcModel.Instance.Db;
             NachoCore.NachoAssert.True (0 < Id);
             DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
@@ -1034,39 +1033,46 @@ namespace NachoCore.Model
                 accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, minHotScore);
         }
 
-        public static List<McContactIndex> SearchAllContactItems (int accountId, string searchFor)
+        public static List<McContactStringAttribute> SearchAllContactItems (int accountId, string searchFor)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
-                return new List<McContactIndex> ();
+                return new List<McContactStringAttribute> ();
             }
             var target = searchFor.Split (new char[] { ' ' });
             var firstName = target.First () + "%";
             var lastName = target.Last () + "%";
+            var email1 = firstName;
+            var email2 = "'" + firstName;
             if (1 == target.Count ()) {
-                return NcModel.Instance.Db.Query<McContactIndex> (
-                    "SELECT c.Id as Id FROM McContact AS c " +
-                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                return NcModel.Instance.Db.Query<McContactStringAttribute> (
+                    "Select s.* FROM MCContactStringAttribute AS s  " +
+                    " JOIN McContact AS c ON s.ContactId = c.Id   " +
+                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
                     " WHERE " +
+                    " m.ClassCode=? AND  " +
+                    " s.Type=? AND  " +
                     " c.AccountId = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " m.ClassCode = ? AND " +
-                    " ( c.FirstName LIKE ? OR " +
-                    "   c.LastName LIKE ? ) " +
-                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
-                    accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, firstName, lastName);
+                    " c.AccountId=m.AccountId AND " +
+                    " ( " +
+                    "     ( c.FirstName LIKE ? OR c.LastName LIKE ? ) OR " +
+                    "     s.Value LIKE ? OR s.Value LIKE ? " +
+                    " ) " +
+                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
+                    McFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, email1, email2);
             } else {
-                return NcModel.Instance.Db.Query<McContactIndex> (
-                    "SELECT c.Id as Id FROM McContact AS c  " +
-                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                return NcModel.Instance.Db.Query<McContactStringAttribute> (
+                    "Select s.* FROM MCContactStringAttribute AS s  " +
+                    " JOIN McContact AS c ON s.ContactId = c.Id   " +
+                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
                     " WHERE " +
+                    " m.ClassCode=? AND  " +
+                    " s.Type=? AND  " +
                     " c.AccountId = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " m.ClassCode = ? AND " +
-                    " ( c.FirstName LIKE ? AND " +
-                    "   c.LastName LIKE ? ) " +
-                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100",
-                    accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, firstName, lastName);
+                    " c.AccountId=m.AccountId AND " +
+                    " ( c.FirstName LIKE ? AND c.LastName LIKE ? ) " +
+                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
+                    McFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, firstName);
             }
         }
 

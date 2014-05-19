@@ -9,10 +9,29 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class FileListViewController : UITableViewController
+    public partial class FileListViewController : UITableViewController, INachoFileChooser
     {
+        INachoFileChooserParent owner;
+
         public FileListViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        /// <summary>
+        /// INachoFileChooser delegate
+        /// </summary>
+        public void SetOwner (INachoFileChooserParent owner)
+        {
+            this.owner = owner;
+        }
+
+        /// <summary>
+        /// INachoFileChooser delegate
+        /// </summary>
+        public void DismissFileChooser (bool animated, NSAction action)
+        {
+            owner = null;
+            NavigationController.PopViewControllerAnimated (true);
         }
 
         public override void ViewDidLoad ()
@@ -38,7 +57,7 @@ namespace NachoClient.iOS
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
-                if (NcResult.SubKindEnum.Info_TaskSetChanged == s.Status.SubKind) {
+                if (NcResult.SubKindEnum.Info_FileSetChanged == s.Status.SubKind) {
                     RefreshFileList ();
                 }
             };
@@ -53,11 +72,47 @@ namespace NachoClient.iOS
             RefreshFileList ();
         }
 
-        protected void RefreshFileList()
+        protected void RefreshFileList ()
         {
             this.TableView.DataSource = new FileTableSource ();
             this.TableView.ReloadData ();
         }
 
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+
+            var dataSource = TableView.DataSource as FileTableSource;
+            var file = dataSource.GetFile (indexPath.Row);
+
+            if (null == owner) {
+                PlatformHelpers.DisplayFile (this, file);
+                return;
+            }
+
+            // We're in "chooser' mode & the attachment is downloaded
+            var actionSheet = new UIActionSheet ("Attachment Selection");
+            actionSheet.Add ("Cancel");
+            actionSheet.Add ("Preview");
+            actionSheet.Add ("Select Attachment");
+            actionSheet.CancelButtonIndex = 0;
+
+            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    break; // Cancel
+                case 1:
+                    PlatformHelpers.DisplayFile (this, file);
+                    break;
+                case 2:
+                    owner.SelectFile (this, file);
+                    break;
+                default:
+                    NachoAssert.CaseError ();
+                    break;
+                }
+            };
+
+            actionSheet.ShowInView (this.View);
+        }
     }
 }

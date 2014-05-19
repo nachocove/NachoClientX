@@ -19,6 +19,11 @@ namespace NachoClient.iOS
             files = McFile.QueryAllFiles ();
         }
 
+        public McFile GetFile(int i)
+        {
+            return files [i];
+        }
+
         public override int RowsInSection (UITableView tableview, int section)
         {
             return files.Count;
