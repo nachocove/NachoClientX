@@ -374,7 +374,7 @@ namespace NachoCore.ActiveSync
                 }
                 var mime = Owner.ToMime (this);
                 if (null != mime) {
-                    request.Content = new StringContent (mime, UTF8Encoding.UTF8, ContentTypeMail);
+                    request.Content = mime;
                 }
                 request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
                 if (Owner.DoSendPolicyKey (this)) {

@@ -64,6 +64,11 @@ namespace NachoCore.Model
             return McBody.Get (BodyId);
         }
 
+        public McBody GetBodyDescr ()
+        {
+            return McBody.GetDescr (BodyId);
+        }
+
         public string GetBodyPath ()
         {
             return McBody.GetBodyPath (BodyId);

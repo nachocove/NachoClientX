@@ -299,8 +299,9 @@ namespace NachoCore.Wbxml
                 }
 
                 byte token = codePages [currentCodePage].GetToken (element.Name.LocalName);
+                var fileAttr = element.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-path");
 
-                if (element.HasElements || !element.IsEmpty) {
+                if (null != fileAttr || element.HasElements || !element.IsEmpty) {
                     token |= 0x40;
                 }
 
@@ -310,11 +311,15 @@ namespace NachoCore.Wbxml
                     filter.Update (level, node, byteList.ToArray ());
                 }
 
-                if (element.HasElements || !element.IsEmpty) {
+                if (null != fileAttr) {
+                    byteList.Add ((byte)GlobalTokens.OPAQUE);
+                    byteList.AddRange (EncodeOpaque (File.ReadAllText (fileAttr.Value)));
+                    byteList.Add ((byte)GlobalTokens.END);
+                    fileAttr.Remove ();
+                } else if (element.HasElements || !element.IsEmpty) {
                     foreach (XNode child in element.Nodes()) {
                         byteList.AddRange (EncodeNode (child, level + 1, filter));
                     }
-
                     byteList.Add ((byte)GlobalTokens.END);
                 }
                 break;

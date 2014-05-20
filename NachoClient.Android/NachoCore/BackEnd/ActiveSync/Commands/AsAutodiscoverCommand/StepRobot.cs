@@ -591,7 +591,7 @@ namespace NachoCore.ActiveSync
                 throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
-            public virtual string ToMime (AsHttpOperation Sender)
+            public virtual StreamContent ToMime (AsHttpOperation Sender)
             {
                 // We don't generate MIME.
                 return null;

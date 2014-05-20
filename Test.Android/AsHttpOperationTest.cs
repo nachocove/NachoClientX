@@ -79,7 +79,7 @@ namespace Test.iOS
             return null;
         }
 
-        public virtual string ToMime (AsHttpOperation sender)
+        public virtual StreamContent ToMime (AsHttpOperation sender)
         {
             return null;
         }

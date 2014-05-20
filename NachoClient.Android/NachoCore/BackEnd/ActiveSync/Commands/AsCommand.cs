@@ -179,7 +179,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public virtual string ToMime (AsHttpOperation Sender)
+        public virtual StreamContent ToMime (AsHttpOperation Sender)
         {
             return null;
         }

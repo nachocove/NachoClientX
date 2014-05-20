@@ -62,6 +62,15 @@ namespace NachoCore.Model
             return body.Id;
         }
 
+        public static McBody GetDescr (int id)
+        {
+            if (0 == id) {
+                return null;
+            }
+            var body = NcModel.Instance.Db.Get<McBody> (id);
+            return (null == body || !body.IsValid) ? null : body;
+        }
+
         public static string Get (int id)
         {
             if (0 == id) {

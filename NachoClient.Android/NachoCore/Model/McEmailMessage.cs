@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using SQLite;
 using NachoCore;
 using NachoCore.Utils;
@@ -185,9 +187,27 @@ namespace NachoCore.Model
         }
 
         /// TODO: Support other types besides mime!
-        public string ToMime ()
+        public StreamContent ToMime ()
         {
-            return GetBody ();
+            var bodyPath = MimePath ();
+            if (null == bodyPath) {
+                return null;
+            }
+            var fileStream = new FileStream (bodyPath, FileMode.Open);
+            if (null == fileStream) {
+                Log.Error (Log.LOG_EMAIL, "BodyPath {0} doesn't find a file.", bodyPath);
+                return null;
+            }
+            return new StreamContent (fileStream);
+        }
+
+        public string MimePath ()
+        {
+            var body = McBody.GetDescr (BodyId);
+            if (null == body) {
+                return null;
+            }
+            return body.BodyPath;
         }
 
         public void DeleteAttachments ()

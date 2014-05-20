@@ -38,16 +38,17 @@ namespace NachoCore.ActiveSync
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
                                new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
-                               new XElement (m_ns + Xml.ComposeMail.Mime, GenerateMime ()));
+                               new XElement (m_ns + Xml.ComposeMail.Mime, 
+                                   new XAttribute ("nacho-body-path", EmailMessage.MimePath ())));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
             return doc;
         }
 
-        public override string ToMime (AsHttpOperation Sender)
+        public override StreamContent ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                return GenerateMime ();
+                return EmailMessage.ToMime ();
             }
             return null;
         }
@@ -67,11 +68,6 @@ namespace NachoCore.ActiveSync
                     NcResult.WhyEnum.Unknown));
             return Event.Create ((uint)SmEvt.E.HardFail, "SMHARD0", null, 
                 string.Format ("Server sent non-empty response to SendMail w/unrecognized TL Status: {0}", doc.ToString ()));
-        }
-
-        private string GenerateMime ()
-        {
-            return EmailMessage.ToMime ();
         }
     }
 }
