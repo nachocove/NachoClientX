@@ -53,7 +53,7 @@ namespace Test.iOS
     [TestFixture]
     public class AsAutodiscoverCommandTest
     {
-        [Test]
+//        [Test]
         public void ServerNotConfigured ()
         {
             // header settings
@@ -77,41 +77,51 @@ namespace Test.iOS
         public void TestFirstMicrosoftDocResponse ()
         {
             string xml = CommonMockData.AutodPhonyPingResponseXmlv1;
-            TestAutodPingWithXmlResponse (xml);
+            TestGetAndPostForXml (xml);
         }
 
         [Test]
         public void TestSecondMicrosoftDocResponse ()
         {
             string xml = CommonMockData.AutodPhonyPingResponseXmlv2;
-            TestAutodPingWithXmlResponse (xml);
+            TestGetAndPostForXml (xml);
         }
 
         [Test]
         public void TestOffice365Response ()
         {
             string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestAutodPingWithXmlResponse (xml);
+            TestGetAndPostForXml (xml);
         }
 
-        private void TestAutodPingWithXmlResponse (string xml)
+        private void TestGetAndPostForXml (string xml)
+        {
+            var steps = Enum.GetValues(typeof(MockSteps));
+            foreach (MockSteps step in steps) {
+                TestAutodPingWithXmlResponse (xml, step);
+            }
+        }
+
+        private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
         {
             // header settings
             string mockResponseLength = xml.Length.ToString ();
 
             PerformAutoDiscoveryWithSettings (xml, mockContext => {
-                mockContext.Server = null;
+                mockContext.Server = McServer.Create (CommonMockData.MockUri);
+                mockContext.Server.UsedBefore = false;
+                mockContext.Server.Id = 1;
             }, httpResponse => {
                 httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
                 httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
             }, provideDnsResponse => {
 
             }, httpRequest => {
-                // return true if the robot should pass, false otherwise
-                return PassRobotForStep(MockSteps.S1, httpRequest);
+                return PassRobotForStep(step, httpRequest);
             });
         }
 
+        // return true if the robot should pass, false otherwise
         private bool PassRobotForStep (MockSteps step, HttpRequestMessage request)
         {
             string requestUri = request.RequestUri.ToString ();
@@ -130,7 +140,7 @@ namespace Test.iOS
                 if (request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri) {
                     return true;
                 }
-                return false;;
+                return false;
             default:
                 // this catches the OPTIONS cases
                 return true;
@@ -210,29 +220,7 @@ namespace Test.iOS
                     new Node {State = (uint)St.Start,
                         On = new [] {
                             new Trans { 
-                                Event = (uint)SmEvt.E.Launch, 
-                                Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
-                                },
-                                State = (uint)St.Start },
-                            new Trans {
-                                Event = (uint)SmEvt.E.Success,
-                                Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
-                                }, 
-                                State = (uint)St.Start },
-                            new Trans {
-                                Event = (uint)Lst.TestW,
-                                Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
-                                },
-                                State = (uint)St.Start },
-
-                            new Trans {
-                                Event = (uint)SmEvt.E.Launch,
+                                Event = (uint)SmEvt.E.Success, 
                                 Act = delegate () {
                                     setTrueBySuccessEvent = true;
                                     action(setTrueBySuccessEvent);
