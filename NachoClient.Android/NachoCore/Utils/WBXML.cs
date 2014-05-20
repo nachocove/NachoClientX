@@ -282,6 +282,81 @@ namespace NachoCore.Wbxml
             return byteList.ToArray ();
         }
 
+        private void EmitNode (BufferedStream stream, XNode node, int level, NcXmlFilterState filter)
+        {
+            switch (node.NodeType) {
+            case XmlNodeType.Element:
+                var element = (XElement)node;
+                if (element.HasAttributes) {
+                    ParseXmlnsAttributes (element);
+                }
+
+                if (SetCodePageByXmlns (element.Name.NamespaceName)) {
+                    stream.WriteByte ((byte)GlobalTokens.SWITCH_PAGE);
+                    stream.WriteByte ((byte)currentCodePage);
+                }
+
+                byte token = codePages [currentCodePage].GetToken (element.Name.LocalName);
+                var fileAttr = element.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-path");
+
+                if (null != fileAttr || element.HasElements || !element.IsEmpty) {
+                    token |= 0x40;
+                }
+
+                stream.WriteByte (token);
+
+                if (null != filter) {
+                    // FIXME - work in filter.Updates.
+                    // filter.Update (level, node, byteList.ToArray ());
+                }
+
+                if (null != fileAttr) {
+                    stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                    byte[] opaque = EncodeOpaque (File.ReadAllText (fileAttr.Value));
+                    stream.Write (opaque, 0, opaque.Length);
+                    stream.WriteByte ((byte)GlobalTokens.END);
+                    fileAttr.Remove ();
+                } else if (element.HasElements || !element.IsEmpty) {
+                    foreach (XNode child in element.Nodes()) {
+                        EmitNode (stream, child, level + 1, filter);
+                    }
+                    stream.WriteByte ((byte)GlobalTokens.END);
+                }
+                break;
+
+            case XmlNodeType.Text:
+                var text = (XText)node;
+                if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
+                    stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                    byte[] opaque = EncodeOpaque (text.Value);
+                    stream.Write (opaque, 0, opaque.Length);
+                    //FIXME filter.Update (level, node, byteList.ToArray ());
+                } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
+                    stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                    byte[] opaqueB64 = EncodeOpaque (Convert.ToBase64String 
+                        (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value)));
+                    stream.Write (opaqueB64, 0, opaqueB64.Length);
+                    //FIXME filter.Update (level, node, byteList.ToArray ());
+                } else {
+                    stream.WriteByte ((byte)GlobalTokens.STR_I);
+                    byte[] stringBytes = EncodeString (text.Value);
+                    stream.Write (stringBytes, 0, stringBytes.Length);
+                    //FIXME filter.Update (level, node, byteList.ToArray ());
+                }
+                break;
+
+            case XmlNodeType.CDATA:
+                var cdata = (XCData)node;
+                stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                byte[] opaqueCdata = EncodeOpaque (cdata.Value);
+                stream.Write (opaqueCdata, 0, opaqueCdata.Length);
+                //FIXME filter.Update (level, node, byteList.ToArray ());
+                break;
+            default:
+                break;
+            }
+        }
+
         private byte[] EncodeNode (XNode node, int level, NcXmlFilterState filter)
         {
             List<byte> byteList = new List<byte> ();
