@@ -202,7 +202,7 @@ namespace NachoClient.iOS
             NachoAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
 
             if (NachoContactType.EmailRequired == (contactType & NachoContactType.EmailRequired)) {
-                if (null == contact.DisplayEmailAddress) {
+                if (String.IsNullOrEmpty(contact.DisplayEmailAddress)) {
                     ComplainAboutMissingEmailAddress (contact);
                     return;
                 }
@@ -326,10 +326,11 @@ namespace NachoClient.iOS
                 var displayName = contact.DisplayName;
                 var displayEmailAddress = contact.DisplayEmailAddress;
 
-                if (null == displayName) {
+                if (String.IsNullOrEmpty(displayName)) {
                     cell = tableView.DequeueReusableCell ("Basic");
                     NachoCore.NachoAssert.True (null != cell);
-                    cell.TextLabel.Text = "";
+                    cell.TextLabel.Text = "No name or email address";
+                    cell.TextLabel.TextColor = UIColor.LightGray;
                     return cell;
                 }
 
@@ -337,6 +338,7 @@ namespace NachoClient.iOS
                     cell = tableView.DequeueReusableCell ("Basic");
                     NachoCore.NachoAssert.True (null != cell);
                     cell.TextLabel.Text = displayName;
+                    cell.TextLabel.TextColor = UIColor.Black;
                     return cell;
                 }
 
@@ -344,16 +346,18 @@ namespace NachoClient.iOS
                 NachoCore.NachoAssert.True (null != cell);
                 cell.TextLabel.Text = displayName;
                 cell.DetailTextLabel.Text = displayEmailAddress;
+                cell.TextLabel.TextColor = UIColor.Black;
+                cell.DetailTextLabel.TextColor = UIColor.Black;
                 return cell;  
             }
         }
 
         string complaintTitle = "Email Address Missing";
-        string complaintMessage = "You've selected a contact that does not have an email address.  Would you like to edit this contact?";
+        string complaintMessage = "You've selected a contact who does not have an email address.  Would you like to edit this contact?";
 
         void ComplainAboutMissingEmailAddress (McContact contact)
         {
-            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", new string[] { "Edit contact" });
+            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "No", new string[] { "Edit contact" });
             alert.Clicked += (s, b) => {
                 if (1 == b.ButtonIndex) {
                     PerformSegue ("ContactChooserToContactView", new SegueHolder (contact));
