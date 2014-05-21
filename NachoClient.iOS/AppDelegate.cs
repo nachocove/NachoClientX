@@ -79,16 +79,22 @@ namespace NachoClient.iOS
             Marshal.FreeHGlobal (sigsegv);
         }
 
-        public override bool FinishedLaunching (UIApplication application, NSDictionary launcOptions)
+        public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            Log.Info ("FinishedLaunching: checkpoint A");
+
             NcApplication.Instance.CredReqCallback = CredReqCallback;
             NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
 
             application.ApplicationIconBadgeNumber = 0;
-           
+
+            Log.Info ("FinishedLaunching: checkpoint B");
+
             StartCrashReporting ();
+
+            Log.Info ("FinishedLaunching: checkpoint C");
 
             Telemetry.SharedInstance.Start<TelemetryBEParse> ();
 
@@ -97,20 +103,27 @@ namespace NachoClient.iOS
 
             Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
 
+            Log.Info ("FinishedLaunching: checkpoint D");
+
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 // Watch for changes from the back end
                 var s = (StatusIndEventArgs)e;
                 this.StatusInd (s.Account.Id, s.Status, s.Tokens);
             };
 
+            Log.Info ("FinishedLaunching: checkpoint E");
+
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
 
-            if (launcOptions != null) {
+            Log.Info ("FinishedLaunching: checkpoint F");
+
+            if (launchOptions != null) {
                 // we got some launch options from the OS, probably launched from a localNotification
-                if (launcOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
-                    var localNotification = launcOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                    Log.Info (Log.LOG_UI, "Launched from local notification");
+                if (launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
+                    Log.Info ("FinishedLaunching: checkpoint G");
+                    var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
+                    Log.Info (Log.LOG_LIFECYCLE, "Launched from local notification");
                     if (localNotification.HasAction) {
                         // something supposed to happen
                         //FIXME - for now we'll pop up an alert saying we got new mail
@@ -119,12 +132,12 @@ namespace NachoClient.iOS
                         var alert = new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null);
                         alert.PerformSelector (new Selector ("show"), null, 0.1); // http://stackoverflow.com/questions/9040896
                    
-                        //localNotification.ApplicationIconBadgeNumber = BackEnd.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false);// need to find accountID here
+                        Log.Info ("FinishedLaunching: checkpoint H");
                     }
                 }
             }
 
-            Log.Info (Log.LOG_UI, "AppDelegate FinishedLaunching done.");
+            Log.Info (Log.LOG_LIFECYCLE, "AppDelegate FinishedLaunching done.");
             return true;
         }
 
@@ -165,12 +178,12 @@ namespace NachoClient.iOS
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Log.Info (Log.LOG_UI, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
                 FetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Log.Info (Log.LOG_UI, "FetchStatusHandler:Info_SyncSucceeded");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
                 if (UIBackgroundFetchResult.Failed == FetchResult) {
                     FetchResult = UIBackgroundFetchResult.NoData;
                 }
@@ -182,14 +195,14 @@ namespace NachoClient.iOS
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
-                Log.Info (Log.LOG_UI, "FetchStatusHandler:Error_SyncFailed");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed");
                 BackEnd.Instance.Stop ();
                 UnhookFetchStatusHandler ();
                 CompletionHandler (FetchResult);
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
-                Log.Info (Log.LOG_UI, "FetchStatusHandler:Error_SyncFailedToComplete");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
                 // BE calls Stop () itself.
                 UnhookFetchStatusHandler ();
                 CompletionHandler (FetchResult);
@@ -199,7 +212,7 @@ namespace NachoClient.iOS
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
-            Log.Info (Log.LOG_UI, "PerformFetch Called");
+            Log.Info (Log.LOG_LIFECYCLE, "PerformFetch Called");
             CompletionHandler = completionHandler;
             FetchResult = UIBackgroundFetchResult.Failed;
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
@@ -212,14 +225,14 @@ namespace NachoClient.iOS
         //
         public override void OnResignActivation (UIApplication application)
         {
-            Log.Info (Log.LOG_UI, "App Resign Activation: time remaining: " + application.BackgroundTimeRemaining);
+            Log.Info (Log.LOG_LIFECYCLE, "App Resign Activation: time remaining: " + application.BackgroundTimeRemaining);
         }
         // This method should be used to release shared resources and it should store the application state.
         // If your application supports background exection this method is called instead of WillTerminate
         // when the user quits.
         public override void DidEnterBackground (UIApplication application)
         {
-            Log.Info (Log.LOG_UI, "App Did Enter Background");
+            Log.Info (Log.LOG_LIFECYCLE, "App Did Enter Background");
             NcApplication.Instance.Stop ();
             var imageView = new UIImageView (Window.Frame);
             imageView.Tag = 101;    // Give some decent tagvalue or keep a reference of imageView in self
@@ -230,7 +243,7 @@ namespace NachoClient.iOS
         // This method is called as part of the transiton from background to active state.
         public override void WillEnterForeground (UIApplication application)
         {
-            Log.Info (Log.LOG_UI, "App Will Enter Foreground");
+            Log.Info (Log.LOG_LIFECYCLE, "App Will Enter Foreground");
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (101);
             if (null != imageView) {
                 imageView.RemoveFromSuperview ();
@@ -239,81 +252,81 @@ namespace NachoClient.iOS
         // Equivalent to applicationDidBecomeActive
         public override void OnActivated (UIApplication application)
         {
-            Log.Info (Log.LOG_UI, "App Did Become Active");
+            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: Checkpoint A - Enter");
             UnhookFetchStatusHandler ();
+            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: Checkpoint B");
             NcApplication.Instance.Start ();
+            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: Checkpoint C - Exit");
         }
         // This method is called when the application is about to terminate. Save data, if needed.
         public override void WillTerminate (UIApplication application)
         {
-            Log.Info (Log.LOG_UI, "App Will Terminate");
+            Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Checkpoint A - Enter");
             NcApplication.Instance.Stop ();
+            Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Checkpoint B - Exit");
         }
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
-            Log.Info (Log.LOG_UI, "Recieved Local Notification");
+            Log.Info (Log.LOG_LIFECYCLE, "Recieved Local Notification");
             if (notification.UserInfo != null) {
-                Log.Info (Log.LOG_UI, "User Info from localnotifocation");
+                Log.Info (Log.LOG_LIFECYCLE, "User Info from localnotifocation");
                 // in future, we'll use this to open to right screen if we got launched from a notification
             }
         }
 
         public void StatusInd (int accountId, NcResult status, string[] tokens)
         {
-            {
-                //Assert MCAccount != null;
-                // with code change - what is  corect access to DB?
-                UILocalNotification badgeNotification;
-                UILocalNotification notification = new UILocalNotification ();
-                var countunread = NcModel.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
+            //Assert MCAccount != null;
+            // with code change - what is  corect access to DB?
+            UILocalNotification badgeNotification;
+            UILocalNotification notification = new UILocalNotification ();
+            var countunread = NcModel.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
 
+            switch (status.SubKind) {
+            case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
 
-                switch (status.SubKind) {
-                case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
+                notification.AlertAction = "Nacho Mail";
+                notification.AlertBody = "You have new mail.";
 
-                    notification.AlertAction = "Nacho Mail";
-                    notification.AlertBody = "You have new mail.";
+                notification.ApplicationIconBadgeNumber = countunread;
+                notification.SoundName = UILocalNotification.DefaultSoundName;
+                notification.FireDate = DateTime.Now;
 
-                    notification.ApplicationIconBadgeNumber = countunread;
-                    notification.SoundName = UILocalNotification.DefaultSoundName;
-                    notification.FireDate = DateTime.Now;
+                UIApplication.SharedApplication.ScheduleLocalNotification (notification);
 
-                    UIApplication.SharedApplication.ScheduleLocalNotification (notification);
+                break;
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
 
-                    break;
-                case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
-
-                    notification.AlertAction = "Nacho Mail"; 
+                notification.AlertAction = "Nacho Mail"; 
                     // no AlertBody should prevent message form being shown            
-                    notification.HasAction = false;  // no alert to show on screen
-                    notification.SoundName = UILocalNotification.DefaultSoundName;
-                    notification.ApplicationIconBadgeNumber = countunread;
-                    notification.FireDate = DateTime.Now;
-                    UIApplication.SharedApplication.ScheduleLocalNotification (notification);
-                    break;
-                case NcResult.SubKindEnum.Info_CalendarSetChanged:
+                notification.HasAction = false;  // no alert to show on screen
+                notification.SoundName = UILocalNotification.DefaultSoundName;
+                notification.ApplicationIconBadgeNumber = countunread;
+                notification.FireDate = DateTime.Now;
+                UIApplication.SharedApplication.ScheduleLocalNotification (notification);
+                break;
+            case NcResult.SubKindEnum.Info_CalendarSetChanged:
                     //UILocalNotification notification = new UILocalNotification ();
-                    notification.AlertAction = "Nacho Mail";
-                    notification.AlertBody = "Your Calendar has Changed";
-                    notification.FireDate = DateTime.Now;
-                    UIApplication.SharedApplication.ScheduleLocalNotification (notification);
+                notification.AlertAction = "Nacho Mail";
+                notification.AlertBody = "Your Calendar has Changed";
+                notification.FireDate = DateTime.Now;
+                UIApplication.SharedApplication.ScheduleLocalNotification (notification);
 
-                    break;
-                case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
+                break;
+            case NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded:
                     // need to find way to pop badge number without alert on app popping up
-                    badgeNotification = new UILocalNotification ();
-                    badgeNotification.AlertAction = "Nacho Mail";
+                badgeNotification = new UILocalNotification ();
+                badgeNotification.AlertAction = "Nacho Mail";
                     //badgeNotification.AlertBody = "Message Read"; // null body means don't show
-                    badgeNotification.HasAction = false;  // no alert to show on screen
-                    badgeNotification.FireDate = DateTime.Now;
-                    var count2 = NcModel.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
-                    badgeNotification.ApplicationIconBadgeNumber = count2;
+                badgeNotification.HasAction = false;  // no alert to show on screen
+                badgeNotification.FireDate = DateTime.Now;
+                var count2 = NcModel.Instance.Db.Table<McEmailMessage> ().Count (x => x.IsRead == false && x.AccountId == accountId);
+                badgeNotification.ApplicationIconBadgeNumber = count2;
 
-                    UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
-                    break;
-                }
+                UIApplication.SharedApplication.ScheduleLocalNotification (badgeNotification);
+                break;
             }
         }
 
@@ -388,7 +401,7 @@ namespace NachoClient.iOS
                     var txt = parent.GetTextField (0).Text;
                     // FIXME need to scan string to make sure it is of right format
                     if (txt != null) {
-                        Log.Info (Log.LOG_UI, " New Server Name = " + txt);
+                        Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
                         tmpServer.Host = txt;
                         tmpServer.Update ();
                         Be.ServerConfResp (accountId, false); 
