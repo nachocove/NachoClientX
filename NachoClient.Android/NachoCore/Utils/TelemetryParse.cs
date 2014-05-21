@@ -23,25 +23,48 @@ namespace NachoCore.Utils
             Dict = new NSMutableDictionary ();
         }
 
+        // This is a really fugly solution to what seems to be a
+        // MonoTouch.Foundation.NSString implementation issue. When creating
+        // a NSString object initialized with a constant string. It seems that
+        // it creates with a RetainCount of -1. It seems that NSString is
+        // smart enough to know that it is initialized from a constant NSString.
+        // In that case, it creates a NSString with a ref. count of MAX_UINT
+        // which becomes -1 when casted into int.
+        //
+        // See: http://stackoverflow.com/questions/1390334/nsstring-retain-count
+        //
+        // The solution is to reate a NSMutableString and set the constant
+        // string to that object. NSMutableString cannot use that optimization
+        // because it is mutable. This way we can create a NSString that has
+        // a positive ref. count.
+        private NSMutableString SafeNSString (string key)
+        {
+            NSMutableString nsString = new NSMutableString ();
+            nsString.SetString (new NSString (key));
+            return nsString;
+        }
+
         public void AddString (string key, string value)
         {
-            Add (new NSString (key), new NSString (value));
+            Add (SafeNSString (key), SafeNSString(value));
         }
 
         public void AddInteger (string key, int value)
         {
-            Add (new NSString (key), NSNumber.FromInt32 (value));
+            Add (SafeNSString (key), NSNumber.FromInt32 (value));
         }
 
         public void AddData (string key, byte[] data)
         {
-            Add (new NSString (key), NSData.FromArray (data));
+            Add (SafeNSString (key), NSData.FromArray (data));
         }
 
         public void Add (NSObject key, NSObject value)
         {
             NachoAssert.True (null != key);
             NachoAssert.True (null != value);
+            NachoAssert.True (0 < key.RetainCount);
+            NachoAssert.True (0 < value.RetainCount);
             Dict.Add (key, value);
         }
 
@@ -52,7 +75,7 @@ namespace NachoCore.Utils
                 Epoch = new DateTime (1970, 1, 1, 0, 0, 0);
             }
             double elapsedTime = date.Subtract (Epoch).TotalSeconds;
-            NSString nsKey = new NSString (key);
+            NSMutableString nsKey = SafeNSString (key);
             NSDate nsDate = NSDate.FromTimeIntervalSince1970 (elapsedTime);
             Add (nsKey, nsDate);
         }
