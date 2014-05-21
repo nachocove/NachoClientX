@@ -103,6 +103,11 @@ namespace NachoCore.Utils
 
             DefaultAcl = PFACL.ACL ();
             DefaultAcl.SetReadAccessForRoleWithName (true, "Ops");
+
+            while (null == CurrentUser.Username) {
+                Console.WriteLine ("waiting for Parse...");
+                Thread.Sleep (5000);
+            }
         }
             
         public void SendEvent (TelemetryEvent tEvent)
