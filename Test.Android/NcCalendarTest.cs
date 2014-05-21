@@ -84,6 +84,16 @@ namespace Test.iOS
             CreateTable<McBody> ();
             DropTable<McBody> ();
             CreateTable<McBody> ();
+
+            // Telemetry
+            CreateTable<McTelemetryEvent> ();
+            DropTable<McTelemetryEvent> ();
+            CreateTable<McTelemetryEvent> ();
+
+            // McServer
+            CreateTable<McServer> ();
+            DropTable<McServer> ();
+            CreateTable<McServer> ();
         }
     }
 

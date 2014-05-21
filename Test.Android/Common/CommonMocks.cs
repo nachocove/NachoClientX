@@ -12,6 +12,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoPlatform;
 using System.Xml.Linq;
+using SQLite;
 
 
 namespace Test.iOS
@@ -107,6 +108,8 @@ namespace Test.iOS
                 Username = "dummy",
                 Password = "password",
             };
+
+            NcModel.Instance.Db = new TestDb ();
         }
     }
 
