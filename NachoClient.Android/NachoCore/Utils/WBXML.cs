@@ -253,6 +253,31 @@ namespace NachoCore.Wbxml
             }
         }
 
+        public void EmitToStream (BinaryWriter writer, Boolean? doFiltering = null)
+        {
+            NcXmlFilterState filter = null;
+            if (doFiltering ?? DEFAULT_FILTERING) {
+                filter = new NcXmlFilterState (AsXmlFilterSet.Requests);
+            } else {
+                filter = new NcXmlFilterState (null);
+            }
+            filter.Start ();
+
+            writer.Write (versionByte);
+            writer.Write (publicIdentifierByte);
+            writer.Write (characterSetByte);
+            writer.Write (stringTableLengthByte);
+            EmitNode (writer, XmlDoc.Root, 0, filter);
+
+            if (doFiltering ?? DEFAULT_FILTERING) {
+                // TODO - Need to feed the redacted XML into a storage that
+                // can hold and forward to the telemetry server.
+                Log.Info ("request_debug_XML = \n{0}", filter.FinalizeXml ());
+                //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
+                //Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
+            }
+        }
+
         public byte[] GetBytes (Boolean? doFiltering = null)
         {
             List<byte> byteList = new List<byte> ();
@@ -282,7 +307,7 @@ namespace NachoCore.Wbxml
             return byteList.ToArray ();
         }
 
-        private void EmitNode (BufferedStream stream, XNode node, int level, NcXmlFilterState filter)
+        private void EmitNode (BinaryWriter writer, XNode node, int level, NcXmlFilterState filter)
         {
             switch (node.NodeType) {
             case XmlNodeType.Element:
@@ -292,8 +317,8 @@ namespace NachoCore.Wbxml
                 }
 
                 if (SetCodePageByXmlns (element.Name.NamespaceName)) {
-                    stream.WriteByte ((byte)GlobalTokens.SWITCH_PAGE);
-                    stream.WriteByte ((byte)currentCodePage);
+                    writer.Write ((byte)GlobalTokens.SWITCH_PAGE);
+                    writer.Write ((byte)currentCodePage);
                 }
 
                 byte token = codePages [currentCodePage].GetToken (element.Name.LocalName);
@@ -303,53 +328,53 @@ namespace NachoCore.Wbxml
                     token |= 0x40;
                 }
 
-                stream.WriteByte (token);
+                writer.Write (token);
 
                 if (null != filter) {
-                    // FIXME - work in filter.Updates.
+                    // FIXME - add back in in filter code.
                     // filter.Update (level, node, byteList.ToArray ());
                 }
 
                 if (null != fileAttr) {
-                    stream.WriteByte ((byte)GlobalTokens.OPAQUE);
-                    byte[] opaque = EncodeOpaque (File.ReadAllText (fileAttr.Value));
-                    stream.Write (opaque, 0, opaque.Length);
-                    stream.WriteByte ((byte)GlobalTokens.END);
+                    writer.Write ((byte)GlobalTokens.OPAQUE);
+                    var stream = new FileStream (fileAttr.Value, FileMode.Open, FileAccess.Read);
+                    EmitOpaque (writer, stream);
+                    writer.Write ((byte)GlobalTokens.END);
                     fileAttr.Remove ();
                 } else if (element.HasElements || !element.IsEmpty) {
                     foreach (XNode child in element.Nodes()) {
-                        EmitNode (stream, child, level + 1, filter);
+                        EmitNode (writer, child, level + 1, filter);
                     }
-                    stream.WriteByte ((byte)GlobalTokens.END);
+                    writer.Write ((byte)GlobalTokens.END);
                 }
                 break;
 
             case XmlNodeType.Text:
                 var text = (XText)node;
                 if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
-                    stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                    writer.Write ((byte)GlobalTokens.OPAQUE);
                     byte[] opaque = EncodeOpaque (text.Value);
-                    stream.Write (opaque, 0, opaque.Length);
+                    writer.Write (opaque);
                     //FIXME filter.Update (level, node, byteList.ToArray ());
                 } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
-                    stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                    writer.Write ((byte)GlobalTokens.OPAQUE);
                     byte[] opaqueB64 = EncodeOpaque (Convert.ToBase64String 
                         (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value)));
-                    stream.Write (opaqueB64, 0, opaqueB64.Length);
+                    writer.Write (opaqueB64);
                     //FIXME filter.Update (level, node, byteList.ToArray ());
                 } else {
-                    stream.WriteByte ((byte)GlobalTokens.STR_I);
+                    writer.Write ((byte)GlobalTokens.STR_I);
                     byte[] stringBytes = EncodeString (text.Value);
-                    stream.Write (stringBytes, 0, stringBytes.Length);
+                    writer.Write (stringBytes);
                     //FIXME filter.Update (level, node, byteList.ToArray ());
                 }
                 break;
 
             case XmlNodeType.CDATA:
                 var cdata = (XCData)node;
-                stream.WriteByte ((byte)GlobalTokens.OPAQUE);
+                writer.Write ((byte)GlobalTokens.OPAQUE);
                 byte[] opaqueCdata = EncodeOpaque (cdata.Value);
-                stream.Write (opaqueCdata, 0, opaqueCdata.Length);
+                writer.Write (opaqueCdata, 0, opaqueCdata.Length);
                 //FIXME filter.Update (level, node, byteList.ToArray ());
                 break;
             default:
@@ -491,6 +516,12 @@ namespace NachoCore.Wbxml
             }
         }
 
+        public static void EmitString (BinaryWriter writer, string value)
+        {
+            writer.Write (value);
+            writer.Write ((byte)0x00);
+        }
+
         public static byte[] EncodeString (string value)
         {
             List<byte> byteList = new List<byte> ();
@@ -504,6 +535,14 @@ namespace NachoCore.Wbxml
             byteList.Add (0x00);
 
             return byteList.ToArray ();
+        }
+
+        private void EmitOpaque (BinaryWriter writer, FileStream stream)
+        {
+            var length = stream.Length;
+            writer.Write (EncodeMultiByteInteger ((int)length));
+            writer.Flush ();
+            stream.CopyTo (writer.BaseStream);
         }
 
         private byte[] EncodeOpaque (string value)

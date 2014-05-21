@@ -354,15 +354,16 @@ namespace NachoCore.ActiveSync
             HttpResponseMessage response = null;
 
             try {
+                Cts = new CancellationTokenSource ();
+                CancellationToken cToken = Cts.Token;
                 request = new HttpRequestMessage (Owner.Method (this), ServerUri);
                 if (null != doc) {
                     Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
-                    // Sadly, Xamarin does not support schema-based XML validation APIs.
                     if (Owner.UseWbxml (this)) {
-                        var wbxml = doc.ToWbxml ();
-                        var content = new ByteArrayContent (wbxml);
+                        var stream = doc.ToWbxmlStream (Owner.IsContentLarge (this), cToken);
+                        var content = new StreamContent (stream);
                         request.Content = content;
-                        request.Content.Headers.Add ("Content-Length", wbxml.Length.ToString ());
+                        request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
                         request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
                     } else {
                         // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
@@ -381,9 +382,6 @@ namespace NachoCore.ActiveSync
                     request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
                 }
                 request.Headers.Add ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
-                Cts = new CancellationTokenSource ();
-                CancellationToken cToken = Cts.Token;
-
                 // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
                 // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
                 // assume the IHttpClient instance has been abandoned.

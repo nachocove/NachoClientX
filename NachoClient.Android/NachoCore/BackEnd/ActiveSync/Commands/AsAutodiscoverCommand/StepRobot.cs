@@ -645,6 +645,11 @@ namespace NachoCore.ActiveSync
                 return false;
             }
 
+            public bool IsContentLarge (AsHttpOperation Sender)
+            {
+                return false;
+            }
+
             public bool DoSendPolicyKey (AsHttpOperation Sender)
             {
                 return false;

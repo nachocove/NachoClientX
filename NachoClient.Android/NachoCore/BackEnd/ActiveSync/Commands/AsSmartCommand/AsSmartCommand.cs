@@ -79,6 +79,11 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.HardFail, "SEFAIL", null, 
                 string.Format ("Server sent non-empty response to SendMail: {0}", doc.ToString ()));
         }
+
+        public override bool IsContentLarge (AsHttpOperation Sender)
+        {
+            return true;
+        }
     }
 }
 
