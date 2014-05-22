@@ -207,5 +207,8 @@
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
       <Link>Resources\xsd\common\contacts.xsd</Link>
     </BundleResource>
+    <BundleResource Include="..\Test.Android\Common\utopiasystems.cer">
+      <Link>Resources\utopiasystems.cer</Link>
+    </BundleResource>
   </ItemGroup>
 </Project>

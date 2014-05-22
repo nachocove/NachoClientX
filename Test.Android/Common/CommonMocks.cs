@@ -13,6 +13,10 @@ using NachoCore.Model;
 using NachoPlatform;
 using System.Xml.Linq;
 using SQLite;
+using System.Text;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using System.Net;
 
 
 namespace Test.iOS
@@ -31,7 +35,7 @@ namespace Test.iOS
         // utopiasystems is used because they have an Autodiscover SRV response
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
         public static string Host = "utopiasystems.net";
-        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml";
+        public static string RedirectionUrl = "https://redir.utopiasystems.net/autodiscover/autodiscover.xml";
 
         public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
         public static XDocument MockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
@@ -70,9 +74,17 @@ namespace Test.iOS
 
         public Task<HttpResponseMessage> GetAsync (Uri uri)
         {
-            // FIXME.
-            return null;
+            var webRequest = WebRequest.Create (CommonMockData.RedirectionUrl);
+
+            // cert is under resources in Test.iOS and Test.Android
+            X509Certificate mockCert = new X509Certificate ("utopiasystems.cer");
+            ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
+            var mockResponse = new HttpResponseMessage () {};
+            return Task.Run<HttpResponseMessage> (delegate {
+                return mockResponse;
+            });
         }
+
         public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
             HttpCompletionOption completionOption,
             CancellationToken cancellationToken)
