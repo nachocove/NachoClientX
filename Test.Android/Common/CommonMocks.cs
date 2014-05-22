@@ -67,6 +67,11 @@ namespace Test.iOS
         {
         }
 
+        public Task<HttpResponseMessage> GetAsync (Uri uri)
+        {
+            // FIXME.
+            return null;
+        }
         public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
             HttpCompletionOption completionOption,
             CancellationToken cancellationToken)

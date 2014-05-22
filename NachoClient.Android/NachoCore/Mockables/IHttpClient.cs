@@ -13,6 +13,7 @@ namespace NachoCore.Utils
         Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
                                      HttpCompletionOption completionOption,
                                      CancellationToken cancellationToken);
+        Task<HttpResponseMessage> GetAsync (Uri uri);
     }
 }
 

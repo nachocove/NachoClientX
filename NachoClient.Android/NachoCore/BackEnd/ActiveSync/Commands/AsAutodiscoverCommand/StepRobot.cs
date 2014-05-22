@@ -507,7 +507,8 @@ namespace NachoCore.ActiveSync
                 // FIXME: need to set & handle timeout.
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var client = new HttpClient (new HttpClientHandler () { AllowAutoRedirect = false });
+                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, 
+                        new HttpClientHandler () { AllowAutoRedirect = false });
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
                         await client.GetAsync (ReDirUri);
