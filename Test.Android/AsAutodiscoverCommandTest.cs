@@ -85,10 +85,31 @@ namespace Test.iOS
         }
 
         [Test]
-        public void TestDnsResponse ()
+        public void TestPOSTResponse1 ()
+        {
+            string xml = CommonMockData.AutodPhonyPingResponseXmlv1;
+            TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+        }
+
+        [Test]
+        public void TestPOSTResponse2 ()
         {
             string xml = CommonMockData.AutodOffice365ResponseXml;
             TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+        }
+
+        [Test]
+        public void TestGETResponse ()
+        {
+            string xml = CommonMockData.AutodOffice365ResponseXml;
+            TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+        }
+
+        [Test]
+        public void TestDNSResponse ()
+        {
+            string xml = CommonMockData.AutodOffice365ResponseXml;
+            TestAutodPingWithXmlResponse (xml, MockSteps.S4);
         }
 
         private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
@@ -97,7 +118,8 @@ namespace Test.iOS
             string mockResponseLength = xml.Length.ToString ();
 
             PerformAutoDiscoveryWithSettings (xml, mockContext => {
-                mockContext.Server = McServer.Create (CommonMockData.MockUri);
+                mockContext.Server = new McServer ();
+                mockContext.Server.Host = "";
                 mockContext.Server.UsedBefore = false;
                 mockContext.Server.Id = 1;
             }, httpResponse => {
@@ -106,7 +128,7 @@ namespace Test.iOS
             }, provideDnsResponse => {
 
             }, httpRequest => {
-                return PassRobotForStep(step, httpRequest);
+                return PassRobotForStep(step, httpRequest, xml);
             });
         }
     }
@@ -121,7 +143,7 @@ namespace Test.iOS
     public class AsAutodiscoverCommandTest
     {
         // return true if the robot should pass, false otherwise
-        public bool PassRobotForStep (MockSteps step, HttpRequestMessage request)
+        public string PassRobotForStep (MockSteps step, HttpRequestMessage request, string xml)
         {
             string requestUri = request.RequestUri.ToString ();
             string s1Uri = "https://" + CommonMockData.Host;
@@ -129,26 +151,27 @@ namespace Test.iOS
             string getUri = "http://autodiscover." + CommonMockData.Host;
             switch (request.Method.ToString ()) {
             case "POST":
-                if (step == MockSteps.S1 && requestUri.Substring(0, s1Uri.Length) == s1Uri) {
-                    return true;
-                } else if (step == MockSteps.S2 && requestUri.Substring(0, s2Uri.Length) == s2Uri) {
-                    return true;
+                if (step == MockSteps.S1 && requestUri.Substring (0, s1Uri.Length) == s1Uri) {
+                    return xml;
+                } else if (step == MockSteps.S2 && requestUri.Substring (0, s2Uri.Length) == s2Uri) {
+                    return xml;
                 }
-                return false;
+                break;
             case "GET":
-                if (request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri) {
-                    return true;
+                if (step == MockSteps.S3 && requestUri.Substring (0, getUri.Length) == getUri) {
+                    return CommonMockData.AutodPhonyRedirectResponse;
                 }
-                return false;
+                break;
             default:
                 // this catches the OPTIONS cases
-                return false;
+                break;
             }
+            return CommonMockData.AutodPhonyErrorResponse;
         }
 
         public void PerformAutoDiscoveryWithSettings (string xml, Action<MockContext> provideContext, 
             Action<HttpResponseMessage> exposeHttpResponse, Action<DnsQueryResponse> exposeDnsResponse, 
-            Func<HttpRequestMessage, bool> exposeHttpRequest)
+            Func<HttpRequestMessage, string> exposeHttpRequest)
         {
             var interlock = new BlockingCollection<bool> ();
 
@@ -171,18 +194,19 @@ namespace Test.iOS
             MockHttpClient.ExamineHttpRequestMessage = (request) => {};
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
-                // check for the type of response and decide to fail the robot or not
-                bool shouldPassRobot = exposeHttpRequest(request);
-                if (shouldPassRobot) {
-                    // create the response, then allow caller to set headers,
-                    // then return response and assign to mockResponse
-                    return CreateMockResponse (xml, response => {
-                        exposeHttpResponse (response);
-                    });
-                } else {
-                    // return an empty (invalid) response message to fail the robot
-                    return CreateMockResponse (CommonMockData.AutodPhonyErrorResponse, response => {});
-                }
+                // check for the type of request and respond with appropriate response (redir, error, pass)
+                string responseXml = exposeHttpRequest(request);
+                // check for redirection and set the response to 302 (Found) if true
+                bool isRedirection = request.Method.ToString () == "GET";
+                // create the response, then allow caller to set headers,
+                // then return response and assign to mockResponse
+                return CreateMockResponse (responseXml, response => {
+                    exposeHttpResponse (response);
+                    if (isRedirection) {
+                        response.StatusCode = System.Net.HttpStatusCode.Found;
+                        response.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                    }
+                });
             };
 
             var mockContext = new MockContext ();
@@ -195,7 +219,7 @@ namespace Test.iOS
             autod.Execute (sm);
 
             bool didFinish = false;
-            if (!interlock.TryTake (out didFinish, 3000)) {
+            if (!interlock.TryTake (out didFinish, 8000)) {
                 Assert.Inconclusive ("Failed in TryTake clause");
             }
             Assert.IsTrue (didFinish);
@@ -219,11 +243,17 @@ namespace Test.iOS
                                     action(setTrueBySuccessEvent);
                                 },
                                 State = (uint)St.Start },
+                            new Trans { 
+                                Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk, 
+                                Act = delegate () {
+                                    setTrueBySuccessEvent = true;
+                                    action(setTrueBySuccessEvent);
+                                },
+                                State = (uint)St.Start },
                         }
                     }
                 }
             };
-
             return sm;
         }
 
