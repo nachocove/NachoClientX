@@ -50,131 +50,130 @@ namespace Test.iOS
         }
     }
 
-    // Test that each of the 8 Sx complete successfully
-    // Ensure discovered server name is tested by auto-d
     [TestFixture]
-    public class BasicSuccessfulResponses : AsAutodiscoverCommandTest
+    public class BaseAutoDiscoverTests : AsAutodiscoverCommandTest
     {
-        // does not work because <Action>settings</Action> is not handled correctly
-//        [Test]
-        public void TestFirstMicrosoftDocResponse ()
+        // Test that each of the 8 Sx complete successfully
+        // Ensure discovered server name is tested by auto-d
+        public class BasicSuccessfulResponses : AsAutodiscoverCommandTest
         {
-            string xml = CommonMockData.AutodPhonyPingResponseXmlv1;
-            TestGetAndPostForXml (xml);
+            // does not work because <Action>settings</Action> is not handled correctly
+            //        [Test]
+            public void TestFirstMicrosoftDocResponse ()
+            {
+                string xml = CommonMockData.AutodPhonyPingResponseXmlv1;
+                TestGetAndPostForXml (xml);
+            }
+
+            [Test]
+            public void TestSecondMicrosoftDocResponse ()
+            {
+                string xml = CommonMockData.AutodPhonyPingResponseXmlv2;
+                TestGetAndPostForXml (xml);
+            }
+
+            [Test]
+            public void TestOffice365Response ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestGetAndPostForXml (xml);
+            }
+
+            private void TestGetAndPostForXml (string xml)
+            {
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S4);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+            }
+
+            [Test]
+            public void TestS1 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+            }
+
+            [Test]
+            public void TestS2 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+            }
+
+            [Test]
+            public void TestS3 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+            }
+
+            [Test]
+            public void TestS4 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S4);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
+
+                PerformAutoDiscoveryWithSettings (xml, mockContext => {
+                    mockContext.Server = new McServer ();
+                    mockContext.Server.Host = "";
+                    mockContext.Server.UsedBefore = false;
+                    mockContext.Server.Id = 1;
+                }, httpResponse => {
+                    httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                    httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                }, provideDnsResponse => {
+                    if (step == MockSteps.S4) {
+                        provideDnsResponse.ParseResponse (dnsByteArray);
+                    }
+                }, httpRequest => {
+                    return PassRobotForStep(step, httpRequest, xml);
+                });
+            }
         }
 
-        [Test]
-        public void TestSecondMicrosoftDocResponse ()
+        // Test that each of the 8 Sx succeed after one timeout
+        [TestFixture]
+        public class XMLErrorCodes : AsAutodiscoverCommandTest
         {
-            string xml = CommonMockData.AutodPhonyPingResponseXmlv2;
-            TestGetAndPostForXml (xml);
-        }
+            [Test]
+            public void ErrorCode600 ()
+            {
+                string xml = CommonMockData.AutodPhony600Response;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+            }
 
-        [Test]
-        public void TestOffice365Response ()
-        {
-            string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestGetAndPostForXml (xml);
-        }
+            [Test]
+            public void ErrorCode601 ()
+            {
+         
+            }
 
-        private void TestGetAndPostForXml (string xml)
-        {
-            TestAutodPingWithXmlResponse (xml, MockSteps.S1);
-            TestAutodPingWithXmlResponse (xml, MockSteps.S2);
-            TestAutodPingWithXmlResponse (xml, MockSteps.S4);
-            TestAutodPingWithXmlResponse (xml, MockSteps.S3);
-        }
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
 
-        [Test]
-        public void TestS1 ()
-        {
-            string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestAutodPingWithXmlResponse (xml, MockSteps.S1);
-        }
-
-        [Test]
-        public void TestS2 ()
-        {
-            string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestAutodPingWithXmlResponse (xml, MockSteps.S2);
-        }
-
-        [Test]
-        public void TestS3 ()
-        {
-            string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestAutodPingWithXmlResponse (xml, MockSteps.S3);
-        }
-
-        [Test]
-        public void TestS4 ()
-        {
-            string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestAutodPingWithXmlResponse (xml, MockSteps.S4);
-        }
-
-        private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
-        {
-            // header settings
-            string mockResponseLength = xml.Length.ToString ();
-
-            PerformAutoDiscoveryWithSettings (xml, mockContext => {
-                mockContext.Server = new McServer ();
-                mockContext.Server.Host = "";
-                mockContext.Server.UsedBefore = false;
-                mockContext.Server.Id = 1;
-            }, httpResponse => {
-                httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
-                httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-            }, provideDnsResponse => {
-                if (step == MockSteps.S4) {
-                    provideDnsResponse.ParseResponse (dnsByteArray);
-                }
-            }, httpRequest => {
-                return PassRobotForStep(step, httpRequest, xml);
-            });
-        }
-    }
-
-    // Test that each of the 8 Sx succeed after one timeout
-    [TestFixture]
-    public class SuccessfulResponsesAfterTimeout : AsAutodiscoverCommandTest
-    {
-        [Test]
-        public void TestOffice365Response ()
-        {
-            string xml = CommonMockData.AutodOffice365ResponseXml;
-            TestGetAndPostForXml (xml);
-        }
-
-        private void TestGetAndPostForXml (string xml)
-        {
-            TestAutodPingWithXmlResponse (xml, MockSteps.S1);
-            TestAutodPingWithXmlResponse (xml, MockSteps.S2);
-//            TestAutodPingWithXmlResponse (xml, MockSteps.S3);
-//            TestAutodPingWithXmlResponse (xml, MockSteps.S4);
-        }
-
-        private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
-        {
-            // header settings
-            string mockResponseLength = xml.Length.ToString ();
-
-            PerformAutoDiscoveryWithSettings (xml, mockContext => {
-                mockContext.Server = new McServer ();
-                mockContext.Server.Host = "";
-                mockContext.Server.UsedBefore = false;
-                mockContext.Server.Id = 1;
-            }, httpResponse => {
-                httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
-                httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-            }, provideDnsResponse => {
-                if (step == MockSteps.S4) {
-                    provideDnsResponse.ParseResponse (dnsByteArray);
-                }
-            }, httpRequest => {
-                return PassRobotForStep(step, httpRequest, xml);
-            });
+                PerformAutoDiscoveryWithSettings (xml, mockContext => {
+                    mockContext.Server = new McServer ();
+                    mockContext.Server.Host = "";
+                    mockContext.Server.UsedBefore = false;
+                    mockContext.Server.Id = 1;
+                }, httpResponse => {
+                    httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                    httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                }, provideDnsResponse => {
+                    // not necessary for this test
+                }, httpRequest => {
+                    return PassRobotForStep(step, httpRequest, xml);
+                });
+            }
         }
     }
 
