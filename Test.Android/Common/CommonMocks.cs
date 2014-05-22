@@ -31,7 +31,7 @@ namespace Test.iOS
         // utopiasystems is used because they have an Autodiscover SRV response
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
         public static string Host = "utopiasystems.net";
-        public static string RedirectionUrl = "https://autodiscover.redir.utopiasystems.net/autodiscover/autodiscover.xml";
+        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml";
 
         public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
         public static XDocument MockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
@@ -107,7 +107,7 @@ namespace Test.iOS
             Server = null; // Should not be accessed.
             Account = new McAccount () {
                 Id = 1,
-                EmailAddr = "johnd@utopiasystems.net",
+                EmailAddr = "johnd@foo.utopiasystems.net",
             };
 
             Cred = new McCred () {
