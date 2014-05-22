@@ -60,6 +60,11 @@ namespace NachoCore.Utils
             }
             return false;
         }
+
+        public static void TestOnlyFlushCache ()
+        {
+            instance.Cache = new ConcurrentDictionary<string, X509Certificate2> ();
+        }
     }
 }
 
