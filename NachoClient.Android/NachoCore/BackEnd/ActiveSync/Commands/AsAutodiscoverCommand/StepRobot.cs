@@ -422,7 +422,7 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public void ServerCertificateEventHandler (HttpWebRequest sender,
+            public void ServerCertificateEventHandler (IHttpWebRequest sender,
                                                        X509Certificate2 certificate,
                                                        X509Chain chain,
                                                        SslPolicyErrors sslPolicyErrors, 

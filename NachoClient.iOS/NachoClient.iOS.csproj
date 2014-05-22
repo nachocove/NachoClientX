@@ -817,6 +817,12 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoFileChooser.cs" />
     <Compile Include="BuildInfo.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\IHttpWebRequest.cs">
+      <Link>NachoCore\Mockables\IHttpWebRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableHttpWebRequest.cs">
+      <Link>NachoCore\Mockables\MockableHttpWebRequest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

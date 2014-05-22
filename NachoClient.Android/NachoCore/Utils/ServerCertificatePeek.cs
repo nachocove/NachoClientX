@@ -8,7 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.Utils
 {
-    public delegate void ServerCertificateEventHandler (HttpWebRequest sender,
+    public delegate void ServerCertificateEventHandler (IHttpWebRequest sender,
                                                        X509Certificate2 certificate,
                                                        X509Chain chain,
                                                        SslPolicyErrors sslPolicyErrors, 
@@ -42,12 +42,13 @@ namespace NachoCore.Utils
             }
         }
 
-        private static bool CertificateValidationCallback (Object sender,
+        // Note: public only for test code!
+        public static bool CertificateValidationCallback (Object sender,
                                                            X509Certificate certificate,
                                                            X509Chain chain,
                                                            SslPolicyErrors sslPolicyErrors)
         {
-            HttpWebRequest request = (HttpWebRequest)sender;
+            IHttpWebRequest request = new MockableHttpWebRequest ((HttpWebRequest)sender);
             X509Certificate2 certificate2 = new X509Certificate2 (certificate);
             if (null != Instance.ValidationEvent) {
                 Instance.ValidationEvent (request, certificate2, chain, sslPolicyErrors, EventArgs.Empty);
