@@ -378,7 +378,8 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.MessagePreviouslySent_118:
                 // If server says previously sent, then we succeeded!
                 PendingApply (pending => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                    pending.ResolveAsSuccess (BEContext.ProtoControl,
+                        NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "TLS118");
 
