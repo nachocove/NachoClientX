@@ -420,7 +420,9 @@ namespace NachoCore.ActiveSync
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                     return;
+                #pragma warning disable 1058
                 } catch (Exception ex) {
+                #pragma warning restore 1058
                     // We've seen HttpClient barf due to Cancel().
                     if (myClient == Client) {
                         CancelTimeoutTimer ();
@@ -428,6 +430,13 @@ namespace NachoCore.ActiveSync
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
                     }
                     return;
+                } catch {
+                    // Well, I ain't superstitious, black cat just cross my trail.
+                    if (myClient == Client) {
+                        CancelTimeoutTimer ();
+                        Log.Error (Log.LOG_HTTP, "Exception: no-Exception got caught.");
+
+                    }
                 }
 
                 if (myClient == Client) {
