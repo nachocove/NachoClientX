@@ -234,7 +234,7 @@ namespace NachoCore.ActiveSync
                 if (TriesLeft != KDefaultRetries) {
                     Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * KDefaultTimeoutExpander));
                 }
-                Log.Info (Log.LOG_AS, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
+                Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
             } else {
                 Owner.ResoveAllDeferred ();
@@ -346,7 +346,7 @@ namespace NachoCore.ActiveSync
             try {
                 doc = Owner.ToXDocument (this);
             } catch (AsCommand.AbortCommandException) {
-                Log.Warn (Log.LOG_AS, "Intentionally aborting HTTP operation.");
+                Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
                 HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
                 return;
             }
@@ -389,7 +389,7 @@ namespace NachoCore.ActiveSync
                 TimeoutTimer = new NcTimer (TimeoutTimerCallback, myClient, Timeout, 
                     System.Threading.Timeout.InfiniteTimeSpan);
                 try {
-                    Log.Info (Log.LOG_AS, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
+                    Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
                     response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
@@ -424,9 +424,10 @@ namespace NachoCore.ActiveSync
                     // We've seen HttpClient barf due to Cancel().
                     if (myClient == Client) {
                         CancelTimeoutTimer ();
-                        Log.Error (Log.LOG_AS, "Exception: {0}", ex.ToString ());
+                        Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
                     }
+                    return;
                 }
 
                 if (myClient == Client) {
@@ -436,21 +437,20 @@ namespace NachoCore.ActiveSync
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
                     } catch (ObjectDisposedException ex) {
-                        // Seems like a runtime bug. We've seen the Dispose(es) in the outer finally block
-                        // execute and then have the ReadAsStreamAsync crash on the response being disposed.
-                        // Execution of ReadAsStreamAsync should be complete before finally runs.
-                        // We return because if the finally is run, then we shouldn't even be here!
-                        Log.Warn ("AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                        // If we see this, it is most likely a bug in error processing above in AttemptHttp().
+                        Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
                         return;
                     }
 
                     try {
                         HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
                     } catch (Exception ex) {
-                        Log.Error ("AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                        Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                         // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
                         Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
                         HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
+                        return;
                     }
                 }
             } finally {
@@ -470,7 +470,7 @@ namespace NachoCore.ActiveSync
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
                 var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
-                Log.Info (Log.LOG_AS, "HTML response: {0}", possibleMessage);
+                Log.Info (Log.LOG_HTTP, "HTML response: {0}", possibleMessage);
             }
             Event preProcessEvent = Owner.PreProcessResponse (this, response);
             if (null != preProcessEvent) {
@@ -489,7 +489,6 @@ namespace NachoCore.ActiveSync
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
-                        var cap = NcCapture.CreateAndStart (KToXML);
                         try {
                             decoder.LoadBytes (ContentData);
                         } catch (TaskCanceledException) {
@@ -503,30 +502,29 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
                         }
                         responseDoc = decoder.XmlDoc;
-                        cap.Stop ();
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
                             // FIXME - push TL status into pending.
                             var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
                             if (null != statusEvent) {
                                 Log.Info (Log.LOG_AS, "Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
-                                // If owner is returning an event, then they MUST resolve all pending.
+                                // If Owner is returning an event, then Owner MUST resolve all pending.
                                 return Final (statusEvent);
                             }
                         }
-                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
+                        Log.Info (Log.LOG_AS, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
-                        Log.Info (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
+                        Log.Info (Log.LOG_AS, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:
                         if (null == ContentType) {
-                            Log.Warn (Log.LOG_AS, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
+                            Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
                         }
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response));
