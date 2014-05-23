@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using NachoCore.Utils;
 
 namespace NachoCore.Utils
@@ -64,7 +65,7 @@ namespace NachoCore.Utils
                 }
             }
             Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
-                level + callInfo + ": " + fmt, list));
+                level + ":" + Thread.CurrentThread.ManagedThreadId.ToString() + ":" + callInfo + ": " + fmt, list));
         }
 
         public static void Error (int when, string fmt, params object[] list)
