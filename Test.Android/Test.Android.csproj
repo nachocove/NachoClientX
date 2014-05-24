@@ -81,6 +81,7 @@
     <Compile Include="ExtensionTest.cs" />
     <Compile Include="AsAutodiscoverCommandTest.cs" />
     <Compile Include="Common\CommonMocks.cs" />
+    <Compile Include="McMutablesTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -149,6 +149,9 @@
     <Compile Include="..\Test.Android\Common\CommonMocks.cs">
       <Link>CommonMocks.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McMutablesTest.cs">
+      <Link>McMutablesTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
