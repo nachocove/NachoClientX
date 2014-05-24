@@ -36,6 +36,7 @@ namespace Test.iOS
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
         public static string Host = "utopiasystems.net";
         public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml";
+        public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
         public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
 
         public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
@@ -68,6 +69,10 @@ namespace Test.iOS
         public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate (HttpRequestMessage request);
         public static ProvideHttpResponseMessageDelegate ProvideHttpResponseMessage { set; get; }
 
+        // Turn on/off server certificate validation callback
+        public delegate bool HasServerCertificateDelegate ();
+        public static HasServerCertificateDelegate HasServerCertificate { set; get; }
+
         public TimeSpan Timeout { get; set; }
 
         public MockHttpClient (HttpClientHandler handler)
@@ -76,11 +81,22 @@ namespace Test.iOS
 
         public Task<HttpResponseMessage> GetAsync (Uri uri)
         {
+            // provide validated certificate
             var webRequest = WebRequest.Create (CommonMockData.RedirectionUrl);
+
+            var hasCert = true;
+            if (null != HasServerCertificate) {
+                hasCert = HasServerCertificate ();
+            }
 
             // cert is under resources in Test.iOS and Test.Android
             X509Certificate mockCert = new X509Certificate ("utopiasystems.cer");
-            ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
+
+            if (hasCert) {
+                ServerCertificatePeek.CertificateValidationCallback (webRequest, mockCert, new X509Chain (), new SslPolicyErrors ());
+            }
+
+            // Create and return a mock response
             var mockResponse = new HttpResponseMessage () {};
             return Task.Run<HttpResponseMessage> (delegate {
                 return mockResponse;
