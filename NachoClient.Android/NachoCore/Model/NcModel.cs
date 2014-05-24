@@ -54,6 +54,7 @@ namespace NachoCore.Model
             Db.CreateTable<McBody> ();
             Db.CreateTable<McFile> ();
             Db.CreateTable<McTelemetryEvent> ();
+            Db.CreateTable<McMutables> ();
         }
 
         private static volatile NcModel instance;

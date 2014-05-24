@@ -823,6 +823,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableHttpWebRequest.cs">
       <Link>NachoCore\Mockables\MockableHttpWebRequest.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMutables.cs">
+      <Link>NachoCore\Model\McMutables.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

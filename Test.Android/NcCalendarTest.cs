@@ -94,6 +94,10 @@ namespace Test.iOS
             CreateTable<McServer> ();
             DropTable<McServer> ();
             CreateTable<McServer> ();
+
+            CreateTable<McMutables> ();
+            DropTable<McMutables> ();
+            CreateTable<McMutables> ();
         }
     }
 
