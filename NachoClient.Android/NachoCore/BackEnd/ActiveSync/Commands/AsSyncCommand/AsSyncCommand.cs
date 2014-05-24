@@ -225,7 +225,9 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case McFolderEntry.ClassCodeEnum.Tasks:
-                        // We don't express a preference for Tasks yet.
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
                         break;
                     }
                     if (options.HasElements) {

@@ -614,7 +614,7 @@
       <Link>NachoCore\Model\McRecurrence.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\AsSyncTaskCommand.cs</Link>
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\AttachmentViewController.cs" />
     <Compile Include="NachoUI.iOS\AttachmentViewController.designer.cs">
