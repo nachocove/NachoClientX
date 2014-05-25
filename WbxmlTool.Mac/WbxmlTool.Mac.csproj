@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">iPhone</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>WbxmlTool.Mac</RootNamespace>
+    <AssemblyName>WbxmlTool.Mac</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;WBXMLTOOL;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSet.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXML.cs">
+      <Link>NachoCore\Utils\ASWBXML.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXMLByteQueue.cs">
+      <Link>NachoCore\Utils\ASWBXMLByteQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXMLCodePage.cs">
+      <Link>NachoCore\Utils\ASWBXMLCodePage.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\Log.cs">
+      <Link>NachoCore\Utils\Log.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NachoAssert.cs">
+      <Link>NachoCore\Utils\NachoAssert.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcXmlFilter.cs">
+      <Link>NachoCore\Utils\NcXmlFilter.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\WBXML.cs">
+      <Link>NachoCore\Utils\WBXML.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncBase.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncBase.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterCalendar.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterComposeMailResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts2.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterContacts2.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterDocumentLibrary.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterDocumentLibrary.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail2.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterEmail2.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterFolderHierarchyResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGAL.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGAL.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterGetItemEstimateResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterItemOperationsResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMeetingResponseResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterMoveResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterPingResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterProvisionResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterResolveRecipientsResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterRightsManagement.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSearchResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsRequest.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterSettingsResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs</Link>
+    </Compile>
+    <Compile Include="Mock\Telemetry.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="NachoCore\" />
+    <Folder Include="Mock\" />
+  </ItemGroup>
+</Project>

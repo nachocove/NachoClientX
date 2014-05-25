@@ -7,7 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+#if (!WBXMLTOOL)
 using NachoCore.Model;
+#endif
 
 namespace NachoCore.Wbxml
 {

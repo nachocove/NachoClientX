@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClient.Mac", "NachoCli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parse.iOS", "..\Parse\Parse.iOS\Parse.iOS.csproj", "{3D62A798-BABE-4639-B504-24E045E8B0A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WbxmlTool.Mac", "WbxmlTool.Mac\WbxmlTool.Mac.csproj", "{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,22 @@ Global
 		{3D62A798-BABE-4639-B504-24E045E8B0A0}.Release|iPhone.Build.0 = Release|Any CPU
 		{3D62A798-BABE-4639-B504-24E045E8B0A0}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{3D62A798-BABE-4639-B504-24E045E8B0A0}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Ad-Hoc|iPhone.ActiveCfg = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Ad-Hoc|iPhone.Build.0 = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.AppStore|iPhone.ActiveCfg = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.AppStore|iPhone.Build.0 = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Debug|Any CPU.ActiveCfg = Debug|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Debug|Any CPU.Build.0 = Debug|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Debug|iPhone.Build.0 = Debug|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Debug|iPhoneSimulator.Build.0 = Debug|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Release|Any CPU.ActiveCfg = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Release|Any CPU.Build.0 = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Release|iPhone.ActiveCfg = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Release|iPhone.Build.0 = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Release|iPhoneSimulator.ActiveCfg = Release|iPhone
+		{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}.Release|iPhoneSimulator.Build.0 = Release|iPhone
 		{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
 		{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
 		{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}.AppStore|iPhone.ActiveCfg = Release|Any CPU
