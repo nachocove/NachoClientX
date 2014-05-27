@@ -120,11 +120,6 @@ namespace Test.iOS
 
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
                     return PassRobotForStep (step, request, xml);
-                }, mockContext => {
-                    mockContext.Server = new McServer ();
-                    mockContext.Server.Host = "";
-                    mockContext.Server.UsedBefore = false;
-                    mockContext.Server.Id = 1;
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
@@ -186,11 +181,6 @@ namespace Test.iOS
                     provideSm(sm);
                 }, request => {
                     return PassRobotForStep (step, request, xml);
-                }, mockContext => {
-                    mockContext.Server = new McServer ();
-                    mockContext.Server.Host = "";
-                    mockContext.Server.UsedBefore = false;
-                    mockContext.Server.Id = 1;
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
                     // check for redirection and set the response to 302 (Found) if true
@@ -211,6 +201,29 @@ namespace Test.iOS
 
     public class AsAutodiscoverCommandTest
     {
+        public static AsAutodiscoverCommand autodCommand { get; set; }
+        public static MockContext mockContext { get; set; }
+
+        [TestFixtureSetUp]
+        public void Setup ()
+        {
+            NcModel.Instance.Db = new TestDb ();
+
+            // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
+            var phonyServer = new McServer ();
+            phonyServer.Host = "";
+            phonyServer.UsedBefore = false;
+            phonyServer.Id = 5;
+            NcModel.Instance.Db.Insert (phonyServer);
+
+            mockContext = new MockContext ();
+            // make a server for this context
+            mockContext.Server = new McServer ();
+            mockContext.Server.Host = "";
+            mockContext.Server.UsedBefore = false;
+            mockContext.Server.Id = 1;
+        }
+
         // return true if the robot should pass, false otherwise
         public string PassRobotForStep (MockSteps step, HttpRequestMessage request, string xml)
         {
@@ -241,8 +254,8 @@ namespace Test.iOS
             return CommonMockData.AutodPhonyErrorResponse;
         }
 
-        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml, Action<MockContext> provideContext, Action<DnsQueryResponse> exposeDnsResponse, 
-            Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
+        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml, 
+            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
         {
             var interlock = new BlockingCollection<bool> ();
 
@@ -282,16 +295,6 @@ namespace Test.iOS
             MockHttpClient.HasServerCertificate = () => {
                 return hasCert;
             };
-
-            var mockContext = new MockContext ();
-            provideContext (mockContext);
-
-            // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
-            var phonyServer = new McServer ();
-            phonyServer.Host = "";
-            phonyServer.UsedBefore = false;
-            phonyServer.Id = 5;
-            NcModel.Instance.Db.Insert (phonyServer);
 
             var autod = new AsAutodiscoverCommand (mockContext);
             autod.DnsQueryRequestType = typeof(MockDnsQueryRequest);
@@ -360,8 +363,6 @@ namespace Test.iOS
             };
             return sm;
         }
-
-        public static AsAutodiscoverCommand autodCommand { get; set; }
 
         public void PostAutodEvent (uint evt, string mnemonic)
         {

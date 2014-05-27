@@ -145,8 +145,6 @@ namespace Test.iOS
                 Username = "dummy",
                 Password = "password",
             };
-
-            NcModel.Instance.Db = new TestDb ();
         }
     }
 
