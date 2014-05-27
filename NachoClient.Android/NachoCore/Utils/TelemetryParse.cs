@@ -49,9 +49,9 @@ namespace NachoCore.Utils
             Add (SafeNSString (key), SafeNSString(value));
         }
 
-        public void AddInteger (string key, int value)
+        public void AddInteger (string key, long value)
         {
-            Add (SafeNSString (key), NSNumber.FromInt32 (value));
+            Add (SafeNSString (key), NSNumber.FromInt64 (value));
         }
 
         public void AddData (string key, byte[] data)
@@ -153,6 +153,14 @@ namespace NachoCore.Utils
                     break;
                 }
                 dict.AddData ("wbxml", tEvent.Wbxml);
+            } else if (tEvent.IsCounterEvent ()) {
+                dict.AddString ("event_type", "COUNTER");
+                dict.AddString ("counter_name", tEvent.CounterName);
+                dict.AddInteger ("count", tEvent.Count);
+                dict.AddDate ("counter_start", tEvent.CounterStart);
+                dict.AddDate ("counter_end", tEvent.CounterEnd);
+            } else {
+                NachoAssert.True (false);
             }
             PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
             anEvent.ACL = DefaultAcl;

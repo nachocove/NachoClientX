@@ -262,6 +262,7 @@
     <Compile Include="NachoCore\Mockables\IHttpWebRequest.cs" />
     <Compile Include="NachoCore\Mockables\MockableHttpWebRequest.cs" />
     <Compile Include="NachoCore\Model\McMutables.cs" />
+    <Compile Include="NachoCore\Utils\NcCounter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

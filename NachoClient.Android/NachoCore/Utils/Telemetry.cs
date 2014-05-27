@@ -17,7 +17,8 @@ namespace NachoCore.Utils
         WBXML_REQUEST,
         WBXML_RESPONSE,
         STATE_MACHINE,
-        COUNTERS,
+        COUNTER,
+        MAX_TELEMETRY_EVENT_TYPE
     };
 
     [Serializable]
@@ -56,6 +57,54 @@ namespace NachoCore.Utils
             }
         }
 
+        // Counter Name
+        private string _CounterName;
+        public string CounterName {
+            get {
+                return _CounterName;
+            }
+            set {
+                NachoAssert.True (IsCounterEvent ());
+                _CounterName = value;
+            }
+        }
+
+        // Counter Count
+        private Int64 _Count;
+        public Int64 Count {
+            get {
+                return _Count;
+            }
+            set {
+                NachoAssert.True (IsCounterEvent ());
+                _Count = value;
+            }
+        }
+
+        // Counter start time
+        private DateTime _CounterStart;
+        public DateTime CounterStart {
+            get {
+                return _CounterStart;
+            }
+            set {
+                NachoAssert.True (IsCounterEvent ());
+                _CounterStart = value;
+            }
+        }
+
+        // Counter end time
+        private DateTime _CounterEnd;
+        public DateTime CounterEnd {
+            get {
+                return _CounterEnd;
+            }
+            set {
+                NachoAssert.True (IsCounterEvent ());
+                _CounterEnd = value;
+            }
+        }
+
         public static bool IsLogEvent (TelemetryEventType type)
         {
             return ((TelemetryEventType.ERROR == type) ||
@@ -70,6 +119,11 @@ namespace NachoCore.Utils
             (TelemetryEventType.WBXML_RESPONSE == type));
         }
 
+        public static bool IsCounterEvent (TelemetryEventType type)
+        {
+            return (TelemetryEventType.COUNTER == type);
+        }
+
         public bool IsLogEvent ()
         {
             return IsLogEvent (Type);
@@ -78,6 +132,11 @@ namespace NachoCore.Utils
         public bool IsWbxmlEvent ()
         {
             return IsWbxmlEvent (Type);
+        }
+
+        public bool IsCounterEvent ()
+        {
+            return IsCounterEvent (Type);
         }
 
         public TelemetryEvent (TelemetryEventType type)
@@ -122,30 +181,45 @@ namespace NachoCore.Utils
         private ITelemetryBE BackEnd;
 
         private Thread ProcessThread;
+
+        NcCounter[] Counters;
   
         public Telemetry ()
         {
             EventQueue = new NcQueue<TelemetryEvent> ();
             BackEnd = null;
             DbUpdated = new AutoResetEvent (false);
+            Counters = new NcCounter[(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
+            Counters[0] = new NcCounter ("Telemetry", true);
+            Counters[0].AutoReset = true;
+            Counters[0].ReportPeriod = 0;
+            Counters [0].PreReportCallback = PreReportAdjustment;
+
+            Counters [(int)TelemetryEventType.DEBUG] = Counters [0].AddChild ("DEBUG");
+            Counters[(int)TelemetryEventType.INFO] = Counters[0].AddChild ("INFO");
+            Counters[(int)TelemetryEventType.WARN] = Counters[0].AddChild ("WARN");
+            Counters[(int)TelemetryEventType.ERROR] = Counters[0].AddChild ("ERROR");
+            Counters[(int)TelemetryEventType.WBXML_REQUEST] = Counters[0].AddChild ("WBXML_REQUEST");
+            Counters[(int)TelemetryEventType.WBXML_RESPONSE] = Counters[0].AddChild ("WBXML_RESPONSE");
+            Counters [(int)TelemetryEventType.STATE_MACHINE] = Counters [0].AddChild ("STATE_MACHINE");
+            // Counter must be the last counter created!
+            Counters[(int)TelemetryEventType.COUNTER] = Counters[0].AddChild ("COUNTER");
         }
 
-        public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
+        // This is kind of a hack. When Telemetry is reporting the counter values,
+        // they are being updated. For example, root counter "Telemetry" is updated
+        // 8 more times (for 8 event types) after it is reported. So, its count is 
+        // wrong. The fix is pre-adjust the increment that will happen during the
+        // reporting. All counts are reset after reporting so the adjustment has
+        // no longer effect at all.
+        private static void PreReportAdjustment ()
         {
-            if (!ENABLED) {
-                return;
-            }
+            SharedInstance.Counters [(int)TelemetryEventType.COUNTER].Click (1);
+            SharedInstance.Counters [0].Click ((int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE - 1);
+        }
 
-            NachoAssert.True (TelemetryEvent.IsLogEvent (type));
-            TelemetryEvent tEvent = new TelemetryEvent (type);
-            tEvent.Message = String.Format(fmt, list);
-
-            if (MAX_PARSE_LEN < tEvent.Message.Length) {
-                // Truncate the message
-                tEvent.Message = tEvent.Message.Substring (0, MAX_PARSE_LEN - 4);
-                tEvent.Message += " ...";
-            }
-
+        private static void RecordRawEvent (TelemetryEvent tEvent)
+        {
             if (!PERSISTED) {
                 SharedInstance.EventQueue.Enqueue (tEvent);
             } else {
@@ -155,18 +229,42 @@ namespace NachoCore.Utils
             }
         }
 
+        public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            NachoAssert.True (TelemetryEvent.IsLogEvent (type));
+            SharedInstance.Counters [(int)type].Click ();
+
+            TelemetryEvent tEvent = new TelemetryEvent (type);
+            tEvent.Message = String.Format(fmt, list);
+
+            if (MAX_PARSE_LEN < tEvent.Message.Length) {
+                // Truncate the message
+                tEvent.Message = tEvent.Message.Substring (0, MAX_PARSE_LEN - 4);
+                tEvent.Message += " ...";
+            }
+
+            RecordRawEvent (tEvent);
+        }
+
         public static void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
         {
             if (!ENABLED) {
                 return;
             }
 
-            TelemetryEvent tEvent;
+            TelemetryEventType type;
             if (isRequest) {
-                tEvent = new TelemetryEvent (TelemetryEventType.WBXML_REQUEST);
+                type = TelemetryEventType.WBXML_REQUEST;
             } else {
-                tEvent = new TelemetryEvent (TelemetryEventType.WBXML_RESPONSE);
+                type = TelemetryEventType.WBXML_RESPONSE;
             }
+            TelemetryEvent tEvent = new TelemetryEvent(type);
+            SharedInstance.Counters [(int)type].Click ();
+
             if (MAX_PARSE_LEN < wbxml.Length) {
                 Console.WriteLine ("Redacted WBXML too long (length={0})", wbxml.Length);
                 StackTrace st = new StackTrace ();
@@ -177,13 +275,24 @@ namespace NachoCore.Utils
 
             tEvent.Wbxml = wbxml;
 
-            if (!PERSISTED) {
-                SharedInstance.EventQueue.Enqueue (tEvent);
-            } else {
-                McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
-                dbEvent.Insert ();
-                Telemetry.SharedInstance.DbUpdated.Set ();
+            RecordRawEvent (tEvent);
+        }
+
+        public static void RecordCounter (string name, Int64 count, DateTime start, DateTime end)
+        {
+            if (!ENABLED) {
+                return;
             }
+
+            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.COUNTER);
+            SharedInstance.Counters [(int)TelemetryEventType.COUNTER].Click ();
+
+            tEvent.CounterName = name;
+            tEvent.Count = count;
+            tEvent.CounterStart = start;
+            tEvent.CounterEnd = end;
+
+            RecordRawEvent (tEvent);
         }
 
         public void Start<T> () where T : ITelemetryBE, new()
@@ -198,6 +307,7 @@ namespace NachoCore.Utils
         private void Process<T> () where T : ITelemetryBE, new()
         {
             BackEnd = new T ();
+            Counters [0].ReportPeriod = 60 * 60 * 24; // report once per day
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good

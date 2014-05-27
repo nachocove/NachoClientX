@@ -826,6 +826,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMutables.cs">
       <Link>NachoCore\Model\McMutables.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCounter.cs">
+      <Link>NachoCore\Utils\NcCounter.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
