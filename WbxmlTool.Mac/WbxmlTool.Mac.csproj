@@ -162,7 +162,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs</Link>
     </Compile>
-    <Compile Include="Mock\Telemetry.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockTelemetry.cs">
+      <Link>MockTelemetry.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
