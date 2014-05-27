@@ -138,6 +138,7 @@ namespace Test.iOS
             Account = new McAccount () {
                 Id = 1,
                 EmailAddr = "johnd@foo.utopiasystems.net",
+                ServerId = 1,
             };
 
             Cred = new McCred () {

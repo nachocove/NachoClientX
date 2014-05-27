@@ -286,18 +286,30 @@ namespace Test.iOS
             var mockContext = new MockContext ();
             provideContext (mockContext);
 
+            // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
+            var phonyServer = new McServer ();
+            phonyServer.Host = "";
+            phonyServer.UsedBefore = false;
+            phonyServer.Id = 5;
+            NcModel.Instance.Db.Insert (phonyServer);
+
             var autod = new AsAutodiscoverCommand (mockContext);
             autod.DnsQueryRequestType = typeof(MockDnsQueryRequest);
             autod.HttpClientType = typeof(MockHttpClient);
 
             autod.Execute (sm);
 
+            autodCommand = autod;
+
             bool didFinish = false;
-            if (!interlock.TryTake (out didFinish, 8000)) {
+            if (!interlock.TryTake (out didFinish, 16000)) {
                 Assert.Inconclusive ("Failed in TryTake clause");
             }
-            Assert.IsTrue (didFinish);
-            Assert.IsTrue (setTrueBySuccessEvent);
+            Assert.IsTrue (didFinish, "Autodiscovery operation should finish");
+            Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
+
+            // Test that the server record was updated
+//            var serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
         }
 
         private NcStateMachine CreatePhonySM (Action<bool> action)
@@ -333,18 +345,31 @@ namespace Test.iOS
 
                     new Node {State = (uint)PhonySt.UITest,
                         On = new [] {
-                            new Trans { 
+                            new Trans {
+                                // TestInvalidRedirect lands here. TestValidRedirectThenFailure should too
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetServConf, 
                                 Act = delegate () {
                                     setTrueBySuccessEvent = true;
                                     action(setTrueBySuccessEvent);
+//                                    PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet, "TEST-ASPCDSSC");
                                 },
-                                State = (uint)PhonySt.UITest },
+                                State = (uint)St.Start },
                         }
                     }
                 }
             };
             return sm;
+        }
+
+        public static AsAutodiscoverCommand autodCommand { get; set; }
+
+        public void PostAutodEvent (uint evt, string mnemonic)
+        {
+            if (autodCommand != null) {
+                autodCommand.Sm.PostEvent (evt, mnemonic);
+            } else {
+                Assert.Fail ("Autodiscover static property not set: Problem in test code.");
+            }
         }
             
         public enum PhonySt : uint
