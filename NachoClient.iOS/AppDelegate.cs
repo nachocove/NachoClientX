@@ -116,6 +116,14 @@ namespace NachoClient.iOS
             #endif
         }
 
+        public override void RegisteredForRemoteNotifications (
+            UIApplication application, NSData deviceToken)
+        {
+            // FIXME - save in mutables.
+            // this._deviceToken = deviceToken.ToString();
+            // code to register with your server application goes here
+        }
+
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
@@ -132,6 +140,7 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
 
+            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (UIRemoteNotificationType.NewsstandContentAvailability);
             NcApplication.Instance.CredReqCallback = CredReqCallback;
             NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
