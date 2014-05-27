@@ -198,7 +198,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            Log.Info ("Unhandled segue identifer {0}", segue.Identifier);
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NachoAssert.CaseError ();
         }
 

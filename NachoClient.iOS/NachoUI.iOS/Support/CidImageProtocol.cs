@@ -60,7 +60,7 @@ namespace NachoClient.iOS
             var value = Request.Url.ResourceSpecifier;
             using (var image = PlatformHelpers.RenderContentId (value)) {
                 if (null == image) {
-                    Log.Error ("CidImageProtocol: RenderContentId returned null {0}", value);
+                    Log.Error (Log.LOG_UI, "CidImageProtocol: RenderContentId returned null {0}", value);
                 } else {
                     var scaledImage = image.Scale (new SizeF (320.0f, image.Size.Height * (320.0f / image.Size.Width)));
                     using (var response = new NSUrlResponse (Request.Url, "image/jpeg", -1, null)) {

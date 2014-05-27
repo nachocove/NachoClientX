@@ -58,7 +58,7 @@ namespace NachoCore.Utils
 
         static public void DumpMessage (MimeMessage message, int indent)
         {
-            Log.Info ("{0}MimeMessage: {1}", Indent (indent), message);
+            Log.Info (Log.LOG_EMAIL, "{0}MimeMessage: {1}", Indent (indent), message);
             DumpMimeEntity (message.Body, indent + 1);
         }
 
@@ -66,20 +66,20 @@ namespace NachoCore.Utils
         {
             if (entity is MessagePart) {
                 var messagePart = (MessagePart)entity;
-                Log.Info ("{0}MimeEntity: {1} {2}", Indent (indent), messagePart, messagePart.ContentType);
+                Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), messagePart, messagePart.ContentType);
                 DumpMessage (messagePart.Message, indent + 1);
                 return;
             }
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
-                Log.Info ("{0}Multipart: {1} {2}", Indent (indent), multipart, multipart.ContentType);
+                Log.Info (Log.LOG_EMAIL, "{0}Multipart: {1} {2}", Indent (indent), multipart, multipart.ContentType);
                 foreach (var subpart in multipart) {
-                    Log.Info ("{0}Subpart: {1} {2}", Indent (indent), subpart, subpart.ContentType);
+                    Log.Info (Log.LOG_EMAIL, "{0}Subpart: {1} {2}", Indent (indent), subpart, subpart.ContentType);
                     DumpMimeEntity (subpart, indent + 1);
                 }
                 return;
             }
-            Log.Info ("{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
+            Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
         }
 
         static protected TextPart FindTextPart (MimeEntity entity)
@@ -256,15 +256,15 @@ namespace NachoCore.Utils
             }
 
             if (entity.ContentType.Matches ("application", "ics")) {
-                NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
+                NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled ics: {0}\n", part.ContentType);
                 return;
             }
             if (entity.ContentType.Matches ("application", "octet-stream")) {
-                NachoCore.Utils.Log.Error ("Unhandled octet-stream: {0}\n", part.ContentType);
+                NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled octet-stream: {0}\n", part.ContentType);
                 return;
             }
 
-            NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
+            NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled Render: {0}\n", part.ContentType);
         }
 
         /// <summary>

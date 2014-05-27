@@ -64,12 +64,12 @@ namespace NachoCore.Brain
                 } catch (Exception e) {
                     // TODO: Find root cause
                     MarkAsGleaned (emailMessage);
-                    NachoCore.Utils.Log.Error ("GleanContacts exception ignored:\n{0}", e);
+                    NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContacts exception ignored:\n{0}", e);
                     return;
                 }
                 var gleanedFolder = McFolder.GetGleanedFolder (accountId);
                 if (null == gleanedFolder) {
-                    NachoCore.Utils.Log.Error ("GleanContacts gleandedFolder is null for account id {0}", accountId);
+                    NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContacts gleandedFolder is null for account id {0}", accountId);
                     MarkAsGleaned (emailMessage);
                     return;
                 }

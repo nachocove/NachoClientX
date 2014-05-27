@@ -72,7 +72,7 @@ namespace NachoClient.AndroidClient
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
 
-            Log.Info ("{0} (build {1}) built at {2} by {3}",
+            Log.Info (Log.LOG_UI, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
 
             PopulateSidebarMenu ();

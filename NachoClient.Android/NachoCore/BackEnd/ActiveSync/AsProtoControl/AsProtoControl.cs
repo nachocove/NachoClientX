@@ -1329,17 +1329,17 @@ namespace NachoCore.ActiveSync
             if (e.ServerId == Server.Id) {
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
-                    Log.Info ("Server {0} communication quality OK.", Server.Host);
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality OK.", Server.Host);
                     Execute ();
                     break;
 
                 default:
                 case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Warn ("Server {0} communication quality degrated.", Server.Host);
+                    Log.Warn (Log.LOG_AS, "Server {0} communication quality degrated.", Server.Host);
                     break;
 
                 case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Error ("Server {0} communication quality unusable.", Server.Host);
+                    Log.Error (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
                     ForceStop ();
                     break;
                 }

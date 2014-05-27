@@ -1078,7 +1078,7 @@ namespace NachoCore.Model
 
         public void UpdateScore (string reason, int score)
         {
-            Log.Info ("SCORE: {0} {1} {2}", DisplayName, score, reason);
+            Log.Info (Log.LOG_BRAIN, "SCORE: {0} {1} {2}", DisplayName, score, reason);
             Score += score;
             Update ();
         }

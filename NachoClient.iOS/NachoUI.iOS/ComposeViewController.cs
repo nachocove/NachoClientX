@@ -307,11 +307,11 @@ namespace NachoClient.iOS
                 break;
             case "public.video":
                 // TODO: Implement videos
-                Log.Info ("video ignored");
+                Log.Info (Log.LOG_UI, "video ignored");
                 break;
             default:
                 // TODO: Implement videos
-                Log.Error ("unknown media type selected");
+                Log.Error (Log.LOG_UI, "unknown media type selected");
                 break;
             }
 

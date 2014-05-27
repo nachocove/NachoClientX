@@ -22,7 +22,7 @@ namespace NachoCore.ActiveSync
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var syncKey = BEContext.ProtocolState.AsSyncKey;
-            Log.Info ("AsFolderSyncCommand: AsSyncKey=" + syncKey);
+            Log.Info (Log.LOG_AS, "AsFolderSyncCommand: AsSyncKey=" + syncKey);
             var folderSync = new XElement (m_ns + Xml.FolderHierarchy.FolderSync, new XElement (m_ns + Xml.FolderHierarchy.SyncKey, syncKey));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderSync);
@@ -37,7 +37,7 @@ namespace NachoCore.ActiveSync
             switch (status) {
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
-                Log.Info ("AsFolderSyncCommand process response: SyncKey=" + syncKey);
+                Log.Info (Log.LOG_AS, "AsFolderSyncCommand process response: SyncKey=" + syncKey);
                 protocolState.AsSyncKey = syncKey;
                 protocolState.Update ();
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "FSYNCBADFMT");
 
             default:
-                Log.Error ("ASFoldersyncCommand: UNHANDLED status {0}", status);
+                Log.Error (Log.LOG_AS, "ASFoldersyncCommand: UNHANDLED status {0}", status);
                 return Event.Create ((uint)SmEvt.E.HardFail, "FSYNCHARD");
             }
         }

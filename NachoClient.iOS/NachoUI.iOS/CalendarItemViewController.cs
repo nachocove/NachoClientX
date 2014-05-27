@@ -265,7 +265,7 @@ namespace NachoClient.iOS
                 }
             } catch (Exception e) {
                 // TODO: Find root cause
-                NachoCore.Utils.Log.Error ("CalendarItemView exception ignored:\n{0}", e);
+                NachoCore.Utils.Log.Error (Log.LOG_UI, "CalendarItemView exception ignored:\n{0}", e);
                 return;
             }
         }

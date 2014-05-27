@@ -31,19 +31,19 @@ namespace NachoClient
         {
             MimeEntity e = MimeHelpers.SearchMessage (value, motd);
             if (null == e) {
-                Log.Error ("RenderContentId: MimeEntity is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
                 return RenderStringToImage (value);
             }
 
             var part = e as MimePart;
             if (null == part) {
-                Log.Error ("RenderContentId: MimePart is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: MimePart is null: {0}", value);
                 return RenderStringToImage (value);
             }
 
             var image = RenderImage (part);
             if (null == image) {
-                Log.Error ("RenderContentId: image is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: image is null: {0}", value);
                 return RenderStringToImage (value);
             }
             return image;

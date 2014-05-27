@@ -379,7 +379,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPRRR");
 
             default:
-                Log.Error ("AsSyncCommand ProcessResponse UNHANDLED Top Level status: {0}", status);
+                Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED Top Level status: {0}", status);
                 return null;
             }
         }
@@ -494,7 +494,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 default:
-                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED Collection status: {0}", status);
+                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED Collection status: {0}", status);
                     break;
                 }
                 folder.Update ();
@@ -657,7 +657,7 @@ namespace NachoCore.ActiveSync
                         ServerSaysAddTask (command, folder);
                         break;
                     default:
-                        Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
                     break;
@@ -680,7 +680,7 @@ namespace NachoCore.ActiveSync
                         ServerSaysChangeTask (command, folder);
                         break;
                     default:
-                        Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
                     break;
@@ -717,13 +717,13 @@ namespace NachoCore.ActiveSync
                         }
                         break;
                     default:
-                        Log.Error ("AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
+                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
                     break;
 
                 default:
-                    Log.Error ("AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
+                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
                     break;
                 }
             }
@@ -752,7 +752,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 default:
-                    Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED response " + response.Name.LocalName);
+                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED response " + response.Name.LocalName);
                     break;
                 }
             }
@@ -806,7 +806,7 @@ namespace NachoCore.ActiveSync
                 break;
 
             case Xml.AirSync.StatusCode.LimitReWait_14:
-                Log.Warn ("Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
+                Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
                 PendingList.Remove (pending);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
@@ -851,7 +851,7 @@ namespace NachoCore.ActiveSync
                 item = McItem.QueryByClientId<McTask> (BEContext.Account.Id, clientId);
                 break;
             default:
-                Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
                 return;
             }
             var xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
@@ -906,7 +906,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case Xml.AirSync.StatusCode.LimitReWait_14:
-                        Log.Warn ("Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
+                        Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
                         PendingList.Remove (pending);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                         break;
@@ -933,7 +933,7 @@ namespace NachoCore.ActiveSync
                 }
                 return;
             default:
-                Log.Error ("AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
                 return;
             }
         }

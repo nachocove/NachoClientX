@@ -176,12 +176,12 @@ namespace NachoCore.Utils
             }
 
             if (!MailboxAddress.TryParse (candidate, out mailbox)) {
-                Log.Error ("Mailbox candidate won't parse: {0}", candidate);
+                Log.Error (Log.LOG_EMAIL, "Mailbox candidate won't parse: {0}", candidate);
                 return null;
             }
 
             if (null == mailbox.Address) {
-                Log.Error ("Mailbox candidate has null address: {0}", candidate);
+                Log.Error (Log.LOG_EMAIL, "Mailbox candidate has null address: {0}", candidate);
                 return null;
             }
 

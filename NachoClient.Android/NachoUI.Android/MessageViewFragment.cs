@@ -181,15 +181,15 @@ namespace NachoClient.AndroidClient
             }
 
             if (entity.ContentType.Matches ("application", "ics")) {
-                NachoCore.Utils.Log.Error ("Unhandled ics: {0}\n", part.ContentType);
+                NachoCore.Utils.Log.Error (Log.LOG_RENDER, "Unhandled ics: {0}\n", part.ContentType);
                 return;
             }
             if (entity.ContentType.Matches ("application", "octet-stream")) {
-                NachoCore.Utils.Log.Error ("Unhandled octet-stream: {0}\n", part.ContentType);
+                NachoCore.Utils.Log.Error (Log.LOG_RENDER, "Unhandled octet-stream: {0}\n", part.ContentType);
                 return;
             }
 
-            NachoCore.Utils.Log.Error ("Unhandled Render: {0}\n", part.ContentType);
+            NachoCore.Utils.Log.Error (Log.LOG_RENDER, "Unhandled Render: {0}\n", part.ContentType);
         }
 
         /// <summary>
@@ -219,38 +219,38 @@ namespace NachoClient.AndroidClient
         {
             public override WebResourceResponse ShouldInterceptRequest (WebView view, string url)
             {
-                Log.Info ("ShouldInterceptRequest: {0}", url);
+                Log.Info (Log.LOG_RENDER, "ShouldInterceptRequest: {0}", url);
                 return base.ShouldInterceptRequest (view, url);
             }
 
             public override bool ShouldOverrideUrlLoading (WebView view, string url)
             {
-                Log.Info ("ShouldOverrideUrlLoading: {0}", url);
+                Log.Info (Log.LOG_RENDER, "ShouldOverrideUrlLoading: {0}", url);
                 return base.ShouldOverrideUrlLoading (view, url);
             }
 
             public override void OnPageStarted (WebView view, string url, Android.Graphics.Bitmap favicon)
             {
-                Log.Info ("OnPageStarted: {0}", url);
+                Log.Info (Log.LOG_RENDER, "OnPageStarted: {0}", url);
                 base.OnPageStarted (view, url, favicon);
             }
 
             public override void OnLoadResource (WebView view, string url)
             {
-                Log.Info ("OnLoadResource: {0}", url);
+                Log.Info (Log.LOG_RENDER, "OnLoadResource: {0}", url);
                 base.OnLoadResource (view, url);
             }
 
             public override void OnReceivedError (WebView view, ClientError errorCode, string description, string failingUrl)
             {
-                Log.Info ("OnReceivedError: {0}", failingUrl);
+                Log.Info (Log.LOG_RENDER, "OnReceivedError: {0}", failingUrl);
                 base.OnReceivedError (view, errorCode, description, failingUrl);
             }
         }
 
         void RenderText (string text)
         {
-            NachoCore.Utils.Log.Info ("Add multiline element: {0}", text);
+            NachoCore.Utils.Log.Info (Log.LOG_RENDER, "Add multiline element: {0}", text);
             var lf = this.GetLayoutInflater (null);
             var view = lf.Inflate (Resource.Layout.MimePartText, null);
             var valueView = view.FindViewById<TextView> (Resource.Id.value);
@@ -261,7 +261,7 @@ namespace NachoClient.AndroidClient
 
         void RenderImage (MimePart part)
         {
-            NachoCore.Utils.Log.Info ("Add image element: {0}", part);
+            NachoCore.Utils.Log.Info (Log.LOG_RENDER, "Add image element: {0}", part);
             var lf = this.GetLayoutInflater (null);
             var view = lf.Inflate (Resource.Layout.MimePartImage, null);
             var valueView = view.FindViewById<ImageView> (Resource.Id.value);

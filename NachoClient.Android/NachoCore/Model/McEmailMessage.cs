@@ -319,14 +319,14 @@ namespace NachoCore.Model
             // Use a set to eliminate duplicates
             HashSet<McContact> contactSet = new HashSet<McContact> ();
 
-            Log.Info ("SCORE: emailAddressString={0}", emailAddressString);
+            Log.Info (Log.LOG_BRAIN, "SCORE: emailAddressString={0}", emailAddressString);
             foreach (var address in addresses) {
                 var emailAddress = address as MailboxAddress;
                 if (null != emailAddress) {
-                    Log.Info ("SCORE: emailAddress={0}", emailAddress.Address);
+                    Log.Info (Log.LOG_BRAIN, "SCORE: emailAddress={0}", emailAddress.Address);
                     List<McContact> queryResult = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
                     if (0 == queryResult.Count) {
-                        Log.Warn ("Unknown email address {0}", emailAddress);
+                        Log.Warn (Log.LOG_BRAIN, "Unknown email address {0}", emailAddress);
                     }
                     foreach (McContact contact in queryResult) {
                         contactSet.Add (contact);

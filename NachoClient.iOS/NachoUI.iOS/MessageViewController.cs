@@ -218,7 +218,7 @@ namespace NachoClient.iOS
             scrollView.AddSubview (view);
 
             scrollView.DidZoom += (object sender, EventArgs e) => {
-                Log.Info ("scrollview did zoom");
+                Log.Info (Log.LOG_UI, "scrollview did zoom");
             };
             scrollView.MinimumZoomScale = 0.3f;
             scrollView.MaximumZoomScale = 4.0f;
@@ -337,7 +337,7 @@ namespace NachoClient.iOS
             }
             var tv = this.attachmentsView as UITableView;
             if (null == tv) {
-                Log.Error ("expected UITableView in RefreshAttachmentSection");
+                Log.Error (Log.LOG_UI, "expected UITableView in RefreshAttachmentSection");
                 return;
             }
 
@@ -460,13 +460,13 @@ namespace NachoClient.iOS
                     frame.Width = 320;
                     web.Frame = frame;
                     frame.Height = web.ScrollView.ContentSize.Height > View.Bounds.Height ? View.Bounds.Height : web.ScrollView.ContentSize.Height;
-                    Log.Info ("frame = {0}", frame);
+                    Log.Info (Log.LOG_UI, "frame = {0}", frame);
 
                     web.Frame = frame;
                     web.Alpha = 1.0f;
                     view.Frame = frame;
                     MyLayout ();
-                    Log.Info ("content size = {0}", scrollView.ContentSize);
+                    Log.Info (Log.LOG_UI, "content size = {0}", scrollView.ContentSize);
 
                 }
             };
@@ -481,7 +481,7 @@ namespace NachoClient.iOS
                     UIApplication.SharedApplication.OpenUrl (request.Url);
                     return false;
                 }
-                NachoCore.Utils.Log.Info ("Html element link: {0}", request.Url);
+                NachoCore.Utils.Log.Info (Log.LOG_UI, "Html element link: {0}", request.Url);
                 return true;
             };
 

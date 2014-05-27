@@ -218,7 +218,7 @@ namespace NachoCore.Wbxml
         public void Start ()
         {
             if (0 < FilterStack.Count) {
-                Log.Warn ("Has previous state. Reset");
+                Log.Warn (Log.LOG_XML_FILTER, "Has previous state. Reset");
             }
             FilterStack.Clear ();
         }
@@ -234,11 +234,11 @@ namespace NachoCore.Wbxml
                 XElement element = (XElement)node;
                 current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
                 if (null == current.Filter) {
-                    Log.Warn ("No filter for namespace {0}", element.Name.NamespaceName);
+                    Log.Warn (Log.LOG_XML_FILTER, "No filter for namespace {0}", element.Name.NamespaceName);
                 } else {
                     current.ParentNode = current.Filter.Root.FindChildNode (element);
                     if (null == current.ParentNode) {
-                        Log.Warn ("Unexpected root element {0}", element.Name);
+                        Log.Warn (Log.LOG_XML_FILTER, "Unexpected root element {0}", element.Name);
                     }
                 }
             } else {
@@ -255,7 +255,7 @@ namespace NachoCore.Wbxml
                                 current.ParentNode = current.Filter.Root;
                                 NachoAssert.True (null != current.ParentNode);
                             } else {
-                                Log.Warn ("Switching to an unknown namespace {0}", element.Name.NamespaceName);
+                                Log.Warn (Log.LOG_XML_FILTER, "Switching to an unknown namespace {0}", element.Name.NamespaceName);
                                 current.ParentNode = null;
                             }
                         }
@@ -265,7 +265,7 @@ namespace NachoCore.Wbxml
                     if (null != current.ParentNode) {
                         current.ParentNode = current.ParentNode.FindChildNode (element);
                         if (null == current.ParentNode) {
-                            Log.Warn ("Unknown element tag {0}", element.Name);
+                            Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}", element.Name);
                         }
                     }
                 }
@@ -325,7 +325,7 @@ namespace NachoCore.Wbxml
             } else if (RedactionType.PARTIAL == type) {
                 value = String.Format ("-redacted:{0} bytes-", GetContentLength(origContent));
             } else {
-                Log.Error ("Unknown redaction type {0}", type);
+                Log.Error (Log.LOG_XML_FILTER, "Unknown redaction type {0}", type);
                 NachoAssert.True (false);
             }
 

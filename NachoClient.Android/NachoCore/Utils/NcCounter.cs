@@ -26,14 +26,14 @@ namespace NachoCore.Utils
         public bool AutoReset {
             get {
                 if (!IsRoot ()) {
-                    Log.Warn ("Getting AutoReset for non-root counter {0}", Name);
+                    Log.Warn (Log.LOG_UTILS, "Getting AutoReset for non-root counter {0}", Name);
                     NachoAssert.True (false == _AutoReset);
                 }
                 return _AutoReset;
             }
             set {
                 if (!IsRoot ()) {
-                    Log.Error ("Setting AutoReset for non-root counter {0} is ignored", Name);
+                    Log.Error (Log.LOG_UTILS, "Setting AutoReset for non-root counter {0} is ignored", Name);
                     return;
                 }
                 _Lock.WaitOne ();
@@ -48,18 +48,18 @@ namespace NachoCore.Utils
         public int ReportPeriod {
             get {
                 if (!IsRoot ()) {
-                    Log.Warn ("Getting ReportPeriod for non-root counter {0}", Name);
+                    Log.Warn (Log.LOG_UTILS, "Getting ReportPeriod for non-root counter {0}", Name);
                     NachoAssert.True (0 == _ReportPeriod);
                 }
                 return _ReportPeriod;
             }
             set {
                 if (!IsRoot ()) {
-                    Log.Error ("Setting ReportPeriod for non-root counter {0} is ignored", Name);
+                    Log.Error (Log.LOG_UTILS, "Setting ReportPeriod for non-root counter {0} is ignored", Name);
                     return;
                 }
                 if (0 > value) {
-                    Log.Error("Invalid second ({0})", value);
+                    Log.Error(Log.LOG_UTILS, "Invalid second ({0})", value);
                     return;
                 }
                 if (value == _ReportPeriod) {

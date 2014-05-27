@@ -288,7 +288,7 @@ namespace NachoCore.ActiveSync
             markUpdate.Insert ();
 
             // SCORING - Email read. Has it been an hour?
-            Log.Info ("EMAIL DATE:", emailMessage.DateReceived);
+            Log.Info (Log.LOG_BRAIN, "EMAIL DATE:", emailMessage.DateReceived);
             if (emailMessage.DateReceived.AddHours (1.0) > DateTime.Now) {
                 McContact sender = emailMessage.GetFromContact ();
                 if (null != sender) {

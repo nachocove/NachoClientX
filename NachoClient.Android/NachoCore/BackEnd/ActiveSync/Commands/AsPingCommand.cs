@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
 
             default:
                 // FIXME - how do we want to handle unknown status codes?
-                Log.Error ("AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
+                Log.Error (Log.LOG_AS, "AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD1");
             }
         }

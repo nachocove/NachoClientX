@@ -11,28 +11,108 @@ using NachoCore.Utils;
 
 namespace NachoCore.Utils
 {
-    public class Log
+    // LogLevelSettings represents the configuration for one log level (debug, 
+    // info, warn, error). Each level has configuration for two destinations - 
+    // console and telemetry. Each level has multiple (up to 64) subsystem. Each
+    // subsystem can decide to go to console or telemetry or both.
+    public class LogLevelSettings
     {
-        public const int LOG_SYNC = 1;
-        public const int LOG_CALENDAR = 2;
-        public const int LOG_CONTACTS = 4;
-        public const int LOG_UI = 8;
-        public const int LOG_TIMER = 16;
-        public const int LOG_HTTP = 32;
-        public const int LOG_STATE = 64;
-        public const int LOG_RENDER = 128;
-        public const int LOG_EMAIL = 256;
-        public const int LOG_AS = 512;
-        public const int LOG_SYS = 1024;
-        public const int LOG_XML = 2048;
-        public const int LOG_LIFECYCLE = 4096;
-        public static int logLevel = LOG_SYNC + LOG_TIMER + LOG_STATE + LOG_AS + LOG_XML + LOG_AS + LOG_HTTP + LOG_LIFECYCLE;
-        // Determine if caller info (method, file name, line #) is included in log messages
-        // Set it to false if it is slowing things down too much.
-        public static Boolean CallerInfo = false;
+        public ulong Console;
+        public ulong Telemetry;
+        public bool CallerInfo;
 
-        public Log ()
+        public LogLevelSettings (ulong consoleFlags = ulong.MaxValue, ulong telemetryFlags = ulong.MaxValue, bool callerInfo=false)
         {
+            Console = consoleFlags;
+            Telemetry = telemetryFlags;
+            CallerInfo = callerInfo;
+        }
+
+        // Copy Constructor
+        public LogLevelSettings (LogLevelSettings settings)
+        {
+            Console = settings.Console;
+            Telemetry = settings.Telemetry;
+        }
+
+        public void DisableConsole (ulong subsystem = ulong.MaxValue)
+        {
+            Console &= ~subsystem;
+        }
+
+        public void DisableTelemetry (ulong subsystem = ulong.MaxValue)
+        {
+            Telemetry &= ~subsystem;
+        }
+
+        public bool ToConsole (ulong subsystem)
+        {
+            return (0 != (Console & subsystem));
+        }
+
+        public bool ToTelemetry (ulong subsystem)
+        {
+            return (0 != (Telemetry & subsystem));
+        }
+    }
+
+    public class LogSettings
+    {
+        public LogLevelSettings Debug;
+        public LogLevelSettings Info;
+        public LogLevelSettings Warn;
+        public LogLevelSettings Error;
+
+        public LogSettings ()
+        {
+            Debug = new LogLevelSettings ();
+            Info = new LogLevelSettings ();
+            Warn = new LogLevelSettings ();
+            Error = new LogLevelSettings ();
+
+            FixUp ();
+        }
+
+        // Copy constructor
+        public LogSettings (LogSettings settings)
+        {
+            Debug = new LogLevelSettings (settings.Debug);
+            Info = new LogLevelSettings (settings.Info);
+            Warn = new LogLevelSettings (settings.Warn);
+            Error = new LogLevelSettings (settings.Error);
+
+            FixUp ();
+        }
+
+        public LogSettings (LogLevelSettings debug, LogLevelSettings info, 
+            LogLevelSettings warn, LogLevelSettings error)
+        {
+            Debug = new LogLevelSettings(debug);
+            Info = new LogLevelSettings(info);
+            Warn = new LogLevelSettings (warn);
+            Error = new LogLevelSettings (error);
+
+            FixUp ();
+        }
+
+        private void FixUp ()
+        {
+            // We'll never send XML and state machine logs to telemetry because
+            // they have specialized telemetry API.
+            Debug.DisableTelemetry (Log.LOG_XML/* | Log.LOG_STATE */);
+            Warn.DisableTelemetry (Log.LOG_XML/* | Log.LOG_STATE */);
+            Info.DisableTelemetry (Log.LOG_XML/* | Log.LOG_STATE */);
+            Error.DisableTelemetry (Log.LOG_XML/* | Log.LOG_STATE */);
+        }
+    }
+
+    public class Logger
+    {
+        private LogSettings settings;
+
+        public Logger ()
+        {
+            settings = new LogSettings ();
         }
 
         private static string GetMethodShortName (string methodName)
@@ -43,65 +123,51 @@ namespace NachoCore.Utils
             return methodName2.Substring (space + 1);
         }
 
-        private static void _Log (int when, string fmt, string level, params object[] list)
+        private static void _Log (ulong subsystem,  LogLevelSettings settings, TelemetryEventType teleType,
+            string fmt, string level, params object[] list)
         {
-            if ((when & logLevel) == 0) {
-                return;
-            }
-
-            // Get the caller information
-            StackTrace st = new StackTrace (true);
-            StackFrame sf = st.GetFrame(2);
-            MethodBase mb = sf.GetMethod ();
-            string callInfo = "";
-            if (CallerInfo) {
-                if (0 == sf.GetFileLineNumber ()) {
-                    // No line # info. Must be a release build
-                    callInfo = String.Format (" [{0}.{1}()]", mb.DeclaringType.Name, mb.Name);
-                } else {
-                    callInfo = String.Format (" [{0}:{1}, {2}.{3}()]",
-                        Path.GetFileName (sf.GetFileName ()), sf.GetFileLineNumber (),
-                        mb.DeclaringType.Name, mb.Name);
+            if (settings.ToConsole (subsystem)) {
+                // Get the caller information
+                StackTrace st = new StackTrace (true);
+                StackFrame sf = st.GetFrame (2);
+                MethodBase mb = sf.GetMethod ();
+                string callInfo = "";
+                if (settings.CallerInfo) {
+                    if (0 == sf.GetFileLineNumber ()) {
+                        // No line # info. Must be a release build
+                        callInfo = String.Format (" [{0}.{1}()]", mb.DeclaringType.Name, mb.Name);
+                    } else {
+                        callInfo = String.Format (" [{0}:{1}, {2}.{3}()]",
+                            Path.GetFileName (sf.GetFileName ()), sf.GetFileLineNumber (),
+                            mb.DeclaringType.Name, mb.Name);
+                    }
                 }
+                Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
+                    level + ":" + Thread.CurrentThread.ManagedThreadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
-            Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
-                level + ":" + Thread.CurrentThread.ManagedThreadId.ToString() + ":" + callInfo + ": " + fmt, list));
+            if (settings.ToTelemetry (subsystem)) {
+                Telemetry.RecordLogEvent (teleType, fmt, list);
+            }
         }
 
-        public static void Error (int when, string fmt, params object[] list)
+        public void Error (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (when, fmt, "Error", list);
-            Telemetry.RecordLogEvent (TelemetryEventType.ERROR, fmt, list);
+            _Log (subsystem, settings.Error, TelemetryEventType.ERROR, fmt, "Error", list);
         }
 
-        public static void Warn (int when, string fmt, params object[] list)
+        public void Warn (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (when, fmt, "Warn", list);
-            Telemetry.RecordLogEvent (TelemetryEventType.WARN, fmt, list);
+            _Log (subsystem, settings.Warn, TelemetryEventType.WARN, fmt, "Warn", list);
         }
 
-        public static void Info (int when, string fmt, params object[] list)
+        public void Info (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (when, fmt, "Info", list);
-            Telemetry.RecordLogEvent (TelemetryEventType.INFO, fmt, list);
+            _Log (subsystem, settings.Info, TelemetryEventType.INFO, fmt, "Info", list);
         }
 
-        public static void Error (string fmt, params object[] list)
+        public void Debug (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (logLevel, fmt, "Error", list);
-            Telemetry.RecordLogEvent (TelemetryEventType.ERROR, fmt, list);
-        }
-
-        public static void Warn (string fmt, params object[] list)
-        {
-            _Log (logLevel, fmt, "Warn", list);
-            Telemetry.RecordLogEvent (TelemetryEventType.WARN, fmt, list);
-        }
-
-        public static void Info (string fmt, params object[] list)
-        {
-            _Log (logLevel, fmt, "Info", list);
-            Telemetry.RecordLogEvent (TelemetryEventType.INFO, fmt, list);
+            _Log (subsystem, settings.Debug, TelemetryEventType.DEBUG, fmt, "Debug", list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
@@ -138,6 +204,65 @@ namespace NachoCore.Utils
         }
     }
 
+    public class Log
+    {
+        // Subsystem denotes a functional area of the app. Ulong supports 64 subsystems.
+        // 
+        public const ulong LOG_SYNC = (1 << 0);
+        public const ulong LOG_CALENDAR = (1 << 1);
+        public const ulong LOG_CONTACTS = (1 << 2);
+        public const ulong LOG_UI = (1 << 3);
+        public const ulong LOG_TIMER = (1 << 4);
+        public const ulong LOG_HTTP = (1 << 5);
+        public const ulong LOG_STATE = (1 << 6);
+        public const ulong LOG_RENDER = (1 << 7);
+        public const ulong LOG_EMAIL = (1 << 8);
+        public const ulong LOG_AS = (1 << 9);
+        public const ulong LOG_SYS = (1 << 10);
+        // Note: used only for displaying XML. Do not use for anything else because
+        // it does not get sent to telemetry.
+        public const ulong LOG_XML = (1 << 11);
+        public const ulong LOG_LIFECYCLE = (1 << 12);
+        public const ulong LOG_BRAIN = (1 << 13);
+        public const ulong LOG_XML_FILTER = (1 << 14);
+        public const ulong LOG_UTILS = (1 << 15);
+        public const ulong LOG_INIT = (1 << 16);
+
+        private static Logger DefaultLogger;
+        public static Logger SharedInstance {
+            get {
+                if (null == DefaultLogger) {
+                    DefaultLogger = new Logger ();
+                }
+                return DefaultLogger;
+            }
+        }
+
+        public Log ()
+        {
+        }
+
+        public static void Deubg (ulong subsystem, string fmt, params object[] list)
+        {
+            Log.SharedInstance.Debug (subsystem, fmt, list);
+        }
+
+        public static void Info (ulong subsystem, string fmt, params object[] list)
+        {
+            Log.SharedInstance.Info (subsystem, fmt, list);
+        }
+
+        public static void Warn (ulong subsystem, string fmt, params object[] list)
+        {
+            Log.SharedInstance.Warn (subsystem, fmt, list);
+        }
+
+        public static void Error (ulong subsystem, string fmt, params object[] list)
+        {
+            Log.SharedInstance.Error (subsystem, fmt, list);
+        }
+    }
+
     public static class LogHelpers
     {
         public class TruncatingXmlTextWriter : XmlTextWriter
@@ -154,8 +279,6 @@ namespace NachoCore.Utils
                     base.WriteString (text);
                 }
             }
-
-
         }
 
         public static string ToStringWithoutCharacterChecking (this XDocument xElement)

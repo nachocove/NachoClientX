@@ -117,7 +117,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.Success, "MVSUCCESS");
 
             case Xml.Mov.StatusCode.SrcDestSame_4:
-                Log.Error ("Attempted to move where the destination folder == the source folder.");
+                Log.Error (Log.LOG_AS, "Attempted to move where the destination folder == the source folder.");
                 PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
                 return Event.Create ((uint)SmEvt.E.Success, "MVIDIOT");
 
@@ -137,7 +137,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)(uint)AsProtoControl.AsEvt.E.ReSync, "MVSYNC");
             
             default:
-                Log.Error ("Unknown status code in AsMoveItemsCommand response: {0}", status);
+                Log.Error (Log.LOG_AS, "Unknown status code in AsMoveItemsCommand response: {0}", status);
                 LocalFailureInd.Why = NcResult.WhyEnum.Unknown;
                 PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
                 return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUS");

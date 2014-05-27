@@ -53,7 +53,7 @@ namespace NachoClient.iOS
                 //
                 // For an explanation, see:
                 // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
-                Log.Info ("Crashlytics is disabled on simulator");
+                Log.Info (Log.LOG_INIT, "Crashlytics is disabled on simulator");
                 return;
             }
 
@@ -81,7 +81,7 @@ namespace NachoClient.iOS
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
-            Log.Info ("FinishedLaunching: checkpoint A");
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
 
             NcApplication.Instance.CredReqCallback = CredReqCallback;
             NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
@@ -90,20 +90,20 @@ namespace NachoClient.iOS
 
             application.ApplicationIconBadgeNumber = 0;
 
-            Log.Info ("FinishedLaunching: checkpoint B");
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint B");
 
             StartCrashReporting ();
 
-            Log.Info ("FinishedLaunching: checkpoint C");
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint C");
 
             Telemetry.SharedInstance.Start<TelemetryBEParse> ();
 
-            Log.Info ("{0} (build {1}) built at {2} by {3}",
+            Log.Info (Log.LOG_INIT, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
 
             Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
 
-            Log.Info ("FinishedLaunching: checkpoint D");
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint D");
 
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 // Watch for changes from the back end
@@ -111,17 +111,17 @@ namespace NachoClient.iOS
                 this.StatusInd (s.Account.Id, s.Status, s.Tokens);
             };
 
-            Log.Info ("FinishedLaunching: checkpoint E");
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint E");
 
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
 
-            Log.Info ("FinishedLaunching: checkpoint F");
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint F");
 
             if (launchOptions != null) {
                 // we got some launch options from the OS, probably launched from a localNotification
                 if (launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
-                    Log.Info ("FinishedLaunching: checkpoint G");
+                    Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint G");
                     var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
                     Log.Info (Log.LOG_LIFECYCLE, "Launched from local notification");
                     if (localNotification.HasAction) {
@@ -132,7 +132,7 @@ namespace NachoClient.iOS
                         var alert = new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null);
                         alert.PerformSelector (new Selector ("show"), null, 0.1); // http://stackoverflow.com/questions/9040896
                    
-                        Log.Info ("FinishedLaunching: checkpoint H");
+                        Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint H");
                     }
                 }
             }

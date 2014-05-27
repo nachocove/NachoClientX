@@ -63,7 +63,7 @@ namespace NachoCore.Wbxml
             // Version is ignored
             byte version = bytes.Dequeue ();
             if (versionByte != version) {
-                Log.Warn ("Unexpected version {0}", (int)version);
+                Log.Warn (Log.LOG_AS, "Unexpected version {0}", (int)version);
             }
 
 
@@ -259,7 +259,7 @@ namespace NachoCore.Wbxml
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that can hold and
                 // forward to the telemetry server.
-                Log.Info ("response_debug_XML = \n{0}", filter.FinalizeXml ());
+                Log.Info (Log.LOG_XML, "response_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("response_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
                 Telemetry.RecordWbxmlEvent (false, filter.Finalize ());
             }
@@ -284,7 +284,7 @@ namespace NachoCore.Wbxml
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
-                Log.Info ("request_debug_XML = \n{0}", filter.FinalizeXml ());
+                Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
                 //Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }
@@ -311,7 +311,7 @@ namespace NachoCore.Wbxml
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
-                Log.Info ("request_debug_XML = \n{0}", filter.FinalizeXml ());
+                Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
                 Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }

@@ -242,7 +242,7 @@ namespace NachoCore.ActiveSync
                     McEmailMessage.QueryByThreadTopic (emailMessage.AccountId, emailMessage.ThreadTopic);
                 if (0 < emailThread.Count) {
                     emailMessage.ContentScore += emailThread.Count;
-                    Log.Info ("SCORE: ThreadTopic={0}, Subject={1}, ContentScore={2}", 
+                    Log.Info (Log.LOG_BRAIN, "SCORE: ThreadTopic={0}, Subject={1}, ContentScore={2}", 
                         emailMessage.ThreadTopic, emailMessage.Subject, emailMessage.ContentScore);
                 }
                 emailMessage.Insert ();

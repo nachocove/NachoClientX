@@ -388,7 +388,7 @@ namespace NachoCore.Model
                 if (result.isOK()) {
                     HasReadAncillaryData = true;
                 } else {
-                    Log.Warn ("Fail to read calendar ancillary data (Id={0})", Id);
+                    Log.Warn (Log.LOG_CALENDAR, "Fail to read calendar ancillary data (Id={0})", Id);
                 }
             }
             return result;

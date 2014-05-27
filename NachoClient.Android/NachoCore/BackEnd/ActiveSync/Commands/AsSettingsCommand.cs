@@ -54,7 +54,7 @@ namespace NachoCore.ActiveSync
                         return Event.Create ((uint)SmEvt.E.HardFail, "SETTFAIL0A");
 
                     default:
-                        Log.Error ("Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
+                        Log.Error (Log.LOG_AS, "Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
                         BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
                             NcResult.WhyEnum.Unknown));
                         return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSA");
@@ -78,7 +78,7 @@ namespace NachoCore.ActiveSync
                         return Event.Create ((uint)SmEvt.E.HardFail, "SETTFAIL0B");
 
                     default:
-                        Log.Error ("Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
+                        Log.Error (Log.LOG_AS, "Unknown inner status code in AsSettingsCommand response: {0}", innerStatus);
                         BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
                             NcResult.WhyEnum.Unknown));
                         return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSB");
@@ -105,7 +105,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.TempFail, "SETTFAIL2");
 
             default:
-                Log.Error ("Unknown status code in AsSettingsCommand response: {0}", status);
+                Log.Error (Log.LOG_AS, "Unknown status code in AsSettingsCommand response: {0}", status);
                 BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_SettingsFailed,
                     NcResult.WhyEnum.Unknown));
                 return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUS");
