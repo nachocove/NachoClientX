@@ -2,13 +2,36 @@
 //
 using System;
 
-namespace NachoClient.AndroidClient
+namespace NachoCore.Utils
 {
-    public class MockTelemetry
+    public enum TelemetryEventType {
+        UNKNOWN = 0,
+        ERROR,
+        WARN,
+        INFO,
+        DEBUG,
+        WBXML_REQUEST,
+        WBXML_RESPONSE,
+        STATE_MACHINE,
+        COUNTERS,
+    };
+
+    public class Telemetry
     {
-        public MockTelemetry ()
+        public Telemetry ()
+        {
+        }
+
+        public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
+        {
+        }
+
+        public static void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
+        {
+        }
+
+        public static void RecordCounter (string name, Int64 count, DateTime start, DateTime end)
         {
         }
     }
 }
-
