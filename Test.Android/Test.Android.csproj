@@ -149,4 +149,7 @@
       <Visible>False</Visible>
     </XamarinComponentReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\utopiasystems.cer" />
+  </ItemGroup>
 </Project>
