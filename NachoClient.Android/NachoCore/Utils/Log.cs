@@ -290,6 +290,7 @@ namespace NachoCore.Utils
         public const ulong LOG_XML_FILTER = (1 << 14);
         public const ulong LOG_UTILS = (1 << 15);
         public const ulong LOG_INIT = (1 << 16);
+        public const ulong LOG_TEST = (1 << 17);
 
         private static Logger DefaultLogger;
         public static Logger SharedInstance {
