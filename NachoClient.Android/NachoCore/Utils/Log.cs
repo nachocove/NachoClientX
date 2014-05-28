@@ -171,7 +171,7 @@ namespace NachoCore.Utils
 
     public class Logger
     {
-        public LogSettings Settings;
+        public LogSettings Settings { set; get; }
 
         public Logger ()
         {

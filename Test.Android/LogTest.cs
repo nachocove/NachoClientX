@@ -11,56 +11,62 @@ namespace Test.iOS
         [Test]
         public void LoggingToConsole ()
         {
-            // Save the old value
-            int save = Log.logLevel;
+            LogSettings settings = Log.SharedInstance.Settings;
+            LogSettings save = new LogSettings (settings);
+
+            // Disable all telemetry
+            settings.Error.DisableTelemetry ();
+            settings.Warn.DisableTelemetry ();
+            settings.Info.DisableTelemetry ();
+            settings.Debug.DisableTelemetry ();
 
             // Error
 
             // Make sure a single filter works
-            Log.logLevel = Log.LOG_SYNC;
+            settings.Error.Console = Log.LOG_SYNC;
             Log.Error (Log.LOG_SYNC, "Test no args.");
 
             // Make sure multiple filters work
-            Log.logLevel |= Log.LOG_CALENDAR;
+            settings.Error.Console |= Log.LOG_CALENDAR;
             Log.Error (Log.LOG_SYNC, "Test int 5 = {0}", 5);
             Log.Error (Log.LOG_CALENDAR, "Test int 6 7 = {0} {1}", 6, 7);
 
             // Make sure filters block too
-            Log.logLevel = Log.LOG_CALENDAR;
+            settings.Error.Console = Log.LOG_CALENDAR;
             Log.Error (Log.LOG_SYNC, "You should not see this message.");
 
             // Warnings
 
             // Make sure a single filter works
-            Log.logLevel = Log.LOG_SYNC;
+            settings.Warn.Console = Log.LOG_SYNC;
             Log.Warn (Log.LOG_SYNC, "Test no args.");
 
             // Make sure multiple filters work
-            Log.logLevel |= Log.LOG_CALENDAR;
+            settings.Warn.Console |= Log.LOG_CALENDAR;
             Log.Warn (Log.LOG_SYNC, "Test int 5 = {0}", 5);
             Log.Warn (Log.LOG_CALENDAR, "Test int 6 7 = {0} {1}", 6, 7);
 
             // Make sure filters block too
-            Log.logLevel = Log.LOG_CALENDAR;
+            settings.Warn.Console = Log.LOG_CALENDAR;
             Log.Warn (Log.LOG_SYNC, "You should not see this message.");
 
             // Info
 
             // Make sure a single filter works
-            Log.logLevel = Log.LOG_SYNC;
+            settings.Info.Console = Log.LOG_SYNC;
             Log.Info (Log.LOG_SYNC, "Test no args.");
 
             // Make sure multiple filters work
-            Log.logLevel |= Log.LOG_CALENDAR;
+            settings.Info.Console |= Log.LOG_CALENDAR;
             Log.Info (Log.LOG_SYNC, "Test int 5 = {0}", 5);
             Log.Info (Log.LOG_CALENDAR, "Test int 6 7 = {0} {1}", 6, 7);
 
             // Make sure filters block too
-            Log.logLevel = Log.LOG_CALENDAR;
+            settings.Info.Console = Log.LOG_CALENDAR;
             Log.Info (Log.LOG_SYNC, "You should not see this message.");
 
             // Restore the old
-            Log.logLevel = save;
+            Log.SharedInstance.Settings = save;
             Assert.True (true);
         }
     }
