@@ -30,6 +30,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -47,6 +49,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -75,6 +79,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -97,6 +103,8 @@
         <Command type="AfterBuild" command="cp bin/${ProjectConfigPlat}/${ProjectConfigName}/NachoClientiOS.app.dSYM/Contents/Resources/DWARF/NachoClientiOS bin/" />
         <Command type="AfterBuild" command="xcodebuild build" workingdir="${ProjectDir}/UploadDSym/nachomail" />
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -118,6 +126,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -137,6 +147,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -829,6 +841,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcCounter.cs">
       <Link>NachoCore\Utils\NcCounter.cs</Link>
     </Compile>
+    <Compile Include="LogSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

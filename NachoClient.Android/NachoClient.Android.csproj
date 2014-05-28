@@ -34,6 +34,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py" workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -48,6 +50,8 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py" workingdir="${ProjectDir}" />
+        <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -263,6 +267,7 @@
     <Compile Include="NachoCore\Mockables\MockableHttpWebRequest.cs" />
     <Compile Include="NachoCore\Model\McMutables.cs" />
     <Compile Include="NachoCore\Utils\NcCounter.cs" />
+    <Compile Include="LogSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

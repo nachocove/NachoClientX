@@ -54,9 +54,14 @@ namespace NachoCore.Utils
         {
             return (0 != (Telemetry & subsystem));
         }
+
+        public override string ToString ()
+        {
+            return String.Format ("console=0x{0:X16}, telemetry=0x{1:X16}, callerinfo={2}", Console, Telemetry, CallerInfo);
+        }
     }
 
-    public class LogSettings
+    public partial class LogSettings
     {
         public LogLevelSettings Debug;
         public LogLevelSettings Info;
@@ -65,10 +70,40 @@ namespace NachoCore.Utils
 
         public LogSettings ()
         {
-            Debug = new LogLevelSettings ();
-            Info = new LogLevelSettings ();
-            Warn = new LogLevelSettings ();
-            Error = new LogLevelSettings ();
+            // Log is used everywhere. So, we want this to be self-contained. Just
+            // including this file should be all anyone needs to do to make logging
+            // to work.
+            //
+            // However, we want to provide a convenient way to customize logging settings
+            // for developers. The solution is to create a LogSettings.cs that is never
+            // committed to source repo. It contains the default settings and developers
+            // can customize it without worrying about accidentally committing private
+            // settings.
+            //
+            // LogSetting.cs is partial class definition of LogSettings that defines 
+            // constants to be used for constructing LogSetting objects. If Log.cs
+            // is used standalone, it will fail to detect the existence of those contants
+            // and fall back to the default.
+            ulong debugConsoleSettings = GetOptionalUlong ("DEBUG_CONSOLE_SETTINGS");
+            ulong debugTelemetrySettings = GetOptionalUlong ("DEBUG_TELEMETRY_SETTINGS");
+            bool debugCallInfo = GetOptionalBool ("DEBUG_CALLERINFO");
+
+            ulong infoConsoleSettings = GetOptionalUlong ("INFO_CONSOLE_SETTINGS");
+            ulong infoTelemetrySettings = GetOptionalUlong ("INFO_TELEMETRY_SETTINGS");
+            bool infoCallInfo = GetOptionalBool ("INFO_CALLERINFO");
+
+            ulong warnConsoleSettings = GetOptionalUlong ("WARN_CONSOLE_SETTINGS");
+            ulong warnTelemetrySettings = GetOptionalUlong ("WARN_TELEMETRY_SETTINGS");
+            bool warnCallInfo = GetOptionalBool ("WARN_CALLERINFO");
+
+            ulong errorConsoleSettings = GetOptionalUlong ("ERROR_CONSOLE_SETTINGS");
+            ulong errorTelemetrySettings = GetOptionalUlong ("ERROR_TELEMETRY_SETTINGS");
+            bool errorCallInfo = GetOptionalBool ("ERROR_CALLERINFO");
+
+            Debug = new LogLevelSettings (debugConsoleSettings, debugTelemetrySettings, debugCallInfo);
+            Info = new LogLevelSettings (infoConsoleSettings, infoTelemetrySettings, infoCallInfo);
+            Warn = new LogLevelSettings (warnConsoleSettings, warnTelemetrySettings, warnCallInfo);
+            Error = new LogLevelSettings (errorConsoleSettings, errorTelemetrySettings, errorCallInfo);
 
             FixUp ();
         }
@@ -95,6 +130,24 @@ namespace NachoCore.Utils
             FixUp ();
         }
 
+        private ulong GetOptionalUlong(string fieldName, ulong defaultValue = ulong.MaxValue)
+        {
+            FieldInfo field = typeof(LogSettings).GetField (fieldName);
+            if (null == field) {
+                return defaultValue;
+            }
+            return (ulong)field.GetValue (this);
+        }
+
+        private bool GetOptionalBool(string fieldName, bool defaultValue = false)
+        {
+            FieldInfo field = typeof(LogSettings).GetField (fieldName);
+            if (null == field) {
+                return defaultValue;
+            }
+            return (bool)field.GetValue (this);
+        }
+
         private void FixUp ()
         {
             // We'll never send XML and state machine logs to telemetry because
@@ -104,15 +157,25 @@ namespace NachoCore.Utils
             Info.DisableTelemetry (Log.LOG_XML/* | Log.LOG_STATE */);
             Error.DisableTelemetry (Log.LOG_XML/* | Log.LOG_STATE */);
         }
+
+        public override string ToString ()
+        {
+            string retval = "";
+            retval += "Error: " + Error.ToString () + "\n";
+            retval += "Warn: " + Warn.ToString () + "\n";
+            retval += "Info: " + Info.ToString () + "\n";
+            retval += "Debug: " + Debug.ToString () + "\n";
+            return retval;
+        }
     }
 
     public class Logger
     {
-        private LogSettings settings;
+        public LogSettings Settings;
 
         public Logger ()
         {
-            settings = new LogSettings ();
+            Settings = new LogSettings ();
         }
 
         private static string GetMethodShortName (string methodName)
@@ -152,22 +215,22 @@ namespace NachoCore.Utils
 
         public void Error (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, settings.Error, TelemetryEventType.ERROR, fmt, "Error", list);
+            _Log (subsystem, Settings.Error, TelemetryEventType.ERROR, fmt, "Error", list);
         }
 
         public void Warn (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, settings.Warn, TelemetryEventType.WARN, fmt, "Warn", list);
+            _Log (subsystem, Settings.Warn, TelemetryEventType.WARN, fmt, "Warn", list);
         }
 
         public void Info (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, settings.Info, TelemetryEventType.INFO, fmt, "Info", list);
+            _Log (subsystem, Settings.Info, TelemetryEventType.INFO, fmt, "Info", list);
         }
 
         public void Debug (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, settings.Debug, TelemetryEventType.DEBUG, fmt, "Debug", list);
+            _Log (subsystem, Settings.Debug, TelemetryEventType.DEBUG, fmt, "Debug", list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
