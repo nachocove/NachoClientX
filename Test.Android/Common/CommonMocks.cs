@@ -73,6 +73,8 @@ namespace Test.iOS
         public delegate bool HasServerCertificateDelegate ();
         public static HasServerCertificateDelegate HasServerCertificate { set; get; }
 
+        public static uint AsyncCalledCount { set; get; }
+
         public TimeSpan Timeout { get; set; }
 
         public MockHttpClient (HttpClientHandler handler)
@@ -107,6 +109,8 @@ namespace Test.iOS
             HttpCompletionOption completionOption,
             CancellationToken cancellationToken)
         {
+            AsyncCalledCount++;
+
             if (null != ExamineHttpRequestMessage) {
                 ExamineHttpRequestMessage (request);
             }
