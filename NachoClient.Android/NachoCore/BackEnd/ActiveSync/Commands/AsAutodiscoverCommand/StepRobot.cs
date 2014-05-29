@@ -749,10 +749,23 @@ namespace NachoCore.ActiveSync
                 // FIXME: log Time and Id attributes if present:
                 // Time="16:56:32.6164027" Id="1054084152".
                 if (null != xmlStatus) {
+                    // ProtocolError is the only valid value, but MSFT does not always obey! See
+                    // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
+                    switch (uint.Parse (xmlStatus.Value)) {
+                    case (uint)Xml.Autodisco.StatusCode.Success_1:
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}", Xml.Autodisco.StatusCode.Success_1);
+                        StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDStatus1));
+                        break;
+                    case (uint)Xml.Autodisco.StatusCode.ProtocolError_2:
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}", Xml.Autodisco.StatusCode.ProtocolError_2);
+                        StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDStatus2));
+                        break;
+                    default:
+                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Status code {0}", xmlStatus.Value);
+                        break;
+                    }
                     if ((uint)Xml.Autodisco.StatusCode.ProtocolError_2 != uint.Parse (xmlStatus.Value)) {
-                        // ProtocolError is the only valid value, but MSFT does not always obey! See
-                        // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
-                        ; // FIXME: log this case.
+                        
                     }
                 }
                 var xmlMessage = xmlError.ElementAnyNs (Xml.Autodisco.Message);
@@ -765,7 +778,19 @@ namespace NachoCore.ActiveSync
                 }
                 var xmlErrorCode = xmlError.ElementAnyNs (Xml.Autodisco.ErrorCode);
                 if (null != xmlErrorCode) {
-                    ; // FIXME: log this along with request.
+                    switch (uint.Parse (xmlErrorCode.Value)) {
+                    case (uint)Xml.Autodisco.ErrorCodeCode.InvalidRequest_600:
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}", Xml.Autodisco.ErrorCodeCode.InvalidRequest_600);
+                        StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDError600));
+                        break;
+                    case (uint)Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601:
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}", Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601);
+                        StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDError601));
+                        break;
+                    default:
+                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Error code {0}", xmlErrorCode.Value);
+                        break;
+                    }
                 }
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
             }

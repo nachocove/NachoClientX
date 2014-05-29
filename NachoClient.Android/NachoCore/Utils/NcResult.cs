@@ -102,6 +102,10 @@ namespace NachoCore.Utils
             Error_SearchCommandFailed,
             Error_AuthFailBlocked,
             Error_AuthFailPasswordExpired,
+            Error_AutoDStatus1,
+            Error_AutoDStatus2,
+            Error_AutoDError600,
+            Error_AutoDError601,
         };
 
         public enum WhyEnum {
