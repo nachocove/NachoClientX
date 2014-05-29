@@ -198,6 +198,7 @@
     <Folder Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand\" />
     <Folder Include="NachoCore\Mockables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
+    <Folder Include="NachoUI.iOS\ViewControllers\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -842,6 +843,7 @@
       <Link>NachoCore\Utils\NcCounter.cs</Link>
     </Compile>
     <Compile Include="LogSettings.cs" />
+    <Compile Include="NachoUI.iOS\ViewControllers\NcUIViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

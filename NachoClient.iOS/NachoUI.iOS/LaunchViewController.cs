@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class LaunchViewController : UIViewController
+    public partial class LaunchViewController : NcUIViewController
     {
 
         AppDelegate appDelegate;
