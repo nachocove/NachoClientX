@@ -68,10 +68,10 @@ namespace NachoCore.ActiveSync
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
-        private const uint KDefaultDelaySeconds = 10;
-        private const int KDefaultTimeoutSeconds = 20;
-        private const double KDefaultTimeoutExpander = 1.2;
-        private const uint KDefaultRetries = 8;
+        private const string KDefaultDelaySeconds = "10";
+        private const string KDefaultTimeoutSeconds = "20";
+        private const string KDefaultTimeoutExpander = "1.2";
+        private const string KDefaultRetries = "8";
         private const string KToXML = "ToXML";
         private string CommandName;
         private IBEContext BEContext;
@@ -98,6 +98,8 @@ namespace NachoCore.ActiveSync
         public INcCommStatus NcCommStatusSingleton { set; get; }
         // Timer for timing out a single access.
         public TimeSpan Timeout { set; get; }
+        public double TimeoutExpander { set; get; }
+        public uint MaxRetries { set; get; }
         // Numer of times we'll try again (remaining).
         public uint TriesLeft { set; get; }
 
@@ -114,8 +116,12 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToXML);
             HttpClientType = typeof(MockableHttpClient);
             NcCommStatusSingleton = NcCommStatus.Instance;
-            Timeout = new TimeSpan (0, 0, KDefaultTimeoutSeconds);
-            TriesLeft = KDefaultRetries + 1;
+            var timeoutSeconds = McMutables.GetOrCreate ("HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
+            Timeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
+            var timeoutExpander = McMutables.GetOrCreate ("HTTPOP", "TimeoutExpander", KDefaultTimeoutExpander);
+            TimeoutExpander = double.Parse (timeoutExpander);
+            MaxRetries = uint.Parse (McMutables.GetOrCreate ("HTTPOP", "Retries", KDefaultRetries));
+            TriesLeft = MaxRetries + 1;
             Allow451Follow = true;
             CommandName = commandName;
             Owner = owner;
@@ -231,8 +237,8 @@ namespace NachoCore.ActiveSync
         {
             if (0 < TriesLeft) {
                 --TriesLeft;
-                if (TriesLeft != KDefaultRetries) {
-                    Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * KDefaultTimeoutExpander));
+                if (TriesLeft != MaxRetries) {
+                    Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * TimeoutExpander));
                 }
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
@@ -669,25 +675,26 @@ namespace NachoCore.ActiveSync
 
             case HttpStatusCode.ServiceUnavailable:
                 ReportCommResult (ServerUri.Host, true);
-                uint seconds = KDefaultDelaySeconds;
+                uint configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "DelaySeconds", KDefaultDelaySeconds));
+                uint bestSecs = configuredSecs;
                 if (response.Headers.Contains (HeaderRetryAfter)) {
                     string value;
                     try {
                         value = response.Headers.GetValues (HeaderRetryAfter).First ();
-                        seconds = uint.Parse (value);
+                        bestSecs = uint.Parse (value);
                     } catch {
                         try {
                             var when = DateTime.Parse (value);
                             var maybe_secs = when.Subtract(DateTime.UtcNow).Seconds;
-                            seconds = ((maybe_secs > 0) ? (uint)maybe_secs : KDefaultDelaySeconds);
+                            bestSecs = ((maybe_secs > 0) ? (uint)maybe_secs : configuredSecs);
                         } catch (Exception ex) {
                             Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                            return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", seconds, "Could not parse Retry-After value.");
+                            return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", bestSecs, "Could not parse Retry-After value.");
                         }
                     }
-                    return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503B", seconds, HeaderRetryAfter);
+                    return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503B", bestSecs, HeaderRetryAfter);
                 }
-                return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503C", seconds, "HttpStatusCode.ServiceUnavailable");
+                return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503C", bestSecs, "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)505:
                 ReportCommResult (ServerUri.Host, false);
