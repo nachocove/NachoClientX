@@ -70,6 +70,15 @@ namespace NachoCore.Model
             }
             return exists.Value;
         }
+
+        public static void Delete (string module, string key)
+        {
+            var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x => x.Key == key && 
+                x.Module == module).SingleOrDefault ();
+            if (null != exists) {
+                exists.Delete ();
+            }
+        }
     }
 }
 
