@@ -436,13 +436,15 @@ namespace NachoCore.Model
 
         public void ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
         {
+            NachoAssert.True (DeferredEnum.UntilTime != reason);
             if (0 >= DefersRemaining) {
                 ResolveAsHardFail (control, onFail);
+            } else {
+                DefersRemaining--;
+                DeferredReason = reason;
+                State = StateEnum.Deferred;
+                Update ();
             }
-            DefersRemaining--;
-            DeferredReason = reason;
-            State = StateEnum.Deferred;
-            Update ();
         }
 
         public void ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult onFail)
