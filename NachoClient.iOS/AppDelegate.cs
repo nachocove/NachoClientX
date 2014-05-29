@@ -116,12 +116,16 @@ namespace NachoClient.iOS
             #endif
         }
 
-        public override void RegisteredForRemoteNotifications (
-            UIApplication application, NSData deviceToken)
+        public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
-            // FIXME - save in mutables.
-            // this._deviceToken = deviceToken.ToString();
-            // code to register with your server application goes here
+            PushAssist.Instance.SetDeviceToken (deviceToken.ToArray ());
+            Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications :{0}", deviceToken.ToString ());
+        }
+
+        public override void FailedToRegisterForRemoteNotifications (UIApplication application , NSError error)
+        {
+            PushAssist.Instance.ResetDeviceToken ();
+            Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
@@ -140,7 +144,8 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
 
-            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (UIRemoteNotificationType.NewsstandContentAvailability);
+            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
+                UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             NcApplication.Instance.CredReqCallback = CredReqCallback;
             NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
@@ -276,6 +281,21 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             NcApplication.Instance.QuickCheck (KDefaultTimeoutSeconds);
         }
+
+        public override void ReceivedRemoteNotification (UIApplication application, NSDictionary userInfo)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "ReceivedRemoteNotification (non-fetch) Called");
+        }
+
+        public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "DidReceiveRemoteNotification (fetch) Called");
+            CompletionHandler = completionHandler;
+            FetchResult = UIBackgroundFetchResult.Failed;
+            NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
+            NcApplication.Instance.QuickCheck (KDefaultTimeoutSeconds);
+        }
+
         //
         // This method is invoked when the application is about to move from active to inactive state.
         //
