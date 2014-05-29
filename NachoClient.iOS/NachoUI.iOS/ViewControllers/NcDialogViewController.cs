@@ -1,13 +1,12 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using MonoTouch.Dialog;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class NcUIViewController : UIViewController
+    public class NcDialogViewController : DialogViewController
     {
         private string AppearingName;
         private string InUseName;
@@ -17,17 +16,12 @@ namespace NachoClient.iOS
         NcCapture InUse;
         NcCapture Disappearing;
 
-        public NcUIViewController () : base()
+        public NcDialogViewController (IntPtr handle) : base (handle)
         {
             Initialize ();
         }
 
-        public NcUIViewController (IntPtr handle) : base (handle)
-        {
-            Initialize ();
-        }
-
-        public NcUIViewController (string nibName, NSBundle bundle) : base (nibName, bundle)
+        public NcDialogViewController (RootElement root, bool yes) : base (root, yes)
         {
             Initialize ();
         }
