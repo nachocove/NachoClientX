@@ -95,7 +95,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (xml, MockSteps.S4);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, Action<NcStateMachine> provideSm = null)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
@@ -182,6 +182,7 @@ namespace Test.iOS
         [TestFixture]
         public class Test600XmlErrorCodes : AsAutodiscoverCommandTest
         {
+            // 600 = Invalid Request
             [Test]
             public void Test600ErrorCode ()
             {
@@ -189,6 +190,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (xml, MockSteps.S1);
             }
 
+            // 601 = Requested schema version not supported
             [Test]
             public void Test601ErrorCode ()
             {
@@ -308,12 +310,15 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                // gets set to true when creds have been provided so that autod can proceed
+                bool hasProvidedCreds = false;
+
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST_FAIL");
                 }, request => {
                     return PassRobotForStep (step, request, xml, optionsXml: optionsXml);
                 }, provideDnsResponse => {
-                },(httpRequest, httpResponse) => {
+                }, (httpRequest, httpResponse) => {
                     // check for OPTIONS header and set status code to Unauthorized to force auth failure
                     bool isOptions = httpRequest.Method.ToString () == "OPTIONS";
                     // check for redirection and set the response to 302 (Found) if true
@@ -323,11 +328,9 @@ namespace Test.iOS
                     if (isRedirection) {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-
-                        // set step to be S1 because you must provide success xml to POST requests after this point
-                        step = MockSteps.S1;
-                    } else if (isOptions) {
+                    } else if (isOptions && !hasProvidedCreds) {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Unauthorized;
+                        hasProvidedCreds = true;
                     } else {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
@@ -348,12 +351,19 @@ namespace Test.iOS
             Log.Info (Log.LOG_TEST, "Setup began");
 
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+            autodCommand = null;
 
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
-            phonyServer.Host = "";
-            phonyServer.UsedBefore = false;
-            phonyServer.Id = 5;
+            phonyServer.Host = "/Phony-Server";
+            phonyServer.Path = "/phonypath";
+            phonyServer.Port = 500;
+            phonyServer.Scheme = "/phonyscheme";
+            phonyServer.UsedBefore = true;
+
+//            phonyServer.Host = "";
+//            phonyServer.UsedBefore = false;
+//            phonyServer.Id = 5;
             NcModel.Instance.Db.Insert (phonyServer);
 
             mockContext = new MockContext ();
@@ -362,6 +372,9 @@ namespace Test.iOS
             mockContext.Server.Host = "";
             mockContext.Server.UsedBefore = false;
             mockContext.Server.Id = 1;
+
+            var instance = ServerCertificatePeek.Instance;
+            ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
         [TearDown]
@@ -374,12 +387,16 @@ namespace Test.iOS
             ServerCertificatePeek.TestOnlyFlushCache ();
 
             MockHttpClient.AsyncCalledCount = 0; // reset counter
+            MockHttpClient.ProvideHttpResponseMessage = null;
+            MockHttpClient.HasServerCertificate = null;
         }
 
         // return good xml if the robot should pass, bad otherwise
         public string PassRobotForStep (MockSteps step, HttpRequestMessage request, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
         {
+            string redirUrl = CommonMockData.RedirectionUrl;
             string requestUri = request.RequestUri.ToString ();
+            Log.Info (Log.LOG_TEST, "RQSTURL: {0}", requestUri);
             string s1Uri = "https://" + CommonMockData.Host;
             string s2Uri = "https://autodiscover." + CommonMockData.Host;
             string getUri = "http://autodiscover." + CommonMockData.Host;
@@ -387,6 +404,8 @@ namespace Test.iOS
             case "POST":
                 if (step == MockSteps.S1 && requestUri.Substring (0, s1Uri.Length) == s1Uri) {
                     return xml;
+                } else if (requestUri == redirUrl) {
+                    return CommonMockData.AutodOffice365ResponseXml;
                 } else if (step == MockSteps.S2 && requestUri.Substring (0, s2Uri.Length) == s2Uri) {
                     return xml;
                 }
@@ -397,9 +416,9 @@ namespace Test.iOS
                 }
                 break;
             case "OPTIONS":
-//                McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
+                McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
 
-//                ServerFalseAssertions (mockContext.Server, serv);
+                ServerFalseAssertions (serv, mockContext.Server);
                 Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
 
                 string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
@@ -467,8 +486,8 @@ namespace Test.iOS
             Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
 
             // Test that the server record was updated
-            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
-            ServerTrueAssertions (mockContext.Server, serv);
+//            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+//            ServerTrueAssertions (mockContext.Server, serv);
         }
 
         private void ServerTrueAssertions (McServer expected, McServer actual)
@@ -482,11 +501,11 @@ namespace Test.iOS
 
         private void ServerFalseAssertions (McServer expected, McServer actual)
         {
-            Assert.AreNotEqual (expected.Host, actual.Host, "Stored server host does not match expected");
-            Assert.AreNotEqual (expected.Path, actual.Path, "Stored server path does not match expected");
-            Assert.AreNotEqual (expected.Port, actual.Port, "Stored server port does not match expected");
-            Assert.AreNotEqual (expected.Scheme, actual.Scheme, "Stored server scheme does not match expected");
-            Assert.AreNotEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag does not match expected");
+            Assert.AreNotEqual (expected.Host, actual.Host, "Stored server host should not equal host in context");
+            Assert.AreNotEqual (expected.Path, actual.Path, "Stored server path should not equal path in context");
+            Assert.AreNotEqual (expected.Port, actual.Port, "Stored server port should not equal port in context");
+            Assert.AreNotEqual (expected.Scheme, actual.Scheme, "Stored server scheme should not equal scheme in context");
+            Assert.AreNotEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag should not equal flag in context");
         }
 
         private NcStateMachine CreatePhonySM (Action<bool> action)
@@ -515,8 +534,8 @@ namespace Test.iOS
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk, 
                                 Act = delegate () {
                                     Log.Info (Log.LOG_TEST, "Owner was asked to verify provided certificate with UI");
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    Log.Info (Log.LOG_TEST, "Owner _verified_ provided certificate. Moving on.");
+                                    PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
                                 State = (uint)St.Start },
                         }
@@ -539,14 +558,15 @@ namespace Test.iOS
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
                                     Log.Info (Log.LOG_TEST, "Owner was asked to get new credentials from UI");
-                                    setTrueBySuccessEvent = true;
-                                    action (setTrueBySuccessEvent);
+                                    Log.Info (Log.LOG_TEST, "Owner provided new credentials. Moving on.");
+                                    PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet, "TEST-ASPCDSC");
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 // NewCredsUponAuthFailure test lands here
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk,
                                 Act = delegate () {
+                                    Log.Info (Log.LOG_TEST, "Owner was asked to verify provided certificate with UI");
                                     Log.Info (Log.LOG_TEST, "Owner _verified_ provided certificate. Moving on.");
                                     PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
