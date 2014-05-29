@@ -708,6 +708,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503C", bestSecs, "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)505:
+                // This has been seen to be caused by a mis-typed MS-XX header name.
                 ReportCommResult (ServerUri.Host, false);
                 Owner.ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOP505", null, "HttpStatusCode 505 - Server says it doesn't like our HTTP version.");

@@ -40,7 +40,7 @@ namespace NachoCore.ActiveSync
         {
             Sm = new NcStateMachine ("PROV") { 
                 LocalStateType = typeof(Lst),
-                LocalEventType = typeof(AsProtoControl.AsEvt),
+                LocalEventType = typeof(ProvEvt),
                 TransTable = new[] {
                     new Node {
                         State = (uint)St.Start,

@@ -179,6 +179,8 @@
     <Reference Include="HockeyApp.iOS">
       <HintPath>HockeyApp\hockeyappios-3.5.4.2\lib\ios\HockeyApp.iOS.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Json" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
