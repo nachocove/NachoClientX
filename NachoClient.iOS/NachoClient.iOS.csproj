@@ -85,6 +85,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignProvision>A5DDC8B9-8C91-450E-AA60-390062F9658D</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
@@ -922,6 +923,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
       <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
     </Compile>
+    <Compile Include="PushAssist.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
