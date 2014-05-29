@@ -2,12 +2,11 @@
 //
 using System;
 using MonoTouch.UIKit;
-using MonoTouch.Foundation;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class NcUIViewController : UIViewController
+    public class NcUITableViewController : UITableViewController
     {
         private string AppearingName;
         private string InUseName;
@@ -17,17 +16,12 @@ namespace NachoClient.iOS
         NcCapture InUse;
         NcCapture Disappearing;
 
-        public NcUIViewController () : base()
+        public NcUITableViewController () : base ()
         {
             Initialize ();
         }
 
-        public NcUIViewController (IntPtr handle) : base (handle)
-        {
-            Initialize ();
-        }
-
-        public NcUIViewController (string nibName, NSBundle bundle) : base (nibName, bundle)
+        public NcUITableViewController (IntPtr handle) : base (handle)
         {
             Initialize ();
         }
