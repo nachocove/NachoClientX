@@ -43,6 +43,16 @@ namespace Test.iOS
             McMutables.Set ("test", "key2", "value2");
             Assert.AreEqual ("value2", McMutables.Get ("test", "key2"));
         }
+
+        [Test]
+        public void TestGetOrCreate ()
+        {
+            var getdef = McMutables.GetOrCreate ("test", "keyT", "default");
+            Assert.AreEqual (getdef, "default");
+            McMutables.Set ("test", "keyT", "notdef");
+            var notdef = McMutables.GetOrCreate ("test", "keyT", "default");
+            Assert.AreEqual (notdef, "notdef");
+        }
     }
 }
 

@@ -50,6 +50,17 @@ namespace NachoCore.Model
             }
         }
 
+        public static string GetOrCreate (string module, string key, string defaultValue)
+        {
+            var exists = Get (module, key);
+            if (null != exists) {
+                return exists;
+            } else {
+                Set (module, key, defaultValue);
+                return defaultValue;
+            }
+        }
+
         public static string Get (string module, string key)
         {
             var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x => x.Key == key && 
