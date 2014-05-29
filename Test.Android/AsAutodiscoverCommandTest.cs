@@ -26,6 +26,7 @@ using System.Linq;
 
 /* Important: Auto-d uses xml, not wbxml */
 /* Details about HTTP OPTIONS responses: http://msdn.microsoft.com/en-us/library/jj127441(v=exchg.140).aspx */
+using System.Net;
 
 namespace Test.iOS
 {
@@ -54,6 +55,7 @@ namespace Test.iOS
         }
     }
         
+
     public class BaseAutoDiscoverTests : AsAutodiscoverCommandTest
     {
         // Test that each of the 8 Sx complete successfully
@@ -178,23 +180,57 @@ namespace Test.iOS
         }
 
         [TestFixture]
+        public class Test600XmlErrorCodes : AsAutodiscoverCommandTest
+        {
+            [Test]
+            public void Test600ErrorCode ()
+            {
+                string xml = CommonMockData.AutodPhony600Response;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+            }
+
+            [Test]
+            public void Test601ErrorCode ()
+            {
+                string xml = CommonMockData.AutodPhony601Response;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
+
+                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                    return PassRobotForStep (step, request, xml);
+                }, provideDnsResponse => {
+                }, (httpRequest, httpResponse) => {
+                    httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                    httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                });
+            }
+        }
+
+        [TestFixture]
         public class AutodTestFailure : AsAutodiscoverCommandTest
         {
             /* TODO: This test is failing because it does not retry enough times. Fix it!
              */
             // Ensure that a server name test failure results in re-tries.
-//            [Test]
+            [Test]
             public void TestFailureHasRetries ()
             {
-                int expectedRetries = 6; // 7 works, but is not enough
+                int expectedRetries = 15;
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;
 
+                // bad gateway forces retries
+                HttpStatusCode status = HttpStatusCode.BadGateway;
+
                 // pass POST request, but fail OPTIONS
-                TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (successXml, failureXml, status, MockSteps.S1);
                 Assert.AreEqual (expectedRetries, MockHttpClient.AsyncCalledCount, "Should match the expected number of Async calls");
-                Log.Info (Log.LOG_TEST, "AsyncCalledCount: {0}", MockHttpClient.AsyncCalledCount);
             }
 
             // Ensure that a server name test failure results in the Owner being 
@@ -205,11 +241,14 @@ namespace Test.iOS
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;
 
+                // not found forces hard fail
+                HttpStatusCode status = HttpStatusCode.NotFound;
+
                 // pass POST request, but fail OPTIONS
-                TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (successXml, failureXml, status, MockSteps.S1);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, string optionsXml, MockSteps step)
+            private void TestAutodPingWithXmlResponse (string xml, string optionsXml, HttpStatusCode status, MockSteps step)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
@@ -230,12 +269,12 @@ namespace Test.iOS
 
                     // provide valid redirection headers if needed
                     if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                     } else if (isOptions) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.NotFound;
+                        httpResponse.StatusCode = status;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = HttpStatusCode.OK;
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -298,8 +337,6 @@ namespace Test.iOS
         }
     }
 
-
-
     public class AsAutodiscoverCommandTest
     {
         public static AsAutodiscoverCommand autodCommand { get; set; }
@@ -360,6 +397,9 @@ namespace Test.iOS
                 }
                 break;
             case "OPTIONS":
+//                McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
+
+//                ServerFalseAssertions (mockContext.Server, serv);
                 Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
 
                 string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
@@ -427,7 +467,26 @@ namespace Test.iOS
             Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
 
             // Test that the server record was updated
-//            var serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+            ServerTrueAssertions (mockContext.Server, serv);
+        }
+
+        private void ServerTrueAssertions (McServer expected, McServer actual)
+        {
+            Assert.AreEqual (expected.Host, actual.Host, "Stored server host does not match expected");
+            Assert.AreEqual (expected.Path, actual.Path, "Stored server path does not match expected");
+            Assert.AreEqual (expected.Port, actual.Port, "Stored server port does not match expected");
+            Assert.AreEqual (expected.Scheme, actual.Scheme, "Stored server scheme does not match expected");
+            Assert.AreEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag does not match expected");
+        }
+
+        private void ServerFalseAssertions (McServer expected, McServer actual)
+        {
+            Assert.AreNotEqual (expected.Host, actual.Host, "Stored server host does not match expected");
+            Assert.AreNotEqual (expected.Path, actual.Path, "Stored server path does not match expected");
+            Assert.AreNotEqual (expected.Port, actual.Port, "Stored server port does not match expected");
+            Assert.AreNotEqual (expected.Scheme, actual.Scheme, "Stored server scheme does not match expected");
+            Assert.AreNotEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag does not match expected");
         }
 
         private NcStateMachine CreatePhonySM (Action<bool> action)
