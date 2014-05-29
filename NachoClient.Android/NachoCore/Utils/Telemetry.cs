@@ -18,6 +18,7 @@ namespace NachoCore.Utils
         WBXML_RESPONSE,
         STATE_MACHINE,
         COUNTER,
+        CAPTURE,
         MAX_TELEMETRY_EVENT_TYPE
     };
 
@@ -76,7 +77,7 @@ namespace NachoCore.Utils
                 return _Count;
             }
             set {
-                NachoAssert.True (IsCounterEvent ());
+                NachoAssert.True (IsCounterEvent () || IsCaptureEvent ());
                 _Count = value;
             }
         }
@@ -105,6 +106,55 @@ namespace NachoCore.Utils
             }
         }
 
+
+        // Capture Name
+        private string _CaptureName;
+        public string CaptureName {
+            get {
+                return _CaptureName;
+            }
+            set {
+                NachoAssert.True (IsCaptureEvent ());
+                _CaptureName = value;
+            }
+        }
+
+        // Average
+        private uint _Average;
+        public uint Average {
+            get {
+                return _Average;
+            }
+            set {
+                NachoAssert.True (IsCaptureEvent ());
+                _Average = value;
+            }
+        }
+
+        // Capture Min
+        private uint _Min;
+        public uint Min {
+            get {
+                return _Min;
+            }
+            set {
+                NachoAssert.True (IsCaptureEvent ());
+                _Min = value;
+            }
+        }
+
+        // Capture Max
+        private uint _Max;
+        public uint Max {
+            get {
+                return _Max;
+            }
+            set {
+                NachoAssert.True (IsCaptureEvent ());
+                _Max = value;
+            }
+        }
+
         public static bool IsLogEvent (TelemetryEventType type)
         {
             return ((TelemetryEventType.ERROR == type) ||
@@ -124,6 +174,11 @@ namespace NachoCore.Utils
             return (TelemetryEventType.COUNTER == type);
         }
 
+        public static bool IsCaptureEvent (TelemetryEventType type)
+        {
+            return (TelemetryEventType.CAPTURE == type);
+        }
+
         public bool IsLogEvent ()
         {
             return IsLogEvent (Type);
@@ -139,12 +194,25 @@ namespace NachoCore.Utils
             return IsCounterEvent (Type);
         }
 
+        public bool IsCaptureEvent ()
+        {
+            return IsCaptureEvent (Type);
+        }
+
         public TelemetryEvent (TelemetryEventType type)
         {
             Timestamp = DateTime.UtcNow;
             _Type = type;
             _Message = null;
             _Wbxml = null;
+            _CounterName = null;
+            _Count = 0;
+            _CounterStart = new DateTime();
+            _CounterEnd = new DateTime();
+            _CaptureName = null;
+            _Average = 0;
+            _Min = 0;
+            _Max = 0;
         }
 
         public uint GetSize ()
@@ -195,13 +263,15 @@ namespace NachoCore.Utils
             Counters[0].ReportPeriod = 0;
             Counters [0].PreReportCallback = PreReportAdjustment;
 
-            Counters [(int)TelemetryEventType.DEBUG] = Counters [0].AddChild ("DEBUG");
-            Counters[(int)TelemetryEventType.INFO] = Counters[0].AddChild ("INFO");
-            Counters[(int)TelemetryEventType.WARN] = Counters[0].AddChild ("WARN");
-            Counters[(int)TelemetryEventType.ERROR] = Counters[0].AddChild ("ERROR");
-            Counters[(int)TelemetryEventType.WBXML_REQUEST] = Counters[0].AddChild ("WBXML_REQUEST");
-            Counters[(int)TelemetryEventType.WBXML_RESPONSE] = Counters[0].AddChild ("WBXML_RESPONSE");
-            Counters [(int)TelemetryEventType.STATE_MACHINE] = Counters [0].AddChild ("STATE_MACHINE");
+            Type teleEvtType = typeof(TelemetryEventType);
+            foreach (TelemetryEventType type in Enum.GetValues(teleEvtType)) {
+                if ((TelemetryEventType.COUNTER == type) || 
+                    (TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE == type) ||
+                    (TelemetryEventType.UNKNOWN == type)) {
+                    continue;
+                }
+                Counters [(int)type] = Counters [0].AddChild (Enum.GetName (teleEvtType, type));
+            }
             // Counter must be the last counter created!
             Counters[(int)TelemetryEventType.COUNTER] = Counters[0].AddChild ("COUNTER");
         }
@@ -220,6 +290,7 @@ namespace NachoCore.Utils
 
         private static void RecordRawEvent (TelemetryEvent tEvent)
         {
+            SharedInstance.Counters [(int)tEvent.Type].Click ();
             if (!PERSISTED) {
                 SharedInstance.EventQueue.Enqueue (tEvent);
             } else {
@@ -236,7 +307,6 @@ namespace NachoCore.Utils
             }
 
             NachoAssert.True (TelemetryEvent.IsLogEvent (type));
-            SharedInstance.Counters [(int)type].Click ();
 
             TelemetryEvent tEvent = new TelemetryEvent (type);
             tEvent.Message = String.Format(fmt, list);
@@ -263,7 +333,6 @@ namespace NachoCore.Utils
                 type = TelemetryEventType.WBXML_RESPONSE;
             }
             TelemetryEvent tEvent = new TelemetryEvent(type);
-            SharedInstance.Counters [(int)type].Click ();
 
             if (MAX_PARSE_LEN < wbxml.Length) {
                 Console.WriteLine ("Redacted WBXML too long (length={0})", wbxml.Length);
@@ -285,12 +354,28 @@ namespace NachoCore.Utils
             }
 
             TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.COUNTER);
-            SharedInstance.Counters [(int)TelemetryEventType.COUNTER].Click ();
 
             tEvent.CounterName = name;
             tEvent.Count = count;
             tEvent.CounterStart = start;
             tEvent.CounterEnd = end;
+
+            RecordRawEvent (tEvent);
+        }
+
+        public static void RecordCapture (string name, uint count, uint average, uint min, uint max)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.CAPTURE);
+
+            tEvent.CaptureName = name;
+            tEvent.Count = count;
+            tEvent.Average = average;
+            tEvent.Min = min;
+            tEvent.Max = max;
 
             RecordRawEvent (tEvent);
         }
@@ -307,7 +392,13 @@ namespace NachoCore.Utils
         private void Process<T> () where T : ITelemetryBE, new()
         {
             BackEnd = new T ();
-            Counters [0].ReportPeriod = 60 * 60 * 24; // report once per day
+            Counters [0].ReportPeriod = 60 * 60; // report once per day
+
+            // Capture the transaction time to telemetry server
+            const string CAPTURE_NAME = "Telemetry";
+            NcCapture.AddKind (CAPTURE_NAME);
+            NcCapture transactionTime = NcCapture.Create(CAPTURE_NAME);
+
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good
@@ -319,12 +410,19 @@ namespace NachoCore.Utils
                 } else {
                     dbEvent = McTelemetryEvent.QueryOne ();
                     if (null == dbEvent) {
+                        // No pending event. Wait for one.
                         DbUpdated.WaitOne ();
                         continue;
                     }
                     tEvent = dbEvent.GetTelemetryEvent ();
                 }
+
+                // Send it to the telemetry server
+                transactionTime.Start ();
                 BackEnd.SendEvent (tEvent);
+                transactionTime.Stop ();
+                transactionTime.Reset ();
+
                 if (null != dbEvent) {
                     dbEvent.Delete ();
                 }

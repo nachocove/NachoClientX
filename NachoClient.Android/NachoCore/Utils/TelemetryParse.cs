@@ -159,6 +159,12 @@ namespace NachoCore.Utils
                 dict.AddInteger ("count", tEvent.Count);
                 dict.AddDate ("counter_start", tEvent.CounterStart);
                 dict.AddDate ("counter_end", tEvent.CounterEnd);
+            } else if (tEvent.IsCaptureEvent()) {
+                dict.AddString ("event_type", "CAPTURE");
+                dict.AddInteger ("count", tEvent.Count);
+                dict.AddInteger ("average", tEvent.Average);
+                dict.AddInteger ("min", tEvent.Min);
+                dict.AddInteger ("max", tEvent.Max);
             } else {
                 NachoAssert.True (false);
             }

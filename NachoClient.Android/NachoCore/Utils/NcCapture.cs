@@ -14,8 +14,14 @@ namespace NachoCore.Utils
             bool IsTop;
             uint Min;
             uint Max;
-            uint Average;
+            uint Average {
+                // Only compute average when asked to save some divide
+                get {
+                    return (uint)(Total / Count);
+                }
+            }
             uint Count;
+            UInt64 Total;
             Dictionary <string, Summary> Xtra;
 
             public Summary (bool isTop)
@@ -23,15 +29,14 @@ namespace NachoCore.Utils
                 IsTop = isTop;
                 Min = uint.MaxValue;
                 Max = uint.MinValue;
-                Average = 0;
                 Count = 0;
+                Total = 0;
             }
 
             public void Update (uint value, Dictionary<string,uint> xtra)
             {
-                UInt64 prod = Count * Average;
                 Count += 1;
-                Average = (uint)((prod + value) / Count);
+                Total += value;
                 if (value < Min) {
                     Min = value;
                 }
@@ -77,6 +82,16 @@ namespace NachoCore.Utils
                 } else {
                     return string.Format ("Count = {1}, Min = {2}, Max = {3}, Average = {4}",
                         Count, Min, Max, Average);
+                }
+            }
+
+            public void Report (string kind)
+            {
+                Telemetry.RecordCapture (kind, Count, Average, Min, Max);
+                if (null != Xtra) {
+                    foreach (var key in Xtra.Keys) {
+                        Xtra [key].Report (key);
+                    }
                 }
             }
         }
@@ -149,6 +164,27 @@ namespace NachoCore.Utils
             var summary = PerKind [Kind];
             summary.Update ((uint)Watch.ElapsedMilliseconds);
 
+        }
+
+        public void Reset ()
+        {
+            Watch.Reset ();
+        }
+
+        public static void Report (string Kind)
+        {
+            if (!PerKind.ContainsKey(Kind)) {
+                return;
+            }
+            Summary summary = PerKind [Kind];
+            summary.Report (Kind);
+        }
+
+        public static void Report ()
+        {
+            foreach (string kind in PerKind.Keys) {
+                Report (kind);
+            }
         }
     }
 }
