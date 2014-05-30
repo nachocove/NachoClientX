@@ -26,16 +26,7 @@ namespace NachoClient.iOS
         private static Object StaticLockObj = new Object ();
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected UIFont Font_AvenirNextDemiBold17 = null;
-        protected UIFont Font_AvenirNextRegular17 = null;
-        protected UIFont Font_AvenirNextRegular14 = null;
-        protected UIFont Font_AvenirNextMedium14 = null;
-        protected UIFont Font_AvenirNextUltraLight32 = null;
-        protected UIFont Font_AvenirNextUltraLight24 = null;
-        protected UIColor Color_999999 = null;
-        protected UIColor Color_0F424C = null;
-        protected UIColor Color_9B9B9B = null;
-        protected UIColor Color_FFFFFF = null;
+
         protected HashSet<int> MultiSelect = null;
 
         public void SetEmailMessages (INachoEmailMessages l)
@@ -45,16 +36,7 @@ namespace NachoClient.iOS
 
         public MessageListViewController (IntPtr handle) : base (handle)
         {
-            Font_AvenirNextDemiBold17 = UIFont.FromName ("AvenirNext-DemiBold", 17);
-            Font_AvenirNextRegular17 = UIFont.FromName ("AvenirNext-Regular", 17);
-            Font_AvenirNextRegular14 = UIFont.FromName ("AvenirNext-Regular", 14);
-            Font_AvenirNextMedium14 = UIFont.FromName ("AvenirNext-Regular", 14);
-            Font_AvenirNextUltraLight32 = UIFont.FromName ("AvenirNext-UltraLight", 32);
-            Font_AvenirNextUltraLight24 = UIFont.FromName ("AvenirNext-UltraLight", 24);
-            Color_999999 = UIColor.FromRGB (0x99, 0x99, 0x99);
-            Color_0F424C = UIColor.FromRGB (0x0f, 0x42, 0x4c);
-            Color_9B9B9B = UIColor.FromRGB (0x9b, 0x9b, 0x9b);
-            Color_FFFFFF = UIColor.FromRGB (0xff, 0xff, 0xff);
+
 
             MultiSelect = new HashSet<int> ();
         }
@@ -76,8 +58,8 @@ namespace NachoClient.iOS
             NavigationController.SetNeedsStatusBarAppearanceUpdate ();
 
             var attributes = new UITextAttributes ();
-            attributes.Font = Font_AvenirNextDemiBold17;
-            attributes.TextColor = Color_FFFFFF;
+            attributes.Font = A.Font_AvenirNextDemiBold17;
+            attributes.TextColor = A.Color_FFFFFF;
             NavigationController.NavigationBar.SetTitleTextAttributes (attributes);
             cancelButton.SetTitleTextAttributes (attributes, UIControlState.Normal);
 
@@ -511,7 +493,7 @@ namespace NachoClient.iOS
                 var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
                 cell.TextLabel.TextAlignment = UITextAlignment.Center;
                 cell.TextLabel.TextColor = UIColor.FromRGB (0x0f, 0x42, 0x4c);
-                cell.TextLabel.Font = Font_AvenirNextDemiBold17;
+                cell.TextLabel.Font = A.Font_AvenirNextDemiBold17;
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.ContentView.BackgroundColor = UIColor.White;
                 return cell;
@@ -567,8 +549,8 @@ namespace NachoClient.iOS
                 // Font will vary bold or regular, depending on isRead.
                 // Size fields will be recalculated after text is known.
                 var fromLabelView = new UILabel (new RectangleF (65, 20, 150, 20));
-                fromLabelView.Font = Font_AvenirNextDemiBold17;
-                fromLabelView.TextColor = Color_0F424C;
+                fromLabelView.Font = A.Font_AvenirNextDemiBold17;
+                fromLabelView.TextColor = A.Color_0F424C;
                 fromLabelView.Tag = FROM_TAG;
                 cell.ContentView.AddSubview (fromLabelView);
 
@@ -577,16 +559,16 @@ namespace NachoClient.iOS
                 // TODO: Confirm 'y' of Subject
                 var subjectLabelView = new UILabel (new RectangleF (65, 40, cellWidth - 15 - 65, 20));
                 subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
-                subjectLabelView.Font = Font_AvenirNextMedium14;
-                subjectLabelView.TextColor = Color_0F424C;
+                subjectLabelView.Font = A.Font_AvenirNextMedium14;
+                subjectLabelView.TextColor = A.Color_0F424C;
                 subjectLabelView.Tag = SUBJECT_TAG;
                 cell.ContentView.AddSubview (subjectLabelView);
 
                 // Summary label view
                 // Size fields will be recalculated after text is known
                 var summaryLabelView = new UILabel (new RectangleF (65, 60, cellWidth - 15 - 65, 60));
-                summaryLabelView.Font = Font_AvenirNextRegular14;
-                summaryLabelView.TextColor = Color_999999;
+                summaryLabelView.Font = A.Font_AvenirNextRegular14;
+                summaryLabelView.TextColor = A.Color_999999;
                 summaryLabelView.Lines = 2;
                 summaryLabelView.Tag = SUMMARY_TAG;
                 cell.ContentView.AddSubview (summaryLabelView);
@@ -599,8 +581,8 @@ namespace NachoClient.iOS
 
                 // Reminder label view
                 var reminderLabelView = new UILabel (new RectangleF (87, 115, 230, 20));
-                reminderLabelView.Font = Font_AvenirNextRegular14;
-                reminderLabelView.TextColor = Color_9B9B9B;
+                reminderLabelView.Font = A.Font_AvenirNextRegular14;
+                reminderLabelView.TextColor = A.Color_9B9B9B;
                 reminderLabelView.Tag = REMINDER_TEXT_TAG;
                 cell.ContentView.AddSubview (reminderLabelView);
 
@@ -613,8 +595,8 @@ namespace NachoClient.iOS
 
                 // Received label view
                 var receivedLabelView = new UILabel (new RectangleF (220, 18, 100, 20));
-                receivedLabelView.Font = Font_AvenirNextRegular14;
-                receivedLabelView.TextColor = Color_9B9B9B;
+                receivedLabelView.Font = A.Font_AvenirNextRegular14;
+                receivedLabelView.TextColor = A.Color_9B9B9B;
                 receivedLabelView.TextAlignment = UITextAlignment.Right;
                 receivedLabelView.Tag = RECEIVED_DATE_TAG;
                 cell.ContentView.AddSubview (receivedLabelView);
@@ -659,7 +641,7 @@ namespace NachoClient.iOS
             // TODO: initials
             // TODO: user images
             var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            userImageView.Image = Util.LettersWithColor ("BP", UIColor.LightGray, Font_AvenirNextUltraLight24);
+            userImageView.Image = Util.LettersWithColor ("BP", UIColor.LightGray, A.Font_AvenirNextUltraLight24);
 
             // User chili view
             var userChiliView = cell.ViewWithTag (USER_CHILI_TAG) as UIImageView;
@@ -720,7 +702,7 @@ namespace NachoClient.iOS
             fromLabelRect.Width = attachmentImageRect.X - 65;
             fromLabelView.Frame = fromLabelRect;
             fromLabelView.Text = Pretty.SenderString (message.From);
-            fromLabelView.Font = (message.IsRead ? Font_AvenirNextDemiBold17 : Font_AvenirNextRegular17);
+            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
             ConfigureSwipes (cell as MCSwipeTableViewCell, messageThreadIndex);
             ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);

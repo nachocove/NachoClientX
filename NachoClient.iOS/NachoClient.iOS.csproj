@@ -853,6 +853,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\GatedMemoryStream.cs">
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\A.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
