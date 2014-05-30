@@ -678,7 +678,7 @@ namespace NachoCore.ActiveSync
                 uint configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "DelaySeconds", KDefaultDelaySeconds));
                 uint bestSecs = configuredSecs;
                 if (response.Headers.Contains (HeaderRetryAfter)) {
-                    string value;
+                    string value = null;
                     try {
                         value = response.Headers.GetValues (HeaderRetryAfter).First ();
                         bestSecs = uint.Parse (value);
