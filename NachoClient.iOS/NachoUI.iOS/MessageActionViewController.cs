@@ -9,24 +9,27 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageActionViewController : BlurryViewController, IUITableViewDelegate, INachoMessageEditor
+    public partial class MessageActionViewController : BlurryViewController, IUITableViewDelegate, INachoFolderChooser
     {
-        public McEmailMessageThread thread;
-        protected INachoMessageEditorParent owner;
+        protected object cookie;
+        protected INachoFolderChooserParent owner;
         protected INachoFolders folders = null;
 
         public MessageActionViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void SetOwner(INachoMessageEditorParent o)
+        public void SetOwner (INachoFolderChooserParent owner, object cookie)
         {
-            owner = o;
+            this.owner = owner;
+            this.cookie = cookie;
         }
 
-        public void DismissMessageEditor (bool animated, NSAction action)
+        public void DismissFolderChooser (bool animated, NSAction action)
         {
             owner = null;
+            cookie = null;
+            DismissViewController (animated, action);
         }
 
         public override void ViewDidLoad ()
@@ -50,25 +53,25 @@ namespace NachoClient.iOS
             folderTableView.DataSource = folderSource;
         }
 
+        public void FolderSelected (McFolder folder)
+        {
+            owner.FolderSelected (this, folder, cookie);
+        }
+
         protected class FolderTableDelegate : UITableViewDelegate
         {
             MessageActionViewController owner = null;
 
-            public FolderTableDelegate(MessageActionViewController o)
+            public FolderTableDelegate (MessageActionViewController owner)
             {
-                owner = o;
+                this.owner = owner;
             }
 
-            public override void RowSelected(UITableView tableView, NSIndexPath indexPath)
+            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
                 var folderSource = (FolderTableSource)tableView.DataSource;
                 var folder = folderSource.getFolder (indexPath);
-                foreach (var message in owner.thread) {
-                    BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
-                }
-                var o = owner;
-                owner = null;
-                o.DismissMessageEditor (true, null);
+                owner.FolderSelected (folder);
             }
         }
     }

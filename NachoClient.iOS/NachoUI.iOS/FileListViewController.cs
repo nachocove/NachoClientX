@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class FileListViewController : UITableViewController, INachoFileChooser
+    public partial class FileListViewController : NcUITableViewController, INachoFileChooser
     {
         INachoFileChooserParent owner;
 

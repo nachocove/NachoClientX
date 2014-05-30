@@ -269,6 +269,7 @@
     <Compile Include="NachoCore\Utils\NcCounter.cs" />
     <Compile Include="LogSettings.cs" />
     <Compile Include="NachoCore\Model\McPendDep.cs" />
+    <Compile Include="NachoCore\Utils\GatedMemoryStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -61,14 +61,14 @@ namespace Test.iOS
         [TestFixture]
         public class BasicSuccessfulResponses : AsAutodiscoverCommandTest
         {
-            [Test]
+//            [Test]
             public void TestS1 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S1);
             }
 
-            [Test]
+//            [Test]
             public void TestS2 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -77,7 +77,7 @@ namespace Test.iOS
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
             // the HTTPS access following a DNS SRV lookup
-            [Test]
+//            [Test]
             public void TestS3 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -86,7 +86,7 @@ namespace Test.iOS
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
             // the HTTPS access following a DNS SRV lookup
-            [Test]
+//            [Test]
             public void TestS4 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -123,7 +123,7 @@ namespace Test.iOS
         [TestFixture]
         public class TestStep5Responses : AsAutodiscoverCommandTest
         {
-            [Test]
+//            [Test]
             public void TestValidRedirectThenSuccess ()
             {
                 string redirUrl = CommonMockData.RedirectionUrl;
@@ -131,7 +131,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (true, xml, redirUrl, MockSteps.S3, sm => {});  
             }
 
-            [Test]
+//            [Test]
             public void TestValidRedirectThenFailure ()
             {
                 string redirUrl = CommonMockData.RedirectionUrl;
@@ -141,7 +141,7 @@ namespace Test.iOS
                 });
             }
 
-            [Test]
+//            [Test]
             public void TestInvalidRedirect ()
             {
                 string redirUrl = CommonMockData.InvalidRedirUrl;
@@ -199,7 +199,7 @@ namespace Test.iOS
 
             // Ensure that a server name test failure results in the Owner being 
             // asked to supply a new server name.
-            [Test]
+//            [Test]
             public void AsksOwnerForServerNameOnFailure ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -256,7 +256,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
             }
 
-            [Test]
+//            [Test]
             public void NewCredsUponAuthFailureS3 ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;

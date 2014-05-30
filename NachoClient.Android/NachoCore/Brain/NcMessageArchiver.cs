@@ -14,6 +14,11 @@ namespace NachoCore
         {
         }
 
+        public static void Move (McEmailMessage message, McFolder folder)
+        {
+            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
+        }
+
         public static void Archive (McEmailMessage message)
         {
             var type = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
@@ -27,7 +32,7 @@ namespace NachoCore
             BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
         }
 
-        public static void Delete(McEmailMessage message)
+        public static void Delete (McEmailMessage message)
         {
             BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
         }

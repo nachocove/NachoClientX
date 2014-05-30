@@ -13,7 +13,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class AttendeeViewController : DialogViewController, INachoContactChooserDelegate
+    public partial class AttendeeViewController : NcDialogViewController, INachoContactChooserDelegate
     {
         List<McAttendee> AttendeeList = new List<McAttendee> ();
 

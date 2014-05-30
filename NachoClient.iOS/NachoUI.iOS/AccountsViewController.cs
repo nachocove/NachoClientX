@@ -7,7 +7,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountsViewController : UITableViewController
+    public partial class AccountsViewController : NcUITableViewController
     {
         public AccountsViewController (IntPtr handle) : base (handle)
         {

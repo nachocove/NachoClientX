@@ -14,7 +14,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentViewController : DialogViewController, INachoFileChooser
+    public partial class AttachmentViewController : NcDialogViewController, INachoFileChooser
     {
         INachoFileChooserParent owner;
 

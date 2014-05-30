@@ -16,7 +16,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : UIViewController, INachoMessageEditorParent, INachoCalendarItemEditorParent
+    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         List<object> hotList;
         INachoEmailMessages messageThreads;
@@ -130,7 +130,7 @@ namespace NachoClient.iOS
         }
 
         [MonoTouch.Foundation.Export ("CurrentEventTapSelector:")]
-        public void OnTapCurrentEvent(UIGestureRecognizer sender)
+        public void OnTapCurrentEvent (UIGestureRecognizer sender)
         {
             if (null != currentEvent) {
                 PerformSegue ("NachoNowToCalendarItem", new SegueHolder (currentEvent));
@@ -173,8 +173,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
                 var indexPath = (NSIndexPath)sender;
-                vc.thread = messageThreads.GetEmailThread (indexPath.Row);
-                vc.SetOwner (this);
+                vc.SetOwner (this, new SegueHolder (indexPath.Row));
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageList") {
@@ -220,9 +219,10 @@ namespace NachoClient.iOS
             var t = CalendarHelper.CreateTask (m);
             vc.SetOwner (null);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue("", new SegueHolder(t));
+                PerformSegue ("", new SegueHolder (t));
             }));
         }
+
         /// <summary>
         /// INachoMessageControl delegate
         /// </summary>
@@ -231,14 +231,14 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue("", new SegueHolder(c));
+                PerformSegue ("", new SegueHolder (c));
             }));
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
         {
-            vc.SetOwner(null);
-            vc.DismissCalendarItemEditor(false, null);
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (false, null);
         }
 
         protected void UpdateHotLists ()
@@ -340,6 +340,16 @@ namespace NachoClient.iOS
             for (int i = 0; (i < taskThreads.Count ()) && (i < 8); i++) {
                 hotList.Add (taskThreads.GetEmailThread (i));
             }
+        }
+
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            NachoAssert.CaseError ();
+        }
+
+        public void DismissChildFolderChooser (INachoFolderChooser vc)
+        {
+            NachoAssert.CaseError ();
         }
 
         public class CarouselDataSource : iCarouselDataSource
@@ -506,7 +516,7 @@ namespace NachoClient.iOS
 
                 var calendarItem = item as McCalendar;
                 if (null != calendarItem) {
-                    owner.PerformSegue ("NachoNowToCalendarItem", new SegueHolder(calendarItem));
+                    owner.PerformSegue ("NachoNowToCalendarItem", new SegueHolder (calendarItem));
                     return;
                 }
 

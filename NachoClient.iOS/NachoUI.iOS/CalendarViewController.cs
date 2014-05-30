@@ -11,7 +11,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : UITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent
+    public partial class CalendarViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent
     {
         INachoCalendar calendar;
         public bool UseDeviceCalendar;

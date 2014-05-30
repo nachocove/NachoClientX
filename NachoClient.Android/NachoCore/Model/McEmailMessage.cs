@@ -341,6 +341,57 @@ namespace NachoCore.Model
             }
             return contactList;
         }
+
+        public bool IsDeferred ()
+        {
+            if ((DateTime.MinValue == FlagDeferUntil) && (DateTime.MinValue == FlagUtcDeferUntil)) {
+                return false;
+            }
+            if (DateTime.MinValue != FlagDeferUntil) {
+                return DateTime.Now > FlagDeferUntil;
+            }
+            if (DateTime.MinValue != FlagUtcDeferUntil) {
+                return DateTime.UtcNow > FlagUtcDeferUntil;
+            }
+            NachoAssert.CaseError ();
+            return false;
+        }
+
+        public bool HasDueDate ()
+        {
+            if ((DateTime.MinValue == FlagDue) && (DateTime.MinValue == FlagUtcDue)) {
+                return false;
+            }
+            if ((FlagDue == FlagDeferUntil) && (FlagUtcDue == FlagUtcDeferUntil)) {
+                return false;
+            }
+            return true;
+        }
+
+        public bool IsOverdue ()
+        {
+            if (HasDueDate ()) {
+                if (DateTime.MinValue != FlagDue) {
+                    return DateTime.Now > FlagDue;
+                }
+                if (DateTime.MinValue != FlagUtcDue) {
+                    return DateTime.UtcNow > FlagUtcDue;
+                }
+                NachoAssert.CaseError ();
+            }
+            return false;
+        }
+
+        public DateTime FlagDueAsUtc ()
+        {
+            if (DateTime.MinValue != FlagDue) {
+                return FlagDue.ToUniversalTime ();
+            }
+            if (DateTime.MinValue != FlagUtcDue) {
+                return FlagUtcDue.ToUniversalTime ();
+            }
+            return DateTime.MinValue;
+        }
     }
 
     public class McEmailMessageThread
@@ -388,4 +439,3 @@ namespace NachoCore.Model
         }
     }
 }
-

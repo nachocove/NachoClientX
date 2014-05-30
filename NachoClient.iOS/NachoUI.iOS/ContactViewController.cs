@@ -10,7 +10,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactViewController : DialogViewController
+    public partial class ContactViewController : NcDialogViewController
     {
         public bool editing;
         public McContact contact;

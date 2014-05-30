@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class TaskListViewController : UITableViewController
+    public partial class TaskListViewController : NcUITableViewController
     {
         public TaskListViewController (IntPtr handle) : base (handle)
         {

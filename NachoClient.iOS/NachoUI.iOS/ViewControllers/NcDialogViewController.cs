@@ -21,7 +21,7 @@ namespace NachoClient.iOS
             Initialize ();
         }
 
-        public NcDialogViewController (RootElement root, bool yes) : base (root, yes)
+        public NcDialogViewController (RootElement root, bool push) : base (root, push)
         {
             Initialize ();
         }

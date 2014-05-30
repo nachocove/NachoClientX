@@ -25,7 +25,7 @@ namespace NachoClient.iOS
     /// Handles search in an INachoContacts.
     /// Handles async search too.
     /// </summary>
-    public partial class ContactsViewController : UITableViewController
+    public partial class ContactsViewController : NcUITableViewController
     {
         public bool UseDeviceContacts;
         INachoContacts contacts;

@@ -7,7 +7,7 @@ using NachoClient.iOS;
 
 namespace NachoClient.iOS
 {
-    public partial class DatePickerViewController : UIViewController
+    public partial class DatePickerViewController : NcUIViewController
     {
         public MessagePriorityViewController owner;
 

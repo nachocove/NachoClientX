@@ -15,7 +15,7 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class ComposeViewController : DialogViewController, INachoContactChooserDelegate, INachoFileChooserParent
+    public partial class ComposeViewController : NcDialogViewController, INachoContactChooserDelegate, INachoFileChooserParent
     {
         List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
         List<int> attachmentList = new List<int> ();

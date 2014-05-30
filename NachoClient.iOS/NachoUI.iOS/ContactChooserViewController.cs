@@ -16,7 +16,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactChooserViewController : UIViewController, IUITableViewDelegate, IUITextFieldDelegate, INachoContactChooser
+    public partial class ContactChooserViewController : NcUIViewController, IUITableViewDelegate, IUITextFieldDelegate, INachoContactChooser
     {
         // Interface
         protected NcEmailAddress address;
