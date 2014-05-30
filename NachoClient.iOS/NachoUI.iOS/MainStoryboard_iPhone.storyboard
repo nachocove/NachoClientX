@@ -1497,6 +1497,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="navbar-icn-menu.png" width="24" height="24"/>
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
     </resources>
+    <color key="tintColor" red="0.20784313725490194" green="0.81568627450980391" blue="0.74509803921568629" alpha="1" colorSpace="deviceRGB"/>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>

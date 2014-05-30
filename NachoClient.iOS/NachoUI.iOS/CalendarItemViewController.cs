@@ -100,11 +100,6 @@ namespace NachoClient.iOS
                     ReloadRoot (ShowDetail ());
                     return;
                 }
-//                if (CalendarItemEditorAction.view == action) {
-//                    c = item;
-//                    ReloadRoot (ShowDetail ());
-//                    return;
-//                }
                 NachoAssert.CaseError ();
             };
 

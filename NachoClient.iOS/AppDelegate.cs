@@ -81,6 +81,9 @@ namespace NachoClient.iOS
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
+
+
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
 
             NcApplication.Instance.CredReqCallback = CredReqCallback;
