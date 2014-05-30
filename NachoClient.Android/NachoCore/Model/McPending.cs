@@ -117,9 +117,6 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
-        // Valid when in PredBlocked state.
-        [Indexed]
-        public int PredPendingId { set; get; }
         // Valid when in Deferred state.
         [Indexed]
         // FIXME - need code in sync, fsync and here to manage this reason state.
@@ -222,7 +219,8 @@ namespace NachoCore.Model
         public void MarkPredBlocked (int predPendingId)
         {
             State = StateEnum.PredBlocked;
-            PredPendingId = predPendingId;
+            var dep = new McPendDep (predPendingId, Id);
+            dep.Insert ();
             if (0 == Id) {
                 Insert ();
             } else {
@@ -383,14 +381,15 @@ namespace NachoCore.Model
             }
         }
 
-        private bool UnblockSuccessors ()
+        // PUBLIC FOR TEST USE ONLY. OTHERWISE CONSIDER IT PRIVATE.
+        public bool UnblockSuccessors ()
         {
             var successors = QuerySuccessors (AccountId, Id);
             foreach (var succ in successors) {
-                succ.PredPendingId = 0;
                 succ.State = StateEnum.Eligible;
                 succ.Update ();
             }
+            McPendDep.DeleteAllSucc (Id);
             return (0 != successors.Count);
         }
 
@@ -532,13 +531,25 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Id).ToList ();
         }
 
+        public static List<McPending> QueryPredecessors (int accountId, int succId)
+        {
+            return NcModel.Instance.Db.Query<McPending> (
+                "SELECT p.* FROM McPending AS p JOIN McPendDep AS m ON p.Id = m.PredId WHERE " +
+                "p.AccountId = ? AND " +
+                "m.SuccId = ? " +
+                "ORDER BY Id ASC",
+                accountId, succId).ToList ();
+        }
+
         public static List<McPending> QuerySuccessors (int accountId, int predId)
         {
-            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
-                rec.AccountId == accountId &&
-            rec.State == StateEnum.PredBlocked &&
-            rec.PredPendingId == predId
-            ).OrderBy (x => x.Id).ToList ();
+            return NcModel.Instance.Db.Query<McPending> (
+                "SELECT p.* FROM McPending AS p JOIN McPendDep AS m ON p.Id = m.SuccId WHERE " +
+                "p.AccountId = ? AND " +
+                "p.State = ? AND " +
+                "m.PredId = ? " +
+                "ORDER BY Id ASC",
+                accountId, (uint)StateEnum.PredBlocked, predId).ToList ();
         }
 
         public static List<McPending> QueryDeferredFSync (int accountId)

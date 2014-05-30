@@ -80,6 +80,10 @@ namespace Test.iOS
             DropTable<McPending> ();
             CreateTable<McPending> ();
 
+            CreateTable<McPendDep> ();
+            DropTable<McPendDep> ();
+            CreateTable<McPendDep> ();
+
             // McBody
             CreateTable<McBody> ();
             DropTable<McBody> ();

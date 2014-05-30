@@ -846,6 +846,9 @@
     <Compile Include="NachoUI.iOS\ViewControllers\NcUIViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUITableViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcDialogViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPendDep.cs">
+      <Link>NachoCore\Model\McPendDep.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
