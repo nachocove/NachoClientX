@@ -165,6 +165,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockTelemetry.cs">
       <Link>MockTelemetry.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\GatedMemoryStream.cs">
+      <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
