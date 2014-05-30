@@ -134,7 +134,7 @@ namespace Test.iOS
 
         public MockContext ()
         {
-            Owner = null; // Should not be accessed.
+            Owner = new MockOwner ();
             ProtoControl = null; // Should not be accessed.
             ProtocolState = new McProtocolState ();
             // READ AsPolicyKey
@@ -152,6 +152,29 @@ namespace Test.iOS
                 Password = "password",
             };
         }
+    }
+
+    public class MockOwner : IProtoControlOwner
+    {
+        public NcResult Status { get; set; }
+
+        // Use these to check which error code was posted
+        public void StatusInd (ProtoControl sender, NcResult status) {
+            Status = status;
+        }
+        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens) {
+            Status = status;
+        }
+
+        public MockOwner () {
+            Status = null;
+        }
+
+        // we aren't interested in these
+        public void CredReq (ProtoControl sender) {}
+        public void ServConfReq (ProtoControl sender) {}
+        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {}
+        public void SearchContactsResp (ProtoControl sender, string prefix, string token) {}
     }
 
     public class MockNcCommStatus : INcCommStatus

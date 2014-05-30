@@ -525,7 +525,7 @@ namespace Test.iOS
                             new Trans { 
                                 Event = (uint)SmEvt.E.Success, 
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Success event was posted to Owner");
+                                    Log.Info (Log.LOG_TEST, "Success event was posted to Owner SM");
                                     setTrueBySuccessEvent = true;
                                     action(setTrueBySuccessEvent);
                                 },
@@ -533,8 +533,8 @@ namespace Test.iOS
                             new Trans { 
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk, 
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to verify provided certificate with UI");
-                                    Log.Info (Log.LOG_TEST, "Owner _verified_ provided certificate. Moving on.");
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to verify provided certificate with UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM _verified_ provided certificate. Moving on.");
                                     PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
                                 State = (uint)St.Start },
@@ -547,7 +547,7 @@ namespace Test.iOS
                                 // TestInvalidRedirect lands here. TestValidRedirectThenFailure should too
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetServConf, 
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to get server config from UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to get server config from UI");
                                     setTrueBySuccessEvent = true;
                                     action(setTrueBySuccessEvent);
 //                                    PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet, "TEST-ASPCDSSC");
@@ -557,8 +557,8 @@ namespace Test.iOS
                                 // NewCredsUponAuthFailure test lands here
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to get new credentials from UI");
-                                    Log.Info (Log.LOG_TEST, "Owner provided new credentials. Moving on.");
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to get new credentials from UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM provided new credentials. Moving on.");
                                     PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet, "TEST-ASPCDSC");
                                 },
                                 State = (uint)St.Start },
@@ -566,8 +566,8 @@ namespace Test.iOS
                                 // NewCredsUponAuthFailure test lands here
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk,
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to verify provided certificate with UI");
-                                    Log.Info (Log.LOG_TEST, "Owner _verified_ provided certificate. Moving on.");
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to verify provided certificate with UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM _verified_ provided certificate. Moving on.");
                                     PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
                                 State = (uint)PhonySt.UITest },
