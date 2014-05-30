@@ -83,6 +83,13 @@ namespace NachoClient.iOS
         {
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
+            UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
+
+            var navigationTitleTextAttributes = new UITextAttributes ();
+            navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
+            navigationTitleTextAttributes.TextColor = A.Color_FFFFFF;
+            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
+            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
 

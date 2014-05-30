@@ -50,19 +50,6 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
-            UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
-
-            NavigationController.NavigationBar.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
-            NavigationController.NavigationBar.Translucent = false;
-            SetNeedsStatusBarAppearanceUpdate ();
-            NavigationController.SetNeedsStatusBarAppearanceUpdate ();
-
-            var attributes = new UITextAttributes ();
-            attributes.Font = A.Font_AvenirNextDemiBold17;
-            attributes.TextColor = A.Color_FFFFFF;
-            NavigationController.NavigationBar.SetTitleTextAttributes (attributes);
-            cancelButton.SetTitleTextAttributes (attributes, UIControlState.Normal);
-
             MultiSelectToggle ();
 
             using (var nachoImage = UIImage.FromBundle ("navbar-icn-inbox-active")) {
@@ -142,11 +129,6 @@ namespace NachoClient.iOS
             RefreshControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
 
             //this.setNeedsStatusBarAppearanceUpdate;
-        }
-
-        public override UIStatusBarStyle PreferredStatusBarStyle ()
-        {
-            return UIStatusBarStyle.LightContent;
         }
 
         public int GetFirstVisibleRow ()
