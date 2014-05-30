@@ -119,12 +119,12 @@ namespace NachoClient.iOS
                     DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(ClientTokenResponse));
                     var clientTokenResponse = (ClientTokenResponse)ser.ReadObject (await response.Content.ReadAsStreamAsync ());
                     McMutables.Set(k_ios, k_clienttoken, clientTokenResponse.Token);
-                    Sm.PostEvent (SmEvt.E.Success, "GOTCLITOK");
+                    Sm.PostEvent ((uint)SmEvt.E.Success, "GOTCLITOK");
                 } catch {
-                    Sm.PostEvent (SmEvt.E.HardFail, "CLITOKEX");
+                    Sm.PostEvent ((uint)SmEvt.E.HardFail, "CLITOKEX");
                 }
             } else {
-                Sm.PostEvent (SmEvt.E.HardFail, "CLITOKNOTOK");
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "CLITOKNOTOK");
             }
         }
 
@@ -140,7 +140,7 @@ namespace NachoClient.iOS
             ser.WriteObject (jsonStream, requestJson);
             HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, "https://nco9.com/start-session");
             request.Content = new StreamContent (jsonStream);
-            var response = await Client.SendAsync (request, ctoken);
+            //var response = await Client.SendAsync (request, ctoken);
             // FIXME try/catch +/-.
         }
 
@@ -150,7 +150,7 @@ namespace NachoClient.iOS
             var b64tok = Convert.ToBase64String (deviceToken);
             if (null == existing && b64tok != existing) {
                 McMutables.Set (k_ios, k_devicetoken, b64tok);
-                Sm.PostEvent (PAEvt.E.DevTok, "SETDEVTOK");
+                Sm.PostEvent ((uint)PAEvt.E.DevTok, "SETDEVTOK");
             }
         }
 
