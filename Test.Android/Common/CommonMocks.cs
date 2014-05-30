@@ -156,7 +156,8 @@ namespace Test.iOS
 
     public class MockOwner : IProtoControlOwner
     {
-        public NcResult Status { get; set; }
+        // Helper property added for test purposes only
+        public static NcResult Status { get; set; }
 
         // Use these to check which error code was posted
         public void StatusInd (ProtoControl sender, NcResult status) {

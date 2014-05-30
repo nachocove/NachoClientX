@@ -63,14 +63,14 @@ namespace Test.iOS
         [TestFixture]
         public class BasicSuccessfulResponses : AsAutodiscoverCommandTest
         {
-//            [Test]
+            [Test]
             public void TestS1 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S1);
             }
 
-//            [Test]
+            [Test]
             public void TestS2 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -79,7 +79,7 @@ namespace Test.iOS
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
             // the HTTPS access following a DNS SRV lookup
-//            [Test]
+            [Test]
             public void TestS3 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -88,14 +88,14 @@ namespace Test.iOS
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
             // the HTTPS access following a DNS SRV lookup
-//            [Test]
+            [Test]
             public void TestS4 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S4);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, Action<NcStateMachine> provideSm = null)
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
@@ -125,7 +125,7 @@ namespace Test.iOS
         [TestFixture]
         public class TestStep5Responses : AsAutodiscoverCommandTest
         {
-//            [Test]
+            [Test]
             public void TestValidRedirectThenSuccess ()
             {
                 string redirUrl = CommonMockData.RedirectionUrl;
@@ -133,7 +133,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (true, xml, redirUrl, MockSteps.S3, sm => {});  
             }
 
-//            [Test]
+            [Test]
             public void TestValidRedirectThenFailure ()
             {
                 string redirUrl = CommonMockData.RedirectionUrl;
@@ -143,7 +143,7 @@ namespace Test.iOS
                 });
             }
 
-//            [Test]
+            [Test]
             public void TestInvalidRedirect ()
             {
                 string redirUrl = CommonMockData.InvalidRedirUrl;
@@ -216,8 +216,6 @@ namespace Test.iOS
         [TestFixture]
         public class AutodTestFailure : AsAutodiscoverCommandTest
         {
-            /* TODO: This test is failing because it does not retry enough times. Fix it!
-             */
             // Ensure that a server name test failure results in re-tries.
             [Test]
             public void TestFailureHasRetries ()
@@ -237,7 +235,7 @@ namespace Test.iOS
 
             // Ensure that a server name test failure results in the Owner being 
             // asked to supply a new server name.
-//            [Test]
+            [Test]
             public void AsksOwnerForServerNameOnFailure ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -297,7 +295,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
             }
 
-//            [Test]
+            [Test]
             public void NewCredsUponAuthFailureS3 ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -354,7 +352,6 @@ namespace Test.iOS
 
             MockHttpClient.AsyncCalledCount = 0; // reset counter
             MockHttpClient.ProvideHttpResponseMessage = null;
-            MockHttpClient.ExamineHttpRequestMessage = null;
             MockHttpClient.HasServerCertificate = null;
 
             autodCommand = null;
@@ -396,7 +393,6 @@ namespace Test.iOS
         {
             string redirUrl = CommonMockData.RedirectionUrl;
             string requestUri = request.RequestUri.ToString ();
-            Log.Info (Log.LOG_TEST, "RQSTURL: {0}", requestUri);
             string s1Uri = "https://" + CommonMockData.Host;
             string s2Uri = "https://autodiscover." + CommonMockData.Host;
             string getUri = "http://autodiscover." + CommonMockData.Host;
@@ -428,7 +424,7 @@ namespace Test.iOS
             return CommonMockData.AutodPhonyErrorResponse;
         }
 
-        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml, 
+        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
             Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
         {
             var interlock = new BlockingCollection<bool> ();
@@ -446,6 +442,8 @@ namespace Test.iOS
                 exposeDnsResponse (mockDnsQueryResponse);
                 return mockDnsQueryResponse;
             };
+
+            MockHttpClient.ExamineHttpRequestMessage = (request) => {};
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 string xml = provideXml (request);
@@ -476,12 +474,15 @@ namespace Test.iOS
 
             autodCommand = autod;
 
+
             bool didFinish = false;
+
             if (!interlock.TryTake (out didFinish, 8000)) {
                 Assert.Fail ("Failed in TryTake clause");
             }
             Assert.IsTrue (didFinish, "Autodiscovery operation should finish");
             Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
+
 
             // Test that the server record was updated
 //            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
