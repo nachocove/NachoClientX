@@ -350,12 +350,19 @@ namespace NachoClient
         {
             var size = new SizeF (40, 40);
             var origin = new PointF (0, 0);
+            var content = letters;
 
-            UIGraphics.BeginImageContext (size);
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
 
+            var contentString = new NSString (content);
+            var contentSize = contentString.StringSize (font);
             ctx.SetFillColor (color.CGColor);
-            ctx.FillRect (new RectangleF (origin, size));
+            ctx.FillEllipseInRect (new RectangleF (origin, size));
+            var rect = new RectangleF (0, ((40 - contentSize.Height) / 2) + 0, 40, contentSize.Height);
+
+            ctx.SetFillColorWithColor (UIColor.White.CGColor);
+            new NSString (content).DrawString (rect, font, UILineBreakMode.WordWrap, UITextAlignment.Center);
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
