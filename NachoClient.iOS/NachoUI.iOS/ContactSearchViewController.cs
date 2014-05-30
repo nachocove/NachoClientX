@@ -23,7 +23,7 @@ namespace NachoClient.iOS
     /// Handles search in an INachoContacts.
     /// Handles async search too.
     /// </summary>
-    public partial class ContactSearchViewController : UITableViewController
+    public partial class ContactSearchViewController : NcUITableViewController
     {
         // Interface
         public ContactChooserViewController owner;

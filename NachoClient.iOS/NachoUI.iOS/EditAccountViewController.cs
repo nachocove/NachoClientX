@@ -9,7 +9,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public class EditAccountViewController : DialogViewController
+    public class EditAccountViewController : NcDialogViewController
     {
         class AccountInfo
         {

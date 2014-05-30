@@ -9,7 +9,7 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class StartupViewController : UIViewController
+    public partial class StartupViewController : NcUIViewController
     {
         public StartupViewController (IntPtr handle) : base (handle)
         {

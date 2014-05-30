@@ -18,7 +18,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarItemViewController : DialogViewController, INachoCalendarItemEditor
+    public partial class CalendarItemViewController : NcDialogViewController, INachoCalendarItemEditor
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;

@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class HomePageController : UIViewController
+    public partial class HomePageController : NcUIViewController
     {
         //loads the HomePageController.xib file and connects it to this object
         public HomePageController (int pageIndex) : base ("HomePageController", null)

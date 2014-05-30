@@ -16,7 +16,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : UITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent
+    public partial class MessageListViewController : NcUITableViewController, IUITableViewDelegate, IUISearchDisplayDelegate, IUISearchBarDelegate, IUIScrollViewDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent
     {
         INachoEmailMessages messageThreads;
         // iOS Bug Workaround

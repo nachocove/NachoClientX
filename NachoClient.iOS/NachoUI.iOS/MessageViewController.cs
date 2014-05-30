@@ -19,7 +19,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : UIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
+    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         public McEmailMessageThread thread;
         protected UIView view;

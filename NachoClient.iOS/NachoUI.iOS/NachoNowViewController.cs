@@ -16,7 +16,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : UIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
+    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         List<object> hotList;
         INachoEmailMessages messageThreads;

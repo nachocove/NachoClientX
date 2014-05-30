@@ -10,7 +10,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class HomeViewController : UIViewController
+    public partial class HomeViewController : NcUIViewController
     {
         UIPageViewController pageController;
 

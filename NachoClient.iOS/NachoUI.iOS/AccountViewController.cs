@@ -12,7 +12,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountViewController : UITableViewController
+    public partial class AccountViewController : NcUITableViewController
     {
         public override void ViewDidLoad ()
         {

@@ -7,7 +7,7 @@ using MonoTouch.UIKit;
 
 namespace NachoClient.iOS
 {
-	public partial class CalendarSettingsViewController : UITableViewController
+    public partial class CalendarSettingsViewController : NcUITableViewController
 	{
 		public CalendarSettingsViewController (IntPtr handle) : base (handle)
 		{

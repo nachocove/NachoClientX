@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class SettingsViewController : DialogViewController
+    public partial class SettingsViewController : NcDialogViewController
     {
         public SettingsViewController (IntPtr handle) : base (handle)
         {

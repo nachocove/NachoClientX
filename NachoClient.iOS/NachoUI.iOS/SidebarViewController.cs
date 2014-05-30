@@ -15,7 +15,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class SidebarViewController : UIViewController
+    public partial class SidebarViewController : NcUIViewController
     {
         ///   cellIDs for segues
         ///      "SidebarToAccounts"
