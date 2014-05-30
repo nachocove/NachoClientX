@@ -847,6 +847,9 @@
     <Compile Include="NachoUI.iOS\ViewControllers\NcUITableViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcDialogViewController.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoFolderChooser.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\GatedMemoryStream.cs">
+      <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

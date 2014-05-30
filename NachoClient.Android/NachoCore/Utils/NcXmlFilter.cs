@@ -97,7 +97,7 @@ namespace NachoCore.Wbxml
 
         private void Walk (XNode node, NcXmlFilterState filterState, int level)
         {
-            filterState.Update (level, node, null);
+            filterState.Update (level, node);
             if (XmlNodeType.Element == node.NodeType) {
                 XElement element = (XElement)node;
                 for (XNode child = element.FirstNode; child != null; child = child.NextNode) {
@@ -167,6 +167,9 @@ namespace NachoCore.Wbxml
             }
         }
 
+        // Hold temporary WBXML stream
+        public GatedMemoryStream WbxmlBuffer;
+
         private NcXmlFilterSet FilterSet;
 
         private Stack<Frame> FilterStack;
@@ -203,6 +206,7 @@ namespace NachoCore.Wbxml
                 Wbxml = null;
                 XmlDoc = new XDocument ();
             }
+            WbxmlBuffer = new GatedMemoryStream ();
         }
 
         private Boolean IsElement (XNode node)
@@ -365,8 +369,9 @@ namespace NachoCore.Wbxml
             }
         }
 
-        public void Update (int level, XNode node, byte[] wbxml)
+        public void Update (int level, XNode node)
         {
+            byte[] wbxml = WbxmlBuffer.ReadAll ();
             if (null == FilterSet) {
                 // If the constructor is not given a valid filter set,
                 // the state machine is disabled. We 

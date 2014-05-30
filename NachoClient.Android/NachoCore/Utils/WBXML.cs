@@ -50,8 +50,6 @@ namespace NachoCore.Wbxml
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
             int level = 0;
 
-            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML, doFiltering ?? DEFAULT_FILTERING);
-
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
                 filter = new NcXmlFilterState (AsXmlFilterSet.Responses);
@@ -59,6 +57,8 @@ namespace NachoCore.Wbxml
                 filter = new NcXmlFilterState (null);
             }
             filter.Start ();
+
+            ASWBXMLByteQueue bytes = new ASWBXMLByteQueue (byteWBXML, filter.WbxmlBuffer);
 
             // Version is ignored
             byte version = bytes.Dequeue ();
@@ -82,7 +82,7 @@ namespace NachoCore.Wbxml
             if (stringTableLength != 0)
                 throw new InvalidDataException ("WBXML data contains a string table.");
 
-            bytes.GetRedactCopy ();
+            filter.WbxmlBuffer.ReadAll ();
 
             // Now we should be at the body of the data.
             // Add the declaration
@@ -109,8 +109,10 @@ namespace NachoCore.Wbxml
                         currentNode = currentNode.Parent;
                         NachoAssert.True (0 < level);
                         level--;
-                        bytes.RedactCopyEnabled = true;
-                        bytes.GetRedactCopy ();
+                        if (null != filter) {
+                            filter.WbxmlBuffer.Mode = GatedMemoryStream.WriteMode.NORMAL;
+                            filter.WbxmlBuffer.ReadAll ();
+                        }
                     } else {
                         //throw new InvalidDataException("END global token encountered out of sequence");
                     }
@@ -125,7 +127,7 @@ namespace NachoCore.Wbxml
                         newOpaqueNode = new XText (System.Text.Encoding.UTF8.GetString (OpaqueBytes));
                     }
                     currentNode.Add (newOpaqueNode);
-                    filter.Update (level, newOpaqueNode, bytes.GetRedactCopy ());
+                    filter.Update (level, newOpaqueNode);
 
                     //XmlCDataSection newOpaqueNode = xmlDoc.CreateCDataSection(bytes.DequeueString(CDATALength));
                     //currentNode.AppendChild(newOpaqueNode);
@@ -190,7 +192,7 @@ namespace NachoCore.Wbxml
                         newTextNode = new XText (bytes.DequeueString ());
                     }
                     currentNode.Add (newTextNode);
-                    filter.Update (level, newTextNode, bytes.GetRedactCopy ());
+                    filter.Update (level, newTextNode);
                     break;
                 // According to MS-ASWBXML, these features aren't used
                 case GlobalTokens.ENTITY:
@@ -235,10 +237,10 @@ namespace NachoCore.Wbxml
                     //newNode.Prefix = codePages[currentCodePage].Xmlns;
                     if (null == currentNode) {
                         XmlDoc.Add (newNode);
-                        filter.Update (level, newNode, bytes.GetRedactCopy ());
+                        filter.Update (level, newNode);
                     } else {
                         currentNode.Add (newNode);
-                        filter.Update (level, newNode, bytes.GetRedactCopy ());
+                        filter.Update (level, newNode);
                     }
                     // TODO - Currently, we create a copy of all dequeued bytes for XML filter state update.
                     // The problem is that XText or XCDATA node may have a lot of bytes. Creating a 
@@ -286,7 +288,7 @@ namespace NachoCore.Wbxml
                 // can hold and forward to the telemetry server.
                 Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
-                //Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
+                Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }
         }
 
@@ -343,8 +345,7 @@ namespace NachoCore.Wbxml
                 writer.Write (token);
 
                 if (null != filter) {
-                    // FIXME - add back in in filter code.
-                    // filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 }
 
                 if (null != fileAttr) {
@@ -420,7 +421,7 @@ namespace NachoCore.Wbxml
                 byteList.Add (token);
 
                 if (null != filter) {
-                    filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 }
 
                 if (null != fileAttr) {
@@ -440,23 +441,23 @@ namespace NachoCore.Wbxml
                 if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
                     byteList.AddRange (EncodeOpaque (text.Value));
-                    filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
                     byteList.AddRange (EncodeOpaque (Convert.ToBase64String 
                         (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value))));
-                    filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 } else {
                     byteList.Add ((byte)GlobalTokens.STR_I);
                     byteList.AddRange (EncodeString (text.Value));
-                    filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 }
                 break;
             case XmlNodeType.CDATA:
                 var cdata = (XCData)node;
                 byteList.Add ((byte)GlobalTokens.OPAQUE);
                 byteList.AddRange (EncodeOpaque (cdata.Value));
-                filter.Update (level, node, byteList.ToArray ());
+                filter.Update (level, node);
                 break;
             default:
                 break;
