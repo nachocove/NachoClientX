@@ -95,11 +95,16 @@ namespace NachoClient.iOS
                     NavigationController.PopViewControllerAnimated (true);
                     return;
                 }
-                if (CalendarItemEditorAction.edit == action) {
+                if (CalendarItemEditorAction.edit == action || CalendarItemEditorAction.view == action) {
                     c = item;
                     ReloadRoot (ShowDetail ());
                     return;
                 }
+//                if (CalendarItemEditorAction.view == action) {
+//                    c = item;
+//                    ReloadRoot (ShowDetail ());
+//                    return;
+//                }
                 NachoAssert.CaseError ();
             };
 
