@@ -110,8 +110,8 @@ namespace NachoCore.Wbxml
                         NachoAssert.True (0 < level);
                         level--;
                         if (null != filter) {
-                            filter.WbxmlBuffer.Mode = GatedMemoryStream.WriteMode.NORMAL;
                             filter.WbxmlBuffer.ReadAll ();
+                            filter.WbxmlBuffer.Mode = GatedMemoryStream.WriteMode.NORMAL;
                         }
                     } else {
                         //throw new InvalidDataException("END global token encountered out of sequence");
@@ -368,18 +368,18 @@ namespace NachoCore.Wbxml
                     writer.Write ((byte)GlobalTokens.OPAQUE);
                     byte[] opaque = EncodeOpaque (text.Value);
                     writer.Write (opaque);
-                    //FIXME filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
                     writer.Write ((byte)GlobalTokens.OPAQUE);
                     byte[] opaqueB64 = EncodeOpaque (Convert.ToBase64String 
                         (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value)));
                     writer.Write (opaqueB64);
-                    //FIXME filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 } else {
                     writer.Write ((byte)GlobalTokens.STR_I);
                     byte[] stringBytes = EncodeString (text.Value);
                     writer.Write (stringBytes);
-                    //FIXME filter.Update (level, node, byteList.ToArray ());
+                    filter.Update (level, node);
                 }
                 break;
 
@@ -388,7 +388,7 @@ namespace NachoCore.Wbxml
                 writer.Write ((byte)GlobalTokens.OPAQUE);
                 byte[] opaqueCdata = EncodeOpaque (cdata.Value);
                 writer.Write (opaqueCdata, 0, opaqueCdata.Length);
-                //FIXME filter.Update (level, node, byteList.ToArray ());
+                filter.Update (level, node);
                 break;
             default:
                 break;
