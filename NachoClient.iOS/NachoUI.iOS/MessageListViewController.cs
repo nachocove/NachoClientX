@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         protected UIFont Font_AvenirNextRegular14 = null;
         protected UIFont Font_AvenirNextMedium14 = null;
         protected UIFont Font_AvenirNextUltraLight32 = null;
+        protected UIFont Font_AvenirNextUltraLight24 = null;
         protected UIColor Color_999999 = null;
         protected UIColor Color_0F424C = null;
         protected UIColor Color_9B9B9B = null;
@@ -49,6 +50,7 @@ namespace NachoClient.iOS
             Font_AvenirNextRegular14 = UIFont.FromName ("AvenirNext-Regular", 14);
             Font_AvenirNextMedium14 = UIFont.FromName ("AvenirNext-Regular", 14);
             Font_AvenirNextUltraLight32 = UIFont.FromName ("AvenirNext-UltraLight", 32);
+            Font_AvenirNextUltraLight24 = UIFont.FromName ("AvenirNext-UltraLight", 24);
             Color_999999 = UIColor.FromRGB (0x99, 0x99, 0x99);
             Color_0F424C = UIColor.FromRGB (0x0f, 0x42, 0x4c);
             Color_9B9B9B = UIColor.FromRGB (0x9b, 0x9b, 0x9b);
@@ -655,7 +657,7 @@ namespace NachoClient.iOS
             // TODO: initials
             // TODO: user images
             var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            userImageView.Image = Util.LettersWithColor ("BP", UIColor.Blue, Font_AvenirNextUltraLight32);
+            userImageView.Image = Util.LettersWithColor ("BP", UIColor.LightGray, Font_AvenirNextUltraLight24);
 
             // User chili view
             var userChiliView = cell.ViewWithTag (USER_CHILI_TAG) as UIImageView;
