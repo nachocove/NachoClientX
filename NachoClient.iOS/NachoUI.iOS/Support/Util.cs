@@ -346,6 +346,22 @@ namespace NachoClient
             return image;
         }
 
+        public static UIImage LettersWithColor (string letters, UIColor color, UIFont font)
+        {
+            var size = new SizeF (40, 40);
+            var origin = new PointF (0, 0);
+
+            UIGraphics.BeginImageContext (size);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (color.CGColor);
+            ctx.FillRect (new RectangleF (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
         #endregion
     }
 }

@@ -13,13 +13,22 @@ namespace NachoClient.iOS
 	partial class MessageListViewController
 	{
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem cancelButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem composeButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem searchButton { get; set; }
@@ -29,6 +38,11 @@ namespace NachoClient.iOS
 			if (composeButton != null) {
 				composeButton.Dispose ();
 				composeButton = null;
+			}
+
+			if (nachoButton != null) {
+				nachoButton.Dispose ();
+				nachoButton = null;
 			}
 
 			if (revealButton != null) {
@@ -41,9 +55,19 @@ namespace NachoClient.iOS
 				searchButton = null;
 			}
 
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
+			if (deleteButton != null) {
+				deleteButton.Dispose ();
+				deleteButton = null;
+			}
+
+			if (saveButton != null) {
+				saveButton.Dispose ();
+				saveButton = null;
+			}
+
+			if (cancelButton != null) {
+				cancelButton.Dispose ();
+				cancelButton = null;
 			}
 		}
 	}

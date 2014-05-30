@@ -19,7 +19,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : UIViewController, INachoMessageEditorParent, INachoCalendarItemEditorParent
+    public partial class MessageViewController : UIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
     {
         public McEmailMessageThread thread;
         protected UIView view;
@@ -121,8 +121,7 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageViewToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
-                vc.thread = thread;
-                vc.SetOwner (this);
+                vc.SetOwner (this, thread);
             }
             if (segue.Identifier == "MessageViewToComposeView") {
                 var vc = (ComposeViewController)segue.DestinationViewController;
@@ -180,7 +179,27 @@ namespace NachoClient.iOS
             vc.SetOwner (null);
             vc.DismissCalendarItemEditor (true, null);
         }
-       
+
+        /// <summary>
+        /// INachoFolderChooser delegate
+        /// </summary>
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            MoveThisMessage (folder);
+            vc.SetOwner (null, null);
+            vc.DismissFolderChooser (false, new NSAction (delegate {
+                NavigationController.PopViewControllerAnimated (true);
+            }));
+        }
+
+        /// <summary>
+        /// INachoFolderChooser delegate
+        /// </summary>
+        public void DismissChildFolderChooser (INachoFolderChooser vc)
+        {
+            vc.DismissFolderChooser (true, null);
+        }
+
         void MarkAsRead ()
         {
             var account = NcModel.Instance.Db.Table<McAccount> ().First ();
@@ -200,6 +219,12 @@ namespace NachoClient.iOS
         {
             var m = thread.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (m);
+        }
+
+        public void MoveThisMessage (McFolder folder)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            NcEmailArchiver.Move (m, folder);
         }
 
         protected void CreateView ()
@@ -576,6 +601,5 @@ namespace NachoClient.iOS
                 PlatformHelpers.DownloadAttachment (a);
             }
         }
-
     }
 }
