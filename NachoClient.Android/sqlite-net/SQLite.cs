@@ -151,6 +151,7 @@ namespace SQLite
 
             // NACHO
             // SQLite3.Config (SQLite3.ConfigOption.Log, SQLite3.LogCallback, IntPtr.Zero);
+            SQLite3.Config (SQLite3.ConfigOption.Serialized);
             // NACHO
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
@@ -2791,6 +2792,9 @@ namespace SQLite
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_changes", CallingConvention=CallingConvention.Cdecl)]
 		public static extern int Changes (IntPtr db);
+
+        [DllImport("sqlite3", EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
+        public static extern int Threadsafe ();
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Prepare2 (IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);

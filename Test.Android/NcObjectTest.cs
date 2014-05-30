@@ -14,9 +14,8 @@ namespace Test.Android
     {
         public class TestDb : SQLiteConnection
         {
-            public TestDb () : base (System.IO.Path.GetTempFileName (), true)
+            public TestDb () : base (System.IO.Path.GetTempFileName (), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, true)
             {
-                ;
             }
         }
 
