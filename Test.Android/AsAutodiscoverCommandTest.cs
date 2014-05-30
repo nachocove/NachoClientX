@@ -351,7 +351,14 @@ namespace Test.iOS
             Log.Info (Log.LOG_TEST, "Setup began");
 
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+
+            MockHttpClient.AsyncCalledCount = 0; // reset counter
+            MockHttpClient.ProvideHttpResponseMessage = null;
+            MockHttpClient.ExamineHttpRequestMessage = null;
+            MockHttpClient.HasServerCertificate = null;
+
             autodCommand = null;
+            mockContext = null;
 
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
@@ -373,7 +380,8 @@ namespace Test.iOS
             mockContext.Server.UsedBefore = false;
             mockContext.Server.Id = 1;
 
-            var instance = ServerCertificatePeek.Instance;
+            // flush the certificate cache so it doesn't interfere with future tests
+            var instance = ServerCertificatePeek.Instance; // do this in case instance has not yet been created
             ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
@@ -381,14 +389,6 @@ namespace Test.iOS
         public void Teardown ()
         {
             Log.Info (Log.LOG_TEST, "Teardown began");
-
-            // flush the certificate cache so it doesn't interfere with future tests
-            var instance = ServerCertificatePeek.Instance; // do this in case instance has not yet been created
-            ServerCertificatePeek.TestOnlyFlushCache ();
-
-            MockHttpClient.AsyncCalledCount = 0; // reset counter
-            MockHttpClient.ProvideHttpResponseMessage = null;
-            MockHttpClient.HasServerCertificate = null;
         }
 
         // return good xml if the robot should pass, bad otherwise
@@ -446,8 +446,6 @@ namespace Test.iOS
                 exposeDnsResponse (mockDnsQueryResponse);
                 return mockDnsQueryResponse;
             };
-
-            MockHttpClient.ExamineHttpRequestMessage = (request) => {};
 
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 string xml = provideXml (request);
