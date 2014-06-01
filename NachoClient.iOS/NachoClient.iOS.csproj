@@ -11,6 +11,7 @@
     <RootNamespace>NachoClient.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <AssemblyName>NachoClientiOS</AssemblyName>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
     <DebugSymbols>true</DebugSymbols>
@@ -107,6 +108,7 @@
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
+    <BuildIpa>true</BuildIpa>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <DebugType>full</DebugType>
@@ -151,6 +153,8 @@
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
+    <IpaPackageName>
+    </IpaPackageName>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -172,6 +176,9 @@
     </Reference>
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="HockeyApp.iOS">
+      <HintPath>HockeyApp\hockeyappios-3.5.4.2\lib\ios\HockeyApp.iOS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -1013,10 +1020,6 @@
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Crashlytics\Crashlytics.iOS\Crashlytics.iOS.csproj">
-      <Project>{3A17C9D8-1191-49F1-871B-6F909D6AABA3}</Project>
-      <Name>Crashlytics.iOS</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Parse\Parse.iOS\Parse.iOS.csproj">
       <Project>{3D62A798-BABE-4639-B504-24E045E8B0A0}</Project>

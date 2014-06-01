@@ -1,3 +1,4 @@
+//#define CRASHLYTICS
 using System;
 using System.IO;
 using System.Linq;
@@ -5,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
+using System.Threading.Tasks;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
@@ -15,12 +17,16 @@ using NachoCore.Brain;
 using NachoPlatform;
 using NachoClient.iOS;
 using SQLite;
+#if (CRASHLYTICS)
 using CrashlyticsBinding;
+#endif
 using NachoCore.Wbxml;
 using MonoTouch.ObjCRuntime;
 using ParseBinding;
 using NachoClient.Build;
-
+#if (!CRASHLYTICS)
+using HockeyApp;
+#endif
 namespace NachoClient.iOS
 {
     // The UIApplicationDelegate for the application. This class is responsible for launching the
@@ -44,6 +50,7 @@ namespace NachoClient.iOS
         // iOS kills us after 30, so make sure we dont get there
         private const int KDefaultTimeoutSeconds = 25;
 
+        #if (CRASHLYTICS)
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -78,6 +85,7 @@ namespace NachoClient.iOS
             Marshal.FreeHGlobal (sigbus);
             Marshal.FreeHGlobal (sigsegv);
         }
+        #endif
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
@@ -102,7 +110,38 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint B");
 
+            #if (CRASHLYTICS)
             StartCrashReporting ();
+            #else
+            //We MUST wrap our setup in this block to wire up
+            // Mono's SIGSEGV and SIGBUS signals
+            HockeyApp.Setup.EnableCustomCrashReporting (() => {
+
+                //Get the shared instance
+                var manager = BITHockeyManager.SharedHockeyManager;
+
+                //Configure it to use our APP_ID
+                manager.Configure ("5f7134267a5c73933420a1f0efbdfcbf");
+
+                // Enable automatic reporting
+                manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
+                manager.CrashManager.EnableOnDeviceSymbolication = true;
+
+                //Start the manager
+                manager.StartManager ();
+
+                //Authenticate (there are other authentication options)
+                manager.Authenticator.AuthenticateInstallation ();
+
+                //Rethrow any unhandled .NET exceptions as native iOS
+                // exceptions so the stack traces appear nicely in HockeyApp
+                AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+                    Setup.ThrowExceptionAsNative(e.ExceptionObject);
+
+                TaskScheduler.UnobservedTaskException += (sender, e) =>
+                    Setup.ThrowExceptionAsNative(e.Exception);
+            });
+            #endif
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint C");
 
