@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>
+			Dashboard
+		</title>
+		<meta name="generator" content="TextMate http://macromates.com/">
+		<meta name="author" content="Stefan Fürst"><!-- Date: 2011-05-03 -->
+       
+ 		<link rel="stylesheet" type="text/css" href="bars.css" />     
+		<script type='text/javascript'>
+
+			var currentMonth;
+			var currentQuarter;
+			var currentYear;
+			
+			
+			function updateYear(theElement)
+			{
+				currentYear = theElement.value;
+				update();
+			}
+			
+			function updateQuarter(theElement)
+			{
+				currentQuarter = theElement.value;
+				update();
+			}
+			
+			function updateMonth(theElement)
+			{
+				currentMonth = theElement.value;
+				update();
+			}
+			
+			function update()
+			{   
+				
+				var aTotal = BITValues.crashesOpen() + BITValues.crashesResolved() + BITValues.crashesIgnored();
+				var aResolvedBar =  BITValues.crashesResolved() / aTotal;
+				var aIgnoredBar = BITValues.crashesIgnored() / aTotal
+				var aOpenBar =  BITValues.crashesOpen() / aTotal;
+				
+				document.getElementById('resolvedBar1').style.width = fixWidth(aResolvedBar * 100) + "%";
+				document.getElementById('resolvedBar1').style.left = "0%";
+				document.getElementById('resolvedBar1').title  = "Resolved: " + Math.round(aResolvedBar * 100)  + "%";
+				
+				document.getElementById('ignoredBar1').style.left = aResolvedBar * 100 + "%";
+				document.getElementById('ignoredBar1').style.width = fixWidth(aIgnoredBar * 100) + "%";
+				document.getElementById('ignoredBar1').title = "Ignored: " +  Math.round(aIgnoredBar * 100)  + "%";
+                
+				document.getElementById('openBar1').style.left = (aIgnoredBar + aResolvedBar) * 100 + "%";
+				document.getElementById('openBar1').style.width = fixWidth(aOpenBar * 100) + "%";
+				document.getElementById('openBar1').title = "Open: " + Math.round(aOpenBar * 100) + "%";
+                
+                
+               	aTotal = BITValues.groupsOpen() + BITValues.groupsResolved() + BITValues.groupsIgnored();
+			 	aResolvedBar =  BITValues.groupsResolved() / aTotal;
+				 aIgnoredBar = BITValues.groupsIgnored() / aTotal
+				 aOpenBar =  BITValues.groupsOpen() / aTotal;
+			
+                
+                            
+				document.getElementById('resolvedBar2').style.width = fixWidth(aResolvedBar * 100) + "%";
+				document.getElementById('resolvedBar2').style.left = "0%";
+				document.getElementById('resolvedBar2').title  = "Resolved: " + Math.round(aResolvedBar * 100) + "%";
+				
+				document.getElementById('ignoredBar2').style.left = aResolvedBar * 100 + "%";
+				document.getElementById('ignoredBar2').style.width = fixWidth(aIgnoredBar * 100) + "%";
+				document.getElementById('ignoredBar2').title = "Ignored: " +  Math.round(aIgnoredBar * 100) + "%";
+                
+				document.getElementById('openBar2').style.left = (aIgnoredBar + aResolvedBar) * 100 + "%";
+				document.getElementById('openBar2').style.width = fixWidth(aOpenBar * 100) + "%";
+				document.getElementById('openBar2').title = "Open: " + Math.round(aOpenBar * 100) + "%";
+				
+			}
+			
+			
+			function fixWidth(theWidth)
+			{
+				if (theWidth == 0)
+					return theWidth;
+				return Math.floor(theWidth) + 1;
+			}	
+				
+		</script>
+	</head>
+	<body onload='update()'>
+		<div class="item">
+			<div class='barContainer' >
+                <div class ='barlabel'>Crashes:</div>
+				<div class='bar'>
+					<div class='progressGreen' id="resolvedBar1" style='width:0%;'></div>
+					<div class='progressOrange' id="ignoredBar1" style='width:0%; left:0%'></div>
+					<div class='progressRed' id="openBar1" style='width:0%; left:0%'></div>
+					
+					
+				</div>
+			</div>
+		</div>
+			<div class="item">
+				<div class='barContainer' >
+                    <div class ='barlabel'>Groups:</div>
+
+					<div class='bar'>
+						<div class='progressGreen' id="resolvedBar2" style='width:0%;'></div>
+						<div class='progressOrange' id="ignoredBar2" style='width:0%; left:0%'></div>
+						<div class='progressRed' id="openBar2" style='width:0%; left:0%'></div>
+
+
+					</div>
+				</div>
+			</div>
+	
+		
+	</body>
+</html>

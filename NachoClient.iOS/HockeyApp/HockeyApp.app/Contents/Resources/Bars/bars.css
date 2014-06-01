@@ -1,0 +1,135 @@
+@media print { 
+	body { font-family: "Lucida Grande" }
+	select {
+	    padding-left: 12px;
+	    -webkit-appearance: menulist-text;
+	    background-position: 0px 0px;
+	}
+}
+@media screen { 
+	html { height: 100% }
+	body {
+	    position: absolute;
+	    margin: 0px 0px 0px 0px;
+	    background-color: #babec8;
+	    font-family: "Lucida Grande";
+	    background-color: #f3f3f3;
+	    float: left;
+	    font-size: 13px;
+	    line-height: 18px;
+	    width: 100%;
+	    text-shadow: rgba(255,255,255,0.3) 0px 1px 0px;
+	    -webkit-user-select: none;
+	    overflow: hidden;
+	}
+	select {
+	    padding-left: 12px;
+	    -webkit-appearance: menulist-text;
+	    background-position: 0px 0px;
+	    background-repeat: no-repeat;
+	    background-image: url(triangle_down.png);
+	    background-color: #f3f3f3;
+	}
+	div { cursor: default }
+	.item {
+	    font-weight: bold;
+	    position: relative;
+	    margin: 0px;
+	    background-color: #f3f3f3;
+	    padding: 10px;
+	    padding-top: 0px;
+	    padding-bottom: 0px;
+	    border-radius: 0px;
+	    overflow: hidden;
+	}
+}
+.barContainer { position: relative }
+.barDivider {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    width: 50%;
+    height: 100%;
+    border-right: solid 1px rgba(255,255,255,.8);
+    border-left: solid 1px rgba(0,0,0,.1);
+    background-color: #ddd;
+    z-index: 0;
+    border-radius: 0px 7px 7px 0px;
+}
+.barlabel {
+    position: absolute;
+    font-family: "Lucida Grande";
+    font-size: 11px;
+    color: #444;
+    text-shadow: rgba(255,255,255,1.0) 0px 1px 0px;
+}
+.bar {
+    -webkit-box-shadow: inset 0 0 10px #000000;
+    text-shadow: rgba(0,0,0,0.3) 0px -1px 0px;
+    color: white;
+    position: relative;
+    height: 16px;
+    margin-top: 10px;
+    margin-left: 60px;
+    border: 1px solid #555;
+    border-top: 1px solid #555;
+    z-index: 1;
+    -webkit-border-radius: 3px;
+    background-image: -webkit-gradient( linear, left bottom, left top, color-stop(1, rgb(70,70,70)), color-stop(0, rgb(100,100,100)) );
+    text-align: center;
+    overflow: hidden;
+}
+.labelLeft {
+    position: absolute;
+    width: 50%;
+    text-align: center;
+    font-weight: normal;
+    margin-top: 5px;
+}
+.labelCenter {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    font-weight: normal;
+    margin-top: 5px;
+}
+.labelRight {
+    position: relative;
+    left: 50%;
+    width: 50%;
+    text-align: center;
+    font-weight: normal;
+    margin-top: 5px;
+}
+.progressGreen {
+    position: absolute;
+    height: 100%;
+    background-image: -webkit-gradient( linear, left bottom, left top, color-stop(0,rgb(37,219,49) ), color-stop(1,rgb(45,138,67) ) );
+    /*-webkit-box-shadow: 5px 0px 10px rgba(0,0,0,.5);*/
+    /*-webkit-transition: width 0.5s ease-out;*/
+}
+
+
+
+.progressRed {
+    position: absolute;
+    height: 100%;
+    background-image: -webkit-gradient( linear, left bottom, left top, color-stop(0, rgb(219,37,37)), color-stop(1, rgb(138,45,45)) );
+    /*-webkit-box-shadow: 5px 0px 10px rgba(0,0,0,.5);*/
+    /*-webkit-transition: width 0.5s ease-out;*/
+}
+.progressOrange {
+    position: absolute;
+    height: 100%;
+   /* background-image: -webkit-gradient( linear, left bottom, left top, color-stop(0, #ffbd05), color-stop(1, #ca730c) );*/
+    
+      background-image: -webkit-gradient( linear, left bottom, left top, color-stop(0, #ddd), color-stop(1, #888) );
+    /*-	-webkit-box-shadow: 5px 0px 10px rgba(0,0,0,.5);*/
+}
+.progressCompare {
+    position: absolute;
+    height: 100%;
+    background-image: -webkit-gradient( linear, left bottom, left top, color-stop(0, rgb(222,222,222)), color-stop(1, rgb(150,150,150)) );
+    -webkit-transition: width .5s ease-out;
+    /*	-webkit-box-shadow: -5px 0px 10px rgba(0,0,0,.5);*/
+}
