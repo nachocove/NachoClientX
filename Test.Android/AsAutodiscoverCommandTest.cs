@@ -336,6 +336,76 @@ namespace Test.iOS
                 });
             }
         }
+
+        [TestFixture]
+        public class SingleTimeoutSuccess : AsAutodiscoverCommandTest
+        {
+            /* The timeout flag is ASHTTPTTC */
+
+            private void SetTimeoutConstants ()
+            {
+                McMutables.Set ("HTTPOP", "TimeoutSeconds", "3");
+            }
+
+            [Test]
+            public void TestS1 ()
+            {
+                SetTimeoutConstants ();
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+            }
+
+            [Test]
+            public void TestS2 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+            }
+
+            // Ensure that the Owner is called-back when a valid cert is encountered in
+            // the HTTPS access following a DNS SRV lookup
+            [Test]
+            public void TestS3 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+            }
+
+            // Ensure that the Owner is called-back when a valid cert is encountered in
+            // the HTTPS access following a DNS SRV lookup
+            [Test]
+            public void TestS4 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S4);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
+
+                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                    return PassRobotForStep (step, request, xml);
+                }, provideDnsResponse => {
+                    if (step == MockSteps.S4) {
+                        provideDnsResponse.ParseResponse (dnsByteArray);
+                    }
+                }, (httpRequest, httpResponse) => {
+                    // check for redirection and set the response to 302 (Found) if true
+                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
+
+                    // provide valid redirection headers if needed
+                    if (isRedirection) {
+                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                    } else {
+                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                    }
+                });
+            }
+        }
     }
 
     public class AsAutodiscoverCommandTest
@@ -350,9 +420,13 @@ namespace Test.iOS
 
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
 
+            MockDnsQueryRequest.ProvideDnsQueryResponseMessage = null;
+
             MockHttpClient.AsyncCalledCount = 0; // reset counter
+            MockHttpClient.ExamineHttpRequestMessage = null;
             MockHttpClient.ProvideHttpResponseMessage = null;
             MockHttpClient.HasServerCertificate = null;
+            MockNcCommStatus.Instance = null;
 
             autodCommand = null;
             mockContext = null;
@@ -470,10 +544,9 @@ namespace Test.iOS
             autod.DnsQueryRequestType = typeof(MockDnsQueryRequest);
             autod.HttpClientType = typeof(MockHttpClient);
 
-            autod.Execute (sm);
-
             autodCommand = autod;
 
+            autod.Execute (sm);
 
             bool didFinish = false;
 
