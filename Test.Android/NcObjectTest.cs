@@ -7,18 +7,10 @@ using NachoCore.Model;
 using NachoCore.ActiveSync;
 using SQLite;
 
-namespace Test.Android
+namespace Test.Common
 {
-    [TestFixture]
-    public class NcObjectTest
+    public class NcObjectTest : NcTestBase
     {
-
-        [SetUp]
-        public void Setup ()
-        {
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-        }
-
         [Test]
         public void NcItems ()
         {
