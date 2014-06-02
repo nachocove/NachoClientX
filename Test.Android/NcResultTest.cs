@@ -3,10 +3,9 @@ using NUnit.Framework;
 using NachoCore;
 using NachoCore.Utils;
 
-namespace Test.iOS
+namespace Test.Common
 {
-    [TestFixture]
-    public class NcResultTest
+    public class NcResultTest : NcTestBase
     {
         [Test]
         public void Result ()

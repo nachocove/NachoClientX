@@ -16,7 +16,7 @@
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
     <AssemblyName>Test.Android</AssemblyName>
-    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -72,7 +72,6 @@
     <Compile Include="NcCalendarTest.cs" />
     <Compile Include="LogTest.cs" />
     <Compile Include="NcResultTest.cs" />
-    <Compile Include="NcItemTest.cs" />
     <Compile Include="NcObjectTest.cs" />
     <Compile Include="NcContactTest.cs" />
     <Compile Include="AsHttpOperationTest.cs" />
@@ -83,6 +82,7 @@
     <Compile Include="Common\CommonMocks.cs" />
     <Compile Include="McMutablesTest.cs" />
     <Compile Include="McPendDepTest.cs" />
+    <Compile Include="NcTestBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

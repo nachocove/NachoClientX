@@ -10,17 +10,11 @@ using System.Reflection;
 using System.Collections;
 using SQLite;
 
-namespace Test.iOS
+namespace Test.Common
 {
     [TestFixture]
-    public class NcContactTest
+    public class NcContactTest : NcTestBase
     {
-        [SetUp]
-        public void Setup ()
-        {
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-        }
-
         public class MockDataSource : IBEContext
         {
             public IProtoControlOwner Owner { set; get; }

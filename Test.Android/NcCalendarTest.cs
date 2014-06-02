@@ -9,7 +9,7 @@ using NachoCore.ActiveSync;
 using System.Security.Cryptography.X509Certificates;
 using SQLite;
 
-namespace Test.iOS
+namespace Test.Common
 {
     public class MockDataSource : IBEContext
     {
@@ -76,15 +76,8 @@ namespace Test.iOS
         }
     }
 
-    [TestFixture]
-    public class NcCalendarTest
+    public class NcCalendarTest : NcTestBase
     {
-        [SetUp]
-        public void Setup ()
-        {
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-        }
-
         NachoCore.ActiveSync.AsHelpers c = new NachoCore.ActiveSync.AsHelpers ();
 
         public void GoodCompactDateTime (string compactDateTime, DateTime match)
@@ -206,9 +199,6 @@ namespace Test.iOS
         [Test]
         public void CalendarCategories ()
         {
-            // Start with a clean db
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-
             var c01 = new McCalendarCategory ("test");
             c01.ParentId = 5;
             c01.ParentType = McCalendarCategory.CALENDAR;
@@ -259,9 +249,6 @@ namespace Test.iOS
         [Test]
         public void CalendarAttendee ()
         {
-            // Start with a clean db
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-
             var c01 = new McAttendee ("Steve", "rascal2210@hotmail.com");
             c01.ParentId = 5;
             c01.Insert ();
@@ -322,9 +309,6 @@ namespace Test.iOS
         [Test]
         public void CalendarTimezoneDB ()
         {
-            // Start with a clean db
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-
             McTimeZone t01 = new McTimeZone ();
             t01.Bias = 10;
             t01.DaylightBias = 11;

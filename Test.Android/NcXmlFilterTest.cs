@@ -6,7 +6,7 @@ using NUnit.Framework;
 using NachoCore.Utils;
 using NachoCore.Wbxml;
 
-namespace Test.Android
+namespace Test.Common
 {
     public class NcXmlFilterTest
     {
