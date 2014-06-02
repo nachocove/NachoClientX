@@ -15,6 +15,12 @@ namespace Test.iOS
     [TestFixture]
     public class NcContactTest
     {
+        [SetUp]
+        public void Setup ()
+        {
+            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+        }
+
         public class MockDataSource : IBEContext
         {
             public IProtoControlOwner Owner { set; get; }
@@ -32,7 +38,6 @@ namespace Test.iOS
             public MockDataSource ()
             {
                 Owner = new MockProtoControlOwner ();
-                NcModel.Instance.Db = new TestDb ();
                 Account = new McAccount ();
                 Account.Id = 1;
             }

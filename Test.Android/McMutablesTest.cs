@@ -11,9 +11,10 @@ namespace Test.iOS
     [TestFixture]
     public class McMutablesTest
     {
-        public McMutablesTest ()
+        [SetUp]
+        public void Setup ()
         {
-            NcModel.Instance.Db = new TestDb ();
+            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
         }
 
         [Test]

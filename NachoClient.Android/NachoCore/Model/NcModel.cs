@@ -2,7 +2,10 @@
 //
 using SQLite;
 using System;
+using System.Collections.Concurrent;
+using System.Threading;
 using System.IO;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -11,24 +14,33 @@ namespace NachoCore.Model
         public string FilesDir { set; get; }
         public string AttachmentsDir { set; get; }
         public string BodiesDir { set; get; }
-        public SQLiteConnection Db { set; get; }
+        public string DbFileName { set; get; }
+        private string Documents { set; get; }
+        public SQLiteConnection Db { get
+            {
+                var threadId = Thread.CurrentThread.ManagedThreadId;
+                SQLiteConnection db = null;
+                if (!DbConns.TryGetValue (threadId, out db)) {
+                    db = new SQLiteConnection (DbFileName, 
+                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
+                        storeDateTimeAsTicks: true);
+                    DbConns.TryAdd (threadId, db);
+                }
+                return db;
+            } 
+        }
 
-        private string DbFileName;
+        private ConcurrentDictionary<int, SQLiteConnection> DbConns;
 
-        private NcModel ()
+        private void Initialize ()
         {
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            FilesDir = Path.Combine (documents, "files");
-            Directory.CreateDirectory (Path.Combine (documents, FilesDir));
-            AttachmentsDir = Path.Combine (documents, "attachments");
-            Directory.CreateDirectory (Path.Combine (documents, AttachmentsDir));
-            BodiesDir = Path.Combine (documents, "bodies");
-            Directory.CreateDirectory (Path.Combine (documents, BodiesDir));
-
-            DbFileName = Path.Combine (documents, "db");
-            Db = new SQLiteConnection (DbFileName, 
-                SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, 
-                storeDateTimeAsTicks: true);
+            FilesDir = Path.Combine (Documents, "files");
+            Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
+            AttachmentsDir = Path.Combine (Documents, "attachments");
+            Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
+            BodiesDir = Path.Combine (Documents, "bodies");
+            Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
+            DbConns = new ConcurrentDictionary<int, SQLiteConnection> ();
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
             Db.CreateTable<McMapFolderFolderEntry> ();
@@ -58,6 +70,13 @@ namespace NachoCore.Model
             Db.CreateTable<McMutables> ();
         }
 
+        private NcModel ()
+        {
+            Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            DbFileName = Path.Combine (Documents, "db");
+            Initialize ();
+        }
+
         private static volatile NcModel instance;
         private static object syncRoot = new Object ();
 
@@ -75,6 +94,12 @@ namespace NachoCore.Model
 
         public void Nop ()
         {
+        }
+
+        public void Reset (string dbFileName)
+        {
+            DbFileName = dbFileName;
+            Initialize ();
         }
     }
 }

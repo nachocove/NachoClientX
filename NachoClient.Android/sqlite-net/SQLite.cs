@@ -149,10 +149,14 @@ namespace SQLite
 
 			DatabasePath = databasePath;
 
-            // NACHO
+            /* NACHO - this code *should* not be nec.
             // SQLite3.Config (SQLite3.ConfigOption.Log, SQLite3.LogCallback, IntPtr.Zero);
-            SQLite3.Config (SQLite3.ConfigOption.Serialized);
-            // NACHO
+            if (SQLiteOpenFlags.FullMutex == (openFlags & SQLiteOpenFlags.FullMutex)) {
+                SQLite3.Config (SQLite3.ConfigOption.Serialized);
+            } else if (SQLiteOpenFlags.NoMutex == (openFlags & SQLiteOpenFlags.NoMutex)) {
+                SQLite3.Config (SQLite3.ConfigOption.MultiThread);
+            }
+            */
 #if NETFX_CORE
 			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
 #endif
@@ -177,7 +181,7 @@ namespace SQLite
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
 			
-			BusyTimeout = TimeSpan.FromSeconds (0.1);
+            BusyTimeout = TimeSpan.FromSeconds (1.0);
 		}
 		
 		static SQLiteConnection ()
