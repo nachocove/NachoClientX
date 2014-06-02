@@ -284,7 +284,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "App Did Enter Background");
             NcApplication.Instance.Stop ();
             var imageView = new UIImageView (Window.Frame);
-            imageView.Tag = 101;    // Give some decent tagvalue or keep a reference of imageView in self
+            imageView.Tag = 653;    // Give some decent tagvalue or keep a reference of imageView in self
             imageView.BackgroundColor = UIColor.Red;
             UIApplication.SharedApplication.KeyWindow.AddSubview (imageView);
             UIApplication.SharedApplication.KeyWindow.BringSubviewToFront (imageView);
@@ -293,9 +293,11 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "App Will Enter Foreground");
-            var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (101);
+            var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (653);
             if (null != imageView) {
                 imageView.RemoveFromSuperview ();
+            } else {
+                Log.Info (Log.LOG_LIFECYCLE, "App Will Enter Foreground failed to find red view");
             }
         }
         // Equivalent to applicationDidBecomeActive
