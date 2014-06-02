@@ -860,6 +860,10 @@
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\A.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Support\IMessageTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\CalendarTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Support\ICalendarTableViewSourceDelegate.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
@@ -987,6 +991,12 @@
     <BundleResource Include="Resources\navbar-icn-inbox.png" />
     <BundleResource Include="Resources\navbar-icn-inbox-active%402x.png" />
     <BundleResource Include="Resources\navbar-icn-inbox-active.png" />
+    <BundleResource Include="Resources\cal-close-grabber%402x.png" />
+    <BundleResource Include="Resources\cal-close-grabber.png" />
+    <BundleResource Include="Resources\cal-icn-phone%402x.png" />
+    <BundleResource Include="Resources\cal-icn-phone.png" />
+    <BundleResource Include="Resources\cal-icn-pin.png" />
+    <BundleResource Include="Resources\cal-icn-pin%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

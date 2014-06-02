@@ -233,6 +233,9 @@ namespace NachoCore.ActiveSync
                 case Xml.Email2.ConversationId:
                     emailMessage.ConversationId = child.Value;
                     break;
+                default:
+                    Log.Warn (Log.LOG_AS, "ProcessEmailItem UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+                    break;
                 }
             }
 

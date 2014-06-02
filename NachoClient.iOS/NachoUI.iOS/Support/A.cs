@@ -18,6 +18,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_0F424C = null;
         protected static UIColor _Color_9B9B9B = null;
         protected static UIColor _Color_FFFFFF = null;
+        protected static UIColor _Color_114645 = null;
 
         public A ()
         {
@@ -107,11 +108,18 @@ namespace NachoClient.iOS
         public static UIColor Color_FFFFFF {
             get {
                 if (null == _Color_FFFFFF) {
-
-
                     _Color_FFFFFF = UIColor.FromRGB (0xff, 0xff, 0xff);
                 }
                 return _Color_FFFFFF;
+            }
+        }
+
+        public static UIColor Color_114645 {
+            get {
+                if (null == _Color_114645) {
+                    _Color_114645 = UIColor.FromRGB (0x11, 0x46, 0x45);
+                }
+                return _Color_114645;
             }
         }
     }

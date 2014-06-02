@@ -267,7 +267,7 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcDeferUntil < ? " +
-                " ORDER BY e.ContentScore DESC, e.DateReceived DESC",
+                " ORDER BY e.ContentScore DESC, e.DateReceived DESC LIMIT 20",
                 accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
@@ -340,6 +340,13 @@ namespace NachoCore.Model
                 contactList.Add (contact);
             }
             return contactList;
+        }
+
+        public const int minHotScore = 1;
+
+        public bool isHot()
+        {
+            return (minHotScore < this.ContentScore);
         }
 
         public bool IsDeferred ()

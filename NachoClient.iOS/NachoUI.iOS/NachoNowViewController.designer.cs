@@ -13,7 +13,16 @@ namespace NachoClient.iOS
 	partial class NachoNowViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem calendarNowButton { get; set; }
+		MonoTouch.UIKit.UITableView calendarTableView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIImageView calendarThumbView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIView calendarView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem cancelButton { get; set; }
 
 		[Outlet]
 		iCarouselBinding.iCarousel carouselView { get; set; }
@@ -22,13 +31,10 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem composeButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem contactButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIView currentEventView { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem emailNowButton { get; set; }
+		MonoTouch.UIKit.UITableView inboxTableView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
@@ -37,13 +43,23 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem tasksNowButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (calendarNowButton != null) {
-				calendarNowButton.Dispose ();
-				calendarNowButton = null;
+			if (calendarTableView != null) {
+				calendarTableView.Dispose ();
+				calendarTableView = null;
+			}
+
+			if (calendarView != null) {
+				calendarView.Dispose ();
+				calendarView = null;
+			}
+
+			if (cancelButton != null) {
+				cancelButton.Dispose ();
+				cancelButton = null;
 			}
 
 			if (carouselView != null) {
@@ -51,19 +67,19 @@ namespace NachoClient.iOS
 				carouselView = null;
 			}
 
-			if (contactButton != null) {
-				contactButton.Dispose ();
-				contactButton = null;
+			if (composeButton != null) {
+				composeButton.Dispose ();
+				composeButton = null;
 			}
 
-			if (currentEventView != null) {
-				currentEventView.Dispose ();
-				currentEventView = null;
+			if (deleteButton != null) {
+				deleteButton.Dispose ();
+				deleteButton = null;
 			}
 
-			if (emailNowButton != null) {
-				emailNowButton.Dispose ();
-				emailNowButton = null;
+			if (inboxTableView != null) {
+				inboxTableView.Dispose ();
+				inboxTableView = null;
 			}
 
 			if (nachoButton != null) {
@@ -76,14 +92,14 @@ namespace NachoClient.iOS
 				revealButton = null;
 			}
 
-			if (tasksNowButton != null) {
-				tasksNowButton.Dispose ();
-				tasksNowButton = null;
+			if (saveButton != null) {
+				saveButton.Dispose ();
+				saveButton = null;
 			}
 
-			if (composeButton != null) {
-				composeButton.Dispose ();
-				composeButton = null;
+			if (calendarThumbView != null) {
+				calendarThumbView.Dispose ();
+				calendarThumbView = null;
 			}
 		}
 	}

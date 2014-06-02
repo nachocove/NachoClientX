@@ -28,65 +28,40 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <view contentMode="scaleToFill" id="JQi-Fy-VOe" userLabel="View - Current Event View">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="58"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                <subviews>
-                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="4" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Subject" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="fon-gi-ESl" userLabel="Label - Subject">
-                                        <rect key="frame" x="110" y="9" width="190" height="39"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <imageView userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="8GD-vi-sFs">
-                                        <rect key="frame" x="81" y="9" width="21" height="22"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    </imageView>
-                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="2" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Bottom" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Cqg-Ez-ph3">
-                                        <rect key="frame" x="15" y="27" width="58" height="21"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                        <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Top" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="jnG-7i-Owd">
-                                        <rect key="frame" x="15" y="9" width="58" height="21"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="5" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No event" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="tfJ-ZP-2nE" userLabel="Label - No event label">
-                                        <rect key="frame" x="0.0" y="17" width="320" height="21"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                </subviews>
+                            <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
+                                <rect key="frame" x="0.0" y="160" width="320" height="127"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
-                            <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
-                                <rect key="frame" x="0.0" y="66" width="320" height="306"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <view contentMode="scaleToFill" id="LK2-5y-My2" customClass="UITableView">
+                                <rect key="frame" x="20" y="305" width="285" height="111"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                            </view>
+                            <view contentMode="scaleToFill" id="Xjy-3n-xIA">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="112"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="cal-close-grabber.png" id="wZZ-JO-qCp">
+                                        <rect key="frame" x="0.0" y="87" width="320" height="25"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
+                                    </imageView>
+                                    <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="AA2-uw-Sad">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="87"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    </tableView>
+                                </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <toolbarItems>
-                        <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="jWS-vv-VcN"/>
-                        <barButtonItem image="ic_action_email.png" id="Q8j-Ms-eXM" userLabel="Bar Button Item - Email"/>
-                        <barButtonItem style="plain" systemItem="flexibleSpace" id="jJF-li-rLp"/>
-                        <barButtonItem image="ic_action_event.png" id="ab3-Ei-AkG" userLabel="Bar Button Item - Calendar"/>
-                        <barButtonItem style="plain" systemItem="flexibleSpace" id="kcD-hH-aQ2"/>
-                        <barButtonItem image="ic_action_time.png" id="llx-zm-FnK" userLabel="Bar Button Item - Tasks"/>
-                        <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="U1f-bf-kbg"/>
-                    </toolbarItems>
+                    <toolbarItems/>
                     <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
                         <barButtonItem key="rightBarButtonItem" systemItem="compose" id="HwW-s6-dM7">
@@ -97,17 +72,19 @@
                         </barButtonItem>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="calendarNowButton" destination="ab3-Ei-AkG" id="K9u-LA-BLa"/>
+                        <outlet property="calendarTableView" destination="AA2-uw-Sad" id="XvA-gG-im4"/>
+                        <outlet property="calendarThumbView" destination="wZZ-JO-qCp" id="Tqz-bx-MqT"/>
+                        <outlet property="calendarView" destination="Xjy-3n-xIA" id="H26-sA-fEv"/>
+                        <outlet property="cancelButton" destination="oqK-FW-0L1" id="G9e-ty-vGO"/>
                         <outlet property="carouselView" destination="y3I-K7-FUQ" id="T7e-1d-zpR"/>
                         <outlet property="composeButton" destination="HwW-s6-dM7" id="Pm7-Ew-3AZ"/>
-                        <outlet property="contactButton" destination="XcW-kn-g9X" id="4Xs-dw-eFm"/>
-                        <outlet property="currentEventView" destination="JQi-Fy-VOe" id="fLr-gK-fgd"/>
-                        <outlet property="emailNowButton" destination="Q8j-Ms-eXM" id="b1o-hi-we7"/>
+                        <outlet property="deleteButton" destination="q2b-Qv-RwO" id="3UR-BJ-lwK"/>
+                        <outlet property="inboxTableView" destination="LK2-5y-My2" id="ldy-tx-2df"/>
                         <outlet property="nachoButton" destination="Mqq-sh-bns" id="fSw-0x-68Y"/>
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
-                        <outlet property="tasksNowButton" destination="llx-zm-FnK" id="e7O-OU-6Zo"/>
+                        <outlet property="saveButton" destination="Gfu-QM-YrL" id="6Hc-Oe-sAO"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="ef5-Td-j3Y" kind="push" identifier="NachoNowToCalendar" id="8JW-bP-0Qw"/>
@@ -119,8 +96,10 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="ic_action_group.png" id="XcW-kn-g9X" userLabel="Bar Button Item - Contacts"/>
-                <barButtonItem title="Item" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
+                <barButtonItem image="navbar-icn-inbox-active.png" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
+                <barButtonItem systemItem="trash" id="q2b-Qv-RwO" userLabel="Bar Button Item - Delete"/>
+                <barButtonItem systemItem="save" id="Gfu-QM-YrL" userLabel="Bar Button Item - Save"/>
+                <barButtonItem systemItem="cancel" id="oqK-FW-0L1" userLabel="Bar Button Item - Cancel"/>
             </objects>
             <point key="canvasLocation" x="-2205" y="-1910"/>
         </scene>
@@ -1082,7 +1061,7 @@
                 </barButtonItem>
                 <barButtonItem image="Nacho-Cove-Icon.png" id="lwb-Kh-Nak" userLabel="Bar Button Item - Nacho"/>
                 <barButtonItem image="navbar-icn-menu.png" id="2XU-yE-OMg" userLabel="Bar Button Item - Reveal"/>
-                <barButtonItem systemItem="stop" id="s53-5r-Ts6" userLabel="Bar Button Item - Delete"/>
+                <barButtonItem systemItem="trash" id="s53-5r-Ts6" userLabel="Bar Button Item - Delete"/>
                 <barButtonItem systemItem="save" id="vFg-TU-IRT"/>
                 <barButtonItem systemItem="cancel" id="JBa-CL-cDv" userLabel="Bar Button Item - Cancel"/>
             </objects>
@@ -1126,7 +1105,7 @@
                     </connections>
                 </viewController>
                 <barButtonItem image="clock.png" id="IfT-j6-Bb4" userLabel="Bar Button Item - Clock"/>
-                <barButtonItem systemItem="stop" id="Zr2-lX-3VI"/>
+                <barButtonItem systemItem="trash" id="Zr2-lX-3VI"/>
                 <barButtonItem image="check.png" id="48s-Jx-T9s" userLabel="Bar Button Item - Check"/>
                 <barButtonItem image="ic_action_collection.png" id="U02-SH-VHC" userLabel="Bar Button Item - Folders"/>
                 <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="5C3-Gh-DbC">
@@ -1484,16 +1463,14 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </scenes>
     <resources>
         <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
+        <image name="cal-close-grabber.png" width="36" height="12"/>
         <image name="calendar-3-48.png" width="48" height="48"/>
         <image name="check.png" width="23" height="20"/>
         <image name="clock-3-48.png" width="48" height="48"/>
         <image name="clock.png" width="22" height="22"/>
         <image name="ic_action_collection.png" width="32" height="32"/>
-        <image name="ic_action_email.png" width="32" height="32"/>
-        <image name="ic_action_event.png" width="32" height="32"/>
-        <image name="ic_action_group.png" width="32" height="32"/>
-        <image name="ic_action_time.png" width="32" height="32"/>
         <image name="list.png" width="20" height="18"/>
+        <image name="navbar-icn-inbox-active.png" width="24" height="24"/>
         <image name="navbar-icn-menu.png" width="24" height="24"/>
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
     </resources>
@@ -1505,19 +1482,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="Oi3-nV-lAC"/>
-        <segue reference="6LT-Zj-XeH"/>
-        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="gkM-dU-I3K"/>
+        <segue reference="Rd3-YY-NMX"/>
         <segue reference="8JW-bP-0Qw"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="wNy-ed-w10"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="lVj-NH-yQq"/>
+        <segue reference="JWi-mA-RVD"/>
         <segue reference="nAp-rc-bND"/>
+        <segue reference="PxE-UU-EfC"/>
         <segue reference="P1G-aN-KBc"/>
         <segue reference="sGK-tB-hv0"/>
     </inferredMetricsTieBreakers>
