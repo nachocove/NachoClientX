@@ -74,7 +74,7 @@ namespace NachoClient.iOS
                 if (null == _Font_AvenirNextUltraLight24) {
                     _Font_AvenirNextUltraLight24 = UIFont.FromName ("AvenirNext-UltraLight", 24);
                 }
-                return _Font_AvenirNextDemiBold17;
+                return _Font_AvenirNextUltraLight24;
             }
         }
 
