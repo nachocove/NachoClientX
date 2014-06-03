@@ -998,6 +998,8 @@
     <BundleResource Include="Resources\cal-icn-phone.png" />
     <BundleResource Include="Resources\cal-icn-pin.png" />
     <BundleResource Include="Resources\cal-icn-pin%402x.png" />
+    <BundleResource Include="Resources\cal-open-grabber%402x.png" />
+    <BundleResource Include="Resources\cal-open-grabber.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

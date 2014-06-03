@@ -15,7 +15,7 @@ namespace NachoClient.iOS
     public class CalendarTableViewSource : UITableViewSource
     {
         INachoCalendar calendar;
-        public IMessageTableViewSourceDelegate owner;
+        public ICalendarTableViewSourceDelegate owner;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string CalendarEventReuseIdentifier = "CalendarEvent";
@@ -75,7 +75,8 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-
+            McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
+            owner.PerformSegueForDelegate ("NachoNowToCalendarItem", new SegueHolder (c));
         }
 
         protected const int SUBJECT_TAG = 101;
@@ -328,6 +329,17 @@ namespace NachoClient.iOS
         public void ArchiveThisMessage (int messageThreadIndex)
         {
            
+        }
+
+        public void ScrollToNow(UITableView tableView)
+        {
+            if (calendar.NumberOfDays () > 0) {
+                var i = calendar.IndexOfDate (DateTime.UtcNow);
+                if (i >= 0) {
+                    var p = NSIndexPath.FromItemSection (0, i);
+                    tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+                }
+            }
         }
     }
 }

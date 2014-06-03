@@ -2,6 +2,14 @@ import subprocess
 import json
 
 
+class HockeyAppError(Exception):
+    def __init__(self, desc):
+        self.desc = desc
+
+    def __str__(self):
+        return str(self.desc)
+
+
 class CurlCommand:
     """
     Simple wrapper around curl command. Instead of writing our own
@@ -49,6 +57,7 @@ class CurlCommand:
 
     def delete(self):
         self.params.extend(['-X', 'DELETE'])
+        return self
 
     def _command(self):
         return ['curl'] + self.params + [self.url_]
@@ -65,7 +74,10 @@ class CurlCommand:
             raise ValueError('URL is not set')
 
         output = subprocess.check_output(self._command())
-        return json.loads(output)
+        try:
+            return json.loads(output)
+        except ValueError:
+            return {}
 
 
 class HockeyApp:
@@ -100,11 +112,12 @@ class HockeyApp:
                       title=app_data['title'],
                       bundle_id=str(app_data['bundle_identifier']),
                       platform=str(app_data['platform']))
+            app.release_type = App.release_type_from_value(app_data['release_type'])
             app_list.append(app)
         return app_list
 
     def app(self, app_id):
-        return App(hockeyapp_obj=self, app_id=app_id)
+        return App(hockeyapp_obj=self, app_id=app_id).read()
 
     def delete_app(self, app_id):
         app = App(hockeyapp_obj=self, app_id=app_id)
@@ -112,26 +125,54 @@ class HockeyApp:
 
 
 class App:
-    def __init__(self, hockeyapp_obj, app_id,
-                 title=None, bundle_id=None, platform=None):
+    RELEASE_TYPES = {'beta': 0,
+                     'live': 1,
+                     'alpha': 2}
+
+    PLATFORMS = ('iOS', 'Android', 'Mac OS', 'Windows Phone')
+
+    @staticmethod
+    def check_release_type(release_type):
+        if release_type is not None and release_type not in App.RELEASE_TYPES:
+            raise ValueError('Invalid release type. Choices are: ' + ' '.join(App.RELEASE_TYPES.keys()))
+
+    @staticmethod
+    def check_platform(platform):
+        if platform is not None and platform not in App.PLATFORMS:
+            raise ValueError('Invalid platform type. Choices are: ' + ' '.join(App.PLATFORMS))
+
+    @staticmethod
+    def release_type_from_value(release_type_value):
+        for (type_, value) in App.RELEASE_TYPES.items():
+            if value != release_type_value:
+                continue
+            return type_
+        else:
+            raise ValueError('unknown release type value %s' % str(app.release_type))
+
+    def __init__(self, hockeyapp_obj, app_id=None,
+                 title=None, bundle_id=None, platform=None, release_type=None):
         assert isinstance(hockeyapp_obj, HockeyApp)
         self.hockeyapp_obj = hockeyapp_obj
         self.app_id = app_id
-        self.base_url = self.hockeyapp_obj.base_url + '/apps/' + app_id
+        if self.app_id is not None:
+            self.base_url = self.hockeyapp_obj.base_url + '/apps/' + self.app_id
+        else:
+            self.base_url = None
         self.title = title
         self.bundle_id = bundle_id
+        App.check_platform(platform)
         self.platform = platform
+        App.check_release_type(release_type)
+        self.release_type = release_type
 
-        if self.title is None or self.bundle_id is None or self.platform is None:
-            app_list = self.hockeyapp_obj.apps()
-            for app in app_list:
-                if app.app_id == self.app_id:
-                    self.title = app.title
-                    self.bundle_id = app.bundle_id
-                    self.platform = app.platform
-                    break
-            else:
-                raise ValueError('Unknown app id %s' % self.app_id)
+    def __eq__(self, other):
+        return (self.app_id == other.app_id and
+                self.base_url == other.base_url and
+                self.title == other.title and
+                self.bundle_id == other.bundle_id and
+                self.platform == other.platform and
+                self.release_type == other.release_type)
 
     def desc(self):
         return '<hockeyapp.App: %s %s [%s: %s]>' % (self.title, self.app_id, self.platform, self.bundle_id)
@@ -163,30 +204,74 @@ class App:
         Return a Version object that represents a single version of this app.
         """
         return Version(app_obj=self,
-                       version_id=version_id)
+                       version_id=version_id).read()
+
+    def create(self):
+        form_data = dict()
+        if self.title is None:
+            raise ValueError('title is not initialized')
+        else:
+            form_data['title'] = self.title
+        if self.bundle_id is None:
+            raise ValueError('bundle_id is not initialized')
+        else:
+            form_data['bundle_identifier'] = self.bundle_id
+        App.check_platform(self.platform)
+        if self.platform is not None:
+            form_data['platform'] = self.platform
+        App.check_release_type(self.release_type)
+        if self.release_type is not None:
+            form_data['release_type'] = App.RELEASE_TYPES[self.release_type]
+
+        response = self.hockeyapp_obj.command(self.hockeyapp_obj.base_url + '/apps/new', form_data).post().run()
+        if 'errors' in response:
+            raise HockeyAppError(response)
+        if 'public_identifier' not in response:
+            raise HockeyAppError('no public_identifier in response')
+        self.app_id = str(response['public_identifier'])
+        self.base_url = self.hockeyapp_obj.base_url + '/apps/' + self.app_id
+        return self
+
+    def read(self):
+        app_list = self.hockeyapp_obj.apps()
+        for app in app_list:
+            if app.app_id != self.app_id:
+                continue
+            self.title = app.title
+            self.bundle_id = app.bundle_id
+            self.platform = app.platform
+            self.release_type = app.release_type
+        else:
+            raise ValueError('Unknown app id %s' % self.app_id)
+        return self
 
     def delete(self):
         self.hockeyapp_obj.command(self.base_url).delete().run()
 
+    def find_version(self, version, short_version):
+        for version_obj in self.versions():
+            if version_obj.short_version == short_version and version_obj.version == version:
+                return version_obj
+        return None
+
 
 class Version:
-    def __init__(self, app_obj, version_id, version=None, short_version=None):
+    def __init__(self, app_obj, version_id=None, version=None, short_version=None):
         assert isinstance(app_obj, App)
         self.app_obj = app_obj
         self.version_id = version_id
-        self.base_url = self.app_obj.base_url + '/app_versions/' + str(self.version_id)
+        if self.version_id is not None:
+            self.base_url = self.app_obj.base_url + '/app_versions/' + str(self.version_id)
+        else:
+            self.base_url = None
         self.version = version
         self.short_version = short_version
 
-        if self.version is None or self.short_version is None:
-            version_list = self.app_obj.versions()
-            for version in version_list:
-                if version.version_id == self.version_id:
-                    self.version = version.version
-                    self.short_version = version.short_version
-                    break
-            else:
-                raise ValueError('Unknown version id %s for app id %s' % (self.version_id, self.app_obj.app_id))
+    def __eq__(self, other):
+        return (self.version_id == other.version_id and
+                self.version == other.version and
+                self.short_version == other.short_version and
+                self.base_url == other.base_url)
 
     def desc(self):
         return '<hockeyapp.Version: %s %s %s [%s: %s]>' % (self.short_version, self.version, self.version_id,
@@ -206,11 +291,36 @@ class Version:
         response = self.app_obj.hockeyapp_obj.command(self.base_url, form_data).put().run()
         return response
 
+    def create(self):
+        form_data = dict()
+        if self.version is None:
+            raise ValueError('version is not initialized')
+        else:
+            form_data['bundle_version'] = self.version
+        if self.short_version is None:
+            raise ValueError('short_version is not initialized')
+        else:
+            form_data['bundle_short_version'] = self.short_version
 
-if __name__ == '__main__':
-    ha = HockeyApp(api_token='92c7e2b0e98642f3b6ad1e3f6403924c')
-    apps = ha.apps()
-    print apps
-    versions = apps[0].versions()
-    print versions
-    versions[0].update('./NachoClientiOS.dSYM.zip')
+        response = self.app_obj.hockeyapp_obj.command(self.app_obj.base_url + '/app_versions/new', form_data).post().run()
+        if 'errors' in response:
+            raise HockeyAppError(response)
+        if 'id' not in response:
+            raise HockeyAppError('no id in response')
+        self.version_id = response['id']
+        self.base_url = self.app_obj.base_url + '/app_versions/' + str(self.version_id)
+        return self
+
+    def read(self):
+        version_list = self.app_obj.versions()
+        for version in version_list:
+            if version.version_id == self.version_id:
+                self.version = version.version
+                self.short_version = version.short_version
+                break
+        else:
+            raise ValueError('Unknown version id %s for app id %s' % (self.version_id, self.app_obj.app_id))
+        return self
+
+    def delete(self):
+        self.app_obj.hockeyapp_obj.command(self.base_url, {'strategy': 'purge'}).delete().run()
