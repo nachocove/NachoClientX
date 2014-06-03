@@ -21,3 +21,4 @@ NachoClient.*/.build_number
 Test.*/.build_number
 NachoClient.*/BuildInfo.cs
 NachoClient.*/LogSettings.cs
+*.pyc
