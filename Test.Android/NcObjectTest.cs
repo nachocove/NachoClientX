@@ -7,63 +7,42 @@ using NachoCore.Model;
 using NachoCore.ActiveSync;
 using SQLite;
 
-namespace Test.Android
+namespace Test.Common
 {
-    [TestFixture]
-    public class NcObjectTest
+    public class NcObjectTest : NcTestBase
     {
-        public class TestDb : SQLiteConnection
-        {
-            public TestDb () : base (System.IO.Path.GetTempFileName (), SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, true)
-            {
-            }
-        }
-
-        public class MyObject : McObject
-        {
-        }
-
         [Test]
         public void NcItems ()
         {
-            TestDb db = new TestDb ();
-
-            // Start with a clean db
-            db.CreateTable<MyObject> ();
-            db.DropTable<MyObject> ();
-
-            // Create a new db
-            db.CreateTable<MyObject> ();
-
             int r;
-            MyObject i = new MyObject ();
-            Assert.AreEqual (i.Id, 0);
+            McServer i = new McServer ();
+            Assert.True (i.Id == 0);
 
-            r = db.Insert (i);
+            r = i.Insert ();
             Assert.IsTrue (0 < r);
-            Assert.AreEqual (1, i.Id);
-            Assert.AreEqual (1, db.Table<MyObject> ().Count ());
+            Assert.True (1 == i.Id);
+            Assert.True (1 == NcModel.Instance.Db.Table<McServer> ().Count ());
 
             try {
-                r = db.Insert (i);
+                r = i.Insert ();
                 Assert.Fail ("Do not allow insertion if ID is set");
             } catch (NachoAssert.NachoAssertionFailure) {
                 // Don't allow duplicate 
             }
 
             i.Id = 0;
-            r = db.Insert (i);
+            r = i.Insert ();
             Assert.IsTrue (0 < r);
             Assert.AreEqual (2, i.Id);
-            Assert.AreEqual (2, db.Table<MyObject> ().Count ());
+            Assert.AreEqual (2, NcModel.Instance.Db.Table<McServer> ().Count ());
 
-            r = db.Update (i);
+            r = i.Update ();
             Assert.IsTrue (0 < r);
-            Assert.AreEqual (2, db.Table<MyObject> ().Count ());
+            Assert.AreEqual (2, NcModel.Instance.Db.Table<McServer> ().Count ());
 
             try {
                 i.Id = 0;
-                r = db.Update (i);
+                r = i.Update ();
                 Assert.Fail ("Do not allow update if ID is 0");
             } catch (NachoAssert.NachoAssertionFailure) {
                 // Don't allow duplicate 

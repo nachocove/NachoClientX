@@ -9,16 +9,10 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 
-namespace Test.iOS
+namespace Test.Common
 {
-    [TestFixture]
-    public class McPendDepTest
+    public class McPendDepTest : NcTestBase
     {
-        public McPendDepTest ()
-        {
-            NcModel.Instance.Db = new TestDb ();
-        }
-
         [Test]
         public void DepThenIndep ()
         {

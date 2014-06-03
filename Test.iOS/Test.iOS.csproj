@@ -124,9 +124,6 @@
     <Compile Include="..\Test.Android\NcResultTest.cs">
       <Link>NcResultTest.cs</Link>
     </Compile>
-    <Compile Include="..\Test.Android\NcItemTest.cs">
-      <Link>NcItemTest.cs</Link>
-    </Compile>
     <Compile Include="..\Test.Android\NcObjectTest.cs">
       <Link>NcObjectTest.cs</Link>
     </Compile>
@@ -155,6 +152,9 @@
     <Compile Include="..\Test.Android\McPendDepTest.cs">
       <Link>McPendDepTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcTestBase.cs">
+      <Link>Test.Android\NcTestBase.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -169,6 +169,7 @@
     <Folder Include="Resources\xsd\response\" />
     <Folder Include="Resources\xsd\request\" />
     <Folder Include="Resources\xsd\common\" />
+    <Folder Include="Test.Android\" />
   </ItemGroup>
   <ItemGroup>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">

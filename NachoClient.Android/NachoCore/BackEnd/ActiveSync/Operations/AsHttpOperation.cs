@@ -681,13 +681,14 @@ namespace NachoCore.ActiveSync
                     string value = null;
                     try {
                         value = response.Headers.GetValues (HeaderRetryAfter).First ();
-                        bestSecs = uint.Parse (value);
+                        bestSecs = (uint)double.Parse (value);
                     } catch {
                         try {
                             var when = DateTime.Parse (value);
                             var maybe_secs = when.Subtract(DateTime.UtcNow).Seconds;
                             bestSecs = ((maybe_secs > 0) ? (uint)maybe_secs : configuredSecs);
                         } catch (Exception ex) {
+                            Log.Info (Log.LOG_HTTP, "Rejected DateTime string: {0}", value);
                             Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
                             return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", bestSecs, "Could not parse Retry-After value.");
                         }

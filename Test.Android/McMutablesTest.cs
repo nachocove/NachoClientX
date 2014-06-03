@@ -6,16 +6,10 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 
-namespace Test.iOS
+namespace Test.Common
 {
-    [TestFixture]
-    public class McMutablesTest
+    public class McMutablesTest : NcTestBase
     {
-        public McMutablesTest ()
-        {
-            NcModel.Instance.Db = new TestDb ();
-        }
-
         [Test]
         public void Reset ()
         {

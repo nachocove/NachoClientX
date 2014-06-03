@@ -10,10 +10,10 @@ using System.Reflection;
 using System.Collections;
 using SQLite;
 
-namespace Test.iOS
+namespace Test.Common
 {
     [TestFixture]
-    public class NcContactTest
+    public class NcContactTest : NcTestBase
     {
         public class MockDataSource : IBEContext
         {
@@ -32,7 +32,6 @@ namespace Test.iOS
             public MockDataSource ()
             {
                 Owner = new MockProtoControlOwner ();
-                NcModel.Instance.Db = new TestDb ();
                 Account = new McAccount ();
                 Account.Id = 1;
             }

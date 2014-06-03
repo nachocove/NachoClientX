@@ -310,7 +310,7 @@ namespace Test.iOS
         {
             Log.Info (Log.LOG_TEST, "Setup began");
 
-            NcModel.Instance.Db = new TestDb ();
+            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
 
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
