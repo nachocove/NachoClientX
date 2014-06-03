@@ -139,7 +139,7 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint B");
 
-            //StartCrashReporting ();
+            StartCrashReporting ();
   
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint C");
 
