@@ -35,7 +35,7 @@ namespace Test.iOS
         // utopiasystems is used because they have an Autodiscover SRV response
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
         public static string Host = "utopiasystems.net";
-        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml";
+        public static string RedirectionUrl = "https://redir.utopiasystems.net./autodiscover/autodiscover.xml";
         public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
         public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
 

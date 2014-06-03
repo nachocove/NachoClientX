@@ -100,22 +100,27 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                bool hasRedirected = false;
+
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    return PassRobotForStep (step, request, xml);
+                    return XMLContentForStep (step, request, xml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
+                        step = MockSteps.S1; // S4 resolves to POST after DNS lookup
                     }
                 }, (httpRequest, httpResponse) => {
                     // check for redirection and set the response to 302 (Found) if true
                     bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
 
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
+                    if (isRedirection && !hasRedirected) {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        hasRedirected = true; // disable second redirection
+                        step = MockSteps.S1;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -161,7 +166,7 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (hasCert, sm => {
                     provideSm(sm);
                 }, request => {
-                    return PassRobotForStep (step, request, xml);
+                    return XMLContentForStep (step, request, xml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
                     // check for redirection and set the response to 302 (Found) if true
@@ -172,7 +177,7 @@ namespace Test.iOS
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", redirUrl);
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 }, testEndingDbState: false);
@@ -206,10 +211,10 @@ namespace Test.iOS
                 string mockResponseLength = xml.Length.ToString ();
 
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    return PassRobotForStep (step, request, xml);
+                    return XMLContentForStep (step, request, xml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
-                    httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                    httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
                     httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                 }, resultKind: errorKind, testEndingDbState:false);
             }
@@ -258,7 +263,7 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
                 }, request => {
-                    return PassRobotForStep (step, request, xml, optionsXml: optionsXml);
+                    return XMLContentForStep (step, request, xml, optionsXml: optionsXml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
@@ -276,7 +281,7 @@ namespace Test.iOS
                     } else if (isOptions) {
                         httpResponse.StatusCode = status;
                     } else {
-                        httpResponse.StatusCode = HttpStatusCode.OK;
+                        httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 }, testEndingDbState: false);
@@ -316,7 +321,7 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST_FAIL");
                 }, request => {
-                    return PassRobotForStep (step, request, xml, optionsXml: optionsXml);
+                    return XMLContentForStep (step, request, xml, optionsXml: optionsXml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
                     // check for OPTIONS header and set status code to Unauthorized to force auth failure
@@ -332,7 +337,7 @@ namespace Test.iOS
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Unauthorized;
                         hasProvidedCreds = true;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -387,22 +392,27 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                bool hasRedirected = false;
+
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    return PassRobotForStep (step, request, xml);
+                    return XMLContentForStep (step, request, xml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
+                        step = MockSteps.S1; // S4 resolves to POST after DNS lookup
                     }
                 }, (httpRequest, httpResponse) => {
                     // check for redirection and set the response to 302 (Found) if true
                     bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
 
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
+                    if (isRedirection && !hasRedirected) {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        hasRedirected = true; // disable second redirection
+                        step = MockSteps.S1;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -412,8 +422,8 @@ namespace Test.iOS
 
     public class AsAutodiscoverCommandTest
     {
-        public static AsAutodiscoverCommand autodCommand { get; set; }
-        public static MockContext mockContext { get; set; }
+        private static AsAutodiscoverCommand autodCommand { get; set; }
+        private static MockContext mockContext { get; set; }
 
         [SetUp]
         public void Setup ()
@@ -453,8 +463,43 @@ namespace Test.iOS
             ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
+        public System.Net.HttpStatusCode PassRobotForStep (MockSteps step, HttpRequestMessage request, HttpResponseMessage httpResponse)
+        {
+            string requestUri = request.RequestUri.ToString ();
+            string s1Uri = "https://" + CommonMockData.Host;
+            string s2Uri = "https://autodiscover." + CommonMockData.Host;
+
+            // always pass if the redirection url is given
+            if (requestUri == CommonMockData.RedirectionUrl) {
+                return System.Net.HttpStatusCode.OK;
+            }
+
+            bool giveOK = false;
+            switch (request.Method.ToString ()) {
+            case "POST":
+                if (step == MockSteps.S1 && requestUri.Substring (0, s1Uri.Length) == s1Uri) {
+                    giveOK = true;
+                } else if (step == MockSteps.S2 && requestUri.Substring (0, s2Uri.Length) == s2Uri) {
+                    giveOK = true;
+                }
+                break;
+            case "OPTIONS":
+                Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
+                string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
+                Assert.AreEqual ("12.0", protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
+                giveOK = true;
+                break;
+            }
+            if (giveOK) {
+                return System.Net.HttpStatusCode.OK;
+            } else {
+                return System.Net.HttpStatusCode.NotFound;
+            }
+        }
+
+
         // return good xml if the robot should pass, bad otherwise
-        public string PassRobotForStep (MockSteps step, HttpRequestMessage request, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
+        public string XMLContentForStep (MockSteps step, HttpRequestMessage request, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
         {
             string redirUrl = CommonMockData.RedirectionUrl;
             string requestUri = request.RequestUri.ToString ();
