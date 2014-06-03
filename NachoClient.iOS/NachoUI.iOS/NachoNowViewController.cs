@@ -96,7 +96,6 @@ namespace NachoClient.iOS
 
             inboxSource = new MessageTableViewSource ();
             inboxSource.owner = this;
-            inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
             inboxTableView.Source = inboxSource;
 
             calendarSource = new CalendarTableViewSource ();
@@ -140,11 +139,25 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             carouselView.ReloadData ();
+            inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
-        public override void ViewDidAppear (bool animated)
+        public override void ViewWillDisappear (bool animated)
         {
-            base.ViewDidAppear (animated);
+            base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                carouselView.ReloadData ();
+                inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
+                inboxTableView.ReloadData ();
+            }
         }
 
         protected void DisableGestureRecognizers ()
@@ -173,6 +186,7 @@ namespace NachoClient.iOS
 //            calendarTableView.ScrollToRow (NSIndexPath.FromRowSection (0, 0), UITableViewScrollPosition.Top, false);
             calendarView.Frame = calendarSmallSize ();
             calendarTableView.ScrollEnabled = false;
+            calendarThumbView.Image = UIImage.FromBundle ("cal-open-grabber");
 
             carouselView.Frame = carouselNormalSize ();
 
@@ -203,6 +217,8 @@ namespace NachoClient.iOS
             calendarView.Frame = calendarFullSize ();
             calendarTableView.ScrollEnabled = true;
             calendarThumbTapGestureRecognizer.Enabled = true;
+            calendarThumbView.Image = UIImage.FromBundle ("cal-close-grabber");
+
 
             carouselView.Frame = carouselSmallSize ();
         }
@@ -510,12 +526,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToContacts") {
                 return; // Nothing to do
             }
-            if (segue.Identifier == "NachoNowToMessageAction") {
-                var vc = (MessageActionViewController)segue.DestinationViewController;
-                var h = sender as SegueHolder;
-                vc.SetOwner (this, h);
-                return;
-            }
+
             if (segue.Identifier == "NachoNowToMessageList") {
                 var holder = (SegueHolder)sender;
                 var messageList = (INachoEmailMessages)holder.value;
@@ -523,22 +534,33 @@ namespace NachoClient.iOS
                 messageListViewController.SetEmailMessages (messageList);
                 return;
             }
-//            if (segue.Identifier == "NachoNowToMessageView") {
-//                var indexPath = (NSIndexPath)sender;
-//                var vc = (MessageViewController)segue.DestinationViewController;
-//                vc.thread = (McEmailMessageThread)hotList [indexPath.Row];
-//                return;
-//            }
-//            if (segue.Identifier == "NachoNowToMessagePriority") {
-//                var vc = (MessagePriorityViewController)segue.DestinationViewController;
-//                var indexPath = (NSIndexPath)sender;
-//                vc.thread = messageThreads.GetEmailThread (indexPath.Row);
-//                vc.SetOwner (this);
-//                return;
-//            }
+            if (segue.Identifier == "NachoNowToMessageView") {
+                var vc = (MessageViewController)segue.DestinationViewController;
+                var holder = (SegueHolder)sender;
+                vc.thread = holder.value as McEmailMessageThread;                
+                return;
+            }
+            if (segue.Identifier == "NachoNowToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                var holder = (SegueHolder)sender;
+                vc.thread = holder.value as McEmailMessageThread;
+                vc.SetOwner (this);
+                return;
+            }
+            if (segue.Identifier == "NachoNowToMessageAction") {
+                var vc = (MessageActionViewController)segue.DestinationViewController;
+                var h = sender as SegueHolder;
+                vc.SetOwner (this, h);
+                return;
+            }
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NachoAssert.CaseError ();
+        }
+
+        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
         }
 
         /// <summary>
@@ -595,6 +617,9 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
+        /// <summary>
+        /// INachoCalendarItemEditorParent delegate
+        /// </summary>
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
         {
             vc.SetOwner (null);

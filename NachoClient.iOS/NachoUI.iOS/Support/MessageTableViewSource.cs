@@ -12,7 +12,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class MessageTableViewSource : UITableViewSource
+    public class MessageTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
     {
         INachoEmailMessages messageThreads;
         protected const string UICellReuseIdentifier = "UICell";
@@ -79,9 +79,11 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            if (!MultiSelectActive ()) {
-//                PerformSegue ("MessageListToMessageView", indexPath);
+            if (MultiSelectActive ()) {
+                return;
             }
+            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+            owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
         }
 
         protected const int USER_IMAGE_TAG = 101;
@@ -166,8 +168,8 @@ namespace NachoClient.iOS
                     ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);
                 }
             }
-            if(null != owner) {
-                owner.MultiSelectToggle(this, allowMultiSelect && (0 != MultiSelect.Count));
+            if (null != owner) {
+                owner.MultiSelectToggle (this, allowMultiSelect && (0 != MultiSelect.Count));
             }
         }
 
@@ -182,9 +184,9 @@ namespace NachoClient.iOS
             MultiSelectToggle (tableView);
         }
 
-        public void MultiSelectEnable(UITableView tableView, bool enabled)
+        public void MultiSelectEnable (UITableView tableView, bool enabled)
         {
-            if(allowMultiSelect == enabled) {
+            if (allowMultiSelect == enabled) {
                 return; // no change
             }
             allowMultiSelect = enabled;
@@ -373,7 +375,7 @@ namespace NachoClient.iOS
 
             // User chili view
             var userChiliView = cell.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            userChiliView.Hidden = !message.isHot();
+            userChiliView.Hidden = !message.isHot ();
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
@@ -432,14 +434,14 @@ namespace NachoClient.iOS
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
-            ConfigureSwipes (cell as MCSwipeTableViewCell, messageThreadIndex);
+            ConfigureSwipes (cell as MCSwipeTableViewCell, messageThread);
             ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);
         }
 
         /// <summary>
         /// Configures the swipes.
         /// </summary>
-        void ConfigureSwipes (MCSwipeTableViewCell cell, int messageThreadIndex)
+        void ConfigureSwipes (MCSwipeTableViewCell cell, McEmailMessageThread messageThread)
         {
             cell.FirstTrigger = 0.20f;
             cell.SecondTrigger = 0.50f;
@@ -458,22 +460,24 @@ namespace NachoClient.iOS
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     Console.WriteLine ("Did swipe Checkmark cell");
-                    ArchiveThisMessage (messageThreadIndex);
+                    ArchiveThisMessage (messageThread);
                 });
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    DeleteThisMessage (messageThreadIndex);
+                    DeleteThisMessage (messageThread);
                 });
                 clockView = ViewWithImageName ("clock");
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-//                    PerformSegue ("MessageToMessagePriority", new SegueHolder (messageThreadIndex));
+                    ShowPriorityChooser (messageThread);
+                    return;
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-//                    PerformSegue ("MessageToMessageAction", new SegueHolder (messageThreadIndex));
+                    ShowFileChooser (messageThread);
+                    return;
                 });
             } finally {
                 if (null != checkView) {
@@ -530,28 +534,25 @@ namespace NachoClient.iOS
                 MultiSelectMove (tableView, folder);
             } else {
                 var h = cookie as SegueHolder;
-                var messageThreadIndex = (int)h.value;
-                MoveThisMessage (messageThreadIndex, folder);
+                var messageThread = (McEmailMessageThread)h.value;
+                MoveThisMessage (messageThread, folder);
             }
         }
 
-        public void MoveThisMessage (int messageThreadIndex, McFolder folder)
+        public void MoveThisMessage (McEmailMessageThread messageThread, McFolder folder)
         {
-            var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Move (message, folder);
         }
-            
-        public void DeleteThisMessage (int messageThreadIndex)
+
+        public void DeleteThisMessage (McEmailMessageThread messageThread)
         {
-            var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (message);
         }
 
-        public void ArchiveThisMessage (int messageThreadIndex)
+        public void ArchiveThisMessage (McEmailMessageThread messageThread)
         {
-            var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (message);
         }
@@ -559,7 +560,7 @@ namespace NachoClient.iOS
         public void MultiSelectDelete (UITableView tableView)
         {
             foreach (var messageThreadIndex in MultiSelect) {
-                DeleteThisMessage (messageThreadIndex);
+                DeleteThisMessage (messageThreads.GetEmailThread(messageThreadIndex));
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
@@ -568,10 +569,60 @@ namespace NachoClient.iOS
         public void MultiSelectMove (UITableView tableView, McFolder folder)
         {
             foreach (var messageThreadIndex in MultiSelect) {
-                MoveThisMessage (messageThreadIndex, folder);
+                MoveThisMessage (messageThreads.GetEmailThread(messageThreadIndex), folder);
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
+        }
+
+        /// <summary>
+        /// INachoMessageEditor delegate
+        /// </summary>
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
+        {
+            vc.DismissMessageEditor (true, null);
+        }
+
+        /// <summary>
+        /// INachoMessageEditor delegate
+        /// </summary>
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateTaskForEmailMessage");
+        }
+
+        /// <summary>
+        /// INachoMessageEditor delegate
+        /// </summary>
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            Log.Info (Log.LOG_UI, "MessageTableViewSource: CreateMeetingEmailForMessage");
+        }
+
+        /// <summary>
+        /// INachoFolderChooserParent delegate
+        /// </summary>
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            Log.Info (Log.LOG_UI, "MessageTableViewSource: FolderSelected");
+        }
+
+        /// <summary>
+        /// INachoFolderChooserParent delegate
+        /// </summary>
+        public void DismissChildFolderChooser (INachoFolderChooser vc)
+        {
+            vc.DismissFolderChooser (true, null);
+        }
+
+        protected void ShowPriorityChooser (McEmailMessageThread messageThread)
+        {
+            owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+        }
+
+        protected void ShowFileChooser (McEmailMessageThread messageThread)
+        {
+            owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
         }
     }
 }
