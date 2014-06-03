@@ -186,19 +186,21 @@ namespace Test.iOS
             [Test]
             public void Test600ErrorCode ()
             {
+                var errorKind600 = NcResult.SubKindEnum.Error_AutoDError600;
                 string xml = CommonMockData.AutodPhony600Response;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, errorKind600);
             }
 
             // 601 = Requested schema version not supported
             [Test]
             public void Test601ErrorCode ()
             {
+                var errorKind601 = NcResult.SubKindEnum.Error_AutoDError600;
                 string xml = CommonMockData.AutodPhony601Response;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, errorKind601);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, NcResult.SubKindEnum errorKind)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
@@ -209,7 +211,7 @@ namespace Test.iOS
                 }, (httpRequest, httpResponse) => {
                     httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
                     httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                });
+                }, resultKind: errorKind);
             }
         }
 
@@ -499,7 +501,8 @@ namespace Test.iOS
         }
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
-            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
+            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
+            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified)
         {
             var interlock = new BlockingCollection<bool> ();
 
@@ -551,11 +554,14 @@ namespace Test.iOS
             bool didFinish = false;
 
             if (!interlock.TryTake (out didFinish, 8000)) {
+                if (resultKind == MockOwner.Status.SubKind) {
+                    return;
+                }
+
                 Assert.Fail ("Failed in TryTake clause");
             }
             Assert.IsTrue (didFinish, "Autodiscovery operation should finish");
             Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
-
 
             // Test that the server record was updated
 //            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
