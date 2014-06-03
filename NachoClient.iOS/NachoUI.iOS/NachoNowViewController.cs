@@ -16,7 +16,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, IMessageTableViewSourceDelegate
+    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, IMessageTableViewSourceDelegate, ICalendarTableViewSourceDelegate
     {
         public bool wrap = false;
         protected INachoEmailMessages priorityInbox;
@@ -159,6 +159,10 @@ namespace NachoClient.iOS
                 inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
                 inboxTableView.ReloadData ();
             }
+            if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
+                NcCalendarManager.Instance.Refresh ();
+                calendarTableView.ReloadData ();
+            }
         }
 
         protected void DisableGestureRecognizers ()
@@ -188,6 +192,7 @@ namespace NachoClient.iOS
             calendarView.Frame = calendarSmallSize ();
             calendarTableView.ScrollEnabled = false;
             calendarThumbView.Image = UIImage.FromBundle ("cal-open-grabber");
+            calendarSource.ScrollToNow (calendarTableView);
 
             carouselView.Frame = carouselNormalSize ();
 
