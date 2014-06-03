@@ -50,7 +50,6 @@ namespace NachoClient.iOS
         // iOS kills us after 30, so make sure we dont get there
         private const int KDefaultTimeoutSeconds = 25;
 
-        #if (CRASHLYTICS)
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -60,10 +59,11 @@ namespace NachoClient.iOS
                 //
                 // For an explanation, see:
                 // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
-                Log.Info (Log.LOG_INIT, "Crashlytics is disabled on simulator");
+                Log.Info (Log.LOG_INIT, "Crash reporting is disabled on simulator");
                 return;
             }
 
+            #if (CRASHLYTICS)
             // Debugger is causing Crashlytics to crash the app. See the following as a solution
             // http://stackoverflow.com/questions/14499334/how-to-prevent-ios-crash-reporters-from-crashing-monotouch-apps
             IntPtr sigbus = Marshal.AllocHGlobal (512);
@@ -84,34 +84,6 @@ namespace NachoClient.iOS
 
             Marshal.FreeHGlobal (sigbus);
             Marshal.FreeHGlobal (sigsegv);
-        }
-        #endif
-
-        public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
-        {
-            application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
-
-            UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
-
-            var navigationTitleTextAttributes = new UITextAttributes ();
-            navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
-            navigationTitleTextAttributes.TextColor = A.Color_FFFFFF;
-            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
-            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
-
-            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
-
-            NcApplication.Instance.CredReqCallback = CredReqCallback;
-            NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
-            NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
-            UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
-
-            application.ApplicationIconBadgeNumber = 0;
-
-            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint B");
-
-            #if (CRASHLYTICS)
-            StartCrashReporting ();
             #else
             //We MUST wrap our setup in this block to wire up
             // Mono's SIGSEGV and SIGBUS signals
@@ -142,7 +114,33 @@ namespace NachoClient.iOS
                     Setup.ThrowExceptionAsNative(e.Exception);
             });
             #endif
+        }
 
+        public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
+        {
+            application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
+
+            UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
+
+            var navigationTitleTextAttributes = new UITextAttributes ();
+            navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
+            navigationTitleTextAttributes.TextColor = A.Color_FFFFFF;
+            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
+            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
+
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint A");
+
+            NcApplication.Instance.CredReqCallback = CredReqCallback;
+            NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
+            NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
+            UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
+
+            application.ApplicationIconBadgeNumber = 0;
+
+            Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint B");
+
+            //StartCrashReporting ();
+  
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint C");
 
             Telemetry.SharedInstance.Start<TelemetryBEParse> ();
