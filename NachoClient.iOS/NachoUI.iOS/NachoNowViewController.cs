@@ -140,6 +140,7 @@ namespace NachoClient.iOS
             }
             carouselView.ReloadData ();
             inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
+            inboxTableView.ReloadData ();
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
