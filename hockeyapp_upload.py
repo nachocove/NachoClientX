@@ -77,13 +77,14 @@ class HockeyappUploadIos(HockeyappUpload):
         plistlib.writePlist(dsym_info_plist, dsym_info_plist_path)
 
     def find_version(self):
-        version_list = self.app_obj.versions()
-        for version in version_list:
-            if version.version == self.version and version.short_version == self.short_version:
-                self.version_obj = version
-                break
-        else:
-            raise ValueError('unknown version %s %s' % (self.short_version, self.version))
+        self.version_obj = self.app_obj.find_version(version=self.version, short_version=self.short_version)
+        if self.version_obj is None:
+            print 'Creating version %s %s' % (self.short_version, self.version)
+            self.version_obj = hockeyapp.Version(self.app_obj,
+                                                 version=self.version,
+                                                 short_version=self.short_version)
+            self.version_obj.create()
+        assert self.version_obj.version_id is not None
 
 
 def main():
