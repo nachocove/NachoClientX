@@ -132,6 +132,8 @@ namespace NachoCore.Utils
         private Dictionary<string,uint> EventCode;
         private Dictionary<uint,string> EventName;
         private BlockingCollection<Event> EventQ;
+        private Object LockObj;
+        private bool InProcess;
         // Static.
         private static int NextId = 0;
         private static Object StaticLockObj = new Object ();
@@ -147,9 +149,7 @@ namespace NachoCore.Utils
             PseudoKlass = pseudoKlass;
             EventQ = new BlockingCollection<Event> ();
             State = (uint)St.Start;
-            Task.Run (delegate {
-                FireLoop ();
-            });
+            LockObj = new Object ();
         }
 
         public string NameAndId ()
@@ -211,54 +211,80 @@ namespace NachoCore.Utils
         {
             BuildEventDicts ();
 
-            if ((uint)SmEvt.Sequence == smEvent.EventCode) {
-                NachoAssert.True (null != smEvent.Sequence && 0 < smEvent.Sequence.Length);
-                foreach (var subSmEvent in smEvent.Sequence) {
-                    EventQ.Add (subSmEvent);
+            lock (LockObj) {
+                // Enter critical section.
+                if ((uint)SmEvt.Sequence == smEvent.EventCode) {
+                    NachoAssert.True (null != smEvent.Sequence && 0 < smEvent.Sequence.Length);
+                    foreach (var subSmEvent in smEvent.Sequence) {
+                        EventQ.Add (subSmEvent);
+                    }
+                } else {
+                    NachoAssert.True (null == smEvent.Sequence);
+                    EventQ.Add (smEvent);
                 }
-            } else {
-                NachoAssert.True (null == smEvent.Sequence);
-                EventQ.Add (smEvent);
+                if (InProcess) {
+                    // If another thread is already working on this SM, then let it process
+                    // the event we just added to the Q.
+                    return;
+                }
+                // There isn't another thread already working, so we will be the working thread.
+                InProcess = true;
+                // Exit crticial section.
             }
+            FireLoop ();
         }
-
+        // It is critical that InProcess be false when we return from this function!
         private void FireLoop ()
         {
             while (true) {
-                var fireEvent = (Event)EventQ.Take ();
-                FireEventCode = fireEvent.EventCode;
-                Arg = fireEvent.Arg;
-                Message = fireEvent.Message;
-                if ((uint)St.Stop == State) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    continue;
+                try {
+                    var fireEvent = (Event)EventQ.Take ();
+                    FireEventCode = fireEvent.EventCode;
+                    Arg = fireEvent.Arg;
+                    Message = fireEvent.Message;
+                    if ((uint)St.Stop == State) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
+                    var hotNode = TransTable.Where (x => State == x.State).Single ();
+                    if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
+                    if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
+                        Log.Error (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
+                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                    Action = hotTrans.Act;
+                    NextState = hotTrans.State;
+                    Action ();
+                    var oldState = State;
+                    State = NextState;
+                    if (oldState != State && null != StateChangeIndication) {
+                        StateChangeIndication ();
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_STATE, "Exception in StateMachine.FireLoop: {0}", ex.ToString ());
+                    lock (LockObj) {
+                        InProcess = false;
+                    }
+                    throw ex;
                 }
-                var hotNode = TransTable.Where (x => State == x.State).Single ();
-                if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    continue;
-                }
-                if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    throw new Exception ();
-                }
-                var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
-                    NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
-                Action = hotTrans.Act;
-                NextState = hotTrans.State;
-                Action ();
-                var oldState = State;
-                State = NextState;
-                if (oldState != State && null != StateChangeIndication) {
-                    StateChangeIndication ();
-                }
-                if ((uint)St.Stop == State) {
-                    // If we are done, then quit the loop.
-                    return;
+                PossiblyLeave:
+                lock (LockObj) {
+                    // Enter critical section.
+                    if (0 == EventQ.Count) {
+                        // If there is nothing to do, indicate we are leaving and leave.
+                        InProcess = false;
+                        return;
+                    }
+                    // Leave critical section.
                 }
             }
         }
