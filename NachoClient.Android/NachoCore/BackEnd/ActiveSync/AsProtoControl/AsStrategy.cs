@@ -35,6 +35,9 @@ namespace NachoCore.ActiveSync
             All,
         };
 
+        // Anyone can set to request that the next Sync command be a "quick fetch".
+        public bool RequestQuickFetch { set; get; }
+        private bool IsQuickFetch;
         private const uint CTLstLast = (uint)CTLst.All;
         private NcStateMachine EmailCalendarSm;
         private NcStateMachine ContactsTasksSm;
@@ -249,8 +252,11 @@ namespace NachoCore.ActiveSync
             ContactsTasksSm.PostEvent ((uint)SmEvt.E.HardFail, "DOSPCON");
         }
 
-        private List<McFolder> ECFolderListProvider ()
+        private List<McFolder> ECFolderListProvider (bool quickFetch)
         {
+            if (quickFetch) {
+                return DefaultInboxAndDefaultCalendarFolders ();
+            }
             switch ((ECLst)EmailCalendarSm.State) {
             case ECLst.DefI1dC2w:
             case ECLst.DefI3dC2w:
@@ -269,12 +275,16 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> CTFolderListProvider ()
+        private List<McFolder> CTFolderListProvider (bool quickFetch)
         {
             var ric = McFolder.GetRicContactFolder (BEContext.Account.Id);
             var retval = new List<McFolder> ();
             if (null != ric) {
                 retval.Add (ric);
+            }
+            if (quickFetch) {
+                // Only the RIC in a quickfetch.
+                return retval;
             }
             switch ((CTLst)ContactsTasksSm.State) {
             case CTLst.RicOnly:
@@ -293,15 +303,15 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> FolderListProvider ()
+        private List<McFolder> FolderListProvider (bool quickFetch)
         {
-            List<McFolder> ecFolders = ECFolderListProvider ();
-            List<McFolder> cFolders = CTFolderListProvider ();
+            List<McFolder> ecFolders = ECFolderListProvider (quickFetch);
+            List<McFolder> cFolders = CTFolderListProvider (quickFetch);
             ecFolders.AddRange (cFolders);
             return ecFolders;
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder)
+        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder, bool quickFetch)
         {
             uint perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
@@ -314,6 +324,9 @@ namespace NachoCore.ActiveSync
             }
             switch (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type)) {
             case McFolder.ClassCodeEnum.Email:
+                if (quickFetch) {
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
+                }
                 switch ((ECLst)EmailCalendarSm.State) {
                 case ECLst.DefI1dC2w:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
@@ -340,6 +353,9 @@ namespace NachoCore.ActiveSync
                 }
 
             case McFolder.ClassCodeEnum.Calendar:
+                if (quickFetch) {
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+                }
                 switch ((ECLst)EmailCalendarSm.State) {
                 case ECLst.DefI1dC2w:
                 case ECLst.DefI3dC2w:
@@ -388,7 +404,7 @@ namespace NachoCore.ActiveSync
             protocolState.SyncStratEmailCalendarState = EmailCalendarSm.State;
             protocolState.Update ();
             // Filter value changed, so go tickle all the changes-expected flags.
-            foreach (var folder in ECFolderListProvider ()) {
+            foreach (var folder in ECFolderListProvider (false)) {
                 if (null != folder) {
                     // We may see null if the server hasn't yet created these folders.
                     // Note that because we don't (yet) break out Cal into its own SM, it will get needlessly tickled here.
@@ -402,7 +418,7 @@ namespace NachoCore.ActiveSync
             var protocolState = BEContext.ProtocolState;
             protocolState.SyncStratContactsState = ContactsTasksSm.State;
             protocolState.Update ();
-            foreach (var folder in CTFolderListProvider ()) {
+            foreach (var folder in CTFolderListProvider (false)) {
                 if (null != folder) {
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
@@ -456,6 +472,9 @@ namespace NachoCore.ActiveSync
         // External API.
         public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ()
         {
+            IsQuickFetch = RequestQuickFetch;
+            // Quick fetch request is good only for *next* Sync command.
+            RequestQuickFetch = false;
             uint overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
@@ -465,7 +484,7 @@ namespace NachoCore.ActiveSync
                 overallWindowSize *= 3;
                 break;
             }
-            List<McFolder> eligibleForGetChanges = FolderListProvider ();
+            List<McFolder> eligibleForGetChanges = FolderListProvider (IsQuickFetch);
             List<McPending> issuePendings;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
@@ -482,7 +501,7 @@ namespace NachoCore.ActiveSync
                 if (null != eligibleForGetChanges.FirstOrDefault (x => x.Id == folder.Id)) {
                     if (folder.AsSyncMetaToClientExpected) {
                         folder.AsSyncMetaDoGetChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
-                        var parms = ParametersProvider (folder);
+                        var parms = ParametersProvider (folder, IsQuickFetch);
                         folder.AsSyncMetaFilterCode = parms.Item1;
                         folder.AsSyncMetaWindowSize = parms.Item2;
                     } else {
@@ -528,17 +547,19 @@ namespace NachoCore.ActiveSync
         public bool IsMoreSyncNeeded ()
         {
             // Are there any AsSyncMetaToClientExpected folders available?
-             bool areExpecting = FolderListProvider ().Any (f => f.AsSyncMetaToClientExpected);
+            bool areExpecting = FolderListProvider (false).Any (f => f.AsSyncMetaToClientExpected);
 
             // if we're not in the ultimate state(s), then true.
             if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
-                if (!areExpecting) {
+                if (!areExpecting && !IsQuickFetch) {
+                    // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
                     EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
                 }
                 return true;
             }
             // if a within-scope folder has to-client stuff waiting on the server, then true.
-            if (areExpecting) {
+            // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
+            if (areExpecting || IsQuickFetch) {
                 return true;
             }
             // if there is a sync-based operation pending, then true.
@@ -552,7 +573,7 @@ namespace NachoCore.ActiveSync
 
         public List<McFolder> PingKit ()
         {
-            return FolderListProvider ();
+            return FolderListProvider (false);
         }
     }
 }

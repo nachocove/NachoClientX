@@ -88,6 +88,8 @@ namespace NachoCore.ActiveSync
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
+        private bool RequestQuickFetch;
+
         public AsProtoControl (IProtoControlOwner owner, int accountId)
         {
             ProtoControl = this;
@@ -1106,6 +1108,11 @@ namespace NachoCore.ActiveSync
                 if ((uint)AsEvt.E.ReSync == insteadEvent.EventCode) {
                     // The Top-of-Q pending IS executed using Sync.
                     NachoAssert.True (SyncStrategy.IsMoreSyncNeeded ());
+                    if (!SyncStrategy.RequestQuickFetch) {
+                        // If it hasn't already been requested externally, we want every other Sync to be a quick-fetch.
+                        SyncStrategy.RequestQuickFetch = RequestQuickFetch;
+                        RequestQuickFetch = !RequestQuickFetch;
+                    }
                     SetCmd (new AsSyncCommand (this));
                     Cmd.Execute (Sm);
                 } else {
@@ -1114,6 +1121,11 @@ namespace NachoCore.ActiveSync
                 }
             } else {
                 if (SyncStrategy.IsMoreSyncNeeded ()) {
+                    if (!SyncStrategy.RequestQuickFetch) {
+                        // If it hasn't already been requested externally, we want every other Sync to be a quick-fetch.
+                        SyncStrategy.RequestQuickFetch = RequestQuickFetch;
+                        RequestQuickFetch = !RequestQuickFetch;
+                    }
                     SetCmd (new AsSyncCommand (this));
                     Cmd.Execute (Sm);
                 } else {
@@ -1278,6 +1290,8 @@ namespace NachoCore.ActiveSync
                 defaultInbox.AsSyncMetaToClientExpected = true;
                 defaultInbox.Update ();
             }
+            // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
+            SyncStrategy.RequestQuickFetch = true;
             Task.Run (delegate {
                 if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
                     Log.Warn (Log.LOG_AS, "Execute called while network is down.");
