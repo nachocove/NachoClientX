@@ -237,36 +237,44 @@ namespace NachoCore.Utils
         private void FireLoop ()
         {
             while (true) {
-                var fireEvent = (Event)EventQ.Take ();
-                FireEventCode = fireEvent.EventCode;
-                Arg = fireEvent.Arg;
-                Message = fireEvent.Message;
-                if ((uint)St.Stop == State) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    goto PossiblyLeave;
-                }
-                var hotNode = TransTable.Where (x => State == x.State).Single ();
-                if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    goto PossiblyLeave;
-                }
-                if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
-                    Log.Error (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
-                    goto PossiblyLeave;
-                }
-                var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
-                    NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
-                Action = hotTrans.Act;
-                NextState = hotTrans.State;
-                Action ();
-                var oldState = State;
-                State = NextState;
-                if (oldState != State && null != StateChangeIndication) {
-                    StateChangeIndication ();
+                try {
+                    var fireEvent = (Event)EventQ.Take ();
+                    FireEventCode = fireEvent.EventCode;
+                    Arg = fireEvent.Arg;
+                    Message = fireEvent.Message;
+                    if ((uint)St.Stop == State) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED IN St.Stop",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
+                    var hotNode = TransTable.Where (x => State == x.State).Single ();
+                    if (null != hotNode.Drop && hotNode.Drop.Contains (FireEventCode)) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => DROPPED EVENT",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
+                    if (null != hotNode.Invalid && hotNode.Invalid.Contains (FireEventCode)) {
+                        Log.Error (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => INVALID EVENT",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
+                        goto PossiblyLeave;
+                    }
+                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                    Action = hotTrans.Act;
+                    NextState = hotTrans.State;
+                    Action ();
+                    var oldState = State;
+                    State = NextState;
+                    if (oldState != State && null != StateChangeIndication) {
+                        StateChangeIndication ();
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_STATE, "Exception in StateMachine.FireLoop: {0}", ex.ToString ());
+                    lock (LockObj) {
+                        InProcess = false;
+                    }
+                    throw ex;
                 }
                 PossiblyLeave:
                 lock (LockObj) {
