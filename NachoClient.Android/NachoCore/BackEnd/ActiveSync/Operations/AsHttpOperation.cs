@@ -396,7 +396,11 @@ namespace NachoCore.ActiveSync
                     System.Threading.Timeout.InfiniteTimeSpan);
                 try {
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
-                    response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken);
+                    try {
+                        response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken);
+                    } catch (AggregateException aex) {
+                        throw aex.InnerException;
+                    }
                 } catch (OperationCanceledException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
                     if (myClient == Client) {
