@@ -197,7 +197,7 @@ namespace NachoCore.Utils
             if (settings.ToConsole (subsystem)) {
                 // Get the caller information
                 StackTrace st = new StackTrace (true);
-                StackFrame sf = st.GetFrame (2);
+                StackFrame sf = st.GetFrame (3);
                 MethodBase mb = sf.GetMethod ();
                 string callInfo = "";
                 if (settings.CallerInfo) {
@@ -311,7 +311,7 @@ namespace NachoCore.Utils
         {
         }
 
-        public static void Deubg (ulong subsystem, string fmt, params object[] list)
+        public static void Debug (ulong subsystem, string fmt, params object[] list)
         {
             Log.SharedInstance.Debug (subsystem, fmt, list);
         }

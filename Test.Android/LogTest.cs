@@ -72,6 +72,15 @@ namespace Test.iOS
             Log.Error (Log.LOG_SYNC, "You should not see this message.");
             CheckOutput ("");
 
+            // Make sure caller info works when configured
+            settings.Error.CallerInfo = true;
+            Log.Error (Log.LOG_CALENDAR, "Test caller info");
+            #if (DEBUG)
+            CheckOutput (String.Format ("Error:{0}: [LogTest.cs:77, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            #else
+            CheckOutput (String.Format ("Error:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            #endif
+
             // Warnings
 
             // Make sure a single filter works
@@ -91,6 +100,16 @@ namespace Test.iOS
             MockConsole.Output = "";
             Log.Warn (Log.LOG_SYNC, "You should not see this message.");
             CheckOutput ("");
+
+
+            // Make sure caller info works when configured
+            settings.Warn.CallerInfo = true;
+            Log.Warn (Log.LOG_CALENDAR, "Test caller info");
+            #if (DEBUG)
+            CheckOutput (String.Format ("Warn:{0}: [LogTest.cs:107, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            #else
+            CheckOutput (String.Format ("Warn:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            #endif
 
             // Info
 
@@ -112,6 +131,46 @@ namespace Test.iOS
             MockConsole.Output = "";
             Log.Info (Log.LOG_SYNC, "You should not see this message.");
             CheckOutput ("");
+
+            // Make sure caller info works when configured
+            settings.Info.CallerInfo = true;
+            Log.Info (Log.LOG_CALENDAR, "Test caller info");
+            #if (DEBUG)
+            CheckOutput (String.Format ("Info:{0}: [LogTest.cs:137, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            #else
+            CheckOutput (String.Format ("Info:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            #endif
+
+            // Debug
+
+            // Make sure a single filter works
+            settings.Debug.Console = Log.LOG_SYNC;
+            MockConsole.Output = "";
+            Log.Debug (Log.LOG_SYNC, "Test no args.");
+            CheckOutput (String.Format ("Debug:{0}:: Test no args.", threadId));
+
+            // Make sure multiple filters work
+            settings.Debug.Console |= Log.LOG_CALENDAR;
+            Log.Debug (Log.LOG_SYNC, "Test int 5 = {0}", 5);
+            CheckOutput (String.Format ("Debug:{0}:: Test int 5 = 5", threadId));
+            Log.Debug (Log.LOG_CALENDAR, "Test int 6 7 = {0} {1}", 6, 7);
+            CheckOutput (String.Format ("Debug:{0}:: Test int 6 7 = 6 7", threadId));
+
+            // Make sure filters block too
+            settings.Debug.Console = Log.LOG_CALENDAR;
+            MockConsole.Output = "";
+            Log.Debug (Log.LOG_SYNC, "You should not see this message.");
+            CheckOutput ("");
+
+            // Make sure caller info works when configured
+            settings.Debug.CallerInfo = true;
+            Log.Debug (Log.LOG_CALENDAR, "Test caller info");
+            #if (DEBUG)
+            CheckOutput (String.Format ("Debug:{0}: [LogTest.cs:167, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            #else
+            CheckOutput (String.Format ("Debug:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            #endif
+
 
             // Restore the original logger
             Log.SetLogger (save);
