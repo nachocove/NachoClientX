@@ -52,7 +52,6 @@ namespace NachoCore.ActiveSync
         public Type DnsQueryRequestType { set; get; }
 
         public Type HttpClientType { set; get; }
-
         // Initializers.
         public AsCommand (string commandName, string nsName, IBEContext beContext) : this (commandName, beContext)
         {
@@ -68,21 +67,18 @@ namespace NachoCore.ActiveSync
             BEContext = beContext;
             PendingList = new List<McPending> ();
         }
-
         // Virtual Methods.
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
         {
-            lock (LockObj) {
-                Op = new AsHttpOperation (CommandName, this, BEContext) {
-                    HttpClientType = HttpClientType,
-                    DontReportCommResult = DontReportCommResult,
-                };
-                if (TimeSpan.Zero != Timeout) {
-                    Op.Timeout = Timeout;
-                }
-                opRef = Op;
-                Op.Execute (sm);
+            Op = new AsHttpOperation (CommandName, this, BEContext) {
+                HttpClientType = HttpClientType,
+                DontReportCommResult = DontReportCommResult,
+            };
+            if (TimeSpan.Zero != Timeout) {
+                Op.Timeout = Timeout;
             }
+            opRef = Op;
+            Op.Execute (sm);
         }
 
         public virtual void Execute (NcStateMachine sm)
@@ -93,26 +89,25 @@ namespace NachoCore.ActiveSync
         // Cancel() must be safe to call even when the command has already completed.
         public virtual void Cancel ()
         {
-            lock (LockObj) {
-                if (null != Op) {
-                    Op.Cancel ();
-                    Op = null;
-                }
-                if (null != PendingSingle) {
-                    PendingList.Add (PendingSingle);
-                    PendingSingle = null;
-                }
-                foreach (var pending in PendingList) {
-                    /* Q: Do we need another state? We need to be smart about the case where
+            if (null != Op) {
+                Op.Cancel ();
+                // Don't null Op here - we might be calling Execute() on another thread. Let GC get it.
+            }
+            // FIXME - there is a race-condition when dealing with Pending. The Op may be concurrently manipulating.
+            if (null != PendingSingle) {
+                PendingList.Add (PendingSingle);
+                PendingSingle = null;
+            }
+            foreach (var pending in PendingList) {
+                /* Q: Do we need another state? We need to be smart about the case where
                  * the cancel comes after the op has been run against the server. The op
                  * may fail the 2nd time because the item exists. Don't want to bug the user.
                  */
-                    if (McPending.StateEnum.Dispatched == pending.State) {
-                        pending.ResolveAsDeferredForce ();
-                    }
+                if (McPending.StateEnum.Dispatched == pending.State) {
+                    pending.ResolveAsDeferredForce ();
                 }
-                PendingList.Clear ();
             }
+            PendingList.Clear ();
         }
 
         public virtual bool UseWbxml (AsHttpOperation Sender)
@@ -177,7 +172,6 @@ namespace NachoCore.ActiveSync
         public class AbortCommandException : Exception
         {
         }
-
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
         public virtual XDocument ToXDocument (AsHttpOperation Sender)
         {
@@ -286,7 +280,7 @@ namespace NachoCore.ActiveSync
                 tmpPendingList.Add (PendingSingle);
             }
             foreach (var pending in tmpPendingList) {
-                        action (pending);
+                action (pending);
             }
         }
 
@@ -303,12 +297,12 @@ namespace NachoCore.ActiveSync
         }
 
         protected Event CompleteAsUserBlocked (uint status, 
-            McPending.BlockReasonEnum reason, NcResult.WhyEnum why)
+                                               McPending.BlockReasonEnum reason, NcResult.WhyEnum why)
         {
             PendingApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
-                pending.ResolveAsUserBlocked(BEContext.ProtoControl, reason, why);
+                pending.ResolveAsUserBlocked (BEContext.ProtoControl, reason, why);
             });
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
@@ -326,7 +320,6 @@ namespace NachoCore.ActiveSync
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
                 string.Format ("{0}", (Xml.StatusCode)status));
         }
-
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
         // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
@@ -546,8 +539,8 @@ namespace NachoCore.ActiveSync
                 return CompleteAsUserBlocked (status, McPending.BlockReasonEnum.AdminRemediation,
                     NcResult.WhyEnum.QuotaExceeded);
 
-                // DO NOT add a default: here. We return null so that success codes and 
-                // command-specific codes can be processed elsewhere.
+            // DO NOT add a default: here. We return null so that success codes and 
+            // command-specific codes can be processed elsewhere.
             }
             return null;
         }

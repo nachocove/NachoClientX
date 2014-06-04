@@ -1292,13 +1292,11 @@ namespace NachoCore.ActiveSync
             }
             // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
             SyncStrategy.RequestQuickFetch = true;
-            Task.Run (delegate {
-                if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                    Log.Warn (Log.LOG_AS, "Execute called while network is down.");
-                    return;
-                }
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
-            });
+            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
+                return;
+            }
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
         public override void Cancel (string token)

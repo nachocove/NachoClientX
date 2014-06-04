@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
@@ -73,7 +74,7 @@ namespace NachoCore.Wbxml
             return (continuationBitmask & byteval) != 0;
         }
 
-        public bool DequeueStringToStream (Stream stream)
+        public bool DequeueStringToStream (Stream stream, CancellationToken cToken)
         {
             try {
                 byte currentByte = 0x00;
@@ -82,7 +83,7 @@ namespace NachoCore.Wbxml
                     if (currentByte != 0x00) {
                         stream.WriteByte (currentByte);
                     }
-                } while (currentByte != 0x00);
+                } while (currentByte != 0x00 && !cToken.IsCancellationRequested);
                 stream.Flush();
                 return true;
             } catch (Exception ex) {
@@ -91,7 +92,7 @@ namespace NachoCore.Wbxml
             }
         }
 
-        public string DequeueString ()
+        public string DequeueString (CancellationToken cToken)
         {
             StringBuilder strReturn = new StringBuilder ();
             byte currentByte = 0x00;
@@ -103,12 +104,12 @@ namespace NachoCore.Wbxml
                 if (currentByte != 0x00) {
                     strReturn.Append ((char)currentByte);
                 }
-            } while (currentByte != 0x00);
+            } while (currentByte != 0x00 && !cToken.IsCancellationRequested);
 
             return strReturn.ToString ();
         }
 
-        public byte[] DequeueOpaque (int length)
+        public byte[] DequeueOpaque (int length, CancellationToken cToken)
         {
             MemoryStream bStream = new MemoryStream ();
 
@@ -119,6 +120,9 @@ namespace NachoCore.Wbxml
                 // characters outside of the US-ASCII range
                 currentByte = this.Dequeue ();
                 bStream.WriteByte (currentByte);
+                if (cToken.IsCancellationRequested) {
+                    break;
+                }
             }
             return bStream.ToArray ();
         }

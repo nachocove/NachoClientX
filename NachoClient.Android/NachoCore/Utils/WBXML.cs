@@ -90,7 +90,7 @@ namespace NachoCore.Wbxml
 
             while (bytes.Peek () >= 0) {
                 if (CToken.IsCancellationRequested) {
-                    throw new TaskCanceledException ();
+                    throw new OperationCanceledException ();
                 }
                 byte currentByte = bytes.Dequeue ();
 
@@ -119,7 +119,7 @@ namespace NachoCore.Wbxml
                     break;
                 case GlobalTokens.OPAQUE:
                     int OpaqueLength = bytes.DequeueMultibyteInt ();
-                    var OpaqueBytes = bytes.DequeueOpaque (OpaqueLength);
+                    var OpaqueBytes = bytes.DequeueOpaque (OpaqueLength, CToken);
                     XText newOpaqueNode;
                     if (codePages [currentCodePage].GetIsOpaqueBase64 (currentNode.Name.LocalName)) {
                         newOpaqueNode = new XText (Convert.ToBase64String (OpaqueBytes));
@@ -142,7 +142,7 @@ namespace NachoCore.Wbxml
                             try {
                                 var data = McBody.SaveStart ();
                                 using (var fileStream = data.SaveFileStream ()) {
-                                    if (bytes.DequeueStringToStream (fileStream)) {
+                                    if (bytes.DequeueStringToStream (fileStream, CToken)) {
                                         data.SaveDone ();
                                         fileStream.Dispose();
                                         currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
@@ -166,7 +166,7 @@ namespace NachoCore.Wbxml
                                 using (var fileStream = McAttachment.TempFileStream (guidString)) {
                                     using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
                                                                   new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                        if (bytes.DequeueStringToStream (cryptoStream)) {
+                                        if (bytes.DequeueStringToStream (cryptoStream, CToken)) {
                                             cryptoStream.Dispose ();
                                             currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
                                         } else {
@@ -189,7 +189,7 @@ namespace NachoCore.Wbxml
                             break;
                         }
                     } else {
-                        newTextNode = new XText (bytes.DequeueString ());
+                        newTextNode = new XText (bytes.DequeueString (CToken));
                     }
                     currentNode.Add (newTextNode);
                     filter.Update (level, newTextNode);

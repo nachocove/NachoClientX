@@ -19,8 +19,10 @@ namespace NachoCore.ActiveSync
         private IAsDnsOperationOwner m_owner;
         private NcTimer TimeoutTimer;
         private IDnsQueryRequest Request;
+        private object LockObj;
 
         public AsDnsOperation(IAsDnsOperationOwner owner) {
+            LockObj = new object ();
             Timeout = TimeSpan.Zero;
             DnsQueryRequestType = typeof(MockableDnsQueryRequest);
             m_owner = owner;
@@ -53,9 +55,11 @@ namespace NachoCore.ActiveSync
 
         public void Cancel ()
         {
-            wasCancelled = true;
-            CleanupTimeoutTimer ();
-            Close ();
+            lock (LockObj) {
+                wasCancelled = true;
+                CleanupTimeoutTimer ();
+                Close ();
+            }
         }
 
         private void Close ()

@@ -22,7 +22,7 @@ namespace NachoCore.Model
                 SQLiteConnection db = null;
                 if (!DbConns.TryGetValue (threadId, out db)) {
                     db = new SQLiteConnection (DbFileName, 
-                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
+                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, 
                         storeDateTimeAsTicks: true);
                     DbConns.TryAdd (threadId, db);
                 }

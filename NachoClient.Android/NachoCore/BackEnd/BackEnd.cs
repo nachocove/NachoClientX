@@ -99,7 +99,7 @@ namespace NachoCore
                 QuickTimeoutTimer.Dispose ();
                 QuickTimeoutTimer = null;
             }
-            // Don't Task.Run.
+            // Don't Task.Run - we do it inside Stop ().
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Stop (account.Id);
