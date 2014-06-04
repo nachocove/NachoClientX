@@ -580,7 +580,10 @@ namespace NachoCore.ActiveSync
         public override bool WasAbleToRephrase ()
         {
             // See if we are trying to do a bunch in parallel - if so go serial.
-            var firstPending = PendingList.First ();
+            var firstPending = PendingList.FirstOrDefault ();
+            if (null == firstPending) {
+                return false;
+            }
             if (1 >= PendingList.Count || firstPending.DeferredSerialIssueOnly) {
                 // We are already doing serial.
                 return false;
