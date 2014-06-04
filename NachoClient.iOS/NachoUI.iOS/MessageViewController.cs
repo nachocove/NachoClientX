@@ -452,7 +452,7 @@ namespace NachoClient.iOS
             var textPart = part as TextPart;
             var html = textPart.Text;
 
-            Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
+            //Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
 
             int i = 0;
 
