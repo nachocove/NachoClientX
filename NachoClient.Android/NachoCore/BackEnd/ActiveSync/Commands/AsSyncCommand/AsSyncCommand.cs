@@ -722,6 +722,11 @@ namespace NachoCore.ActiveSync
                     }
                     break;
 
+                case Xml.AirSync.SoftDelete:
+                    // TODO: Implement SoftDelete if we want to constrain storage. Need to be careful 
+                    // ignore SoftDelete for in-window items when doing quick-fetch.
+                    break;
+
                 default:
                     Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED command " + command.Name.LocalName);
                     break;

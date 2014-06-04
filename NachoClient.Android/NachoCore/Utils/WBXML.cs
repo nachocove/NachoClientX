@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using NachoCore;
+
 #if (!WBXMLTOOL)
 using NachoCore.Model;
 #endif
@@ -139,20 +140,12 @@ namespace NachoCore.Wbxml
                         switch (currentCodePage) {
                         case ASWBXML.KCodePage_AirSyncBase:
                             #if (!WBXMLTOOL)
-                            try {
-                                var data = McBody.SaveStart ();
-                                using (var fileStream = data.SaveFileStream ()) {
-                                    if (bytes.DequeueStringToStream (fileStream, CToken)) {
-                                        data.SaveDone ();
-                                        fileStream.Dispose();
-                                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
-                                    } else {
-                                        Log.Error (Log.LOG_AS, "Failure while trying to write body.");
-                                    }
-                                }
-                            } catch (Exception ex) {
-                                Log.Error (Log.LOG_AS, "Exception while trying to write body {0}", ex.ToString ());
+                            var data = McBody.SaveStart ();
+                            using (var fileStream = data.SaveFileStream ()) {
+                                bytes.DequeueStringToStream (fileStream, CToken);
                             }
+                            currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                            data.SaveDone ();
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
                             NachoAssert.True (false); // not implemented yet
@@ -161,22 +154,14 @@ namespace NachoCore.Wbxml
 
                         case ASWBXML.KCodePage_ItemOperations:
                             #if (!WBXMLTOOL)
-                            try {
-                                var guidString = Guid.NewGuid ().ToString ("N");
-                                using (var fileStream = McAttachment.TempFileStream (guidString)) {
-                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
+                            var guidString = Guid.NewGuid ().ToString ("N");
+                            using (var fileStream = McAttachment.TempFileStream (guidString)) {
+                                using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
                                                                   new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                        if (bytes.DequeueStringToStream (cryptoStream, CToken)) {
-                                            cryptoStream.Dispose ();
-                                            currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
-                                        } else {
-                                            Log.Error (Log.LOG_AS, "Failure while trying to write attachment.");
-                                        }
-                                    }
+                                    bytes.DequeueStringToStream (cryptoStream, CToken);
+                                    cryptoStream.Dispose ();
+                                    currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
                                 }
-                            } catch (Exception ex) {
-                                // If we can't write the file, don't add the attr.
-                                Log.Error (Log.LOG_AS, "Exception while trying to write attachment {0}", ex.ToString ());
                             }
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.

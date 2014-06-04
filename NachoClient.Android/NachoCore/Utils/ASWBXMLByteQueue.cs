@@ -74,22 +74,19 @@ namespace NachoCore.Wbxml
             return (continuationBitmask & byteval) != 0;
         }
 
-        public bool DequeueStringToStream (Stream stream, CancellationToken cToken)
+        public void DequeueStringToStream (Stream stream, CancellationToken cToken)
         {
-            try {
-                byte currentByte = 0x00;
-                do {
-                    currentByte = this.Dequeue ();
-                    if (currentByte != 0x00) {
-                        stream.WriteByte (currentByte);
-                    }
-                } while (currentByte != 0x00 && !cToken.IsCancellationRequested);
-                stream.Flush();
-                return true;
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_AS, "Exception in DequeueStringToStream {0}", ex.ToString ());
-                return false;
-            }
+            byte currentByte = 0x00;
+            do {
+                if (cToken.IsCancellationRequested) {
+                    throw new OperationCanceledException ();
+                }
+                currentByte = this.Dequeue ();
+                if (currentByte != 0x00) {
+                    stream.WriteByte (currentByte);
+                }
+            } while (currentByte != 0x00);
+            stream.Flush ();
         }
 
         public string DequeueString (CancellationToken cToken)
@@ -97,6 +94,9 @@ namespace NachoCore.Wbxml
             StringBuilder strReturn = new StringBuilder ();
             byte currentByte = 0x00;
             do {
+                if (cToken.IsCancellationRequested) {
+                    throw new OperationCanceledException ();
+                }
                 // TODO: Improve this handling. We are technically UTF-8, meaning
                 // that characters could be more than one byte long. This will fail if we have
                 // characters outside of the US-ASCII range
@@ -104,7 +104,7 @@ namespace NachoCore.Wbxml
                 if (currentByte != 0x00) {
                     strReturn.Append ((char)currentByte);
                 }
-            } while (currentByte != 0x00 && !cToken.IsCancellationRequested);
+            } while (currentByte != 0x00);
 
             return strReturn.ToString ();
         }
@@ -121,7 +121,7 @@ namespace NachoCore.Wbxml
                 currentByte = this.Dequeue ();
                 bStream.WriteByte (currentByte);
                 if (cToken.IsCancellationRequested) {
-                    break;
+                    throw new OperationCanceledException ();
                 }
             }
             return bStream.ToArray ();
