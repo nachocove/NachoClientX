@@ -247,7 +247,7 @@ namespace Test.iOS
         {
             // Ensure that an authentication failure during S1, S2, or S3 results in 
             // the Owner being asked to supply new credentials.
-            [Test]
+//            [Test]
             public void NewCredsUponAuthFailureS1 ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
