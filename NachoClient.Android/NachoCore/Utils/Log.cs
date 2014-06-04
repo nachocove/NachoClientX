@@ -171,11 +171,16 @@ namespace NachoCore.Utils
 
     public class Logger
     {
+        public delegate void ConsoleWriteLineFunction (string fmt, object arg0);
+
+        public ConsoleWriteLineFunction WriteLine { set; get; }
+
         public LogSettings Settings { set; get; }
 
         public Logger ()
         {
             Settings = new LogSettings ();
+            WriteLine = Console.WriteLine;
         }
 
         private static string GetMethodShortName (string methodName)
@@ -186,7 +191,7 @@ namespace NachoCore.Utils
             return methodName2.Substring (space + 1);
         }
 
-        private static void _Log (ulong subsystem,  LogLevelSettings settings, TelemetryEventType teleType,
+        private void _Log (ulong subsystem,  LogLevelSettings settings, TelemetryEventType teleType,
             string fmt, string level, params object[] list)
         {
             if (settings.ToConsole (subsystem)) {
@@ -205,7 +210,7 @@ namespace NachoCore.Utils
                             mb.DeclaringType.Name, mb.Name);
                     }
                 }
-                Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
+                WriteLine ("{0}", String.Format (new NachoFormatter (),
                     level + ":" + Thread.CurrentThread.ManagedThreadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
@@ -324,6 +329,12 @@ namespace NachoCore.Utils
         public static void Error (ulong subsystem, string fmt, params object[] list)
         {
             Log.SharedInstance.Error (subsystem, fmt, list);
+        }
+
+        // This is for testing only
+        public static void SetLogger (Logger logger)
+        {
+            DefaultLogger = logger;
         }
     }
 
