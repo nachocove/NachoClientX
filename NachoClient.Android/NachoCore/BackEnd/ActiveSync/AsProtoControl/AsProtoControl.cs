@@ -958,10 +958,6 @@ namespace NachoCore.ActiveSync
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
             // FIXME - make pretty. Make a generic timer service in the Brain.
-            PendingOnTimeTimer = new NcTimer (state => {
-                McPending.MakeEligibleOnTime (Account.Id);
-            }, null, 1000, 2000);
-            PendingOnTimeTimer.Stfu = true;
         }
         // Methods callable by the owner.
         public override void Execute ()
@@ -970,6 +966,11 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_AS, "Execute called while network is down.");
                 return;
             }
+            PendingOnTimeTimer = new NcTimer (state => {
+                McPending.MakeEligibleOnTime (Account.Id);
+            }, null, 1000, 2000);
+            PendingOnTimeTimer.Stfu = true;
+
             // There isn't really a way to tell whether we are executing currently or not!
             // All states are required to handle the Launch event gracefully, so we just send it.
             Sm.PostAtMostOneEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
@@ -1101,7 +1102,7 @@ namespace NachoCore.ActiveSync
 
         private void DoSync ()
         {
-            ForceStop ();
+            StopCurrentOp ();
             var insteadEvent = FirePendingInstead ();
             if (null != insteadEvent) {
                 // We can be Syncing for a long time. Let's get some pendings out & done.
@@ -1138,21 +1139,21 @@ namespace NachoCore.ActiveSync
 
         private void DoSend ()
         {
-            ForceStop ();
+            StopCurrentOp ();
             SetCmd (new AsSendMailCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoSFwd ()
         {
-            ForceStop ();
+            StopCurrentOp ();
             SetCmd (new AsSmartForwardCommand (this));
             Cmd.Execute (Sm);
         }
 
         private void DoSRply ()
         {
-            ForceStop ();
+            StopCurrentOp ();
             SetCmd (new AsSmartReplyCommand (this));
             Cmd.Execute (Sm);
         }
@@ -1209,7 +1210,7 @@ namespace NachoCore.ActiveSync
 
         private void DoSearch ()
         {
-            ForceStop ();
+            StopCurrentOp ();
             SetCmd (new AsSearchCommand (this));
             Cmd.Execute (Sm);
         }
@@ -1279,12 +1280,21 @@ namespace NachoCore.ActiveSync
 
         public override void ForceStop ()
         {
+            StopCurrentOp ();
+            if (null != PendingOnTimeTimer) {
+                PendingOnTimeTimer.Dispose ();
+                PendingOnTimeTimer = null;
+            }
+        }
+
+        public void StopCurrentOp ()
+        {
             SetCmd (null);
         }
 
         public override void ForceSync ()
         {
-            ForceStop ();
+            StopCurrentOp ();
             var defaultInbox = McFolder.GetDefaultInboxFolder (Account.Id);
             if (null != defaultInbox) {
                 defaultInbox.AsSyncMetaToClientExpected = true;
@@ -1352,7 +1362,7 @@ namespace NachoCore.ActiveSync
 
                 case NcCommStatus.CommQualityEnum.Unusable:
                     Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
-                    ForceStop ();
+                    StopCurrentOp ();
                     break;
                 }
             }
@@ -1364,7 +1374,7 @@ namespace NachoCore.ActiveSync
                 Execute ();
             } else {
                 // The "Down" case.
-                ForceStop ();
+                StopCurrentOp ();
             }
         }
 
