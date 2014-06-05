@@ -5,7 +5,6 @@ using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
-using MonoTouch.UIKit;
 
 namespace NachoCore.Model
 {
