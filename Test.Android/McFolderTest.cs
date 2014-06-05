@@ -277,6 +277,7 @@ namespace Test.iOS
                 folder3.Insert ();
                 folder4.Insert ();
                 folder5.Insert ();
+                folder6.Insert ();
 
                 List<McFolder> retrieved = McFolder.QueryByParentId (1, "1");
                 Assert.AreEqual (3, retrieved.Count, "Should return correct number of folders with matching parent id");
@@ -297,11 +298,11 @@ namespace Test.iOS
             }
         }
 
-        [TestFixture]
-        public class TestQueryByFolderEntryId
-        {
-//            [Test]
-        }
+//        [TestFixture]
+//        public class TestQueryByFolderEntryId
+//        {
+////            [Test]
+//        }
 
         [TestFixture]
         public class TestQueryClientOwned : BaseMcFolderTest
@@ -377,6 +378,95 @@ namespace Test.iOS
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
 
                 folder.IsAwaitingDelete = false;
+                return folder;
+            }
+        }
+
+        [TestFixture]
+        public class TestServerEndQuery : BaseMcFolderTest
+        {
+            [Test]
+            public void CanQueryFoldersAwaitingDelete ()
+            {
+                // server-end should be able to process commands against folder until folder delete is complete
+                McFolder folder1 = CreateClientFolder (1, isAwaitingDelete: true);
+                McFolder badFolder = CreateClientFolder (2);
+                folder1.Insert ();
+                badFolder.Insert ();
+
+                List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (1, retrieved1.Count, "Server end query should return only 1 folder if only one has been inserted");
+                FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Server end query should return folder where isAwaitingDelete == true");
+
+                McFolder folder2 = CreateClientFolder (1, isAwaitingDelete: false);
+                folder2.Insert ();
+
+                List<McFolder> retrieved2 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (2, retrieved2.Count, "Server end query should return both folders awaiting deletion and those that are not");
+            }
+
+            [Test]
+            public void CannotQueryFoldersAwaitingCreate ()
+            {
+                // should not return folders that are awaiting creation on the server
+                McFolder folder1 = CreateClientFolder (1, isAwaitingCreate: true);
+                folder1.Insert ();
+
+                List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (0, retrieved1.Count, "Server should not return a folder awaiting creation on the server");
+
+                folder1.IsAwaitingCreate = false;
+                folder1.Update ();
+
+                retrieved1 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (1, retrieved1.Count, "Server should return a folder once it is no longer awaiting creation");
+                FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Retrieved folder should be valid once it is created on the client");
+
+                // should not return folders awaiting creation on server and awaiting deletion on client
+                McFolder folder2 = CreateClientFolder (2, isAwaitingDelete: true, isAwaitingCreate: true);
+                folder2.Insert ();
+
+                List <McFolder> retrieved2 = McFolder.ServerEndQueryAll (2);
+                Assert.AreEqual (0, retrieved2.Count, "Should not return folders awaiting creation on server and awaiting deletion on client");
+            }
+
+            [Test]
+            public void ShouldNotReturnClientOwnedFolders ()
+            {
+                // should not return folders that are client owned
+                McFolder folder1 = CreateClientFolder (1, isClientOwned: true);
+                folder1.Insert ();
+
+                List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (0, retrieved1.Count, "Should not return folders that are client owned");
+
+                // add isAwaitingDelete flag
+                folder1.IsAwaitingDelete = true;
+                folder1.Update ();
+
+                retrieved1 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (0, retrieved1.Count, "Should not return folders that are client owned, even if they are awaiting delete");
+
+                // folder is no longer client owned
+                folder1.IsClientOwned = false;
+                folder1.Update ();
+
+                retrieved1 = McFolder.ServerEndQueryAll (1);
+                Assert.AreEqual (1, retrieved1.Count, "Should return folders that are client owned, but previously were not");
+                FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Non-client owned folder returned should match inserted (and updated) folder");
+            }
+
+            private McFolder CreateClientFolder (int accountId, bool isAwaitingDelete = false, bool isAwaitingCreate = false, 
+                bool isClientOwned = false)
+            {
+                string parentId = "1";
+                string serverId = "Server";
+                string name = "Folder Name";
+                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
+
+                folder.IsAwaitingCreate = isAwaitingCreate;
+                folder.IsAwaitingDelete = isAwaitingDelete;
                 return folder;
             }
         }
