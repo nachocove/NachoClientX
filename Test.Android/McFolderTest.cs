@@ -470,6 +470,100 @@ namespace Test.iOS
                 return folder;
             }
         }
+
+        [TestFixture]
+        public class TestResetState : BaseMcFolderTest
+        {
+            private const string serverId = "Server Id";
+
+            [Test]
+            public void ShouldNotBreakDefaultFolder ()
+            {
+                McFolder folder1 = CreateFolder (1);
+                folder1.Insert ();
+                McFolder.AsResetState (1);
+
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                FoldersAreEqual (folder1, retrieved1, "Folder should be the same after resetting state");
+                FlagsAreReset (retrieved1, "Folder flags should be correct when reset");
+            }
+
+            [Test]
+            public void ShouldResetFolderSyncKey ()
+            {
+                McFolder folder1 = CreateFolder (1, asSyncKey: "10");
+                folder1.Insert ();
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
+                McFolder.AsResetState (1);
+
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, serverId);
+                FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
+                FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
+            }
+
+            [Test]
+            public void ShouldResetSyncMetaFlag ()
+            {
+                McFolder folder1 = CreateFolder (1, syncMetaToClient: false);
+                folder1.Insert ();
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
+                McFolder.AsResetState (1);
+
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, serverId);
+                FoldersAreEqual (folder1, retrieved1, "Folder core values should not be modified by AsResetState");
+                FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
+
+                // set both at the same time
+                folder1.AsSyncMetaToClientExpected = false;
+                folder1.AsSyncKey = "10";
+                folder1.Update ();
+                McFolder.AsResetState (1);
+                McFolder retrieved3 = McFolder.GetClientOwnedFolder (1, serverId);
+                FlagsAreReset (retrieved3, "Both folder flags should have been reset correctly");
+            }
+
+            [Test]
+            public void ShouldOnlyResetStateForAccountId ()
+            {
+                // only reset state for the specified account id
+                McFolder folder1 = CreateFolder (2, asSyncKey: "10", syncMetaToClient: false);
+                folder1.Insert ();
+
+                McFolder folder2 = CreateFolder (1, asSyncKey: "10", syncMetaToClient: false);  // only this folder should be retrieved
+                folder2.Insert ();
+
+                McFolder.AsResetState (1);
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                FlagsAreReset (retrieved1, "Both folder flags should have been reset correctly");
+
+                // check that folder1's flags _were not_ reset
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (2, serverId);
+                Assert.AreEqual ("10", retrieved2.AsSyncKey, "Sync key should not be reset");
+                Assert.AreEqual (false, retrieved2.AsSyncMetaToClientExpected, "AsSyncMetaToClientExpected should not be reset");
+            }
+
+            private void FlagsAreReset (McFolder actual, string message)
+            {
+                Assert.AreEqual ("0", actual.AsSyncKey, message);
+                Assert.AreEqual (true, actual.AsSyncMetaToClientExpected, message);
+            }
+
+            private McFolder CreateFolder (int accountId, string asSyncKey = "0", bool syncMetaToClient = true)
+            {
+                bool isClientOwned = true;  // make it easy to query with client-owned
+                string parentId = "1";
+                string name = "Folder Name";
+                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
+
+                folder.AsSyncKey = asSyncKey;
+                folder.AsSyncMetaToClientExpected = syncMetaToClient;
+
+                return folder;
+            }
+        }
     }
 
     public class BaseMcFolderTest
