@@ -40,8 +40,9 @@ namespace NachoCore.ActiveSync
                 try {
                     response = await Request.ResolveAsync (m_owner.DnsHost (this),
                         m_owner.DnsType (this),
-                        m_owner.DnsClass (this), ProtocolType.Udp);
+                        m_owner.DnsClass (this), ProtocolType.Udp).ConfigureAwait (false);
                 } catch (AggregateException aex) {
+                    Log.Error(Log.LOG_HTTP, "Received AggregateException in await ... ResolveAsync");
                     throw aex.InnerException;
                 }
                 CleanupTimeoutTimer ();

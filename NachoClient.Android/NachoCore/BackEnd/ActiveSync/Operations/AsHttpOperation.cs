@@ -397,8 +397,9 @@ namespace NachoCore.ActiveSync
                 try {
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
                     try {
-                        response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken);
+                        response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                     } catch (AggregateException aex) {
+                        Log.Error(Log.LOG_HTTP, "Received AggregateException in await ... SendAsync");
                         throw aex.InnerException;
                     }
                 } catch (OperationCanceledException ex) {
@@ -454,7 +455,7 @@ namespace NachoCore.ActiveSync
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
-                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ());
+                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
                     } catch (ObjectDisposedException ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
@@ -481,7 +482,7 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
-        // TODO: move a bunch of this logic into AsCommand.
+
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
             if (HttpStatusCode.OK != response.StatusCode &&

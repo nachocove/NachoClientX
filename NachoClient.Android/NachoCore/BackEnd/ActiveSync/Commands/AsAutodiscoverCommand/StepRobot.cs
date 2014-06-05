@@ -511,7 +511,7 @@ namespace NachoCore.ActiveSync
                         new HttpClientHandler () { AllowAutoRedirect = false });
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
-                        await client.GetAsync (ReDirUri);
+                        await client.GetAsync (ReDirUri).ConfigureAwait (false);
                     } catch {
                         StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0");
                         return;
