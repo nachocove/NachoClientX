@@ -89,6 +89,8 @@ namespace NachoCore
             // THIS IS THE BEST PLADE TO PUT Stop FUNCTIONS - WHEN SERVICE NEEDS TO BE SHUTDOWN BEFORE SLEEP/EXIT.
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
+            // NcTimer.Stop () should go last.
+            NcTimer.Stop ();
         }
 
         public void QuickCheck (uint seconds)
