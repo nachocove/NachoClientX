@@ -34,6 +34,7 @@ using System.Globalization;
 using System.Drawing;
 using NachoCore;
 using NachoCore.Utils;
+using System.Collections.Generic;
 
 namespace NachoClient
 {
@@ -333,6 +334,30 @@ namespace NachoClient
 
         #region NachoCove
 
+        //Colors for users' CircleColor. These colors arent great.  NEED TO BE CHANGED
+        public static UIColor greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
+        public static UIColor redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
+        public static UIColor yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
+        public static UIColor brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
+        public static UIColor fiveColor = new UIColor (120.0f / 255.0f, 111.0f / 255.0f, 79.0f / 255.0f, 1.0f);
+        public static UIColor sixColor = new UIColor (50.0f / 255.0f, 10.0f / 255.0f, 14.0f / 255.0f, 1.0f);
+        public static UIColor sevenColor = new UIColor (10.0f / 255.0f, 217.0f / 255.0f, 150.0f / 255.0f, 1.0f);
+        public static UIColor eightColor = new UIColor (34.0f / 255.0f, 20.0f / 255.0f, 98.0f / 255.0f, 1.0f);
+        public static List<UIColor> colors = new List<UIColor> ()
+        {
+            UIColor.LightGray,
+            greenColor,
+            redColor,
+            yellowColor,
+            brownColor,
+            fiveColor,
+            sixColor,
+            sevenColor,
+            eightColor
+        };
+
+
+
         public static UIImage DotWithColor (UIColor color)
         {
             UIGraphics.BeginImageContext (new SizeF (22, 22));
@@ -346,11 +371,11 @@ namespace NachoClient
             return image;
         }
 
-        public static UIImage LettersWithColor (string letters, UIColor color, UIFont font)
+        public static UIImage LettersWithColor (string from, UIColor color, UIFont font)
         {
             var size = new SizeF (40, 40);
             var origin = new PointF (0, 0);
-            var content = letters;
+            var content = StringToLetters(from);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
@@ -368,6 +393,26 @@ namespace NachoClient
             UIGraphics.EndImageContext ();
             return image;
         }
+
+        //Converts a users name into capitalized initials
+        public static string StringToLetters (string theString)
+        {
+            var LetterString = "";
+            string[] names = theString.Split(' ');
+            if (names.Length > 1)
+                LetterString = (names [0].Substring (0, 1)).ToCapitalized() + (names [1].Substring (0, 1)).ToCapitalized();
+            if (names.Length == 1)
+                LetterString = (names [0].Substring (0, 1)).ToCapitalized();
+            return LetterString;
+        }
+
+        //Takes an int and returns a UIColor.  This is nessary because the db
+        //can't store UIColors
+        public static UIColor IntToUIColor (int colorNum)
+        {
+            return colors [colorNum];
+        }
+
 
         #endregion
     }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using MonoTouch.UIKit;
 
 namespace NachoCore.Model
 {
@@ -135,6 +136,9 @@ namespace NachoCore.Model
         public string NickName { get; set; }
         // "Hotness" of the contact. Currently, updated by the emails.
         public int Score { get; set; }
+
+        // Color of contact's profile circle if they have not set their photo or a photo cannot be found
+        public int CircleColor { get; set; }
 
         public static ClassCodeEnum GetClassCode ()
         {
