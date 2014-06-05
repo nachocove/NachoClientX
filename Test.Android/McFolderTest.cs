@@ -298,11 +298,151 @@ namespace Test.iOS
             }
         }
 
-//        [TestFixture]
-//        public class TestQueryByFolderEntryId
-//        {
-////            [Test]
-//        }
+        [TestFixture]
+        public class TestQueryByFolderEntryId : BaseMcFolderTest
+        {
+            [Test]
+            public void ShouldQueryByEntryId ()
+            {
+                int accountId = 1;
+                int folderId = 1;
+                int folderEntryId = 11;
+                McFolder folder1 = CreateFolder (accountId);
+                McMapFolderFolderEntry folderEntry = CreateFolderEntry (accountId, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder);
+                Console.WriteLine ("folder1 ID: {0}", folder1.Id);
+                Console.WriteLine ("folderId: {0}", folderEntry.FolderId);
+
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                Assert.AreEqual (1, retrieved1.Count, "Should only find one matching folder");
+                FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Retrieved folder should be unchanged");
+            }
+
+            [Test]
+            public void ShouldNotDisplayFoldersAwaitingDelete ()
+            {// should not display folders awaiting delete
+                int accountId = 1;
+                int folderId = 1;
+                int folderEntryId = 11;
+                CreateFolder (accountId, isAwaitingDelete: true);
+                CreateFolderEntry (accountId, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder);
+
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                Assert.AreEqual (0, retrieved1.Count, "Should not return folders awaiting delete");
+            }
+
+            [Test]
+            public void ShouldNotReturnFoldersWithoutFolderEntry ()
+            {
+                // should only return McFolders that have a corresponding entry in McMapFolderFolderEntry
+                int accountId = 1;
+                int folderId = 50;
+                int folderEntryId = 11;
+                McFolder folder1 = CreateFolder (accountId, autoInsert: false);
+                folder1.Id = 30;
+                folder1.Update ();
+                CreateFolderEntry (accountId, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder, autoInsert: false);
+
+                List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                Assert.AreEqual (0, retrieved1.Count, "Should not find folders if folder ID and folderEntry ID differ");
+            }
+
+            [Test]
+            public void ShouldQueryByFolderEntryAccountId ()
+            {
+                // should query folders by McMapFolderFolderEntry accountId
+                int accountId = 1;
+                int accountIdOther = 2;
+                int folderId = 1;
+                int folderEntryId = 11;
+                CreateFolder (accountId);
+                CreateFolderEntry (accountIdOther, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder);
+
+                List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McFolder> (accountIdOther, folderEntryId);
+                Assert.AreEqual (0, retrieved1.Count, "Should only retrieve folder by folderEntry accountId");
+                Assert.AreEqual (1, retrieved2.Count, "Should be able to retrieve folder by folderEntry accountId");
+            }
+
+            [Test]
+            public void ShouldReturnFoldersWithFolderCode ()
+            {
+                // should only return folders with “Folder” class code
+                McFolderEntry.ClassCodeEnum goodClassCode = McFolderEntry.ClassCodeEnum.Folder;
+                McFolderEntry.ClassCodeEnum badClassCode = McFolderEntry.ClassCodeEnum.Calendar;
+
+                // don't return folders that don't have the Folder class code
+                int accountId = 1;
+                int folderId = 1;
+                int folderEntryId = 11;
+                McFolder folder1 = CreateFolder (accountId);
+                McMapFolderFolderEntry folderEntry1 = CreateFolderEntry (accountId, folderId, folderEntryId, badClassCode);
+
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                Assert.AreEqual (0, retrieved1.Count, "Should not retrieve folders that don't have the folder class code");
+
+                // make sure that class code can be changed back and the record will be found
+                folderEntry1.ClassCode = goodClassCode;
+                folderEntry1.Update ();
+
+                List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                Assert.AreEqual (1, retrieved2.Count, "Should retrieve matching folder once it has the correct class code");
+                FoldersAreEqual (folder1, retrieved2.FirstOrDefault (), "Retrieved folder should match inserted (and updated) folder");
+            }
+
+            [Test]
+            public void QueryByMcItemType ()
+            {
+                QueryFolderOfGenericType<McEmailMessage> ("Should be able to query email messages by folderEntryId");
+                QueryFolderOfGenericType<McCalendar> ("Should be able to query all calendars by folderEntryId");
+                QueryFolderOfGenericType<McContact> ("Should be able to query all contacts by folderEntryId");
+                QueryFolderOfGenericType<McTask> ("Should be able to query all tasks by folderEntryId");
+            }
+
+            private void QueryFolderOfGenericType<T> (string message) where T : McItem, new()
+            {
+                int accountId = 1;
+                int folderId = 1;
+                int folderEntryId = 11;
+
+                T email1 = new T ();
+                email1.AccountId = accountId;
+                email1.Insert ();
+
+                CreateFolderEntry (accountId, folderId, folderEntryId);
+
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<T> (accountId, folderEntryId);
+                Assert.AreEqual (0, retrieved1.Count, message);
+            }
+
+            private McFolder CreateFolder (int accountId, bool isAwaitingDelete = false, bool autoInsert = true)
+            {
+                bool isClientOwned = false;
+                string parentId = "0";
+                string serverId = "Server";
+                string name = "Folder Name";
+                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
+
+                folder.IsAwaitingDelete = isAwaitingDelete;
+
+                if (autoInsert) { folder.Insert (); }
+                return folder;
+            }
+
+            private McMapFolderFolderEntry CreateFolderEntry (int accountId, int folderId, int folderEntryId, 
+                McFolderEntry.ClassCodeEnum classCode = McFolderEntry.ClassCodeEnum.Folder, bool autoInsert = true)
+            {
+                McMapFolderFolderEntry folderEntry = new McMapFolderFolderEntry (accountId);
+
+                folderEntry.FolderId = folderId;
+                folderEntry.FolderEntryId = folderEntryId;
+                folderEntry.ClassCode = classCode;
+
+                if (autoInsert) { folderEntry.Insert (); }
+
+                return folderEntry;
+            }
+        }
 
         [TestFixture]
         public class TestQueryClientOwned : BaseMcFolderTest
@@ -494,7 +634,7 @@ namespace Test.iOS
                 McFolder folder1 = CreateFolder (1, asSyncKey: "10");
                 folder1.Insert ();
                 McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
-                Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
+                Assert.AreEqual ("10", retrieved1.AsSyncKey, "AsSyncKey should be set correctly before reset event");
                 McFolder.AsResetState (1);
 
                 McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, serverId);
