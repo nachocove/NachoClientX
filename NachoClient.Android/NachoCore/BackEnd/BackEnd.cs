@@ -63,12 +63,17 @@ namespace NachoCore
 
         public IBackEndOwner Owner { set; private get; }
 
+        private bool HasServiceFromAccountId (int accountId)
+        {
+            NachoAssert.True (0 != accountId);
+            return Services.Where (ctrl => ctrl.Account.Id.Equals (accountId)).Any ();
+        }
+
         private ProtoControl ServiceFromAccountId (int accountId)
         {
+            NachoAssert.True (0 != accountId);
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
-            if (!Services.Any ()) {
-                return null;
-            }
+            NachoAssert.True (Services.Any ());
             return query.Single ();
         }
         // For IBackEnd.
@@ -144,10 +149,9 @@ namespace NachoCore
         {
             Task.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
-                var service = ServiceFromAccountId (accountId);
-                if (null == service) {
+                if (! HasServiceFromAccountId (accountId)) {
                     // TODO: this is AS-specific.
-                    service = new AsProtoControl (this, accountId);
+                    var service = new AsProtoControl (this, accountId);
                     Services.Add (service);
                     // Create client owned objects as needed.
                     McFolder freshMade;
@@ -176,7 +180,7 @@ namespace NachoCore
                         freshMade.Insert();
                     }
                 }
-                service.Execute ();
+                ServiceFromAccountId (accountId).Execute ();
             });
         }
 

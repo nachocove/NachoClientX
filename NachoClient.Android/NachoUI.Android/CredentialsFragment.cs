@@ -30,15 +30,15 @@ namespace NachoClient.AndroidClient
                 var txtPassword = rootView.FindViewById<TextView> (Resource.Id.user_password).Text;
 
                 var cred = new McCred () { Username = txtUsername, Password = txtPassword };
-                NcModel.Instance.Db.Insert (cred);
+                cred.Insert ();
                 // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
 				var server = new McServer () { Host = txtServer };
-                NcModel.Instance.Db.Insert (server);
+                server.Insert ();
                 // In the near future, you won't need to create this protocol state object.
                 var protocolState = new McProtocolState ();
-                NcModel.Instance.Db.Insert (protocolState);
+                protocolState.Insert ();
                 var policy = new McPolicy ();
-                NcModel.Instance.Db.Insert (policy);
+                policy.Insert ();
                 // You will always need to supply the user's email address.
                 var Account = new McAccount () { EmailAddr = txtUsername };
                 // The account object is the "top", pointing to credential, server, and opaque protocol state.
@@ -46,8 +46,8 @@ namespace NachoClient.AndroidClient
                 Account.ServerId = server.Id;
                 Account.ProtocolStateId = protocolState.Id;
                 Account.PolicyId = policy.Id;
-                NcModel.Instance.Db.Insert (Account);
-                NcApplication.Instance.Start();
+                Account.Insert ();
+                BackEnd.Instance.Start (Account.Id);
                 // Clean up UI
                 Activity.SupportFragmentManager.BeginTransaction().Remove(this).Commit();
             };
