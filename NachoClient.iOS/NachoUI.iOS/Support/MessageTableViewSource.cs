@@ -134,7 +134,7 @@ namespace NachoClient.iOS
             if (MultiSelect.Contains (threadIndex)) {
                 userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-active");
             } else {
-                userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select");
+                userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-default");
             }
         }
 

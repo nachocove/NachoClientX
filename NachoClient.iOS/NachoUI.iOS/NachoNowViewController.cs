@@ -281,6 +281,7 @@ namespace NachoClient.iOS
             calendarSource.ScrollToNow (calendarTableView);
 
             carouselView.Frame = carouselNormalSize ();
+            carouselView.Alpha = 1.0f;
 
             // Enabled gestures
             inboxPanGestureRecognizer.Enabled = true;
@@ -298,7 +299,7 @@ namespace NachoClient.iOS
             inboxTableView.Frame = inboxFullSize ();
             inboxTableView.ScrollEnabled = true;
 
-            carouselView.Frame = carouselSmallSize ();
+            carouselView.Alpha = 0.0f;
 
             inboxTableView.Layer.CornerRadius = 0;
             inboxTableView.Layer.MasksToBounds = false;
@@ -312,8 +313,7 @@ namespace NachoClient.iOS
             calendarThumbTapGestureRecognizer.Enabled = true;
             calendarThumbView.Image = UIImage.FromBundle ("cal-close-grabber");
 
-
-            carouselView.Frame = carouselSmallSize ();
+            carouselView.Alpha = 0.0f;
         }
 
         int INBOX_ROW_HEIGHT = 116;
@@ -498,7 +498,7 @@ namespace NachoClient.iOS
             var rect = new RectangleF (0, 0, parentFrame.Width, parentFrame.Height);
             return rect;
         }
-
+            
         protected double calendarPercentOpen (float yOffset)
         {
             var fullSize = calendarFullSize ();
@@ -691,9 +691,6 @@ namespace NachoClient.iOS
             protected const int REMINDER_TEXT_TAG = 106;
             protected const int ATTACHMENT_TAG = 107;
             protected const int RECEIVED_DATE_TAG = 108;
-            protected const int REPLY_BUTTON_TAG = 110;
-            protected const int SAVE_BUTTON_TAG = 111;
-            protected const int DELETE_BUTTON_TAG = 112;
             static List<UIBarButtonItem> preventGC;
 
             /// <summary>
@@ -789,17 +786,25 @@ namespace NachoClient.iOS
                     preventGC = new List<UIBarButtonItem> ();
                 }
                     
-                var replyButton = new UIBarButtonItem (UIBarButtonSystemItem.Reply);
+                var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
                 replyButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view);
+                    onReplyButtonClicked (view, ComposeViewController.Reply);
                 };
                 preventGC.Add (replyButton);
 
-                var saveButton = new UIBarButtonItem (UIBarButtonSystemItem.Save);
-                var saveButtonAttributes = new UITextAttributes ();
-                saveButtonAttributes.TextColor = A.Color_999999;
-                saveButtonAttributes.Font = A.Font_AvenirNextRegular17;
-                saveButton.SetTitleTextAttributes (saveButtonAttributes, UIControlState.Normal);
+                var replyAllButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply-all"), UIBarButtonItemStyle.Plain, null);
+                replyAllButton.Clicked += (object sender, EventArgs e) => {
+                    onReplyButtonClicked (view, ComposeViewController.ReplyAll);
+                };
+                preventGC.Add (replyAllButton);
+
+                var forwardButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-fwd"), UIBarButtonItemStyle.Plain, null);
+                forwardButton.Clicked += (object sender, EventArgs e) => {
+                    onReplyButtonClicked (view, ComposeViewController.Forward);
+                };
+                preventGC.Add (forwardButton);
+
+                var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
                     onSaveButtonClicked (view);
                 };
@@ -808,24 +813,31 @@ namespace NachoClient.iOS
                 var flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
                 preventGC.Add (flexibleSpace);
 
-                var deleteButton = new UIBarButtonItem (UIBarButtonSystemItem.Trash);
+                var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-delete"), UIBarButtonItemStyle.Plain, null);
                 deleteButton.Clicked += (object sender, EventArgs e) => {
                     onDeleteButtonClicked (view);
                 };
                 preventGC.Add (deleteButton);
 
                 var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
-                toolbar.SetItems (new UIBarButtonItem[] { replyButton, flexibleSpace, saveButton, deleteButton }, false);
+                toolbar.SetItems (new UIBarButtonItem[] {
+                    replyButton,
+                    replyAllButton,
+                    forwardButton,
+                    flexibleSpace,
+                    saveButton,
+                    deleteButton
+                }, false);
                 view.AddSubview (toolbar);
 
                 return view;
             }
 
-            void onReplyButtonClicked (UIView view)
+            void onReplyButtonClicked (UIView view, string action)
             {
                 var messageThreadIndex = view.Tag;
                 var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
-                owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (ComposeViewController.Reply, messageThread));
+                owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (action, messageThread));
             }
 
             void onSaveButtonClicked (UIView view)
