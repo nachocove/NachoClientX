@@ -19,9 +19,9 @@ namespace NachoClient.iOS
     {
         List<NcEmailAddress> AddressList = new List<NcEmailAddress> ();
         List<int> attachmentList = new List<int> ();
-        public static readonly NSString Reply = new NSString ("Reply");
-        public static readonly NSString ReplyAll = new NSString ("ReplyAll");
-        public static readonly NSString Forward = new NSString ("Forward");
+        public static readonly string Reply = "Reply";
+        public static readonly string ReplyAll = "ReplyAll";
+        public static readonly string Forward = "Forward";
         public string Action;
         public McEmailMessageThread ActionThread;
         public INachoMessageEditorParent owner;
@@ -485,6 +485,7 @@ namespace NachoClient.iOS
             }
         }
 
+        // TODO: Put in pretty
         protected string CreateInitialSubjectLine ()
         {
             if (null == ActionThread) {
@@ -494,14 +495,19 @@ namespace NachoClient.iOS
             var ActionMessage = ActionThread.SingleMessageSpecialCase ();
             NachoAssert.True (null != ActionMessage);
 
+            var Subject = "";
+            if (null != ActionMessage.Subject) {
+                Subject = ActionMessage.Subject;
+            }
+
             if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
-                if (ActionMessage.Subject.StartsWith ("Re:")) {
-                    return ActionMessage.Subject;
+                if (Subject.StartsWith ("Re:")) {
+                    return Subject;
                 }
-                return "Re: " + ActionMessage.Subject;
+                return "Re: " + Subject;
             }
             if (Action.Equals (Forward)) {
-                return "Fwd: " + ActionMessage.Subject;
+                return "Fwd: " + Subject;
             }
             return "";
         }

@@ -10,6 +10,7 @@ namespace NachoClient.iOS
     public class SegueHolder : NSObject
     {
         public object value { get; private set; }
+        public object value2 { get; private set; }
 
         /// <summary>
         /// Creates an NSObject to hold a typed C# object
@@ -18,6 +19,12 @@ namespace NachoClient.iOS
         public SegueHolder (Object value)
         {
             this.value = value;
+        }
+
+        public SegueHolder (Object value, Object value2)
+        {
+            this.value = value;
+            this.value2 = value2;
         }
     }
 }
