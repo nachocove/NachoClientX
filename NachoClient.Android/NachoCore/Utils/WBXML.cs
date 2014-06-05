@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using NachoCore;
+
 #if (!WBXMLTOOL)
 using NachoCore.Model;
 #endif
@@ -52,9 +53,9 @@ namespace NachoCore.Wbxml
 
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
-                filter = new NcXmlFilterState (AsXmlFilterSet.Responses);
+                filter = new NcXmlFilterState (AsXmlFilterSet.Responses, CToken);
             } else {
-                filter = new NcXmlFilterState (null);
+                filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
 
@@ -90,7 +91,7 @@ namespace NachoCore.Wbxml
 
             while (bytes.Peek () >= 0) {
                 if (CToken.IsCancellationRequested) {
-                    throw new TaskCanceledException ();
+                    throw new OperationCanceledException ();
                 }
                 byte currentByte = bytes.Dequeue ();
 
@@ -119,7 +120,7 @@ namespace NachoCore.Wbxml
                     break;
                 case GlobalTokens.OPAQUE:
                     int OpaqueLength = bytes.DequeueMultibyteInt ();
-                    var OpaqueBytes = bytes.DequeueOpaque (OpaqueLength);
+                    var OpaqueBytes = bytes.DequeueOpaque (OpaqueLength, CToken);
                     XText newOpaqueNode;
                     if (codePages [currentCodePage].GetIsOpaqueBase64 (currentNode.Name.LocalName)) {
                         newOpaqueNode = new XText (Convert.ToBase64String (OpaqueBytes));
@@ -139,20 +140,12 @@ namespace NachoCore.Wbxml
                         switch (currentCodePage) {
                         case ASWBXML.KCodePage_AirSyncBase:
                             #if (!WBXMLTOOL)
-                            try {
-                                var data = McBody.SaveStart ();
-                                using (var fileStream = data.SaveFileStream ()) {
-                                    if (bytes.DequeueStringToStream (fileStream)) {
-                                        data.SaveDone ();
-                                        fileStream.Dispose();
-                                        currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
-                                    } else {
-                                        Log.Error (Log.LOG_AS, "Failure while trying to write body.");
-                                    }
-                                }
-                            } catch (Exception ex) {
-                                Log.Error (Log.LOG_AS, "Exception while trying to write body {0}", ex.ToString ());
+                            var data = McBody.SaveStart ();
+                            using (var fileStream = data.SaveFileStream ()) {
+                                bytes.DequeueStringToStream (fileStream, CToken);
                             }
+                            currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                            data.SaveDone ();
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
                             NachoAssert.True (false); // not implemented yet
@@ -161,22 +154,14 @@ namespace NachoCore.Wbxml
 
                         case ASWBXML.KCodePage_ItemOperations:
                             #if (!WBXMLTOOL)
-                            try {
-                                var guidString = Guid.NewGuid ().ToString ("N");
-                                using (var fileStream = McAttachment.TempFileStream (guidString)) {
-                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
+                            var guidString = Guid.NewGuid ().ToString ("N");
+                            using (var fileStream = McAttachment.TempFileStream (guidString)) {
+                                using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
                                                                   new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                        if (bytes.DequeueStringToStream (cryptoStream)) {
-                                            cryptoStream.Dispose ();
-                                            currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
-                                        } else {
-                                            Log.Error (Log.LOG_AS, "Failure while trying to write attachment.");
-                                        }
-                                    }
+                                    bytes.DequeueStringToStream (cryptoStream, CToken);
+                                    cryptoStream.Dispose ();
+                                    currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
                                 }
-                            } catch (Exception ex) {
-                                // If we can't write the file, don't add the attr.
-                                Log.Error (Log.LOG_AS, "Exception while trying to write attachment {0}", ex.ToString ());
                             }
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
@@ -189,7 +174,7 @@ namespace NachoCore.Wbxml
                             break;
                         }
                     } else {
-                        newTextNode = new XText (bytes.DequeueString ());
+                        newTextNode = new XText (bytes.DequeueString (CToken));
                     }
                     currentNode.Add (newTextNode);
                     filter.Update (level, newTextNode);
@@ -271,9 +256,9 @@ namespace NachoCore.Wbxml
         {
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
-                filter = new NcXmlFilterState (AsXmlFilterSet.Requests);
+                filter = new NcXmlFilterState (AsXmlFilterSet.Requests, CToken);
             } else {
-                filter = new NcXmlFilterState (null);
+                filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
 
@@ -298,9 +283,9 @@ namespace NachoCore.Wbxml
 
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
-                filter = new NcXmlFilterState (AsXmlFilterSet.Requests);
+                filter = new NcXmlFilterState (AsXmlFilterSet.Requests, CToken);
             } else {
-                filter = new NcXmlFilterState (null);
+                filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
 

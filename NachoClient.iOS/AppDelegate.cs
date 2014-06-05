@@ -139,7 +139,7 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint B");
 
-            //StartCrashReporting ();
+            StartCrashReporting ();
   
             Log.Info (Log.LOG_INIT, "FinishedLaunching: checkpoint C");
 
@@ -273,6 +273,7 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "App Resign Activation: time remaining: " + application.BackgroundTimeRemaining);
+            NcApplication.Instance.Stop ();
         }
         // This method should be used to release shared resources and it should store the application state.
         // If your application supports background exection this method is called instead of WillTerminate
@@ -280,7 +281,6 @@ namespace NachoClient.iOS
         public override void DidEnterBackground (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "App Did Enter Background");
-            NcApplication.Instance.Stop ();
             var imageView = new UIImageView (Window.Frame);
             imageView.Tag = 653;    // Give some decent tagvalue or keep a reference of imageView in self
             imageView.BackgroundColor = UIColor.Red;

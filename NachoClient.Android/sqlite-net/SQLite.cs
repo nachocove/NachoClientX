@@ -149,6 +149,7 @@ namespace SQLite
 
 			DatabasePath = databasePath;
 
+            SQLite3.Config (SQLite3.ConfigOption.Serialized);
             /* NACHO - this code *should* not be nec.
             // SQLite3.Config (SQLite3.ConfigOption.Log, SQLite3.LogCallback, IntPtr.Zero);
             if (SQLiteOpenFlags.FullMutex == (openFlags & SQLiteOpenFlags.FullMutex)) {

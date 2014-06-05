@@ -101,8 +101,8 @@ def main():
         exit(0)
 
     if options.ios:
-        hockey_app = HockeyappUploadIos(api_token='92c7e2b0e98642f3b6ad1e3f6403924c',
-                                        app_id='5f7134267a5c73933420a1f0efbdfcbf')
+        hockey_app = HockeyappUploadIos(api_token='dbccf0190d5b410e8f43ef2b5e7d6b43',
+                                        app_id='b22a505d784d64901ab1abde0728df67')
     else:
         raise NotImplementedError('Android is not yet supported')
     hockey_app.upload(options.target_dir)

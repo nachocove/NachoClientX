@@ -88,6 +88,8 @@ namespace NachoCore.ActiveSync
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
+        private bool RequestQuickFetch;
+
         public AsProtoControl (IProtoControlOwner owner, int accountId)
         {
             ProtoControl = this;
@@ -1106,6 +1108,11 @@ namespace NachoCore.ActiveSync
                 if ((uint)AsEvt.E.ReSync == insteadEvent.EventCode) {
                     // The Top-of-Q pending IS executed using Sync.
                     NachoAssert.True (SyncStrategy.IsMoreSyncNeeded ());
+                    if (!SyncStrategy.RequestQuickFetch) {
+                        // If it hasn't already been requested externally, we want every other Sync to be a quick-fetch.
+                        SyncStrategy.RequestQuickFetch = RequestQuickFetch;
+                        RequestQuickFetch = !RequestQuickFetch;
+                    }
                     SetCmd (new AsSyncCommand (this));
                     Cmd.Execute (Sm);
                 } else {
@@ -1114,6 +1121,11 @@ namespace NachoCore.ActiveSync
                 }
             } else {
                 if (SyncStrategy.IsMoreSyncNeeded ()) {
+                    if (!SyncStrategy.RequestQuickFetch) {
+                        // If it hasn't already been requested externally, we want every other Sync to be a quick-fetch.
+                        SyncStrategy.RequestQuickFetch = RequestQuickFetch;
+                        RequestQuickFetch = !RequestQuickFetch;
+                    }
                     SetCmd (new AsSyncCommand (this));
                     Cmd.Execute (Sm);
                 } else {
@@ -1278,13 +1290,13 @@ namespace NachoCore.ActiveSync
                 defaultInbox.AsSyncMetaToClientExpected = true;
                 defaultInbox.Update ();
             }
-            Task.Run (delegate {
-                if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                    Log.Warn (Log.LOG_AS, "Execute called while network is down.");
-                    return;
-                }
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
-            });
+            // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
+            SyncStrategy.RequestQuickFetch = true;
+            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
+                return;
+            }
+            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
         public override void Cancel (string token)
@@ -1335,11 +1347,11 @@ namespace NachoCore.ActiveSync
 
                 default:
                 case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Warn (Log.LOG_AS, "Server {0} communication quality degrated.", Server.Host);
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality degrated.", Server.Host);
                     break;
 
                 case NcCommStatus.CommQualityEnum.Unusable:
-                    Log.Error (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
                     ForceStop ();
                     break;
                 }

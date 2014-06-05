@@ -2,6 +2,7 @@
 //
 using System;
 using System.Xml.Linq;
+using System.Threading;
 using NUnit.Framework;
 using NachoCore.Utils;
 using NachoCore.Wbxml;
@@ -69,7 +70,7 @@ namespace Test.Common
             filterSet.Add (new Filter1 ());
             for (int n = 0; n < xml.Length; n++) {
                 XDocument docIn = XDocument.Parse (xml [n]);
-                XDocument docOut = filterSet.Filter (docIn);
+                XDocument docOut = filterSet.Filter (docIn, new CancellationToken ());
                 Assert.AreEqual (expected [n], docOut.ToString ());
             }
         }
@@ -105,7 +106,7 @@ namespace Test.Common
             filterSet.Add (new Filter2 ());
             for (int n = 0; n < xml.Length; n++) {
                 XDocument docIn = XDocument.Parse (xml [n]);
-                XDocument docOut = filterSet.Filter (docIn);
+                XDocument docOut = filterSet.Filter (docIn, new CancellationToken ());
                 Assert.AreEqual (expected [n], docOut.ToString ());
             }
         }

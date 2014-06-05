@@ -580,7 +580,10 @@ namespace NachoCore.ActiveSync
         public override bool WasAbleToRephrase ()
         {
             // See if we are trying to do a bunch in parallel - if so go serial.
-            var firstPending = PendingList.First ();
+            var firstPending = PendingList.FirstOrDefault ();
+            if (null == firstPending) {
+                return false;
+            }
             if (1 >= PendingList.Count || firstPending.DeferredSerialIssueOnly) {
                 // We are already doing serial.
                 return false;
@@ -720,6 +723,11 @@ namespace NachoCore.ActiveSync
                         Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
+                    break;
+
+                case Xml.AirSync.SoftDelete:
+                    // TODO: Implement SoftDelete if we want to constrain storage. Need to be careful 
+                    // ignore SoftDelete for in-window items when doing quick-fetch.
                     break;
 
                 default:

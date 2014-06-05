@@ -189,6 +189,7 @@ namespace NachoCore.ActiveSync
             public const string Options = "Options";
             public const string Responses = "Responses";
             public const string ServerId = "ServerId";
+            public const string SoftDelete = "SoftDelete";
             public const string Status = "Status";
             public const string Sync = "Sync";
             public const string SyncKey = "SyncKey";

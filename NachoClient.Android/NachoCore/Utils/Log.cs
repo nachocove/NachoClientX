@@ -171,11 +171,16 @@ namespace NachoCore.Utils
 
     public class Logger
     {
+        public delegate void ConsoleWriteLineFunction (string fmt, object arg0);
+
+        public ConsoleWriteLineFunction WriteLine { set; get; }
+
         public LogSettings Settings { set; get; }
 
         public Logger ()
         {
             Settings = new LogSettings ();
+            WriteLine = Console.WriteLine;
         }
 
         private static string GetMethodShortName (string methodName)
@@ -186,13 +191,13 @@ namespace NachoCore.Utils
             return methodName2.Substring (space + 1);
         }
 
-        private static void _Log (ulong subsystem,  LogLevelSettings settings, TelemetryEventType teleType,
+        private void _Log (ulong subsystem,  LogLevelSettings settings, TelemetryEventType teleType,
             string fmt, string level, params object[] list)
         {
             if (settings.ToConsole (subsystem)) {
                 // Get the caller information
                 StackTrace st = new StackTrace (true);
-                StackFrame sf = st.GetFrame (2);
+                StackFrame sf = st.GetFrame (3);
                 MethodBase mb = sf.GetMethod ();
                 string callInfo = "";
                 if (settings.CallerInfo) {
@@ -205,7 +210,7 @@ namespace NachoCore.Utils
                             mb.DeclaringType.Name, mb.Name);
                     }
                 }
-                Console.WriteLine ("{0}", String.Format (new NachoFormatter (), 
+                WriteLine ("{0}", String.Format (new NachoFormatter (),
                     level + ":" + Thread.CurrentThread.ManagedThreadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
@@ -291,6 +296,7 @@ namespace NachoCore.Utils
         public const ulong LOG_UTILS = (1 << 15);
         public const ulong LOG_INIT = (1 << 16);
         public const ulong LOG_TEST = (1 << 17);
+        public const ulong LOG_DNS = (1 << 18);
 
         private static Logger DefaultLogger;
         public static Logger SharedInstance {
@@ -306,7 +312,7 @@ namespace NachoCore.Utils
         {
         }
 
-        public static void Deubg (ulong subsystem, string fmt, params object[] list)
+        public static void Debug (ulong subsystem, string fmt, params object[] list)
         {
             Log.SharedInstance.Debug (subsystem, fmt, list);
         }
@@ -324,6 +330,12 @@ namespace NachoCore.Utils
         public static void Error (ulong subsystem, string fmt, params object[] list)
         {
             Log.SharedInstance.Error (subsystem, fmt, list);
+        }
+
+        // This is for testing only
+        public static void SetLogger (Logger logger)
+        {
+            DefaultLogger = logger;
         }
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using NachoCore.Utils;
 
 namespace NachoCore.Wbxml
@@ -73,29 +74,29 @@ namespace NachoCore.Wbxml
             return (continuationBitmask & byteval) != 0;
         }
 
-        public bool DequeueStringToStream (Stream stream)
+        public void DequeueStringToStream (Stream stream, CancellationToken cToken)
         {
-            try {
-                byte currentByte = 0x00;
-                do {
-                    currentByte = this.Dequeue ();
-                    if (currentByte != 0x00) {
-                        stream.WriteByte (currentByte);
-                    }
-                } while (currentByte != 0x00);
-                stream.Flush();
-                return true;
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_AS, "Exception in DequeueStringToStream {0}", ex.ToString ());
-                return false;
-            }
+            byte currentByte = 0x00;
+            do {
+                if (cToken.IsCancellationRequested) {
+                    throw new OperationCanceledException ();
+                }
+                currentByte = this.Dequeue ();
+                if (currentByte != 0x00) {
+                    stream.WriteByte (currentByte);
+                }
+            } while (currentByte != 0x00);
+            stream.Flush ();
         }
 
-        public string DequeueString ()
+        public string DequeueString (CancellationToken cToken)
         {
             StringBuilder strReturn = new StringBuilder ();
             byte currentByte = 0x00;
             do {
+                if (cToken.IsCancellationRequested) {
+                    throw new OperationCanceledException ();
+                }
                 // TODO: Improve this handling. We are technically UTF-8, meaning
                 // that characters could be more than one byte long. This will fail if we have
                 // characters outside of the US-ASCII range
@@ -108,7 +109,7 @@ namespace NachoCore.Wbxml
             return strReturn.ToString ();
         }
 
-        public byte[] DequeueOpaque (int length)
+        public byte[] DequeueOpaque (int length, CancellationToken cToken)
         {
             MemoryStream bStream = new MemoryStream ();
 
@@ -119,6 +120,9 @@ namespace NachoCore.Wbxml
                 // characters outside of the US-ASCII range
                 currentByte = this.Dequeue ();
                 bStream.WriteByte (currentByte);
+                if (cToken.IsCancellationRequested) {
+                    throw new OperationCanceledException ();
+                }
             }
             return bStream.ToArray ();
         }

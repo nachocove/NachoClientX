@@ -396,7 +396,12 @@ namespace NachoCore.ActiveSync
                     System.Threading.Timeout.InfiniteTimeSpan);
                 try {
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
-                    response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
+                    try {
+                        response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
+                    } catch (AggregateException aex) {
+                        Log.Error(Log.LOG_HTTP, "Received AggregateException in await ... SendAsync");
+                        throw aex.InnerException;
+                    }
                 } catch (OperationCanceledException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
                     if (myClient == Client) {
@@ -477,13 +482,14 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
-        // TODO: move a bunch of this logic into AsCommand.
+
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
             if (HttpStatusCode.OK != response.StatusCode &&
                 ContentTypeHtml == ContentType) {
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
+                // FIXME: find some way to make cancellation token work here.
                 var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
                 Log.Info (Log.LOG_HTTP, "HTML response: {0}", possibleMessage);
             }
@@ -506,15 +512,18 @@ namespace NachoCore.ActiveSync
                         var decoder = new ASWBXML (cToken);
                         try {
                             decoder.LoadBytes (ContentData);
-                        } catch (TaskCanceledException) {
+                        } catch (OperationCanceledException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             Owner.ResoveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
                         } catch (WBXMLReadPastEndException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
-                            // We are deferring because we think that a truncated WBXML string is likely transient.
+                            // We are deferring because we think that an invalid WBXML string is likely transient.
                             Owner.ResoveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
+                        } catch (InvalidDataException) {
+                            Owner.ResoveAllDeferred ();
+                            return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND2");
                         }
                         responseDoc = decoder.XmlDoc;
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);

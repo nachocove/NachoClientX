@@ -60,13 +60,13 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageViewToMessageAction", this);
             };
             replyButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToComposeView", ComposeViewController.Reply);
+                PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Reply));
             };
             replyAllButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToComposeView", ComposeViewController.ReplyAll);
+                PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.ReplyAll));
             };
             forwardButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToComposeView", ComposeViewController.Forward);
+                PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Forward));
             };
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 DeleteThisMessage ();
@@ -125,7 +125,8 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageViewToComposeView") {
                 var vc = (ComposeViewController)segue.DestinationViewController;
-                vc.Action = (NSString)sender;
+                var h = sender as SegueHolder;
+                vc.Action = (string)h.value;
                 vc.ActionThread = thread;
                 vc.SetOwner (this);
             }
@@ -452,7 +453,7 @@ namespace NachoClient.iOS
             var textPart = part as TextPart;
             var html = textPart.Text;
 
-            Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
+            //Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
 
             int i = 0;
 
