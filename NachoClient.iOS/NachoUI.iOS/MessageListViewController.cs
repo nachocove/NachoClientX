@@ -13,6 +13,7 @@ using NachoCore.Utils;
 using NachoCore;
 using MCSwipeTableViewCellBinding;
 using SWRevealViewControllerBinding;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
@@ -36,7 +37,6 @@ namespace NachoClient.iOS
 
         public MessageListViewController (IntPtr handle) : base (handle)
         {
-
 
             MultiSelect = new HashSet<int> ();
         }
@@ -622,7 +622,39 @@ namespace NachoClient.iOS
             // User image view
             // TODO: user images
             var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            userImageView.Image = Util.LettersWithColor ("BP", UIColor.LightGray, A.Font_AvenirNextUltraLight24);
+            var emailOfSender = Pretty.EmailString(message.From);
+            Console.WriteLine ("emailOfSender: " + emailOfSender);
+            string sender = Pretty.SenderString (message.From);
+
+            //Sets the user image. Three cases: user has a picture, user has a CircleColor, 
+            //user has niether and gets a random CircleColor gets assigned and stored in the db.
+            var query = McContact.QueryByEmailAddress (message.AccountId, emailOfSender);
+            UIColor circleColor = Util.IntToUIColor (0);
+            Random random = new Random ();
+            int randomNumber = random.Next (1, 9);
+            foreach (var person in query) {
+                var colorNum = person.CircleColor;
+                if (person.Picture != null) {
+                    Console.WriteLine (person.DisplayName + " has a picture");
+                } else if (colorNum > 0) {
+                    circleColor = Util.IntToUIColor (colorNum);
+                    Console.WriteLine (person.DisplayName + " had a color: " + colorNum);
+                
+                } else if (colorNum == 0) {
+
+                    circleColor = Util.IntToUIColor (randomNumber);
+
+                    NcModel.Instance.Db.Query<McContact> (
+                        "UPDATE McContact SET CircleColor = ? WHERE Id IN" +
+                        " (SELECT ContactId FROM McContactStringAttribute WHERE Value = ?)",
+                        randomNumber, person.DisplayEmailAddress);
+                    Console.WriteLine (person.DisplayName + " had a color assigned");
+
+                }
+            }
+
+            userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
+    
 
             // User chili view
             var userChiliView = cell.ViewWithTag (USER_CHILI_TAG) as UIImageView;

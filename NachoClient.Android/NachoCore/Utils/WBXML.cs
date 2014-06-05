@@ -53,9 +53,9 @@ namespace NachoCore.Wbxml
 
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
-                filter = new NcXmlFilterState (AsXmlFilterSet.Responses);
+                filter = new NcXmlFilterState (AsXmlFilterSet.Responses, CToken);
             } else {
-                filter = new NcXmlFilterState (null);
+                filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
 
@@ -256,9 +256,9 @@ namespace NachoCore.Wbxml
         {
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
-                filter = new NcXmlFilterState (AsXmlFilterSet.Requests);
+                filter = new NcXmlFilterState (AsXmlFilterSet.Requests, CToken);
             } else {
-                filter = new NcXmlFilterState (null);
+                filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
 
@@ -283,9 +283,9 @@ namespace NachoCore.Wbxml
 
             NcXmlFilterState filter = null;
             if (doFiltering ?? DEFAULT_FILTERING) {
-                filter = new NcXmlFilterState (AsXmlFilterSet.Requests);
+                filter = new NcXmlFilterState (AsXmlFilterSet.Requests, CToken);
             } else {
-                filter = new NcXmlFilterState (null);
+                filter = new NcXmlFilterState (null, CToken);
             }
             filter.Start ();
 

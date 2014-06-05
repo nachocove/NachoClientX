@@ -106,9 +106,9 @@ namespace NachoCore.Wbxml
             }
         }
 
-        public XDocument Filter (XDocument doc)
+        public XDocument Filter (XDocument doc, CancellationToken cToken)
         {
-            NcXmlFilterState filterState = new NcXmlFilterState (this);
+            NcXmlFilterState filterState = new NcXmlFilterState (this, cToken);
             filterState.Start ();
             Walk (doc.Root, filterState, 0);
             return filterState.FinalizeXml ();
@@ -192,7 +192,9 @@ namespace NachoCore.Wbxml
             }
         }
 
-        public NcXmlFilterState (NcXmlFilterSet filterSet, Boolean? generateWbxml = null)
+        private CancellationToken CToken;
+
+        public NcXmlFilterState (NcXmlFilterSet filterSet, CancellationToken cToken, Boolean? generateWbxml = null)
         {
             FilterSet = filterSet;
             FilterStack = new Stack<Frame> ();
@@ -207,6 +209,7 @@ namespace NachoCore.Wbxml
                 XmlDoc = new XDocument ();
             }
             WbxmlBuffer = new GatedMemoryStream ();
+            CToken = cToken;
         }
 
         private Boolean IsElement (XNode node)
@@ -371,6 +374,10 @@ namespace NachoCore.Wbxml
 
         public void Update (int level, XNode node)
         {
+            if (CToken.IsCancellationRequested) {
+                throw new OperationCanceledException ();
+            }
+
             byte[] wbxml = WbxmlBuffer.ReadAll ();
             if (null == FilterSet) {
                 // If the constructor is not given a valid filter set,

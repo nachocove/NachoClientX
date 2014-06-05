@@ -195,6 +195,20 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
+        /// Given "From" (ex: "Steve Scalpone" <steves@nachocove.com>), 
+        /// return a string containing just the address.
+        /// </summary>
+        static public string EmailString (string Sender)
+        {
+            string[] email = Sender.Split('<', '>');
+            if (null != email [1]) {
+                return email [1];
+            }
+            return "";
+
+        }
+
+        /// <summary>
         /// Converts a date to a string worthy
         /// of being displayed in the message list.
         /// </summary>
