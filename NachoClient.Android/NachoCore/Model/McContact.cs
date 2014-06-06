@@ -1079,6 +1079,14 @@ namespace NachoCore.Model
             }
         }
 
+        public static void UpdateUserCircleColor(int circleColor, string userAddress)
+        {
+            NcModel.Instance.Db.Query<McContact> (
+                "UPDATE McContact SET CircleColor = ? WHERE Id IN" +
+                " (SELECT ContactId FROM McContactStringAttribute WHERE Value = ?)",
+                circleColor, userAddress);
+        }
+
         public void UpdateScore (string reason, int score)
         {
             Log.Info (Log.LOG_BRAIN, "SCORE: {0} {1} {2}", DisplayName, score, reason);
