@@ -75,8 +75,8 @@ namespace Test.iOS
                 TypeCode typeCode1 = TypeCode.UserCreatedCal_13;
                 TypeCode typeCode2 = TypeCode.DefaultContacts_9;
 
-                McFolder folder1 = CreateFolder (accountId, typeCode: typeCode1, parentId: parentId, name: name);
-                McFolder folder2 = CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
+                CreateFolder (accountId, typeCode: typeCode1, parentId: parentId, name: name);
+                CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
 
                 McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode1, parentId.ToInt (), name);
                 McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode2, parentId.ToInt (), name);
@@ -95,8 +95,8 @@ namespace Test.iOS
                 string parentId1 = "1";
                 string parentId2 = "5";
 
-                McFolder folder1 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId1, name: name);
-                McFolder folder2 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId2, name: name);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parentId1, name: name);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parentId2, name: name);
 
                 McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, parentId1.ToInt (), name);
                 McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, parentId2.ToInt (), name);
@@ -115,8 +115,8 @@ namespace Test.iOS
                 string name1 = "First Name";
                 string name2 = "Second Name";
 
-                McFolder folder1 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name1);
-                McFolder folder2 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name2);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name1);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name2);
 
                 McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1);
                 McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2);
@@ -198,8 +198,8 @@ namespace Test.iOS
                 List<McFolder> retrieved1 = McFolder.QueryByParentId (1, "1");
                 Assert.AreEqual (0, retrieved1.Count, "Should not retrieve any folders if none have been added");
 
-                McFolder folder1 = CreateFolder (1, parentId: "0");
-                McFolder folder2 = CreateFolder (1, parentId: "1");
+                CreateFolder (1, parentId: "0");
+                CreateFolder (1, parentId: "1");
 
                 List<McFolder> retrieved2 = McFolder.QueryByParentId (1, "5");
                 Assert.AreEqual (0, retrieved2.Count, "Should return empty list of folders if none were found");
@@ -208,9 +208,9 @@ namespace Test.iOS
             [Test]
             public void TestSingleFolderRetrieved ()
             {
-                McFolder folder1 = CreateFolder (1, parentId: "0");
+                CreateFolder (1, parentId: "0");
                 McFolder folder2 = CreateFolder (1, parentId: "1");
-                McFolder folder3 = CreateFolder (1, parentId: "2");
+                CreateFolder (1, parentId: "2");
 
                 List<McFolder> retrieved = McFolder.QueryByParentId (1, parentId: "1");
                 Assert.AreEqual (1, retrieved.Count, "Should return a single folder if only one folder has a parent id");
@@ -220,12 +220,12 @@ namespace Test.iOS
             [Test]
             public void TestMultipleFoldersRetrieved ()
             {
-                McFolder folder1 = CreateFolder (1, parentId: "0");
-                McFolder folder2 = CreateFolder (1, parentId: "1");
-                McFolder folder3 = CreateFolder (1, parentId: "1");
-                McFolder folder4 = CreateFolder (1, parentId: "1");
-                McFolder folder5 = CreateFolder (1, parentId: "2");
-                McFolder folder6 = CreateFolder (5, parentId: "1");  // different account id; therefore should not show up in query
+                CreateFolder (1, parentId: "0");
+                CreateFolder (1, parentId: "1");
+                CreateFolder (1, parentId: "1");
+                CreateFolder (1, parentId: "1");
+                CreateFolder (1, parentId: "2");
+                CreateFolder (5, parentId: "1");  // different account id; therefore should not show up in query
 
                 List<McFolder> retrieved = McFolder.QueryByParentId (1, "1");
                 Assert.AreEqual (3, retrieved.Count, "Should return correct number of folders with matching parent id");
@@ -243,12 +243,12 @@ namespace Test.iOS
             public void ShouldQueryByEntryId ()
             {
                 int accountId = 1;
-                int folderId = 1;
-                int folderEntryId = 11;
-                McFolder folder1 = CreateFolder (accountId);
-                McMapFolderFolderEntry folderEntry = CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder);
 
-                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                McFolder folder1 = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+                folder1.Link (email);
+
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
                 Assert.AreEqual (1, retrieved1.Count, "Should only find one matching folder");
                 FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Retrieved folder should be unchanged");
             }
@@ -258,11 +258,12 @@ namespace Test.iOS
             {// should not display folders awaiting delete
                 int accountId = 1;
                 int folderId = 1;
-                int folderEntryId = 11;
-                CreateFolder (accountId, isAwaitingDelete: true);
-                CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder);
 
-                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                McFolder folder1 = CreateFolder (accountId, isAwaitingDelete: true);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+                folder1.Link (email);
+
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
                 Assert.AreEqual (0, retrieved1.Count, "Should not return folders awaiting delete");
             }
 
@@ -271,14 +272,13 @@ namespace Test.iOS
             {
                 // should only return McFolders that have a corresponding entry in McMapFolderFolderEntry
                 int accountId = 1;
-                int folderId = 50;
-                int folderEntryId = 11;
-                McFolder folder1 = CreateFolder (accountId, autoInsert: false);
-                folder1.Id = 30;
-                folder1.Update ();
-                CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder, autoInsert: false);
 
-                List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                McFolder folder1 = CreateFolder (accountId, autoInsert: false);
+                McEmailMessage firstEmail = CreateUniqueItem<McEmailMessage> (accountId);
+                McEmailMessage secondEmail = CreateUniqueItem<McEmailMessage> (accountId);
+                folder1.Link (secondEmail); // insert second email, but query for first email
+
+                List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, firstEmail.Id);
                 Assert.AreEqual (0, retrieved1.Count, "Should not find folders if folder ID and folderEntry ID differ");
             }
 
@@ -288,39 +288,31 @@ namespace Test.iOS
                 // should query folders by McMapFolderFolderEntry accountId
                 int accountId = 1;
                 int accountIdOther = 2;
-                int folderId = 1;
-                int folderEntryId = 11;
-                CreateFolder (accountId);
-                CreateFolderEntry (accountIdOther, folderId, folderEntryId, ClassCode.Folder);
 
-                List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
-                List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McFolder> (accountIdOther, folderEntryId);
-                Assert.AreEqual (0, retrieved1.Count, "Should only retrieve folder by folderEntry accountId");
-                Assert.AreEqual (1, retrieved2.Count, "Should be able to retrieve folder by folderEntry accountId");
+                McFolder folder1 = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+                folder1.Link (email);
+
+                List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountIdOther, email.Id);
+                List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
+                Assert.AreEqual (0, retrieved1.Count, "Should not retrieve folder with wrong accountId");
+                Assert.AreEqual (1, retrieved2.Count, "Should be able to retrieve folder by correct accountId");
             }
 
             [Test]
             public void ShouldReturnFoldersWithFolderCode ()
             {
-                // should only return folders with “Folder” class code
-                ClassCode goodClassCode = ClassCode.Folder;
-                ClassCode badClassCode = ClassCode.Calendar;
-
                 // don't return folders that don't have the Folder class code
                 int accountId = 1;
-                int folderId = 1;
-                int folderEntryId = 11;
+
                 McFolder folder1 = CreateFolder (accountId);
-                McMapFolderFolderEntry folderEntry1 = CreateFolderEntry (accountId, folderId, folderEntryId, badClassCode);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+                folder1.Link (email);
 
-                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
-                Assert.AreEqual (0, retrieved1.Count, "Should not retrieve folders that don't have the folder class code");
+                List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McCalendar> (accountId, email.Id);
+                Assert.AreEqual (0, retrieved1.Count, "Should not retrieve emails that don't have the email class code");
 
-                // make sure that class code can be changed back and the record will be found
-                folderEntry1.ClassCode = goodClassCode;
-                folderEntry1.Update ();
-
-                List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
+                List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
                 Assert.AreEqual (1, retrieved2.Count, "Should retrieve matching folder once it has the correct class code");
                 FoldersAreEqual (folder1, retrieved2.FirstOrDefault (), "Retrieved folder should match inserted (and updated) folder");
             }
@@ -337,9 +329,8 @@ namespace Test.iOS
             private void QueryFolderOfGenericType<T> (ClassCode classCode, string message) where T : McItem, new()
             {
                 int accountId = 1;
-                string serverId = "Server Id";
 
-                T newItem = CreateUniqueItem<T> (accountId, serverId);
+                T newItem = CreateUniqueItem<T> (accountId);
 
                 McFolder folder = CreateFolder (accountId, isAwaitingDelete: false);
                 folder.Link (newItem);
@@ -355,9 +346,9 @@ namespace Test.iOS
             [Test]
             public void TestQueryingClientOwnedFolders ()
             {
-                McFolder folder1 = CreateFolder (1, isClientOwned: true);
-                McFolder folder2 = CreateFolder (1, isClientOwned: true);
-                McFolder folder3 = CreateFolder (1, isClientOwned: false);
+                CreateFolder (1, isClientOwned: true);
+                CreateFolder (1, isClientOwned: true);
+                CreateFolder (1, isClientOwned: false);
                 McFolder folder4 = CreateFolder (2, isClientOwned: false);
 
                 // should return folders that are client owned if asked
@@ -374,7 +365,7 @@ namespace Test.iOS
             public void TestFoldersAwaitingDelete ()
             {
                 // should not return folders that are awaiting delete
-                McFolder deleted1 = CreateFolder (1, isAwaitingDelete: true, isClientOwned: true);
+                CreateFolder (1, isAwaitingDelete: true, isClientOwned: true);
 
                 List<McFolder> retrieved1 = McFolder.QueryClientOwned (1, true);
                 Assert.AreEqual (0, retrieved1.Count, "Should not retrieve any folders if only folder inserted is awaiting delete");
@@ -401,13 +392,13 @@ namespace Test.iOS
             {
                 // server-end should be able to process commands against folder until folder delete is complete
                 McFolder folder1 = CreateFolder (1, isAwaitingDelete: true);
-                McFolder badFolder = CreateFolder (2);
+                CreateFolder (2);
 
                 List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (1, retrieved1.Count, "Server end query should return only 1 folder if only one has been inserted");
                 FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Server end query should return folder where isAwaitingDelete == true");
 
-                McFolder folder2 = CreateFolder (1, isAwaitingDelete: false);
+                CreateFolder (1, isAwaitingDelete: false);
 
                 List<McFolder> retrieved2 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (2, retrieved2.Count, "Server end query should return both folders awaiting deletion and those that are not");
@@ -430,7 +421,7 @@ namespace Test.iOS
                 FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Retrieved folder should be valid once it is created on the client");
 
                 // should not return folders awaiting creation on server and awaiting deletion on client
-                McFolder folder2 = CreateFolder (2, isAwaitingDelete: true, isAwaitingCreate: true);
+                CreateFolder (2, isAwaitingDelete: true, isAwaitingCreate: true);
 
                 List <McFolder> retrieved2 = McFolder.ServerEndQueryAll (2);
                 Assert.AreEqual (0, retrieved2.Count, "Should not return folders awaiting creation on server and awaiting deletion on client");
@@ -516,8 +507,8 @@ namespace Test.iOS
             public void ShouldOnlyResetStateForAccountId ()
             {
                 // only reset state for the specified account id
-                McFolder folder1 = CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);
-                McFolder folder2 = CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);  // only this folder should be retrieved
+                CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);
+                CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);  // only this folder should be retrieved
 
                 McFolder.AsResetState (1);
                 McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
@@ -558,20 +549,20 @@ namespace Test.iOS
             private void TestDeletingItemOfType<T> () where T : McItem, new() {
                 int accountId = 1;
                 string serverId = "ServerId"; // explicit so we can use it in query               
-                T item = CreateUniqueItem<T> (accountId, serverId);
+                T item = CreateUniqueItem<T> (accountId);
 
-                McFolder folder1 = CreateFolder (accountId, serverId: serverId);
+                McFolder folder1 = CreateFolder (accountId, serverId: defaultServerId);
                 folder1.Link (item);
 
                 // sanity checks
-                T foundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
+                T foundItem = McFolderEntry.QueryByServerId<T> (accountId, defaultServerId);
                 Assert.AreEqual (item.Id, foundItem.Id, "Email insertion and linking sanity check");
 
                 // deletion of folder should remove item too
                 folder1.Delete ();
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (accountId, serverId);
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (accountId, defaultServerId);
                 Assert.AreEqual (null, retrieved2, "No user folder should be found if it is deleted");
-                T notFoundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
+                T notFoundItem = McFolderEntry.QueryByServerId<T> (accountId, defaultServerId);
                 Assert.AreEqual (null, notFoundItem, "Deleting a folder should remove any emails contained in that folder");
             }
 
@@ -624,7 +615,7 @@ namespace Test.iOS
             Assert.AreEqual (expected.Type, actual.Type, testDesc);
         }
 
-        public T CreateUniqueItem<T> (int accountId, string serverId) where T : McItem, new ()
+        public T CreateUniqueItem<T> (int accountId, string serverId = defaultServerId) where T : McItem, new ()
         {
             T newItem = new T ();
             newItem.AccountId = accountId;
@@ -647,20 +638,6 @@ namespace Test.iOS
 
             if (autoInsert) { folder.Insert (); }
             return folder;
-        }
-
-        public McMapFolderFolderEntry CreateFolderEntry (int accountId, int folderId, int folderEntryId, 
-            ClassCode classCode = ClassCode.Folder, bool autoInsert = true)
-        {
-            McMapFolderFolderEntry folderEntry = new McMapFolderFolderEntry (accountId);
-
-            folderEntry.FolderId = folderId;
-            folderEntry.FolderEntryId = folderEntryId;
-            folderEntry.ClassCode = classCode;
-
-            if (autoInsert) { folderEntry.Insert (); }
-
-            return folderEntry;
         }
     }
 }
