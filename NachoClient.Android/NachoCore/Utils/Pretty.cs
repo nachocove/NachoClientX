@@ -200,12 +200,18 @@ namespace NachoCore.Utils
         /// </summary>
         static public string EmailString (string Sender)
         {
-            string[] email = Sender.Split('<', '>');
-            if (null != email [1]) {
-                return email [1];
+            if (null == Sender) {
+                return "";
             }
-            return "";
-
+            MailboxAddress address;
+            if (false == MailboxAddress.TryParse (Sender, out address)) {
+                return Sender;
+            }
+            if (String.IsNullOrEmpty (address.Name)) {
+                return Sender;
+            } else {
+                return address.Address;
+            }
         }
 
         /// <summary>

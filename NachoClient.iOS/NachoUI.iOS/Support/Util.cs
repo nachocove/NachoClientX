@@ -32,9 +32,11 @@ using MonoTouch.Dialog;
 using MonoTouch.CoreLocation;
 using System.Globalization;
 using System.Drawing;
+using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using System.Collections.Generic;
+
 
 namespace NachoClient
 {
@@ -356,8 +358,6 @@ namespace NachoClient
             eightColor
         };
 
-
-
         public static UIImage DotWithColor (UIColor color)
         {
             UIGraphics.BeginImageContext (new SizeF (22, 22));
@@ -371,11 +371,14 @@ namespace NachoClient
             return image;
         }
 
+        /// <summary>
+        /// builds the circle containing the sender's initials
+        /// </summary>
         public static UIImage LettersWithColor (string from, UIColor color, UIFont font)
         {
             var size = new SizeF (40, 40);
             var origin = new PointF (0, 0);
-            var content = StringToLetters(from);
+            var content = NameToLetters(from);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
@@ -394,25 +397,84 @@ namespace NachoClient
             return image;
         }
 
-        //Converts a users name into capitalized initials
-        public static string StringToLetters (string theString)
+        /// <summary>
+        /// Converts a users name into capitalized initials
+        /// </summary>
+        public static string NameToLetters (string name)
         {
-            var LetterString = "";
-            string[] names = theString.Split(' ');
-            if (names.Length > 1)
-                LetterString = (names [0].Substring (0, 1)).ToCapitalized() + (names [1].Substring (0, 1)).ToCapitalized();
-            if (names.Length == 1)
-                LetterString = (names [0].Substring (0, 1)).ToCapitalized();
-            return LetterString;
+            var Initials = "";
+            Console.WriteLine ("name: " + name);
+            string[] names = name.Split (new char [] { ',', ' ' });
+            foreach (var item in names){
+                Console.WriteLine("var: " + item);
+            }
+            if (1 == names.Length) {
+                Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+            }
+            if (2 == names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                    Console.WriteLine ("Case 1: " + Initials);
+                } else {
+                    // First name, Last name
+                    Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                    Console.WriteLine ("Case 2: " + Initials);
+                }
+            }
+            if (2 < names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [2].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                    Console.WriteLine ("Case 3: " + Initials);
+                }
+                else if (-1 == name.IndexOf (',')) {
+                    if ((names [1].Substring (0, 1)).ToLower() != (names [1].Substring (0, 1))) {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                    } else {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+                    }
+                    Console.WriteLine ("Case 4: " + Initials);
+                }
+            }
+
+            return Initials;
         }
 
-        //Takes an int and returns a UIColor.  This is nessary because the db
-        //can't store UIColors
+        /// <summary>
+        /// Takes an int and returns a UIColor.  This is nessary because the db
+        /// can't store UIColors
+        /// </summary>
         public static UIColor IntToUIColor (int colorNum)
         {
             return colors [colorNum];
         }
 
+        /// <summary>
+        /// Sets the user image. Three cases: user has a picture, user has a CircleColor, 
+        /// user has niether and gets a random CircleColor gets assigned and stored in the db.
+        /// </summary>
+        public static int SenderToCircle (int accountId, string emailAddress)
+        {
+            var query = McContact.QueryByEmailAddress (accountId, emailAddress);
+            int circleColor = 0;
+            Random random = new Random ();
+            int randomNumber = random.Next (1, 9);
+            foreach (var person in query) {
+                var colorNum = person.CircleColor;
+                if (person.Picture != null) {
+                    //Todo
+                } 
+                else if (colorNum > 0) {
+                    circleColor = colorNum;  
+                } 
+                else if (colorNum == 0) {
+                    circleColor = randomNumber;
+                    McContact.UpdateUserCircleColor (randomNumber, person.DisplayEmailAddress);
+                }
+            }
+            return circleColor;
+        }
 
         #endregion
     }

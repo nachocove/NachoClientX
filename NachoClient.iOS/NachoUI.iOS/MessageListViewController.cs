@@ -127,8 +127,6 @@ namespace NachoClient.iOS
             // iOS 7 BUG Workaround
             // iOS 7 puts the  background view over the refresh view, hiding it.
             RefreshControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
-
-            //this.setNeedsStatusBarAppearanceUpdate;
         }
 
         public int GetFirstVisibleRow ()
@@ -623,36 +621,9 @@ namespace NachoClient.iOS
             // TODO: user images
             var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
             var emailOfSender = Pretty.EmailString(message.From);
-            Console.WriteLine ("emailOfSender: " + emailOfSender);
             string sender = Pretty.SenderString (message.From);
-
-            //Sets the user image. Three cases: user has a picture, user has a CircleColor, 
-            //user has niether and gets a random CircleColor gets assigned and stored in the db.
-            var query = McContact.QueryByEmailAddress (message.AccountId, emailOfSender);
-            UIColor circleColor = Util.IntToUIColor (0);
-            Random random = new Random ();
-            int randomNumber = random.Next (1, 9);
-            foreach (var person in query) {
-                var colorNum = person.CircleColor;
-                if (person.Picture != null) {
-                    Console.WriteLine (person.DisplayName + " has a picture");
-                } else if (colorNum > 0) {
-                    circleColor = Util.IntToUIColor (colorNum);
-                    Console.WriteLine (person.DisplayName + " had a color: " + colorNum);
-                
-                } else if (colorNum == 0) {
-
-                    circleColor = Util.IntToUIColor (randomNumber);
-
-                    NcModel.Instance.Db.Query<McContact> (
-                        "UPDATE McContact SET CircleColor = ? WHERE Id IN" +
-                        " (SELECT ContactId FROM McContactStringAttribute WHERE Value = ?)",
-                        randomNumber, person.DisplayEmailAddress);
-                    Console.WriteLine (person.DisplayName + " had a color assigned");
-
-                }
-            }
-
+            int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
+            UIColor circleColor = Util.IntToUIColor (circleColorNum);
             userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
     
 

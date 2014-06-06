@@ -874,7 +874,12 @@ namespace NachoClient.iOS
                 // User image view
                 // TODO: user images
                 var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+<<<<<<< HEAD
                 var emailOfSender = Pretty.EmailString(message.From);
+=======
+                var emailOfSender = Pretty.EmailString (message.From);
+                Console.WriteLine ("emailOfSender: " + emailOfSender);
+>>>>>>> f72d22264f9e6bb6aa82574e17be18c13eea5070
                 string sender = Pretty.SenderString (message.From);
 
                 int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
