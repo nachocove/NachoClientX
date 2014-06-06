@@ -23,9 +23,7 @@ namespace Test.iOS
             {
                 int accountId = 1;
                 string serverId = "TestServer";
-                McFolder expectedFolder = CreateFolder (accountId, serverId: serverId);
-
-                expectedFolder.Insert ();
+                McFolder expectedFolder = CreateFolder (accountId, serverId: serverId, isClientOwned: true);
 
                 var actualFolder = McFolder.GetClientOwnedFolder (accountId, serverId);
 
@@ -38,20 +36,16 @@ namespace Test.iOS
                 int accountId = 1;
 
                 // Outbox
-                McFolder expectedOutbox = CreateFolder (accountId, serverId: McFolder.ClientOwned_Outbox);
-                expectedOutbox.Insert ();
+                McFolder expectedOutbox = CreateFolder (accountId, serverId: McFolder.ClientOwned_Outbox, isClientOwned: true);
 
                 // GalCache
-                McFolder expectedGalCache = CreateFolder (accountId, serverId: McFolder.ClientOwned_GalCache);
-                expectedGalCache.Insert ();
+                McFolder expectedGalCache = CreateFolder (accountId, serverId: McFolder.ClientOwned_GalCache, isClientOwned: true);
 
                 // Gleaned
-                McFolder expectedGleaned = CreateFolder (accountId, serverId: McFolder.ClientOwned_Gleaned);
-                expectedGleaned.Insert ();
+                McFolder expectedGleaned = CreateFolder (accountId, serverId: McFolder.ClientOwned_Gleaned, isClientOwned: true);
 
                 // Lost and Found
-                McFolder expectedLostFound = CreateFolder (accountId, serverId: McFolder.ClientOwned_LostAndFound);
-                expectedLostFound.Insert ();
+                McFolder expectedLostFound = CreateFolder (accountId, serverId: McFolder.ClientOwned_LostAndFound, isClientOwned: true);
 
                 McFolder actualFolder1 = McFolder.GetOutboxFolder (accountId);
                 FoldersAreEqual (expectedOutbox, actualFolder1, "Should be able to query for distinguished folder (Outbox)");
@@ -64,15 +58,6 @@ namespace Test.iOS
 
                 McFolder lostAndFound = McFolder.GetLostAndFoundFolder (accountId);
                 FoldersAreEqual (expectedLostFound, lostAndFound, "Should be able to query for distinguished folder (Lost And Found)");
-            }
-
-            private McFolder CreateFolder (int accountId, string serverId = "Server Id")
-            {
-                bool isClientOwned = true;
-                string parentId = "ParentFolder";
-                var folderType = TypeCode.UserCreatedGeneric_1;
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, "DisplayName", folderType);
-                return folder;
             }
         }
 
@@ -92,9 +77,6 @@ namespace Test.iOS
 
                 McFolder folder1 = CreateFolder (accountId, typeCode: typeCode1, parentId: parentId, name: name);
                 McFolder folder2 = CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
-
-                folder1.Insert ();
-                folder2.Insert ();
 
                 McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode1, parentId.ToInt (), name);
                 McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode2, parentId.ToInt (), name);
@@ -116,9 +98,6 @@ namespace Test.iOS
                 McFolder folder1 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId1, name: name);
                 McFolder folder2 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId2, name: name);
 
-                folder1.Insert ();
-                folder2.Insert ();
-
                 McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, parentId1.ToInt (), name);
                 McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, parentId2.ToInt (), name);
 
@@ -139,21 +118,10 @@ namespace Test.iOS
                 McFolder folder1 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name1);
                 McFolder folder2 = CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name2);
 
-                folder1.Insert ();
-                folder2.Insert ();
-
                 McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1);
                 McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2);
 
                 Assert.AreNotEqual (expected1.DisplayName, expected2.DisplayName, "Folders with different names should be considered separate folders");
-            }
-
-            private McFolder CreateFolder (int accountId, string parentId = "0", string name = "Default name", TypeCode typeCode = TypeCode.UserCreatedGeneric_1)
-            {
-                bool isClientOwned = false;
-                string serverId = "My Server";
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-                return folder;
             }
         }
 
@@ -194,7 +162,6 @@ namespace Test.iOS
             private void TestFolderWithType (int accountId, TypeCode typeCode, string message)
             {
                 McFolder folder1 = CreateFolder (accountId, typeCode: typeCode);
-                folder1.Insert ();
 
                 McFolder expected1;
                 switch (typeCode) {
@@ -220,16 +187,6 @@ namespace Test.iOS
                 Assert.NotNull (expected1, "Folders count was 0; should retrieve folder with name: '{0}'", folder1.DisplayName);
                 FoldersAreEqual (expected1, folder1, message);
             }
-
-            private McFolder CreateFolder (int accountId, TypeCode typeCode = TypeCode.UserCreatedGeneric_1)
-            {
-                bool isClientOwned = false;
-                string parentId = "2";
-                string serverId = "Server";
-                string name = "Folder Name";
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-                return folder;
-            }
         }
 
         [TestFixture]
@@ -243,8 +200,6 @@ namespace Test.iOS
 
                 McFolder folder1 = CreateFolder (1, parentId: "0");
                 McFolder folder2 = CreateFolder (1, parentId: "1");
-                folder1.Insert ();
-                folder2.Insert ();
 
                 List<McFolder> retrieved2 = McFolder.QueryByParentId (1, "5");
                 Assert.AreEqual (0, retrieved2.Count, "Should return empty list of folders if none were found");
@@ -256,9 +211,6 @@ namespace Test.iOS
                 McFolder folder1 = CreateFolder (1, parentId: "0");
                 McFolder folder2 = CreateFolder (1, parentId: "1");
                 McFolder folder3 = CreateFolder (1, parentId: "2");
-                folder1.Insert ();
-                folder2.Insert ();
-                folder3.Insert ();
 
                 List<McFolder> retrieved = McFolder.QueryByParentId (1, parentId: "1");
                 Assert.AreEqual (1, retrieved.Count, "Should return a single folder if only one folder has a parent id");
@@ -274,12 +226,6 @@ namespace Test.iOS
                 McFolder folder4 = CreateFolder (1, parentId: "1");
                 McFolder folder5 = CreateFolder (1, parentId: "2");
                 McFolder folder6 = CreateFolder (5, parentId: "1");  // different account id; therefore should not show up in query
-                folder1.Insert ();
-                folder2.Insert ();
-                folder3.Insert ();
-                folder4.Insert ();
-                folder5.Insert ();
-                folder6.Insert ();
 
                 List<McFolder> retrieved = McFolder.QueryByParentId (1, "1");
                 Assert.AreEqual (3, retrieved.Count, "Should return correct number of folders with matching parent id");
@@ -287,16 +233,6 @@ namespace Test.iOS
                     Assert.AreEqual (1, folder.AccountId, "Account id's should match expected");
                     Assert.AreEqual ("1", folder.ParentId, "Parent id's should match expected");
                 }
-            }
-
-            private McFolder CreateFolder (int accountId, string parentId = "0")
-            {
-                bool isClientOwned = false;
-                string serverId = "Server";
-                string name = "Folder Name";
-                TypeCode typeCode = TypeCode.Unknown_18;
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-                return folder;
             }
         }
 
@@ -311,8 +247,6 @@ namespace Test.iOS
                 int folderEntryId = 11;
                 McFolder folder1 = CreateFolder (accountId);
                 McMapFolderFolderEntry folderEntry = CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder);
-                Console.WriteLine ("folder1 ID: {0}", folder1.Id);
-                Console.WriteLine ("folderId: {0}", folderEntry.FolderId);
 
                 List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
                 Assert.AreEqual (1, retrieved1.Count, "Should only find one matching folder");
@@ -413,21 +347,6 @@ namespace Test.iOS
                 List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<T> (accountId, newItem.Id);
                 Assert.AreEqual (1, retrieved1.Count, message);
             }
-
-            private McFolder CreateFolder (int accountId, bool isAwaitingDelete = false, bool autoInsert = true)
-            {
-                bool isClientOwned = false;
-                string parentId = "0";
-                string serverId = "Server";
-                string name = "Folder Name";
-                TypeCode typeCode = TypeCode.Unknown_18;
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-
-                folder.IsAwaitingDelete = isAwaitingDelete;
-
-                if (autoInsert) { folder.Insert (); }
-                return folder;
-            }
         }
 
         [TestFixture]
@@ -440,11 +359,6 @@ namespace Test.iOS
                 McFolder folder2 = CreateFolder (1, isClientOwned: true);
                 McFolder folder3 = CreateFolder (1, isClientOwned: false);
                 McFolder folder4 = CreateFolder (2, isClientOwned: false);
-
-                folder1.Insert ();
-                folder2.Insert ();
-                folder3.Insert ();
-                folder4.Insert ();
 
                 // should return folders that are client owned if asked
                 List<McFolder> retrieved1 = McFolder.QueryClientOwned (1, isClientOwned: true);
@@ -461,36 +375,21 @@ namespace Test.iOS
             {
                 // should not return folders that are awaiting delete
                 McFolder deleted1 = CreateFolder (1, isAwaitingDelete: true, isClientOwned: true);
-                deleted1.Insert ();
 
                 List<McFolder> retrieved1 = McFolder.QueryClientOwned (1, true);
                 Assert.AreEqual (0, retrieved1.Count, "Should not retrieve any folders if only folder inserted is awaiting delete");
 
                 McFolder folder1 = CreateFolder (1, isAwaitingDelete: false, isClientOwned: true);
-                folder1.Insert ();
 
                 List <McFolder> retrieved2 = McFolder.QueryClientOwned (1, true);
                 Assert.AreEqual (1, retrieved2.Count, "Should only retrieve client-owned folders that are not awaiting delete");
                 FoldersAreEqual (folder1, retrieved2.FirstOrDefault (), "Retrieved folder should match inserted folder");
 
                 McFolder folder2 = CreateFolder (1, isAwaitingDelete: false, isClientOwned: false);
-                folder2.Insert ();
 
                 List <McFolder> retrieved3 = McFolder.QueryClientOwned (1, false);
                 Assert.AreEqual (1, retrieved3.Count, "Should only retrieve non-client-owned folders that are not awaiting delete");
                 FoldersAreEqual (folder2, retrieved3.FirstOrDefault (), "Retrieved folder should match inserted folder");
-            }
-
-            private McFolder CreateFolder (int accountId, bool isAwaitingDelete = false, bool isClientOwned = true)
-            {
-                string parentId = "1";
-                string serverId = "Server";
-                string name = "Folder Name";
-                TypeCode typeCode = TypeCode.Unknown_18;
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-
-                folder.IsAwaitingDelete = isAwaitingDelete;
-                return folder;
             }
         }
 
@@ -501,17 +400,14 @@ namespace Test.iOS
             public void CanQueryFoldersAwaitingDelete ()
             {
                 // server-end should be able to process commands against folder until folder delete is complete
-                McFolder folder1 = CreateClientFolder (1, isAwaitingDelete: true);
-                McFolder badFolder = CreateClientFolder (2);
-                folder1.Insert ();
-                badFolder.Insert ();
+                McFolder folder1 = CreateFolder (1, isAwaitingDelete: true);
+                McFolder badFolder = CreateFolder (2);
 
                 List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (1, retrieved1.Count, "Server end query should return only 1 folder if only one has been inserted");
                 FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Server end query should return folder where isAwaitingDelete == true");
 
-                McFolder folder2 = CreateClientFolder (1, isAwaitingDelete: false);
-                folder2.Insert ();
+                McFolder folder2 = CreateFolder (1, isAwaitingDelete: false);
 
                 List<McFolder> retrieved2 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (2, retrieved2.Count, "Server end query should return both folders awaiting deletion and those that are not");
@@ -521,8 +417,7 @@ namespace Test.iOS
             public void CannotQueryFoldersAwaitingCreate ()
             {
                 // should not return folders that are awaiting creation on the server
-                McFolder folder1 = CreateClientFolder (1, isAwaitingCreate: true);
-                folder1.Insert ();
+                McFolder folder1 = CreateFolder (1, isAwaitingCreate: true);
 
                 List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (0, retrieved1.Count, "Server should not return a folder awaiting creation on the server");
@@ -535,8 +430,7 @@ namespace Test.iOS
                 FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Retrieved folder should be valid once it is created on the client");
 
                 // should not return folders awaiting creation on server and awaiting deletion on client
-                McFolder folder2 = CreateClientFolder (2, isAwaitingDelete: true, isAwaitingCreate: true);
-                folder2.Insert ();
+                McFolder folder2 = CreateFolder (2, isAwaitingDelete: true, isAwaitingCreate: true);
 
                 List <McFolder> retrieved2 = McFolder.ServerEndQueryAll (2);
                 Assert.AreEqual (0, retrieved2.Count, "Should not return folders awaiting creation on server and awaiting deletion on client");
@@ -546,8 +440,7 @@ namespace Test.iOS
             public void ShouldNotReturnClientOwnedFolders ()
             {
                 // should not return folders that are client owned
-                McFolder folder1 = CreateClientFolder (1, isClientOwned: true);
-                folder1.Insert ();
+                McFolder folder1 = CreateFolder (1, isClientOwned: true);
 
                 List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (0, retrieved1.Count, "Should not return folders that are client owned");
@@ -567,20 +460,6 @@ namespace Test.iOS
                 Assert.AreEqual (1, retrieved1.Count, "Should return folders that are client owned, but previously were not");
                 FoldersAreEqual (folder1, retrieved1.FirstOrDefault (), "Non-client owned folder returned should match inserted (and updated) folder");
             }
-
-            private McFolder CreateClientFolder (int accountId, bool isAwaitingDelete = false, bool isAwaitingCreate = false, 
-                bool isClientOwned = false)
-            {
-                string parentId = "1";
-                string serverId = "Server";
-                string name = "Folder Name";
-                TypeCode typeCode = TypeCode.Unknown_18;
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-
-                folder.IsAwaitingCreate = isAwaitingCreate;
-                folder.IsAwaitingDelete = isAwaitingDelete;
-                return folder;
-            }
         }
 
         [TestFixture]
@@ -591,11 +470,10 @@ namespace Test.iOS
             [Test]
             public void ShouldNotBreakDefaultFolder ()
             {
-                McFolder folder1 = CreateFolder (1);
-                folder1.Insert ();
+                McFolder folder1 = CreateFolder (1, isClientOwned: true);
                 McFolder.AsResetState (1);
 
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 FoldersAreEqual (folder1, retrieved1, "Folder should be the same after resetting state");
                 FlagsAreReset (retrieved1, "Folder flags should be correct when reset");
             }
@@ -603,13 +481,12 @@ namespace Test.iOS
             [Test]
             public void ShouldResetFolderSyncKey ()
             {
-                McFolder folder1 = CreateFolder (1, asSyncKey: "10");
-                folder1.Insert ();
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder folder1 = CreateFolder (1, asSyncKey: "10", isClientOwned: true);
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 Assert.AreEqual ("10", retrieved1.AsSyncKey, "AsSyncKey should be set correctly before reset event");
                 McFolder.AsResetState (1);
 
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
                 FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
             }
@@ -617,13 +494,12 @@ namespace Test.iOS
             [Test]
             public void ShouldResetSyncMetaFlag ()
             {
-                McFolder folder1 = CreateFolder (1, syncMetaToClient: false);
-                folder1.Insert ();
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder folder1 = CreateFolder (1, syncMetaToClient: false, isClientOwned: true);
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
                 McFolder.AsResetState (1);
 
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 FoldersAreEqual (folder1, retrieved1, "Folder core values should not be modified by AsResetState");
                 FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
 
@@ -632,7 +508,7 @@ namespace Test.iOS
                 folder1.AsSyncKey = "10";
                 folder1.Update ();
                 McFolder.AsResetState (1);
-                McFolder retrieved3 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder retrieved3 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 FlagsAreReset (retrieved3, "Both folder flags should have been reset correctly");
             }
 
@@ -640,18 +516,15 @@ namespace Test.iOS
             public void ShouldOnlyResetStateForAccountId ()
             {
                 // only reset state for the specified account id
-                McFolder folder1 = CreateFolder (2, asSyncKey: "10", syncMetaToClient: false);
-                folder1.Insert ();
-
-                McFolder folder2 = CreateFolder (1, asSyncKey: "10", syncMetaToClient: false);  // only this folder should be retrieved
-                folder2.Insert ();
+                McFolder folder1 = CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);
+                McFolder folder2 = CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);  // only this folder should be retrieved
 
                 McFolder.AsResetState (1);
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, serverId);
+                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
                 FlagsAreReset (retrieved1, "Both folder flags should have been reset correctly");
 
                 // check that folder1's flags _were not_ reset
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (2, serverId);
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (2, defaultServerId);
                 Assert.AreEqual ("10", retrieved2.AsSyncKey, "Sync key should not be reset");
                 Assert.AreEqual (false, retrieved2.AsSyncMetaToClientExpected, "AsSyncMetaToClientExpected should not be reset");
             }
@@ -660,20 +533,6 @@ namespace Test.iOS
             {
                 Assert.AreEqual ("0", actual.AsSyncKey, message);
                 Assert.AreEqual (true, actual.AsSyncMetaToClientExpected, message);
-            }
-
-            private McFolder CreateFolder (int accountId, string asSyncKey = "0", bool syncMetaToClient = true)
-            {
-                bool isClientOwned = true;  // make it easy to query with client-owned
-                string parentId = "1";
-                string name = "Folder Name";
-                TypeCode typeCode = TypeCode.Unknown_18;
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-
-                folder.AsSyncKey = asSyncKey;
-                folder.AsSyncMetaToClientExpected = syncMetaToClient;
-
-                return folder;
             }
         }
 
@@ -740,22 +599,13 @@ namespace Test.iOS
                 McFolder notFoundFolder = McFolder.GetUserFolder (accountId, typeCode, childFolder.Id, subChildFolder.DisplayName);
                 Assert.AreEqual (null, notFoundFolder, "McFolder should delete sub-folders recursively");
             }
-
-            private McFolder CreateFolder (int accountId, string parentId = "1", TypeCode typeCode = TypeCode.UserCreatedGeneric_1, bool autoInsert = true,
-                string serverId = "Server")
-            {
-                bool isClientOwned = true;
-                string name = "Folder Name";
-                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
-
-                if (autoInsert) { folder.Insert (); }
-                return folder;
-            }
         }
     }
 
     public class BaseMcFolderTest
     {
+        public const string defaultServerId = "Default Server Id";
+
         [SetUp]
         public void SetUp ()
         {
@@ -781,6 +631,22 @@ namespace Test.iOS
             newItem.ServerId = serverId;
             newItem.Insert ();
             return newItem;
+        }
+
+        public McFolder CreateFolder (int accountId, bool isClientOwned = false, string parentId = "0", 
+            string serverId = defaultServerId, string name = "Default name", TypeCode typeCode = TypeCode.UserCreatedGeneric_1,
+            bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "0", 
+            bool syncMetaToClient = true)
+        {
+            McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
+
+            folder.IsAwaitingDelete = isAwaitingDelete;
+            folder.IsAwaitingCreate = isAwaitingCreate;
+            folder.AsSyncKey = asSyncKey;
+            folder.AsSyncMetaToClientExpected = syncMetaToClient;
+
+            if (autoInsert) { folder.Insert (); }
+            return folder;
         }
 
         public McMapFolderFolderEntry CreateFolderEntry (int accountId, int folderId, int folderEntryId, 
