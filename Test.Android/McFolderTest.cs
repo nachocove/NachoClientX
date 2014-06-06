@@ -709,22 +709,54 @@ namespace Test.iOS
                 TestDeletingItemOfType<McTask> ();
             }
 
+            private void TestDeletingItemOfType<T> () where T : McItem, new() {
+                int accountId = 1;
+                string serverId = "ServerId"; // explicit so we can use it in query               
+                T item = CreateUniqueItem<T> (accountId, serverId);
+
+                McFolder folder1 = CreateFolder (accountId, serverId: serverId);
+                folder1.Link (item);
+
+                // sanity checks
+                T foundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
+                Assert.AreEqual (item.Id, foundItem.Id, "Email insertion and linking sanity check");
+
+                // deletion of folder should remove item too
+                folder1.Delete ();
+                McFolder retrieved2 = McFolder.GetClientOwnedFolder (accountId, serverId);
+                Assert.AreEqual (null, retrieved2, "No user folder should be found if it is deleted");
+                T notFoundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
+                Assert.AreEqual (null, notFoundItem, "Deleting a folder should remove any emails contained in that folder");
+            }
+
             [Test]
             public void ShouldDeleteFoldersRecursively ()
             {
+                int accountId = 1;
+                string serverId = "My custom server";
+                TypeCode typeCode = TypeCode.UserCreatedGeneric_1;
+
                 // when deleting folders, should remove all contained folders
+                McFolder parentFolder = CreateFolder (accountId, parentId: "0", typeCode: typeCode, serverId: serverId);
+                McFolder childFolder = CreateFolder (accountId, parentId: parentFolder.Id.ToString (), typeCode: typeCode, serverId: serverId);
+                McFolder subChildFolder = CreateFolder (accountId, parentId: childFolder.Id.ToString (), typeCode: typeCode, serverId: serverId);
+
+                parentFolder.Link (childFolder);
+                childFolder.Link (subChildFolder);
+
+                McFolder foundFolder = McFolder.GetUserFolder (accountId, typeCode, childFolder.Id, subChildFolder.DisplayName);
+                Assert.AreNotEqual (null, foundFolder, "Sanity test: Should retrieve a folder from query");
+                FoldersAreEqual (subChildFolder, foundFolder, "Sanity check that subChild folder was added correctly");
+
+                parentFolder.Delete ();
+
+                McFolder notFoundFolder = McFolder.GetUserFolder (accountId, typeCode, childFolder.Id, subChildFolder.DisplayName);
+                Assert.AreEqual (null, notFoundFolder, "McFolder should delete sub-folders recursively");
             }
 
-            [Test]
-            public void ShouldThrowExceptionOnBadItem ()
-            {
-                // when deleting an item with an unsupported class code, should throw exception
-            }
-
-            private McFolder CreateFolder (int accountId, TypeCode typeCode = TypeCode.Unknown_18, bool autoInsert = true,
+            private McFolder CreateFolder (int accountId, string parentId = "1", TypeCode typeCode = TypeCode.UserCreatedGeneric_1, bool autoInsert = true,
                 string serverId = "Server")
             {
-                string parentId = "1";
                 bool isClientOwned = true;
                 string name = "Folder Name";
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
@@ -732,26 +764,6 @@ namespace Test.iOS
                 if (autoInsert) { folder.Insert (); }
                 return folder;
             }
-        }
-
-        private void TestDeletingItemOfType<T> () where T : McItem, new() {
-            int accountId = 1;
-            string serverId = "ServerId"; // explicit so we can use it in query               
-            T item = CreateUniqueItem<T> (accountId, serverId);
-
-            McFolder folder1 = CreateFolder (accountId, serverId: serverId);
-            folder1.Link (item);
-
-            // sanity checks
-            T foundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
-            Assert.AreEqual (item.Id, foundItem.Id, "Email insertion and linking sanity check");
-
-            // deletion of folder should remove item too
-            folder1.Delete ();
-            McFolder retrieved2 = McFolder.GetClientOwnedFolder (accountId, serverId);
-            Assert.AreEqual (null, retrieved2, "No user folder should be found if it is deleted");
-            T notFoundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
-            Assert.AreEqual (null, notFoundItem, "Deleting a folder should remove any emails contained in that folder");
         }
     }
 
@@ -799,4 +811,3 @@ namespace Test.iOS
         }
     }
 }
-
