@@ -100,6 +100,11 @@ def main():
         parser.print_help()
         exit(0)
 
+    # if .skip_hockeyapp_upload exists, early exit
+    if os.path.exists('.skip_hockeyapp_upload'):
+        print 'Skipping HockeyApp upload.'
+        exit(0)
+
     if options.ios:
         hockey_app = HockeyappUploadIos(api_token='dbccf0190d5b410e8f43ef2b5e7d6b43',
                                         app_id='b22a505d784d64901ab1abde0728df67')
