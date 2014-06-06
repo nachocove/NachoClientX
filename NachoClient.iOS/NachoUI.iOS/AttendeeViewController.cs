@@ -68,7 +68,7 @@ namespace NachoClient.iOS
 
         public void DismissINachoContactChooser (INachoContactChooser vc)
         {
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
         }
 
         Section requiredAddresses;
@@ -99,7 +99,7 @@ namespace NachoClient.iOS
                 e.Tapped += () => {
                     AddressTapped (lambda_object);
                 };
-                NachoAssert.True (a.AttendeeTypeIsSet);
+                NcAssert.True (a.AttendeeTypeIsSet);
                 switch (a.AttendeeType) {
                 case NcAttendeeType.Required:
                     requiredAddresses.Add (e);
@@ -112,7 +112,7 @@ namespace NachoClient.iOS
                     // Skip, but preserve.
                     break;
                 default:
-                    NachoAssert.CaseError ();
+                    NcAssert.CaseError ();
                     break;
                 }
             }
@@ -159,7 +159,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void UpdateEmailAddress (NcEmailAddress address)
         {
-            NachoAssert.True (null != address);
+            NcAssert.True (null != address);
 
             var mailboxAddress = address.ToMailboxAddress ();
 
@@ -189,7 +189,7 @@ namespace NachoClient.iOS
                 AttendeeList.Add (attendee);
                 break;
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 break;
             }
         }
@@ -199,7 +199,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void DeleteEmailAddress (NcEmailAddress address)
         {
-            NachoAssert.True (null != address);
+            NcAssert.True (null != address);
 
             if (NcEmailAddress.Action.edit == address.action) {
                 AttendeeList.RemoveAt (address.index);

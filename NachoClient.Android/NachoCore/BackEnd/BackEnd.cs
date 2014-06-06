@@ -65,15 +65,15 @@ namespace NachoCore
 
         private bool HasServiceFromAccountId (int accountId)
         {
-            NachoAssert.True (0 != accountId);
+            NcAssert.True (0 != accountId);
             return Services.Where (ctrl => ctrl.Account.Id.Equals (accountId)).Any ();
         }
 
         private ProtoControl ServiceFromAccountId (int accountId)
         {
-            NachoAssert.True (0 != accountId);
+            NcAssert.True (0 != accountId);
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
-            NachoAssert.True (Services.Any ());
+            NcAssert.True (Services.Any ());
             return query.Single ();
         }
         // For IBackEnd.

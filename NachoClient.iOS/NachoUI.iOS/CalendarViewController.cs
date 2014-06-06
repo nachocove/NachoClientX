@@ -115,7 +115,7 @@ namespace NachoClient.iOS
                 // Nothing to do
                 return;
             }
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
@@ -146,7 +146,7 @@ namespace NachoClient.iOS
         {
             UITableViewCell cell = TableView.DequeueReusableCell (CalendarToCalendarItemSegueID);
             // Should always get a prototype cell
-            NachoCore.NachoAssert.True (null != cell);
+            NachoCore.NcAssert.True (null != cell);
 
             McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
 

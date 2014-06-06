@@ -4,7 +4,7 @@ using System;
 
 namespace NachoCore
 {
-    public class NachoAssert
+    public class NcAssert
     {
 
         public class NachoAssertionFailure : Exception
@@ -14,7 +14,7 @@ namespace NachoCore
         {
         }
 
-        public NachoAssert ()
+        public NcAssert ()
         {
         }
 

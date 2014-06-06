@@ -14,7 +14,7 @@ namespace NachoCore.Brain
 
         static public List<McEmailMessageThread> ThreadByConversation (List<McEmailMessageIndex> list)
         {
-            NachoAssert.True (null != list);
+            NcAssert.True (null != list);
             var conversationList = new List<McEmailMessageThread> ();
             for (int i = 0; i < list.Count; i++) {
                 var singleMessageList = new McEmailMessageThread ();

@@ -156,7 +156,7 @@ namespace NachoClient.iOS
                 ConfigureCalendarCell (cell, indexPath);
                 return;
             }
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
         }
 
         protected UITableView FindEnclosingTableView (UIView view)

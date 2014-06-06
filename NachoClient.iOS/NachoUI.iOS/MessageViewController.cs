@@ -373,9 +373,9 @@ namespace NachoClient.iOS
             for (int i = 0; i < attachments.Count; i++) {
                 var a = attachments [i];
                 var c = tv.VisibleCells [i];
-                NachoAssert.True (null != a);
-                NachoAssert.True (null != c);
-                NachoAssert.True (a.DisplayName.Equals (c.TextLabel.Text));
+                NcAssert.True (null != a);
+                NcAssert.True (null != c);
+                NcAssert.True (a.DisplayName.Equals (c.TextLabel.Text));
                 if (a.IsDownloaded) {
                     c.DetailTextLabel.Text = "Is downloaded";
                 } else if (a.PercentDownloaded > 0) {

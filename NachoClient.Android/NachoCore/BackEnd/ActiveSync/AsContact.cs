@@ -217,24 +217,24 @@ namespace NachoCore.ActiveSync
 
         protected void AddCategoriesFromXml (XNamespace ns, XElement categories)
         {
-            NachoCore.NachoAssert.True (null != categories);
-            NachoCore.NachoAssert.True (categories.Name.LocalName.Equals (Xml.Contacts.Categories));
-            NachoCore.NachoAssert.True (null != Categories);
+            NachoCore.NcAssert.True (null != categories);
+            NachoCore.NcAssert.True (categories.Name.LocalName.Equals (Xml.Contacts.Categories));
+            NachoCore.NcAssert.True (null != Categories);
 
             foreach (var category in categories.Elements()) {
-                NachoCore.NachoAssert.True (category.Name.LocalName.Equals (Xml.Contacts.Category));
+                NachoCore.NcAssert.True (category.Name.LocalName.Equals (Xml.Contacts.Category));
                 Categories.Add (category.Value);
             }
         }
 
         protected void AddChildrenFromXML (XNamespace ns, XElement children)
         {
-            NachoCore.NachoAssert.True (null != children);
-            NachoCore.NachoAssert.True (children.Name.LocalName.Equals (Xml.Contacts.Children));
-            NachoCore.NachoAssert.True (null != Children);
+            NachoCore.NcAssert.True (null != children);
+            NachoCore.NcAssert.True (children.Name.LocalName.Equals (Xml.Contacts.Children));
+            NachoCore.NcAssert.True (null != Children);
 
             foreach (var child in children.Elements()) {
-                NachoCore.NachoAssert.True (child.Name.LocalName.Equals (Xml.Contacts.Child));
+                NachoCore.NcAssert.True (child.Name.LocalName.Equals (Xml.Contacts.Child));
                 Children.Add (child.Value);
             }
         }
@@ -245,7 +245,7 @@ namespace NachoCore.ActiveSync
 
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
-            NachoCore.NachoAssert.True (null != serverId);
+            NachoCore.NcAssert.True (null != serverId);
 
             var c = new AsContact ();
             c.Categories = new List<string> ();
@@ -255,7 +255,7 @@ namespace NachoCore.ActiveSync
 
             // <ApplicationData>...</ApplicationData>
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
-            NachoCore.NachoAssert.True (null != applicationData);
+            NachoCore.NcAssert.True (null != applicationData);
 
             XNamespace m_baseNs = Xml.AirSyncBase.Ns;
 

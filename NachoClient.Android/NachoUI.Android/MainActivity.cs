@@ -233,7 +233,7 @@ namespace NachoClient.AndroidClient
                 fragment = new HomeFragment ();
             }
 
-            NachoAssert.True (null != fragment);
+            NcAssert.True (null != fragment);
 
             this.SupportFragmentManager.BeginTransaction ()
                 .Replace (Resource.Id.content_frame, fragment)

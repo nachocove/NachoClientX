@@ -79,7 +79,7 @@ namespace NachoCore.Model
 
             if (0 != BodyId) {
                 var body = McBody.QueryById<McBody> (BodyId);
-                NachoAssert.True (null != body);
+                NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     // FIXME - need to have dynamic Body type.
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
@@ -97,7 +97,7 @@ namespace NachoCore.Model
             xmlAppData.Add (new XElement (TaskNs + Xml.Tasks.Importance, (uint)Importance));
             if (ReminderSet) {
                 xmlAppData.Add (new XElement (TaskNs + Xml.Tasks.ReminderSet, 1));
-                NachoAssert.True (DateTime.MinValue != ReminderTime);
+                NcAssert.True (DateTime.MinValue != ReminderTime);
                 xmlAppData.Add (new XElement (TaskNs + Xml.Tasks.ReminderTime,
                     ReminderTime.ToString (AsHelpers.DateTimeFmt1)));
             }

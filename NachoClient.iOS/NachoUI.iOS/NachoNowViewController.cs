@@ -233,7 +233,7 @@ namespace NachoClient.iOS
             }
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -916,7 +916,7 @@ namespace NachoClient.iOS
                 if (null == message.Summary) {
                     message.Summarize ();
                 }
-                NachoAssert.True (null != message.Summary);
+                NcAssert.True (null != message.Summary);
                 summaryLabelView.Frame = new RectangleF (65, 60, viewWidth - 15 - 65, 60);
                 summaryLabelView.Text = message.Summary;
                 summaryLabelView.SizeToFit ();

@@ -61,10 +61,10 @@ namespace NachoCore.Utils
 
         public void Add (NSObject key, NSObject value)
         {
-            NachoAssert.True (null != key);
-            NachoAssert.True (null != value);
-            NachoAssert.True (0 < key.RetainCount);
-            NachoAssert.True (0 < value.RetainCount);
+            NcAssert.True (null != key);
+            NcAssert.True (null != value);
+            NcAssert.True (0 < key.RetainCount);
+            NcAssert.True (0 < value.RetainCount);
             Dict.Add (key, value);
         }
 
@@ -136,7 +136,7 @@ namespace NachoCore.Utils
                     dict.AddString ("event_type", "DEBUG");
                     break;
                 default:
-                    NachoAssert.True (false);
+                    NcAssert.True (false);
                     break;
                 }
                 dict.AddString ("message", tEvent.Message);
@@ -149,7 +149,7 @@ namespace NachoCore.Utils
                     dict.AddString ("event_type", "WBXML_RESPONSE");
                     break;
                 default:
-                    NachoAssert.True (false);
+                    NcAssert.True (false);
                     break;
                 }
                 dict.AddData ("wbxml", tEvent.Wbxml);
@@ -166,7 +166,7 @@ namespace NachoCore.Utils
                 dict.AddInteger ("min", tEvent.Min);
                 dict.AddInteger ("max", tEvent.Max);
             } else {
-                NachoAssert.True (false);
+                NcAssert.True (false);
             }
             PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
             anEvent.ACL = DefaultAcl;

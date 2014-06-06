@@ -206,7 +206,6 @@
     <Compile Include="NachoCore\Utils\ASWBXMLByteQueue.cs" />
     <Compile Include="NachoCore\Utils\ASWBXMLCodePage.cs" />
     <Compile Include="NachoCore\Utils\Helpers.cs" />
-    <Compile Include="NachoCore\Utils\NachoAssert.cs" />
     <Compile Include="NachoCore\Utils\NcResult.cs" />
     <Compile Include="NachoCore\Utils\NcTimer.cs" />
     <Compile Include="NachoCore\Utils\WBXML.cs" />
@@ -270,6 +269,7 @@
     <Compile Include="LogSettings.cs" />
     <Compile Include="NachoCore\Model\McPendDep.cs" />
     <Compile Include="NachoCore\Utils\GatedMemoryStream.cs" />
+    <Compile Include="NachoCore\Utils\NcAssert.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

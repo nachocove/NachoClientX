@@ -292,7 +292,7 @@ namespace NachoCore.Model
             ResultSubKind = result.SubKind;
             ResultWhy = result.Why;
             if (null != result) {
-                NachoAssert.True (null != control);
+                NcAssert.True (null != control);
                 control.StatusInd (result, new [] { Token });
             }
             State = StateEnum.Deleted;
@@ -435,7 +435,7 @@ namespace NachoCore.Model
 
         public void ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
         {
-            NachoAssert.True (DeferredEnum.UntilTime != reason);
+            NcAssert.True (DeferredEnum.UntilTime != reason);
             // Added check in case of any bug causing underflow.
             if (0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
                 ResolveAsHardFail (control, onFail);

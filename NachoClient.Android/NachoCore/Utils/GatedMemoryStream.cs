@@ -20,7 +20,7 @@ namespace NachoCore.Utils
             }
             set {
                 // We only allow mode change when there is no data in the stream buffer
-                NachoAssert.True (0 == Length);
+                NcAssert.True (0 == Length);
                 _Mode = value;
 
                 if (WriteMode.SHA1 == _Mode) {
@@ -33,7 +33,7 @@ namespace NachoCore.Utils
 
         public byte[] Sha1Hash {
             get {
-                NachoAssert.True (WriteMode.SHA1 == Mode);
+                NcAssert.True (WriteMode.SHA1 == Mode);
                 byte[] hash = Sha1.ComputeHash (this);
                 SetLength (0);
                 return hash;

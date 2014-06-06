@@ -27,7 +27,7 @@ namespace NachoCore
                 BackEnd.Instance.CreateFolderCmd (message.AccountId, ArchiveFolderName, type, false, false);
             }
             folder = McFolder.GetUserFolder (message.AccountId, type, 0, ArchiveFolderName);
-            NachoAssert.True (null != folder);
+            NcAssert.True (null != folder);
 
             BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
         }

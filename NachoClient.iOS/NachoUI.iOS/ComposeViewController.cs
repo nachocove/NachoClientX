@@ -94,7 +94,7 @@ namespace NachoClient.iOS
 
         public void DismissINachoContactChooser (INachoContactChooser vc)
         {
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
         }
 
         Section toAddresses;
@@ -165,7 +165,7 @@ namespace NachoClient.iOS
                     bccAddresses.Add (e);
                     break;
                 default:
-                    NachoAssert.CaseError ();
+                    NcAssert.CaseError ();
                     break;
                 }
             }
@@ -269,7 +269,7 @@ namespace NachoClient.iOS
                     PerformSegue ("ComposeToAttachments", new SegueHolder (null));
                     break;
                 default:
-                    NachoAssert.CaseError ();
+                    NcAssert.CaseError ();
                     break;
                 }
             };
@@ -320,7 +320,7 @@ namespace NachoClient.iOS
                 if (null == image) {
                     image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
                 }
-                NachoAssert.True (null != image);
+                NcAssert.True (null != image);
                 var attachment = new McAttachment ();
                 attachment.AccountId = account.Id;
                 attachment.Insert ();
@@ -382,7 +382,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void UpdateEmailAddress (NcEmailAddress address)
         {
-            NachoAssert.True (null != address);
+            NcAssert.True (null != address);
 
             switch (address.action) {
             case NcEmailAddress.Action.edit:
@@ -392,7 +392,7 @@ namespace NachoClient.iOS
                 AddressList.Add (address);
                 break;
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 break;
             }
         }
@@ -402,7 +402,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void DeleteEmailAddress (NcEmailAddress address)
         {
-            NachoAssert.True (null != address);
+            NcAssert.True (null != address);
 
             if (NcEmailAddress.Action.edit == address.action) {
                 AddressList.RemoveAt (address.index);
@@ -433,7 +433,7 @@ namespace NachoClient.iOS
                     mimeMessage.Bcc.Add (mailbox);
                     break;
                 default:
-                    NachoAssert.CaseError ();
+                    NcAssert.CaseError ();
                     break;
                 }
             }
@@ -493,7 +493,7 @@ namespace NachoClient.iOS
             }
 
             var ActionMessage = ActionThread.SingleMessageSpecialCase ();
-            NachoAssert.True (null != ActionMessage);
+            NcAssert.True (null != ActionMessage);
 
             var Subject = "";
             if (null != ActionMessage.Subject) {

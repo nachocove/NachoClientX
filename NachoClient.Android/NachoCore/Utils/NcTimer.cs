@@ -76,7 +76,7 @@ namespace NachoCore.Utils
         {
             lock (StaticLockObj) {
                 if (null != ActiveTimers.Find (nct => nct.Id == Id)) {
-                    NachoAssert.True (ActiveTimers.Remove (this));
+                    NcAssert.True (ActiveTimers.Remove (this));
                 }
             }
             lock (InstanceLockObj) {

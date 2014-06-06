@@ -113,7 +113,7 @@ namespace NachoCore.ActiveSync
 
             if (0 != cal.BodyId) {
                 var body = McBody.QueryById<McBody> (cal.BodyId);
-                NachoAssert.True (null != body);
+                NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
@@ -251,7 +251,7 @@ namespace NachoCore.ActiveSync
         /// <param name="fieldLength">Length of the field.</param>
         public string ExtractStringFromAsTimeZone (byte[] binaryData, int start, int fieldLength)
         {
-            NachoCore.NachoAssert.True ((start + fieldLength) <= binaryData.Length);
+            NachoCore.NcAssert.True ((start + fieldLength) <= binaryData.Length);
             String field = System.Text.UnicodeEncoding.Unicode.GetString (binaryData, start, fieldLength);
             int index = field.IndexOf (System.Convert.ToChar (0)); // trim trailing null padding
             if (index < 0) { // no nulls
@@ -268,13 +268,13 @@ namespace NachoCore.ActiveSync
         // TODO: Make sure we don't have extra fields
         public List<McAttendee> ParseAttendees (XNamespace ns, XElement attendees)
         {
-            NachoCore.NachoAssert.True (null != attendees);
-            NachoCore.NachoAssert.True (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
+            NachoCore.NcAssert.True (null != attendees);
+            NachoCore.NcAssert.True (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
 
             var list = new List<McAttendee> ();
 
             foreach (var attendee in attendees.Elements()) {
-                NachoCore.NachoAssert.True (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
+                NachoCore.NcAssert.True (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
 
                 // Required
                 var nameElement = attendee.Element (ns + Xml.Calendar.Attendee.Name);
@@ -311,13 +311,13 @@ namespace NachoCore.ActiveSync
         // TODO: Make sure we don't have extra fields
         public List<McCalendarCategory> ParseCategories (XNamespace ns, XElement categories)
         {
-            NachoCore.NachoAssert.True (null != categories);
-            NachoCore.NachoAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
+            NachoCore.NcAssert.True (null != categories);
+            NachoCore.NcAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
 
             var list = new List<McCalendarCategory> ();
 
             foreach (var category in categories.Elements()) {
-                NachoCore.NachoAssert.True (category.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
+                NachoCore.NcAssert.True (category.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
                 var n = new McCalendarCategory (category.Value);
                 list.Add (n);
             }
@@ -332,8 +332,8 @@ namespace NachoCore.ActiveSync
         /// <param name="recurrence">Recurrence element</param>
         public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence)
         {
-            NachoCore.NachoAssert.True (null != recurrence);
-            NachoCore.NachoAssert.True (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
+            NachoCore.NcAssert.True (null != recurrence);
+            NachoCore.NcAssert.True (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
 
             var r = new McRecurrence ();
 
@@ -383,14 +383,14 @@ namespace NachoCore.ActiveSync
 
         public List<McException> ParseExceptions (XNamespace ns, XElement exceptions)
         {
-            NachoCore.NachoAssert.True (null != exceptions);
-            NachoCore.NachoAssert.True (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
+            NachoCore.NcAssert.True (null != exceptions);
+            NachoCore.NcAssert.True (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
 
             var l = new List<McException> ();
 
             Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions);
             foreach (var exception in exceptions.Elements()) {
-                NachoCore.NachoAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
+                NachoCore.NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
                 e.attendees = new List<McAttendee> ();
                 e.categories = new List<McCalendarCategory> ();
@@ -468,7 +468,7 @@ namespace NachoCore.ActiveSync
                         }
                         break;
                     case Xml.AirSyncBase.NativeBodyType:
-                        NachoAssert.CaseError (); // Docs claim this doesn't exist
+                        NcAssert.CaseError (); // Docs claim this doesn't exist
                         break;
                     default:
                         Log.Warn (Log.LOG_AS, "CreateNcCalendarFromXML UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
@@ -499,7 +499,7 @@ namespace NachoCore.ActiveSync
         {
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
-            NachoCore.NachoAssert.True (null != serverId);
+            NachoCore.NcAssert.True (null != serverId);
 
             McCalendar c = new McCalendar ();
             c.ServerId = serverId.Value;
@@ -512,7 +512,7 @@ namespace NachoCore.ActiveSync
             XNamespace nsCalendar = "Calendar";
             // <ApplicationData>...</ApplicationData>
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
-            NachoCore.NachoAssert.True (null != applicationData);
+            NachoCore.NcAssert.True (null != applicationData);
 
             Log.Info (Log.LOG_CALENDAR, "ParseCalendar\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
@@ -621,7 +621,7 @@ namespace NachoCore.ActiveSync
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                NachoCore.NachoAssert.True (null != prop);
+                NachoCore.NcAssert.True (null != prop);
                 if (typeof(string) != prop.PropertyType) {
                     Log.Warn (Log.LOG_AS, "TrySetStringFromXml: Property {0} is not string.", targetProp);
                     return;
@@ -642,7 +642,7 @@ namespace NachoCore.ActiveSync
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                NachoCore.NachoAssert.True (null != prop);
+                NachoCore.NcAssert.True (null != prop);
                 if (typeof(int) != prop.PropertyType) {
                     Log.Warn (Log.LOG_AS, "TrySetIntFromXml: Property {0} is not int.", targetProp);
                     return;
@@ -664,7 +664,7 @@ namespace NachoCore.ActiveSync
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                NachoCore.NachoAssert.True (null != prop);
+                NachoCore.NcAssert.True (null != prop);
                 if (typeof(DateTime) != prop.PropertyType) {
                     Log.Warn (Log.LOG_AS, "TrySetDateTimeFromXml: Property {0} is not int.", targetProp);
                     return;
@@ -680,7 +680,7 @@ namespace NachoCore.ActiveSync
         {
             try {
                 var prop = targetObj.GetType ().GetProperty (targetProp);
-                NachoCore.NachoAssert.True (null != prop);
+                NachoCore.NcAssert.True (null != prop);
                 if (typeof(DateTime) != prop.PropertyType) {
                     Log.Warn (Log.LOG_AS, "TrySetCompactDateTimeFromXml: Property {0} is not int.", targetProp);
                     return;

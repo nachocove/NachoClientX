@@ -70,7 +70,7 @@ namespace NachoCore.Utils
         /// </summary>
         public NcEmailAddress (McAttendee attendee)
         {
-            NachoAssert.True (attendee.AttendeeTypeIsSet);
+            NcAssert.True (attendee.AttendeeTypeIsSet);
             this.kind = FromAttendeeType (attendee.AttendeeType);
             this.address = attendee.Email;
             this.action = Action.undefined;
@@ -122,7 +122,7 @@ namespace NachoCore.Utils
             case Kind.Unknown:
                 return "Unknown";
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 return"";
             }
         }
@@ -139,7 +139,7 @@ namespace NachoCore.Utils
             case NcAttendeeType.Unknown:
                 return Kind.Unknown;
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 return Kind.Unknown;
             }
         }
@@ -156,7 +156,7 @@ namespace NachoCore.Utils
             case Kind.Unknown:
                 return NcAttendeeType.Unknown;
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 return NcAttendeeType.Unknown;
             }
         }
@@ -164,7 +164,7 @@ namespace NachoCore.Utils
         public MailboxAddress ToMailboxAddress ()
         {
             // Must have a contact or an address
-            NachoAssert.True ((null != this.contact) || (null != this.address));
+            NcAssert.True ((null != this.contact) || (null != this.address));
 
             string candidate;
             MailboxAddress mailbox;

@@ -88,9 +88,9 @@ namespace NachoCore.Utils
             evt.Transparency = TransparencyType.Opaque;
             foreach (var a in c.attendees) {
                 var iAttendee = new Attendee ("MAILTO:" + a.Email);
-                NachoAssert.True (null != a.Name);
+                NcAssert.True (null != a.Name);
                 iAttendee.CommonName = a.Name;
-                NachoAssert.True (a.AttendeeTypeIsSet);
+                NcAssert.True (a.AttendeeTypeIsSet);
                 switch (a.AttendeeType) {
                 case NcAttendeeType.Required:
                     iAttendee.RSVP = c.ResponseRequestedIsSet && c.ResponseRequested;

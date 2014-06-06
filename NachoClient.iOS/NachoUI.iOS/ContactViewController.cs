@@ -108,7 +108,7 @@ namespace NachoClient.iOS
 
         public RootElement ToDialogElement (McContact m)
         {
-            NachoCore.NachoAssert.True (null != m);
+            NachoCore.NcAssert.True (null != m);
 
             var root = new RootElement ("Contact");
             var section = new Section ();

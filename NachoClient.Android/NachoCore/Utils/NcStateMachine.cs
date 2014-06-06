@@ -214,12 +214,12 @@ namespace NachoCore.Utils
             lock (LockObj) {
                 // Enter critical section.
                 if ((uint)SmEvt.Sequence == smEvent.EventCode) {
-                    NachoAssert.True (null != smEvent.Sequence && 0 < smEvent.Sequence.Length);
+                    NcAssert.True (null != smEvent.Sequence && 0 < smEvent.Sequence.Length);
                     foreach (var subSmEvent in smEvent.Sequence) {
                         EventQ.Add (subSmEvent);
                     }
                 } else {
-                    NachoAssert.True (null == smEvent.Sequence);
+                    NcAssert.True (null == smEvent.Sequence);
                     EventQ.Add (smEvent);
                 }
                 if (InProcess) {

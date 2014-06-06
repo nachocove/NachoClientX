@@ -46,8 +46,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            NachoAssert.True (null != owner);
-            NachoAssert.True (null != address);
+            NcAssert.True (null != owner);
+            NcAssert.True (null != address);
 
             // Manage the button toggles thru To, Cc, and Bcc
             ToButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -74,7 +74,7 @@ namespace NachoClient.iOS
                     SetToButtonLabel (NcEmailAddress.Kind.Required);
                     break;
                 default:
-                    NachoAssert.CaseError ();
+                    NcAssert.CaseError ();
                     break;
                 }
             };
@@ -175,7 +175,7 @@ namespace NachoClient.iOS
                 ToButton.SetTitle ("Unk:", UIControlState.Normal);
                 break;
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 break;
             }
         }
@@ -199,7 +199,7 @@ namespace NachoClient.iOS
             }
 
             // TODO: require phone numbers in contact chooser
-            NachoAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
+            NcAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
 
             if (NachoContactType.EmailRequired == (contactType & NachoContactType.EmailRequired)) {
                 if (String.IsNullOrEmpty(contact.DisplayEmailAddress)) {
@@ -296,7 +296,7 @@ namespace NachoClient.iOS
             public override int RowsInSection (UITableView tableview, int section)
             {
                 if (null != Owner.searchResults) {
-                    NachoAssert.True (0 == section);
+                    NcAssert.True (0 == section);
                     return Owner.searchResults.Count;
                 }
 
@@ -328,7 +328,7 @@ namespace NachoClient.iOS
 
                 if (String.IsNullOrEmpty(displayName)) {
                     cell = tableView.DequeueReusableCell ("Basic");
-                    NachoCore.NachoAssert.True (null != cell);
+                    NachoCore.NcAssert.True (null != cell);
                     cell.TextLabel.Text = "No name or email address";
                     cell.TextLabel.TextColor = UIColor.LightGray;
                     return cell;
@@ -336,14 +336,14 @@ namespace NachoClient.iOS
 
                 if (displayName.Equals (displayEmailAddress)) {
                     cell = tableView.DequeueReusableCell ("Basic");
-                    NachoCore.NachoAssert.True (null != cell);
+                    NachoCore.NcAssert.True (null != cell);
                     cell.TextLabel.Text = displayName;
                     cell.TextLabel.TextColor = UIColor.Black;
                     return cell;
                 }
 
                 cell = tableView.DequeueReusableCell ("Subtitle");
-                NachoCore.NachoAssert.True (null != cell);
+                NachoCore.NcAssert.True (null != cell);
                 cell.TextLabel.Text = displayName;
                 cell.DetailTextLabel.Text = displayEmailAddress;
                 cell.TextLabel.TextColor = UIColor.Black;

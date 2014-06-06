@@ -138,7 +138,7 @@ namespace NachoClient.iOS
             // cell that's hooked up to the segue and has matching attributes.
             UITableViewCell cell = TableView.DequeueReusableCell (CellSegueID);
             // Should always get a prototype cell
-            NachoCore.NachoAssert.True (null != cell);
+            NachoCore.NcAssert.True (null != cell);
 
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {

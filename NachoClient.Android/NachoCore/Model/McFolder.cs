@@ -126,7 +126,7 @@ namespace NachoCore.Model
             if (0 == folders.Count) {
                 return null;
             }
-            NachoAssert.True (1 == folders.Count);
+            NcAssert.True (1 == folders.Count);
             return folders.First ();
         }
 
@@ -139,7 +139,7 @@ namespace NachoCore.Model
             if (0 == folders.Count) {
                 return null;
             }
-            NachoAssert.True (1 == folders.Count);
+            NcAssert.True (1 == folders.Count);
             return folders.First ();
         }
 
@@ -180,7 +180,7 @@ namespace NachoCore.Model
         public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McFolderEntry
         {
             var getClassCode = typeof(T).GetMethod ("GetClassCode");
-            NachoAssert.True (null != getClassCode);
+            NcAssert.True (null != getClassCode);
             ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
             " m.AccountId = ? AND " +
@@ -246,7 +246,7 @@ namespace NachoCore.Model
                     break;
 
                 default:
-                    NachoAssert.True (false);
+                    NcAssert.True (false);
                     break;
                 }
             }
@@ -256,7 +256,7 @@ namespace NachoCore.Model
         public NcResult Link (McFolderEntry obj)
         {
             var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
-            NachoAssert.True (null != getClassCode);
+            NcAssert.True (null != getClassCode);
             ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);
@@ -275,7 +275,7 @@ namespace NachoCore.Model
         public NcResult Unlink (McFolderEntry obj)
         {
             var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
-            NachoAssert.True (null != getClassCode);
+            NcAssert.True (null != getClassCode);
             ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);

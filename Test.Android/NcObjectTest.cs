@@ -26,7 +26,7 @@ namespace Test.Common
             try {
                 r = i.Insert ();
                 Assert.Fail ("Do not allow insertion if ID is set");
-            } catch (NachoAssert.NachoAssertionFailure) {
+            } catch (NcAssert.NachoAssertionFailure) {
                 // Don't allow duplicate 
             }
 
@@ -44,7 +44,7 @@ namespace Test.Common
                 i.Id = 0;
                 r = i.Update ();
                 Assert.Fail ("Do not allow update if ID is 0");
-            } catch (NachoAssert.NachoAssertionFailure) {
+            } catch (NcAssert.NachoAssertionFailure) {
                 // Don't allow duplicate 
             }
         }

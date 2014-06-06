@@ -108,7 +108,7 @@ namespace NachoCore.Wbxml
                 case GlobalTokens.END:
                     if (currentNode.Parent != null) {
                         currentNode = currentNode.Parent;
-                        NachoAssert.True (0 < level);
+                        NcAssert.True (0 < level);
                         level--;
                         if (null != filter) {
                             filter.WbxmlBuffer.ReadAll ();
@@ -148,7 +148,7 @@ namespace NachoCore.Wbxml
                             data.SaveDone ();
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
-                            NachoAssert.True (false); // not implemented yet
+                            NcAssert.True (false); // not implemented yet
                             #endif
                             break;
 
@@ -165,12 +165,12 @@ namespace NachoCore.Wbxml
                             }
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
-                            NachoAssert.True (false);
+                            NcAssert.True (false);
                             #endif
                             break;
 
                         default:
-                            NachoAssert.True (false);
+                            NcAssert.True (false);
                             break;
                         }
                     } else {

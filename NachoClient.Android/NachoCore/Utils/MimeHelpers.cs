@@ -20,7 +20,7 @@ namespace NachoCore.Utils
 
         public static MimeEntity SearchMessage (string cid, MimeMessage message)
         {
-            NachoAssert.True (null != message);
+            NcAssert.True (null != message);
             return SearchMimeEntity (cid, message.Body);
         }
 
@@ -176,7 +176,7 @@ namespace NachoCore.Utils
         static public void SendEmail (int AccountId, MimeMessage mimeMessage, int CalendarId = 0)
         {
             // Don't let 0 into the db
-            NachoAssert.True (AccountId > 0);
+            NcAssert.True (AccountId > 0);
 
             var msg = new McEmailMessage ();
             msg.AccountId = AccountId;

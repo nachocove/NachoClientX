@@ -27,7 +27,7 @@ namespace NachoCore.Utils
             get {
                 if (!IsRoot ()) {
                     Log.Warn (Log.LOG_UTILS, "Getting AutoReset for non-root counter {0}", Name);
-                    NachoAssert.True (false == _AutoReset);
+                    NcAssert.True (false == _AutoReset);
                 }
                 return _AutoReset;
             }
@@ -49,7 +49,7 @@ namespace NachoCore.Utils
             get {
                 if (!IsRoot ()) {
                     Log.Warn (Log.LOG_UTILS, "Getting ReportPeriod for non-root counter {0}", Name);
-                    NachoAssert.True (0 == _ReportPeriod);
+                    NcAssert.True (0 == _ReportPeriod);
                 }
                 return _ReportPeriod;
             }

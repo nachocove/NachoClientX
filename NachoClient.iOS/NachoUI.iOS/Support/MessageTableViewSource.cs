@@ -342,7 +342,7 @@ namespace NachoClient.iOS
                 ConfigureMessageCell (cell, indexPath.Row);
                 return;
             }
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
         }
 
         protected UITableView FindEnclosingTableView (UIView view)
@@ -434,7 +434,7 @@ namespace NachoClient.iOS
                 if (null == message.Summary) {
                     message.Summarize ();
                 }
-                NachoAssert.True (null != message.Summary);
+                NcAssert.True (null != message.Summary);
                 summaryLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
                 summaryLabelView.Text = message.Summary;
                 summaryLabelView.SizeToFit ();
