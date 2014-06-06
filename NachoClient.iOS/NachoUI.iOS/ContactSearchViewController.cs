@@ -12,6 +12,7 @@ using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using Xamarin.Contacts;
 using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Model;
 
 namespace NachoClient.iOS

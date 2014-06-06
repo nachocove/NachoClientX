@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore.Brain
 {

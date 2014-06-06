@@ -6,7 +6,7 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using MonoTouch.Dialog;
 using NachoCore.ActiveSync;
-using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -108,7 +108,7 @@ namespace NachoClient.iOS
 
         public RootElement ToDialogElement (McContact m)
         {
-            NachoCore.NcAssert.True (null != m);
+            NcAssert.True (null != m);
 
             var root = new RootElement ("Contact");
             var section = new Section ();

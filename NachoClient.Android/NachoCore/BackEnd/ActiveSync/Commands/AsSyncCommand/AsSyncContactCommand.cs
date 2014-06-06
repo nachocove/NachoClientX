@@ -27,14 +27,14 @@ namespace NachoCore.ActiveSync
             // Convert the XML to an AsContact
             var asResult = AsContact.FromXML (Ns, command);
             var asContact = asResult.GetValue<AsContact> ();
-            NachoCore.NcAssert.True (asResult.isOK ());
-            NachoCore.NcAssert.True (null != asContact);
+            NcAssert.True (asResult.isOK (), "asResult.isOK");
+            NcAssert.NotNull (asContact, "asContact");
 
             // Convert the AsContact to an McContact
             var mcResult = asContact.ToMcContact ();
             var mcContact = mcResult.GetValue<McContact> ();
-            NachoCore.NcAssert.True (mcResult.isOK ());
-            NachoCore.NcAssert.True (null != mcContact);
+            NcAssert.True (mcResult.isOK ());
+            NcAssert.NotNull (mcContact, "mcContact");
 
             mcContact.AccountId = folder.AccountId;
 
@@ -43,11 +43,11 @@ namespace NachoCore.ActiveSync
             if (null == existingContact) {
                 var ur = mcContact.Insert ();
                 folder.Link (mcContact);
-                NachoCore.NcAssert.True (0 < ur);
+                NcAssert.True (0 < ur, "mcContact.Insert");
             } else {
                 mcContact.Id = existingContact.Id;
                 var ur = mcContact.Update ();
-                NachoCore.NcAssert.True (0 < ur);
+                NcAssert.True (0 < ur, "mcContact.Update");
             }
         }
     }

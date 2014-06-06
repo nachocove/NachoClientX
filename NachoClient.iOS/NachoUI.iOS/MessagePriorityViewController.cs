@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Model;
-using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Brain;
 
 namespace NachoClient.iOS
@@ -151,7 +151,7 @@ namespace NachoClient.iOS
                 break;
             case MessageDeferralType.None:
             default:
-                NachoCore.NcAssert.CaseError ();
+                NcAssert.CaseError ();
                 return;
             }
         }

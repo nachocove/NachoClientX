@@ -146,7 +146,7 @@ namespace NachoClient.iOS
         {
             UITableViewCell cell = TableView.DequeueReusableCell (CalendarToCalendarItemSegueID);
             // Should always get a prototype cell
-            NachoCore.NcAssert.True (null != cell);
+            NcAssert.True (null != cell);
 
             McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
 

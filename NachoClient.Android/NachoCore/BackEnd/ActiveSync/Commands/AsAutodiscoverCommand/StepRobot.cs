@@ -512,8 +512,9 @@ namespace NachoCore.ActiveSync
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
                         await client.GetAsync (ReDirUri).ConfigureAwait (false);
-                    } catch {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0");
+                    } catch (Exception ex) {
+                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0", null, 
+                            string.Format ("SR:GetAsync Exception: {0}", ex.ToString ()));
                         return;
                     }
                     ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
