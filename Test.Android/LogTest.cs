@@ -78,7 +78,7 @@ namespace Test.iOS
             #if (DEBUG)
             CheckOutput (String.Format ("Error:{0}: [LogTest.cs:77, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
-            CheckOutput (String.Format ("Error:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            CheckOutput (String.Format ("Error:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
 
             // Warnings
@@ -108,7 +108,7 @@ namespace Test.iOS
             #if (DEBUG)
             CheckOutput (String.Format ("Warn:{0}: [LogTest.cs:107, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
-            CheckOutput (String.Format ("Warn:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            CheckOutput (String.Format ("Warn:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
 
             // Info
@@ -138,7 +138,7 @@ namespace Test.iOS
             #if (DEBUG)
             CheckOutput (String.Format ("Info:{0}: [LogTest.cs:137, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
-            CheckOutput (String.Format ("Info:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            CheckOutput (String.Format ("Info:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
 
             // Debug
@@ -168,7 +168,7 @@ namespace Test.iOS
             #if (DEBUG)
             CheckOutput (String.Format ("Debug:{0}: [LogTest.cs:167, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
-            CheckOutput (String.Format ("Debug:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId);
+            CheckOutput (String.Format ("Debug:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
 
 
