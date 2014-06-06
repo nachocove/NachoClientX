@@ -127,8 +127,6 @@ namespace NachoClient.iOS
             // iOS 7 BUG Workaround
             // iOS 7 puts the  background view over the refresh view, hiding it.
             RefreshControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
-
-            //this.setNeedsStatusBarAppearanceUpdate;
         }
 
         public int GetFirstVisibleRow ()
