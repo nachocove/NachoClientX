@@ -428,7 +428,7 @@ namespace NachoCore.Model
         public McEmailMessage SingleMessageSpecialCase ()
         {
             var message = GetEmailMessage (0);
-            NcAssert.NotNUll (message);
+            NcAssert.NotNull (message);
             return message;
         }
 

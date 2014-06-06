@@ -25,7 +25,7 @@ namespace NachoCore
             }
         }
 
-        public static void NotNUll(Object o)
+        public static void NotNull(Object o)
         {
             if (null == o) {
                 throw new NachoAssertionFailure ();
