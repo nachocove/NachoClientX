@@ -91,4 +91,13 @@ he may need to investigate. For example, if A has a crash that B can fix, B
 need to check both DEV[A] (and DEV[B]) to see all the crashes. For N developers,
 we need to check N versions. Putting them into a single version simplifies
 the process of notifying developers.
-								   
+
+If you are working in a slow network, you may want to disable upload by
+creating NachoClient.iOS/.skip_hockeyapp_upload. In Xamarin studio build
+log, it should display:
+
+Skipping HockeyApp upload.
+
+The file is intentionally not added to .gitignore to constantly remind you about 
+that your build cannot be symbolicated.
+
