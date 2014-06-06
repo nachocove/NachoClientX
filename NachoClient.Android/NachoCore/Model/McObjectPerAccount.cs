@@ -13,19 +13,19 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            NachoAssert.True (0 < AccountId);
+            NcAssert.True (0 < AccountId);
             return base.Insert ();
         }
 
         public override int Delete ()
         {
-            NachoAssert.True (0 < AccountId);
+            NcAssert.True (0 < AccountId);
             return base.Delete ();
         }
 
         public override int Update ()
         {
-            NachoAssert.True (0 < AccountId);
+            NcAssert.True (0 < AccountId);
             return base.Update ();
         }
     }

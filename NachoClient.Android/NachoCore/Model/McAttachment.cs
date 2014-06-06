@@ -44,7 +44,7 @@ namespace NachoCore.Model
         public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
         {
             // ActiveSync only supports email attachments.
-            NachoAssert.True (typeof(T) == typeof(McEmailMessage));
+            NcAssert.True (typeof(T) == typeof(McEmailMessage));
             return NcModel.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
             " a.AccountId = ? AND " +
             " a.EmailMessageId = ? ",
@@ -72,7 +72,7 @@ namespace NachoCore.Model
 
         public string FilePath ()
         {
-            NachoAssert.True (0 != Id);
+            NcAssert.True (0 != Id);
             return Path.Combine (NcModel.Instance.AttachmentsDir, Id.ToString (), LocalFileName);
         }
 

@@ -138,7 +138,7 @@ namespace NachoClient.iOS
                     owner.SelectFile (this, a);
                     break;
                 default:
-                    NachoAssert.CaseError ();
+                    NcAssert.CaseError ();
                     break;
                 }
             };

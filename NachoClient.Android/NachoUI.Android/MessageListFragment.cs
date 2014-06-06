@@ -125,7 +125,7 @@ namespace NachoClient.AndroidClient
             if (null == message.Summary) {
                 UpdateDbWithSummary (message);
             }
-            NachoAssert.True (null != message.Summary);
+            NcAssert.True (null != message.Summary);
             summary.Text = message.Summary;
             received.Text = Pretty.FullDateString (message.DateReceived);
 

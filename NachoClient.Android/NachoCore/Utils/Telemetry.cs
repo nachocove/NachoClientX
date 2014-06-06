@@ -41,7 +41,7 @@ namespace NachoCore.Utils
                 return _Message;
             }
             set {
-                NachoAssert.True (IsLogEvent());
+                NcAssert.True (IsLogEvent());
                 _Message = value;
             }
         }
@@ -53,7 +53,7 @@ namespace NachoCore.Utils
                 return _Wbxml;
             }
             set {
-                NachoAssert.True (IsWbxmlEvent ());
+                NcAssert.True (IsWbxmlEvent ());
                 _Wbxml = value;
             }
         }
@@ -65,7 +65,7 @@ namespace NachoCore.Utils
                 return _CounterName;
             }
             set {
-                NachoAssert.True (IsCounterEvent ());
+                NcAssert.True (IsCounterEvent ());
                 _CounterName = value;
             }
         }
@@ -77,7 +77,7 @@ namespace NachoCore.Utils
                 return _Count;
             }
             set {
-                NachoAssert.True (IsCounterEvent () || IsCaptureEvent ());
+                NcAssert.True (IsCounterEvent () || IsCaptureEvent ());
                 _Count = value;
             }
         }
@@ -89,7 +89,7 @@ namespace NachoCore.Utils
                 return _CounterStart;
             }
             set {
-                NachoAssert.True (IsCounterEvent ());
+                NcAssert.True (IsCounterEvent ());
                 _CounterStart = value;
             }
         }
@@ -101,7 +101,7 @@ namespace NachoCore.Utils
                 return _CounterEnd;
             }
             set {
-                NachoAssert.True (IsCounterEvent ());
+                NcAssert.True (IsCounterEvent ());
                 _CounterEnd = value;
             }
         }
@@ -114,7 +114,7 @@ namespace NachoCore.Utils
                 return _CaptureName;
             }
             set {
-                NachoAssert.True (IsCaptureEvent ());
+                NcAssert.True (IsCaptureEvent ());
                 _CaptureName = value;
             }
         }
@@ -126,7 +126,7 @@ namespace NachoCore.Utils
                 return _Average;
             }
             set {
-                NachoAssert.True (IsCaptureEvent ());
+                NcAssert.True (IsCaptureEvent ());
                 _Average = value;
             }
         }
@@ -138,7 +138,7 @@ namespace NachoCore.Utils
                 return _Min;
             }
             set {
-                NachoAssert.True (IsCaptureEvent ());
+                NcAssert.True (IsCaptureEvent ());
                 _Min = value;
             }
         }
@@ -150,7 +150,7 @@ namespace NachoCore.Utils
                 return _Max;
             }
             set {
-                NachoAssert.True (IsCaptureEvent ());
+                NcAssert.True (IsCaptureEvent ());
                 _Max = value;
             }
         }
@@ -237,7 +237,7 @@ namespace NachoCore.Utils
                 if (null == _SharedInstance) {
                     _SharedInstance = new Telemetry ();
                 }
-                NachoAssert.True (null != _SharedInstance);
+                NcAssert.True (null != _SharedInstance);
                 return _SharedInstance;
             }
         }
@@ -306,7 +306,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            NachoAssert.True (TelemetryEvent.IsLogEvent (type));
+            NcAssert.True (TelemetryEvent.IsLogEvent (type));
 
             TelemetryEvent tEvent = new TelemetryEvent (type);
             tEvent.Message = String.Format(fmt, list);

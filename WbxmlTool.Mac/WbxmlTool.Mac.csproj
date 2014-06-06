@@ -51,9 +51,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Log.cs">
       <Link>NachoCore\Utils\Log.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NachoAssert.cs">
-      <Link>NachoCore\Utils\NachoAssert.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcXmlFilter.cs">
       <Link>NachoCore\Utils\NcXmlFilter.cs</Link>
     </Compile>
@@ -167,6 +164,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\GatedMemoryStream.cs">
       <Link>NachoCore\Utils\GatedMemoryStream.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
+      <Link>NachoCore\Utils\NcAssert.cs</Link>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

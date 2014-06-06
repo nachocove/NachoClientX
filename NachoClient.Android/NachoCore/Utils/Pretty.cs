@@ -95,7 +95,7 @@ namespace NachoCore.Utils
                 }
             case DateTimeKind.Local:
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 return DateTime.MinValue;
             }
         }
@@ -105,8 +105,8 @@ namespace NachoCore.Utils
         /// </summary>
         static public string EventStartToEnd (DateTime startTime, DateTime endTime)
         {
-            NachoAssert.True (DateTimeKind.Local != startTime.Kind);
-            NachoAssert.True (DateTimeKind.Local != endTime.Kind);
+            NcAssert.True (DateTimeKind.Local != startTime.Kind);
+            NcAssert.True (DateTimeKind.Local != endTime.Kind);
 
             var startString = LocalT (startTime).ToString ("t");
 
@@ -127,7 +127,7 @@ namespace NachoCore.Utils
         /// </summary>
         static public string FullDateString (DateTime d)
         {
-            NachoAssert.True (DateTimeKind.Local != d.Kind);
+            NcAssert.True (DateTimeKind.Local != d.Kind);
             return LocalT (d).ToString ("D");
         }
 

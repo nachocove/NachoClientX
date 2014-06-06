@@ -65,15 +65,15 @@ namespace NachoCore
 
         private bool HasServiceFromAccountId (int accountId)
         {
-            NachoAssert.True (0 != accountId);
+            NcAssert.True (0 != accountId);
             return Services.Where (ctrl => ctrl.Account.Id.Equals (accountId)).Any ();
         }
 
         private ProtoControl ServiceFromAccountId (int accountId)
         {
-            NachoAssert.True (0 != accountId);
+            NcAssert.True (0 != accountId);
             var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
-            NachoAssert.True (Services.Any ());
+            NcAssert.True (Services.Any ());
             return query.Single ();
         }
         // For IBackEnd.
@@ -98,13 +98,15 @@ namespace NachoCore
             }
         }
 
+        // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
+        // Under iOS, there is a deadline. The ProtoControl's ForceStop must stop everything and 
+        // return without waiting.
         public void Stop ()
         {
             if (null != QuickTimeoutTimer) {
                 QuickTimeoutTimer.Dispose ();
                 QuickTimeoutTimer = null;
             }
-            // Don't Task.Run - we do it inside Stop ().
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Stop (account.Id);
@@ -114,9 +116,7 @@ namespace NachoCore
         public void Stop (int accountId)
         {
             var service = ServiceFromAccountId (accountId);
-            Task.Run (delegate {
-                service.ForceStop ();
-            });
+            service.ForceStop ();
         }
 
         public void QuickCheck (uint seconds)

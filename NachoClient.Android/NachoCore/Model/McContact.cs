@@ -588,7 +588,7 @@ namespace NachoCore.Model
         public NcResult ForceReadAncillaryData ()
         {
             var db = NcModel.Instance.Db;
-            NachoCore.NachoAssert.True (0 < Id);
+            NachoCore.NcAssert.True (0 < Id);
             DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbRelationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
@@ -603,7 +603,7 @@ namespace NachoCore.Model
 
         public NcResult InsertAncillaryData (SQLiteConnection db)
         {
-            NachoCore.NachoAssert.True (0 < Id);
+            NachoCore.NcAssert.True (0 < Id);
 
             // Don't read what will be deleted
             HasReadAncillaryData = true;
@@ -810,7 +810,7 @@ namespace NachoCore.Model
 
             if (0 != BodyId) {
                 var body = McBody.QueryById<McBody> (BodyId);
-                NachoAssert.True (null != body);
+                NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));

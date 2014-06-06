@@ -151,7 +151,7 @@ namespace NachoClient.iOS
                 break;
             case MessageDeferralType.None:
             default:
-                NachoCore.NachoAssert.CaseError ();
+                NachoCore.NcAssert.CaseError ();
                 return;
             }
         }

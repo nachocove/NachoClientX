@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
             }
-            NachoAssert.True (null != PendingSingle);
+            NcAssert.True (null != PendingSingle);
             PendingSingle.MarkDispached ();
         }
 
@@ -104,7 +104,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     default:
-                        NachoAssert.True (false);
+                        NcAssert.True (false);
                         break;
                     }
                     if (null != item) {

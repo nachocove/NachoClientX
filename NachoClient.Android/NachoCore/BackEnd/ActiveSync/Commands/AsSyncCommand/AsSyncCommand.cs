@@ -281,7 +281,7 @@ namespace NachoCore.ActiveSync
                         commands.Add (ToTaskDelete (pending, folder));
                         break;
                     default:
-                        NachoAssert.True (false);
+                        NcAssert.True (false);
                         break;
                     }
                     pending.MarkDispached ();

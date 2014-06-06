@@ -18,8 +18,8 @@ namespace NachoCore.ActiveSync
         {
             var pending = McObject.QueryById<McPending> (pendingId);
             if (null != pending) {
-                NachoAssert.True (Account.Id == pending.AccountId);
-                NachoAssert.True (McPending.StateEnum.UserBlocked == pending.State);
+                NcAssert.True (Account.Id == pending.AccountId);
+                NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
                 pending.BlockReason = McPending.BlockReasonEnum.NotBlocked;
                 pending.State = McPending.StateEnum.Eligible;
                 Task.Run (delegate {
@@ -32,7 +32,7 @@ namespace NachoCore.ActiveSync
         {
             var pending = McObject.QueryById<McPending> (pendingId);
             if (null != pending) {
-                NachoAssert.True (Account.Id == pending.AccountId);
+                NcAssert.True (Account.Id == pending.AccountId);
                 pending.ResolveAsCancelled ();
             }
         }
@@ -108,7 +108,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 default:
-                    NachoAssert.True (false);
+                    NcAssert.True (false);
                     break;
                 }
             }

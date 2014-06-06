@@ -18,7 +18,8 @@ namespace NachoCore.Model
         private string Documents { set; get; }
         public SQLiteConnection Db { get
             {
-                var threadId = Thread.CurrentThread.ManagedThreadId;
+                //var threadId = Thread.CurrentThread.ManagedThreadId;
+                int threadId = 0;
                 SQLiteConnection db = null;
                 if (!DbConns.TryGetValue (threadId, out db)) {
                     db = new SQLiteConnection (DbFileName, 

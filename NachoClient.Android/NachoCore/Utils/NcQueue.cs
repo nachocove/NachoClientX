@@ -76,14 +76,14 @@ namespace NachoCore.Utils
         {
             lock (Lock) {
                 _NumEnqueueBytes += obj.GetSize ();
-                NachoAssert.True (_NumEnqueueBytes >= _NumDequeueBytes);
+                NcAssert.True (_NumEnqueueBytes >= _NumDequeueBytes);
                 ulong numBytes = _NumEnqueueBytes - _NumDequeueBytes;
                 if (numBytes > _MaxNumQueuedBytes) {
                     _MaxNumQueuedBytes = numBytes;
                 }
 
                 _NumEnqueue++;
-                NachoAssert.True (_NumEnqueue >= _NumDequeue);
+                NcAssert.True (_NumEnqueue >= _NumDequeue);
                 ulong numElements = _NumEnqueue - _NumDequeue;
                 if (numElements > _MaxNumQueued) {
                     _MaxNumQueued = numElements;

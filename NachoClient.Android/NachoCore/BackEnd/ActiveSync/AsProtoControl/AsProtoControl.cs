@@ -1108,7 +1108,7 @@ namespace NachoCore.ActiveSync
                 // We can be Syncing for a long time. Let's get some pendings out & done.
                 if ((uint)AsEvt.E.ReSync == insteadEvent.EventCode) {
                     // The Top-of-Q pending IS executed using Sync.
-                    NachoAssert.True (SyncStrategy.IsMoreSyncNeeded ());
+                    NcAssert.True (SyncStrategy.IsMoreSyncNeeded ());
                     if (!SyncStrategy.RequestQuickFetch) {
                         // If it hasn't already been requested externally, we want every other Sync to be a quick-fetch.
                         SyncStrategy.RequestQuickFetch = RequestQuickFetch;
@@ -1257,7 +1257,7 @@ namespace NachoCore.ActiveSync
 
                 default:
                     // If it isn't above then it is accomplished by doing a Sync.
-                    NachoAssert.True (AsSyncCommand.IsSyncCommand (next.Operation));
+                    NcAssert.True (AsSyncCommand.IsSyncCommand (next.Operation));
                     return Event.Create ((uint)AsEvt.E.ReSync, "ASPCPDIRS");
                 }
             }

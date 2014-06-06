@@ -360,7 +360,7 @@ namespace NachoCore.Model
             if (DateTime.MinValue != FlagUtcDeferUntil) {
                 return DateTime.UtcNow > FlagUtcDeferUntil;
             }
-            NachoAssert.CaseError ();
+            NcAssert.CaseError ();
             return false;
         }
 
@@ -384,7 +384,7 @@ namespace NachoCore.Model
                 if (DateTime.MinValue != FlagUtcDue) {
                     return DateTime.UtcNow > FlagUtcDue;
                 }
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
             }
             return false;
         }
@@ -427,7 +427,9 @@ namespace NachoCore.Model
 
         public McEmailMessage SingleMessageSpecialCase ()
         {
-            return GetEmailMessage (0);
+            var message = GetEmailMessage (0);
+            NcAssert.NotNull (message);
+            return message;
         }
 
         public int Count {

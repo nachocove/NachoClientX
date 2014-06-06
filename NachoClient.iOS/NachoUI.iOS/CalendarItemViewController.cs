@@ -100,7 +100,7 @@ namespace NachoClient.iOS
                     ReloadRoot (ShowDetail ());
                     return;
                 }
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
             };
 
             // TODO: Need account manager.
@@ -125,7 +125,7 @@ namespace NachoClient.iOS
                 Root = ShowDetail ();
                 break;
             default:
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 break;
             }
 

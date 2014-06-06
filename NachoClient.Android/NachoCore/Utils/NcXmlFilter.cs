@@ -43,7 +43,7 @@ namespace NachoCore.Wbxml
         {
             XNode filterNode = this.FirstNode;
             while (null != filterNode) {
-                NachoAssert.True (XmlNodeType.Element == this.NodeType);
+                NcAssert.True (XmlNodeType.Element == this.NodeType);
                 XElement filterElement = (XElement)filterNode;
                 if (filterElement.Name.LocalName == docElement.Name.LocalName) {
                     return (NcXmlFilterNode)filterElement;
@@ -116,7 +116,7 @@ namespace NachoCore.Wbxml
 
         public void Add (NcXmlFilter filter)
         {
-            NachoAssert.True (null == FindFilter (filter.NameSpace));
+            NcAssert.True (null == FindFilter (filter.NameSpace));
             FilterList.Add (filter);
             filter.ParentSet = this;
         }
@@ -237,7 +237,7 @@ namespace NachoCore.Wbxml
             if (0 == FilterStack.Count) {
                 current = new Frame ();
 
-                NachoAssert.True (IsElement (node));
+                NcAssert.True (IsElement (node));
                 XElement element = (XElement)node;
                 current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
                 if (null == current.Filter) {
@@ -260,7 +260,7 @@ namespace NachoCore.Wbxml
                             current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
                             if (null != current.Filter) {
                                 current.ParentNode = current.Filter.Root;
-                                NachoAssert.True (null != current.ParentNode);
+                                NcAssert.True (null != current.ParentNode);
                             } else {
                                 Log.Warn (Log.LOG_XML_FILTER, "Switching to an unknown namespace {0}", element.Name.NamespaceName);
                                 current.ParentNode = null;
@@ -288,12 +288,12 @@ namespace NachoCore.Wbxml
             } else {
                 newElement = new XElement (element.Name);
                 if (0 == FilterStack.Count) {
-                    NachoAssert.True (null == XmlDoc.Root);
+                    NcAssert.True (null == XmlDoc.Root);
                     XmlDoc.Add (newElement);
                 } else {
                     Frame current = FilterStack.Peek ();
-                    NachoAssert.True (null != current.XmlNode);
-                    NachoAssert.True (IsElement(current.XmlNode));
+                    NcAssert.True (null != current.XmlNode);
+                    NcAssert.True (IsElement(current.XmlNode));
                     XElement parentElement = (XElement)current.XmlNode;
                     parentElement.Add(newElement);
                 }
@@ -305,7 +305,7 @@ namespace NachoCore.Wbxml
         private int GetContentLength (XNode content)
         {
             int contentLen = -1;
-            NachoAssert.True (IsContent(content));
+            NcAssert.True (IsContent(content));
             if (XmlNodeType.Text == content.NodeType) {
                 XText text = (XText)content;
                 contentLen = text.Value.Length;
@@ -313,7 +313,7 @@ namespace NachoCore.Wbxml
                 XCData data = (XCData)content;
                 contentLen = data.Value.Length;
             } else {
-                NachoAssert.True (false);
+                NcAssert.True (false);
             }
             return contentLen;
         }
@@ -323,7 +323,7 @@ namespace NachoCore.Wbxml
             if (RedactionType.NONE == type) {
                 return;
             }
-            NachoAssert.True (IsElement (newElement));
+            NcAssert.True (IsElement (newElement));
 
             // Determine the redaction string
             string value = null;
@@ -333,7 +333,7 @@ namespace NachoCore.Wbxml
                 value = String.Format ("-redacted:{0} bytes-", GetContentLength(origContent));
             } else {
                 Log.Error (Log.LOG_XML_FILTER, "Unknown redaction type {0}", type);
-                NachoAssert.True (false);
+                NcAssert.True (false);
             }
 
             // Encode the redaction string
@@ -349,9 +349,9 @@ namespace NachoCore.Wbxml
         {
             // Check the latest redaction policy. That should be the parent element
             Frame current = FilterStack.Peek ();
-            NachoAssert.True (IsContent(node));
-            NachoAssert.True (null != current);
-            NachoAssert.True (IsElement(current.XmlNode));
+            NcAssert.True (IsContent(node));
+            NcAssert.True (null != current);
+            NcAssert.True (IsElement(current.XmlNode));
             XElement element = (XElement)current.XmlNode;
 
             if (RedactionType.NONE != current.ParentNode.ElementRedaction) {
@@ -367,7 +367,7 @@ namespace NachoCore.Wbxml
                 } else if (XmlNodeType.CDATA == node.NodeType) {
                     element.Add (new XCData ((XCData)node));
                 } else {
-                    NachoAssert.True (false);
+                    NcAssert.True (false);
                 }
             }
         }
@@ -411,7 +411,7 @@ namespace NachoCore.Wbxml
                     if (IsElement (node)) {
                         XElement element = (XElement)node;
                         XElement newElement = AddElement (element, wbxml, current);
-                        NachoAssert.True (null != newElement);
+                        NcAssert.True (null != newElement);
                     }
                 }
             } else {
@@ -421,7 +421,7 @@ namespace NachoCore.Wbxml
 
                     // Regardless of redaction policy. Always add the tag itself.
                     XElement newElement = AddElement (element, wbxml, current);
-                    NachoAssert.True (null != newElement);
+                    NcAssert.True (null != newElement);
                 } else if ((XmlNodeType.Text == node.NodeType) ||
                            (XmlNodeType.CDATA == node.NodeType)) {
                     AddContent (node, wbxml, current.ElementRedaction);

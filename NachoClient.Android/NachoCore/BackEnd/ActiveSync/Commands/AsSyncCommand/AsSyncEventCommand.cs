@@ -52,8 +52,8 @@ namespace NachoCore.ActiveSync
             var r = h.ParseCalendar (Ns, command);
             McCalendar newItem = r.GetValue<McCalendar> ();
 
-            NachoCore.NachoAssert.True (r.isOK ());
-            NachoCore.NachoAssert.True (null != newItem);
+            NachoCore.NcAssert.True (r.isOK ());
+            NachoCore.NcAssert.True (null != newItem);
 
             // Look up the event by ServerId
             McCalendar oldItem = null;
@@ -68,7 +68,7 @@ namespace NachoCore.ActiveSync
             if (null == oldItem) {
                 newItem.AccountId = folder.AccountId;
                 int ir = newItem.Insert ();
-                NachoCore.NachoAssert.True (0 < ir);
+                NachoCore.NcAssert.True (0 < ir);
                 folder.Link (newItem);
                 return;
             }
@@ -85,7 +85,7 @@ namespace NachoCore.ActiveSync
             // to preserve the index, in
             newItem.Id = oldItem.Id;
             int ur = oldItem.Update ();
-            NachoCore.NachoAssert.True (0 < ur);
+            NachoCore.NcAssert.True (0 < ur);
 
             // Update the entries that refer to the updated entry
             MergeAttendees (newItem);
@@ -99,10 +99,10 @@ namespace NachoCore.ActiveSync
         /// FIXME - move to McAttendee.
         public static List<McAttendee> GetAttendees (McCalendarRoot r)
         {
-            NachoCore.NachoAssert.True (r.Id > 0);
+            NachoCore.NcAssert.True (r.Id > 0);
             string query = "select * from McAttendee where parentType = ? and parentId = ?";
             var l = NcModel.Instance.Db.Query<McAttendee> (query, McAttendee.GetParentType (r), r.Id);
-            NachoCore.NachoAssert.True (l.Count >= 0);
+            NachoCore.NcAssert.True (l.Count >= 0);
             return l;
         }
 
@@ -110,10 +110,10 @@ namespace NachoCore.ActiveSync
         /// <param name="parentId">Id field from McCalendar or NcException</param>
         public static List<McCalendarCategory> GetCategories (McCalendarRoot r)
         {
-            NachoCore.NachoAssert.True (r.Id > 0);
+            NachoCore.NcAssert.True (r.Id > 0);
             string query = "select * from McCalendarCategory where parentType = ? and parentId = ?";
             var l = NcModel.Instance.Db.Query<McCalendarCategory> (query, McCalendarCategory.GetParentType (r), r.Id);
-            NachoCore.NachoAssert.True (l.Count >= 0);
+            NachoCore.NcAssert.True (l.Count >= 0);
             return l;
         }
 
@@ -124,9 +124,9 @@ namespace NachoCore.ActiveSync
         /// <param name="calendar">Calendar item</param>
         public static List<McException> GetExceptions (McCalendar calendar)
         {
-            NachoCore.NachoAssert.True (calendar.Id > 0);
+            NachoCore.NcAssert.True (calendar.Id > 0);
             var l = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendar.Id).ToList ();
-            NachoCore.NachoAssert.True (l.Count >= 0);
+            NachoCore.NcAssert.True (l.Count >= 0);
             return l;
         }
 
@@ -137,9 +137,9 @@ namespace NachoCore.ActiveSync
         /// <param name="calendar">Calendar item</param>
         public static List<McRecurrence> GetRecurrences (McCalendar calendar)
         {
-            NachoCore.NachoAssert.True (calendar.Id > 0);
+            NachoCore.NcAssert.True (calendar.Id > 0);
             var l = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == calendar.Id).ToList ();
-            NachoCore.NachoAssert.True (l.Count >= 0);
+            NachoCore.NcAssert.True (l.Count >= 0);
             return l;
         }
 
@@ -152,7 +152,7 @@ namespace NachoCore.ActiveSync
         public static void MergeAttendees (McCalendarRoot c)
         {
             // Get the old list
-            NachoCore.NachoAssert.True (null != c);
+            NachoCore.NcAssert.True (null != c);
             List<McAttendee> attendees = GetAttendees (c);
 
             // FIXME: use update instead of delete & add
@@ -163,14 +163,14 @@ namespace NachoCore.ActiveSync
             }
 
             // Add the new, if any
-            NachoCore.NachoAssert.True (null != c.attendees);
+            NachoCore.NcAssert.True (null != c.attendees);
 
             // Add the new
             foreach (var attendee in c.attendees) {
                 attendee.ParentId = c.Id;
                 attendee.ParentType = McAttendee.GetParentType (c);
                 int r = attendee.Insert ();
-                NachoCore.NachoAssert.True (0 < r);
+                NachoCore.NcAssert.True (0 < r);
             }
 
         }
@@ -185,7 +185,7 @@ namespace NachoCore.ActiveSync
         public static void MergeCategories (McCalendarRoot c)
         {
             // Get the old list
-            NachoCore.NachoAssert.True (null != c);
+            NachoCore.NcAssert.True (null != c);
             List<McCalendarCategory> categories = GetCategories (c);
 
             // Delete the old
@@ -194,17 +194,17 @@ namespace NachoCore.ActiveSync
             }
 
             // Add the new, if any
-            NachoCore.NachoAssert.True (null != c.categories);
+            NachoCore.NcAssert.True (null != c.categories);
 
             // Add the new
             foreach (var category in c.categories) {
                 if (category.Id > 0) {
                     int r = category.Update ();
-                    NachoCore.NachoAssert.True (0 < r);
+                    NachoCore.NcAssert.True (0 < r);
                 } else {
                     category.ParentId = McCalendarCategory.GetParentType (c);
                     int r = category.Insert ();
-                    NachoCore.NachoAssert.True (0 < r);
+                    NachoCore.NcAssert.True (0 < r);
                 }
             }
         }
@@ -219,7 +219,7 @@ namespace NachoCore.ActiveSync
         public static void MergeExceptions (McCalendar c)
         {
             // Get the old list
-            NachoCore.NachoAssert.True (null != c);
+            NachoCore.NcAssert.True (null != c);
             List<McException> exceptions = GetExceptions (c);
 
             // Delete the old
@@ -228,17 +228,17 @@ namespace NachoCore.ActiveSync
             }
 
             // Add the new, if any
-            NachoCore.NachoAssert.True (null != c.exceptions);
+            NachoCore.NcAssert.True (null != c.exceptions);
 
             // Add the new
             foreach (var exception in c.exceptions) {
                 exception.AccountId = c.AccountId;
                 if (exception.Id > 0) {
                     int r = exception.Update ();
-                    NachoCore.NachoAssert.True (0 < r);
+                    NachoCore.NcAssert.True (0 < r);
                 } else {
                     int r = exception.Insert ();
-                    NachoCore.NachoAssert.True (0 < r);
+                    NachoCore.NcAssert.True (0 < r);
                 }
                 MergeAttendees (exception);
                 MergeCategories (exception);
@@ -248,7 +248,7 @@ namespace NachoCore.ActiveSync
         public static void MergeRecurrences (McCalendar c)
         {
             // Get the old list
-            NachoCore.NachoAssert.True (null != c);
+            NachoCore.NcAssert.True (null != c);
             List<McRecurrence> recurrences = GetRecurrences (c);
 
             // Delete the old
@@ -257,16 +257,16 @@ namespace NachoCore.ActiveSync
             }
 
             // Add the new, if any
-            NachoCore.NachoAssert.True (null != c.recurrences);
+            NachoCore.NcAssert.True (null != c.recurrences);
 
             // Add the new
             foreach (var recurrence in c.recurrences) {
                 if (recurrence.Id > 0) {
                     int r = recurrence.Update ();
-                    NachoCore.NachoAssert.True (0 < r);
+                    NachoCore.NcAssert.True (0 < r);
                 } else {
                     int r = recurrence.Insert ();
-                    NachoCore.NachoAssert.True (0 < r);
+                    NachoCore.NcAssert.True (0 < r);
                 }
             }
         }
@@ -278,17 +278,17 @@ namespace NachoCore.ActiveSync
         // TODO: error checking and unit tests.
         public void DeleteException (McException exception)
         {
-            NachoCore.NachoAssert.True (null != exception);
+            NachoCore.NcAssert.True (null != exception);
 
             var attendees = GetAttendees (exception);
-            NachoCore.NachoAssert.True (null != attendees);
+            NachoCore.NcAssert.True (null != attendees);
 
             foreach (var attendee in attendees) {
                 attendee.Delete ();
             }
 
             var categories = GetCategories (exception);
-            NachoCore.NachoAssert.True (null != categories);
+            NachoCore.NcAssert.True (null != categories);
 
             foreach (var category in categories) {
                 category.Delete ();

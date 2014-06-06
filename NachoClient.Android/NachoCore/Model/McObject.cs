@@ -27,19 +27,19 @@ namespace NachoCore.Model
 
         public virtual int Insert ()
         {
-            NachoAssert.True (0 == Id);
+            NcAssert.True (0 == Id);
             return NcModel.Instance.Db.Insert (this);
         }
 
         public virtual int Delete ()
         {
-            NachoAssert.True (0 != Id);
+            NcAssert.True (0 != Id);
             return NcModel.Instance.Db.Delete (this);
         }
 
         public virtual int Update ()
         {
-            NachoAssert.True (0 != Id);
+            NcAssert.True (0 != Id);
             return NcModel.Instance.Db.Update (this);
         }
 

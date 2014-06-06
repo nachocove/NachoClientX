@@ -152,7 +152,7 @@ namespace NachoCore.ActiveSync
                         provision.Add (AsSettingsCommand.DeviceInformation ());
                     }
                 } else {
-                    NachoAssert.True (AckOp == Sender);
+                    NcAssert.True (AckOp == Sender);
                     policy.Add (new XElement (m_ns + Xml.Provision.PolicyKey, BEContext.ProtocolState.AsPolicyKey));
                     policy.Add (new XElement (m_ns + Xml.Provision.Status,
                         ((uint)NcEnforcer.Instance.Compliance (BEContext.Account)).ToString ()));

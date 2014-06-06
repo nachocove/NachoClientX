@@ -59,7 +59,7 @@ namespace NachoCore
 
             public McEmailMessageThread GetEmailThread (int i)
             {
-                NachoAssert.CaseError ();
+                NcAssert.CaseError ();
                 return null;
             }
         }
