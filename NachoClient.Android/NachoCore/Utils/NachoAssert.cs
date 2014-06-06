@@ -25,6 +25,13 @@ namespace NachoCore
             }
         }
 
+        public static void NotNUll(Object o)
+        {
+            if (null == o) {
+                throw new NachoAssertionFailure ();
+            }
+        }
+
         public static void CaseError()
         {
             throw new NachoDefaultCaseFailure();

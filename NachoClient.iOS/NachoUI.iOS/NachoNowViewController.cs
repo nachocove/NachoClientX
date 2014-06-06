@@ -51,6 +51,7 @@ namespace NachoClient.iOS
                         ConfigureBasicView ();
                     },
                     () => {
+                        inboxTableView.ReloadData();
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
             };
@@ -267,6 +268,7 @@ namespace NachoClient.iOS
 
             // Disable scroll & multi-select when inbox is small
             inboxTableView.ScrollEnabled = false;
+            inboxSource.SetCompactMode (true);
             inboxSource.MultiSelectEnable (inboxTableView, false);
             inboxTableView.ScrollToRow (NSIndexPath.FromRowSection (0, 0), UITableViewScrollPosition.Top, false);
             inboxTableView.Frame = inboxSmallSize ();
@@ -295,9 +297,11 @@ namespace NachoClient.iOS
         protected void ConfigureMessageListView ()
         {
             DisableGestureRecognizers ();
+            inboxSource.SetCompactMode (false);
             inboxSource.MultiSelectEnable (inboxTableView, true);
             inboxTableView.Frame = inboxFullSize ();
             inboxTableView.ScrollEnabled = true;
+            inboxTableView.ReloadData ();
 
             carouselView.Alpha = 0.0f;
 
@@ -316,7 +320,7 @@ namespace NachoClient.iOS
             carouselView.Alpha = 0.0f;
         }
 
-        int INBOX_ROW_HEIGHT = 116;
+        int INBOX_ROW_HEIGHT = 69;
         int CALENDAR_VIEW_HEIGHT = 112;
         float inboxStartingY;
         float calendarStartingY;
@@ -359,23 +363,17 @@ namespace NachoClient.iOS
             var Height = fullSize.Height - (inboxStartingY + yOffset);
             return  Height / fullSize.Height;
         }
-        // Positive means shrinking
+
+        /// Positive means shrinking
         protected RectangleF inboxAdjustedSize (float yOffset)
         {
-            var smallSize = inboxSmallSize ();
             var fullSize = inboxFullSize ();
-            // Compute new size
             var rect = fullSize;
-            rect.Y = inboxStartingY + yOffset;
+            rect.Y = Math.Max (0, inboxStartingY + yOffset);
             rect.Height = rect.Height - rect.Y;
-            // Don't get smaller than small size
-            if (rect.Height < smallSize.Height) {
-                return smallSize;
-            }
-            if (rect.Height > fullSize.Height) {
-                return fullSize;
-            }
-            var adjust = 10 - (10 * (float)inboxPercentOpen (yOffset));
+            rect.Height = Math.Max (rect.Height, inboxSmallSize ().Height);
+            rect.Height = Math.Min (rect.Height, fullSize.Height);
+            var adjust = 10;
             rect.X = rect.X + adjust;
             rect.Width = rect.Width - (2 * adjust);
             return rect;
@@ -408,7 +406,7 @@ namespace NachoClient.iOS
                     return;
                 }
                 if ((yOffset <= 0) && (inboxPercentOpen (yOffset) > 0.3f)) {
-                    duration = 1.0 - percentOpen;
+                    duration = Math.Max (0.1, 1.0 - percentOpen);
                     UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
                             ConfigureMessageListView ();
@@ -423,6 +421,7 @@ namespace NachoClient.iOS
                             ConfigureBasicView ();
                         },
                         () => {
+                            inboxTableView.ReloadData();
                         }
                     );
                 }
@@ -498,7 +497,7 @@ namespace NachoClient.iOS
             var rect = new RectangleF (0, 0, parentFrame.Width, parentFrame.Height);
             return rect;
         }
-            
+
         protected double calendarPercentOpen (float yOffset)
         {
             var fullSize = calendarFullSize ();
@@ -656,6 +655,16 @@ namespace NachoClient.iOS
 
         public class CarouselDataSource : iCarouselDataSource
         {
+            protected const int USER_IMAGE_TAG = 101;
+            protected const int FROM_TAG = 102;
+            protected const int SUBJECT_TAG = 103;
+            protected const int SUMMARY_TAG = 104;
+            protected const int REMINDER_ICON_TAG = 105;
+            protected const int REMINDER_TEXT_TAG = 106;
+            protected const int ATTACHMENT_TAG = 107;
+            protected const int RECEIVED_DATE_TAG = 108;
+            static List<UIView> PreventViewGC;
+            static List<UIBarButtonItem> preventBarButtonGC;
             NachoNowViewController owner;
 
             public CarouselDataSource (NachoNowViewController o)
@@ -678,20 +687,14 @@ namespace NachoClient.iOS
                 // Create new view if no view is available for recycling
                 if (view == null) {
                     view = CreateView (carousel);
+                    if (null == PreventViewGC) {
+                        PreventViewGC = new List<UIView> ();
+                    }
+                    PreventViewGC.Add (view);
                 }
                 ConfigureView (view, (int)index);
                 return view;
             }
-
-            protected const int USER_IMAGE_TAG = 101;
-            protected const int FROM_TAG = 102;
-            protected const int SUBJECT_TAG = 103;
-            protected const int SUMMARY_TAG = 104;
-            protected const int REMINDER_ICON_TAG = 105;
-            protected const int REMINDER_TEXT_TAG = 106;
-            protected const int ATTACHMENT_TAG = 107;
-            protected const int RECEIVED_DATE_TAG = 108;
-            static List<UIBarButtonItem> preventGC;
 
             /// <summary>
             /// Create the views, not the values, of the cell.
@@ -782,42 +785,42 @@ namespace NachoClient.iOS
 //                view.AddSubview (replyButton);
 
 
-                if (null == preventGC) {
-                    preventGC = new List<UIBarButtonItem> ();
+                if (null == preventBarButtonGC) {
+                    preventBarButtonGC = new List<UIBarButtonItem> ();
                 }
                     
                 var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
                 replyButton.Clicked += (object sender, EventArgs e) => {
                     onReplyButtonClicked (view, ComposeViewController.Reply);
                 };
-                preventGC.Add (replyButton);
+                preventBarButtonGC.Add (replyButton);
 
                 var replyAllButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply-all"), UIBarButtonItemStyle.Plain, null);
                 replyAllButton.Clicked += (object sender, EventArgs e) => {
                     onReplyButtonClicked (view, ComposeViewController.ReplyAll);
                 };
-                preventGC.Add (replyAllButton);
+                preventBarButtonGC.Add (replyAllButton);
 
                 var forwardButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-fwd"), UIBarButtonItemStyle.Plain, null);
                 forwardButton.Clicked += (object sender, EventArgs e) => {
                     onReplyButtonClicked (view, ComposeViewController.Forward);
                 };
-                preventGC.Add (forwardButton);
+                preventBarButtonGC.Add (forwardButton);
 
                 var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
                     onSaveButtonClicked (view);
                 };
-                preventGC.Add (saveButton);
+                preventBarButtonGC.Add (saveButton);
 
                 var flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-                preventGC.Add (flexibleSpace);
+                preventBarButtonGC.Add (flexibleSpace);
 
                 var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-delete"), UIBarButtonItemStyle.Plain, null);
                 deleteButton.Clicked += (object sender, EventArgs e) => {
                     onDeleteButtonClicked (view);
                 };
-                preventGC.Add (deleteButton);
+                preventBarButtonGC.Add (deleteButton);
 
                 var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
                 toolbar.SetItems (new UIBarButtonItem[] {
@@ -871,7 +874,7 @@ namespace NachoClient.iOS
                 // User image view
                 // TODO: user images
                 var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-                var emailOfSender = Pretty.EmailString(message.From);
+                var emailOfSender = Pretty.EmailString (message.From);
                 Console.WriteLine ("emailOfSender: " + emailOfSender);
                 string sender = Pretty.SenderString (message.From);
 

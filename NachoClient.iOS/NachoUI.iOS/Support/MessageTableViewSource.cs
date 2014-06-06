@@ -19,6 +19,7 @@ namespace NachoClient.iOS
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected HashSet<int> MultiSelect = null;
         protected bool allowMultiSelect;
+        protected bool compactMode;
         public IMessageTableViewSourceDelegate owner;
 
         public MessageTableViewSource ()
@@ -26,6 +27,11 @@ namespace NachoClient.iOS
             owner = null;
             allowMultiSelect = true;
             MultiSelect = new HashSet<int> ();
+        }
+
+        public void SetCompactMode (bool compactMode)
+        {
+            this.compactMode = compactMode;
         }
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -58,19 +64,25 @@ namespace NachoClient.iOS
             }
         }
 
+        const float COMPACT_ROW_HEIGHT = 69.0f;
+        const float NORMAL_ROW_HEIGHT = 116.0f;
+        const float DATED_ROW_HEIGHT = 141.0f;
+
         protected float HeightForMessage (McEmailMessage message)
         {
-            if (message.IsDeferred () || message.HasDueDate ()) {
-                return 141.0f;
-            } else {
-                return 116.0f;
+            if (compactMode) {
+                return COMPACT_ROW_HEIGHT;
             }
+            if (message.IsDeferred () || message.HasDueDate ()) {
+                return DATED_ROW_HEIGHT;
+            }
+            return NORMAL_ROW_HEIGHT;
         }
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (NoMessageThreads ()) {
-                return 44.0f;
+                return COMPACT_ROW_HEIGHT;
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             var message = messageThread.SingleMessageSpecialCase ();
@@ -360,6 +372,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureMessageCell (UITableViewCell cell, int messageThreadIndex)
         {
+            Console.Write ("ConfigureMessageCell");
             // Save thread index
             cell.ContentView.Tag = messageThreadIndex;
 
@@ -371,7 +384,7 @@ namespace NachoClient.iOS
             // User image view
             // TODO: user images
             var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var emailOfSender = Pretty.EmailString(message.From);
+            var emailOfSender = Pretty.EmailString (message.From);
             Console.WriteLine ("emailOfSender: " + emailOfSender);
             string sender = Pretty.SenderString (message.From);
 
@@ -405,7 +418,7 @@ namespace NachoClient.iOS
 
             // User chili view
             var userChiliView = cell.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            userChiliView.Hidden = !message.isHot ();
+            userChiliView.Hidden = (compactMode || (!message.isHot ()));
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
@@ -416,18 +429,21 @@ namespace NachoClient.iOS
 
             // Summary label view
             var summaryLabelView = cell.ViewWithTag (SUMMARY_TAG) as UILabel;
-            if (null == message.Summary) {
-                message.Summarize ();
+            summaryLabelView.Hidden = compactMode;
+            if (!compactMode) {
+                if (null == message.Summary) {
+                    message.Summarize ();
+                }
+                NachoAssert.True (null != message.Summary);
+                summaryLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
+                summaryLabelView.Text = message.Summary;
+                summaryLabelView.SizeToFit ();
             }
-            NachoAssert.True (null != message.Summary);
-            summaryLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
-            summaryLabelView.Text = message.Summary;
-            summaryLabelView.SizeToFit ();
 
             // Reminder image view and label
             var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = cell.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            if (message.HasDueDate ()) {
+            if ((!compactMode) && message.HasDueDate ()) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 if (message.IsOverdue ()) {
@@ -590,7 +606,7 @@ namespace NachoClient.iOS
         public void MultiSelectDelete (UITableView tableView)
         {
             foreach (var messageThreadIndex in MultiSelect) {
-                DeleteThisMessage (messageThreads.GetEmailThread(messageThreadIndex));
+                DeleteThisMessage (messageThreads.GetEmailThread (messageThreadIndex));
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
@@ -599,7 +615,7 @@ namespace NachoClient.iOS
         public void MultiSelectMove (UITableView tableView, McFolder folder)
         {
             foreach (var messageThreadIndex in MultiSelect) {
-                MoveThisMessage (messageThreads.GetEmailThread(messageThreadIndex), folder);
+                MoveThisMessage (messageThreads.GetEmailThread (messageThreadIndex), folder);
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
