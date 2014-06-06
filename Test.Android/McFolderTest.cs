@@ -7,6 +7,8 @@ using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using ClassCode = NachoCore.Model.McFolderEntry.ClassCodeEnum;
 
 namespace Test.iOS
 {
@@ -21,7 +23,7 @@ namespace Test.iOS
             {
                 int accountId = 1;
                 string serverId = "TestServer";
-                McFolder expectedFolder = CreateDistFolder (accountId, serverId);
+                McFolder expectedFolder = CreateFolder (accountId, serverId);
 
                 expectedFolder.Insert ();
 
@@ -36,19 +38,19 @@ namespace Test.iOS
                 int accountId = 1;
 
                 // Outbox
-                McFolder expectedOutbox = CreateDistFolder (accountId, McFolder.ClientOwned_Outbox);
+                McFolder expectedOutbox = CreateFolder (accountId, McFolder.ClientOwned_Outbox);
                 expectedOutbox.Insert ();
 
                 // GalCache
-                McFolder expectedGalCache = CreateDistFolder (accountId, McFolder.ClientOwned_GalCache);
+                McFolder expectedGalCache = CreateFolder (accountId, McFolder.ClientOwned_GalCache);
                 expectedGalCache.Insert ();
 
                 // Gleaned
-                McFolder expectedGleaned = CreateDistFolder (accountId, McFolder.ClientOwned_Gleaned);
+                McFolder expectedGleaned = CreateFolder (accountId, McFolder.ClientOwned_Gleaned);
                 expectedGleaned.Insert ();
 
                 // Lost and Found
-                McFolder expectedLostFound = CreateDistFolder (accountId, McFolder.ClientOwned_LostAndFound);
+                McFolder expectedLostFound = CreateFolder (accountId, McFolder.ClientOwned_LostAndFound);
                 expectedLostFound.Insert ();
 
                 McFolder actualFolder1 = McFolder.GetOutboxFolder (accountId);
@@ -64,11 +66,11 @@ namespace Test.iOS
                 FoldersAreEqual (expectedLostFound, lostAndFound, "Should be able to query for distinguished folder (Lost And Found)");
             }
 
-            private McFolder CreateDistFolder (int accountId, string serverId)
+            private McFolder CreateFolder (int accountId, string serverId)
             {
                 bool isClientOwned = true;
                 string parentId = "ParentFolder";
-                var folderType = Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1;
+                var folderType = TypeCode.UserCreatedGeneric_1;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, "DisplayName", folderType);
                 return folder;
             }
@@ -85,11 +87,11 @@ namespace Test.iOS
                 string parentId = "0";
                 string name = "Name";
 
-                Xml.FolderHierarchy.TypeCode typeCode1 = Xml.FolderHierarchy.TypeCode.UserCreatedCal_13;
-                Xml.FolderHierarchy.TypeCode typeCode2 = Xml.FolderHierarchy.TypeCode.DefaultContacts_9;
+                TypeCode typeCode1 = TypeCode.UserCreatedCal_13;
+                TypeCode typeCode2 = TypeCode.DefaultContacts_9;
 
-                McFolder folder1 = CreateUserFolder (accountId, typeCode1, parentId, name);
-                McFolder folder2 = CreateUserFolder (accountId, typeCode2, parentId, name);
+                McFolder folder1 = CreateFolder (accountId, typeCode1, parentId, name);
+                McFolder folder2 = CreateFolder (accountId, typeCode2, parentId, name);
 
                 folder1.Insert ();
                 folder2.Insert ();
@@ -105,14 +107,14 @@ namespace Test.iOS
             {
                 // Same name and typecodes, different parent id
                 int accountId = 1;
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.UserCreatedCal_13;
+                TypeCode typeCode = TypeCode.UserCreatedCal_13;
                 string name = "Name";
 
                 string parentId1 = "1";
                 string parentId2 = "5";
 
-                McFolder folder1 = CreateUserFolder (accountId, typeCode, parentId1, name);
-                McFolder folder2 = CreateUserFolder (accountId, typeCode, parentId2, name);
+                McFolder folder1 = CreateFolder (accountId, typeCode, parentId1, name);
+                McFolder folder2 = CreateFolder (accountId, typeCode, parentId2, name);
 
                 folder1.Insert ();
                 folder2.Insert ();
@@ -128,14 +130,14 @@ namespace Test.iOS
             {
                 // Same parent id and typecodes, different name
                 int accountId = 1;
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.UserCreatedCal_13;
+                TypeCode typeCode = TypeCode.UserCreatedCal_13;
                 string parentId = "1";
 
                 string name1 = "First Name";
                 string name2 = "Second Name";
 
-                McFolder folder1 = CreateUserFolder (accountId, typeCode, parentId, name1);
-                McFolder folder2 = CreateUserFolder (accountId, typeCode, parentId, name2);
+                McFolder folder1 = CreateFolder (accountId, typeCode, parentId, name1);
+                McFolder folder2 = CreateFolder (accountId, typeCode, parentId, name2);
 
                 folder1.Insert ();
                 folder2.Insert ();
@@ -146,7 +148,7 @@ namespace Test.iOS
                 Assert.AreNotEqual (expected1.DisplayName, expected2.DisplayName, "Folders with different names should be considered separate folders");
             }
 
-            private McFolder CreateUserFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode, string parentId, string name)
+            private McFolder CreateFolder (int accountId, TypeCode typeCode, string parentId, string name)
             {
                 bool isClientOwned = false;
                 string serverId = "My Server";
@@ -161,7 +163,7 @@ namespace Test.iOS
             [Test]
             public void TestGetRicContactFolder ()
             {
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Ric_19;
+                TypeCode typeCode = TypeCode.Ric_19;
                 TestFolderWithType (1, typeCode, "Should be able to retrieve Ric Contact distinguished folder");
             }
 
@@ -169,7 +171,7 @@ namespace Test.iOS
             public void TestGetDefaultInboxFolder ()
             {
                 // can get default inbox folder
-                Xml.FolderHierarchy.TypeCode inboxType = Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
+                TypeCode inboxType = TypeCode.DefaultInbox_2;
                 TestFolderWithType (1, inboxType, "Should be able to retrieve Default Inbox distinguished folder");
                 TestFolderWithType (2, inboxType, "Folders with the same type but different accountId's should be retrieved separately");
                 McFolder expected1 = McFolder.GetDefaultInboxFolder (1);
@@ -177,38 +179,38 @@ namespace Test.iOS
                 Assert.AreNotEqual (expected1.AccountId, expected2.AccountId);
 
                 // can get default calendar folder
-                Xml.FolderHierarchy.TypeCode calType = Xml.FolderHierarchy.TypeCode.DefaultCal_8;
+                TypeCode calType = TypeCode.DefaultCal_8;
                 TestFolderWithType (1, calType, "Should be able to retrieve Default Calendar distinguished folder");
 
                 // can get default contact folder
-                Xml.FolderHierarchy.TypeCode contactsType = Xml.FolderHierarchy.TypeCode.DefaultContacts_9;
+                TypeCode contactsType = TypeCode.DefaultContacts_9;
                 TestFolderWithType (1, contactsType, "Should be able to retrieve Default Contact distinguished folder");
 
                 // can get default task folder
-                Xml.FolderHierarchy.TypeCode tasksType = Xml.FolderHierarchy.TypeCode.DefaultTasks_7;
+                TypeCode tasksType = TypeCode.DefaultTasks_7;
                 TestFolderWithType (1, tasksType, "Should be able to retrieve Default Task distinguished folder");
             }
 
-            private void TestFolderWithType (int accountId, Xml.FolderHierarchy.TypeCode typeCode, string message)
+            private void TestFolderWithType (int accountId, TypeCode typeCode, string message)
             {
-                McFolder folder1 = CreateDistFolder (accountId, typeCode);
+                McFolder folder1 = CreateFolder (accountId, typeCode);
                 folder1.Insert ();
 
                 McFolder expected1;
                 switch (typeCode) {
-                case Xml.FolderHierarchy.TypeCode.Ric_19:
+                case TypeCode.Ric_19:
                     expected1 = McFolder.GetRicContactFolder (accountId);
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultInbox_2:
+                case TypeCode.DefaultInbox_2:
                     expected1 = McFolder.GetDefaultInboxFolder (accountId);
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultCal_8:
+                case TypeCode.DefaultCal_8:
                     expected1 = McFolder.GetDefaultCalendarFolder (accountId);
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultContacts_9:
+                case TypeCode.DefaultContacts_9:
                     expected1 = McFolder.GetDefaultContactFolder (accountId);
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultTasks_7:
+                case TypeCode.DefaultTasks_7:
                     expected1 = McFolder.GetDefaultTaskFolder (accountId);
                     break;
                 default:
@@ -219,7 +221,7 @@ namespace Test.iOS
                 FoldersAreEqual (expected1, folder1, message);
             }
 
-            private McFolder CreateDistFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
+            private McFolder CreateFolder (int accountId, TypeCode typeCode)
             {
                 bool isClientOwned = false;
                 string parentId = "2";
@@ -292,7 +294,7 @@ namespace Test.iOS
                 bool isClientOwned = false;
                 string serverId = "Server";
                 string name = "Folder Name";
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                TypeCode typeCode = TypeCode.Unknown_18;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
                 return folder;
             }
@@ -308,7 +310,7 @@ namespace Test.iOS
                 int folderId = 1;
                 int folderEntryId = 11;
                 McFolder folder1 = CreateFolder (accountId);
-                McMapFolderFolderEntry folderEntry = CreateFolderEntry (accountId, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder);
+                McMapFolderFolderEntry folderEntry = CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder);
                 Console.WriteLine ("folder1 ID: {0}", folder1.Id);
                 Console.WriteLine ("folderId: {0}", folderEntry.FolderId);
 
@@ -324,7 +326,7 @@ namespace Test.iOS
                 int folderId = 1;
                 int folderEntryId = 11;
                 CreateFolder (accountId, isAwaitingDelete: true);
-                CreateFolderEntry (accountId, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder);
+                CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder);
 
                 List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
                 Assert.AreEqual (0, retrieved1.Count, "Should not return folders awaiting delete");
@@ -340,7 +342,7 @@ namespace Test.iOS
                 McFolder folder1 = CreateFolder (accountId, autoInsert: false);
                 folder1.Id = 30;
                 folder1.Update ();
-                CreateFolderEntry (accountId, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder, autoInsert: false);
+                CreateFolderEntry (accountId, folderId, folderEntryId, ClassCode.Folder, autoInsert: false);
 
                 List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
                 Assert.AreEqual (0, retrieved1.Count, "Should not find folders if folder ID and folderEntry ID differ");
@@ -355,7 +357,7 @@ namespace Test.iOS
                 int folderId = 1;
                 int folderEntryId = 11;
                 CreateFolder (accountId);
-                CreateFolderEntry (accountIdOther, folderId, folderEntryId, McFolderEntry.ClassCodeEnum.Folder);
+                CreateFolderEntry (accountIdOther, folderId, folderEntryId, ClassCode.Folder);
 
                 List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McFolder> (accountId, folderEntryId);
                 List <McFolder> retrieved2 = McFolder.QueryByFolderEntryId<McFolder> (accountIdOther, folderEntryId);
@@ -367,8 +369,8 @@ namespace Test.iOS
             public void ShouldReturnFoldersWithFolderCode ()
             {
                 // should only return folders with “Folder” class code
-                McFolderEntry.ClassCodeEnum goodClassCode = McFolderEntry.ClassCodeEnum.Folder;
-                McFolderEntry.ClassCodeEnum badClassCode = McFolderEntry.ClassCodeEnum.Calendar;
+                ClassCode goodClassCode = ClassCode.Folder;
+                ClassCode badClassCode = ClassCode.Calendar;
 
                 // don't return folders that don't have the Folder class code
                 int accountId = 1;
@@ -392,23 +394,20 @@ namespace Test.iOS
             [Test]
             public void QueryByMcItemType ()
             {
-                QueryFolderOfGenericType<McEmailMessage> ("Should be able to query email messages by folderEntryId");
-                QueryFolderOfGenericType<McCalendar> ("Should be able to query all calendars by folderEntryId");
-                QueryFolderOfGenericType<McContact> ("Should be able to query all contacts by folderEntryId");
-                QueryFolderOfGenericType<McTask> ("Should be able to query all tasks by folderEntryId");
+                CreateFolder (1);
+                QueryFolderOfGenericType<McEmailMessage> (ClassCode.Email, "Should be able to query email messages by folderEntryId");
+                QueryFolderOfGenericType<McCalendar> (ClassCode.Calendar, "Should be able to query all calendars by folderEntryId");
+                QueryFolderOfGenericType<McContact> (ClassCode.Contact, "Should be able to query all contacts by folderEntryId");
+                QueryFolderOfGenericType<McTask> (ClassCode.Tasks, "Should be able to query all tasks by folderEntryId");
             }
 
-            private void QueryFolderOfGenericType<T> (string message) where T : McItem, new()
+            private void QueryFolderOfGenericType<T> (ClassCode classCode, string message) where T : McItem
             {
                 int accountId = 1;
                 int folderId = 1;
                 int folderEntryId = 11;
 
-                T email1 = new T ();
-                email1.AccountId = accountId;
-                email1.Insert ();
-
-                CreateFolderEntry (accountId, folderId, folderEntryId);
+                CreateFolderEntry (accountId, folderId, folderEntryId, classCode: classCode);
 
                 List<McFolder> retrieved1 = McFolder.QueryByFolderEntryId<T> (accountId, folderEntryId);
                 Assert.AreEqual (0, retrieved1.Count, message);
@@ -420,27 +419,13 @@ namespace Test.iOS
                 string parentId = "0";
                 string serverId = "Server";
                 string name = "Folder Name";
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                TypeCode typeCode = TypeCode.Unknown_18;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
 
                 folder.IsAwaitingDelete = isAwaitingDelete;
 
                 if (autoInsert) { folder.Insert (); }
                 return folder;
-            }
-
-            private McMapFolderFolderEntry CreateFolderEntry (int accountId, int folderId, int folderEntryId, 
-                McFolderEntry.ClassCodeEnum classCode = McFolderEntry.ClassCodeEnum.Folder, bool autoInsert = true)
-            {
-                McMapFolderFolderEntry folderEntry = new McMapFolderFolderEntry (accountId);
-
-                folderEntry.FolderId = folderId;
-                folderEntry.FolderEntryId = folderEntryId;
-                folderEntry.ClassCode = classCode;
-
-                if (autoInsert) { folderEntry.Insert (); }
-
-                return folderEntry;
             }
         }
 
@@ -501,7 +486,7 @@ namespace Test.iOS
                 string parentId = "1";
                 string serverId = "Server";
                 string name = "Folder Name";
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                TypeCode typeCode = TypeCode.Unknown_18;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
 
                 folder.IsAwaitingDelete = isAwaitingDelete;
@@ -514,7 +499,7 @@ namespace Test.iOS
                 string parentId = "1";
                 string serverId = "Server";
                 string name = "Folder Name";
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                TypeCode typeCode = TypeCode.Unknown_18;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
 
                 folder.IsAwaitingDelete = false;
@@ -602,7 +587,7 @@ namespace Test.iOS
                 string parentId = "1";
                 string serverId = "Server";
                 string name = "Folder Name";
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                TypeCode typeCode = TypeCode.Unknown_18;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
 
                 folder.IsAwaitingCreate = isAwaitingCreate;
@@ -695,7 +680,7 @@ namespace Test.iOS
                 bool isClientOwned = true;  // make it easy to query with client-owned
                 string parentId = "1";
                 string name = "Folder Name";
-                Xml.FolderHierarchy.TypeCode typeCode = Xml.FolderHierarchy.TypeCode.Unknown_18;
+                TypeCode typeCode = TypeCode.Unknown_18;
                 McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
 
                 folder.AsSyncKey = asSyncKey;
@@ -703,6 +688,70 @@ namespace Test.iOS
 
                 return folder;
             }
+        }
+
+        [TestFixture]
+        public class TestDelete : BaseMcFolderTest
+        {
+            [Test]
+            public void CanDeleteItemOfEachType ()
+            {
+                // delete emails
+                TestDeletingItemOfType<McEmailMessage> ();
+
+                // delete calendars
+                TestDeletingItemOfType<McCalendar> ();
+
+                // delete contacts
+                TestDeletingItemOfType<McContact> ();
+
+                // delete tasks
+                TestDeletingItemOfType<McTask> ();
+            }
+
+            [Test]
+            public void ShouldDeleteFoldersRecursively ()
+            {
+                // when deleting folders, should remove all contained folders
+            }
+
+            [Test]
+            public void ShouldThrowExceptionOnBadItem ()
+            {
+                // when deleting an item with an unsupported class code, should throw exception
+            }
+
+            private McFolder CreateFolder (int accountId, TypeCode typeCode = TypeCode.Unknown_18, bool autoInsert = true,
+                string serverId = "Server")
+            {
+                string parentId = "1";
+                bool isClientOwned = true;
+                string name = "Folder Name";
+                McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
+
+                if (autoInsert) { folder.Insert (); }
+                return folder;
+            }
+        }
+
+        private void TestDeletingItemOfType<T> () where T : McItem, new() {
+            int accountId = 1;
+            string serverId = "ServerId"; // explicit so we can use it in query               
+            T item = CreateUniqueItem<T> (accountId, serverId);
+
+            McFolder folder1 = CreateFolder (accountId, serverId: serverId);
+            folder1.Link (item);
+
+            // sanity checks
+            T foundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
+            Assert.AreEqual (item.Id, foundItem.Id, "Email insertion and linking sanity check");
+
+            // deletion of folder should remove item too
+            folder1.Delete ();
+            McFolder retrieved2 = McFolder.GetClientOwnedFolder (accountId, serverId);
+            Assert.AreEqual (null, retrieved2, "No user folder should be found if it is deleted");
+            T notFoundItem = McFolderEntry.QueryByServerId<T> (accountId, serverId);
+            Assert.AreEqual (null, notFoundItem, "Deleting a folder should remove any emails contained in that folder");
         }
     }
 
@@ -724,6 +773,29 @@ namespace Test.iOS
             Assert.AreEqual (expected.ServerId, actual.ServerId, testDesc);
             Assert.AreEqual (expected.DisplayName, actual.DisplayName, testDesc);
             Assert.AreEqual (expected.Type, actual.Type, testDesc);
+        }
+
+        public T CreateUniqueItem<T> (int accountId, string serverId) where T : McItem, new ()
+        {
+            T newItem = new T ();
+            newItem.AccountId = accountId;
+            newItem.ServerId = serverId;
+            newItem.Insert ();
+            return newItem;
+        }
+
+        public McMapFolderFolderEntry CreateFolderEntry (int accountId, int folderId, int folderEntryId, 
+            ClassCode classCode = ClassCode.Folder, bool autoInsert = true)
+        {
+            McMapFolderFolderEntry folderEntry = new McMapFolderFolderEntry (accountId);
+
+            folderEntry.FolderId = folderId;
+            folderEntry.FolderEntryId = folderEntryId;
+            folderEntry.ClassCode = classCode;
+
+            if (autoInsert) { folderEntry.Insert (); }
+
+            return folderEntry;
         }
     }
 }

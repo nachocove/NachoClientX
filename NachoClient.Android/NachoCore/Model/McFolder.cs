@@ -230,7 +230,7 @@ namespace NachoCore.Model
                     break;
 
                 case McItem.ClassCodeEnum.Contact:
-                    var contact = McFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
+                    var contact = McFolderEntry.QueryById<McContact> (map.FolderEntryId);
                     contact.Delete ();
                     break;
 
