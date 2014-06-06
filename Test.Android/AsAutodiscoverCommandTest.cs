@@ -288,7 +288,7 @@ namespace Test.iOS
         {
             // Ensure that an authentication failure during S1, S2, or S3 results in 
             // the Owner being asked to supply new credentials.
-//            [Test]
+            [Test]
             public void NewCredsUponAuthFailureS1 ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -504,12 +504,10 @@ namespace Test.iOS
             Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
             NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified)
         {
-            var interlock = new BlockingCollection<bool> ();
+            var autoResetEvent = new AutoResetEvent(false);
 
-            bool setTrueBySuccessEvent = false;
-            NcStateMachine sm = CreatePhonySM (val => {
-                setTrueBySuccessEvent = val;
-                interlock.Add(true);
+            NcStateMachine sm = CreatePhonySM (() => {
+                autoResetEvent.Set ();
             });
 
             provideSm (sm);
@@ -551,17 +549,8 @@ namespace Test.iOS
 
             autod.Execute (sm);
 
-            bool didFinish = false;
-
-            if (!interlock.TryTake (out didFinish, 8000)) {
-                if (resultKind == MockOwner.Status.SubKind) {
-                    return;
-                }
-
-                Assert.Fail ("Failed in TryTake clause");
-            }
-            Assert.IsTrue (didFinish, "Autodiscovery operation should finish");
-            Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
+            bool didFinish = autoResetEvent.WaitOne (8000);
+            Assert.IsTrue (didFinish, "Operation did not finish");
 
             // Test that the server record was updated
 //            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
@@ -586,9 +575,8 @@ namespace Test.iOS
             Assert.AreNotEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag should not equal flag in context");
         }
 
-        private NcStateMachine CreatePhonySM (Action<bool> action)
+        private NcStateMachine CreatePhonySM (Action action)
         {
-            bool setTrueBySuccessEvent = false;
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
@@ -604,8 +592,7 @@ namespace Test.iOS
                                 Event = (uint)SmEvt.E.Success, 
                                 Act = delegate () {
                                     Log.Info (Log.LOG_TEST, "Success event was posted to Owner SM");
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans { 
@@ -626,8 +613,7 @@ namespace Test.iOS
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetServConf, 
                                 Act = delegate () {
                                     Log.Info (Log.LOG_TEST, "Owner SM was asked to get server config from UI");
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
 //                                    PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet, "TEST-ASPCDSSC");
                                 },
                                 State = (uint)St.Start },

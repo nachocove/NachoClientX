@@ -522,7 +522,6 @@ namespace Test.iOS
         // Action Delegate for creating a state machine
         private NcStateMachine CreatePhonySM (Action action)
         {
-            bool setTrueBySuccessEvent = false;
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),

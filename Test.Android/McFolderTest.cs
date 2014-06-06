@@ -255,9 +255,9 @@ namespace Test.iOS
 
             [Test]
             public void ShouldNotDisplayFoldersAwaitingDelete ()
-            {// should not display folders awaiting delete
+            {
+                // should not display folders awaiting delete
                 int accountId = 1;
-                int folderId = 1;
 
                 McFolder folder1 = CreateFolder (accountId, isAwaitingDelete: true);
                 McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
@@ -548,7 +548,7 @@ namespace Test.iOS
 
             private void TestDeletingItemOfType<T> () where T : McItem, new() {
                 int accountId = 1;
-                string serverId = "ServerId"; // explicit so we can use it in query               
+
                 T item = CreateUniqueItem<T> (accountId);
 
                 McFolder folder1 = CreateFolder (accountId, serverId: defaultServerId);
