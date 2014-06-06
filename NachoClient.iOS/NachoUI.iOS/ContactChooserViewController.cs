@@ -328,7 +328,7 @@ namespace NachoClient.iOS
 
                 if (String.IsNullOrEmpty(displayName)) {
                     cell = tableView.DequeueReusableCell ("Basic");
-                    NachoCore.NcAssert.True (null != cell);
+                    NcAssert.True (null != cell);
                     cell.TextLabel.Text = "No name or email address";
                     cell.TextLabel.TextColor = UIColor.LightGray;
                     return cell;
@@ -336,14 +336,14 @@ namespace NachoClient.iOS
 
                 if (displayName.Equals (displayEmailAddress)) {
                     cell = tableView.DequeueReusableCell ("Basic");
-                    NachoCore.NcAssert.True (null != cell);
+                    NcAssert.True (null != cell);
                     cell.TextLabel.Text = displayName;
                     cell.TextLabel.TextColor = UIColor.Black;
                     return cell;
                 }
 
                 cell = tableView.DequeueReusableCell ("Subtitle");
-                NachoCore.NcAssert.True (null != cell);
+                NcAssert.True (null != cell);
                 cell.TextLabel.Text = displayName;
                 cell.DetailTextLabel.Text = displayEmailAddress;
                 cell.TextLabel.TextColor = UIColor.Black;

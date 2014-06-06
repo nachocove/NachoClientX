@@ -1,7 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Model;
 
 namespace NachoCore

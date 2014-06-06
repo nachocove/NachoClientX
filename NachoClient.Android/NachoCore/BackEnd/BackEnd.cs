@@ -65,16 +65,14 @@ namespace NachoCore
 
         private bool HasServiceFromAccountId (int accountId)
         {
-            NcAssert.True (0 != accountId);
-            return Services.Where (ctrl => ctrl.Account.Id.Equals (accountId)).Any ();
+            NcAssert.True (0 != accountId, "0 != accountId");
+            return Services.Where (ctrl => ctrl.Account.Id == accountId).Any ();
         }
 
         private ProtoControl ServiceFromAccountId (int accountId)
         {
-            NcAssert.True (0 != accountId);
-            var query = Services.Where (ctrl => ctrl.Account.Id.Equals (accountId));
-            NcAssert.True (Services.Any ());
-            return query.Single ();
+            NcAssert.True (0 != accountId, "0 != accountId");
+            return Services.Where (ctrl => ctrl.Account.Id == accountId).Single ();
         }
         // For IBackEnd.
         private BackEnd ()
@@ -141,7 +139,43 @@ namespace NachoCore
                 System.Threading.Timeout.InfiniteTimeSpan);
 
             foreach (var account in accounts) {
+                if (!HasServiceFromAccountId (account.Id)) {
+                    EstablishService (account.Id);
+                }
                 ForceSync (account.Id);
+            }
+        }
+
+        private void EstablishService (int accountId)
+        {
+            // TODO: this is AS-specific.
+            var service = new AsProtoControl (this, accountId);
+            Services.Add (service);
+            // Create client owned objects as needed.
+            McFolder freshMade;
+            if (null == McFolder.GetOutboxFolder (accountId)) {
+                freshMade = McFolder.Create (accountId, true, false, "0",
+                    McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
+                    Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                freshMade.Insert();
+            }
+            if (null == McFolder.GetGalCacheFolder (accountId)) {
+                freshMade = McFolder.Create (accountId, true, true, "0",
+                    McFolder.ClientOwned_GalCache, string.Empty,
+                    Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                freshMade.Insert();
+            }
+            if (null == McFolder.GetGleanedFolder (accountId)) {
+                freshMade = McFolder.Create (accountId, true, true, "0",
+                    McFolder.ClientOwned_Gleaned, string.Empty,
+                    Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                freshMade.Insert();
+            }
+            if (null == McFolder.GetLostAndFoundFolder (accountId)) {
+                freshMade = McFolder.Create (accountId, true, true, "0",
+                    McFolder.ClientOwned_LostAndFound, string.Empty,
+                    Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                freshMade.Insert();
             }
         }
 
@@ -150,47 +184,10 @@ namespace NachoCore
             Task.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
                 if (! HasServiceFromAccountId (accountId)) {
-                    // TODO: this is AS-specific.
-                    var service = new AsProtoControl (this, accountId);
-                    Services.Add (service);
-                    // Create client owned objects as needed.
-                    McFolder freshMade;
-                    if (null == McFolder.GetOutboxFolder (accountId)) {
-                        freshMade = McFolder.Create (accountId, true, false, "0",
-                            McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
-                            Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                        freshMade.Insert();
-                    }
-                    if (null == McFolder.GetGalCacheFolder (accountId)) {
-                        freshMade = McFolder.Create (accountId, true, true, "0",
-                            McFolder.ClientOwned_GalCache, string.Empty,
-                            Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                        freshMade.Insert();
-                    }
-                    if (null == McFolder.GetGleanedFolder (accountId)) {
-                        freshMade = McFolder.Create (accountId, true, true, "0",
-                            McFolder.ClientOwned_Gleaned, string.Empty,
-                            Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                        freshMade.Insert();
-                    }
-                    if (null == McFolder.GetLostAndFoundFolder (accountId)) {
-                        freshMade = McFolder.Create (accountId, true, true, "0",
-                            McFolder.ClientOwned_LostAndFound, string.Empty,
-                            Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
-                        freshMade.Insert();
-                    }
+                    EstablishService (accountId);
                 }
                 ServiceFromAccountId (accountId).Execute ();
             });
-        }
-
-        public void ForceSync ()
-        {
-            // The callee does Task.Run.
-            var accounts = NcModel.Instance.Db.Table<McAccount> ();
-            foreach (var account in accounts) {
-                ForceSync (account.Id);
-            }
         }
 
         public void ForceSync (int accountId)

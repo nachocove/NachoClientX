@@ -20,8 +20,6 @@ namespace NachoCore
         void Stop ();
         // ... for a specific account.
         void Stop (int accountId);
-        // ask all accounts to sync immediately (does a Start if needed).
-        void ForceSync ();
         // for a single account to sync immediately.
         void ForceSync (int accountId);
         // let the BE know that the asked-about server cert is/not okay to trust.

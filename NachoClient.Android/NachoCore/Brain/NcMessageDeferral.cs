@@ -125,7 +125,7 @@ namespace NachoCore.Brain
             case MessageDeferralType.Custom:
             case MessageDeferralType.None:
             default:
-                NachoCore.NcAssert.CaseError ();
+                NcAssert.CaseError ();
                 return NcResult.Error (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
             }
             return NcResult.OK (from.ToUniversalTime ());

@@ -461,7 +461,7 @@ namespace NachoCore.Model
 
         public NcResult InsertAncillaryData (SQLiteConnection db)
         {
-            NachoCore.NcAssert.True (0 < Id);
+            NcAssert.True (0 < Id);
 
             // TODO: Fix this hammer?
             DeleteAncillaryData (db);
@@ -556,7 +556,7 @@ namespace NachoCore.Model
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
             } else {
-                NachoCore.NcAssert.True (false);
+                NcAssert.True (false);
                 return 0;
             }
         }
@@ -585,7 +585,7 @@ namespace NachoCore.Model
                 if (!String.IsNullOrEmpty (Email)) {
                     return Email;
                 }
-                NachoCore.NcAssert.CaseError ();
+                NcAssert.CaseError ();
                 return "";
             }
             protected set {
@@ -616,7 +616,7 @@ namespace NachoCore.Model
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
             } else {
-                NachoCore.NcAssert.True (false);
+                NcAssert.True (false);
                 return 0;
             }
         }

@@ -91,7 +91,7 @@ namespace NachoCore.ActiveSync
 
         public string toEncodedTimeZone ()
         {
-            NachoCore.NcAssert.True (binaryData.Length == (4 + 64 + 16 + 4 + 64 + 16 + 4));
+            NcAssert.True (binaryData.Length == (4 + 64 + 16 + 4 + 64 + 16 + 4));
             return System.Convert.ToBase64String (binaryData);
         }
 
@@ -235,7 +235,7 @@ namespace NachoCore.ActiveSync
         /// <param name="fieldLength">Length of the field.</param>
         protected string ExtractStringFromBinaryData (byte[] binaryData, int start, int fieldLength)
         {
-            NachoCore.NcAssert.True ((start + fieldLength) <= binaryData.Length);
+            NcAssert.True ((start + fieldLength) <= binaryData.Length);
             String field = System.Text.UnicodeEncoding.Unicode.GetString (binaryData, start, fieldLength);
             int index = field.IndexOf (System.Convert.ToChar (0)); // trim trailing null padding
             if (index < 0) { // no nulls
@@ -247,7 +247,7 @@ namespace NachoCore.ActiveSync
 
         protected void InsertStringIntoBinaryData (string value, byte[] binaryData, int start, int fieldLength)
         {
-            NachoCore.NcAssert.True ((start + fieldLength) <= binaryData.Length);
+            NcAssert.True ((start + fieldLength) <= binaryData.Length);
             var asBytes = System.Text.UnicodeEncoding.Unicode.GetBytes (value);
             for (int i = 0; i < fieldLength; i++) {
                 if (i < asBytes.Length) {

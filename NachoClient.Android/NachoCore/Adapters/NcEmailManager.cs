@@ -2,7 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
-using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Model;
 using NachoClient;
 
