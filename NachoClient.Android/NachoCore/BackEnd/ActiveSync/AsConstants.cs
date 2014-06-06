@@ -678,10 +678,11 @@ namespace NachoCore.ActiveSync
                 switch (code) {
                 case TypeCode.DefaultJournal_11:
                 case TypeCode.UserCreatedJournal_16:
+                    return McFolderEntry.ClassCodeEnum.Journal;
+
                 case TypeCode.Unknown_18:
-                    //FIXME - we don't know what to do with these yet.
-                    Log.Info (Log.LOG_AS, "TypeCodeToAirSyncClassCode: got unhandled code: {0}. Pretending Notes.", code);
-                    return McFolderEntry.ClassCodeEnum.Notes;
+                case TypeCode.UserCreatedGeneric_1:
+                    return McFolderEntry.ClassCodeEnum.Generic;
 
                 case TypeCode.DefaultInbox_2:
                 case TypeCode.DefaultDrafts_3:
@@ -699,7 +700,6 @@ namespace NachoCore.ActiveSync
                 case TypeCode.UserCreatedCal_13:
                     return McFolderEntry.ClassCodeEnum.Calendar;
 
-                case TypeCode.UserCreatedGeneric_1:
                 case TypeCode.DefaultContacts_9:
                 case TypeCode.UserCreatedContacts_14:
                 case TypeCode.Ric_19:
@@ -729,9 +729,8 @@ namespace NachoCore.ActiveSync
                 case McFolderEntry.ClassCodeEnum.Tasks:
                     return AirSync.ClassCode.Tasks;
 
-                case McFolderEntry.ClassCodeEnum.Folder:
                 default:
-                    throw new Exception ();
+                    throw new Exception (string.Format ("Un-syncable class code: {0}", enumVal.ToString ()));
                 }
             }
         }

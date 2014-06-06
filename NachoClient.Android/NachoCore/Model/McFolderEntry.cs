@@ -18,8 +18,11 @@ namespace NachoCore.Model
             Contact = 4,
             Notes = 5,
             Sms = 6,
+            MaxSyncable = 6,
             // Values created by Nacho are >= 100.
             Folder = 100,
+            Journal = 101,
+            Generic = 102,
         };
 
         [Indexed]
