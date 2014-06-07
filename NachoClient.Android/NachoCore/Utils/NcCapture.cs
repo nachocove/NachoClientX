@@ -59,12 +59,22 @@ namespace NachoCore.Utils
         private class Summary
         {
             bool IsTop;
-            uint Min;
-            uint Max;
+            uint _Min;
+            uint Min {
+                get {
+                    return (0 == Count ? 0 : _Min);
+                }
+            }
+            uint _Max;
+            uint Max {
+                get {
+                    return (0 == Count ? 0 : _Max);
+                }
+            }
             uint Average {
                 // Only compute average when asked to save some divide
                 get {
-                    return (uint)(Total / Count);
+                    return (0 == Count ? 0 : (uint)(Total / Count));
                 }
             }
             uint Count;
@@ -74,8 +84,8 @@ namespace NachoCore.Utils
             public Summary (bool isTop)
             {
                 IsTop = isTop;
-                Min = uint.MaxValue;
-                Max = uint.MinValue;
+                _Min = uint.MaxValue;
+                _Max = uint.MinValue;
                 Count = 0;
                 Total = 0;
             }
@@ -84,11 +94,11 @@ namespace NachoCore.Utils
             {
                 Count += 1;
                 Total += value;
-                if (value < Min) {
-                    Min = value;
+                if (value < _Min) {
+                    _Min = value;
                 }
-                if (value > Max) {
-                    Max = value;
+                if (value > _Max) {
+                    _Max = value;
                 }
                 if (null != xtra) {
                     if (null == Xtra) {
@@ -180,6 +190,10 @@ namespace NachoCore.Utils
         private static object ClassLockObj;
         private static Dictionary<string, NcCaptureKind> PerKind;
         public static Type StopwatchClass = typeof(PlatformStopwatch);
+        // For periodically report to telemetry
+        private static NcTimer ReportTimer;
+        // For keep track of how long the sleep is
+        private static IStopwatch SleepWatch;
 
         private NcCapture (string kind)
         {
@@ -312,7 +326,7 @@ namespace NachoCore.Utils
             _IsRunning = false;
         }
 
-        public static void Report (string Kind)
+        public static void ReportKind (string Kind)
         {
             if (!PerKind.ContainsKey(Kind)) {
                 return;
@@ -325,7 +339,7 @@ namespace NachoCore.Utils
         {
             lock (ClassLockObj) {
                 foreach (string kind in PerKind.Keys) {
-                    Report (kind);
+                    ReportKind (kind);
                 }
             }
         }
@@ -357,9 +371,26 @@ namespace NachoCore.Utils
             });
         }
 
+        public static void Callback (object obj)
+        {
+            NcCapture.Report ();
+        }
+
         public static void ResumeAll ()
         {
             lock (ClassLockObj) {
+                const int reportPeriodMsec = 30 * 1000;
+                if (null == SleepWatch) {
+                    SleepWatch = (IStopwatch) Activator.CreateInstance (StopwatchClass);
+                }
+                int dueTime = reportPeriodMsec;
+                if (reportPeriodMsec < SleepWatch.ElapsedMilliseconds) {
+                    dueTime = 1000; // if it has slept for more than report period, report immediately
+                }
+                if (null == ReportTimer) {
+                    // Report once every 30 min
+                    ReportTimer = new NcTimer (NcCapture.Callback, null, dueTime, reportPeriodMsec);
+                }
                 foreach (string kind in PerKind.Keys) {
                     ResumeKind (kind);
                 }
@@ -369,9 +400,15 @@ namespace NachoCore.Utils
         public static void PauseAll ()
         {
             lock (ClassLockObj) {
+                if (null != ReportTimer) {
+                    ReportTimer.Dispose ();
+                    ReportTimer = null;
+                }
                 foreach (string kind in PerKind.Keys) {
                     PauseKind (kind);
                 }
+                NcAssert.True (null != SleepWatch);
+                SleepWatch.Start ();
             }
         }
     }
