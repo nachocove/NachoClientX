@@ -82,6 +82,7 @@ namespace NachoCore
             // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();
+            NcCapture.ResumeAll ();
         }
 
         public void Stop ()
@@ -89,6 +90,7 @@ namespace NachoCore
             // THIS IS THE BEST PLADE TO PUT Stop FUNCTIONS - WHEN SERVICE NEEDS TO BE SHUTDOWN BEFORE SLEEP/EXIT.
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
+            NcCapture.PauseAll ();
             // NcTimer.Stop () should go last.
             NcTimer.Stop ();
         }

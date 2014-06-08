@@ -16,6 +16,7 @@ namespace NachoClient.iOS
     {
         INachoCalendar calendar;
         public ICalendarTableViewSourceDelegate owner;
+        protected bool compactMode;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string CalendarEventReuseIdentifier = "CalendarEvent";
@@ -28,6 +29,11 @@ namespace NachoClient.iOS
         public void SetCalendar (INachoCalendar calendar)
         {
             this.calendar = calendar;
+        }
+
+        public void SetCompactMode (bool compactMode)
+        {
+            this.compactMode = compactMode;
         }
 
         protected bool NoCalendarEvents ()
@@ -61,6 +67,9 @@ namespace NachoClient.iOS
 
         protected float HeightForCalendarEvent (McCalendar c)
         {
+            if (compactMode) {
+                return 69.0f;
+            }
             return 87.0f;
         }
 
@@ -83,6 +92,9 @@ namespace NachoClient.iOS
         protected const int DURATION_TAG = 102;
         protected const int LOCATION_ICON_TAG = 103;
         protected const int LOCATION_TEXT_TAG = 104;
+        protected const int COMPACT_SUBJECT_TAG = 105;
+        protected const int COMPACT_ICON_TAG = 106;
+        protected const int COMPACT_TEXT_TAG = 107;
 
         /// <summary>
         /// Create the views, not the values, of the cell.
@@ -111,14 +123,14 @@ namespace NachoClient.iOS
                 var cellWidth = tableView.Frame.Width;
 
                 // Subject label view
-                var subjectLabelView = new UILabel (new RectangleF (65, 21, 150, 20));
+                var subjectLabelView = new UILabel (new RectangleF (65, 21, cellWidth - 65, 20));
                 subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
                 subjectLabelView.TextColor = A.Color_114645;
                 subjectLabelView.Tag = SUBJECT_TAG;
                 cell.ContentView.AddSubview (subjectLabelView);
 
                 // Duration label view
-                var durationLabelView = new UILabel (new RectangleF (65, 41, 150, 20));
+                var durationLabelView = new UILabel (new RectangleF (65, 41, cellWidth - 65, 20));
                 durationLabelView.Font = A.Font_AvenirNextMedium14;
                 durationLabelView.TextColor = A.Color_999999;
                 durationLabelView.Tag = DURATION_TAG;
@@ -130,11 +142,30 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (locationIconView);
 
                 // Location label view
-                var locationLabelView = new UILabel (new RectangleF (80, 61, 150, 20));
+                var locationLabelView = new UILabel (new RectangleF (80, 61, cellWidth - 80, 20));
                 locationLabelView.Font = A.Font_AvenirNextRegular14;
                 locationLabelView.TextColor = A.Color_999999;
                 locationLabelView.Tag = LOCATION_TEXT_TAG;
                 cell.ContentView.AddSubview (locationLabelView);
+
+                // Subject label view
+                var compactSubjectLabelView = new UILabel (new RectangleF (56, 20, cellWidth - 56, 20));
+                compactSubjectLabelView.Font = A.Font_AvenirNextDemiBold17;
+                compactSubjectLabelView.TextColor = A.Color_114645;
+                compactSubjectLabelView.Tag = COMPACT_SUBJECT_TAG;
+                cell.ContentView.AddSubview (compactSubjectLabelView);
+
+                // Location image view
+                var compactIconView = new UIImageView (new RectangleF (56, 40, 12, 12));
+                compactIconView.Tag = COMPACT_ICON_TAG;
+                cell.ContentView.AddSubview (compactIconView);
+
+                // Location label view
+                var compactLabelView = new UILabel (new RectangleF (74, 36, cellWidth - 74, 20));
+                compactLabelView.Font = A.Font_AvenirNextRegular14;
+                compactLabelView.TextColor = A.Color_999999;
+                compactLabelView.Tag = COMPACT_TEXT_TAG;
+                cell.ContentView.AddSubview (compactLabelView);
 
                 return cell;
             }
@@ -194,30 +225,72 @@ namespace NachoClient.iOS
             var cellWidth = cell.Frame.Width;
 
             // Subject label view
+            var subject = Pretty.SubjectString (c.Subject);
+
             var subjectLabelView = cell.ViewWithTag (SUBJECT_TAG) as UILabel;
-            subjectLabelView.Text = Pretty.SubjectString (c.Subject);
+            var compactSubjectLabelView = cell.ViewWithTag (COMPACT_SUBJECT_TAG) as UILabel;
+            compactSubjectLabelView.Hidden = !compactMode;
+            subjectLabelView.Hidden = compactMode;
+            if (compactMode) {
+                compactSubjectLabelView.Text = subject;
+            } else {
+                subjectLabelView.Text = subject;
+            }
 
             // Duration label view
             var durationLabelView = cell.ViewWithTag (DURATION_TAG) as UILabel;
+            var locationLabelView = cell.ViewWithTag (LOCATION_TEXT_TAG) as UILabel;
+            var locationIconView = cell.ViewWithTag (LOCATION_ICON_TAG) as UIImageView;
+            var compactIconView = cell.ViewWithTag (COMPACT_ICON_TAG) as UIImageView;
+            var compactTextView = cell.ViewWithTag (COMPACT_TEXT_TAG) as UILabel;
+
+            durationLabelView.Hidden = compactMode;
+            locationLabelView.Hidden = compactMode;
+            locationIconView.Hidden = compactMode;
+            compactIconView.Hidden = !compactMode;
+            compactTextView.Hidden = !compactMode;
+
+            var durationString = "";
             if (c.AllDayEvent) {
-                durationLabelView.Text = "ALL DAY";
+                durationString = "ALL DAY";
             } else {
                 var start = Pretty.ShortTimeString (c.StartTime);
                 var duration = Pretty.CompactDuration (c);
-                durationLabelView.Text = String.Join (" - ", new string[] { start, duration });
+                durationString = String.Join (" - ", new string[] { start, duration });
             }
 
-            // Locaion view
-            var locationLabelView = cell.ViewWithTag (LOCATION_TEXT_TAG) as UILabel;
-            var locationIconView = cell.ViewWithTag (LOCATION_ICON_TAG) as UIImageView;
-            if (String.IsNullOrEmpty (c.Location)) {
-                locationIconView.Hidden = true;
-                locationLabelView.Hidden = true;
-            } else {
-                locationIconView.Hidden = false;
-                locationLabelView.Hidden = false;
+            var locationString = "";
+            if (!String.IsNullOrEmpty (c.Location)) {
                 locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
-                locationLabelView.Text = Pretty.SubjectString (c.Location);
+                locationString = Pretty.SubjectString (c.Location);
+            }
+
+            if (compactMode) {
+                var eventString = "";
+                if (String.IsNullOrEmpty (locationString)) {
+                    eventString = durationString;
+                } else {
+                    eventString = String.Join (" : ", new string[] { locationString, durationString });
+                }
+                if(String.IsNullOrEmpty(eventString)) {
+                    compactIconView.Hidden = true;
+                    compactTextView.Hidden = true;
+                } else {
+                    compactIconView.Image = UIImage.FromBundle ("cal-icn-pin");
+                    compactTextView.Text = eventString;
+                }
+
+            } else {
+                // Duration
+                durationLabelView.Text = durationString;
+                // Location view
+                if (String.IsNullOrEmpty (locationString)) {
+                    locationIconView.Hidden = true;
+                    locationLabelView.Hidden = true;
+                } else {
+                    locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
+                    locationLabelView.Text = locationString;
+                }
             }
 
             ConfigureSwipes (cell as MCSwipeTableViewCell, c.Id);
@@ -331,7 +404,7 @@ namespace NachoClient.iOS
            
         }
 
-        public void ScrollToNow(UITableView tableView)
+        public void ScrollToNow (UITableView tableView)
         {
             if (calendar.NumberOfDays () > 0) {
                 var i = calendar.IndexOfDate (DateTime.UtcNow);

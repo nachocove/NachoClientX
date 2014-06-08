@@ -120,6 +120,9 @@ namespace NachoClient.iOS
             });
             inboxPanGestureRecognizer.Enabled = false;
             inboxPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            inboxPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
             inboxTableView.AddGestureRecognizer (inboxPanGestureRecognizer);
 
             // Pan the calendar down from the top
@@ -128,6 +131,9 @@ namespace NachoClient.iOS
             });
             calendarPanGestureRecognizer.Enabled = false;
             calendarPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            calendarPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
             calendarView.AddGestureRecognizer (calendarPanGestureRecognizer);
 
             // Tap the calendar thumb to hid the calendar again
@@ -277,6 +283,7 @@ namespace NachoClient.iOS
             inboxTableView.Layer.MasksToBounds = true;
 
 //            calendarTableView.ScrollToRow (NSIndexPath.FromRowSection (0, 0), UITableViewScrollPosition.Top, false);
+            calendarSource.SetCompactMode (true);
             calendarView.Frame = calendarSmallSize ();
             calendarTableView.ScrollEnabled = false;
             calendarThumbView.Image = UIImage.FromBundle ("cal-open-grabber");
@@ -312,16 +319,18 @@ namespace NachoClient.iOS
         protected void ConfigureCalendarListView ()
         {
             DisableGestureRecognizers ();
+            calendarSource.SetCompactMode (false);
             calendarView.Frame = calendarFullSize ();
             calendarTableView.ScrollEnabled = true;
             calendarThumbTapGestureRecognizer.Enabled = true;
             calendarThumbView.Image = UIImage.FromBundle ("cal-close-grabber");
+            calendarTableView.ReloadData ();
 
             carouselView.Alpha = 0.0f;
         }
 
         int INBOX_ROW_HEIGHT = 69;
-        int CALENDAR_VIEW_HEIGHT = 112;
+        int CALENDAR_VIEW_HEIGHT = (69 + 11);
         float inboxStartingY;
         float calendarStartingY;
 
@@ -742,10 +751,10 @@ namespace NachoClient.iOS
 
                 // Summary label view
                 // Size fields will be recalculated after text is known
-                var summaryLabelView = new UILabel (new RectangleF (65, 60, viewWidth - 15 - 65, 60));
+                var summaryLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 120));
                 summaryLabelView.Font = A.Font_AvenirNextRegular14;
                 summaryLabelView.TextColor = A.Color_999999;
-                summaryLabelView.Lines = 2;
+                summaryLabelView.Lines = 0;
                 summaryLabelView.Tag = SUMMARY_TAG;
                 view.AddSubview (summaryLabelView);
 
@@ -890,10 +899,8 @@ namespace NachoClient.iOS
                 if (null == message.Summary) {
                     message.Summarize ();
                 }
-                NcAssert.True (null != message.Summary);
-                summaryLabelView.Frame = new RectangleF (65, 60, viewWidth - 15 - 65, 60);
+                NcAssert.NotNull(message.Summary);
                 summaryLabelView.Text = message.Summary;
-                summaryLabelView.SizeToFit ();
 
 //                // Reminder image view and label
 //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;

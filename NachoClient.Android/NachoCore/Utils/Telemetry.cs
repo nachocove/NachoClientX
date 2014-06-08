@@ -395,7 +395,7 @@ namespace NachoCore.Utils
             Counters [0].ReportPeriod = 60 * 60; // report once per day
 
             // Capture the transaction time to telemetry server
-            const string CAPTURE_NAME = "Telemetry";
+            const string CAPTURE_NAME = "Telemetry.SendEvent";
             NcCapture.AddKind (CAPTURE_NAME);
             NcCapture transactionTime = NcCapture.Create(CAPTURE_NAME);
 
