@@ -23,9 +23,9 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
+			if (editButton != null) {
+				editButton.Dispose ();
+				editButton = null;
 			}
 
 			if (nachoButton != null) {
@@ -33,9 +33,9 @@ namespace NachoClient.iOS
 				nachoButton = null;
 			}
 
-			if (editButton != null) {
-				editButton.Dispose ();
-				editButton = null;
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
 			}
 		}
 	}

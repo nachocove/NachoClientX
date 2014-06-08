@@ -156,12 +156,12 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (compactSubjectLabelView);
 
                 // Location image view
-                var compactIconView = new UIImageView (new RectangleF (56, 40, 12, 12));
+                var compactIconView = new UIImageView (new RectangleF (56, 46, 12, 12));
                 compactIconView.Tag = COMPACT_ICON_TAG;
                 cell.ContentView.AddSubview (compactIconView);
 
                 // Location label view
-                var compactLabelView = new UILabel (new RectangleF (74, 36, cellWidth - 74, 20));
+                var compactLabelView = new UILabel (new RectangleF (74, 40, cellWidth - 74, 20));
                 compactLabelView.Font = A.Font_AvenirNextRegular14;
                 compactLabelView.TextColor = A.Color_999999;
                 compactLabelView.Tag = COMPACT_TEXT_TAG;
@@ -221,8 +221,6 @@ namespace NachoClient.iOS
 
             // Save calendar item index
             cell.ContentView.Tag = c.Id;
-
-            var cellWidth = cell.Frame.Width;
 
             // Subject label view
             var subject = Pretty.SubjectString (c.Subject);
