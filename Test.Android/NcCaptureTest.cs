@@ -105,13 +105,13 @@ namespace Test.common
             NcCapture.AddKind (thisKind1);
             captures[0] = NcCapture.Create (thisKind1);
 
-            CaptureStartStop (captures[0], thisKind1, 50, "[Kind: Test1] Count = 1, Min = 50ms, Max = 50ms, Average = 50ms");
+            CaptureStartStop (captures[0], thisKind1, 50, "[Kind: Test1] Count = 1, Min = 50ms, Max = 50ms, Average = 50ms, StdDev = 0ms");
 
             captures[0].Reset ();
-            CaptureStartStop (captures[0], thisKind1, 100, "[Kind: Test1] Count = 2, Min = 50ms, Max = 100ms, Average = 75ms");
+            CaptureStartStop (captures[0], thisKind1, 100, "[Kind: Test1] Count = 2, Min = 50ms, Max = 100ms, Average = 75ms, StdDev = 25ms");
 
             captures[0].Reset ();
-            CaptureStartStop (captures[0], thisKind1, 30, "[Kind: Test1] Count = 3, Min = 30ms, Max = 100ms, Average = 60ms");
+            CaptureStartStop (captures[0], thisKind1, 30, "[Kind: Test1] Count = 3, Min = 30ms, Max = 100ms, Average = 60ms, StdDev = 29ms");
         }
 
         [Test]
@@ -151,11 +151,11 @@ namespace Test.common
 
             captures [0].Stop ();
 
-            CaptureCheck (thisKind1, "[Kind: Test1] Count = 1, Min = 180ms, Max = 180ms, Average = 180ms");
+            CaptureCheck (thisKind1, "[Kind: Test1] Count = 1, Min = 180ms, Max = 180ms, Average = 180ms, StdDev = 0ms");
 
             captures [1].Stop ();
 
-            CaptureCheck (thisKind1, "[Kind: Test1] Count = 2, Min = 140ms, Max = 180ms, Average = 160ms");
+            CaptureCheck (thisKind1, "[Kind: Test1] Count = 2, Min = 140ms, Max = 180ms, Average = 160ms, StdDev = 20ms");
 
             Assert.False (captures [0].IsRunning);
             Assert.False (captures [1].IsRunning);

@@ -77,8 +77,20 @@ namespace NachoCore.Utils
                     return (0 == Count ? 0 : (uint)(Total / Count));
                 }
             }
+            uint StdDev {
+                get {
+                    if (0 == Count) {
+                        return 0;
+                    }
+                    double variance = -((double)Total * (double)Total) / (double)Count;
+                    variance += (double)Total2;
+                    variance /= (double)Count;
+                    return (uint)Math.Sqrt (variance);
+                }
+            }
             uint Count;
             UInt64 Total;
+            UInt64 Total2;
             Dictionary <string, Summary> Xtra;
 
             public Summary (bool isTop)
@@ -88,12 +100,14 @@ namespace NachoCore.Utils
                 _Max = uint.MinValue;
                 Count = 0;
                 Total = 0;
+                Total2 = 0;
             }
 
             public void Update (uint value, Dictionary<string,uint> xtra)
             {
                 Count += 1;
                 Total += value;
+                Total2 += value * value;
                 if (value < _Min) {
                     _Min = value;
                 }
@@ -123,8 +137,8 @@ namespace NachoCore.Utils
             public override string ToString ()
             {
                 if (IsTop) {
-                    var top = string.Format ("Count = {0}, Min = {1}ms, Max = {2}ms, Average = {3}ms",
-                        Count, Min, Max, Average);
+                    var top = string.Format ("Count = {0}, Min = {1}ms, Max = {2}ms, Average = {3}ms, StdDev = {4}ms",
+                        Count, Min, Max, Average, StdDev);
                     if (null == Xtra) {
                         return top;
                     } else {
@@ -137,14 +151,14 @@ namespace NachoCore.Utils
                         return sb.ToString ();
                     }
                 } else {
-                    return string.Format ("Count = {1}, Min = {2}, Max = {3}, Average = {4}",
-                        Count, Min, Max, Average);
+                    return string.Format ("Count = {0}, Min = {1}, Max = {2}, Average = {3}, StdDev = {4}",
+                        Count, Min, Max, Average, StdDev);
                 }
             }
 
             public void Report (string kind)
             {
-                Telemetry.RecordCapture (kind, Count, Average, Min, Max);
+                Telemetry.RecordCapture (kind, Count, Average, Min, Max, StdDev);
                 if (null != Xtra) {
                     foreach (var key in Xtra.Keys) {
                         Xtra [key].Report (key);

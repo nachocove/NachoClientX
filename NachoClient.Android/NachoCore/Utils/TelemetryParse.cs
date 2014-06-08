@@ -166,6 +166,7 @@ namespace NachoCore.Utils
                 dict.AddInteger ("average", tEvent.Average);
                 dict.AddInteger ("min", tEvent.Min);
                 dict.AddInteger ("max", tEvent.Max);
+                dict.AddInteger ("stddev", tEvent.StdDev);
             } else {
                 NcAssert.True (false);
             }

@@ -155,6 +155,18 @@ namespace NachoCore.Utils
             }
         }
 
+        // Capture Std. Dev
+        private uint _StdDev;
+        public uint StdDev {
+            get {
+                return _StdDev;
+            }
+            set {
+                NcAssert.True (IsCaptureEvent ());
+                _StdDev = value;
+            }
+        }
+
         public static bool IsLogEvent (TelemetryEventType type)
         {
             return ((TelemetryEventType.ERROR == type) ||
@@ -213,6 +225,7 @@ namespace NachoCore.Utils
             _Average = 0;
             _Min = 0;
             _Max = 0;
+            _StdDev = 0;
         }
 
         public uint GetSize ()
@@ -363,7 +376,7 @@ namespace NachoCore.Utils
             RecordRawEvent (tEvent);
         }
 
-        public static void RecordCapture (string name, uint count, uint average, uint min, uint max)
+        public static void RecordCapture (string name, uint count, uint average, uint min, uint max, uint stddev)
         {
             if (!ENABLED) {
                 return;
@@ -376,6 +389,7 @@ namespace NachoCore.Utils
             tEvent.Average = average;
             tEvent.Min = min;
             tEvent.Max = max;
+            tEvent.StdDev = stddev;
 
             RecordRawEvent (tEvent);
         }
