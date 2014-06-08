@@ -51,7 +51,7 @@ namespace NachoClient.iOS
                         ConfigureBasicView ();
                     },
                     () => {
-                        inboxTableView.ReloadData();
+                        inboxTableView.ReloadData ();
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
             };
@@ -72,7 +72,15 @@ namespace NachoClient.iOS
                 PerformSegue ("NachoNowToMessageAction", this);
             };
 
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {newMeetingButton, composeButton };
+            composeButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToCompose", new SegueHolder (null));
+            };
+
+            newMeetingButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToCalendarItem", new SegueHolder (null));
+            };
+
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
             carouselTapGestureRecognizer.NumberOfTapsRequired = 1;
@@ -195,24 +203,20 @@ namespace NachoClient.iOS
                 } else {
                     vc.Action = (string)h.value;
                     vc.ActionThread = (McEmailMessageThread)h.value2;
-                    vc.SetOwner (this);
                 }
+                vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "NachoNowToContacts") {
-                return; // Nothing to do
-            }
-
             if (segue.Identifier == "NachoNowToCalendarItem") {
+                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                if (null != holder) {
-                    var c = holder.value as McCalendar;
-                    if (null != c) {
-                        CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-                        dvc.SetCalendarItem (c, CalendarItemEditorAction.view);
-                        dvc.SetOwner (this);
-                    }
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
                 }
+                vc.SetOwner (this);
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageList") {
@@ -241,7 +245,6 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, h);
                 return;
             }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -376,7 +379,7 @@ namespace NachoClient.iOS
             return inboxFrame;
         }
 
-        protected RectangleF inboxShadowSize(int widthAdjust, int yAdjust)
+        protected RectangleF inboxShadowSize (int widthAdjust, int yAdjust)
         {
             var frame = inboxSmallSize ();
             frame.Inflate (-widthAdjust, 0);
@@ -425,7 +428,6 @@ namespace NachoClient.iOS
             if (UIGestureRecognizerState.Changed == obj.State) {
                 // yOffset is negative when going up!
                 var yOffset = obj.TranslationInView (inboxTableView).Y;
-                Console.WriteLine ("yOffset = {0}", yOffset);
                 inboxTableView.Frame = inboxAdjustedSize (yOffset);
                 inboxTableView.SetNeedsDisplay ();
                 return;
@@ -435,7 +437,6 @@ namespace NachoClient.iOS
                 Double duration;
                 var yOffset = obj.TranslationInView (inboxTableView).Y;
                 var percentOpen = inboxPercentOpen (yOffset);
-                Console.WriteLine ("velocity {0} & %open {1}", obj.VelocityInView (inboxTableView).Y, inboxPercentOpen (yOffset));
                 if ((yOffset < 0) && (obj.VelocityInView (inboxTableView).Y < -1000) && (inboxPercentOpen (yOffset) < 0.5f)) {
                     inboxFlick (yOffset);
                     return;
@@ -456,7 +457,7 @@ namespace NachoClient.iOS
                             ConfigureBasicView ();
                         },
                         () => {
-                            inboxTableView.ReloadData();
+                            inboxTableView.ReloadData ();
                         }
                     );
                 }
@@ -507,7 +508,7 @@ namespace NachoClient.iOS
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
                     } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { newMeetingButton, composeButton };
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
                     }
                 })
@@ -569,7 +570,6 @@ namespace NachoClient.iOS
             if (UIGestureRecognizerState.Changed == obj.State) {
                 // yOffset is negative when going up!
                 var yOffset = obj.TranslationInView (calendarTableView).Y;
-                Console.WriteLine ("yOffset = {0}", yOffset);
                 calendarView.Frame = calendarAdjustedSize (yOffset);
                 calendarView.SetNeedsDisplay ();
                 return;
@@ -579,9 +579,8 @@ namespace NachoClient.iOS
                 Double duration;
                 var yOffset = obj.TranslationInView (calendarTableView).Y;
                 var percentOpen = calendarPercentOpen (yOffset);
-                Console.WriteLine ("velocity {0} & %open {1}", obj.VelocityInView (inboxTableView).Y, calendarPercentOpen (yOffset));
                 if (percentOpen > 0.7f) {
-                    duration = Math.Max(0.1, 1.0 - percentOpen);
+                    duration = Math.Max (0.1, 1.0 - percentOpen);
                     UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
                             ConfigureCalendarListView ();
@@ -901,7 +900,7 @@ namespace NachoClient.iOS
                 // User image view
                 // TODO: user images
                 var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-                var emailOfSender = Pretty.EmailString(message.From);
+                var emailOfSender = Pretty.EmailString (message.From);
                 string sender = Pretty.SenderString (message.From);
 
                 int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
@@ -917,7 +916,7 @@ namespace NachoClient.iOS
                 if (null == message.Summary) {
                     message.Summarize ();
                 }
-                NcAssert.NotNull(message.Summary);
+                NcAssert.NotNull (message.Summary);
                 summaryLabelView.Text = message.Summary;
 
 //                // Reminder image view and label
