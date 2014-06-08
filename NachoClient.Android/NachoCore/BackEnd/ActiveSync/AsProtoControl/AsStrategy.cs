@@ -311,7 +311,7 @@ namespace NachoCore.ActiveSync
             return ecFolders;
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder, bool quickFetch)
+        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder)
         {
             uint perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
@@ -324,9 +324,6 @@ namespace NachoCore.ActiveSync
             }
             switch (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type)) {
             case McFolder.ClassCodeEnum.Email:
-                if (quickFetch) {
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
-                }
                 switch ((ECLst)EmailCalendarSm.State) {
                 case ECLst.DefI1dC2w:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
@@ -353,9 +350,6 @@ namespace NachoCore.ActiveSync
                 }
 
             case McFolder.ClassCodeEnum.Calendar:
-                if (quickFetch) {
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
-                }
                 switch ((ECLst)EmailCalendarSm.State) {
                 case ECLst.DefI1dC2w:
                 case ECLst.DefI3dC2w:
@@ -501,7 +495,7 @@ namespace NachoCore.ActiveSync
                 if (null != eligibleForGetChanges.FirstOrDefault (x => x.Id == folder.Id)) {
                     if (folder.AsSyncMetaToClientExpected) {
                         folder.AsSyncMetaDoGetChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
-                        var parms = ParametersProvider (folder, IsQuickFetch);
+                        var parms = ParametersProvider (folder);
                         folder.AsSyncMetaFilterCode = parms.Item1;
                         folder.AsSyncMetaWindowSize = parms.Item2;
                     } else {
