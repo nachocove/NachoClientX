@@ -265,7 +265,7 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSyncBase.Body:
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     if (null != bodyElement) {
-                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                        var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
                         if (null != saveAttr) {
                             c.BodyId = int.Parse (saveAttr.Value);
                         } else {

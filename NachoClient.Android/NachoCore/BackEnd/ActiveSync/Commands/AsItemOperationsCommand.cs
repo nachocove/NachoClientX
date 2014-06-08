@@ -44,7 +44,7 @@ namespace NachoCore.ActiveSync
                 var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                 attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                 var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
-                var saveAttr = xmlData.Attributes ().SingleOrDefault (x => x.Name == "nacho-attachment-file");
+                var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-attachment-file").SingleOrDefault ();
                 if (null != saveAttr) {
                     attachment.SaveFromTemp (saveAttr.Value);
                     attachment.PercentDownloaded = 100;

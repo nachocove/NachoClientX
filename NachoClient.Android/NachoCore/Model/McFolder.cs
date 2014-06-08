@@ -81,10 +81,10 @@ namespace NachoCore.Model
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
         {
-            return NcModel.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+            return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
                 accountId == x.AccountId &&
             serverId == x.ServerId &&
-            true == x.IsClientOwned);
+            true == x.IsClientOwned).SingleOrDefault ();
         }
         /*
          * SYNCED FOLDERS:

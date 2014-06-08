@@ -581,10 +581,10 @@ namespace NachoCore.Model
 
         public static McPending QueryByToken (int accountId, string token)
         {
-            return NcModel.Instance.Db.Table<McPending> ()
-                    .SingleOrDefault (x => 
-                        x.AccountId == accountId &&
-            x.Token == token);
+            return NcModel.Instance.Db.Table<McPending> ().Where (x => 
+                x.AccountId == accountId &&
+                x.Token == token)
+                    .SingleOrDefault ();
         }
 
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)
