@@ -456,7 +456,7 @@ namespace NachoCore.ActiveSync
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
-                    } catch (ObjectDisposedException ex) {
+                    } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
