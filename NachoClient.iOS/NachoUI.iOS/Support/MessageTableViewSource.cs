@@ -380,6 +380,9 @@ namespace NachoClient.iOS
             var message = messageThread.SingleMessageSpecialCase ();
 
             var cellWidth = cell.Frame.Width;
+            if (compactMode) {
+                cellWidth -= 30;
+            }
 
             // User image view
             // TODO: user images
