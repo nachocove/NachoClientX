@@ -51,7 +51,6 @@ namespace NachoClient.iOS
                         ConfigureBasicView ();
                     },
                     () => {
-                        inboxTableView.ReloadData ();
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
             };
@@ -309,6 +308,7 @@ namespace NachoClient.iOS
             calendarTableView.ScrollEnabled = false;
             calendarThumbView.Hidden = false;
             calendarCloseView.Hidden = true;
+            calendarTableView.ReloadData ();
             calendarSource.ScrollToNow (calendarTableView);
 
             carouselView.Frame = carouselNormalSize ();

@@ -13,19 +13,16 @@ namespace NachoClient.iOS
 	partial class CalendarViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem addButton { get; set; }
+		MonoTouch.UIKit.UITableView calendarTableView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIView dateView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem searchButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem switcherButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
@@ -39,19 +36,14 @@ namespace NachoClient.iOS
 				revealButton = null;
 			}
 
-			if (addButton != null) {
-				addButton.Dispose ();
-				addButton = null;
+			if (dateView != null) {
+				dateView.Dispose ();
+				dateView = null;
 			}
 
-			if (searchButton != null) {
-				searchButton.Dispose ();
-				searchButton = null;
-			}
-
-			if (switcherButton != null) {
-				switcherButton.Dispose ();
-				switcherButton = null;
+			if (calendarTableView != null) {
+				calendarTableView.Dispose ();
+				calendarTableView = null;
 			}
 		}
 	}

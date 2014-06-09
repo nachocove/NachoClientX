@@ -11,15 +11,13 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoCalendarItemEditorParent
+    public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
         INachoCalendar calendar;
+        protected CalendarTableViewSource calendarSource;
+
         public bool UseDeviceCalendar;
         protected bool adjustScrollPosition = true;
-        /// <summary>
-        ///  Must match the id in the prototype cell.
-        /// </summary>
-        static readonly NSString CalendarToCalendarItemSegueID = new NSString ("CalendarToCalendarItem");
 
         public CalendarViewController (IntPtr handle) : base (handle)
         {
@@ -45,27 +43,24 @@ namespace NachoClient.iOS
                 PerformSegue ("CalendarToNachoNow", this);
             };
 
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton, searchButton };
-
-            searchButton.Clicked += (object sender, EventArgs e) => {
-                if (!SearchDisplayController.Active) {
-                    SearchDisplayController.SearchBar.BecomeFirstResponder ();
-                }
-            };
+            calendarSource = new CalendarTableViewSource ();
+            calendarSource.owner = this;
+            calendarSource.SetCalendar (NcCalendarManager.Instance);
+            calendarTableView.Source = calendarSource;
                 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
 
             calendar = NcCalendarManager.Instance;
-            TableView.ReloadData ();
+            calendarTableView.ReloadData ();
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                     calendar.Refresh ();
-                    TableView.ReloadData ();
+                    calendarTableView.ReloadData ();
                 }
             };
         }
@@ -82,7 +77,7 @@ namespace NachoClient.iOS
                 var i = calendar.IndexOfDate (DateTime.UtcNow);
                 if (i >= 0) {
                     var p = NSIndexPath.FromItemSection (0, i);
-                    TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
+                    calendarTableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
                 }
             }
         }
@@ -94,28 +89,34 @@ namespace NachoClient.iOS
         /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            // The "+" button segues with CalendarToNewCalendarItem
-            // Cells segue with CellSegueID, CalendarToCalendarItem
-            if (segue.Identifier.Equals (CalendarToCalendarItemSegueID)) {
-                UITableViewCell cell = (UITableViewCell)sender;
-                NSIndexPath indexPath = TableView.IndexPathForCell (cell);
-                McCalendar calendarItem = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
-                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-                dvc.SetCalendarItem (calendarItem, CalendarItemEditorAction.view);
-                dvc.SetOwner (this);
+            if (segue.Identifier == "NachoNowToCalendarItem") {
+                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                }
+                vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier.Equals ("CalendarToNewCalendarItem")) {
-                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-                dvc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                dvc.SetOwner (this);
-                return;
-            }
+//            if (segue.Identifier.Equals ("CalendarToNewCalendarItem")) {
+//                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
+//                dvc.SetCalendarItem (null, CalendarItemEditorAction.create);
+//                dvc.SetOwner (this);
+//                return;
+//            }
             if (segue.Identifier.Equals ("CalendarToNachoNow")) {
                 // Nothing to do
                 return;
             }
             NcAssert.CaseError ();
+        }
+
+        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
@@ -124,52 +125,5 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (true, null);
         }
 
-        public override int NumberOfSections (UITableView tableView)
-        {
-            if (null == calendar) {
-                return 0;
-            } else {
-                return calendar.NumberOfDays ();
-            }
-        }
-
-        public override int RowsInSection (UITableView tableview, int section)
-        {
-            if (null == calendar) {
-                return 0;
-            } else {
-                return calendar.NumberOfItemsForDay (section);
-            }
-        }
-
-        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
-        {
-            UITableViewCell cell = TableView.DequeueReusableCell (CalendarToCalendarItemSegueID);
-            // Should always get a prototype cell
-            NcAssert.True (null != cell);
-
-            McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
-
-            UILabel startLabel = (UILabel)cell.ViewWithTag (1);
-            UILabel durationLabel = (UILabel)cell.ViewWithTag (2);
-            UIImageView calendarImage = (UIImageView)cell.ViewWithTag (3);
-            UILabel titleLabel = (UILabel)cell.ViewWithTag (4);
-
-            if (c.AllDayEvent) {
-                startLabel.Text = "ALL DAY";
-                durationLabel.Text = "";
-            } else {
-                startLabel.Text = Pretty.ShortTimeString (c.StartTime);
-                durationLabel.Text = Pretty.CompactDuration (c);
-            }
-            calendarImage.Image = NachoClient.Util.DotWithColor (UIColor.Green);
-            var titleLabelFrame = titleLabel.Frame;
-            titleLabelFrame.Width = cell.Frame.Width - titleLabel.Frame.Left;
-            titleLabel.Frame = titleLabelFrame;
-            titleLabel.Text = c.Subject;
-            titleLabel.SizeToFit ();
-
-            return cell;
-        }
     }
 }

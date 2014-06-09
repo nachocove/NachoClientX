@@ -12,6 +12,7 @@ namespace NachoClient.iOS
         protected static UIFont _Font_AvenirNextRegular17 = null;
         protected static UIFont _Font_AvenirNextRegular14 = null;
         protected static UIFont _Font_AvenirNextMedium14 = null;
+        protected static UIFont _Font_AvenirNextUltraLight64 = null;
         protected static UIFont _Font_AvenirNextUltraLight32 = null;
         protected static UIFont _Font_AvenirNextUltraLight24 = null;
         protected static UIColor _Color_999999 = null;
@@ -19,6 +20,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_9B9B9B = null;
         protected static UIColor _Color_FFFFFF = null;
         protected static UIColor _Color_114645 = null;
+        protected static UIColor _Color_29CCBE = null;
         protected static UIColor _Color_NachoNowBackground = null;
 
         public A ()
@@ -58,6 +60,15 @@ namespace NachoClient.iOS
                     _Font_AvenirNextMedium14 = UIFont.FromName ("AvenirNext-Regular", 14);
                 }
                 return _Font_AvenirNextMedium14;
+            }
+        }
+
+        public static UIFont Font_AvenirNextUltraLight64 {
+            get {
+                if (null == _Font_AvenirNextUltraLight64) {
+                    _Font_AvenirNextUltraLight64 = UIFont.FromName ("AvenirNext-UltraLight", 64);
+                }
+                return _Font_AvenirNextUltraLight64;
             }
         }
 
@@ -121,6 +132,15 @@ namespace NachoClient.iOS
                     _Color_114645 = UIColor.FromRGB (0x11, 0x46, 0x45);
                 }
                 return _Color_114645;
+            }
+        }
+
+        public static UIColor Color_29CCBE {
+            get {
+                if (null == _Color_29CCBE) {
+                    _Color_29CCBE = UIColor.FromRGB (0x29, 0xcc, 0xbe);
+                }
+                return _Color_29CCBE;
             }
         }
 

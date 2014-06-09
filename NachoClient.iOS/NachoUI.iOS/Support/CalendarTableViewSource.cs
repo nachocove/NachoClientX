@@ -95,6 +95,8 @@ namespace NachoClient.iOS
         protected const int COMPACT_SUBJECT_TAG = 105;
         protected const int COMPACT_ICON_TAG = 106;
         protected const int COMPACT_TEXT_TAG = 107;
+        protected const int LINE_TAG = 108;
+        protected const int DOT_TAG = 109;
 
         /// <summary>
         /// Create the views, not the values, of the cell.
@@ -123,30 +125,41 @@ namespace NachoClient.iOS
                 var cellWidth = tableView.Frame.Width;
 
                 // Subject label view
-                var subjectLabelView = new UILabel (new RectangleF (65, 21, cellWidth - 65, 20));
+                var subjectLabelView = new UILabel (new RectangleF (65, 15, cellWidth - 65, 20));
                 subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
                 subjectLabelView.TextColor = A.Color_114645;
                 subjectLabelView.Tag = SUBJECT_TAG;
                 cell.ContentView.AddSubview (subjectLabelView);
 
                 // Duration label view
-                var durationLabelView = new UILabel (new RectangleF (65, 41, cellWidth - 65, 20));
+                var durationLabelView = new UILabel (new RectangleF (65, 35, cellWidth - 65, 20));
                 durationLabelView.Font = A.Font_AvenirNextMedium14;
                 durationLabelView.TextColor = A.Color_999999;
                 durationLabelView.Tag = DURATION_TAG;
                 cell.ContentView.AddSubview (durationLabelView);
 
                 // Location image view
-                var locationIconView = new UIImageView (new RectangleF (65, 65, 12, 12));
+                var locationIconView = new UIImageView (new RectangleF (65, 59, 12, 12));
                 locationIconView.Tag = LOCATION_ICON_TAG;
                 cell.ContentView.AddSubview (locationIconView);
 
                 // Location label view
-                var locationLabelView = new UILabel (new RectangleF (80, 61, cellWidth - 80, 20));
+                var locationLabelView = new UILabel (new RectangleF (80, 55, cellWidth - 80, 20));
                 locationLabelView.Font = A.Font_AvenirNextRegular14;
                 locationLabelView.TextColor = A.Color_999999;
                 locationLabelView.Tag = LOCATION_TEXT_TAG;
                 cell.ContentView.AddSubview (locationLabelView);
+
+                // Vertical line
+                var lineView = new UIView (new RectangleF (35, 0, 1, 20));
+                lineView.BackgroundColor = A.Color_NachoNowBackground;
+                lineView.Tag = LINE_TAG;
+                cell.ContentView.AddSubview (lineView);
+
+                // Dot image view
+                var dotView = new UIImageView (new RectangleF (29, 19, 12, 12));
+                dotView.Tag = DOT_TAG;
+                cell.ContentView.AddSubview (dotView);
 
                 // Subject label view
                 var compactSubjectLabelView = new UILabel (new RectangleF (56, 20, cellWidth - 56, 20));
@@ -225,15 +238,20 @@ namespace NachoClient.iOS
             // Subject label view
             var subject = Pretty.SubjectString (c.Subject);
 
+            var dotView = cell.ViewWithTag (DOT_TAG) as UIImageView;
             var subjectLabelView = cell.ViewWithTag (SUBJECT_TAG) as UILabel;
             var compactSubjectLabelView = cell.ViewWithTag (COMPACT_SUBJECT_TAG) as UILabel;
             compactSubjectLabelView.Hidden = !compactMode;
             subjectLabelView.Hidden = compactMode;
             if (compactMode) {
                 compactSubjectLabelView.Text = subject;
+                dotView.Frame = new RectangleF (29, 23, 12, 12);
+
             } else {
                 subjectLabelView.Text = subject;
+                dotView.Frame = new RectangleF (29, 18, 12, 12);
             }
+            dotView.Image = UIImage.FromBundle ("cal-dot-icn");
 
             // Duration label view
             var durationLabelView = cell.ViewWithTag (DURATION_TAG) as UILabel;
@@ -270,7 +288,7 @@ namespace NachoClient.iOS
                 } else {
                     eventString = String.Join (" : ", new string[] { locationString, durationString });
                 }
-                if(String.IsNullOrEmpty(eventString)) {
+                if (String.IsNullOrEmpty (eventString)) {
                     compactIconView.Hidden = true;
                     compactTextView.Hidden = true;
                 } else {
@@ -289,6 +307,12 @@ namespace NachoClient.iOS
                     locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
                     locationLabelView.Text = locationString;
                 }
+            }
+
+            var lineView = cell.ViewWithTag (LINE_TAG);
+            lineView.Hidden = compactMode;
+            if (!compactMode) {
+                lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
             }
 
             ConfigureSwipes (cell as MCSwipeTableViewCell, c.Id);
@@ -380,6 +404,47 @@ namespace NachoClient.iOS
             var imageView = new UIImageView (image);
             imageView.ContentMode = UIViewContentMode.Center;
             return imageView;
+        }
+
+        public override float GetHeightForHeader (UITableView tableView, int section)
+        {
+            if (compactMode) {
+                return 0;
+            } else {
+                return 75;
+            }
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, int section)
+        {
+            var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 75));
+            view.BackgroundColor = UIColor.White;
+            view.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
+            view.Layer.BorderWidth = 1;
+
+            var dayLabelView = new UILabel (new RectangleF (65, 21, tableView.Frame.Width - 65, 20));
+            dayLabelView.Font = A.Font_AvenirNextDemiBold17;
+            dayLabelView.TextColor = A.Color_114645;
+            view.AddSubview (dayLabelView);
+
+            var dateLabelView = new UILabel (new RectangleF (65, 41, tableView.Frame.Width - 65, 20));
+            dateLabelView.Font = A.Font_AvenirNextMedium14;
+            dateLabelView.TextColor = A.Color_999999;
+            view.AddSubview (dateLabelView);
+
+            var bigNumberView = new UILabel (new RectangleF (0, 0, 65, 75));
+            bigNumberView.Font = A.Font_AvenirNextUltraLight32;
+            bigNumberView.TextColor = A.Color_29CCBE;
+            bigNumberView.TextAlignment = UITextAlignment.Center;
+            view.AddSubview (bigNumberView);
+
+            var date = calendar.GetDateUsingDayIndex (section);
+
+            dayLabelView.Text = date.ToString ("dddd");
+            dateLabelView.Text = date.ToString ("MMMMM d, yyyy");
+            bigNumberView.Text = date.Day.ToString ();
+
+            return view;
         }
 
         public void MoveToFolder (UITableView tableView, McFolder folder, object cookie)

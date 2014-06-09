@@ -1021,6 +1021,7 @@
     <BundleResource Include="Resources\inbox-multi-select-default%402x.png" />
     <BundleResource Include="Resources\navbar-icn-newevent.png" />
     <BundleResource Include="Resources\navbar-icn-newevent%402x.png" />
+    <BundleResource Include="Resources\cal-dot-icn.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
