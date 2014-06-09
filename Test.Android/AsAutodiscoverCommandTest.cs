@@ -175,7 +175,7 @@ namespace Test.iOS
                         httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
-                });
+                }, testEndingDbState: false);
             }
         }
 
@@ -211,7 +211,7 @@ namespace Test.iOS
                 }, (httpRequest, httpResponse) => {
                     httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
                     httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                }, resultKind: errorKind);
+                }, resultKind: errorKind, testEndingDbState:false);
             }
         }
 
@@ -279,7 +279,7 @@ namespace Test.iOS
                         httpResponse.StatusCode = HttpStatusCode.OK;
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
-                });
+                }, testEndingDbState: false);
             }
         }
 
@@ -418,8 +418,6 @@ namespace Test.iOS
         [SetUp]
         public void Setup ()
         {
-            Log.Info (Log.LOG_TEST, "Setup began");
-
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
 
             MockDnsQueryRequest.ProvideDnsQueryResponseMessage = null;
@@ -441,9 +439,6 @@ namespace Test.iOS
             phonyServer.Scheme = "/phonyscheme";
             phonyServer.UsedBefore = true;
 
-//            phonyServer.Host = "";
-//            phonyServer.UsedBefore = false;
-//            phonyServer.Id = 5;
             NcModel.Instance.Db.Insert (phonyServer);
 
             mockContext = new MockContext ();
@@ -456,12 +451,6 @@ namespace Test.iOS
             // flush the certificate cache so it doesn't interfere with future tests
             var instance = ServerCertificatePeek.Instance; // do this in case instance has not yet been created
             ServerCertificatePeek.TestOnlyFlushCache ();
-        }
-
-        [TearDown]
-        public void Teardown ()
-        {
-            Log.Info (Log.LOG_TEST, "Teardown began");
         }
 
         // return good xml if the robot should pass, bad otherwise
@@ -502,7 +491,7 @@ namespace Test.iOS
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
             Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
-            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified)
+            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified, bool testEndingDbState = true)
         {
             var autoResetEvent = new AutoResetEvent(false);
 
@@ -552,9 +541,12 @@ namespace Test.iOS
             bool didFinish = autoResetEvent.WaitOne (8000);
             Assert.IsTrue (didFinish, "Operation did not finish");
 
-            // Test that the server record was updated
-//            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
-//            ServerTrueAssertions (mockContext.Server, serv);
+            if (testEndingDbState) {
+                // Test that the server record was updated
+                McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+                ServerTrueAssertions (mockContext.Server, serv);
+            }
+
         }
 
         private void ServerTrueAssertions (McServer expected, McServer actual)
