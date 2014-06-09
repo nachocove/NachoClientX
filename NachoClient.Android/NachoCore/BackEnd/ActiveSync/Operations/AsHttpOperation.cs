@@ -336,8 +336,49 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)HttpOpEvt.E.Final, "HTTPOPFIN", endEvent, null);
         }
 
+        private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
+        {
+            XDocument doc;
+            try {
+                doc = Owner.ToXDocument (this);
+            } catch (AsCommand.AbortCommandException) {
+                request = null;
+                return false;
+            }
+            request = new HttpRequestMessage (Owner.Method (this), ServerUri);
+            if (null != doc) {
+                Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
+                if (Owner.UseWbxml (this)) {
+                    var stream = doc.ToWbxmlStream (Owner.IsContentLarge (this), cToken);
+                    var content = new StreamContent (stream);
+                    request.Content = content;
+                    request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
+                    request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
+                } else {
+                    // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
+                    // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
+                    // Method once bug is fixed.
+                    var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
+                    request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
+                }
+            }
+            var mime = Owner.ToMime (this);
+            if (null != mime) {
+                request.Content = mime;
+            }
+            request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
+            if (Owner.DoSendPolicyKey (this)) {
+                request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
+            }
+            request.Headers.Add ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
+            return true;
+        }
+
         private async void AttemptHttp ()
         {
+            Cts = new CancellationTokenSource ();
+            var cToken = Cts.Token;
+
             var handler = new HttpClientHandler () {
                 AllowAutoRedirect = false,
                 PreAuthenticate = true
@@ -348,46 +389,16 @@ namespace NachoCore.ActiveSync
             }
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
             Client.Timeout = this.Timeout;
-            XDocument doc;
-            try {
-                doc = Owner.ToXDocument (this);
-            } catch (AsCommand.AbortCommandException) {
+
+            HttpRequestMessage request = null;
+            if (!CreateHttpRequest (out request, cToken)) {
                 Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
                 HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
                 return;
             }
-            HttpRequestMessage request = null;
             HttpResponseMessage response = null;
 
             try {
-                Cts = new CancellationTokenSource ();
-                CancellationToken cToken = Cts.Token;
-                request = new HttpRequestMessage (Owner.Method (this), ServerUri);
-                if (null != doc) {
-                    Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
-                    if (Owner.UseWbxml (this)) {
-                        var stream = doc.ToWbxmlStream (Owner.IsContentLarge (this), cToken);
-                        var content = new StreamContent (stream);
-                        request.Content = content;
-                        request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
-                        request.Content.Headers.Add ("Content-Type", ContentTypeWbxml);
-                    } else {
-                        // See http://stackoverflow.com/questions/957124/how-to-print-xml-version-1-0-using-xdocument.
-                        // Xamarin bug: this prints out the wrong decl, which breaks autodiscovery. Revert to SO
-                        // Method once bug is fixed.
-                        var xmlText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + doc.ToString ();
-                        request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
-                    }
-                }
-                var mime = Owner.ToMime (this);
-                if (null != mime) {
-                    request.Content = mime;
-                }
-                request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
-                if (Owner.DoSendPolicyKey (this)) {
-                    request.Headers.Add ("X-MS-PolicyKey", BEContext.ProtocolState.AsPolicyKey);
-                }
-                request.Headers.Add ("MS-ASProtocolVersion", BEContext.ProtocolState.AsProtocolVersion);
                 // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
                 // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
                 // assume the IHttpClient instance has been abandoned.
