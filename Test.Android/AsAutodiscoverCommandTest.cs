@@ -26,6 +26,7 @@ using System.Linq;
 
 /* Important: Auto-d uses xml, not wbxml */
 /* Details about HTTP OPTIONS responses: http://msdn.microsoft.com/en-us/library/jj127441(v=exchg.140).aspx */
+using System.Net;
 
 namespace Test.iOS
 {
@@ -54,6 +55,7 @@ namespace Test.iOS
         }
     }
         
+
     public class BaseAutoDiscoverTests : AsAutodiscoverCommandTest
     {
         // Test that each of the 8 Sx complete successfully
@@ -61,14 +63,14 @@ namespace Test.iOS
         [TestFixture]
         public class BasicSuccessfulResponses : AsAutodiscoverCommandTest
         {
-//            [Test]
+            [Test]
             public void TestS1 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S1);
             }
 
-//            [Test]
+            [Test]
             public void TestS2 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -77,7 +79,7 @@ namespace Test.iOS
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
             // the HTTPS access following a DNS SRV lookup
-//            [Test]
+            [Test]
             public void TestS3 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -86,7 +88,7 @@ namespace Test.iOS
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
             // the HTTPS access following a DNS SRV lookup
-//            [Test]
+            [Test]
             public void TestS4 ()
             {
                 string xml = CommonMockData.AutodOffice365ResponseXml;
@@ -123,7 +125,7 @@ namespace Test.iOS
         [TestFixture]
         public class TestStep5Responses : AsAutodiscoverCommandTest
         {
-//            [Test]
+            [Test]
             public void TestValidRedirectThenSuccess ()
             {
                 string redirUrl = CommonMockData.RedirectionUrl;
@@ -131,7 +133,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (true, xml, redirUrl, MockSteps.S3, sm => {});  
             }
 
-//            [Test]
+            [Test]
             public void TestValidRedirectThenFailure ()
             {
                 string redirUrl = CommonMockData.RedirectionUrl;
@@ -141,7 +143,7 @@ namespace Test.iOS
                 });
             }
 
-//            [Test]
+            [Test]
             public void TestInvalidRedirect ()
             {
                 string redirUrl = CommonMockData.InvalidRedirUrl;
@@ -178,38 +180,77 @@ namespace Test.iOS
         }
 
         [TestFixture]
+        public class Test600XmlErrorCodes : AsAutodiscoverCommandTest
+        {
+            // 600 = Invalid Request
+//            [Test]
+            public void Test600ErrorCode ()
+            {
+                var errorKind600 = NcResult.SubKindEnum.Error_AutoDError600;
+                string xml = CommonMockData.AutodPhony600Response;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, errorKind600);
+            }
+
+            // 601 = Requested schema version not supported
+//            [Test]
+            public void Test601ErrorCode ()
+            {
+                var errorKind601 = NcResult.SubKindEnum.Error_AutoDError600;
+                string xml = CommonMockData.AutodPhony601Response;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, errorKind601);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, NcResult.SubKindEnum errorKind)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
+
+                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                    return PassRobotForStep (step, request, xml);
+                }, provideDnsResponse => {
+                }, (httpRequest, httpResponse) => {
+                    httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                    httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                }, resultKind: errorKind);
+            }
+        }
+
+        [TestFixture]
         public class AutodTestFailure : AsAutodiscoverCommandTest
         {
-            /* TODO: This test is failing because it does not retry enough times. Fix it!
-             */
             // Ensure that a server name test failure results in re-tries.
-//            [Test]
+            [Test]
             public void TestFailureHasRetries ()
             {
-                int expectedRetries = 6; // 7 works, but is not enough
+                int expectedRetries = 15;
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;
 
+                // bad gateway forces retries
+                HttpStatusCode status = HttpStatusCode.BadGateway;
+
                 // pass POST request, but fail OPTIONS
-                TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (successXml, failureXml, status, MockSteps.S1);
                 Assert.AreEqual (expectedRetries, MockHttpClient.AsyncCalledCount, "Should match the expected number of Async calls");
-                Log.Info (Log.LOG_TEST, "AsyncCalledCount: {0}", MockHttpClient.AsyncCalledCount);
             }
 
             // Ensure that a server name test failure results in the Owner being 
             // asked to supply a new server name.
-//            [Test]
+            [Test]
             public void AsksOwnerForServerNameOnFailure ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;
 
+                // not found forces hard fail
+                HttpStatusCode status = HttpStatusCode.NotFound;
+
                 // pass POST request, but fail OPTIONS
-                TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (successXml, failureXml, status, MockSteps.S1);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, string optionsXml, MockSteps step)
+            private void TestAutodPingWithXmlResponse (string xml, string optionsXml, HttpStatusCode status, MockSteps step)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
@@ -230,12 +271,12 @@ namespace Test.iOS
 
                     // provide valid redirection headers if needed
                     if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                     } else if (isOptions) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.NotFound;
+                        httpResponse.StatusCode = status;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = HttpStatusCode.OK;
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -247,7 +288,7 @@ namespace Test.iOS
         {
             // Ensure that an authentication failure during S1, S2, or S3 results in 
             // the Owner being asked to supply new credentials.
-//            [Test]
+            [Test]
             public void NewCredsUponAuthFailureS1 ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -256,7 +297,7 @@ namespace Test.iOS
                 TestAutodPingWithXmlResponse (successXml, failureXml, MockSteps.S1);
             }
 
-//            [Test]
+            [Test]
             public void NewCredsUponAuthFailureS3 ()
             {
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -269,12 +310,15 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                // gets set to true when creds have been provided so that autod can proceed
+                bool hasProvidedCreds = false;
+
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST_FAIL");
                 }, request => {
                     return PassRobotForStep (step, request, xml, optionsXml: optionsXml);
                 }, provideDnsResponse => {
-                },(httpRequest, httpResponse) => {
+                }, (httpRequest, httpResponse) => {
                     // check for OPTIONS header and set status code to Unauthorized to force auth failure
                     bool isOptions = httpRequest.Method.ToString () == "OPTIONS";
                     // check for redirection and set the response to 302 (Found) if true
@@ -284,11 +328,79 @@ namespace Test.iOS
                     if (isRedirection) {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-
-                        // set step to be S1 because you must provide success xml to POST requests after this point
-                        step = MockSteps.S1;
-                    } else if (isOptions) {
+                    } else if (isOptions && !hasProvidedCreds) {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.Unauthorized;
+                        hasProvidedCreds = true;
+                    } else {
+                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                    }
+                });
+            }
+        }
+
+        [TestFixture]
+        public class SingleTimeoutSuccess : AsAutodiscoverCommandTest
+        {
+            /* The timeout flag is ASHTTPTTC */
+
+            private void SetTimeoutConstants ()
+            {
+                McMutables.Set ("HTTPOP", "TimeoutSeconds", "3");
+            }
+
+            [Test]
+            public void TestS1 ()
+            {
+                SetTimeoutConstants ();
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+            }
+
+            [Test]
+            public void TestS2 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+            }
+
+            // Ensure that the Owner is called-back when a valid cert is encountered in
+            // the HTTPS access following a DNS SRV lookup
+            [Test]
+            public void TestS3 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+            }
+
+            // Ensure that the Owner is called-back when a valid cert is encountered in
+            // the HTTPS access following a DNS SRV lookup
+            [Test]
+            public void TestS4 ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S4);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
+
+                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                    return PassRobotForStep (step, request, xml);
+                }, provideDnsResponse => {
+                    if (step == MockSteps.S4) {
+                        provideDnsResponse.ParseResponse (dnsByteArray);
+                    }
+                }, (httpRequest, httpResponse) => {
+                    // check for redirection and set the response to 302 (Found) if true
+                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
+
+                    // provide valid redirection headers if needed
+                    if (isRedirection) {
+                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                     } else {
                         httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
@@ -297,8 +409,6 @@ namespace Test.iOS
             }
         }
     }
-
-
 
     public class AsAutodiscoverCommandTest
     {
@@ -312,11 +422,28 @@ namespace Test.iOS
 
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
 
+            MockDnsQueryRequest.ProvideDnsQueryResponseMessage = null;
+
+            MockHttpClient.AsyncCalledCount = 0; // reset counter
+            MockHttpClient.ExamineHttpRequestMessage = null;
+            MockHttpClient.ProvideHttpResponseMessage = null;
+            MockHttpClient.HasServerCertificate = null;
+            MockNcCommStatus.Instance = null;
+
+            autodCommand = null;
+            mockContext = null;
+
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
-            phonyServer.Host = "";
-            phonyServer.UsedBefore = false;
-            phonyServer.Id = 5;
+            phonyServer.Host = "/Phony-Server";
+            phonyServer.Path = "/phonypath";
+            phonyServer.Port = 500;
+            phonyServer.Scheme = "/phonyscheme";
+            phonyServer.UsedBefore = true;
+
+//            phonyServer.Host = "";
+//            phonyServer.UsedBefore = false;
+//            phonyServer.Id = 5;
             NcModel.Instance.Db.Insert (phonyServer);
 
             mockContext = new MockContext ();
@@ -325,23 +452,22 @@ namespace Test.iOS
             mockContext.Server.Host = "";
             mockContext.Server.UsedBefore = false;
             mockContext.Server.Id = 1;
+
+            // flush the certificate cache so it doesn't interfere with future tests
+            var instance = ServerCertificatePeek.Instance; // do this in case instance has not yet been created
+            ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
         [TearDown]
         public void Teardown ()
         {
             Log.Info (Log.LOG_TEST, "Teardown began");
-
-            // flush the certificate cache so it doesn't interfere with future tests
-            var instance = ServerCertificatePeek.Instance; // do this in case instance has not yet been created
-            ServerCertificatePeek.TestOnlyFlushCache ();
-
-            MockHttpClient.AsyncCalledCount = 0; // reset counter
         }
 
         // return good xml if the robot should pass, bad otherwise
         public string PassRobotForStep (MockSteps step, HttpRequestMessage request, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
         {
+            string redirUrl = CommonMockData.RedirectionUrl;
             string requestUri = request.RequestUri.ToString ();
             string s1Uri = "https://" + CommonMockData.Host;
             string s2Uri = "https://autodiscover." + CommonMockData.Host;
@@ -350,6 +476,8 @@ namespace Test.iOS
             case "POST":
                 if (step == MockSteps.S1 && requestUri.Substring (0, s1Uri.Length) == s1Uri) {
                     return xml;
+                } else if (requestUri == redirUrl) {
+                    return CommonMockData.AutodOffice365ResponseXml;
                 } else if (step == MockSteps.S2 && requestUri.Substring (0, s2Uri.Length) == s2Uri) {
                     return xml;
                 }
@@ -360,6 +488,9 @@ namespace Test.iOS
                 }
                 break;
             case "OPTIONS":
+                McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
+
+                ServerFalseAssertions (serv, mockContext.Server);
                 Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
 
                 string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
@@ -369,15 +500,14 @@ namespace Test.iOS
             return CommonMockData.AutodPhonyErrorResponse;
         }
 
-        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml, 
-            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
+        public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
+            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
+            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified)
         {
-            var interlock = new BlockingCollection<bool> ();
+            var autoResetEvent = new AutoResetEvent(false);
 
-            bool setTrueBySuccessEvent = false;
-            NcStateMachine sm = CreatePhonySM (val => {
-                setTrueBySuccessEvent = val;
-                interlock.Add(true);
+            NcStateMachine sm = CreatePhonySM (() => {
+                autoResetEvent.Set ();
             });
 
             provideSm (sm);
@@ -415,24 +545,38 @@ namespace Test.iOS
             autod.DnsQueryRequestType = typeof(MockDnsQueryRequest);
             autod.HttpClientType = typeof(MockHttpClient);
 
-            autod.Execute (sm);
-
             autodCommand = autod;
 
-            bool didFinish = false;
-            if (!interlock.TryTake (out didFinish, 8000)) {
-                Assert.Fail ("Failed in TryTake clause");
-            }
-            Assert.IsTrue (didFinish, "Autodiscovery operation should finish");
-            Assert.IsTrue (setTrueBySuccessEvent, "State machine should set setTrueBySuccessEvent value to true");
+            autod.Execute (sm);
+
+            bool didFinish = autoResetEvent.WaitOne (8000);
+            Assert.IsTrue (didFinish, "Operation did not finish");
 
             // Test that the server record was updated
-//            var serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+//            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+//            ServerTrueAssertions (mockContext.Server, serv);
         }
 
-        private NcStateMachine CreatePhonySM (Action<bool> action)
+        private void ServerTrueAssertions (McServer expected, McServer actual)
         {
-            bool setTrueBySuccessEvent = false;
+            Assert.AreEqual (expected.Host, actual.Host, "Stored server host does not match expected");
+            Assert.AreEqual (expected.Path, actual.Path, "Stored server path does not match expected");
+            Assert.AreEqual (expected.Port, actual.Port, "Stored server port does not match expected");
+            Assert.AreEqual (expected.Scheme, actual.Scheme, "Stored server scheme does not match expected");
+            Assert.AreEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag does not match expected");
+        }
+
+        private void ServerFalseAssertions (McServer expected, McServer actual)
+        {
+            Assert.AreNotEqual (expected.Host, actual.Host, "Stored server host should not equal host in context");
+            Assert.AreNotEqual (expected.Path, actual.Path, "Stored server path should not equal path in context");
+            Assert.AreNotEqual (expected.Port, actual.Port, "Stored server port should not equal port in context");
+            Assert.AreNotEqual (expected.Scheme, actual.Scheme, "Stored server scheme should not equal scheme in context");
+            Assert.AreNotEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag should not equal flag in context");
+        }
+
+        private NcStateMachine CreatePhonySM (Action action)
+        {
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
@@ -447,17 +591,16 @@ namespace Test.iOS
                             new Trans { 
                                 Event = (uint)SmEvt.E.Success, 
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Success event was posted to Owner");
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    Log.Info (Log.LOG_TEST, "Success event was posted to Owner SM");
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans { 
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk, 
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to verify provided certificate with UI");
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to verify provided certificate with UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM _verified_ provided certificate. Moving on.");
+                                    PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
                                 State = (uint)St.Start },
                         }
@@ -469,9 +612,8 @@ namespace Test.iOS
                                 // TestInvalidRedirect lands here. TestValidRedirectThenFailure should too
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetServConf, 
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to get server config from UI");
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to get server config from UI");
+                                    action();
 //                                    PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.ServerSet, "TEST-ASPCDSSC");
                                 },
                                 State = (uint)St.Start },
@@ -479,16 +621,17 @@ namespace Test.iOS
                                 // NewCredsUponAuthFailure test lands here
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner was asked to get new credentials from UI");
-                                    setTrueBySuccessEvent = true;
-                                    action (setTrueBySuccessEvent);
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to get new credentials from UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM provided new credentials. Moving on.");
+                                    PostAutodEvent ((uint)AsAutodiscoverCommand.TlEvt.E.CredSet, "TEST-ASPCDSC");
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 // NewCredsUponAuthFailure test lands here
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetCertOk,
                                 Act = delegate () {
-                                    Log.Info (Log.LOG_TEST, "Owner _verified_ provided certificate. Moving on.");
+                                    Log.Info (Log.LOG_TEST, "Owner SM was asked to verify provided certificate with UI");
+                                    Log.Info (Log.LOG_TEST, "Owner SM _verified_ provided certificate. Moving on.");
                                     PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
                                 State = (uint)PhonySt.UITest },

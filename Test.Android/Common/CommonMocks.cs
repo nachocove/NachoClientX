@@ -57,6 +57,8 @@ namespace Test.iOS
 
         // Invalid Request
         public const string AutodPhony600Response = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>  \n<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006\">\n  <Response>\n    <Error Time=\"09:28:57.8739220\" Id=\"2715916636\">\n      <ErrorCode>600</ErrorCode>\n      <Message>Invalid Request</Message>\n      <DebugData />\n    </Error>\n  </Response>\n</Autodiscover>";
+        // Schema version not supported by server
+        public const string AutodPhony601Response = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Autodiscover\nxmlns:autodiscover=\"http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006\">\n   <autodiscover:Response>\n      <autodiscover:Error Time=\"16:56:32.6164027\" Id=\"1054084152\">\n          <autodiscover:ErrorCode>601</autodiscover:ErrorCode>\n          <autodiscover:Message>Requested schema version not supported</autodiscover:Message>\n          <autodiscover:DebugData />\n      </autodiscover:Error>\n   </autodiscover:Response>\n</Autodiscover>";
     }
 
     public class MockHttpClient : IHttpClient
@@ -132,7 +134,7 @@ namespace Test.iOS
 
         public MockContext ()
         {
-            Owner = null; // Should not be accessed.
+            Owner = new MockOwner ();
             ProtoControl = null; // Should not be accessed.
             ProtocolState = new McProtocolState ();
             // READ AsPolicyKey
@@ -150,6 +152,30 @@ namespace Test.iOS
                 Password = "password",
             };
         }
+    }
+
+    public class MockOwner : IProtoControlOwner
+    {
+        // Helper property added for test purposes only
+        public static NcResult Status { get; set; }
+
+        // Use these to check which error code was posted
+        public void StatusInd (ProtoControl sender, NcResult status) {
+            Status = status;
+        }
+        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens) {
+            Status = status;
+        }
+
+        public MockOwner () {
+            Status = null;
+        }
+
+        // we aren't interested in these
+        public void CredReq (ProtoControl sender) {}
+        public void ServConfReq (ProtoControl sender) {}
+        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {}
+        public void SearchContactsResp (ProtoControl sender, string prefix, string token) {}
     }
 
     public class MockNcCommStatus : INcCommStatus
