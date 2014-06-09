@@ -345,8 +345,7 @@ namespace NachoClient
         public static UIColor sixColor = new UIColor (50.0f / 255.0f, 10.0f / 255.0f, 14.0f / 255.0f, 1.0f);
         public static UIColor sevenColor = new UIColor (10.0f / 255.0f, 217.0f / 255.0f, 150.0f / 255.0f, 1.0f);
         public static UIColor eightColor = new UIColor (34.0f / 255.0f, 20.0f / 255.0f, 98.0f / 255.0f, 1.0f);
-        public static List<UIColor> colors = new List<UIColor> ()
-        {
+        public static List<UIColor> colors = new List<UIColor> () {
             UIColor.LightGray,
             greenColor,
             redColor,
@@ -378,7 +377,7 @@ namespace NachoClient
         {
             var size = new SizeF (40, 40);
             var origin = new PointF (0, 0);
-            var content = NameToLetters(from);
+            var content = NameToLetters (from);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
@@ -403,10 +402,10 @@ namespace NachoClient
         public static string NameToLetters (string name)
         {
             var Initials = "";
-            Console.WriteLine ("name: " + name);
+//            Console.WriteLine ("name: " + name);
             string[] names = name.Split (new char [] { ',', ' ' });
-            foreach (var item in names){
-                Console.WriteLine("var: " + item);
+            foreach (var item in names) {
+//                Console.WriteLine ("var: " + item);
             }
             if (1 == names.Length) {
                 Initials = (names [0].Substring (0, 1)).ToCapitalized ();
@@ -415,26 +414,25 @@ namespace NachoClient
                 if (0 < name.IndexOf (',')) {
                     // Last name, First name
                     Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                    Console.WriteLine ("Case 1: " + Initials);
+//                    Console.WriteLine ("Case 1: " + Initials);
                 } else {
                     // First name, Last name
                     Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
-                    Console.WriteLine ("Case 2: " + Initials);
+//                    Console.WriteLine ("Case 2: " + Initials);
                 }
             }
             if (2 < names.Length) {
                 if (0 < name.IndexOf (',')) {
                     // Last name, First name
                     Initials = (names [2].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                    Console.WriteLine ("Case 3: " + Initials);
-                }
-                else if (-1 == name.IndexOf (',')) {
-                    if ((names [1].Substring (0, 1)).ToLower() != (names [1].Substring (0, 1))) {
+//                    Console.WriteLine ("Case 3: " + Initials);
+                } else if (-1 == name.IndexOf (',')) {
+                    if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
                         Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
                     } else {
                         Initials = (names [0].Substring (0, 1)).ToCapitalized ();
                     }
-                    Console.WriteLine ("Case 4: " + Initials);
+//                    Console.WriteLine ("Case 4: " + Initials);
                 }
             }
 
@@ -464,11 +462,9 @@ namespace NachoClient
                 var colorNum = person.CircleColor;
                 if (person.Picture != null) {
                     //Todo
-                } 
-                else if (colorNum > 0) {
+                } else if (colorNum > 0) {
                     circleColor = colorNum;  
-                } 
-                else if (colorNum == 0) {
+                } else if (colorNum == 0) {
                     circleColor = randomNumber;
                     McContact.UpdateUserCircleColor (randomNumber, person.DisplayEmailAddress);
                 }

@@ -31,75 +31,90 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
+                            <view contentMode="scaleToFill" id="Z7x-qk-TR0" userLabel="PhonyView1">
+                                <rect key="frame" x="28" y="300" width="265" height="116"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                            </view>
+                            <view contentMode="scaleToFill" id="YUG-dS-1xg" userLabel="PhonyView2">
+                                <rect key="frame" x="38" y="295" width="245" height="111"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                            </view>
                             <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
                                 <rect key="frame" x="0.0" y="160" width="320" height="127"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <view contentMode="scaleToFill" id="LK2-5y-My2" customClass="UITableView">
-                                <rect key="frame" x="20" y="305" width="285" height="111"/>
+                                <rect key="frame" x="21" y="305" width="285" height="111"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
-                            <view contentMode="scaleToFill" id="Xjy-3n-xIA">
+                            <view contentMode="scaleToFill" id="Xjy-3n-xIA" userLabel="Calendar View">
                                 <rect key="frame" x="0.0" y="0.0" width="320" height="112"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <subviews>
-                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="cal-close-grabber.png" id="wZZ-JO-qCp">
+                                    <imageView userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="cal-handle.png" id="wZZ-JO-qCp">
                                         <rect key="frame" x="0.0" y="87" width="320" height="25"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                     </imageView>
                                     <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="AA2-uw-Sad">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="87"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     </tableView>
+                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="cal-close-grabber.png" id="PiF-Mg-iGb" userLabel="Image View - cal-close-gripper.png">
+                                        <rect key="frame" x="0.0" y="87" width="320" height="25"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    </imageView>
                                 </subviews>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="HwW-s6-dM7">
-                            <connections>
-                                <action selector="composeButton:" destination="ygr-ff-C2f" id="grY-gx-tV8"/>
-                                <segue destination="lOe-mG-VS5" kind="push" identifier="NachoNowToCompose" id="JWi-mA-RVD"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="calendarCloseView" destination="PiF-Mg-iGb" id="bHh-6e-Lqz"/>
                         <outlet property="calendarTableView" destination="AA2-uw-Sad" id="XvA-gG-im4"/>
                         <outlet property="calendarThumbView" destination="wZZ-JO-qCp" id="Tqz-bx-MqT"/>
                         <outlet property="calendarView" destination="Xjy-3n-xIA" id="H26-sA-fEv"/>
                         <outlet property="cancelButton" destination="oqK-FW-0L1" id="G9e-ty-vGO"/>
                         <outlet property="carouselView" destination="y3I-K7-FUQ" id="T7e-1d-zpR"/>
-                        <outlet property="composeButton" destination="HwW-s6-dM7" id="Pm7-Ew-3AZ"/>
+                        <outlet property="composeButton" destination="FUI-0Y-Rul" id="eJU-2G-GMs"/>
                         <outlet property="deleteButton" destination="q2b-Qv-RwO" id="3UR-BJ-lwK"/>
                         <outlet property="inboxTableView" destination="LK2-5y-My2" id="ldy-tx-2df"/>
                         <outlet property="nachoButton" destination="Mqq-sh-bns" id="fSw-0x-68Y"/>
+                        <outlet property="newMeetingButton" destination="7Rc-PF-jdp" id="JDw-Li-2kf"/>
+                        <outlet property="phonyView1" destination="Z7x-qk-TR0" id="Eud-6R-3pQ"/>
+                        <outlet property="phonyView2" destination="YUG-dS-1xg" id="Frr-cF-vF5"/>
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
                         <outlet property="saveButton" destination="Gfu-QM-YrL" id="6Hc-Oe-sAO"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
-                        <segue destination="ef5-Td-j3Y" kind="push" identifier="NachoNowToCalendar" id="8JW-bP-0Qw"/>
                         <segue destination="jTc-Vg-SXZ" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="ciI-Ve-Wsq"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" id="Q8y-4K-BAb"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItemEdit" id="wNy-ed-w10"/>
+                        <segue destination="lOe-mG-VS5" kind="push" identifier="NachoNowToCompose" id="QzA-3p-JuT"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="navbar-icn-inbox-active.png" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
+                <barButtonItem image="navbar-icn-menu-active.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
+                <barButtonItem image="navbar-icn-inbox.png" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
                 <barButtonItem systemItem="trash" id="q2b-Qv-RwO" userLabel="Bar Button Item - Delete"/>
                 <barButtonItem systemItem="save" id="Gfu-QM-YrL" userLabel="Bar Button Item - Save"/>
                 <barButtonItem systemItem="cancel" id="oqK-FW-0L1" userLabel="Bar Button Item - Cancel"/>
+                <barButtonItem image="navbar-icn-newevent.png" id="7Rc-PF-jdp" userLabel="Bar Button Item - New Event"/>
+                <barButtonItem image="navbar-icn-newEmail.png" id="FUI-0Y-Rul" userLabel="Bar Button Item - Compose"/>
             </objects>
             <point key="canvasLocation" x="-2205" y="-1910"/>
         </scene>
@@ -118,7 +133,6 @@
                     <connections>
                         <segue destination="UKd-1I-ARy" kind="custom" identifier="SidebarToFolders" customClass="SWRevealViewControllerSegue" id="DSB-SJ-fIa"/>
                         <segue destination="jTc-Vg-SXZ" kind="custom" identifier="SidebarToContacts" customClass="SWRevealViewControllerSegue" id="p6V-c0-caL"/>
-                        <segue destination="ef5-Td-j3Y" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="JJM-dg-rMA"/>
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="n8e-Oj-wO2"/>
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="vRC-Oi-s8D"/>
                         <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="wdd-u9-GeA"/>
@@ -129,6 +143,7 @@
                         <segue destination="bBy-CW-6ix" kind="custom" identifier="SidebarToAttachments" customClass="SWRevealViewControllerSegue" id="Pu5-w4-aps"/>
                         <segue destination="sao-Pd-u1t" kind="custom" identifier="SidebarToTasks" customClass="SWRevealViewControllerSegue" id="wOY-cG-Eg7"/>
                         <segue destination="pKz-1u-PCL" kind="custom" identifier="SidebarToFiles" customClass="SWRevealViewControllerSegue" id="i3N-5g-evG"/>
+                        <segue destination="d8n-da-LP7" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="g6P-mU-XFC"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -136,109 +151,50 @@
             <point key="canvasLocation" x="-2205" y="-1169"/>
         </scene>
         <!--Calendar View Controller - Calendar-->
-        <scene sceneID="6Ul-I4-1j0">
+        <scene sceneID="lp3-oi-9fg">
             <objects>
-                <tableViewController storyboardIdentifier="CalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ef5-Td-j3Y" customClass="CalendarViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="ejc-y1-8q9">
+                <viewController storyboardIdentifier="CalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="d8n-da-LP7" customClass="CalendarViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="T2Q-uC-Zpf">
                         <rect key="frame" x="0.0" y="64" width="320" height="416"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <searchBar key="tableHeaderView" contentMode="redraw" id="d12-Sj-4ft">
-                            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                            <textInputTraits key="textInputTraits"/>
-                            <connections>
-                                <outlet property="delegate" destination="ef5-Td-j3Y" id="SR8-Md-sfT"/>
-                            </connections>
-                        </searchBar>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="CalendarToCalendarItem" id="BdV-el-rbL">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="BdV-el-rbL" id="moG-EF-Nk7">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Top" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="HyL-um-IDe">
-                                            <rect key="frame" x="15" y="2" width="58" height="21"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="2" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Bottom" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="q9e-XX-IBn">
-                                            <rect key="frame" x="15" y="20" width="58" height="21"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                            <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" tag="4" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Information" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Wfm-GP-mQy" userLabel="Label - Information">
-                                            <rect key="frame" x="110" y="2" width="190" height="39"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <imageView userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="uNk-Ro-Fe4">
-                                            <rect key="frame" x="81" y="2" width="21" height="22"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        </imageView>
-                                    </subviews>
-                                </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToCalendarItem" id="X0Z-QM-gfH"/>
-                                </connections>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="ef5-Td-j3Y" id="6pu-pr-3bW"/>
-                            <outlet property="delegate" destination="ef5-Td-j3Y" id="5Hg-Qp-f7R"/>
-                        </connections>
-                    </tableView>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" id="OaC-4H-Y1h">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="78"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                            </view>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NDf-lZ-rUS">
+                                <rect key="frame" x="0.0" y="78" width="326" height="339"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            </tableView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Calendar" id="lSV-M1-mR3">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="tmU-Hu-v9N"/>
-                    </navigationItem>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <nil key="simulatedBottomBarMetrics"/>
+                    <navigationItem key="navigationItem" title="Calendar" id="wf8-9h-PY7"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
-                        <outlet property="addButton" destination="JIw-qG-pPK" id="LMB-DB-l90"/>
-                        <outlet property="nachoButton" destination="1y0-Ud-A7G" id="Rdd-eH-X1v"/>
-                        <outlet property="revealButton" destination="tmU-Hu-v9N" id="YzY-zA-O1i"/>
-                        <outlet property="searchButton" destination="0m8-eh-T52" id="MkM-Ej-JNS"/>
-                        <outlet property="searchDisplayController" destination="wxJ-Pi-exX" id="X6Y-Fe-FOd"/>
-                        <outlet property="switcherButton" destination="TIg-xV-rRe" id="OBz-gZ-mG8"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="P1C-rg-Luy"/>
+                        <outlet property="calendarTableView" destination="NDf-lZ-rUS" id="Zhg-FK-Mel"/>
+                        <outlet property="dateView" destination="OaC-4H-Y1h" id="g76-sY-DyU"/>
+                        <outlet property="nachoButton" destination="TQm-zA-PCB" id="B2c-bY-AYR"/>
+                        <outlet property="revealButton" destination="fxd-gq-OpJ" id="n5i-C3-vu1"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="eK3-Wd-Zbv"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="vah-yS-677"/>
                     </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="dzm-K4-fVM" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem systemItem="add" id="JIw-qG-pPK">
-                    <connections>
-                        <segue destination="HgO-45-h9V" kind="push" identifier="CalendarToNewCalendarItem" id="5fj-Ta-mc9"/>
-                    </connections>
-                </barButtonItem>
-                <barButtonItem title="Item" id="1y0-Ud-A7G" userLabel="Bar Button Item - Nacho"/>
-                <barButtonItem systemItem="search" id="0m8-eh-T52" userLabel="Bar Button Item - Search"/>
-                <barButtonItem title="Item" id="TIg-xV-rRe" userLabel="Bar Button Item - Switcher"/>
-                <searchDisplayController id="wxJ-Pi-exX">
-                    <connections>
-                        <outlet property="delegate" destination="ef5-Td-j3Y" id="VQY-yl-m4r"/>
-                        <outlet property="searchBar" destination="d12-Sj-4ft" id="zmh-mB-i6s"/>
-                        <outlet property="searchContentsController" destination="ef5-Td-j3Y" id="fR1-ae-c6Z"/>
-                        <outlet property="searchResultsDataSource" destination="ef5-Td-j3Y" id="XCZ-LY-gqu"/>
-                        <outlet property="searchResultsDelegate" destination="ef5-Td-j3Y" id="6Qx-ZP-H2i"/>
-                    </connections>
-                </searchDisplayController>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem image="navbar-icn-menu.png" id="fxd-gq-OpJ" userLabel="Bar Button Item - revealButton"/>
+                <barButtonItem title="Item" id="TQm-zA-PCB" userLabel="Bar Button Item - nachoButton"/>
             </objects>
-            <point key="canvasLocation" x="-909" y="-1627"/>
+            <point key="canvasLocation" x="-1011" y="-1627"/>
         </scene>
         <!--Calendar Item View Controller - Calendar Item-->
         <scene sceneID="RpJ-bl-dQ1">
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -537,7 +493,7 @@
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -1464,15 +1420,18 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     <resources>
         <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
         <image name="cal-close-grabber.png" width="36" height="12"/>
+        <image name="cal-handle.png" width="320" height="11"/>
         <image name="calendar-3-48.png" width="48" height="48"/>
         <image name="check.png" width="23" height="20"/>
         <image name="clock-3-48.png" width="48" height="48"/>
         <image name="clock.png" width="22" height="22"/>
         <image name="ic_action_collection.png" width="32" height="32"/>
         <image name="list.png" width="20" height="18"/>
-        <image name="navbar-icn-inbox-active.png" width="24" height="24"/>
+        <image name="navbar-icn-inbox.png" width="24" height="24"/>
+        <image name="navbar-icn-menu-active.png" width="24" height="24"/>
         <image name="navbar-icn-menu.png" width="24" height="24"/>
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
+        <image name="navbar-icn-newevent.png" width="24" height="24"/>
     </resources>
     <color key="tintColor" red="0.20784313725490194" green="0.81568627450980391" blue="0.74509803921568629" alpha="1" colorSpace="deviceRGB"/>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
@@ -1481,21 +1440,20 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="vRC-Oi-s8D"/>
+        <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
         <segue reference="Oi3-nV-lAC"/>
         <segue reference="ebP-h4-BhC"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="gkM-dU-I3K"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="8JW-bP-0Qw"/>
+        <segue reference="i3N-5g-evG"/>
+        <segue reference="Pu5-w4-aps"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="eK3-Wd-Zbv"/>
+        <segue reference="vah-yS-677"/>
+        <segue reference="QzA-3p-JuT"/>
         <segue reference="RaB-9o-azo"/>
         <segue reference="Q8y-4K-BAb"/>
-        <segue reference="wNy-ed-w10"/>
-        <segue reference="FHc-YP-jWH"/>
-        <segue reference="JWi-mA-RVD"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="nAp-rc-bND"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="P1G-aN-KBc"/>
-        <segue reference="sGK-tB-hv0"/>
     </inferredMetricsTieBreakers>
 </document>

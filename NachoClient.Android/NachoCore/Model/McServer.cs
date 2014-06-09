@@ -43,12 +43,12 @@ namespace NachoCore.Model
 
 		public static McServer QueryById (int id)
 		{
-            return NcModel.Instance.Db.Table<McServer> ().SingleOrDefault (rec => id == rec.Id);
+            return NcModel.Instance.Db.Table<McServer> ().Where (rec => id == rec.Id).SingleOrDefault ();
 		}
 
 		public static McServer QueryByHost (string host)
 		{
-            return NcModel.Instance.Db.Table<McServer> ().SingleOrDefault (x => host == x.Host);
+            return NcModel.Instance.Db.Table<McServer> ().Where (x => host == x.Host).SingleOrDefault ();
 		}
 	}
 }

@@ -61,7 +61,7 @@ namespace NachoCore.Model
 
         public McRecurrence GetRecurrence ()
         {
-            return NcModel.Instance.Db.Table<McRecurrence> ().SingleOrDefault (x => x.TaskId == Id);
+            return NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.TaskId == Id).SingleOrDefault ();
         }
 
         public static ClassCodeEnum GetClassCode ()
@@ -137,7 +137,7 @@ namespace NachoCore.Model
                     // FIXME - capture Type too.
                     var bodyElement = child.Element (baseNs + Xml.AirSyncBase.Data);
                     if (null != bodyElement) {
-                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                        var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
                         if (null != saveAttr) {
                             BodyId = int.Parse (saveAttr.Value);
                         } else {

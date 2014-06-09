@@ -81,10 +81,10 @@ namespace NachoCore.Model
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
         {
-            return NcModel.Instance.Db.Table<McFolder> ().SingleOrDefault (x => 
+            return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
                 accountId == x.AccountId &&
             serverId == x.ServerId &&
-            true == x.IsClientOwned);
+            true == x.IsClientOwned).SingleOrDefault ();
         }
         /*
          * SYNCED FOLDERS:
@@ -230,7 +230,7 @@ namespace NachoCore.Model
                     break;
 
                 case McItem.ClassCodeEnum.Contact:
-                    var contact = McFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
+                    var contact = McFolderEntry.QueryById<McContact> (map.FolderEntryId);
                     contact.Delete ();
                     break;
 

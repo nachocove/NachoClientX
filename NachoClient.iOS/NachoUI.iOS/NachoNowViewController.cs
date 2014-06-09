@@ -25,7 +25,7 @@ namespace NachoClient.iOS
         UIPanGestureRecognizer inboxPanGestureRecognizer = null;
         UIPanGestureRecognizer calendarPanGestureRecognizer = null;
         //        UIPanGestureRecognizer calendarThumbPanGestureRecognizer = null;
-        UITapGestureRecognizer calendarThumbTapGestureRecognizer = null;
+        UITapGestureRecognizer calendarCloseTapGestureRecognizer = null;
         UITapGestureRecognizer carouselTapGestureRecognizer = null;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
@@ -51,7 +51,6 @@ namespace NachoClient.iOS
                         ConfigureBasicView ();
                     },
                     () => {
-                        inboxTableView.ReloadData();
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
             };
@@ -72,7 +71,15 @@ namespace NachoClient.iOS
                 PerformSegue ("NachoNowToMessageAction", this);
             };
 
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton };
+            composeButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToCompose", new SegueHolder (null));
+            };
+
+            newMeetingButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("NachoNowToCalendarItem", new SegueHolder (null));
+            };
+
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
             carouselTapGestureRecognizer.NumberOfTapsRequired = 1;
@@ -97,8 +104,7 @@ namespace NachoClient.iOS
             carouselView.Type = iCarouselType.Linear;
             carouselView.Vertical = false;
             carouselView.ContentOffset = new SizeF (0f, 0f);
-            carouselView.BackgroundColor = UIColor.LightGray;
-            View.BackgroundColor = UIColor.LightGray;
+            carouselView.BackgroundColor = UIColor.Clear;
 
             inboxTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
             calendarTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
@@ -120,6 +126,9 @@ namespace NachoClient.iOS
             });
             inboxPanGestureRecognizer.Enabled = false;
             inboxPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            inboxPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
             inboxTableView.AddGestureRecognizer (inboxPanGestureRecognizer);
 
             // Pan the calendar down from the top
@@ -128,15 +137,23 @@ namespace NachoClient.iOS
             });
             calendarPanGestureRecognizer.Enabled = false;
             calendarPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            calendarPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
             calendarView.AddGestureRecognizer (calendarPanGestureRecognizer);
 
             // Tap the calendar thumb to hid the calendar again
-            calendarThumbTapGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+            calendarCloseTapGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
                 calendarThumbTouch (obj);
             });
-            calendarThumbView.UserInteractionEnabled = true;
-            calendarThumbTapGestureRecognizer.Enabled = false;
-            calendarThumbView.AddGestureRecognizer (calendarThumbTapGestureRecognizer);
+            calendarCloseView.UserInteractionEnabled = true;
+            calendarCloseTapGestureRecognizer.Enabled = false;
+            calendarCloseView.AddGestureRecognizer (calendarCloseTapGestureRecognizer);
+
+            View.SendSubviewToBack (phonyView1);
+            View.SendSubviewToBack (phonyView2);
+ 
+            View.BackgroundColor = A.Color_NachoNowBackground;
 
             ConfigureBasicView ();
         }
@@ -185,24 +202,20 @@ namespace NachoClient.iOS
                 } else {
                     vc.Action = (string)h.value;
                     vc.ActionThread = (McEmailMessageThread)h.value2;
-                    vc.SetOwner (this);
                 }
+                vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "NachoNowToContacts") {
-                return; // Nothing to do
-            }
-
             if (segue.Identifier == "NachoNowToCalendarItem") {
+                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                if (null != holder) {
-                    var c = holder.value as McCalendar;
-                    if (null != c) {
-                        CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-                        dvc.SetCalendarItem (c, CalendarItemEditorAction.view);
-                        dvc.SetOwner (this);
-                    }
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
                 }
+                vc.SetOwner (this);
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageList") {
@@ -231,7 +244,6 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, h);
                 return;
             }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -255,7 +267,7 @@ namespace NachoClient.iOS
         {
             inboxPanGestureRecognizer.Enabled = false;
             calendarPanGestureRecognizer.Enabled = false;
-            calendarThumbTapGestureRecognizer.Enabled = false;
+            calendarCloseTapGestureRecognizer.Enabled = false;
             carouselTapGestureRecognizer.Enabled = false;
         }
 
@@ -272,14 +284,31 @@ namespace NachoClient.iOS
             inboxSource.MultiSelectEnable (inboxTableView, false);
             inboxTableView.ScrollToRow (NSIndexPath.FromRowSection (0, 0), UITableViewScrollPosition.Top, false);
             inboxTableView.Frame = inboxSmallSize ();
+            inboxTableView.ReloadData ();
 
             inboxTableView.Layer.CornerRadius = 5;
             inboxTableView.Layer.MasksToBounds = true;
+            inboxTableView.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
+            inboxTableView.Layer.BorderWidth = 1;
 
-//            calendarTableView.ScrollToRow (NSIndexPath.FromRowSection (0, 0), UITableViewScrollPosition.Top, false);
+            phonyView1.Frame = inboxShadowSize (10, 5);
+            phonyView1.Layer.CornerRadius = 5;
+            phonyView1.Layer.MasksToBounds = true;
+            phonyView1.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
+            phonyView1.Layer.BorderWidth = 1;
+
+            phonyView2.Frame = inboxShadowSize (20, 10);
+            phonyView2.Layer.CornerRadius = 5;
+            phonyView2.Layer.MasksToBounds = true;
+            phonyView2.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
+            phonyView2.Layer.BorderWidth = 1;
+
+            calendarSource.SetCompactMode (true);
             calendarView.Frame = calendarSmallSize ();
             calendarTableView.ScrollEnabled = false;
-            calendarThumbView.Image = UIImage.FromBundle ("cal-open-grabber");
+            calendarThumbView.Hidden = false;
+            calendarCloseView.Hidden = true;
+            calendarTableView.ReloadData ();
             calendarSource.ScrollToNow (calendarTableView);
 
             carouselView.Frame = carouselNormalSize ();
@@ -307,35 +336,34 @@ namespace NachoClient.iOS
 
             inboxTableView.Layer.CornerRadius = 0;
             inboxTableView.Layer.MasksToBounds = false;
+            inboxTableView.Layer.BorderWidth = 0;
         }
 
         protected void ConfigureCalendarListView ()
         {
             DisableGestureRecognizers ();
+            calendarSource.SetCompactMode (false);
             calendarView.Frame = calendarFullSize ();
             calendarTableView.ScrollEnabled = true;
-            calendarThumbTapGestureRecognizer.Enabled = true;
-            calendarThumbView.Image = UIImage.FromBundle ("cal-close-grabber");
+            calendarCloseTapGestureRecognizer.Enabled = true;
+            calendarCloseView.Hidden = false;
+            calendarThumbView.Hidden = true;
+            calendarTableView.ReloadData ();
 
             carouselView.Alpha = 0.0f;
         }
 
         int INBOX_ROW_HEIGHT = 69;
-        int CALENDAR_VIEW_HEIGHT = 112;
+        int CALENDAR_VIEW_HEIGHT = (69 + 22);
         float inboxStartingY;
         float calendarStartingY;
 
         protected RectangleF carouselNormalSize ()
         {
             var rect = View.Frame;
-            rect.Height = rect.Height - (INBOX_ROW_HEIGHT + CALENDAR_VIEW_HEIGHT);
+            rect.Height = rect.Height - (INBOX_ROW_HEIGHT + CALENDAR_VIEW_HEIGHT + 20);
             rect.Y = CALENDAR_VIEW_HEIGHT;
             return rect;
-        }
-
-        protected RectangleF carouselSmallSize ()
-        {
-            return new RectangleF (0, 0, 0, 0);
         }
 
         /// Grows from bottom of View
@@ -345,9 +373,18 @@ namespace NachoClient.iOS
             var inboxFrame = new RectangleF ();
             inboxFrame.Y = parentFrame.Height - INBOX_ROW_HEIGHT;
             inboxFrame.Height = INBOX_ROW_HEIGHT;
-            inboxFrame.X = parentFrame.X + 10;
-            inboxFrame.Width = parentFrame.Width - 20;
+            var adjust = 15;
+            inboxFrame.X = parentFrame.X + adjust;
+            inboxFrame.Width = parentFrame.Width - (2 * adjust);
             return inboxFrame;
+        }
+
+        protected RectangleF inboxShadowSize (int widthAdjust, int yAdjust)
+        {
+            var frame = inboxSmallSize ();
+            frame.Inflate (-widthAdjust, 0);
+            frame.Y -= yAdjust;
+            return frame;
         }
 
         protected RectangleF inboxFullSize ()
@@ -368,15 +405,16 @@ namespace NachoClient.iOS
         protected RectangleF inboxAdjustedSize (float yOffset)
         {
             var fullSize = inboxFullSize ();
-            var rect = fullSize;
-            rect.Y = Math.Max (0, inboxStartingY + yOffset);
-            rect.Height = rect.Height - rect.Y;
-            rect.Height = Math.Max (rect.Height, inboxSmallSize ().Height);
-            rect.Height = Math.Min (rect.Height, fullSize.Height);
-            var adjust = 10;
-            rect.X = rect.X + adjust;
-            rect.Width = rect.Width - (2 * adjust);
-            return rect;
+            var inboxFrame = fullSize;
+            yOffset = Math.Min (0, yOffset);
+            inboxFrame.Y = Math.Max (0, inboxStartingY + yOffset);
+            inboxFrame.Height = inboxFrame.Height - inboxFrame.Y;
+            inboxFrame.Height = Math.Max (inboxFrame.Height, inboxSmallSize ().Height);
+            inboxFrame.Height = Math.Min (inboxFrame.Height, fullSize.Height);
+            var adjust = 15;
+            inboxFrame.X = inboxFrame.X + adjust;
+            inboxFrame.Width = inboxFrame.Width - (2 * adjust);
+            return inboxFrame;
         }
 
         protected void inboxPan (UIPanGestureRecognizer obj)
@@ -390,7 +428,6 @@ namespace NachoClient.iOS
             if (UIGestureRecognizerState.Changed == obj.State) {
                 // yOffset is negative when going up!
                 var yOffset = obj.TranslationInView (inboxTableView).Y;
-                Console.WriteLine ("yOffset = {0}", yOffset);
                 inboxTableView.Frame = inboxAdjustedSize (yOffset);
                 inboxTableView.SetNeedsDisplay ();
                 return;
@@ -400,7 +437,6 @@ namespace NachoClient.iOS
                 Double duration;
                 var yOffset = obj.TranslationInView (inboxTableView).Y;
                 var percentOpen = inboxPercentOpen (yOffset);
-                Console.WriteLine ("velocity {0} & %open {1}", obj.VelocityInView (inboxTableView).Y, inboxPercentOpen (yOffset));
                 if ((yOffset < 0) && (obj.VelocityInView (inboxTableView).Y < -1000) && (inboxPercentOpen (yOffset) < 0.5f)) {
                     inboxFlick (yOffset);
                     return;
@@ -421,7 +457,7 @@ namespace NachoClient.iOS
                             ConfigureBasicView ();
                         },
                         () => {
-                            inboxTableView.ReloadData();
+                            inboxTableView.ReloadData ();
                         }
                     );
                 }
@@ -472,7 +508,7 @@ namespace NachoClient.iOS
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
                     } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton };
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
                     }
                 })
@@ -534,7 +570,6 @@ namespace NachoClient.iOS
             if (UIGestureRecognizerState.Changed == obj.State) {
                 // yOffset is negative when going up!
                 var yOffset = obj.TranslationInView (calendarTableView).Y;
-                Console.WriteLine ("yOffset = {0}", yOffset);
                 calendarView.Frame = calendarAdjustedSize (yOffset);
                 calendarView.SetNeedsDisplay ();
                 return;
@@ -544,9 +579,8 @@ namespace NachoClient.iOS
                 Double duration;
                 var yOffset = obj.TranslationInView (calendarTableView).Y;
                 var percentOpen = calendarPercentOpen (yOffset);
-                Console.WriteLine ("velocity {0} & %open {1}", obj.VelocityInView (inboxTableView).Y, calendarPercentOpen (yOffset));
                 if (percentOpen > 0.7f) {
-                    duration = 1.0 - percentOpen;
+                    duration = Math.Max (0.1, 1.0 - percentOpen);
                     UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
                             ConfigureCalendarListView ();
@@ -702,14 +736,14 @@ namespace NachoClient.iOS
             protected UIView CreateView (iCarousel carousel)
             {
                 var carouselFrame = carousel.Frame;
-                var frame = new RectangleF (0, 0, carouselFrame.Width - 30.0f, carouselFrame.Height - 30.0f);
+                var frame = new RectangleF (0, 0, carouselFrame.Width - 30.0f, carouselFrame.Height - 0.0f);
                 var view = new UIView (frame);
                 view.BackgroundColor = UIColor.White;
                 view.AutoresizingMask = UIViewAutoresizing.None;
                 view.ContentMode = UIViewContentMode.Center;
                 view.Layer.CornerRadius = 5;
                 view.Layer.MasksToBounds = true;
-                view.Layer.BorderColor = UIColor.DarkGray.CGColor;
+                view.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
                 view.Layer.BorderWidth = 1;
 
                 var viewWidth = view.Frame.Width;
@@ -742,10 +776,10 @@ namespace NachoClient.iOS
 
                 // Summary label view
                 // Size fields will be recalculated after text is known
-                var summaryLabelView = new UILabel (new RectangleF (65, 60, viewWidth - 15 - 65, 60));
+                var summaryLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 120));
                 summaryLabelView.Font = A.Font_AvenirNextRegular14;
                 summaryLabelView.TextColor = A.Color_999999;
-                summaryLabelView.Lines = 2;
+                summaryLabelView.Lines = 0;
                 summaryLabelView.Tag = SUMMARY_TAG;
                 view.AddSubview (summaryLabelView);
 
@@ -776,14 +810,6 @@ namespace NachoClient.iOS
                 receivedLabelView.TextAlignment = UITextAlignment.Right;
                 receivedLabelView.Tag = RECEIVED_DATE_TAG;
                 view.AddSubview (receivedLabelView);
-
-//                var replyButton = UIButton.FromType (UIButtonType.Custom);
-//                replyButton.SetTitle ("Button!", UIControlState.Normal);
-//                replyButton.Frame = new RectangleF (0, view.Frame.Height - 44, 44, 44);
-//                replyButton.BackgroundColor = UIColor.Red;
-//                replyButton.TouchUpInside +=  onReplyButtonClick;
-//                view.AddSubview (replyButton);
-
 
                 if (null == preventBarButtonGC) {
                     preventBarButtonGC = new List<UIBarButtonItem> ();
@@ -874,7 +900,7 @@ namespace NachoClient.iOS
                 // User image view
                 // TODO: user images
                 var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-                var emailOfSender = Pretty.EmailString(message.From);
+                var emailOfSender = Pretty.EmailString (message.From);
                 string sender = Pretty.SenderString (message.From);
 
                 int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
@@ -890,10 +916,8 @@ namespace NachoClient.iOS
                 if (null == message.Summary) {
                     message.Summarize ();
                 }
-                NcAssert.True (null != message.Summary);
-                summaryLabelView.Frame = new RectangleF (65, 60, viewWidth - 15 - 65, 60);
+                NcAssert.NotNull (message.Summary);
                 summaryLabelView.Text = message.Summary;
-                summaryLabelView.SizeToFit ();
 
 //                // Reminder image view and label
 //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;

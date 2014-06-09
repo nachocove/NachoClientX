@@ -156,7 +156,7 @@ namespace Test.iOS
             };
         }
 
-//        [Test]
+        [Test]
         public void BasicPhonyPing ()
         {
             // header settings
@@ -176,7 +176,6 @@ namespace Test.iOS
 
         // TODO Set timeout values to fix this test
 //        [Test]
-//        [Ignore]
         public void NegativeContentLength ()
         {
             // use this to test timeout values once they can be set
@@ -241,7 +240,7 @@ namespace Test.iOS
             });
         }
 
-//        [Test]
+        [Test]
         public void GoodXmlShouldReportSuccessfulCommResult ()
         {
             // use this to test timeout values once they can be set
@@ -265,7 +264,7 @@ namespace Test.iOS
             });
         }
 
-//        [Test]
+        [Test]
         public void MismatchHeaderSizeValues ()
         {
             /* Response Content-Length header does not match actual content length.
@@ -327,7 +326,7 @@ namespace Test.iOS
             });
         }
 
-//        [Test]
+        [Test]
         public void StatusCodeFound ()
         {
             // Status Code -- Found (200)
@@ -339,7 +338,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCodeBadRequest ()
         {
             // Status Code -- Bad Request (400)
@@ -364,7 +363,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCodeForbidden ()
         {
             // Status Code -- Forbidden (403)
@@ -376,7 +375,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCodeNotFound ()
         {
             // Status Code -- NotFound (404)
@@ -388,7 +387,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCode449 ()
         {
             // Status Code -- Retry With Status Code (449)
@@ -400,7 +399,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCodeInternalServerError ()
         {
             // Status Code -- Internal Server Error (500)
@@ -412,7 +411,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCode501 ()
         {
             // Status Code -- Command Not Implemented (501)
@@ -424,7 +423,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCode507 ()
         {
             // Status Code -- Server out of Space (507)
@@ -436,7 +435,7 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
-//        [Test]
+        [Test]
         public void StatusCodeUnknown ()
         {
             // Unknown status code
@@ -475,12 +474,11 @@ namespace Test.iOS
 
         private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
-            var interlock = new BlockingCollection<bool> ();
+            var autoResetEvent = new AutoResetEvent(false);
+
             // setup
-            bool setTrueBySuccessEvent = false;
-            NcStateMachine sm = CreatePhonySM (val => {
-                setTrueBySuccessEvent = val;
-                interlock.Add(true);
+            NcStateMachine sm = CreatePhonySM (() => {
+                autoResetEvent.Set ();
             });
 
             // create the response, then allow caller to set headers,
@@ -517,18 +515,13 @@ namespace Test.iOS
 
             op.Execute (sm);
 
-            bool didFinish = false;
-            if (!interlock.TryTake (out didFinish, 2000)) {
-                Assert.Fail ("Failed in TryTake clause");
-            }
-            Assert.IsTrue (didFinish);
-            Assert.IsTrue (setTrueBySuccessEvent);
+            bool didFinish = autoResetEvent.WaitOne (2000);
+            Assert.IsTrue (didFinish, "Operation did not finish");
         }
 
         // Action Delegate for creating a state machine
-        private NcStateMachine CreatePhonySM (Action<bool> action)
+        private NcStateMachine CreatePhonySM (Action action)
         {
-            bool setTrueBySuccessEvent = false;
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
@@ -543,50 +536,43 @@ namespace Test.iOS
                             new Trans {
                                 Event = (uint)SmEvt.E.Success,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 }, 
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReProv,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)HttpOpEvt.E.Rephrase,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
-                                    setTrueBySuccessEvent = true;
-                                    action(setTrueBySuccessEvent);
+                                    action();
                                 },
                                 State = (uint)St.Start },
                         }

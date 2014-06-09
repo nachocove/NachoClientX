@@ -137,7 +137,9 @@ namespace NachoCore.Utils
             if (null == textPart.Text) {
                 return null;
             }
-            return textPart.Text.Substring (0, Math.Min (textPart.Text.Length, 1000));
+            var raw = textPart.Text.Substring (0, Math.Min (textPart.Text.Length, 1000));
+            var cooked = System.Text.RegularExpressions.Regex.Replace(raw, @"\s+", " ");
+            return cooked;
         }
 
         static public string ExtractTextPart (McEmailMessage message)

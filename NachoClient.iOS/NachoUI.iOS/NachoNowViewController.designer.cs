@@ -13,6 +13,9 @@ namespace NachoClient.iOS
 	partial class NachoNowViewController
 	{
 		[Outlet]
+		MonoTouch.UIKit.UIImageView calendarCloseView { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UITableView calendarTableView { get; set; }
 
 		[Outlet]
@@ -40,6 +43,15 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
 
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem newMeetingButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIView phonyView1 { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIView phonyView2 { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 
 		[Outlet]
@@ -47,9 +59,19 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (calendarCloseView != null) {
+				calendarCloseView.Dispose ();
+				calendarCloseView = null;
+			}
+
 			if (calendarTableView != null) {
 				calendarTableView.Dispose ();
 				calendarTableView = null;
+			}
+
+			if (calendarThumbView != null) {
+				calendarThumbView.Dispose ();
+				calendarThumbView = null;
 			}
 
 			if (calendarView != null) {
@@ -87,6 +109,11 @@ namespace NachoClient.iOS
 				nachoButton = null;
 			}
 
+			if (newMeetingButton != null) {
+				newMeetingButton.Dispose ();
+				newMeetingButton = null;
+			}
+
 			if (revealButton != null) {
 				revealButton.Dispose ();
 				revealButton = null;
@@ -97,9 +124,14 @@ namespace NachoClient.iOS
 				saveButton = null;
 			}
 
-			if (calendarThumbView != null) {
-				calendarThumbView.Dispose ();
-				calendarThumbView = null;
+			if (phonyView1 != null) {
+				phonyView1.Dispose ();
+				phonyView1 = null;
+			}
+
+			if (phonyView2 != null) {
+				phonyView2.Dispose ();
+				phonyView2 = null;
 			}
 		}
 	}

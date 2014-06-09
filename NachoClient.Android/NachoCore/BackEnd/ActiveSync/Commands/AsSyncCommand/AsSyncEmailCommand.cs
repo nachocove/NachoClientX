@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != bodyElement) {
-                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
+                        var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
                         if (null != saveAttr) {
                             emailMessage.BodyId = int.Parse (saveAttr.Value);
                         } else {
@@ -234,7 +234,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.ConversationId = child.Value;
                     break;
                 default:
-                    Log.Warn (Log.LOG_AS, "ProcessEmailItem UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
+//                    Log.Warn (Log.LOG_AS, "ProcessEmailItem UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                     break;
                 }
             }

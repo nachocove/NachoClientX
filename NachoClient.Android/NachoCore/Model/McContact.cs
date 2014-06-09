@@ -545,7 +545,7 @@ namespace NachoCore.Model
 
         protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, McContactStringType type, string name, string label, string value)
         {
-            var existing = list.SingleOrDefault (attr => attr.Type.Equals (type) && attr.Name.Equals (name));
+            var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
             if (null != existing) {
                 existing.Label = label;
                 existing.Value = value;

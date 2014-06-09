@@ -321,7 +321,7 @@ namespace NachoCore.Wbxml
                 }
 
                 byte token = codePages [currentCodePage].GetToken (element.Name.LocalName);
-                var fileAttr = element.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-path");
+                var fileAttr = element.Attributes ().Where (x => x.Name == "nacho-body-path").SingleOrDefault ();
 
                 if (null != fileAttr || element.HasElements || !element.IsEmpty) {
                     token |= 0x40;
@@ -397,7 +397,7 @@ namespace NachoCore.Wbxml
                 }
 
                 byte token = codePages [currentCodePage].GetToken (element.Name.LocalName);
-                var fileAttr = element.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-path");
+                var fileAttr = element.Attributes ().Where (x => x.Name == "nacho-body-path").SingleOrDefault ();
 
                 if (null != fileAttr || element.HasElements || !element.IsEmpty) {
                     token |= 0x40;

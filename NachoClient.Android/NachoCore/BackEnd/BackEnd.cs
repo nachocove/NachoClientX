@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -58,7 +59,7 @@ namespace NachoCore
             WillDelete,
         };
 
-        private List<ProtoControl> Services;
+        private ConcurrentDictionary<int,ProtoControl> Services;
         private NcTimer QuickTimeoutTimer;
 
         public IBackEndOwner Owner { set; private get; }
@@ -66,13 +67,17 @@ namespace NachoCore
         private bool HasServiceFromAccountId (int accountId)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
-            return Services.Where (ctrl => ctrl.Account.Id == accountId).Any ();
+            return Services.ContainsKey (accountId);
         }
 
         private ProtoControl ServiceFromAccountId (int accountId)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
-            return Services.Where (ctrl => ctrl.Account.Id == accountId).Single ();
+            ProtoControl protoCtrl;
+            if (!Services.TryGetValue (accountId, out protoCtrl)) {
+                return null;
+            }
+            return protoCtrl;
         }
         // For IBackEnd.
         private BackEnd ()
@@ -80,7 +85,7 @@ namespace NachoCore
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 8;
 
-            Services = new List<ProtoControl> ();
+            Services = new ConcurrentDictionary<int, ProtoControl> ();
         }
 
         public void Start ()
@@ -150,7 +155,10 @@ namespace NachoCore
         {
             // TODO: this is AS-specific.
             var service = new AsProtoControl (this, accountId);
-            Services.Add (service);
+            if (! Services.TryAdd (accountId, service)) {
+                // Concurrency. Another thread has jumped in and done the add.
+                return;
+            }
             // Create client owned objects as needed.
             McFolder freshMade;
             if (null == McFolder.GetOutboxFolder (accountId)) {

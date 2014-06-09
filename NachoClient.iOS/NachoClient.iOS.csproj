@@ -72,11 +72,6 @@
     </MtouchI18n>
     <MtouchArch>ARMv7</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
-    <EnvironmentVariables>
-      <EnvironmentVariables>
-        <Variable name="CA_DEBUG_TRANSACTIONS" value="1" />
-      </EnvironmentVariables>
-    </EnvironmentVariables>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
@@ -1024,6 +1019,9 @@
     <BundleResource Include="Resources\toolbar-icn-reply-all.png" />
     <BundleResource Include="Resources\inbox-multi-select-default.png" />
     <BundleResource Include="Resources\inbox-multi-select-default%402x.png" />
+    <BundleResource Include="Resources\navbar-icn-newevent.png" />
+    <BundleResource Include="Resources\navbar-icn-newevent%402x.png" />
+    <BundleResource Include="Resources\cal-dot-icn.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

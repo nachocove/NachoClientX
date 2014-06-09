@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Threading.Tasks;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -48,6 +49,14 @@ namespace NachoCore
         // method can be used to post to StatusIndEvent from outside NcApplication.
         private NcApplication ()
         {
+            TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
+                NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
+                var aex = (AggregateException)eargs.Exception;
+                aex.Handle ((ex) => {
+                    Log.Error(Log.LOG_SYS, "UnobservedTaskException: {0}", ex.ToString());
+                    return false;
+                });
+            };
             // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
             // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A Task.Run() IN YOUR INIT
             // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
@@ -82,6 +91,7 @@ namespace NachoCore
             // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();
+            NcCapture.ResumeAll ();
         }
 
         public void Stop ()
@@ -89,6 +99,7 @@ namespace NachoCore
             // THIS IS THE BEST PLADE TO PUT Stop FUNCTIONS - WHEN SERVICE NEEDS TO BE SHUTDOWN BEFORE SLEEP/EXIT.
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
+            NcCapture.PauseAll ();
             // NcTimer.Stop () should go last.
             NcTimer.Stop ();
         }

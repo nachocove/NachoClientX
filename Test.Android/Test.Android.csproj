@@ -83,6 +83,8 @@
     <Compile Include="McMutablesTest.cs" />
     <Compile Include="McPendDepTest.cs" />
     <Compile Include="NcTestBase.cs" />
+    <Compile Include="NcCaptureTest.cs" />
+    <Compile Include="McFolderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
