@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Threading.Tasks;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -48,6 +49,14 @@ namespace NachoCore
         // method can be used to post to StatusIndEvent from outside NcApplication.
         private NcApplication ()
         {
+            TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
+                NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
+                var aex = (AggregateException)eargs.Exception;
+                aex.Handle ((ex) => {
+                    Log.Error(Log.LOG_SYS, "UnobservedTaskException: {0}", ex.ToString());
+                    return false;
+                });
+            };
             // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
             // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A Task.Run() IN YOUR INIT
             // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
