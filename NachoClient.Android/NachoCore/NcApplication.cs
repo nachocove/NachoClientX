@@ -50,7 +50,7 @@ namespace NachoCore
         private NcApplication ()
         {
             // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
-            // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A Task.Run() IN YOUR INIT
+            // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
             // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
             // VIA THE UI THREAD ON STARTUP. ORDER MATTERS - KNOW BEFORE YOU MODIFY!
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {

@@ -22,9 +22,9 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
                 pending.BlockReason = McPending.BlockReasonEnum.NotBlocked;
                 pending.State = McPending.StateEnum.Eligible;
-                Task.Run (delegate {
+                NcTask.Run (delegate {
                     Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCUNBLK");
-                });
+                }, "UnblockPendingCmd");
             }
         }
 
@@ -54,9 +54,9 @@ namespace NachoCore.ActiveSync
                 Token = token
             };
             newSearch.Insert ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSRCH");
-            });
+            }, "SearchContactsReq");
         }
 
         public override string SendEmailCmd (int emailMessageId)
@@ -66,9 +66,9 @@ namespace NachoCore.ActiveSync
                 ItemId = emailMessageId
             };
             sendUpdate.Insert ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSEND");
-            });
+            }, "SendEmailCmd");
             return sendUpdate.Token;
         }
 
@@ -113,9 +113,9 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
-            });
+            }, "SendEmailCmd(cal)");
             return pending.Token;
         }
 
@@ -143,9 +143,9 @@ namespace NachoCore.ActiveSync
                 Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
             };
             smartUpdate.Insert ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSMF");
-            });
+            }, "SmartEmailCmd");
             return smartUpdate.Token;
         }
 
@@ -200,9 +200,9 @@ namespace NachoCore.ActiveSync
             emailMessage.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
-            });
+            }, "DeleteEmailCmd");
             return pending.Token;
         }
 
@@ -230,9 +230,9 @@ namespace NachoCore.ActiveSync
             srcFolder.Unlink (item);
 
             StatusInd (NcResult.Info (subKind));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
-            });
+            }, "MoveItemCmd");
             return move.Token;
         }
 
@@ -299,9 +299,9 @@ namespace NachoCore.ActiveSync
             // Mark the actual item.
             emailMessage.IsRead = true;
             emailMessage.Update ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCMRMSG");
-            });
+            }, "MarkEmailReadCmd");
             return markUpdate.Token;
         }
 
@@ -334,9 +334,9 @@ namespace NachoCore.ActiveSync
             emailMessage.FlagDue = due;
             emailMessage.FlagUtcDue = utcDue;
             emailMessage.Update ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSF");
-            });
+            }, "SetEmailFlagCmd");
             return setFlag.Token;
         }
 
@@ -357,9 +357,9 @@ namespace NachoCore.ActiveSync
 
             emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
             emailMessage.Update ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
-            });
+            }, "ClearEmailFlagCmd");
             return clearFlag.Token;
         }
 
@@ -385,9 +385,9 @@ namespace NachoCore.ActiveSync
             emailMessage.FlagCompleteTime = completeTime;
             emailMessage.FlagDateCompleted = dateCompleted;
             emailMessage.Update ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
-            });
+            }, "MarkEmailFlagDone");
             return markFlagDone.Token;
         }
 
@@ -407,9 +407,9 @@ namespace NachoCore.ActiveSync
             update.Insert ();
             att.PercentDownloaded = 1;
             att.Update ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDATT");
-            });
+            }, "DnldAttCmd");
             return update.Token;
         }
 
@@ -430,9 +430,9 @@ namespace NachoCore.ActiveSync
 
             pending.Insert ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECAL");
-            });
+            }, "CreateCalCmd");
             return pending.Token;
         }
 
@@ -460,9 +460,9 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCAL");
-            });
+            }, "UpdateCalCmd");
             return pending.Token;
         }
 
@@ -495,9 +495,9 @@ namespace NachoCore.ActiveSync
             cal.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCAL");
-            });
+            }, "DeleteCalCmd");
             return pending.Token;
         }
 
@@ -530,9 +530,9 @@ namespace NachoCore.ActiveSync
 
             pending.Insert ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECNT");
-            });
+            }, "CreateContactCmd");
             return pending.Token;
         }
 
@@ -559,9 +559,9 @@ namespace NachoCore.ActiveSync
             };   
             pending.Insert ();
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
-            });
+            }, "UpdateContactCmd");
             return pending.Token;
         }
 
@@ -594,9 +594,9 @@ namespace NachoCore.ActiveSync
             contact.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCTC");
-            });
+            }, "DeleteContactCmd");
             return pending.Token;
         }
 
@@ -629,9 +629,9 @@ namespace NachoCore.ActiveSync
 
             pending.Insert ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRETSK");
-            });
+            }, "CreateTaskCmd");
             return pending.Token;
         }
 
@@ -658,9 +658,9 @@ namespace NachoCore.ActiveSync
             };   
             pending.Insert ();
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGTSK");
-            });
+            }, "UpdateTaskCmd");
             return pending.Token;
         }
 
@@ -693,9 +693,9 @@ namespace NachoCore.ActiveSync
             task.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
-            });
+            }, "DeleteTaskCmd");
             return pending.Token;
         }
 
@@ -745,9 +745,9 @@ namespace NachoCore.ActiveSync
             };
 
             pending.Insert ();
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCRESPCAL");
-            });
+            }, "RespondCalCmd");
 
             return pending.Token;
         }
@@ -805,9 +805,9 @@ namespace NachoCore.ActiveSync
 
             createFolder.Insert ();
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCFCRE");
-            });
+            }, "CreateFolderCmd");
 
             return createFolder.Token;
         }
@@ -837,9 +837,9 @@ namespace NachoCore.ActiveSync
 
             delFolder.Insert ();
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCFDEL");
-            });
+            }, "DeleteFolderCmd");
 
             return delFolder.Token;
         }
@@ -870,9 +870,9 @@ namespace NachoCore.ActiveSync
 
             upFolder.Insert ();
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCFUP1");
-            });
+            }, "MoveFolderCmd");
 
             return upFolder.Token;
         }
@@ -899,9 +899,9 @@ namespace NachoCore.ActiveSync
 
             upFolder.Insert ();
 
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCFUP2");
-            });
+            }, "RenameFolderCmd");
             return upFolder.Token;
         }
     }

@@ -24,7 +24,7 @@ namespace NachoPlatform
         private NetStatus ()
         {
             ReachInternet = NachoPlatformBinding.Reachability.ReachabilityForInternetConnection ();
-            // NOTE: these DON'T get called from the UI thread, so no need to Task.Run them.
+            // NOTE: these DON'T get called from the UI thread, so no need to NcTask.Run them.
             ReachInternet.ReachableBlock = Fire;
             ReachInternet.UnreachableBlock = Fire;
 			ReachInternet.StartNotifier ();
