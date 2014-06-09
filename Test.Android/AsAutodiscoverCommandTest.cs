@@ -183,7 +183,7 @@ namespace Test.iOS
         public class Test600XmlErrorCodes : AsAutodiscoverCommandTest
         {
             // 600 = Invalid Request
-//            [Test]
+            [Test]
             public void Test600ErrorCode ()
             {
                 var errorKind600 = NcResult.SubKindEnum.Error_AutoDError600;
@@ -192,10 +192,10 @@ namespace Test.iOS
             }
 
             // 601 = Requested schema version not supported
-//            [Test]
+            [Test]
             public void Test601ErrorCode ()
             {
-                var errorKind601 = NcResult.SubKindEnum.Error_AutoDError600;
+                var errorKind601 = NcResult.SubKindEnum.Error_AutoDError601;
                 string xml = CommonMockData.AutodPhony601Response;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S1, errorKind601);
             }
