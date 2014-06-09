@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -270,6 +270,7 @@
     <Compile Include="NachoCore\Model\McPendDep.cs" />
     <Compile Include="NachoCore\Utils\GatedMemoryStream.cs" />
     <Compile Include="NachoCore\Utils\NcAssert.cs" />
+    <Compile Include="NachoCore\Utils\NcTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
