@@ -364,6 +364,7 @@ namespace Test.iOS
             [Test]
             public void TestS2 ()
             {
+                SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S2);
             }
@@ -373,6 +374,7 @@ namespace Test.iOS
             [Test]
             public void TestS3 ()
             {
+                SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S3);
             }
@@ -382,6 +384,7 @@ namespace Test.iOS
             [Test]
             public void TestS4 ()
             {
+                SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S4);
             }
@@ -392,7 +395,7 @@ namespace Test.iOS
                 string mockResponseLength = xml.Length.ToString ();
 
                 bool hasRedirected = false;
-//                bool hasTimedOutOnce = false;
+                bool hasTimedOutOnce = false;
 
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
                     MockSteps robotType = DetermineRobotType (request);
@@ -403,6 +406,11 @@ namespace Test.iOS
                         step = MockSteps.S1; // S4 resolves to POST after DNS lookup
                     }
                 }, (httpRequest, httpResponse) => {
+                    MockSteps robotType = DetermineRobotType (httpRequest);
+                    if (!hasTimedOutOnce && robotType == step) {
+                        System.Threading.Thread.Sleep (2000);
+                        hasTimedOutOnce = true;
+                    }
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step) && !hasRedirected) {
                         httpResponse.StatusCode = HttpStatusCode.Found;
@@ -410,7 +418,6 @@ namespace Test.iOS
                         hasRedirected = true; // disable second redirection
                         step = MockSteps.S1;
                     } else {
-                        MockSteps robotType = DetermineRobotType (httpRequest);
                         httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
@@ -522,7 +529,9 @@ namespace Test.iOS
 
         public bool ShouldRedirect (HttpRequestMessage request, MockSteps step)
         {
-            return request.Method.ToString () == "GET" && step == MockSteps.S3;
+            string getUri = "http://autodiscover." + CommonMockData.Host;
+            string requestUri = request.RequestUri.ToString ();
+            return request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri && step == MockSteps.S3;
         }
 
         public bool IsOptionsRequest (HttpRequestMessage request)
