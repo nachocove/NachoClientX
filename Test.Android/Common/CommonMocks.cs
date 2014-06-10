@@ -27,6 +27,7 @@ namespace Test.iOS
         S2,
         S3,
         S4,
+        Other,
     };
 
     // reusable request/response data
