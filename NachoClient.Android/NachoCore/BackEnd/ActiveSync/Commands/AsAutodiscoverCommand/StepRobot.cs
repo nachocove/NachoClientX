@@ -617,12 +617,12 @@ namespace NachoCore.ActiveSync
                 return false;
             }
 
-            public virtual void ResoveAllFailed (NcResult.WhyEnum why)
+            public virtual void ResolveAllFailed (NcResult.WhyEnum why)
             {
                 // Autodiscover does not touch pending.
             }
 
-            public virtual void ResoveAllDeferred ()
+            public virtual void ResolveAllDeferred ()
             {
                 // Autodiscover does not touch pending.
             }

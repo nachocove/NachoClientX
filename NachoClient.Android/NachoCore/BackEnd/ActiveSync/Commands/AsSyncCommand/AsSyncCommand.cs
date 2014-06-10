@@ -316,31 +316,29 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce ();
-                }
-                PendingList.Clear ();
+                ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPFOOF");
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
                 var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
-                if (0 == PendingList.Count) {
-                    // We're syncing because of SM, and something tastes bad to the server.
-                    return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCPE0");
-                } else if (1 == PendingList.Count) {
-                    var pending = PendingList.First ();
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
-                    PendingList.Clear ();
-                    return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCPE1");
-                } else {
-                    foreach (var pending in PendingList) {
-                        pending.DeferredSerialIssueOnly = true;
-                        pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow, result);
+                lock (PendingResolveLockObj) {
+                    if (0 == PendingList.Count) {
+                        // We're syncing because of SM, and something tastes bad to the server.
+                        return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCPE0");
+                    } else if (1 == PendingList.Count) {
+                        var pending = PendingList.First ();
+                        pending.ResolveAsHardFail (BEContext.ProtoControl, result);
+                        PendingList.Clear ();
+                        return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCPE1");
+                    } else {
+                        foreach (var pending in PendingList) {
+                            pending.DeferredSerialIssueOnly = true;
+                            pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow, result);
+                        }
+                        PendingList.Clear ();
+                        return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPPE");
                     }
-                    PendingList.Clear ();
-                    return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPPE");
                 }
-
             case Xml.AirSync.StatusCode.ServerError_5:
                 // TODO: should retry Sync a few times before resetting to Initial.
                 foreach (var folder in FoldersInRequest) {
@@ -348,10 +346,7 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce ();
-                }
-                PendingList.Clear ();
+                ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPRS");
 
             case Xml.AirSync.StatusCode.FolderChange_12:
@@ -360,10 +355,7 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce ();
-                }
-                PendingList.Clear ();
+                ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "ASYNCTOPRFS");
 
             case Xml.AirSync.StatusCode.Retry_16:
@@ -372,10 +364,7 @@ namespace NachoCore.ActiveSync
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce ();
-                }
-                PendingList.Clear ();
+                ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPRRR");
 
             default:
@@ -428,11 +417,13 @@ namespace NachoCore.ActiveSync
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
 
-                    // Any pending not already resolved gets resolved as Success.
-                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                    foreach (var pending in pendingInFolder) {
-                        PendingList.Remove (pending);
-                        pending.ResolveAsSuccess (BEContext.ProtoControl);
+                    lock (PendingResolveLockObj) {
+                        // Any pending not already resolved gets resolved as Success.
+                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                        foreach (var pending in pendingInFolder) {
+                            PendingList.Remove (pending);
+                            pending.ResolveAsSuccess (BEContext.ProtoControl);
+                        }
                     }
                     break;
 
@@ -445,51 +436,59 @@ namespace NachoCore.ActiveSync
                      */
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
                     folder.AsSyncMetaToClientExpected = true;
-                    // Defer all the outbound commands until after ReSync.
-                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                    foreach (var pending in pendingInFolder) {
-                        PendingList.Remove (pending);
-                        pending.ResolveAsDeferred (BEContext.ProtoControl,
-                            McPending.DeferredEnum.UntilSync,
-                            NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                    lock (PendingResolveLockObj) {
+                        // Defer all the outbound commands until after ReSync.
+                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                        foreach (var pending in pendingInFolder) {
+                            PendingList.Remove (pending);
+                            pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                McPending.DeferredEnum.UntilSync,
+                                NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                        }
                     }
                     break;
 
                 case Xml.AirSync.StatusCode.ProtocolError_4:
-                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                    var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
-                    if (1 == pendingInFolder.Count ()) {
-                        var pending = pendingInFolder.First ();
-                        PendingList.Remove (pending);
-                        pending.ResolveAsHardFail (BEContext.ProtoControl, result);
-                    } else {
-                        // Go into serial mode for these pending to weed out the bad apple.
-                        // TODO: why not DeferredForce?
-                        foreach (var pending in pendingInFolder) {
+                    lock (PendingResolveLockObj) {
+                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                        var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
+                        if (1 == pendingInFolder.Count ()) {
+                            var pending = pendingInFolder.First ();
                             PendingList.Remove (pending);
-                            pending.DeferredSerialIssueOnly = true;
-                            pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow, result);
+                            pending.ResolveAsHardFail (BEContext.ProtoControl, result);
+                        } else {
+                            // Go into serial mode for these pending to weed out the bad apple.
+                            // TODO: why not DeferredForce?
+                            foreach (var pending in pendingInFolder) {
+                                PendingList.Remove (pending);
+                                pending.DeferredSerialIssueOnly = true;
+                                pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow, result);
+                            }
                         }
                     }
                     break;
 
                 case Xml.AirSync.StatusCode.FolderChange_12:
                     FolderSyncIsMandated = true;
-                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                    foreach (var pending in pendingInFolder) {
-                        PendingList.Remove (pending);
-                        pending.ResolveAsDeferred (BEContext.ProtoControl,
-                            McPending.DeferredEnum.UntilFSync,
-                            NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                    lock (PendingResolveLockObj) {
+                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                        foreach (var pending in pendingInFolder) {
+                            PendingList.Remove (pending);
+                            pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                McPending.DeferredEnum.UntilFSync,
+                                NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                        }
                     }
                     break;
 
                 case Xml.AirSync.StatusCode.Retry_16:
                     folder.AsSyncMetaToClientExpected = true;
-                    pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                    foreach (var pending in pendingInFolder) {
-                        PendingList.Remove (pending);
-                        pending.ResolveAsDeferredForce ();
+                    lock (PendingResolveLockObj) {
+                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                        foreach (var pending in pendingInFolder) {
+                            PendingList.Remove (pending);
+                            pending.ResolveAsDeferredForce ();
+                        }
                     }
                     break;
 
@@ -557,11 +556,12 @@ namespace NachoCore.ActiveSync
                 folder.Update ();
             }
             BEContext.ProtoControl.SyncStrategy.ReportSyncResult (FoldersInRequest);
-            foreach (var pending in PendingList) {
-                pending.ResolveAsSuccess (BEContext.ProtoControl);
+            lock (PendingResolveLockObj) {
+                foreach (var pending in PendingList) {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                }
+                PendingList.Clear ();
             }
-            PendingList.Clear ();
-
             if (BEContext.ProtoControl.SyncStrategy.IsMoreSyncNeeded ()) {
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC1");
             } else {
@@ -579,24 +579,26 @@ namespace NachoCore.ActiveSync
 
         public override bool WasAbleToRephrase ()
         {
-            // See if we are trying to do a bunch in parallel - if so go serial.
-            var firstPending = PendingList.FirstOrDefault ();
-            if (null == firstPending) {
-                return false;
-            }
-            if (1 >= PendingList.Count || firstPending.DeferredSerialIssueOnly) {
-                // We are already doing serial.
-                return false;
-            }
-            foreach (var pending in PendingList) {
-                pending.DeferredSerialIssueOnly = true;
-                if (pending == firstPending) {
-                    pending.Update ();
-                    continue;
+            lock (PendingResolveLockObj) {
+                // See if we are trying to do a bunch in parallel - if so go serial.
+                var firstPending = PendingList.FirstOrDefault ();
+                if (null == firstPending) {
+                    return false;
                 }
-                pending.ResolveAsDeferredForce ();
+                if (1 >= PendingList.Count || firstPending.DeferredSerialIssueOnly) {
+                    // We are already doing serial.
+                    return false;
+                }
+                foreach (var pending in PendingList) {
+                    pending.DeferredSerialIssueOnly = true;
+                    if (pending == firstPending) {
+                        pending.Update ();
+                        continue;
+                    }
+                    pending.ResolveAsDeferredForce ();
+                }
+                PendingList.Clear ();
             }
-            PendingList.Clear ();
             ApplyStrategy ();
             return true;
         }
@@ -765,12 +767,14 @@ namespace NachoCore.ActiveSync
                 }
             }
             // Because success is not reported in the response document.
-            var pendingChanges = PendingList.Where (x => 
+            lock (PendingResolveLockObj) {
+                var pendingChanges = PendingList.Where (x => 
                 x.State == McPending.StateEnum.Dispatched &&
                                  (x.Operation == McPending.Operations.CalUpdate ||
                                  x.Operation == McPending.Operations.ContactUpdate));
-            foreach (var pendingChange in pendingChanges) {
-                pendingChange.ResolveAsSuccess (BEContext.ProtoControl);
+                foreach (var pendingChange in pendingChanges) {
+                    pendingChange.ResolveAsSuccess (BEContext.ProtoControl);
+                }
             }
         }
 
@@ -783,7 +787,8 @@ namespace NachoCore.ActiveSync
             // Status and ClientId are required to be present.
             var xmlClientId = xmlAdd.Element (m_ns + Xml.AirSync.ClientId);
             var clientId = xmlClientId.Value;
-            pending = McPending.QueryByClientId (folder.AccountId, clientId);
+            pending = McPending.QueryByClientId (folder.AccountId, clientId); 
+            // FIXME - need to use lock for PendingList. need to see pending in list before processing.
             var xmlStatus = xmlAdd.Element (m_ns + Xml.AirSync.Status);
             var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
             switch (status) {
@@ -883,6 +888,7 @@ namespace NachoCore.ActiveSync
                     // If we don't have Status and ServerId - how do we identify & react?
                     var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                     var serverId = xmlServerId.Value;
+                    // FIXME - need to use lock for PendingList. need to see pending in list before processing.
                     var pending = McPending.QueryByServerId (folder.AccountId, serverId);
                     switch (status) {
                     case Xml.AirSync.StatusCode.ProtocolError_4:
@@ -908,6 +914,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case Xml.AirSync.StatusCode.NoSpace_9:
+                        PendingList.Remove (pending);
                         pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                             McPending.BlockReasonEnum.UserRemediation,
                             NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));

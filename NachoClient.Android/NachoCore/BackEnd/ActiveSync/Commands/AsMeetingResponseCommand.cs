@@ -33,17 +33,23 @@ namespace NachoCore.ActiveSync
             var xmlMeetingResp = doc.Root;
             switch ((Xml.MeetingResp.StatusCode)Convert.ToUInt32 (xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Status).Value)) {
             case Xml.MeetingResp.StatusCode.Success_1:
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_MeetingResponseSucceeded));
+                PendingApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_MeetingResponseSucceeded));
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "FUPSUCCESS");
 
             case Xml.MeetingResp.StatusCode.InvalidMeetingRequest_2:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
-                    NcResult.WhyEnum.BadOrMalformed));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
+                        NcResult.WhyEnum.BadOrMalformed));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL1");
 
             default:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
-                    NcResult.WhyEnum.Unknown));
+                PendingApply ((pending) => {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
+                        NcResult.WhyEnum.Unknown));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL2");
             }
         }

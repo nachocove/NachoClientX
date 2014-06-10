@@ -1311,6 +1311,7 @@ namespace NachoCore.ActiveSync
 
         public override void Cancel (string token)
         {
+            // FIXME - need lock to ensure that pending state does not change while in this function.
             var pending = McPending.QueryByToken (Account.Id, token);
             if (null == pending) {
                 return;
@@ -1333,6 +1334,7 @@ namespace NachoCore.ActiveSync
                     // Command Cancel moves state to Deferred. Maybe many pending objs.
                     Cmd.Cancel ();
                 }
+                // FIXME - command should cancel deferred pending.
                 pending.ResolveAsCancelled ();
                 // Don't REALLY know that we killed it before the server saw it.
                 break;

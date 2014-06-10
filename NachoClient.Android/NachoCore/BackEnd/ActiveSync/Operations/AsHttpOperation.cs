@@ -243,7 +243,7 @@ namespace NachoCore.ActiveSync
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 AttemptHttp ();
             } else {
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
             }
         }
@@ -465,7 +465,7 @@ namespace NachoCore.ActiveSync
                     } catch (Exception ex) {
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                         // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
-                        Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
+                        Owner.ResolveAllFailed (NcResult.WhyEnum.Unknown);
                         HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
                         return;
                     }
@@ -511,15 +511,15 @@ namespace NachoCore.ActiveSync
                             decoder.LoadBytes (ContentData);
                         } catch (OperationCanceledException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
-                            Owner.ResoveAllDeferred ();
+                            Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
                         } catch (WBXMLReadPastEndException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             // We are deferring because we think that an invalid WBXML string is likely transient.
-                            Owner.ResoveAllDeferred ();
+                            Owner.ResolveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");
                         } catch (InvalidDataException) {
-                            Owner.ResoveAllDeferred ();
+                            Owner.ResolveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND2");
                         }
                         responseDoc = decoder.XmlDoc;
@@ -559,7 +559,7 @@ namespace NachoCore.ActiveSync
 
             case HttpStatusCode.Found:
                 ReportCommResult (ServerUri.Host, false);
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     McFolder.AsResetState (BEContext.Account.Id);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
@@ -573,14 +573,14 @@ namespace NachoCore.ActiveSync
                 if (Owner.WasAbleToRephrase ()) {
                     return Event.Create ((uint)HttpOpEvt.E.Rephrase, "HTTPOP400R");
                 } else {
-                    Owner.ResoveAllFailed (NcResult.WhyEnum.ProtocolError);
+                    Owner.ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
                     return Final ((uint)SmEvt.E.HardFail, "HTTPOP400F", null, "HttpStatusCode.BadRequest");
                 }
 
             case HttpStatusCode.Unauthorized:
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 // We are ignoring the auto-d directive of MS-ASHTTP 3.2.5.1 here. It doesn't make sense.
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
                             
             case HttpStatusCode.Forbidden:
@@ -592,7 +592,7 @@ namespace NachoCore.ActiveSync
                     IndicateUriIfChanged ();
                 }
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
-                Owner.ResoveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
+                Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP403F");
 
             case HttpStatusCode.NotFound:
@@ -600,7 +600,7 @@ namespace NachoCore.ActiveSync
                 if (Owner.WasAbleToRephrase ()) {
                     return Event.Create ((uint)HttpOpEvt.E.Rephrase, "HTTPOP404R");
                 } else {
-                    Owner.ResoveAllFailed (NcResult.WhyEnum.MissingOnServer);
+                    Owner.ResolveAllFailed (NcResult.WhyEnum.MissingOnServer);
                     return Final ((uint)SmEvt.E.HardFail, "HTTPOP404F", null, "HttpStatusCode.NotFound");
                 }
 
@@ -610,7 +610,7 @@ namespace NachoCore.ActiveSync
                 // TODO: blog post suggests letting admin know and re-trying hourly if 449 repeats (12.1-ism).
                 ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 return Final ((uint)AsProtoControl.AsEvt.E.ReProv, "HTTPOP449");
 
             case (HttpStatusCode)451:
@@ -624,7 +624,7 @@ namespace NachoCore.ActiveSync
                         var redirUri = new Uri (response.Headers.GetValues (HeaderXMsLocation).First ());
                         if (!redirUri.IsHttps ()) {
                             // Don't be tricked into accepting a non-HTTPS URI.
-                            Owner.ResoveAllDeferred ();
+                            Owner.ResolveAllDeferred ();
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451B");
                         }
                         ServerUriBeingTested = true;
@@ -638,7 +638,7 @@ namespace NachoCore.ActiveSync
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                        Owner.ResoveAllDeferred ();
+                        Owner.ResolveAllDeferred ();
                         return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451D");
                     }
                 }
@@ -647,13 +647,13 @@ namespace NachoCore.ActiveSync
 
             case (HttpStatusCode)456:
                 ReportCommResult (ServerUri.Host, false);
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 Owner.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AuthFailBlocked));
                 return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP456");
 
             case (HttpStatusCode)457:
                 ReportCommResult (ServerUri.Host, false);
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 Owner.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AuthFailPasswordExpired));
                 return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP457");
 
@@ -667,12 +667,12 @@ namespace NachoCore.ActiveSync
                     IndicateUriIfChanged ();
                 }
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
-                Owner.ResoveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
+                Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500");
 
             case (HttpStatusCode)501:
                 ReportCommResult (ServerUri.Host, false);
-                Owner.ResoveAllDeferred ();
+                Owner.ResolveAllDeferred ();
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOP501", null, "HttpStatusCode 501 - Command not implemented.");
 
             case HttpStatusCode.BadGateway:
@@ -705,7 +705,7 @@ namespace NachoCore.ActiveSync
 
             case (HttpStatusCode)505:
                 ReportCommResult (ServerUri.Host, false);
-                Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
+                Owner.ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOP505", null, "HttpStatusCode 505 - Server says it doesn't like our HTTP version.");
 
             case (HttpStatusCode)507:
@@ -714,13 +714,13 @@ namespace NachoCore.ActiveSync
                 if (Owner.WasAbleToRephrase ()) {
                     return Event.Create ((uint)HttpOpEvt.E.Rephrase, "HTTPOP507R");
                 } else {
-                    Owner.ResoveAllFailed (NcResult.WhyEnum.NoSpace);
+                    Owner.ResolveAllFailed (NcResult.WhyEnum.NoSpace);
                     return Final ((uint)SmEvt.E.HardFail, "HTTPOP507", null, "HttpStatusCode 507 - Out of space on server.");
                 }
 
             default:
                 ReportCommResult (ServerUri.Host, true);
-                Owner.ResoveAllFailed (NcResult.WhyEnum.Unknown);
+                Owner.ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOPHARD0", null, 
                     string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
             }

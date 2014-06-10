@@ -69,7 +69,9 @@ namespace NachoCore.ActiveSync
             switch (status) {
             case Xml.Mov.StatusCode.InvalidSrc_1:
                 LocalFailureInd.Why = NcResult.WhyEnum.MissingOnServer;
-                PendingSingle.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSyncThenSync, LocalFailureInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSyncThenSync, LocalFailureInd);
+                });
                 return Event.Create (new Event[] {
                     Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "MIIS1"),
                     Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "MIIS2"),
@@ -77,7 +79,9 @@ namespace NachoCore.ActiveSync
 
             case Xml.Mov.StatusCode.InvalidDest_2:
                 LocalFailureInd.Why = NcResult.WhyEnum.MissingOnServer;
-                PendingSingle.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSync, LocalFailureInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSync, LocalFailureInd);
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "MIID");
 
             case Xml.Mov.StatusCode.Success_3:
@@ -113,12 +117,16 @@ namespace NachoCore.ActiveSync
                         item.Update ();
                     }
                 }
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "MVSUCCESS");
 
             case Xml.Mov.StatusCode.SrcDestSame_4:
                 Log.Error (Log.LOG_AS, "Attempted to move where the destination folder == the source folder.");
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "MVIDIOT");
 
             case Xml.Mov.StatusCode.ClobberOrMulti_5:
@@ -127,19 +135,25 @@ namespace NachoCore.ActiveSync
                  * Since we are 1-at-a-time, we can assume the latter.
                  */
                 LocalFailureInd.Why = NcResult.WhyEnum.LockedOnServer;
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "MVGRINF");
 
             case Xml.Mov.StatusCode.Locked_7:
                 LocalFailureInd.Why = NcResult.WhyEnum.LockedOnServer;
-                PendingSingle.ResolveAsDeferred (BEContext.ProtoControl,
-                    DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds), LocalFailureInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsDeferred (BEContext.ProtoControl,
+                        DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds), LocalFailureInd);
+                });
                 return Event.Create ((uint)(uint)AsProtoControl.AsEvt.E.ReSync, "MVSYNC");
             
             default:
                 Log.Error (Log.LOG_AS, "Unknown status code in AsMoveItemsCommand response: {0}", status);
                 LocalFailureInd.Why = NcResult.WhyEnum.Unknown;
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUS");
             }
         }

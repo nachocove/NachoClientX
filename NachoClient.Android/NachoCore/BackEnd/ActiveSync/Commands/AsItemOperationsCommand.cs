@@ -50,10 +50,14 @@ namespace NachoCore.ActiveSync
                     attachment.PercentDownloaded = 100;
                     attachment.IsDownloaded = true;
                     attachment.Update ();
-                    PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
+                    PendingApply ((pending) => {
+                        pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
+                    });
                     return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
                 } else {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
+                    PendingApply ((pending) => {
+                        pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
+                    });
                     return Event.Create ((uint)SmEvt.E.HardFail, "IOHARDU");
                 }
 
@@ -62,17 +66,21 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.StoreUnknownOrNotSupported_9:
             case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
             case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.ProtocolError));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.ProtocolError));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD0");
 
             case Xml.ItemOperations.StatusCode.ServerError_3:
             case Xml.ItemOperations.StatusCode.IoFailure_12:
             case Xml.ItemOperations.StatusCode.ConversionFailure_14:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.ServerError));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.ServerError));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD1");
 
             case Xml.ItemOperations.StatusCode.DocLibBadUri_4:
@@ -81,29 +89,37 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.DocLibFailedServerConn_7:
             case Xml.ItemOperations.StatusCode.PartialFailure_17:
             case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.Unknown));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.Unknown));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD2");
 
             
 
             case Xml.ItemOperations.StatusCode.FileEmpty_10:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.MissingOnServer));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.MissingOnServer));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.TooBig));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.TooBig));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.AccessDeniedOrBlocked));
+                PendingApply ((pending) => {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.AccessDeniedOrBlocked));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD4");
 
             /* FIXME. Need to be able to trigger cred-req from here.
@@ -111,9 +127,11 @@ namespace NachoCore.ActiveSync
              * PendingSingle.ResoveAsDeferredForce ();
              */
             default:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                        NcResult.WhyEnum.Unknown));
+                PendingApply ((pending) => {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
+                            NcResult.WhyEnum.Unknown));
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "IOFAIL");
             }
         }

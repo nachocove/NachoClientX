@@ -53,8 +53,10 @@ namespace NachoCore.ActiveSync
                     foreach (var xmlResult in xmlResults) {
                         UpdateOrInsertGalCache (xmlResult, PendingSingle.Token);
                     }
-                    PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
-                        NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
+                    PendingApply ((pending) => {
+                        pending.ResolveAsSuccess (BEContext.ProtoControl,
+                            NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
+                    });
                     return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");
                 
                 default:
@@ -74,48 +76,62 @@ namespace NachoCore.ActiveSync
                         switch ((Xml.Search.StoreStatusCode)uint.Parse (status)) {
                         case Xml.Search.StoreStatusCode.InvalidRequest_2:
                         case Xml.Search.StoreStatusCode.BadLink_4:
-                            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.BadOrMalformed));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.BadOrMalformed));
+                            });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD0");
 
                         case Xml.Search.StoreStatusCode.AccessDenied_5:
                         case Xml.Search.StoreStatusCode.AccessBlocked_13:
-                            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.AccessDeniedOrBlocked));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.AccessDeniedOrBlocked));
+                            });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD1");
 
                         case Xml.Search.StoreStatusCode.TooComplex_8:
-                            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.TooComplex));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.TooComplex));
+                            });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD2");
 
                         case Xml.Search.StoreStatusCode.ServerError_3:
-                            PendingSingle.ResolveAsDeferred (BEContext.ProtoControl,
-                                DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.ServerError));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                    DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.ServerError));
+                            });
                             return Event.Create ((uint)SmEvt.E.TempFail, "SRCHTEMP0");
 
                         case Xml.Search.StoreStatusCode.ConnectionFailed_7:
                         case Xml.Search.StoreStatusCode.TimedOut_10:
                             // TODO: Possibly drop rebuild ask on timeout case.
-                            PendingSingle.ResolveAsDeferred (BEContext.ProtoControl,
-                                DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.Unknown));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                    DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.Unknown));
+                            });
                             return Event.Create ((uint)SmEvt.E.TempFail, "SRCHTEMP1");
 
                         case Xml.Search.StoreStatusCode.FSyncRequired_11:
-                            PendingSingle.ResolveAsDeferredForce ();
+                            PendingApply ((pending) => {
+                                pending.ResolveAsDeferredForce ();
+                            });
                             return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SRCHREFSYNC");
 
                         case Xml.Search.StoreStatusCode.EndOfRRange_12:
-                            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.TooComplex));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.TooComplex));
+                            });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHEORR");
 
                         /* FIXME. Need to be able to trigger cred-req from here.
@@ -124,24 +140,28 @@ namespace NachoCore.ActiveSync
                          */
 
                         default:
-                            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                                NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                    NcResult.WhyEnum.Unknown));
+                            PendingApply ((pending) => {
+                                pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                                        NcResult.WhyEnum.Unknown));
+                            });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHUNK");
                         }
                     }
                 }
             }
             // if we got here, it is TL Server Error or some unknown.
-            if (Xml.Search.SearchStatusCode.ServerError_3 == (Xml.Search.SearchStatusCode)uint.Parse (status)) {
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                        NcResult.WhyEnum.ServerError));
-            } else {
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                        NcResult.WhyEnum.Unknown));
-            }
+            PendingApply ((pending) => {
+                if (Xml.Search.SearchStatusCode.ServerError_3 == (Xml.Search.SearchStatusCode)uint.Parse (status)) {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                            NcResult.WhyEnum.ServerError));
+                } else {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
+                            NcResult.WhyEnum.Unknown));
+                }
+            });
             return Event.Create ((uint)SmEvt.E.HardFail, "SRTLYUK");
         }
 

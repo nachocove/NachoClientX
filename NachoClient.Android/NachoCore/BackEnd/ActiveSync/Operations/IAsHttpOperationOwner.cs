@@ -28,8 +28,8 @@ namespace NachoCore.ActiveSync
         void StatusInd (bool didSucceed);
         void StatusInd (NcResult result);
         bool WasAbleToRephrase ();
-        void ResoveAllFailed (NcResult.WhyEnum why);
-        void ResoveAllDeferred ();
+        void ResolveAllFailed (NcResult.WhyEnum why);
+        void ResolveAllDeferred ();
     }
 }
 
