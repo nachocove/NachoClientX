@@ -194,9 +194,6 @@ namespace NachoCore.ActiveSync
             }
 
             // Delete the actual item.
-            foreach (var folder in folders) {
-                folder.Unlink (emailMessage);
-            }
             emailMessage.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
@@ -489,9 +486,6 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             // Delete the actual item.
-            foreach (var folder in folders) {
-                folder.Unlink (cal);
-            }
             cal.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
@@ -588,9 +582,6 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             // Delete the actual item.
-            foreach (var folder in folders) {
-                folder.Unlink (contact);
-            }
             contact.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
@@ -687,9 +678,6 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             // Delete the actual item.
-            foreach (var folder in folders) {
-                folder.Unlink (task);
-            }
             task.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));

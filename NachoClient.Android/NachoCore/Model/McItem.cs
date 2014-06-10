@@ -37,6 +37,12 @@ namespace NachoCore.Model
             Internal,
         };
 
+        public virtual int Delete ()
+        {
+            McFolder.UnlinkAll (this);
+            return base.Delete ();
+        }
+
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McItem, new()
         {
             return NcModel.Instance.Db.Query<T> (
