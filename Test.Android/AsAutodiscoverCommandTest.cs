@@ -15,6 +15,7 @@ using System.Xml.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Linq;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 
 /*
@@ -115,7 +116,7 @@ namespace Test.iOS
 
                     // provide valid redirection headers if needed
                     if (isRedirection && !hasRedirected) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                         hasRedirected = true; // disable second redirection
                         step = MockSteps.S1;
@@ -174,7 +175,7 @@ namespace Test.iOS
 
                     // provide valid redirection headers if needed
                     if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", redirUrl);
                     } else {
                         httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
@@ -210,7 +211,9 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
-                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                PerformAutoDiscoveryWithSettings (true, sm => {
+                    sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
+                }, request => {
                     return XMLContentForStep (step, request, xml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
@@ -331,10 +334,10 @@ namespace Test.iOS
 
                     // provide valid redirection headers if needed
                     if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                     } else if (isOptions && !hasProvidedCreds) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Unauthorized;
+                        httpResponse.StatusCode = HttpStatusCode.Unauthorized;
                         hasProvidedCreds = true;
                     } else {
                         httpResponse.StatusCode = PassRobotForStep (step, httpRequest, httpResponse);
@@ -407,7 +410,7 @@ namespace Test.iOS
 
                     // provide valid redirection headers if needed
                     if (isRedirection && !hasRedirected) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                         hasRedirected = true; // disable second redirection
                         step = MockSteps.S1;
@@ -438,6 +441,8 @@ namespace Test.iOS
             MockHttpClient.HasServerCertificate = null;
             MockNcCommStatus.Instance = null;
 
+            MockOwner.Status = null;
+
             autodCommand = null;
             mockContext = null;
 
@@ -463,7 +468,7 @@ namespace Test.iOS
             ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
-        public System.Net.HttpStatusCode PassRobotForStep (MockSteps step, HttpRequestMessage request, HttpResponseMessage httpResponse)
+        public HttpStatusCode PassRobotForStep (MockSteps step, HttpRequestMessage request, HttpResponseMessage httpResponse)
         {
             string requestUri = request.RequestUri.ToString ();
             string s1Uri = "https://" + CommonMockData.Host;
@@ -471,7 +476,7 @@ namespace Test.iOS
 
             // always pass if the redirection url is given
             if (requestUri == CommonMockData.RedirectionUrl) {
-                return System.Net.HttpStatusCode.OK;
+                return HttpStatusCode.OK;
             }
 
             bool giveOK = false;
@@ -491,9 +496,9 @@ namespace Test.iOS
                 break;
             }
             if (giveOK) {
-                return System.Net.HttpStatusCode.OK;
+                return HttpStatusCode.OK;
             } else {
-                return System.Net.HttpStatusCode.NotFound;
+                return HttpStatusCode.NotFound;
             }
         }
 
@@ -585,6 +590,12 @@ namespace Test.iOS
 
             bool didFinish = autoResetEvent.WaitOne (8000);
             Assert.IsTrue (didFinish, "Operation did not finish");
+
+            // if result kind was set by test (see 600/601 for example),
+            // then test that code was set correctly
+            if (resultKind != NcResult.SubKindEnum.NotSpecified) {
+                Assert.AreEqual (resultKind, MockOwner.Status.SubKind, "StatusInd should set status code correctly");
+            }
 
             if (testEndingDbState) {
                 // Test that the server record was updated
