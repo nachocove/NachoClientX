@@ -40,39 +40,55 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderUpdate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
-                    NcResult.Info (NcResult.SubKindEnum.Info_FolderUpdateSucceeded));
+                PendingApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl,
+                        NcResult.Info (NcResult.SubKindEnum.Info_FolderUpdateSucceeded));
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "FUPSUCCESS");
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Exists_2:
                 // "A folder with that name already exists" - makes no sense for update.
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Special_3:
-                PendingSingle.ResolveAsUserBlocked (BEContext.ProtoControl,
-                    McPending.BlockReasonEnum.MustPickNewParent,
-                    NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed,
-                        NcResult.WhyEnum.SpecialFolder));
+                PendingApply ((pending) => {
+                    pending.ResolveAsUserBlocked (BEContext.ProtoControl,
+                        McPending.BlockReasonEnum.MustPickNewParent,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed,
+                            NcResult.WhyEnum.SpecialFolder));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL1");
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Missing_4:
-                if (0 == PendingSingle.DefersRemaining) {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                        NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
-                            NcResult.WhyEnum.MissingOnServer));
-                    return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
-                } else {
-                    PendingSingle.ResolveAsDeferredForce ();
-                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
+                lock (PendingResolveLockObj) {
+                    if (null == PendingSingle) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPECC");
+                    } else if (0 == PendingSingle.DefersRemaining) {
+                        PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                            NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                                NcResult.WhyEnum.MissingOnServer));
+                        PendingSingle = null;
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
+                    } else {
+                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle = null;
+                        return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
+                    }
                 }
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.MissingParent_5:
-                if (0 == PendingSingle.DefersRemaining) {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                        NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
-                            NcResult.WhyEnum.MissingOnServer));
-                    return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
-                } else {
-                    PendingSingle.ResolveAsDeferredForce ();
-                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
+                lock (PendingResolveLockObj) {
+                    if (null == PendingSingle) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILMPC");
+                    } else if (0 == PendingSingle.DefersRemaining) {
+                        PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                            NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                                NcResult.WhyEnum.MissingOnServer));
+                        PendingSingle = null;
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILMP");
+                    } else {
+                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle = null;
+                        return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
+                    }
                 }
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.ServerError_6:
@@ -82,20 +98,26 @@ namespace NachoCore.ActiveSync
                  */
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingSingle.ResolveAsDeferredForce ();
+                PendingApply ((pending) => {
+                    PendingSingle.ResolveAsDeferredForce ();
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC2");
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.ReSync_9:
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingSingle.ResolveAsDeferredForce ();
+                PendingApply ((pending) => {
+                    PendingSingle.ResolveAsDeferredForce ();
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC3");
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.BadFormat_10:
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Unknown_11:
             default:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed));
+                PendingApply ((pending) => {
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL");
             }
         }

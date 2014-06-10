@@ -48,43 +48,59 @@ namespace NachoCore.ActiveSync
                 };
                 applyFolderCreate.ProcessDelta ();
 
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
-                    NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
+                PendingApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl,
+                        NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "FCRESUCCESS");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.Exists_2:
-                PendingSingle.ResolveAsUserBlocked (BEContext.ProtoControl,
-                    McPending.BlockReasonEnum.MustChangeName,
-                    NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed,
-                        NcResult.WhyEnum.AlreadyExistsOnServer));
+                PendingApply ((pending) => {
+                    pending.ResolveAsUserBlocked (BEContext.ProtoControl,
+                        McPending.BlockReasonEnum.MustChangeName,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed,
+                            NcResult.WhyEnum.AlreadyExistsOnServer));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FCREDUP2");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.SpecialParent_3:
-                PendingSingle.ResolveAsUserBlocked (BEContext.ProtoControl,
-                    McPending.BlockReasonEnum.MustPickNewParent,
-                    NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
+                PendingApply ((pending) => {
+                    pending.ResolveAsUserBlocked (BEContext.ProtoControl,
+                        McPending.BlockReasonEnum.MustPickNewParent,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FCRESPECIAL");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.BadParent_5:
                 // Need to ask user for different name *after* the FolderSync.
                 // So we check to see if it is out of DefersRemaining. If yes, THEN we bug the user.
-                if (0 == PendingSingle.DefersRemaining) {
-                    PendingSingle.ResolveAsUserBlocked (BEContext.ProtoControl,
-                        McPending.BlockReasonEnum.MustPickNewParent,
-                        NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
-                    return Event.Create ((uint)SmEvt.E.HardFail, "FCREBADP");
-                } else {
-                    PendingSingle.ResolveAsDeferredForce ();
-                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC");
+                lock (PendingResolveLockObj) {
+                    if (null == PendingSingle) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FCREBADPC");
+                    } else if (0 == PendingSingle.DefersRemaining) {
+                        PendingSingle.ResolveAsUserBlocked (BEContext.ProtoControl,
+                            McPending.BlockReasonEnum.MustPickNewParent,
+                            NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
+                        PendingSingle = null;
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FCREBADP");
+                    } else {
+                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle = null;
+                        return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC");
+                    }
                 }
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.ServerError_6:
                 // Trust server to tell FolderSync if we need to reset SyncKey.
-                PendingSingle.ResolveAsDeferredForce ();
+                PendingApply ((pending) => {
+                    pending.ResolveAsDeferredForce ();
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.ReSync_9:
-                PendingSingle.ResolveAsDeferredForce ();
+                PendingApply ((pending) => {
+                    pending.ResolveAsDeferredForce ();
+                });
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC2");
@@ -93,8 +109,10 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderCreateStatusCode.BadFormat_10:
             case Xml.FolderHierarchy.FolderCreateStatusCode.Unknown_11:
             case Xml.FolderHierarchy.FolderCreateStatusCode.BackEndError_12:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
+                PendingApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FCREFAIL");
             }
         }
