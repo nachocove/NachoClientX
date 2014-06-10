@@ -355,10 +355,10 @@ namespace NachoCore.Model
                 return false;
             }
             if (DateTime.MinValue != FlagDeferUntil) {
-                return DateTime.Now > FlagDeferUntil;
+                return DateTime.Now < FlagDeferUntil;
             }
             if (DateTime.MinValue != FlagUtcDeferUntil) {
-                return DateTime.UtcNow > FlagUtcDeferUntil;
+                return DateTime.UtcNow < FlagUtcDeferUntil;
             }
             NcAssert.CaseError ();
             return false;
