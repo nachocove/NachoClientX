@@ -39,6 +39,11 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
+        public void RefreshEmailMessages()
+        {
+            messageThreads.Refresh ();
+        }
+
         protected bool NoMessageThreads ()
         {
             return ((null == messageThreads) || (0 == messageThreads.Count ()));
@@ -387,7 +392,7 @@ namespace NachoClient.iOS
             // User image view
             // TODO: user images
             var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var emailOfSender = Pretty.EmailString(message.From);
+            var emailOfSender = Pretty.EmailString (message.From);
             string sender = Pretty.SenderString (message.From);
 
             int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
@@ -421,10 +426,12 @@ namespace NachoClient.iOS
             // Reminder image view and label
             var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = cell.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            if ((!compactMode) && message.HasDueDate ()) {
+            if ((!compactMode) && (message.HasDueDate () || message.IsDeferred ())) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
-                if (message.IsOverdue ()) {
+                if (message.IsDeferred ()) {
+                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagDeferUntil);
+                } else if (message.IsOverdue ()) {
                     reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
                 } else {
                     reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());

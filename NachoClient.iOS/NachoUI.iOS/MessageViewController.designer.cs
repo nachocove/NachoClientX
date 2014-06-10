@@ -13,10 +13,7 @@ namespace NachoClient.iOS
 	partial class MessageViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem checkButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem clockButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem deferButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
@@ -25,10 +22,10 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem flexibleSpaceButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem foldersButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem quickReplyButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem replyAllButton { get; set; }
@@ -37,20 +34,13 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem replyButton { get; set; }
 
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (checkButton != null) {
-				checkButton.Dispose ();
-				checkButton = null;
-			}
-
-			if (clockButton != null) {
-				clockButton.Dispose ();
-				clockButton = null;
-			}
-
 			if (deleteButton != null) {
 				deleteButton.Dispose ();
 				deleteButton = null;
@@ -59,11 +49,6 @@ namespace NachoClient.iOS
 			if (flexibleSpaceButton != null) {
 				flexibleSpaceButton.Dispose ();
 				flexibleSpaceButton = null;
-			}
-
-			if (foldersButton != null) {
-				foldersButton.Dispose ();
-				foldersButton = null;
 			}
 
 			if (forwardButton != null) {
@@ -81,9 +66,24 @@ namespace NachoClient.iOS
 				replyButton = null;
 			}
 
+			if (saveButton != null) {
+				saveButton.Dispose ();
+				saveButton = null;
+			}
+
+			if (deferButton != null) {
+				deferButton.Dispose ();
+				deferButton = null;
+			}
+
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
+			}
+
+			if (quickReplyButton != null) {
+				quickReplyButton.Dispose ();
+				quickReplyButton = null;
 			}
 		}
 	}

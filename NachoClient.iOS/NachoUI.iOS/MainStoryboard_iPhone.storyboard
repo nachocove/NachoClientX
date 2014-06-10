@@ -992,11 +992,11 @@
                         <outlet property="saveButton" destination="vFg-TU-IRT" id="JBm-Qx-P3Q"/>
                         <outlet property="searchButton" destination="zTu-79-4b2" id="EGO-9q-D24"/>
                         <outlet property="searchDisplayController" destination="Ug7-2K-mbR" id="1qh-sO-pLj"/>
-                        <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
-                        <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
-                        <segue destination="96Q-f8-PuZ" kind="push" identifier="MessageListToMessageView" id="c79-xS-Npa"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="MessageListToNachoNow" id="gkM-dU-I3K"/>
-                        <segue destination="HgO-45-h9V" kind="push" identifier="MessageListToCalendarItemEdit" id="lVj-NH-yQq"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
+                        <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
+                        <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="c79-xS-Npa"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="NachoNowToNachoNow" id="gkM-dU-I3K"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItemEdit" id="lVj-NH-yQq"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1012,7 +1012,7 @@
                 <barButtonItem systemItem="search" id="zTu-79-4b2"/>
                 <barButtonItem title="Item" image="navbar-icn-newEmail.png" id="A97-xe-h8f">
                     <connections>
-                        <segue destination="lOe-mG-VS5" kind="push" identifier="MessageListToCompose" id="6LT-Zj-XeH"/>
+                        <segue destination="lOe-mG-VS5" kind="push" identifier="NachoNowToCompose" id="6LT-Zj-XeH"/>
                     </connections>
                 </barButtonItem>
                 <barButtonItem image="Nacho-Cove-Icon.png" id="lwb-Kh-Nak" userLabel="Bar Button Item - Nacho"/>
@@ -1045,14 +1045,14 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
                     <connections>
-                        <outlet property="checkButton" destination="48s-Jx-T9s" id="be8-kU-gAI"/>
-                        <outlet property="clockButton" destination="IfT-j6-Bb4" id="Zsd-5X-ipN"/>
-                        <outlet property="deleteButton" destination="Zr2-lX-3VI" id="I6X-nG-eOk"/>
+                        <outlet property="deferButton" destination="Tpu-Ah-KZ5" id="vgx-iP-oBs"/>
+                        <outlet property="deleteButton" destination="PNM-D1-huA" id="QKl-7t-grl"/>
                         <outlet property="flexibleSpaceButton" destination="hYC-KD-Xk0" id="ekc-yV-Qi3"/>
-                        <outlet property="foldersButton" destination="U02-SH-VHC" id="OsV-FF-xHc"/>
                         <outlet property="forwardButton" destination="mmY-Kk-Ld8" id="yz0-CK-zzG"/>
+                        <outlet property="quickReplyButton" destination="AWp-LH-tHp" id="6MW-Mf-t6t"/>
                         <outlet property="replyAllButton" destination="R7P-Ye-Fgq" id="tgo-VQ-ORd"/>
                         <outlet property="replyButton" destination="l45-TG-u6H" id="mS9-Up-jCu"/>
+                        <outlet property="saveButton" destination="Tcg-BD-64n" id="s4a-tn-WDz"/>
                         <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" id="qB9-ce-7gT"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="MessageViewToMessageAction" id="G1z-aV-19B"/>
@@ -1060,20 +1060,20 @@
                         <segue destination="HgO-45-h9V" kind="push" identifier="MessageViewToCalendarItemEdit" id="qvr-mL-sd9"/>
                     </connections>
                 </viewController>
-                <barButtonItem image="clock.png" id="IfT-j6-Bb4" userLabel="Bar Button Item - Clock"/>
-                <barButtonItem systemItem="trash" id="Zr2-lX-3VI"/>
-                <barButtonItem image="check.png" id="48s-Jx-T9s" userLabel="Bar Button Item - Check"/>
-                <barButtonItem image="ic_action_collection.png" id="U02-SH-VHC" userLabel="Bar Button Item - Folders"/>
                 <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="5C3-Gh-DbC">
                     <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                     <items>
-                        <barButtonItem title="Reply" id="l45-TG-u6H"/>
-                        <barButtonItem title="Reply All" id="R7P-Ye-Fgq"/>
-                        <barButtonItem title="Forward" id="mmY-Kk-Ld8"/>
+                        <barButtonItem image="toolbar-icn-reply.png" id="l45-TG-u6H" userLabel="Bar Button Item - Reply"/>
+                        <barButtonItem image="toolbar-icn-reply-all.png" id="R7P-Ye-Fgq" userLabel="Bar Button Item - Reply All"/>
+                        <barButtonItem image="toolbar-icn-fwd.png" id="mmY-Kk-Ld8" userLabel="Bar Button Item - Forward"/>
                         <barButtonItem style="plain" systemItem="flexibleSpace" id="hYC-KD-Xk0"/>
+                        <barButtonItem image="toolbar-icn-move.png" id="Tcg-BD-64n" userLabel="Bar Button Item - Save"/>
+                        <barButtonItem image="toolbar-icn-delete.png" id="PNM-D1-huA" userLabel="Bar Button Item - Delete"/>
                     </items>
                 </toolbar>
+                <barButtonItem image="navbar-icn-defer.png" id="Tpu-Ah-KZ5" userLabel="Bar Button Item - Defer"/>
+                <barButtonItem image="navbar-icn-quickreply.png" id="AWp-LH-tHp" userLabel="Bar Button Item - Quick Reply"/>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-185" y="1044"/>
@@ -1422,16 +1422,20 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="cal-close-grabber.png" width="36" height="12"/>
         <image name="cal-handle.png" width="320" height="11"/>
         <image name="calendar-3-48.png" width="48" height="48"/>
-        <image name="check.png" width="23" height="20"/>
         <image name="clock-3-48.png" width="48" height="48"/>
-        <image name="clock.png" width="22" height="22"/>
-        <image name="ic_action_collection.png" width="32" height="32"/>
         <image name="list.png" width="20" height="18"/>
+        <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
         <image name="navbar-icn-menu-active.png" width="24" height="24"/>
         <image name="navbar-icn-menu.png" width="24" height="24"/>
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
         <image name="navbar-icn-newevent.png" width="24" height="24"/>
+        <image name="navbar-icn-quickreply.png" width="22" height="23"/>
+        <image name="toolbar-icn-delete.png" width="19" height="21"/>
+        <image name="toolbar-icn-fwd.png" width="21" height="16"/>
+        <image name="toolbar-icn-move.png" width="24" height="20"/>
+        <image name="toolbar-icn-reply-all.png" width="24" height="16"/>
+        <image name="toolbar-icn-reply.png" width="21" height="16"/>
     </resources>
     <color key="tintColor" red="0.20784313725490194" green="0.81568627450980391" blue="0.74509803921568629" alpha="1" colorSpace="deviceRGB"/>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
@@ -1441,19 +1445,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
         <segue reference="vRC-Oi-s8D"/>
+        <segue reference="ebP-h4-BhC"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
         <segue reference="Oi3-nV-lAC"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="i3N-5g-evG"/>
         <segue reference="Pu5-w4-aps"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="eK3-Wd-Zbv"/>
-        <segue reference="vah-yS-677"/>
+        <segue reference="i3N-5g-evG"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="gkM-dU-I3K"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="hxO-14-opZ"/>
         <segue reference="QzA-3p-JuT"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="wNy-ed-w10"/>
         <segue reference="nAp-rc-bND"/>
+        <segue reference="PxE-UU-EfC"/>
     </inferredMetricsTieBreakers>
 </document>
