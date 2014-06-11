@@ -588,6 +588,83 @@ namespace Test.iOS
                 Assert.AreEqual (null, notFoundFolder, "McFolder should delete sub-folders recursively");
             }
         }
+
+        [TestFixture]
+        public class TestLinking : BaseMcFolderTest
+        {
+            [Test]
+            public void TestLink ()
+            {
+                int accountId = 1;
+                McFolder folder = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+
+                var result = folder.Link (email);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.OK);
+
+                List<McMapFolderFolderEntry> folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder.Id);
+                var folderEntry = folderEntries.FirstOrDefault ();
+                if (folderEntry == null) {
+                    Assert.Fail ("No matching folder entries were found");  // sanity check
+                }
+                Assert.AreEqual (folder.AccountId, folderEntry.AccountId, "Account ID should be set correctly");
+                Assert.AreEqual (email.Id, folderEntry.FolderEntryId, "ID of object (folder entry) should be set correctly");
+
+                // error should be thrown if object already exists in folder
+                result = folder.Link (email);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_AlreadyInFolder, "Should return error result if object already exists in folder");
+            }
+
+            [Test]
+            public void TestUnlink ()
+            {
+                int accountId = 1;
+                McFolder folder = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+
+                var result = folder.Unlink (email);
+                Assert.AreEqual (NcResult.SubKindEnum.Error_NotInFolder, result.SubKind, "Should return error if unlinking nonexistent object");
+
+                folder.Link (email);
+
+                result = folder.Unlink (email);
+                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "Result should be okay when unlink succeeds");
+                List<McMapFolderFolderEntry> folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder.Id);
+                var folderEntry = folderEntries.FirstOrDefault ();
+                Assert.AreEqual (folderEntry, null, "Folder was not unlinked correctly");
+            }
+
+            [Test]
+            public void TestUnlinkAll ()
+            {
+                int accountId = 1;
+                string customServerId = "Custom Server ID";
+
+                McFolder folder1 = CreateFolder (accountId);
+                McFolder folder2 = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+                McEmailMessage otherEmail = CreateUniqueItem<McEmailMessage> (accountId, serverId: customServerId);
+
+                var result = McFolder.UnlinkAll (email);
+                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "Should be okay to delete non-existent object");
+
+                folder1.Link (email);
+                folder2.Link (email);
+                folder1.Link (otherEmail);
+                folder2.Link (otherEmail);
+
+                result = McFolder.UnlinkAll (email);
+                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "UnlinkAll should result in OK NcResult");
+
+                // Should unlink email but not unlink otherEmail
+                var folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder1.Id);
+                Assert.AreEqual (1, folderEntries.Count, "Email should have been unlinked while otherEmail should remain linked");
+                var folderEntry = folderEntries.FirstOrDefault ();
+                Assert.AreNotEqual (null, folderEntry, "otherEmail should not have been unlinked");
+
+                Assert.AreEqual (otherEmail.Id, folderEntry.FolderEntryId, "Retrieved object should match otherEmail, not email");
+            }
+        }
     }
 
     public class BaseMcFolderTest
