@@ -129,12 +129,12 @@ namespace Test.iOS
             return false;
         }
 
-        public virtual void ResoveAllFailed (NcResult.WhyEnum why)
+        public virtual void ResolveAllFailed (NcResult.WhyEnum why)
         {
             // Dummy.
         }
 
-        public virtual void ResoveAllDeferred ()
+        public virtual void ResolveAllDeferred ()
         {
             // Dummy.
         }

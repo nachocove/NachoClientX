@@ -69,6 +69,7 @@ namespace NachoCore.Model
             Db.CreateTable<McFile> ();
             Db.CreateTable<McTelemetryEvent> ();
             Db.CreateTable<McMutables> ();
+            Db.CreateTable<McPath> ();
         }
 
         private NcModel ()
