@@ -21,9 +21,6 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwaitingCreate { get; set; }
 
-        [Indexed]
-        public bool IsAwaitingDelete { get; set; }
-
         public const string AsSyncKey_Initial = "0";
         public const string AsRootServerId = "0";
 
@@ -119,6 +116,7 @@ namespace NachoCore.Model
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
                           " f.Type = ? AND " +
                           " f.ParentId = ? AND " +
                           " f.DisplayName = ?",
@@ -134,6 +132,7 @@ namespace NachoCore.Model
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
                           " f.Type = ? ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
@@ -172,6 +171,7 @@ namespace NachoCore.Model
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
                           " f.ParentId = ? ",
                               accountId, parentId);
             return folders.ToList ();
@@ -303,7 +303,7 @@ namespace NachoCore.Model
         {
             // TODO: USE SQL UPDATE.
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          "f.AccountId = ? ",
+                " f.AccountId = ? ",
                               accountId);
             foreach (var folder in folders) {
                 folder.AsSyncKey = AsSyncKey_Initial;

@@ -37,7 +37,7 @@ namespace NachoCore.Model
             Internal,
         };
 
-        public virtual int Delete ()
+        public override int Delete ()
         {
             McFolder.UnlinkAll (this);
             return base.Delete ();
@@ -48,6 +48,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                 " f.AccountId = ? AND " +
+                " f.IsAwaitingDelete = 0 AND " +
                 " f.ClientId = ? ", 
                     typeof(T).Name), 
                 accountId, clientId).SingleOrDefault ();
@@ -60,6 +61,7 @@ namespace NachoCore.Model
                     "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
                     " e.AccountId = ? AND " +
                     " m.AccountId = ? AND " +
+                    " e.IsAwaitingDelete = 0 AND " +
                     " m.FolderId = ? ",
                     typeof(T).Name),
                 accountId, accountId, folderId);

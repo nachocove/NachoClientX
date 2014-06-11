@@ -218,6 +218,7 @@ namespace NachoCore.Model
             " ON t.Id = m.FolderEntryId " +
             " WHERE " +
             " t.AccountId = ? AND " +
+            " t.IsAwaitingDelete = 0 AND " +
             " m.AccountId = ? AND " +
             " m.ClassCode = ? " +
             " ORDER BY t.UtcDueDate",

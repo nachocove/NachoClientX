@@ -234,6 +234,7 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
@@ -248,6 +249,7 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
@@ -263,6 +265,7 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
@@ -278,6 +281,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " WHERE " +
+                " e.IsAwaitingDelete = 0 AND " +
                 " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
         }
@@ -285,7 +289,9 @@ namespace NachoCore.Model
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (
-                x => x.AccountId == accountId && x.ThreadTopic == topic).ToList ();
+                x => x.AccountId == accountId &&
+                x.IsAwaitingDelete == false &&
+                x.ThreadTopic == topic).ToList ();
         }
 
         public override int Delete ()
