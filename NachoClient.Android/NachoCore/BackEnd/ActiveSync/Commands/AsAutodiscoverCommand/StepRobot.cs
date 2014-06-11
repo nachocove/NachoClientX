@@ -547,6 +547,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotSuccess ()
             {
+                NcAssert.NotNull (SrServerUri);
                 ForTopLevel (Event.Create ((uint)SmEvt.E.Success, "SRSUCCESS", this));
             }
 

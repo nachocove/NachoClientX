@@ -120,7 +120,9 @@ namespace NachoCore.ActiveSync
 
         private McAttachment Attachment ()
         {
-            return McObject.QueryById<McAttachment> (PendingSingle.AttachmentId);
+            var attachment = McObject.QueryById<McAttachment> (PendingSingle.AttachmentId);
+            NcAssert.NotNull (attachment);
+            return attachment;
         }
     }
 }
