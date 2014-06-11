@@ -521,6 +521,13 @@ namespace NachoCore.ActiveSync
                         } catch (InvalidDataException) {
                             Owner.ResoveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND2");
+                        } catch (WebException) {
+                            return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND3");
+                        } catch (Exception ex) {
+                            // We just don't have a catalog of all the "valid" ways we can fail due
+                            // to network errors. Log as Error so we can see anything that looks like a bug.
+                            Log.Error (Log.LOG_HTTP, "Unanticipated Exception: {0}", ex.ToString ());
+                            return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND4");
                         }
                         responseDoc = decoder.XmlDoc;
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);

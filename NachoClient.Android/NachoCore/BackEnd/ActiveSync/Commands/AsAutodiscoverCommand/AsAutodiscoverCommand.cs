@@ -489,6 +489,7 @@ namespace NachoCore.ActiveSync
         private void DoTestFromRobot ()
         {
             var robot = (StepRobot)Sm.Arg;
+            NcAssert.NotNull (robot);
             ServerCandidate = McServer.Create (robot.SrServerUri);
             // Must shut down any remaining robots so they don't post events to TL SM.
             KillAllRobots ();
