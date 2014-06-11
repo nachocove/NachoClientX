@@ -37,14 +37,14 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_FolderDeleteSucceeded));
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "FDELSUCCESS");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Special_3:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
                             NcResult.WhyEnum.SpecialFolder));
@@ -75,7 +75,7 @@ namespace NachoCore.ActiveSync
                  */
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC2");
@@ -83,20 +83,20 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderDeleteStatusCode.ReSync_9:
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC3");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.BadFormat_10:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAIL1");
 
             default:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
                 });

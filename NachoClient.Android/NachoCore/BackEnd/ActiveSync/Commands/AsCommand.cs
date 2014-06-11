@@ -205,7 +205,7 @@ namespace NachoCore.ActiveSync
 
         public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            PendingApply (pending => {
+            PendingNonResolveApply (pending => {
                 pending.ResponseHttpStatusCode = (uint)response.StatusCode;
             });
             return null;
@@ -281,7 +281,19 @@ namespace NachoCore.ActiveSync
 
         protected delegate void PendingAction (McPending pending);
 
-        protected void PendingApply (PendingAction action)
+        protected void PendingNonResolveApply (PendingAction action)
+        {
+            lock (PendingResolveLockObj) {
+                if (null != PendingSingle) {
+                    action (PendingSingle);
+                }
+                foreach (var pending in PendingList) {
+                    action (pending);
+                }
+            }
+        }
+
+        protected void PendingResolveApply (PendingAction action)
         {
             lock (PendingResolveLockObj) {
                 ConsolidatePending ();
@@ -294,7 +306,7 @@ namespace NachoCore.ActiveSync
 
         protected Event CompleteAsHardFail (uint status, NcResult.WhyEnum why)
         {
-            PendingApply (pending => {
+            PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsHardFail (BEContext.ProtoControl, why);
@@ -307,7 +319,7 @@ namespace NachoCore.ActiveSync
         protected Event CompleteAsUserBlocked (uint status, 
                                                McPending.BlockReasonEnum reason, NcResult.WhyEnum why)
         {
-            PendingApply (pending => {
+            PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl, reason, why);
@@ -319,7 +331,7 @@ namespace NachoCore.ActiveSync
 
         protected Event CompleteAsTempFail (uint status)
         {
-            PendingApply (pending => {
+            PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsDeferredForce ();
@@ -378,7 +390,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.StatusCode.MessagePreviouslySent_118:
                 // If server says previously sent, then we succeeded!
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
                 });
@@ -418,7 +430,7 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.SyncStateCorrupt_134:
             case Xml.StatusCode.SyncStateAlreadyExists_135:
             case Xml.StatusCode.SyncStateVersionInvalid_136:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "TLS132-6");
@@ -432,26 +444,26 @@ namespace NachoCore.ActiveSync
                 var protocolState = BEContext.ProtocolState;
                 protocolState.IsWipeRequired = true;
                 protocolState.Update ();
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS140");
 
             case Xml.StatusCode.LegacyDeviceOnStrictPolicy_141:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 
             case Xml.StatusCode.DeviceNotProvisioned_142:
             case Xml.StatusCode.PolicyRefresh_143:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
 
             case Xml.StatusCode.InvalidPolicyKey_144:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 BEContext.ProtocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;

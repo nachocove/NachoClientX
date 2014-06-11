@@ -69,7 +69,7 @@ namespace NachoCore.ActiveSync
             switch (status) {
             case Xml.Mov.StatusCode.InvalidSrc_1:
                 LocalFailureInd.Why = NcResult.WhyEnum.MissingOnServer;
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSyncThenSync, LocalFailureInd);
                 });
                 return Event.Create (new Event[] {
@@ -79,7 +79,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.Mov.StatusCode.InvalidDest_2:
                 LocalFailureInd.Why = NcResult.WhyEnum.MissingOnServer;
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSync, LocalFailureInd);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "MIID");
@@ -117,14 +117,14 @@ namespace NachoCore.ActiveSync
                         item.Update ();
                     }
                 }
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "MVSUCCESS");
 
             case Xml.Mov.StatusCode.SrcDestSame_4:
                 Log.Error (Log.LOG_AS, "Attempted to move where the destination folder == the source folder.");
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "MVIDIOT");
@@ -135,14 +135,14 @@ namespace NachoCore.ActiveSync
                  * Since we are 1-at-a-time, we can assume the latter.
                  */
                 LocalFailureInd.Why = NcResult.WhyEnum.LockedOnServer;
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "MVGRINF");
 
             case Xml.Mov.StatusCode.Locked_7:
                 LocalFailureInd.Why = NcResult.WhyEnum.LockedOnServer;
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferred (BEContext.ProtoControl,
                         DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds), LocalFailureInd);
                 });
@@ -151,7 +151,7 @@ namespace NachoCore.ActiveSync
             default:
                 Log.Error (Log.LOG_AS, "Unknown status code in AsMoveItemsCommand response: {0}", status);
                 LocalFailureInd.Why = NcResult.WhyEnum.Unknown;
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, LocalFailureInd);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUS");

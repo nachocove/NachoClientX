@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            PendingApply ((pending) => {
+            PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
             EmailMessage.Delete ();
@@ -65,7 +65,7 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             // The only applicable TL Status codes are the general ones.
-            PendingApply ((pending) => {
+            PendingResolveApply ((pending) => {
                 pending.ResolveAsHardFail (BEContext.ProtoControl, 
                     NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
                         NcResult.WhyEnum.Unknown));

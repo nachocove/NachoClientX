@@ -50,12 +50,12 @@ namespace NachoCore.ActiveSync
                     attachment.PercentDownloaded = 100;
                     attachment.IsDownloaded = true;
                     attachment.Update ();
-                    PendingApply ((pending) => {
+                    PendingResolveApply ((pending) => {
                         pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
                     });
                     return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
                 } else {
-                    PendingApply ((pending) => {
+                    PendingResolveApply ((pending) => {
                         pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
                     });
                     return Event.Create ((uint)SmEvt.E.HardFail, "IOHARDU");
@@ -66,7 +66,7 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.StoreUnknownOrNotSupported_9:
             case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
             case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.ProtocolError));
@@ -76,7 +76,7 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.ServerError_3:
             case Xml.ItemOperations.StatusCode.IoFailure_12:
             case Xml.ItemOperations.StatusCode.ConversionFailure_14:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.ServerError));
@@ -89,7 +89,7 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.DocLibFailedServerConn_7:
             case Xml.ItemOperations.StatusCode.PartialFailure_17:
             case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.Unknown));
@@ -99,7 +99,7 @@ namespace NachoCore.ActiveSync
             
 
             case Xml.ItemOperations.StatusCode.FileEmpty_10:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.MissingOnServer));
@@ -107,7 +107,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.TooBig));
@@ -115,7 +115,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.AccessDeniedOrBlocked));
@@ -127,7 +127,7 @@ namespace NachoCore.ActiveSync
              * PendingSingle.ResoveAsDeferredForce ();
              */
             default:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
                             NcResult.WhyEnum.Unknown));

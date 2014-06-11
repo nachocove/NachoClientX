@@ -41,14 +41,22 @@ namespace NachoCore.Model
             Internal,
         };
 
+        public virtual void DeleteAncillary ()
+        {
+            // Sub-class overrides and adds post-delete ancillary data cleanup.
+        }
+
         public override int Delete ()
         {
             McFolder.UnlinkAll (this);
-            NcAssert.True (10000 > PendingRefCount);
+            NcAssert.True (100000 > PendingRefCount);
             if (0 == PendingRefCount) {
-                return base.Delete ();
+                var retval = base.Delete ();
+                DeleteAncillary ();
+                return retval;
             } else {
                 IsAwaitingDelete = true;
+                Update ();
                 return 0;
             }
         }

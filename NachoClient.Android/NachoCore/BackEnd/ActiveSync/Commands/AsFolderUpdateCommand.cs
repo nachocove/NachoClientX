@@ -40,7 +40,7 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderUpdate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_FolderUpdateSucceeded));
                 });
@@ -49,7 +49,7 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Exists_2:
                 // "A folder with that name already exists" - makes no sense for update.
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Special_3:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                         McPending.BlockReasonEnum.MustPickNewParent,
                         NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed,
@@ -98,7 +98,7 @@ namespace NachoCore.ActiveSync
                  */
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     PendingSingle.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC2");
@@ -106,7 +106,7 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderUpdateStatusCode.ReSync_9:
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     PendingSingle.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC3");
@@ -114,7 +114,7 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderUpdateStatusCode.BadFormat_10:
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Unknown_11:
             default:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed));
                 });

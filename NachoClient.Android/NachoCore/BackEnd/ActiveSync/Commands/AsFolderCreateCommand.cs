@@ -48,14 +48,14 @@ namespace NachoCore.ActiveSync
                 };
                 applyFolderCreate.ProcessDelta ();
 
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "FCRESUCCESS");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.Exists_2:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                         McPending.BlockReasonEnum.MustChangeName,
                         NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed,
@@ -64,7 +64,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "FCREDUP2");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.SpecialParent_3:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                         McPending.BlockReasonEnum.MustPickNewParent,
                         NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
@@ -92,13 +92,13 @@ namespace NachoCore.ActiveSync
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.ServerError_6:
                 // Trust server to tell FolderSync if we need to reset SyncKey.
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.ReSync_9:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce ();
                 });
                 protocolState.IncrementAsFolderSyncEpoch ();
@@ -109,7 +109,7 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderCreateStatusCode.BadFormat_10:
             case Xml.FolderHierarchy.FolderCreateStatusCode.Unknown_11:
             case Xml.FolderHierarchy.FolderCreateStatusCode.BackEndError_12:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed));
                 });

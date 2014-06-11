@@ -53,7 +53,7 @@ namespace NachoCore.ActiveSync
                     foreach (var xmlResult in xmlResults) {
                         UpdateOrInsertGalCache (xmlResult, PendingSingle.Token);
                     }
-                    PendingApply ((pending) => {
+                    PendingResolveApply ((pending) => {
                         pending.ResolveAsSuccess (BEContext.ProtoControl,
                             NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
                     });
@@ -76,7 +76,7 @@ namespace NachoCore.ActiveSync
                         switch ((Xml.Search.StoreStatusCode)uint.Parse (status)) {
                         case Xml.Search.StoreStatusCode.InvalidRequest_2:
                         case Xml.Search.StoreStatusCode.BadLink_4:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
                                         NcResult.WhyEnum.BadOrMalformed));
@@ -85,7 +85,7 @@ namespace NachoCore.ActiveSync
 
                         case Xml.Search.StoreStatusCode.AccessDenied_5:
                         case Xml.Search.StoreStatusCode.AccessBlocked_13:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
                                         NcResult.WhyEnum.AccessDeniedOrBlocked));
@@ -93,7 +93,7 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD1");
 
                         case Xml.Search.StoreStatusCode.TooComplex_8:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
                                         NcResult.WhyEnum.TooComplex));
@@ -101,7 +101,7 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD2");
 
                         case Xml.Search.StoreStatusCode.ServerError_3:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsDeferred (BEContext.ProtoControl,
                                     DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
@@ -112,7 +112,7 @@ namespace NachoCore.ActiveSync
                         case Xml.Search.StoreStatusCode.ConnectionFailed_7:
                         case Xml.Search.StoreStatusCode.TimedOut_10:
                             // TODO: Possibly drop rebuild ask on timeout case.
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsDeferred (BEContext.ProtoControl,
                                     DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
@@ -121,13 +121,13 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.TempFail, "SRCHTEMP1");
 
                         case Xml.Search.StoreStatusCode.FSyncRequired_11:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsDeferredForce ();
                             });
                             return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SRCHREFSYNC");
 
                         case Xml.Search.StoreStatusCode.EndOfRRange_12:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
                                         NcResult.WhyEnum.TooComplex));
@@ -140,7 +140,7 @@ namespace NachoCore.ActiveSync
                          */
 
                         default:
-                            PendingApply ((pending) => {
+                            PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                                     NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
                                         NcResult.WhyEnum.Unknown));
@@ -151,7 +151,7 @@ namespace NachoCore.ActiveSync
                 }
             }
             // if we got here, it is TL Server Error or some unknown.
-            PendingApply ((pending) => {
+            PendingResolveApply ((pending) => {
                 if (Xml.Search.SearchStatusCode.ServerError_3 == (Xml.Search.SearchStatusCode)uint.Parse (status)) {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,

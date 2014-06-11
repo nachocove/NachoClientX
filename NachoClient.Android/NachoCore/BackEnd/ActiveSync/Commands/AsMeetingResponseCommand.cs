@@ -33,20 +33,20 @@ namespace NachoCore.ActiveSync
             var xmlMeetingResp = doc.Root;
             switch ((Xml.MeetingResp.StatusCode)Convert.ToUInt32 (xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Status).Value)) {
             case Xml.MeetingResp.StatusCode.Success_1:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_MeetingResponseSucceeded));
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "FUPSUCCESS");
 
             case Xml.MeetingResp.StatusCode.InvalidMeetingRequest_2:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
                         NcResult.WhyEnum.BadOrMalformed));
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL1");
 
             default:
-                PendingApply ((pending) => {
+                PendingResolveApply ((pending) => {
                     PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
                         NcResult.WhyEnum.Unknown));
                 });

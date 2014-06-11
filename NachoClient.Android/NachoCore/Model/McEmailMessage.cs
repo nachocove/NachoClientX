@@ -294,11 +294,10 @@ namespace NachoCore.Model
                 x.ThreadTopic == topic).ToList ();
         }
 
-        public override int Delete ()
+        public override void DeleteAncillary ()
         {
             DeleteBody ();
             DeleteAttachments ();
-            return base.Delete ();
         }
 
         public static ClassCodeEnum GetClassCode ()
