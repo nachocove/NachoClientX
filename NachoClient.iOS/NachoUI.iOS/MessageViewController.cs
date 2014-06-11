@@ -428,7 +428,6 @@ namespace NachoClient.iOS
             } else {
                 scrollView.SetZoomScale (1.0f, true);
             }
-            LayoutView ();
         }
 
         protected void CreateAttachmentSection ()
