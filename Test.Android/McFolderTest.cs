@@ -739,20 +739,6 @@ namespace Test.iOS
                 }, "Should throw NachoExceptionFailure when creating a folder whose parent has a different accountId");
             }
 
-            // Folders cannot be linked inside folders
-            [Test]
-            public void TestLinkingFolderInsideFolder ()
-            {
-                int accountId = 1;
-
-                var folder1 = CreateFolder (accountId);
-                var folder2 = CreateFolder (accountId);
-
-                TestForNachoExceptionFailure (() => {
-                    folder1.Link (folder2);
-                }, "Should not be able to link a folder to another folder");
-            }
-
             // An item for one account can’t be Linked inside a folder for another account.
             [Test]
             public void TestLinkingItemsDiffAccounts ()
