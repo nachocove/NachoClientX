@@ -40,6 +40,9 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderUpdateStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderUpdate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
+                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
+                pathElem.ParentId = PendingSingle.ParentId;
+                pathElem.Update ();
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_FolderUpdateSucceeded));

@@ -42,6 +42,10 @@ namespace NachoCore.ActiveSync
                 protocolState.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
                 var serverId = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
+                var pathElem = new McPath (BEContext.Account.Id);
+                pathElem.ServerId = serverId;
+                pathElem.ParentId = PendingSingle.ParentId;
+                pathElem.Insert ();
                 var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
                     PlaceholderId = PendingSingle.ServerId,
                     FinalServerId = serverId,

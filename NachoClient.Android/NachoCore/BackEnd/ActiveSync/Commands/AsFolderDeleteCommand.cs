@@ -37,6 +37,8 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
+                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
+                pathElem.Delete ();
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_FolderDeleteSucceeded));
