@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SQLite;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -22,6 +23,9 @@ namespace NachoCore.Model
         ///  AirSync.TypeCode; also NativeBodyType
         public int BodyType { get; set; }
 
+        [Indexed]
+        public uint PendingRefCount { get; set; }
+
         public McItem ()
         {
             // TODO - only really need to init ClientId for from-client creations.
@@ -40,7 +44,13 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             McFolder.UnlinkAll (this);
-            return base.Delete ();
+            NcAssert.True (10000 > PendingRefCount);
+            if (0 == PendingRefCount) {
+                return base.Delete ();
+            } else {
+                IsAwaitingDelete = true;
+                return 0;
+            }
         }
 
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McItem, new()
