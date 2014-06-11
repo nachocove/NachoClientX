@@ -19,7 +19,6 @@ namespace NachoClient.iOS
 {
     public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate
     {
-        //        INachoEmailMessages messageThreads;
         MessageTableViewSource messageSource;
         // iOS Bug Workaround
         // The cancel button on the search bar breaks
@@ -33,7 +32,6 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
-//            this.messageThreads = messageThreads;
             this.messageSource.SetEmailMessages (messageThreads);
         }
 
