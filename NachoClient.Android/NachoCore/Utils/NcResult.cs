@@ -60,6 +60,7 @@ namespace NachoCore.Utils
             Info_SearchCommandSucceeded,
             // Warning.
             // Error.
+            Error_InvalidParameter,
             Error_UnknownCommandFailure,
             Error_SettingsFailed,
             Error_ProvisionFailed,

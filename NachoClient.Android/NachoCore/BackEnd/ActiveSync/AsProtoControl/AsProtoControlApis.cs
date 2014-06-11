@@ -61,15 +61,25 @@ namespace NachoCore.ActiveSync
 
         public override string SendEmailCmd (int emailMessageId)
         {
-            var sendUpdate = new McPending (Account.Id) {
+            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            if (null == emailMessage) {
+                return null;
+            }
+
+            var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailSend,
                 ItemId = emailMessageId
             };
-            sendUpdate.Insert ();
+
+            pending.Insert ();
+
+            emailMessage.PendingRefCount++;
+            emailMessage.Update ();
+
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSEND");
             }, "SendEmailCmd");
-            return sendUpdate.Token;
+            return pending.Token;
         }
 
         public override string SendEmailCmd (int emailMessageId, int calId)
@@ -87,6 +97,11 @@ namespace NachoCore.ActiveSync
                 Operation = McPending.Operations.EmailSend,
                 ItemId = emailMessageId,
             };
+
+            pending.Insert ();
+
+            emailMessage.PendingRefCount++;
+            emailMessage.Update ();
 
             // 0 means pending has already been completed & deleted.
             if (0 != pendingCalCreId) {
@@ -125,28 +140,31 @@ namespace NachoCore.ActiveSync
             if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                 return SendEmailCmd (newEmailMessageId);
             }
-
-            McEmailMessage refdEmailMessage;
             McFolder folder;
 
-            refdEmailMessage = McObject.QueryById<McEmailMessage> (refdEmailMessageId);
+            var refdEmailMessage = McObject.QueryById<McEmailMessage> (refdEmailMessageId);
+            var newEmailMessage = McObject.QueryById<McEmailMessage> (newEmailMessageId);
             folder = McObject.QueryById<McFolder> (folderId);
-            if (null == refdEmailMessage || null == folder) {
+            if (null == refdEmailMessage || null == newEmailMessage || null == folder) {
                 return null;
             }
 
-            var smartUpdate = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id) {
                 Operation = Op,
                 ItemId = newEmailMessageId,
                 ServerId = refdEmailMessage.ServerId,
                 ParentId = folder.ServerId,
                 Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
             };
-            smartUpdate.Insert ();
+            pending.Insert ();
+
+            newEmailMessage.PendingRefCount++;
+            newEmailMessage.Update ();
+
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCSMF");
             }, "SmartEmailCmd");
-            return smartUpdate.Token;
+            return pending.Token;
         }
 
         public override string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
@@ -426,6 +444,10 @@ namespace NachoCore.ActiveSync
             };
 
             pending.Insert ();
+
+            cal.PendingRefCount++;
+            cal.Update ();
+
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECAL");
@@ -455,6 +477,9 @@ namespace NachoCore.ActiveSync
                 ServerId = cal.ServerId,
             };   
             pending.Insert ();
+
+            cal.PendingRefCount++;
+            cal.Update ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
@@ -523,6 +548,10 @@ namespace NachoCore.ActiveSync
             };
 
             pending.Insert ();
+
+            contact.PendingRefCount++;
+            contact.Update ();
+
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECNT");
@@ -552,6 +581,9 @@ namespace NachoCore.ActiveSync
                 ServerId = contact.ServerId,
             };   
             pending.Insert ();
+
+            contact.PendingRefCount++;
+            contact.Update ();
 
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
@@ -619,6 +651,10 @@ namespace NachoCore.ActiveSync
             };
 
             pending.Insert ();
+
+            task.PendingRefCount++;
+            task.Update ();
+
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCRETSK");
@@ -648,6 +684,9 @@ namespace NachoCore.ActiveSync
                 ServerId = task.ServerId,
             };   
             pending.Insert ();
+
+            task.PendingRefCount++;
+            task.Update ();
 
             NcTask.Run (delegate {
                 Sm.PostAtMostOneEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGTSK");

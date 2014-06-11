@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SQLite;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -22,6 +23,9 @@ namespace NachoCore.Model
         ///  AirSync.TypeCode; also NativeBodyType
         public int BodyType { get; set; }
 
+        [Indexed]
+        public uint PendingRefCount { get; set; }
+
         public McItem ()
         {
             // TODO - only really need to init ClientId for from-client creations.
@@ -37,10 +41,24 @@ namespace NachoCore.Model
             Internal,
         };
 
-        public virtual int Delete ()
+        public virtual void DeleteAncillary ()
+        {
+            // Sub-class overrides and adds post-delete ancillary data cleanup.
+        }
+
+        public override int Delete ()
         {
             McFolder.UnlinkAll (this);
-            return base.Delete ();
+            NcAssert.True (100000 > PendingRefCount);
+            if (0 == PendingRefCount) {
+                var retval = base.Delete ();
+                DeleteAncillary ();
+                return retval;
+            } else {
+                IsAwaitingDelete = true;
+                Update ();
+                return 0;
+            }
         }
 
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McItem, new()
@@ -48,6 +66,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                 " f.AccountId = ? AND " +
+                " f.IsAwaitingDelete = 0 AND " +
                 " f.ClientId = ? ", 
                     typeof(T).Name), 
                 accountId, clientId).SingleOrDefault ();
@@ -60,6 +79,7 @@ namespace NachoCore.Model
                     "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
                     " e.AccountId = ? AND " +
                     " m.AccountId = ? AND " +
+                    " e.IsAwaitingDelete = 0 AND " +
                     " m.FolderId = ? ",
                     typeof(T).Name),
                 accountId, accountId, folderId);

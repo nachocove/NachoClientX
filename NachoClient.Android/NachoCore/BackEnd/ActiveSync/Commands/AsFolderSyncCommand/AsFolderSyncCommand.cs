@@ -45,28 +45,44 @@ namespace NachoCore.ActiveSync
                     HadFolderChanges = true;
                     // FIXME: should we try-block each op, since we are saving the syncKey up front?
                     foreach (var change in changes) {
+                        string serverId, parentId;
+                        McPath pathElem;
                         switch (change.Name.LocalName) {
                         case Xml.FolderHierarchy.Add:
+                            serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
+                            parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
+                            pathElem = new McPath (BEContext.Account.Id);
+                            pathElem.ServerId = serverId;
+                            pathElem.ParentId = parentId;
+                            pathElem.Insert ();
                             var applyAdd = new ApplyFolderAdd (BEContext.Account.Id) {
-                                ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value, 
-                                ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value,
+                                ServerId = serverId, 
+                                ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
                                 FolderType = (Xml.FolderHierarchy.TypeCode)uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
                             applyAdd.ProcessDelta ();
                             break;
                         case Xml.FolderHierarchy.Update:
+                            serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
+                            parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
+                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
+                            pathElem.ParentId = parentId;
+                            pathElem.Update ();
                             var applyUpdate = new ApplyFolderUpdate (BEContext.Account.Id) {
-                                ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value,
-                                ParentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value,
+                                ServerId = serverId,
+                                ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
                                 FolderType = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
                             applyUpdate.ProcessDelta ();
                             break;
                         case Xml.FolderHierarchy.Delete:
+                            serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
+                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
+                            pathElem.Delete ();
                             var applyDelete = new ApplyFolderDelete (BEContext.Account.Id) {
-                                ServerId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value,
+                                ServerId = serverId,
                             };
                             applyDelete.ProcessDelta ();
                             break;

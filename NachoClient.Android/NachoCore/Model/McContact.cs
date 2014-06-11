@@ -659,11 +659,9 @@ namespace NachoCore.Model
             return retval;
         }
 
-        public override int Delete ()
+        public override void DeleteAncillary ()
         {
-            int retval = base.Delete ();
             DeleteAncillaryData (NcModel.Instance.Db);
-            return retval;
         }
 
         private NcResult DeleteAncillaryData (SQLiteConnection db)
@@ -953,6 +951,7 @@ namespace NachoCore.Model
                                               " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
                                               " WHERE " +
                                               " c.AccountId = ? AND " +
+                                              " c.IsAwaitingDelete = 0 AND " +
                                               " s.Type = ? AND " +
                                               " s.Value = ? ",
                                               accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
@@ -968,6 +967,7 @@ namespace NachoCore.Model
                                               " WHERE " +
                                               " c.AccountId = m.AccountId AND " +
                                               " c.AccountId = ? AND " +
+                                              " c.IsAwaitingDelete = 0 AND " +
                                               " s.Type = ? AND " +
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
@@ -987,6 +987,7 @@ namespace NachoCore.Model
                                               " c.AccountId = m.AccountId AND " +
                                               " c.AccountId = f.AccountId AND " +
                                               " c.AccountId = ? AND " +
+                                              " c.IsAwaitingDelete = 0 AND " +
                                               " s.Type = ? AND " +
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
@@ -1002,6 +1003,7 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
                 " c.AccountId = ? AND " +
+                " c.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ?  " +
                 " ORDER BY c.FirstName",
@@ -1015,6 +1017,7 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
                 " c.AccountId = ? AND " +
+                " c.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? " +
@@ -1029,6 +1032,7 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
                 " c.AccountId = ? AND " +
+                " c.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " c.Score > ? " +
@@ -1056,6 +1060,7 @@ namespace NachoCore.Model
                     " m.ClassCode=? AND  " +
                     " s.Type=? AND  " +
                     " c.AccountId = ? AND " +
+                    " c.IsAwaitingDelete = 0 AND " +
                     " c.AccountId=m.AccountId AND " +
                     " ( " +
                     "     ( c.FirstName LIKE ? OR c.LastName LIKE ? ) OR " +
@@ -1072,6 +1077,7 @@ namespace NachoCore.Model
                     " m.ClassCode=? AND  " +
                     " s.Type=? AND  " +
                     " c.AccountId = ? AND " +
+                    " c.IsAwaitingDelete = 0 AND " +
                     " c.AccountId=m.AccountId AND " +
                     " ( c.FirstName LIKE ? AND c.LastName LIKE ? ) " +
                     " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 

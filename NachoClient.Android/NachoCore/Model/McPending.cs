@@ -510,6 +510,47 @@ namespace NachoCore.Model
             });
         }
 
+        public override int Delete ()
+        {
+            McItem item = null;
+            if (0 != ItemId) {
+                switch (Operation) {
+                case Operations.EmailSend:
+                case Operations.EmailForward:
+                case Operations.EmailReply:
+                    item = McObject.QueryById<McEmailMessage> (ItemId);
+                    break;
+
+                case Operations.CalCreate:
+                case Operations.CalUpdate:
+                    item = McObject.QueryById<McCalendar> (ItemId);
+                    break;
+
+                case Operations.ContactCreate:
+                case Operations.ContactUpdate:
+                    item = McObject.QueryById<McContact> (ItemId);
+                    break;
+
+                case Operations.TaskCreate:
+                case Operations.TaskUpdate:
+                    item = McObject.QueryById<McTask> (ItemId);
+                    break;
+
+                default:
+                    Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
+                    NcAssert.True (false);
+                    break;
+                }
+                NcAssert.NotNull (item);
+                NcAssert.True (0 < item.PendingRefCount);
+                item.PendingRefCount--;
+                if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
+                    item.Delete ();
+                }
+            }
+            return base.Delete ();
+        }
+
         // Query APIs for any & all to call.
         public static List<McPending> Query (int accountId)
         {

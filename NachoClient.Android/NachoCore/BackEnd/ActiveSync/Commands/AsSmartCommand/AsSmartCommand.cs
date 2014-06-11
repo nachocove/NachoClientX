@@ -65,17 +65,21 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, 
-                NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (BEContext.ProtoControl, 
+                    NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
+            });
             EmailMessage.Delete ();
             return Event.Create ((uint)SmEvt.E.Success, "SESUCC");
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
-            PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
-                    NcResult.WhyEnum.Unknown));
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                    NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
+                        NcResult.WhyEnum.Unknown));
+            });
             return Event.Create ((uint)SmEvt.E.HardFail, "SEFAIL", null, 
                 string.Format ("Server sent non-empty response to SendMail: {0}", doc.ToString ()));
         }
