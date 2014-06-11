@@ -88,15 +88,15 @@ namespace NachoClient.iOS
             owner.PerformSegueForDelegate ("NachoNowToCalendarItem", new SegueHolder (c));
         }
 
-        protected const int SUBJECT_TAG = 101;
-        protected const int DURATION_TAG = 102;
-        protected const int LOCATION_ICON_TAG = 103;
-        protected const int LOCATION_TEXT_TAG = 104;
-        protected const int COMPACT_SUBJECT_TAG = 105;
-        protected const int COMPACT_ICON_TAG = 106;
-        protected const int COMPACT_TEXT_TAG = 107;
-        protected const int LINE_TAG = 108;
-        protected const int DOT_TAG = 109;
+        protected const int SUBJECT_TAG = 99101;
+        protected const int DURATION_TAG = 99102;
+        protected const int LOCATION_ICON_TAG = 99103;
+        protected const int LOCATION_TEXT_TAG = 99104;
+        protected const int COMPACT_SUBJECT_TAG = 99105;
+        protected const int COMPACT_ICON_TAG = 99106;
+        protected const int COMPACT_TEXT_TAG = 99107;
+        protected const int LINE_TAG = 99108;
+        protected const int DOT_TAG = 99109;
 
         /// <summary>
         /// Create the views, not the values, of the cell.
@@ -238,9 +238,9 @@ namespace NachoClient.iOS
             // Subject label view
             var subject = Pretty.SubjectString (c.Subject);
 
-            var dotView = cell.ViewWithTag (DOT_TAG) as UIImageView;
-            var subjectLabelView = cell.ViewWithTag (SUBJECT_TAG) as UILabel;
-            var compactSubjectLabelView = cell.ViewWithTag (COMPACT_SUBJECT_TAG) as UILabel;
+            var dotView = cell.ContentView.ViewWithTag (DOT_TAG) as UIImageView;
+            var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
+            var compactSubjectLabelView = cell.ContentView.ViewWithTag (COMPACT_SUBJECT_TAG) as UILabel;
             compactSubjectLabelView.Hidden = !compactMode;
             subjectLabelView.Hidden = compactMode;
             if (compactMode) {
@@ -254,11 +254,11 @@ namespace NachoClient.iOS
             dotView.Image = UIImage.FromBundle ("cal-dot-icn");
 
             // Duration label view
-            var durationLabelView = cell.ViewWithTag (DURATION_TAG) as UILabel;
-            var locationLabelView = cell.ViewWithTag (LOCATION_TEXT_TAG) as UILabel;
-            var locationIconView = cell.ViewWithTag (LOCATION_ICON_TAG) as UIImageView;
-            var compactIconView = cell.ViewWithTag (COMPACT_ICON_TAG) as UIImageView;
-            var compactTextView = cell.ViewWithTag (COMPACT_TEXT_TAG) as UILabel;
+            var durationLabelView = cell.ContentView.ViewWithTag (DURATION_TAG) as UILabel;
+            var locationLabelView = cell.ContentView.ViewWithTag (LOCATION_TEXT_TAG) as UILabel;
+            var locationIconView = cell.ContentView.ViewWithTag (LOCATION_ICON_TAG) as UIImageView;
+            var compactIconView = cell.ContentView.ViewWithTag (COMPACT_ICON_TAG) as UIImageView;
+            var compactTextView = cell.ContentView.ViewWithTag (COMPACT_TEXT_TAG) as UILabel;
 
             durationLabelView.Hidden = compactMode;
             locationLabelView.Hidden = compactMode;
@@ -309,7 +309,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            var lineView = cell.ViewWithTag (LINE_TAG);
+            var lineView = cell.ContentView.ViewWithTag (LINE_TAG);
             lineView.Hidden = compactMode;
             if (!compactMode) {
                 lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
