@@ -877,6 +877,9 @@ namespace NachoCore.ActiveSync
 
             public Event ProcessResponse (AsDnsOperation Sender, DnsQueryResponse response)
             {
+                if (null == response) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2NULL");
+                }
                 if (RCode.NoError == response.RCode &&
                     0 < response.AnswerRRs &&
                     NsType.SRV == response.NsType) {
