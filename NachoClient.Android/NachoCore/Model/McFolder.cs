@@ -214,7 +214,7 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            // Delete anything in the folder and any map entries (recursively).
+            // Delete anything in the folder and any sub-folders/map entries (recursively).
             var contentMaps = McMapFolderFolderEntry.QueryByFolderId (AccountId, Id);
             foreach (var map in contentMaps) {
                 map.Delete ();
@@ -240,15 +240,19 @@ namespace NachoCore.Model
                     break;
 
                 case McItem.ClassCodeEnum.Folder:
-                    var folder = McFolderEntry.QueryById<McFolder> (map.FolderEntryId);
-                    // recursion.
-                    folder.Delete ();
+                    NcAssert.True (false);
                     break;
 
                 default:
                     NcAssert.True (false);
                     break;
                 }
+            }
+            // Delete any sub-folders.
+            var subs = McFolder.QueryByParentId (AccountId, ServerId);
+            foreach (var sub in subs) {
+                // Recusion.
+                sub.Delete ();
             }
             return base.Delete ();
         }
@@ -260,9 +264,10 @@ namespace NachoCore.Model
             return (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
         }
 
-        public NcResult Link (McFolderEntry obj)
+        public NcResult Link (McItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
+            NcAssert.True (ClassCodeEnum.Folder != classCode);
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);
             if (null != existing) {
@@ -277,7 +282,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public static NcResult UnlinkAll (McFolderEntry obj)
+        public static NcResult UnlinkAll (McItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
             var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (obj.AccountId, obj.Id, classCode);
@@ -287,7 +292,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Unlink (McFolderEntry obj)
+        public NcResult Unlink (McItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 

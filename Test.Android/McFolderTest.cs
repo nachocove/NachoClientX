@@ -578,9 +578,6 @@ namespace Test.iOS
                 McFolder childFolder = CreateFolder (accountId, parentId: parentFolder.Id.ToString (), typeCode: typeCode, serverId: serverId);
                 McFolder subChildFolder = CreateFolder (accountId, parentId: childFolder.Id.ToString (), typeCode: typeCode, serverId: serverId);
 
-                parentFolder.Link (childFolder);
-                childFolder.Link (subChildFolder);
-
                 McFolder foundFolder = McFolder.GetUserFolder (accountId, typeCode, childFolder.Id, subChildFolder.DisplayName);
                 Assert.AreNotEqual (null, foundFolder, "Sanity test: Should retrieve a folder from query");
                 FoldersAreEqual (subChildFolder, foundFolder, "Sanity check that subChild folder was added correctly");
