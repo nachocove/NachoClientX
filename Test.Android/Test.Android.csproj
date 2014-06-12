@@ -89,6 +89,7 @@
     <Compile Include="AsNcStateMachineTest.cs" />
     <Compile Include="NcRateLimiterTest.cs" />
     <Compile Include="NcEmailTest.cs" />
+    <Compile Include="McPendingTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

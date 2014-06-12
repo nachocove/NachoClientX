@@ -62,7 +62,7 @@ namespace NachoCore.Model
             TaskDelete,
             TaskMove,
         };
-        // Lifecycle of McPening:
+        // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
         // - XxxCommand marks it Dispatched and attempts to execute it against the server.
         // -- On success: StatusInd (maybe), then delete of McPending.
