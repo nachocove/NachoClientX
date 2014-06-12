@@ -288,6 +288,8 @@ namespace NachoCore.Model
         public void ResolveAsSuccess (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsSuccess.
+            NcAssert.True (StateEnum.Dispatched == State);
+            NcAssert.True (NcResult.KindEnum.Info == result.Kind);
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
             ResultWhy = result.Why;
@@ -307,6 +309,7 @@ namespace NachoCore.Model
 
         public void ResolveAsCancelled ()
         {
+            NcAssert.True (StateEnum.Dispatched == State);
             State = StateEnum.Deleted;
             Delete ();
         }
@@ -314,6 +317,8 @@ namespace NachoCore.Model
         public void ResolveAsHardFail (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
+            NcAssert.True (StateEnum.Dispatched == State);
+            NcAssert.True (NcResult.KindEnum.Error == result.Kind);
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
             ResultWhy = result.Why;
@@ -435,6 +440,7 @@ namespace NachoCore.Model
 
         public void ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
         {
+            NcAssert.True (StateEnum.Dispatched == State);
             NcAssert.True (DeferredEnum.UntilTime != reason);
             // Added check in case of any bug causing underflow.
             if (0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
@@ -462,6 +468,7 @@ namespace NachoCore.Model
 
         public void ResolveAsDeferredForce ()
         {
+            NcAssert.True (StateEnum.Dispatched == State);
             State = StateEnum.Deferred;
             DeferredReason = DeferredEnum.UntilTime;
             DeferredUntilTime = DateTime.UtcNow;
@@ -471,6 +478,8 @@ namespace NachoCore.Model
         public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
         {
             // This is the designated ResoveAsUserBlocked.
+            NcAssert.True (StateEnum.Dispatched == State);
+            NcAssert.True (NcResult.KindEnum.Error == result.Kind);
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
             ResultWhy = result.Why;

@@ -1318,6 +1318,10 @@ namespace NachoCore.ActiveSync
             }
             switch (pending.State) {
             case McPending.StateEnum.Eligible:
+                // FIXME - may need to deal with successors.
+                pending.Delete ();
+                break;
+
             case McPending.StateEnum.Deferred:
             case McPending.StateEnum.Failed:
             case McPending.StateEnum.PredBlocked:
