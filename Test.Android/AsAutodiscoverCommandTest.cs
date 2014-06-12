@@ -408,8 +408,11 @@ namespace Test.iOS
                 }, (httpRequest, httpResponse) => {
                     MockSteps robotType = DetermineRobotType (httpRequest);
                     if (!hasTimedOutOnce && robotType == step) {
+                        Log.Info (Log.LOG_TEST, "Sleeping started");
                         System.Threading.Thread.Sleep (2000);
                         hasTimedOutOnce = true;
+                        throw new WebException("Timed out");
+                        return;
                     }
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step) && !hasRedirected) {

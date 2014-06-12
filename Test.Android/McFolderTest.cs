@@ -93,19 +93,17 @@ namespace Test.iOS
                 TypeCode typeCode = TypeCode.UserCreatedCal_13;
                 string name = "Name";
 
-                var parent1 = CreateFolder (accountId);
-                parent1.Id = 1;
-                parent1.Update ();
+                string serverId1 = "1";
+                string serverId2 = "2";
 
-                var parent2 = CreateFolder (accountId);
-                parent2.Id = 5;
-                parent2.Update ();
+                var parent1 = CreateFolder (accountId, serverId: serverId1);
+                var parent2 = CreateFolder (accountId, serverId: serverId2);
 
-                CreateFolder (accountId, typeCode: typeCode, parentId: parent1.Id.ToString (), name: name);
-                CreateFolder (accountId, typeCode: typeCode, parentId: parent2.Id.ToString (), name: name);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parent1.ServerId, name: name);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parent2.ServerId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, parent1.Id, name);
-                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, parent2.Id, name);
+                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, serverId1.ToInt (), name);
+                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, serverId2.ToInt (), name);
 
                 Assert.AreNotEqual (expected1.ParentId, expected2.ParentId, "Folders with identical properties should be able to reside under different parents"); 
             }
@@ -575,12 +573,14 @@ namespace Test.iOS
             public void ShouldDeleteFoldersRecursively ()
             {
                 int accountId = 1;
-                string serverId = "My custom server";
+                string parentServerId = "1";
+                string childServerId = "2";
+                string subChildServerId = "3";
 
                 // when deleting folders, should remove all contained folders
-                McFolder parentFolder = CreateFolder (accountId, parentId: "0", serverId: serverId);
-                McFolder childFolder = CreateFolder (accountId, parentId: parentFolder.Id.ToString (), serverId: serverId);
-                McFolder subChildFolder = CreateFolder (accountId, parentId: childFolder.Id.ToString (), serverId: serverId);
+                McFolder parentFolder = CreateFolder (accountId, parentId: "0", serverId: parentServerId);
+                McFolder childFolder = CreateFolder (accountId, parentId: parentServerId, serverId: childServerId);
+                McFolder subChildFolder = CreateFolder (accountId, parentId: childServerId, serverId: subChildServerId);
 
                 var foundFolder = McFolder.QueryById<McFolder> (subChildFolder.Id);
                 Assert.AreNotEqual (null, foundFolder, "Sanity test: Should retrieve a folder from query");
@@ -590,6 +590,8 @@ namespace Test.iOS
 
                 var notFoundFolder = McFolder.QueryById<McFolder> (subChildFolder.Id);
                 Assert.AreEqual (null, notFoundFolder, "McFolder should delete sub-folders recursively");
+                var notFoundChild = McFolder.QueryById<McFolder> (childFolder.Id);
+                Assert.AreEqual (null, notFoundChild);
             }
         }
 
@@ -752,13 +754,6 @@ namespace Test.iOS
                 TestForNachoExceptionFailure (() => {
                     folder.Link (email);
                 }, "Should not be able to link item to folder of different accountId");
-            }
-
-            // Exception should be thrown if isClientOwned is changed before .Update ()
-            [Test]
-            public void TestUpdatingClientOwnedFolder ()
-            {
-
             }
         }
     }
