@@ -444,7 +444,7 @@ namespace Test.iOS
                         throw new WebException("Timed out on purpose");
                     }
                     // provide valid redirection headers if needed
-                    if (ShouldRedirect (httpRequest, step) && !hasRedirected) {
+                    if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
                         httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                         hasRedirected = true; // disable second redirection
@@ -561,9 +561,14 @@ namespace Test.iOS
             return request.RequestUri.ToString () == CommonMockData.RedirectionUrl;
         }
 
-        public bool ShouldRedirect (HttpRequestMessage request, MockSteps step)
+        public bool ShouldRedirect (HttpRequestMessage request, MockSteps step, bool isSubDomain = false)
         {
-            string getUri = "http://autodiscover." + CommonMockData.Host;
+            string getUri = "http://autodiscover.";
+            if (isSubDomain) {
+                getUri += CommonMockData.SubHost;
+            } else {
+                getUri += CommonMockData.Host;
+            }
             string requestUri = request.RequestUri.ToString ();
             return request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri && step == MockSteps.S3;
         }
