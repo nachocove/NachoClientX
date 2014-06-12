@@ -25,6 +25,8 @@ namespace NachoCore.ActiveSync
     {
         private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner
         {
+            private const string KDefaultCertTimeoutSeconds = "8";
+
             public enum RobotLst : uint
             {
                 PostWait = (St.Last + 1),
@@ -80,6 +82,7 @@ namespace NachoCore.ActiveSync
 
             public Type HttpClientType { set; get; }
 
+            private TimeSpan CertTimeout;
             private ConcurrentBag<object> DisposedJunk;
             // Allocated at constructor, thereafter only accessed by Cancel.
             private CancellationTokenSource Cts;
@@ -88,6 +91,8 @@ namespace NachoCore.ActiveSync
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
             {
+                var timeoutSeconds = McMutables.GetOrCreate ("AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
+                CertTimeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
                 Cts = new CancellationTokenSource ();
                 Ct = Cts.Token;
                 DisposedJunk = new ConcurrentBag<object> ();
@@ -504,11 +509,11 @@ namespace NachoCore.ActiveSync
                     ServerCertificate = cached;
                     StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSCC");
                 }
-                // FIXME: need to set & handle timeout.
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
                     var client = (IHttpClient)Activator.CreateInstance (HttpClientType, 
-                        new HttpClientHandler () { AllowAutoRedirect = false });
+                                     new HttpClientHandler () { AllowAutoRedirect = false });
+                    client.Timeout = CertTimeout;
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
                         await client.GetAsync (ReDirUri).ConfigureAwait (false);

@@ -6,11 +6,14 @@ using System.Threading;
 using DnDns.Query;
 using DnDns.Enums;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
     public class AsDnsOperation : IAsOperation
     {
+        private const string KDefaultTimeoutSeconds = "10";
+
         public TimeSpan Timeout { set; get; }
 
         public Type DnsQueryRequestType { set; get; }
@@ -25,7 +28,8 @@ namespace NachoCore.ActiveSync
         public AsDnsOperation (IAsDnsOperationOwner owner)
         {
             LockObj = new object ();
-            Timeout = TimeSpan.Zero;
+            var timeoutSeconds = McMutables.GetOrCreate ("DNSOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
+            Timeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
             DnsQueryRequestType = typeof(MockableDnsQueryRequest);
             m_owner = owner;
         }
