@@ -159,7 +159,6 @@ namespace NachoCore.Wbxml
                                 using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
                                                                   new FromBase64Transform (), CryptoStreamMode.Write)) {
                                     bytes.DequeueStringToStream (cryptoStream, CToken);
-                                    cryptoStream.Dispose ();
                                     currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
                                 }
                             }
