@@ -37,7 +37,9 @@ namespace Test.iOS
         public static Uri MockUri = new Uri ("https://utopiasystems.net");
         public static string Host = "utopiasystems.net";
         public static string SubHost = "foo.utopiasystems.net";
-        public static string RedirectionUrl = "https://redir.utopiasystems.net./autodiscover/autodiscover.xml";
+
+        // DNS tests depends on RedirectionUrl being exactly this because the certificate contains this url
+        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml"; 
         public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
         public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
 

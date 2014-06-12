@@ -351,22 +351,20 @@ namespace Test.iOS
             private void SetTimeoutConstants ()
             {
                 McMutables.Set ("HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set ("AUTOD", "CertTimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set ("DNSOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
             }
 
             [Test]
             public void TestS1 ()
             {
-                SetTimeoutConstants ();
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S1, isSubDomain: false);
+                TestSingleTimeout (MockSteps.S1, false);
             }
 
             [Test]
             public void TestS2 ()
             {
-                SetTimeoutConstants ();
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S2, isSubDomain: false);
+                TestSingleTimeout (MockSteps.S2, false);
             }
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
@@ -374,9 +372,7 @@ namespace Test.iOS
             [Test]
             public void TestS3 ()
             {
-                SetTimeoutConstants ();
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S3, isSubDomain: false);
+                TestSingleTimeout (MockSteps.S3, false);
             }
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
@@ -384,23 +380,38 @@ namespace Test.iOS
             [Test]
             public void TestS4 ()
             {
-                SetTimeoutConstants ();
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S4, isSubDomain: false);
+                TestSingleTimeout (MockSteps.S4, false);
             }
 
             [Test]
-            public void TestSubdomainS1 ()
+            public void TestSubS1 ()
+            {
+                TestSingleTimeout (MockSteps.S1, true);
+            }
+
+            [Test]
+            public void TestSubS2 ()
+            {
+                TestSingleTimeout (MockSteps.S2, true);
+            }
+
+            [Test]
+            public void TestSubS3 ()
+            {
+                TestSingleTimeout (MockSteps.S3, true);
+            }
+
+            [Test]
+            public void TestSubS4 ()
+            {
+                TestSingleTimeout (MockSteps.S4, true);
+            }
+
+            private void TestSingleTimeout (MockSteps step, bool isSubDomain)
             {
                 SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S1, isSubDomain: true);
-                Setup ();
-                TestAutodPingWithXmlResponse (xml, MockSteps.S2, isSubDomain: true);
-                Setup ();
-                TestAutodPingWithXmlResponse (xml, MockSteps.S3, isSubDomain: true);
-                Setup ();
-                TestAutodPingWithXmlResponse (xml, MockSteps.S4, isSubDomain: true);
+                TestAutodPingWithXmlResponse (xml, step, isSubDomain: isSubDomain);
             }
 
             private void TestAutodPingWithXmlResponse (string xml, MockSteps step, bool isSubDomain)
@@ -412,18 +423,21 @@ namespace Test.iOS
                 bool hasTimedOutOnce = false;
 
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    MockSteps robotType = DetermineRobotType (request, isSubDomain: true);
+                    MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
                     return XMLForRobotType (request, robotType, step, xml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
-                        provideDnsResponse.ParseResponse (dnsByteArray);
-                        System.Threading.Thread.Sleep (TimeoutTime);
-                        hasTimedOutOnce = true;
-                        step = MockSteps.S1; // S4 resolves to POST after DNS lookup
-                        throw new AggregateException ("Timed out on purpose");
+                        if (!hasTimedOutOnce) {
+                            System.Threading.Thread.Sleep (TimeoutTime);
+                            hasTimedOutOnce = true;
+                            throw new AggregateException ("Timed out", new SocketException (1));
+                        } else {
+                            provideDnsResponse.ParseResponse (dnsByteArray);
+                            step = MockSteps.S1; // S4 resolves to POST after DNS lookup
+                        }
                     }
                 }, (httpRequest, httpResponse) => {
-                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: true);
+                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: isSubDomain);
                     if (!hasTimedOutOnce && robotType == step) {
                         System.Threading.Thread.Sleep (TimeoutTime);
                         hasTimedOutOnce = true;
