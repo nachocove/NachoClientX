@@ -350,7 +350,7 @@ namespace Test.iOS
 
             private void SetTimeoutConstants ()
             {
-                McMutables.Set ("HTTPOP", "TimeoutSeconds", "2");
+                McMutables.Set ("HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
             }
 
             [Test]
@@ -358,7 +358,7 @@ namespace Test.iOS
             {
                 SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, isSubDomain: false);
             }
 
             [Test]
@@ -366,7 +366,7 @@ namespace Test.iOS
             {
                 SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S2, isSubDomain: false);
             }
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
@@ -376,7 +376,7 @@ namespace Test.iOS
             {
                 SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S3, isSubDomain: false);
             }
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
@@ -386,10 +386,24 @@ namespace Test.iOS
             {
                 SetTimeoutConstants ();
                 string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S4);
+                TestAutodPingWithXmlResponse (xml, MockSteps.S4, isSubDomain: false);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            [Test]
+            public void TestSubdomainS1 ()
+            {
+                SetTimeoutConstants ();
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, isSubDomain: true);
+                Setup ();
+                TestAutodPingWithXmlResponse (xml, MockSteps.S2, isSubDomain: true);
+                Setup ();
+                TestAutodPingWithXmlResponse (xml, MockSteps.S3, isSubDomain: true);
+                Setup ();
+                TestAutodPingWithXmlResponse (xml, MockSteps.S4, isSubDomain: true);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, bool isSubDomain)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
@@ -398,21 +412,22 @@ namespace Test.iOS
                 bool hasTimedOutOnce = false;
 
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    MockSteps robotType = DetermineRobotType (request);
+                    MockSteps robotType = DetermineRobotType (request, isSubDomain: true);
                     return XMLForRobotType (request, robotType, step, xml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
+                        System.Threading.Thread.Sleep (TimeoutTime);
+                        hasTimedOutOnce = true;
                         step = MockSteps.S1; // S4 resolves to POST after DNS lookup
+                        throw new AggregateException ("Timed out on purpose");
                     }
                 }, (httpRequest, httpResponse) => {
-                    MockSteps robotType = DetermineRobotType (httpRequest);
+                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: true);
                     if (!hasTimedOutOnce && robotType == step) {
-                        Log.Info (Log.LOG_TEST, "Sleeping started");
-                        System.Threading.Thread.Sleep (2000);
+                        System.Threading.Thread.Sleep (TimeoutTime);
                         hasTimedOutOnce = true;
-                        throw new WebException("Timed out");
-                        return;
+                        throw new WebException("Timed out on purpose");
                     }
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step) && !hasRedirected) {
@@ -433,6 +448,8 @@ namespace Test.iOS
     {
         private static AsAutodiscoverCommand autodCommand { get; set; }
         private static MockContext mockContext { get; set; }
+
+        public const int TimeoutTime = 1000;
 
         [SetUp]
         public void Setup ()
@@ -553,12 +570,21 @@ namespace Test.iOS
             Assert.AreEqual ("12.0", protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
         }
 
-        public MockSteps DetermineRobotType (HttpRequestMessage request)
+        public MockSteps DetermineRobotType (HttpRequestMessage request, bool isSubDomain = false)
         {
             string requestUri = request.RequestUri.ToString ();
-            string s1Uri = "https://" + CommonMockData.Host;
-            string s2Uri = "https://autodiscover." + CommonMockData.Host;
-            string getUri = "http://autodiscover." + CommonMockData.Host;
+            string s1Uri = "https://";
+            string s2Uri = "https://autodiscover.";
+            string getUri = "http://autodiscover.";
+            if (isSubDomain) {
+                s1Uri += CommonMockData.SubHost;
+                s2Uri += CommonMockData.SubHost;
+                getUri += CommonMockData.SubHost;
+            } else {
+                s1Uri += CommonMockData.Host;
+                s2Uri += CommonMockData.Host;
+                getUri += CommonMockData.Host;
+            }
             switch (request.Method.ToString ()) {
             case "POST":
                 if (requestUri.Substring (0, s1Uri.Length) == s1Uri) {
