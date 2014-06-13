@@ -359,7 +359,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.StatusCode.ServerError_110:
                 if (WasAbleToRephrase ()) {
-                    return Event.Create ((uint)SmEvt.E.TempFail, "TLS110A");
+                    return CompleteAsTempFail (status);
                 }
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ServerError);
 

@@ -50,6 +50,9 @@ namespace NachoCore.ActiveSync
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
             ApplyStrategy ();
+            foreach (var pending in PendingList) {
+                pending.MarkDispached ();
+            }
         }
 
         private XElement ToEmailDelete (McPending pending)
@@ -284,7 +287,6 @@ namespace NachoCore.ActiveSync
                         NcAssert.True (false);
                         break;
                     }
-                    pending.MarkDispached ();
                 }
                 if (commands.HasElements) {
                     collection.Add (commands);
