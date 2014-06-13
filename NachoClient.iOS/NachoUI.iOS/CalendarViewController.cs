@@ -87,7 +87,6 @@ namespace NachoClient.iOS
             DateDotView.MakeDateButtons ();
             DateDotView.UpdateButtons ();
             currentDate = DateDotView.ViewDate;
-            Console.WriteLine("InitialDate: " + DateDotView.ViewDate.ToString());
 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
@@ -183,7 +182,6 @@ namespace NachoClient.iOS
         private void DateDotPan (UIPanGestureRecognizer obj)
         {
             if (UIGestureRecognizerState.Began == obj.State) {
-                Console.WriteLine ("~~~~~~~~~~~~~~~~~~~~~Beginning of Pan~~~~~~~~~~~~~~~~~~~~~");
                 startingX = obj.TranslationInView (this.View).X;
                 var Image = Util.caputureView (DateDotView);
                 copyImage.Image = Image;
@@ -201,9 +199,6 @@ namespace NachoClient.iOS
                         directionFlag = 1;
                         DateDotView.ViewDate = currentDate.AddDays (7);
                         DateDotView.UpdateButtons ();
-                        Console.WriteLine ("After leftPan currentDate: " + currentDate);
-                        Console.WriteLine ("After leftPan DateDotView.ViewDate: " + DateDotView.ViewDate);
-
                     }
 
                     var difference = Math.Abs (xOffset - startingX);
@@ -215,8 +210,6 @@ namespace NachoClient.iOS
                         directionFlag = 2;
                         DateDotView.ViewDate = currentDate.AddDays (-7);
                         DateDotView.UpdateButtons ();
-                        Console.WriteLine ("After rightPan currentDate: " + currentDate);
-                        Console.WriteLine ("After rightPan DateDotView.ViewDate: " + DateDotView.ViewDate);
                     }
 
                     var difference = Math.Abs (xOffset - startingX);
@@ -227,11 +220,7 @@ namespace NachoClient.iOS
             }
 
             if (UIGestureRecognizerState.Ended == obj.State) {
-
-                Console.WriteLine ("Before Swipe Animation currentDate: " + currentDate);
-                Console.WriteLine ("Before Swipe Animation DateDotView.ViewDate: " + DateDotView.ViewDate);
                 if (xOffset < -(DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X < -500) { 
-                    Console.WriteLine ("#### WENT LEFT");
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
                             copyImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
@@ -245,7 +234,6 @@ namespace NachoClient.iOS
                     currentDate = currentDate.AddDays (7);
                     DateDotView.ViewDate = currentDate;
                 } else if (xOffset > (DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X > 500) {
-                    Console.WriteLine ("#### WENT RIGHT");
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
                             copyImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
@@ -259,9 +247,7 @@ namespace NachoClient.iOS
                     currentDate = currentDate.AddDays (-7);
                     DateDotView.ViewDate = currentDate;
                 } else {
-                    Console.WriteLine ("#### STAYED");
                     DateDotView.ViewDate = currentDate;
-
                     DateDotView.UpdateButtons ();
                     if (0 > xOffset) {
                         UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
@@ -284,8 +270,6 @@ namespace NachoClient.iOS
                                 this.View.BringSubviewToFront (copyImage);
                                 copyImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-
-
                             },
                             () => {
                                 DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
@@ -295,10 +279,7 @@ namespace NachoClient.iOS
 
                     }
                 }
-                Console.WriteLine ("After Swipe Animation currentDate: " + currentDate);
-                Console.WriteLine ("After Swipe Animation DateDotView.ViewDate: " + DateDotView.ViewDate);
                 directionFlag = 0;
-                Console.WriteLine ("~~~~~~~~~~~~~~~~~~~~~~~~End of Pan~~~~~~~~~~~~~~~~~~~~~~~~");
                 return;
             }
         }

@@ -460,6 +460,9 @@ namespace NachoClient
             return Initials;
         }
 
+        /// <summary>
+        /// Takes a screenshot of the view passed in and returns an image
+        /// </summary>
         public static UIImage caputureView(UIView view) {
             UIGraphics.BeginImageContextWithOptions (view.Bounds.Size, false, 0.0f);
             view.Layer.RenderInContext (UIGraphics.GetCurrentContext ());
