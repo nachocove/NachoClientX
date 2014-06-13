@@ -860,6 +860,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
       <Link>NachoCore\Utils\NcAssert.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\DateBarView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

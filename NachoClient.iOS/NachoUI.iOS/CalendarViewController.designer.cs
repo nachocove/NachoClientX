@@ -13,7 +13,7 @@ namespace NachoClient.iOS
 	partial class CalendarViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UITableView calendarTableView { get; set; }
+        MonoTouch.UIKit.UITableView calendarTableView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIView dateView { get; set; }

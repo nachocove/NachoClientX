@@ -477,6 +477,17 @@ namespace NachoClient.iOS
                 }
             }
         }
+
+        public void ScrollToDate (UITableView tableView, DateTime date)
+        {
+            if (calendar.NumberOfDays () > 0) {
+                var i = calendar.IndexOfDate (date);
+                if (i >= 0) {
+                    var p = NSIndexPath.FromItemSection (0, i);
+                    tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+                }
+            }
+        }
     }
 }
 
