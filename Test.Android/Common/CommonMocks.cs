@@ -17,6 +17,7 @@ using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using System.Net;
+using NUnit.Framework;
 
 
 namespace Test.iOS
@@ -217,5 +218,48 @@ namespace Test.iOS
 
         public void Reset (int serverId) {}
         public void Refresh () {}
+    }
+
+    public class CommonFolderOps : CommonTestOps
+    {
+        public const string defaultServerId = "5";
+
+        public T CreateUniqueItem<T> (int accountId, string serverId = defaultServerId) where T : McItem, new ()
+        {
+            T newItem = new T ();
+            newItem.AccountId = accountId;
+            newItem.ServerId = serverId;
+            newItem.Insert ();
+            return newItem;
+        }
+
+        public McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
+            string serverId = defaultServerId, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+            bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "0", 
+            bool syncMetaToClient = true)
+        {
+            McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, parentId, serverId, name, typeCode);
+
+            folder.IsAwaitingDelete = isAwaitingDelete;
+            folder.IsAwaitingCreate = isAwaitingCreate;
+            folder.AsSyncKey = asSyncKey;
+            folder.AsSyncMetaToClientExpected = syncMetaToClient;
+
+            if (autoInsert) { folder.Insert (); }
+            return folder;
+        }
+    }
+
+    public class CommonTestOps
+    {
+        public void TestForNachoExceptionFailure (Action action, string message)
+        {
+            try {
+                action ();
+                Assert.Fail (message);
+            } catch (NachoCore.Utils.NcAssert.NachoAssertionFailure e) {
+                Log.Info (Log.LOG_TEST, "NachoAssertFailure message: {0}", e.Message);
+            }
+        }
     }
 }

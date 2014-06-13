@@ -85,6 +85,7 @@
     <Compile Include="NcTestBase.cs" />
     <Compile Include="NcCaptureTest.cs" />
     <Compile Include="McFolderTest.cs" />
+    <Compile Include="AsProtoControlApisTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
