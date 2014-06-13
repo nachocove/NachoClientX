@@ -339,7 +339,6 @@ namespace NachoClient.iOS
                 checkView = ViewWithImageName ("check");
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    Console.WriteLine ("Did swipe Checkmark cell");
                     ArchiveThisMessage (calendarIndex);
                 });
                 crossView = ViewWithImageName ("cross");
@@ -469,8 +468,13 @@ namespace NachoClient.iOS
 
         public void ScrollToNow (UITableView tableView)
         {
+            ScrollToDate (tableView, DateTime.UtcNow);
+        }
+
+        public void ScrollToDate (UITableView tableView, DateTime date)
+        {
             if (calendar.NumberOfDays () > 0) {
-                var i = calendar.IndexOfDate (DateTime.UtcNow);
+                var i = calendar.IndexOfDate (date);
                 if (i >= 0) {
                     var p = NSIndexPath.FromItemSection (0, i);
                     tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);

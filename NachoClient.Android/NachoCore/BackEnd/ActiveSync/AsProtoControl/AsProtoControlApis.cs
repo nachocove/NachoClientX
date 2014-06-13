@@ -780,8 +780,7 @@ namespace NachoCore.ActiveSync
         }
 
         public override string CreateFolderCmd (int destFolderId, string displayName, 
-                                                Xml.FolderHierarchy.TypeCode folderType,
-                                                bool isClientOwned, bool isHidden)
+                                                Xml.FolderHierarchy.TypeCode folderType)
         {
             var serverId = DateTime.UtcNow.Ticks.ToString ();
             string destFldServerId;
@@ -795,31 +794,19 @@ namespace NachoCore.ActiveSync
                 if (null == destFld) {
                     return null;
                 }
-                if (isClientOwned ^ destFld.IsClientOwned) {
-                    // Keep client/server-owned domains separate for now.
-                    return null;
-                }
                 destFldServerId = destFld.ServerId;
             }
 
-            if (isHidden && !isClientOwned) {
-                return null;
-            }
-
             var folder = McFolder.Create (Account.Id,
-                             isClientOwned,
-                             isHidden,
+                             false,
+                             false,
                              destFldServerId,
                              serverId,
                              displayName,
                              folderType);
-            folder.IsAwaitingCreate = !isClientOwned;
+            folder.IsAwaitingCreate = true;
             folder.Insert ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
-
-            if (isClientOwned) {
-                return McPending.KSynchronouslyCompleted;
-            }
 
             var createFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderCreate,
@@ -839,10 +826,9 @@ namespace NachoCore.ActiveSync
             return createFolder.Token;
         }
 
-        public override string CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType,
-                                                bool isClientOwned, bool isHidden)
+        public override string CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType)
         {
-            return CreateFolderCmd (-1, displayName, folderType, isClientOwned, isHidden);
+            return CreateFolderCmd (-1, displayName, folderType);
         }
 
         public override string DeleteFolderCmd (int folderId)

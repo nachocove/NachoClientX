@@ -24,7 +24,7 @@ namespace NachoCore
             var type = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
             var folder = McFolder.GetUserFolder (message.AccountId, type, 0, ArchiveFolderName);
             if (null == folder) {
-                BackEnd.Instance.CreateFolderCmd (message.AccountId, ArchiveFolderName, type, false, false);
+                BackEnd.Instance.CreateFolderCmd (message.AccountId, ArchiveFolderName, type);
             }
             folder = McFolder.GetUserFolder (message.AccountId, type, 0, ArchiveFolderName);
             NcAssert.True (null != folder);

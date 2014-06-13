@@ -15,6 +15,7 @@ using System.Xml.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Linq;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 
 /*
@@ -100,22 +101,26 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                bool hasRedirected = false;
+
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    return PassRobotForStep (step, request, xml);
+                    MockSteps robotType = DetermineRobotType (request);
+                    return XMLForRobotType (request, robotType, step, xml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
+                        step = MockSteps.S1; // S4 resolves to POST after DNS lookup
                     }
                 }, (httpRequest, httpResponse) => {
-                    // check for redirection and set the response to 302 (Found) if true
-                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
-
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                    if (ShouldRedirect (httpRequest, step) && !hasRedirected) {
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        hasRedirected = true; // disable second redirection
+                        step = MockSteps.S1;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        MockSteps robotType = DetermineRobotType (httpRequest);
+                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -161,21 +166,20 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (hasCert, sm => {
                     provideSm(sm);
                 }, request => {
-                    return PassRobotForStep (step, request, xml);
+                    MockSteps robotType = DetermineRobotType (request);
+                    return XMLForRobotType (request, robotType, step, xml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
-                    // check for redirection and set the response to 302 (Found) if true
-                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
-
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                    if (ShouldRedirect (httpRequest, step)) {
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", redirUrl);
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        MockSteps robotType = DetermineRobotType (httpRequest);
+                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
-                });
+                }, testEndingDbState: false);
             }
         }
 
@@ -183,7 +187,7 @@ namespace Test.iOS
         public class Test600XmlErrorCodes : AsAutodiscoverCommandTest
         {
             // 600 = Invalid Request
-//            [Test]
+            [Test]
             public void Test600ErrorCode ()
             {
                 var errorKind600 = NcResult.SubKindEnum.Error_AutoDError600;
@@ -192,10 +196,10 @@ namespace Test.iOS
             }
 
             // 601 = Requested schema version not supported
-//            [Test]
+            [Test]
             public void Test601ErrorCode ()
             {
-                var errorKind601 = NcResult.SubKindEnum.Error_AutoDError600;
+                var errorKind601 = NcResult.SubKindEnum.Error_AutoDError601;
                 string xml = CommonMockData.AutodPhony601Response;
                 TestAutodPingWithXmlResponse (xml, MockSteps.S1, errorKind601);
             }
@@ -205,13 +209,17 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
-                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    return PassRobotForStep (step, request, xml);
+                PerformAutoDiscoveryWithSettings (true, sm => {
+                    sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
+                }, request => {
+                    MockSteps robotType = DetermineRobotType (request);
+                    return XMLForRobotType (request, robotType, step, xml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
-                    httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                    MockSteps robotType = DetermineRobotType (httpRequest);
+                    httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                     httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                }, resultKind: errorKind);
+                }, resultKind: errorKind, testEndingDbState:false);
             }
         }
 
@@ -258,28 +266,26 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
                 }, request => {
-                    return PassRobotForStep (step, request, xml, optionsXml: optionsXml);
+                    MockSteps robotType = DetermineRobotType (request);
+                    return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
                     }
                 }, (httpRequest, httpResponse) => {
-                    // check for OPTIONS header and set status code to 404 to force hard fail
-                    bool isOptions = httpRequest.Method.ToString () == "OPTIONS";
-                    // check for redirection and set the response to 302 (Found) if true
-                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
-
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
+                    if (ShouldRedirect (httpRequest, step)) {
                         httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                    } else if (isOptions) {
+                    } else if (IsOptionsRequest (httpRequest)) {
+                        // check for OPTIONS header and set status code to 404 to force hard fail
                         httpResponse.StatusCode = status;
                     } else {
-                        httpResponse.StatusCode = HttpStatusCode.OK;
+                        MockSteps robotType = DetermineRobotType (httpRequest);
+                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
-                });
+                }, testEndingDbState: false);
             }
         }
 
@@ -316,23 +322,21 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST_FAIL");
                 }, request => {
-                    return PassRobotForStep (step, request, xml, optionsXml: optionsXml);
+                    MockSteps robotType = DetermineRobotType (request);
+                    return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
                 }, provideDnsResponse => {
                 }, (httpRequest, httpResponse) => {
-                    // check for OPTIONS header and set status code to Unauthorized to force auth failure
-                    bool isOptions = httpRequest.Method.ToString () == "OPTIONS";
-                    // check for redirection and set the response to 302 (Found) if true
-                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
-
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                    if (ShouldRedirect (httpRequest, step)) {
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
-                    } else if (isOptions && !hasProvidedCreds) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Unauthorized;
+                    } else if (IsOptionsRequest (httpRequest) && !hasProvidedCreds) {
+                        // if OPTIONS, set status code to Unauthorized to force auth failure
+                        httpResponse.StatusCode = HttpStatusCode.Unauthorized;
                         hasProvidedCreds = true;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        MockSteps robotType = DetermineRobotType (httpRequest);
+                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -346,22 +350,21 @@ namespace Test.iOS
 
             private void SetTimeoutConstants ()
             {
-                McMutables.Set ("HTTPOP", "TimeoutSeconds", "3");
+                McMutables.Set ("HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set ("AUTOD", "CertTimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set ("DNSOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
             }
 
             [Test]
             public void TestS1 ()
             {
-                SetTimeoutConstants ();
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S1);
+                TestSingleTimeout (MockSteps.S1, false);
             }
 
             [Test]
             public void TestS2 ()
             {
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S2);
+                TestSingleTimeout (MockSteps.S2, false);
             }
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
@@ -369,8 +372,7 @@ namespace Test.iOS
             [Test]
             public void TestS3 ()
             {
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S3);
+                TestSingleTimeout (MockSteps.S3, false);
             }
 
             // Ensure that the Owner is called-back when a valid cert is encountered in
@@ -378,31 +380,77 @@ namespace Test.iOS
             [Test]
             public void TestS4 ()
             {
-                string xml = CommonMockData.AutodOffice365ResponseXml;
-                TestAutodPingWithXmlResponse (xml, MockSteps.S4);
+                TestSingleTimeout (MockSteps.S4, false);
             }
 
-            private void TestAutodPingWithXmlResponse (string xml, MockSteps step)
+            [Test]
+            public void TestSubS1 ()
+            {
+                TestSingleTimeout (MockSteps.S1, true);
+            }
+
+            [Test]
+            public void TestSubS2 ()
+            {
+                TestSingleTimeout (MockSteps.S2, true);
+            }
+
+            [Test]
+            public void TestSubS3 ()
+            {
+                TestSingleTimeout (MockSteps.S3, true);
+            }
+
+            [Test]
+            public void TestSubS4 ()
+            {
+                TestSingleTimeout (MockSteps.S4, true);
+            }
+
+            private void TestSingleTimeout (MockSteps step, bool isSubDomain)
+            {
+                SetTimeoutConstants ();
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, step, isSubDomain: isSubDomain);
+            }
+
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, bool isSubDomain)
             {
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                bool hasRedirected = false;
+                bool hasTimedOutOnce = false;
+
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
-                    return PassRobotForStep (step, request, xml);
+                    MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
+                    return XMLForRobotType (request, robotType, step, xml);
                 }, provideDnsResponse => {
                     if (step == MockSteps.S4) {
-                        provideDnsResponse.ParseResponse (dnsByteArray);
+                        if (!hasTimedOutOnce) {
+                            System.Threading.Thread.Sleep (TimeoutTime);
+                            hasTimedOutOnce = true;
+                            throw new AggregateException ("Timed out", new SocketException (1));
+                        } else {
+                            provideDnsResponse.ParseResponse (dnsByteArray);
+                            step = MockSteps.S1; // S4 resolves to POST after DNS lookup
+                        }
                     }
                 }, (httpRequest, httpResponse) => {
-                    // check for redirection and set the response to 302 (Found) if true
-                    bool isRedirection = httpRequest.Method.ToString () == "GET" && step == MockSteps.S3;
-
+                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: isSubDomain);
+                    if (!hasTimedOutOnce && robotType == step) {
+                        System.Threading.Thread.Sleep (TimeoutTime);
+                        hasTimedOutOnce = true;
+                        throw new WebException("Timed out on purpose");
+                    }
                     // provide valid redirection headers if needed
-                    if (isRedirection) {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.Found;
+                    if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
+                        httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        hasRedirected = true; // disable second redirection
+                        step = MockSteps.S1;
                     } else {
-                        httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -412,14 +460,14 @@ namespace Test.iOS
 
     public class AsAutodiscoverCommandTest
     {
-        public static AsAutodiscoverCommand autodCommand { get; set; }
-        public static MockContext mockContext { get; set; }
+        private static AsAutodiscoverCommand autodCommand { get; set; }
+        private static MockContext mockContext { get; set; }
+
+        public const int TimeoutTime = 1000;
 
         [SetUp]
         public void Setup ()
         {
-            Log.Info (Log.LOG_TEST, "Setup began");
-
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
 
             MockDnsQueryRequest.ProvideDnsQueryResponseMessage = null;
@@ -429,6 +477,8 @@ namespace Test.iOS
             MockHttpClient.ProvideHttpResponseMessage = null;
             MockHttpClient.HasServerCertificate = null;
             MockNcCommStatus.Instance = null;
+
+            MockOwner.Status = null;
 
             autodCommand = null;
             mockContext = null;
@@ -441,9 +491,6 @@ namespace Test.iOS
             phonyServer.Scheme = "/phonyscheme";
             phonyServer.UsedBefore = true;
 
-//            phonyServer.Host = "";
-//            phonyServer.UsedBefore = false;
-//            phonyServer.Id = 5;
             NcModel.Instance.Db.Insert (phonyServer);
 
             mockContext = new MockContext ();
@@ -458,51 +505,127 @@ namespace Test.iOS
             ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
-        [TearDown]
-        public void Teardown ()
+        public HttpStatusCode AssignStatusCode (HttpRequestMessage request, MockSteps robotType, MockSteps step)
         {
-            Log.Info (Log.LOG_TEST, "Teardown began");
+            if (HasBeenRedirected (request)) {
+                return HttpStatusCode.OK;
+            }
+
+            if (IsOptionsRequest (request)) {
+                DoOptionsAsserts (request);
+                return HttpStatusCode.OK;
+            }
+
+            if (robotType != step) {
+                return HttpStatusCode.NotFound;
+            }
+
+            switch (robotType) {
+            case MockSteps.S1:
+            case MockSteps.S2:
+                return HttpStatusCode.OK;
+            default:
+                return HttpStatusCode.NotFound;
+            }
         }
 
-        // return good xml if the robot should pass, bad otherwise
-        public string PassRobotForStep (MockSteps step, HttpRequestMessage request, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
+        public string XMLForRobotType (HttpRequestMessage request, MockSteps robotType, MockSteps step, string xml, string optionsXml = CommonMockData.BasicPhonyPingResponseXml)
         {
-            string redirUrl = CommonMockData.RedirectionUrl;
+            // if a redirection has already occurred, that means we need to have the robot succeed
+            if (HasBeenRedirected (request)) {
+                return CommonMockData.AutodOffice365ResponseXml;
+            }
+
+            if (IsOptionsRequest (request)) {
+                return optionsXml;
+            }
+
+            if (robotType != step) {
+                return CommonMockData.AutodPhonyErrorResponse;
+            }
+
+            switch (robotType) {
+            case MockSteps.S1:
+            case MockSteps.S2:
+                return xml;
+            case MockSteps.S3:
+                return CommonMockData.AutodPhonyRedirectResponse;
+            default:
+                Log.Info (Log.LOG_TEST, "A request occurred that was not recognized; this should not happen");
+                return CommonMockData.AutodPhonyErrorResponse;
+            }
+        }
+
+        public bool HasBeenRedirected (HttpRequestMessage request)
+        {
+            return request.RequestUri.ToString () == CommonMockData.RedirectionUrl;
+        }
+
+        public bool ShouldRedirect (HttpRequestMessage request, MockSteps step, bool isSubDomain = false)
+        {
+            string getUri = "http://autodiscover.";
+            if (isSubDomain) {
+                getUri += CommonMockData.SubHost;
+            } else {
+                getUri += CommonMockData.Host;
+            }
             string requestUri = request.RequestUri.ToString ();
-            string s1Uri = "https://" + CommonMockData.Host;
-            string s2Uri = "https://autodiscover." + CommonMockData.Host;
-            string getUri = "http://autodiscover." + CommonMockData.Host;
+            return request.Method.ToString () == "GET" && requestUri.Substring (0, getUri.Length) == getUri && step == MockSteps.S3;
+        }
+
+        public bool IsOptionsRequest (HttpRequestMessage request)
+        {
+            return "OPTIONS" == request.Method.ToString ();
+        }
+
+        public void DoOptionsAsserts (HttpRequestMessage request)
+        {
+            McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
+            ServerFalseAssertions (serv, mockContext.Server);
+
+            Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
+
+            string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
+            Assert.AreEqual ("12.0", protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
+        }
+
+        public MockSteps DetermineRobotType (HttpRequestMessage request, bool isSubDomain = false)
+        {
+            string requestUri = request.RequestUri.ToString ();
+            string s1Uri = "https://";
+            string s2Uri = "https://autodiscover.";
+            string getUri = "http://autodiscover.";
+            if (isSubDomain) {
+                s1Uri += CommonMockData.SubHost;
+                s2Uri += CommonMockData.SubHost;
+                getUri += CommonMockData.SubHost;
+            } else {
+                s1Uri += CommonMockData.Host;
+                s2Uri += CommonMockData.Host;
+                getUri += CommonMockData.Host;
+            }
             switch (request.Method.ToString ()) {
             case "POST":
-                if (step == MockSteps.S1 && requestUri.Substring (0, s1Uri.Length) == s1Uri) {
-                    return xml;
-                } else if (requestUri == redirUrl) {
-                    return CommonMockData.AutodOffice365ResponseXml;
-                } else if (step == MockSteps.S2 && requestUri.Substring (0, s2Uri.Length) == s2Uri) {
-                    return xml;
+                if (requestUri.Substring (0, s1Uri.Length) == s1Uri) {
+                    return MockSteps.S1;
+                } else if (requestUri.Substring (0, s2Uri.Length) == s2Uri) {
+                    return MockSteps.S2;
                 }
                 break;
             case "GET":
-                if (step == MockSteps.S3 && requestUri.Substring (0, getUri.Length) == getUri) {
-                    return CommonMockData.AutodPhonyRedirectResponse;
+                if (requestUri.Substring (0, getUri.Length) == getUri) {
+                    return MockSteps.S3;
                 }
                 break;
-            case "OPTIONS":
-                McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
-
-                ServerFalseAssertions (serv, mockContext.Server);
-                Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
-
-                string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
-                Assert.AreEqual ("12.0", protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
-                return optionsXml;
             }
-            return CommonMockData.AutodPhonyErrorResponse;
+
+            // S4, OPTIONS, and robots that have already been redirected return "Other"
+            return MockSteps.Other;
         }
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
             Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
-            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified)
+            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified, bool testEndingDbState = true)
         {
             var autoResetEvent = new AutoResetEvent(false);
 
@@ -552,9 +675,18 @@ namespace Test.iOS
             bool didFinish = autoResetEvent.WaitOne (8000);
             Assert.IsTrue (didFinish, "Operation did not finish");
 
-            // Test that the server record was updated
-//            McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
-//            ServerTrueAssertions (mockContext.Server, serv);
+            // if result kind was set by test (see 600/601 for example),
+            // then test that code was set correctly
+            if (resultKind != NcResult.SubKindEnum.NotSpecified) {
+                Assert.AreEqual (resultKind, MockOwner.Status.SubKind, "StatusInd should set status code correctly");
+            }
+
+            if (testEndingDbState) {
+                // Test that the server record was updated
+                McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
+                ServerTrueAssertions (mockContext.Server, serv);
+            }
+
         }
 
         private void ServerTrueAssertions (McServer expected, McServer actual)

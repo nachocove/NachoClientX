@@ -128,11 +128,9 @@ namespace NachoCore
 
         public abstract string MoveTaskCmd (int taskId, int destFolderId);
 
-        public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
-                                                bool isClientOwned, bool isHidden);
+        public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
 
-        public abstract string CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
-                                                bool IsClientOwned, bool isHidden);
+        public abstract string CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType);
 
         public abstract string DeleteFolderCmd (int folderId);
 

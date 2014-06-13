@@ -79,11 +79,9 @@ namespace NachoCore
         string DeleteTaskCmd (int accountId, int taskId);
         string MoveTaskCmd (int accountId, int taskId, int destFolderId);
         // create a subordinate folder.
-        string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
-                          bool IsClientOwned, bool isHidden);
+        string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
         // create a root folder.
-        string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
-                          bool IsClientOwned, bool isHidden);
+        string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType);
         // delete a folder.
         string DeleteFolderCmd (int accountId, int folderId);
         // move a folder.

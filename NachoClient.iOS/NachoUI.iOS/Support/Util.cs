@@ -373,7 +373,7 @@ namespace NachoClient
         /// <summary>
         /// builds the circle containing the sender's initials
         /// </summary>
-        public static UIImage LettersWithColor (string from, UIColor color, UIFont font)
+        public static UIImage LettersWithColor (string from, UIColor circleColor, UIFont font)
         {
             var size = new SizeF (40, 40);
             var origin = new PointF (0, 0);
@@ -384,11 +384,37 @@ namespace NachoClient
 
             var contentString = new NSString (content);
             var contentSize = contentString.StringSize (font);
-            ctx.SetFillColor (color.CGColor);
+            ctx.SetFillColor (circleColor.CGColor);
             ctx.FillEllipseInRect (new RectangleF (origin, size));
             var rect = new RectangleF (0, ((40 - contentSize.Height) / 2) + 0, 40, contentSize.Height);
 
             ctx.SetFillColorWithColor (UIColor.White.CGColor);
+            new NSString (content).DrawString (rect, font, UILineBreakMode.WordWrap, UITextAlignment.Center);
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
+        /// <summary>
+        /// builds the circle containing the sender's initials
+        /// </summary>
+        public static UIImage NumbersWithColor (string number, UIColor circleColor, UIColor fontColor, UIFont font)
+        {
+            var size = new SizeF (40, 40);
+            var origin = new PointF (0, 0);
+            var content = number;
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            var contentString = new NSString (content);
+            var contentSize = contentString.StringSize (font);
+            ctx.SetFillColor (circleColor.CGColor);
+            ctx.FillEllipseInRect (new RectangleF (origin, size));
+            var rect = new RectangleF (0, ((40 - contentSize.Height) / 2) + 0, 40, contentSize.Height);
+
+            ctx.SetFillColorWithColor (fontColor.CGColor);
             new NSString (content).DrawString (rect, font, UILineBreakMode.WordWrap, UITextAlignment.Center);
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
@@ -410,7 +436,8 @@ namespace NachoClient
                 if (0 < name.IndexOf (',')) {
                     // Last name, First name
                     Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                } else {
+                } 
+                else {
                     // First name, Last name
                     Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
                 }
@@ -419,16 +446,29 @@ namespace NachoClient
                 if (0 < name.IndexOf (',')) {
                     // Last name, First name
                     Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                } else if (-1 == name.IndexOf (',')) {
+                } 
+                else if (-1 == name.IndexOf (',')) {
                     if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
                         Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
-                    } else {
+                    } 
+                    else {
                         Initials = (names [0].Substring (0, 1)).ToCapitalized ();
                     }
                 }
             }
 
             return Initials;
+        }
+
+        /// <summary>
+        /// Takes a screenshot of the view passed in and returns an image
+        /// </summary>
+        public static UIImage caputureView(UIView view) {
+            UIGraphics.BeginImageContextWithOptions (view.Bounds.Size, false, 0.0f);
+            view.Layer.RenderInContext (UIGraphics.GetCurrentContext ());
+            var capturedImage = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return capturedImage;
         }
 
         /// <summary>

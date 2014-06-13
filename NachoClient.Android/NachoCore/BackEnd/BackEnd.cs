@@ -381,18 +381,14 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).MoveTaskCmd (taskId, destFolderId);
         }
 
-        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
-                                 bool IsClientOwned, bool isHidden)
+        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
         {
-            return ServiceFromAccountId (accountId).CreateFolderCmd (destFolderId, displayName, folderType,
-                IsClientOwned, isHidden);
+            return ServiceFromAccountId (accountId).CreateFolderCmd (destFolderId, displayName, folderType);
         }
 
-        public string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
-                                 bool IsClientOwned, bool isHidden)
+        public string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
         {
-            return ServiceFromAccountId (accountId).CreateFolderCmd (DisplayName, folderType,
-                IsClientOwned, isHidden);
+            return ServiceFromAccountId (accountId).CreateFolderCmd (DisplayName, folderType);
         }
 
         public string DeleteFolderCmd (int accountId, int folderId)

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McFolderEntry.ClassCodeEnum;
+using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
 
 namespace Test.iOS
 {
@@ -92,14 +93,17 @@ namespace Test.iOS
                 TypeCode typeCode = TypeCode.UserCreatedCal_13;
                 string name = "Name";
 
-                string parentId1 = "1";
-                string parentId2 = "5";
+                string serverId1 = "1";
+                string serverId2 = "2";
 
-                CreateFolder (accountId, typeCode: typeCode, parentId: parentId1, name: name);
-                CreateFolder (accountId, typeCode: typeCode, parentId: parentId2, name: name);
+                var parent1 = CreateFolder (accountId, serverId: serverId1);
+                var parent2 = CreateFolder (accountId, serverId: serverId2);
 
-                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, parentId1.ToInt (), name);
-                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, parentId2.ToInt (), name);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parent1.ServerId, name: name);
+                CreateFolder (accountId, typeCode: typeCode, parentId: parent2.ServerId, name: name);
+
+                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, serverId1.ToInt (), name);
+                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, serverId2.ToInt (), name);
 
                 Assert.AreNotEqual (expected1.ParentId, expected2.ParentId, "Folders with identical properties should be able to reside under different parents"); 
             }
@@ -110,7 +114,7 @@ namespace Test.iOS
                 // Same parent id and typecodes, different name
                 int accountId = 1;
                 TypeCode typeCode = TypeCode.UserCreatedCal_13;
-                string parentId = "1";
+                string parentId = "0";
 
                 string name1 = "First Name";
                 string name2 = "Second Name";
@@ -225,7 +229,6 @@ namespace Test.iOS
                 CreateFolder (1, parentId: "1");
                 CreateFolder (1, parentId: "1");
                 CreateFolder (1, parentId: "2");
-                CreateFolder (5, parentId: "1");  // different account id; therefore should not show up in query
 
                 List<McFolder> retrieved = McFolder.QueryByParentId (1, "1");
                 Assert.AreEqual (3, retrieved.Count, "Should return correct number of folders with matching parent id");
@@ -570,22 +573,187 @@ namespace Test.iOS
             public void ShouldDeleteFoldersRecursively ()
             {
                 int accountId = 1;
-                string serverId = "My custom server";
-                TypeCode typeCode = TypeCode.UserCreatedGeneric_1;
+                string parentServerId = "1";
+                string childServerId = "2";
+                string subChildServerId = "3";
 
                 // when deleting folders, should remove all contained folders
-                McFolder parentFolder = CreateFolder (accountId, parentId: "0", typeCode: typeCode, serverId: serverId);
-                McFolder childFolder = CreateFolder (accountId, parentId: parentFolder.Id.ToString (), typeCode: typeCode, serverId: serverId);
-                McFolder subChildFolder = CreateFolder (accountId, parentId: childFolder.Id.ToString (), typeCode: typeCode, serverId: serverId);
+                McFolder parentFolder = CreateFolder (accountId, parentId: "0", serverId: parentServerId);
+                McFolder childFolder = CreateFolder (accountId, parentId: parentServerId, serverId: childServerId);
+                McFolder subChildFolder = CreateFolder (accountId, parentId: childServerId, serverId: subChildServerId);
 
-                McFolder foundFolder = McFolder.GetUserFolder (accountId, typeCode, childFolder.Id, subChildFolder.DisplayName);
+                var foundFolder = McFolder.QueryById<McFolder> (subChildFolder.Id);
                 Assert.AreNotEqual (null, foundFolder, "Sanity test: Should retrieve a folder from query");
                 FoldersAreEqual (subChildFolder, foundFolder, "Sanity check that subChild folder was added correctly");
 
                 parentFolder.Delete ();
 
-                McFolder notFoundFolder = McFolder.GetUserFolder (accountId, typeCode, childFolder.Id, subChildFolder.DisplayName);
+                var notFoundFolder = McFolder.QueryById<McFolder> (subChildFolder.Id);
                 Assert.AreEqual (null, notFoundFolder, "McFolder should delete sub-folders recursively");
+                var notFoundChild = McFolder.QueryById<McFolder> (childFolder.Id);
+                Assert.AreEqual (null, notFoundChild);
+            }
+        }
+
+        [TestFixture]
+        public class TestLinking : BaseMcFolderTest
+        {
+            [Test]
+            public void TestLink ()
+            {
+                int accountId = 1;
+                McFolder folder = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+
+                var result = folder.Link (email);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.OK);
+
+                List<McMapFolderFolderEntry> folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder.Id);
+                var folderEntry = folderEntries.FirstOrDefault ();
+                if (folderEntry == null) {
+                    Assert.Fail ("No matching folder entries were found");  // sanity check
+                }
+                Assert.AreEqual (folder.AccountId, folderEntry.AccountId, "Account ID should be set correctly");
+                Assert.AreEqual (email.Id, folderEntry.FolderEntryId, "ID of object (folder entry) should be set correctly");
+
+                // error should be thrown if object already exists in folder
+                result = folder.Link (email);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_AlreadyInFolder, "Should return error result if object already exists in folder");
+            }
+
+            [Test]
+            public void TestUnlink ()
+            {
+                int accountId = 1;
+                McFolder folder = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+
+                var result = folder.Unlink (email);
+                Assert.AreEqual (NcResult.SubKindEnum.Error_NotInFolder, result.SubKind, "Should return error if unlinking nonexistent object");
+
+                folder.Link (email);
+
+                result = folder.Unlink (email);
+                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "Result should be okay when unlink succeeds");
+                List<McMapFolderFolderEntry> folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder.Id);
+                var folderEntry = folderEntries.FirstOrDefault ();
+                Assert.AreEqual (folderEntry, null, "Folder was not unlinked correctly");
+            }
+
+            [Test]
+            public void TestUnlinkAll ()
+            {
+                int accountId = 1;
+                string customServerId = "Custom Server ID";
+
+                McFolder folder1 = CreateFolder (accountId);
+                McFolder folder2 = CreateFolder (accountId);
+                McEmailMessage email = CreateUniqueItem<McEmailMessage> (accountId);
+                McEmailMessage otherEmail = CreateUniqueItem<McEmailMessage> (accountId, serverId: customServerId);
+
+                var result = McFolder.UnlinkAll (email);
+                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "Should be okay to delete non-existent object");
+
+                folder1.Link (email);
+                folder2.Link (email);
+                folder1.Link (otherEmail);
+                folder2.Link (otherEmail);
+
+                result = McFolder.UnlinkAll (email);
+                Assert.AreEqual (NcResult.KindEnum.OK, result.Kind, "UnlinkAll should result in OK NcResult");
+
+                // Should unlink email but not unlink otherEmail
+                var folderEntries = McMapFolderFolderEntry.QueryByFolderId (accountId, folder1.Id);
+                Assert.AreEqual (1, folderEntries.Count, "Email should have been unlinked while otherEmail should remain linked");
+                var folderEntry = folderEntries.FirstOrDefault ();
+                Assert.AreNotEqual (null, folderEntry, "otherEmail should not have been unlinked");
+
+                Assert.AreEqual (otherEmail.Id, folderEntry.FolderEntryId, "Retrieved object should match otherEmail, not email");
+            }
+        }
+
+        [TestFixture]
+        public class FolderConstraints : BaseMcFolderTest
+        {
+            // A client-owned folder can’t be created inside a synced folder. 
+            // Exception should be thrown if parent is wrong kind
+            [Test]
+            public void TestClientOwnedInsideSynced ()
+            {
+                int accountId = 1;
+                McFolder syncedFolder = CreateFolder (accountId, isClientOwned: false);
+
+                TestForNachoExceptionFailure (() => {
+                    CreateFolder (accountId, isClientOwned: true, parentId: syncedFolder.Id.ToString ());
+                }, "Should throw NachoExceptionFailure when creating client folder with synced parent");
+            }
+
+            // A synced folder can’t be created inside a client-owned folder.
+            // Exception should be thrown if parent is wrong kind
+            [Test]
+            public void TestSyncedInsideClientOwned ()
+            {
+                int accountId = 1;
+                McFolder clientFolder = CreateFolder (accountId, isClientOwned: true);
+
+                TestForNachoExceptionFailure (() => {
+                    CreateFolder (accountId, isClientOwned: false, parentId: clientFolder.Id.ToString ());
+                }, "Should throw NachoExceptionFailure when creating synced folder with client parent");
+            }
+
+            // A synced folder can’t be hidden. --> !isClientOwned ? !isHidden : (isHidden || !isHidden)
+            [Test]
+            public void TestHiddenSynced ()
+            {
+                int accountId = 1;
+
+                // try creating a synced folder with hidden == true
+                TestForNachoExceptionFailure (() => {
+                    CreateFolder (accountId, isClientOwned: false, isHidden: true);
+                }, "Should throw NachoExceptionFailure when creating a synced folder with isHidden set to true");
+
+                // try creating a synced folder, then setting hidden to true
+                McFolder syncedFolder = CreateFolder (accountId, isClientOwned: false, isHidden: false);
+                syncedFolder.IsHidden = true;
+                TestForNachoExceptionFailure (() => {
+                    syncedFolder.Update ();
+                }, "Should throw NachoExceptionFailure when updating a synced folder after setting isHidden to true");
+
+                // try creating a hidden folder, then setting it to synced
+                var hiddenFolder = CreateFolder (accountId, isClientOwned: true, isHidden: true);
+                hiddenFolder.IsClientOwned = false;
+                TestForNachoExceptionFailure (() => {
+                    hiddenFolder.Update ();
+                }, "Should throw NachoExceptionFailure when changing a client-owned folder to synced after isHidden is set to true");
+            }
+
+            // A folder for one account can’t be created inside a folder for another account.
+            [Test]
+            public void TestFolderForMultipleAccounts ()
+            {
+                int firstAccount = 1;
+                int secondAccount = 2;
+
+                var folder1 = CreateFolder (firstAccount);
+
+                TestForNachoExceptionFailure (() => {
+                    CreateFolder (secondAccount, parentId: folder1.Id.ToString ());
+                }, "Should throw NachoExceptionFailure when creating a folder whose parent has a different accountId");
+            }
+
+            // An item for one account can’t be Linked inside a folder for another account.
+            [Test]
+            public void TestLinkingItemsDiffAccounts ()
+            {
+                int firstAccount = 1;
+                int secondAccount = 2;
+
+                var folder = CreateFolder (firstAccount);
+                var email = CreateUniqueItem<McEmailMessage> (secondAccount);
+
+                TestForNachoExceptionFailure (() => {
+                    folder.Link (email);
+                }, "Should not be able to link item to folder of different accountId");
             }
         }
     }
@@ -621,12 +789,12 @@ namespace Test.iOS
             return newItem;
         }
 
-        public McFolder CreateFolder (int accountId, bool isClientOwned = false, string parentId = "0", 
+        public McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
             string serverId = defaultServerId, string name = "Default name", TypeCode typeCode = TypeCode.UserCreatedGeneric_1,
             bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "0", 
             bool syncMetaToClient = true)
         {
-            McFolder folder = McFolder.Create (accountId, isClientOwned, false, parentId, serverId, name, typeCode);
+            McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, parentId, serverId, name, typeCode);
 
             folder.IsAwaitingDelete = isAwaitingDelete;
             folder.IsAwaitingCreate = isAwaitingCreate;
@@ -635,6 +803,16 @@ namespace Test.iOS
 
             if (autoInsert) { folder.Insert (); }
             return folder;
+        }
+
+        public void TestForNachoExceptionFailure (Action action, string message)
+        {
+            try {
+                action ();
+                Assert.Fail (message);
+            } catch (NachoAssertionFailure e) {
+                Log.Info (Log.LOG_TEST, "NachoAssertFailure message: {0}", e.Message);
+            }
         }
     }
 }

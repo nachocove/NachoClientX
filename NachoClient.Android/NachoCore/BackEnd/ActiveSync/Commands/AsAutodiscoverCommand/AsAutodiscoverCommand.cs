@@ -15,7 +15,7 @@ using NachoCore.Utils;
 using NachoPlatform;
 
 /* MUST-READs (Besides the ActiveSync specs):
- * http://msdn.microsoft.com/en-us/library/exchange/hh352638(v=exchg.140).aspx
+ * http://msdn.microsoft.com/en-us/library/hh352638(v=exchg.140).aspx
  * http://msdn.microsoft.com/en-us/library/ee332364(EXCHG.140).aspx
  * http://support.microsoft.com/?kbid=940881
  *

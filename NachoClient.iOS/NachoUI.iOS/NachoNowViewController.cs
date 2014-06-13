@@ -36,6 +36,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();

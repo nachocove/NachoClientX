@@ -866,6 +866,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPath.cs">
       <Link>NachoCore\Model\McPath.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\DateBarView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

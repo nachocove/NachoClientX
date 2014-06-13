@@ -62,6 +62,18 @@ namespace NachoCore.Model
                                        string displayName,
                                        Xml.FolderHierarchy.TypeCode folderType)
         {
+            // client-owned folder can't be created inside synced folder
+            if (parentId != "0") {
+                var parentFolder = McFolder.QueryById<McFolder> (parentId.ToInt ());
+                NcAssert.NotNull (parentFolder, "ParentId does not correspond to an existing folder");
+                NcAssert.True (parentFolder.IsClientOwned == isClientOwned, "Child folder's isClientOwned field must match parent's field");
+                NcAssert.True (parentFolder.AccountId == accountId, "Child folder's AccountId must match parent's AccountId");
+            }
+
+            if (isHidden) {
+                NcAssert.True (isClientOwned, "Synced folders cannot be hidden");
+            }
+
             var folder = new McFolder () {
                 AsSyncKey = AsSyncKey_Initial,
                 AsSyncMetaToClientExpected = false,
@@ -74,6 +86,16 @@ namespace NachoCore.Model
                 Type = folderType,
             };
             return folder;
+        }
+
+        public override int Update ()
+        {
+            if (IsHidden) {
+                NcAssert.True (IsClientOwned, "Cannot update synced folders to be hidden");
+            }
+
+            int retval = base.Update ();
+            return retval;
         }
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
@@ -267,7 +289,8 @@ namespace NachoCore.Model
         public NcResult Link (McItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
-            NcAssert.True (ClassCodeEnum.Folder != classCode);
+            NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
+            NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);
             if (null != existing) {

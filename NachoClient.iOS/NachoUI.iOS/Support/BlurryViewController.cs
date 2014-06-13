@@ -65,6 +65,7 @@ namespace NachoClient.iOS
             backgroundBlurredImageView.Frame = View.Bounds;
             backgroundOverlayView.Frame = View.Bounds;
         }
+
         // Show light colored status bar over our dark background
         public override UIStatusBarStyle PreferredStatusBarStyle ()
         {
