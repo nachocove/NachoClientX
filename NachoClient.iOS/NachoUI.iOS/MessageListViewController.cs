@@ -76,6 +76,7 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageToMessageAction", this);
             };
 
+
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
 
@@ -260,6 +261,9 @@ namespace NachoClient.iOS
                     vc.ActionThread = (McEmailMessageThread)h.value2;
                 }
                 vc.SetOwner (this);
+                return;
+            }
+            if (segue.Identifier == "MessageListToNachoNow") {
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {

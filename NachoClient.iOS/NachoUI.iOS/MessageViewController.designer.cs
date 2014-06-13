@@ -13,6 +13,9 @@ namespace NachoClient.iOS
 	partial class MessageViewController
 	{
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem archiveButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem deferButton { get; set; }
 
 		[Outlet]
@@ -41,6 +44,11 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (deferButton != null) {
+				deferButton.Dispose ();
+				deferButton = null;
+			}
+
 			if (deleteButton != null) {
 				deleteButton.Dispose ();
 				deleteButton = null;
@@ -54,6 +62,11 @@ namespace NachoClient.iOS
 			if (forwardButton != null) {
 				forwardButton.Dispose ();
 				forwardButton = null;
+			}
+
+			if (quickReplyButton != null) {
+				quickReplyButton.Dispose ();
+				quickReplyButton = null;
 			}
 
 			if (replyAllButton != null) {
@@ -71,19 +84,14 @@ namespace NachoClient.iOS
 				saveButton = null;
 			}
 
-			if (deferButton != null) {
-				deferButton.Dispose ();
-				deferButton = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
 			}
 
-			if (quickReplyButton != null) {
-				quickReplyButton.Dispose ();
-				quickReplyButton = null;
+			if (archiveButton != null) {
+				archiveButton.Dispose ();
+				archiveButton = null;
 			}
 		}
 	}

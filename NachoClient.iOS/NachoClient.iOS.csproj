@@ -1029,6 +1029,10 @@
     <BundleResource Include="Resources\navbar-icn-newevent.png" />
     <BundleResource Include="Resources\navbar-icn-newevent%402x.png" />
     <BundleResource Include="Resources\cal-dot-icn.png" />
+    <BundleResource Include="Resources\icn-archive-pressed.png" />
+    <BundleResource Include="Resources\icn-archive-pressed%402x.png" />
+    <BundleResource Include="Resources\icn-archive.png" />
+    <BundleResource Include="Resources\icn-archive%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
