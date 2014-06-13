@@ -66,7 +66,6 @@ namespace NachoClient.iOS
             doubletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector("DoubleTapSelector:"));
             titleView.AddGestureRecognizer (doubletap);
             this.NavigationItem.TitleView = titleView;
-            DateBarView backgroundDateBarView = new DateBarView ();
             DateDotView.Frame = (new RectangleF (0, 0, 320, 78));
             DateDotView.ClipsToBounds = true;
             DateDotView.BackgroundColor =  UIColor.White;
