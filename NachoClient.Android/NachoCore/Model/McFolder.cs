@@ -62,14 +62,6 @@ namespace NachoCore.Model
                                        string displayName,
                                        Xml.FolderHierarchy.TypeCode folderType)
         {
-            // client-owned folder can't be created inside synced folder
-            if (parentId != "0") {
-                var parentFolder = McFolder.QueryById<McFolder> (parentId.ToInt ());
-                NcAssert.NotNull (parentFolder, "ParentId does not correspond to an existing folder");
-                NcAssert.True (parentFolder.IsClientOwned == isClientOwned, "Child folder's isClientOwned field must match parent's field");
-                NcAssert.True (parentFolder.AccountId == accountId, "Child folder's AccountId must match parent's AccountId");
-            }
-
             if (isHidden) {
                 NcAssert.True (isClientOwned, "Synced folders cannot be hidden");
             }

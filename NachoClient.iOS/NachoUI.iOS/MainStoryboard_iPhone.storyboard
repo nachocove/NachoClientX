@@ -743,7 +743,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -995,7 +995,7 @@
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="c79-xS-Npa"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="NachoNowToNachoNow" id="gkM-dU-I3K"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="MessageListToNachoNow" id="gkM-dU-I3K"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItemEdit" id="lVj-NH-yQq"/>
                     </connections>
                 </tableViewController>
@@ -1045,6 +1045,7 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
                     <connections>
+                        <outlet property="archiveButton" destination="lwU-bJ-z6E" id="Ads-ZI-Vvl"/>
                         <outlet property="deferButton" destination="Tpu-Ah-KZ5" id="vgx-iP-oBs"/>
                         <outlet property="deleteButton" destination="PNM-D1-huA" id="QKl-7t-grl"/>
                         <outlet property="flexibleSpaceButton" destination="hYC-KD-Xk0" id="ekc-yV-Qi3"/>
@@ -1068,6 +1069,7 @@
                         <barButtonItem image="toolbar-icn-reply-all.png" id="R7P-Ye-Fgq" userLabel="Bar Button Item - Reply All"/>
                         <barButtonItem image="toolbar-icn-fwd.png" id="mmY-Kk-Ld8" userLabel="Bar Button Item - Forward"/>
                         <barButtonItem style="plain" systemItem="flexibleSpace" id="hYC-KD-Xk0"/>
+                        <barButtonItem image="icn-archive.png" id="lwU-bJ-z6E" userLabel="Bar Button Item - Archive"/>
                         <barButtonItem image="toolbar-icn-move.png" id="Tcg-BD-64n" userLabel="Bar Button Item - Save"/>
                         <barButtonItem image="toolbar-icn-delete.png" id="PNM-D1-huA" userLabel="Bar Button Item - Delete"/>
                     </items>
@@ -1423,6 +1425,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="cal-handle.png" width="320" height="11"/>
         <image name="calendar-3-48.png" width="48" height="48"/>
         <image name="clock-3-48.png" width="48" height="48"/>
+        <image name="icn-archive.png" width="24" height="24"/>
         <image name="list.png" width="20" height="18"/>
         <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
@@ -1444,20 +1447,20 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="vRC-Oi-s8D"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="p6V-c0-caL"/>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="Oi3-nV-lAC"/>
-        <segue reference="Pu5-w4-aps"/>
-        <segue reference="i3N-5g-evG"/>
-        <segue reference="Afu-47-Kju"/>
         <segue reference="gkM-dU-I3K"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="QzA-3p-JuT"/>
-        <segue reference="wNy-ed-w10"/>
-        <segue reference="nAp-rc-bND"/>
+        <segue reference="vRC-Oi-s8D"/>
+        <segue reference="p6V-c0-caL"/>
+        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="i3N-5g-evG"/>
+        <segue reference="Pu5-w4-aps"/>
         <segue reference="PxE-UU-EfC"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="lVj-NH-yQq"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="P29-wJ-GoN"/>
+        <segue reference="nAp-rc-bND"/>
     </inferredMetricsTieBreakers>
 </document>

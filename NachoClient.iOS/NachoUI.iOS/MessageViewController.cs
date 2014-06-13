@@ -40,6 +40,7 @@ namespace NachoClient.iOS
                 replyAllButton,
                 forwardButton,
                 flexibleSpaceButton,
+                archiveButton,
                 saveButton,
                 deleteButton
             };
@@ -65,14 +66,14 @@ namespace NachoClient.iOS
             forwardButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Forward));
             };
+            archiveButton.Clicked += (object sender, EventArgs e) => {
+                ArchiveThisMessage ();
+                NavigationController.PopViewControllerAnimated (true);
+            };
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 DeleteThisMessage ();
                 NavigationController.PopViewControllerAnimated (true);
             };
-//            checkButton.Clicked += (object sender, EventArgs e) => {
-//                ArchiveThisMessage ();
-//                NavigationController.PopViewControllerAnimated (true);
-//            };
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
