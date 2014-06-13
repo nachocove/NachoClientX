@@ -62,7 +62,35 @@ namespace Test.iOS
         [TestFixture]
         public class TestUpdateAssertions : BaseProtoApisTest
         {
+            [Test]
+            public void TestUpdateItemCmds ()
+            {
+                TestUpdatingItem<McCalendar> ((protoControl, itemId) => {
+                    protoControl.UpdateCalCmd (itemId);
+                });
+                SetUp ();
+                TestUpdatingItem<McContact> ((protoControl, itemId) => {
+                    protoControl.UpdateContactCmd (itemId);
+                });
+                SetUp ();
+                TestUpdatingItem<McTask> ((protoControl, itemId) => {
+                    protoControl.UpdateTaskCmd (itemId);
+                });
+            }
 
+            private void TestUpdatingItem<T> (Action <AsProtoControl, int> action) where T : McItem, new()
+            {
+                int accountId = 1;
+                var protoControl = CreateProtoControl (accountId);
+
+                var clientFolder = CreateFolder (accountId, isClientOwned: true);
+                var clientItem = CreateUniqueItem<T> (accountId);
+                clientFolder.Link (clientItem);
+
+                TestForNachoExceptionFailure (() => {
+                    action (protoControl, clientItem.Id);
+                }, String.Format ("Should throw exception if attempting to create item (type: {0}) in client-owned folder", typeof(T).ToString ()));
+            }
         }
 
         // Should not be able to delete client-owned items with api

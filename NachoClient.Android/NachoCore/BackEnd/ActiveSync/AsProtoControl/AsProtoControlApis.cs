@@ -470,8 +470,8 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            // FIXME - ensure not client-owned folder.
             var primeFolder = folders.First ();
+            NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
 
             var pending = new McPending (Account.Id) {
                 ItemId = calId,
@@ -574,8 +574,8 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            // FIXME - ensure not client-owned folder.
             var primeFolder = folders.First ();
+            NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.ContactUpdate,
@@ -677,8 +677,8 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            // FIXME - ensure not client-owned folder.
             var primeFolder = folders.First ();
+            NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.TaskUpdate,
