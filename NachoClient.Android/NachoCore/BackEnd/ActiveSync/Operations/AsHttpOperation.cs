@@ -106,10 +106,7 @@ namespace NachoCore.ActiveSync
         public bool Allow451Follow { set; get; }
 
         public bool DontReportCommResult { set; get; }
-        /* Lifecycle:
-         * AsHttpOperation object gets created.
-         * obj.Execute(sm) called.
-         */
+
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             OldCrap = new List<object> ();
@@ -393,7 +390,7 @@ namespace NachoCore.ActiveSync
             HttpRequestMessage request = null;
             if (!CreateHttpRequest (out request, cToken)) {
                 Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
-                HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPNOCON");
+                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
                 return;
             }
             HttpResponseMessage response = null;

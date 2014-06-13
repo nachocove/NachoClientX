@@ -317,7 +317,7 @@ namespace NachoCore.ActiveSync
                     folder.Update ();
                 }
                 ResolveAllDeferred ();
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPFOOF");
+                return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPFOOF");
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
                 var result = NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError);
@@ -336,7 +336,7 @@ namespace NachoCore.ActiveSync
                             pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow, result);
                         }
                         PendingList.Clear ();
-                        return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPPE");
+                        return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPPE");
                     }
                 }
             case Xml.AirSync.StatusCode.ServerError_5:
@@ -347,7 +347,7 @@ namespace NachoCore.ActiveSync
                     folder.Update ();
                 }
                 ResolveAllDeferred ();
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPRS");
+                return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPRS");
 
             case Xml.AirSync.StatusCode.FolderChange_12:
                 foreach (var folder in FoldersInRequest) {
@@ -365,7 +365,7 @@ namespace NachoCore.ActiveSync
                     folder.Update ();
                 }
                 ResolveAllDeferred ();
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "ASYNCTOPRRR");
+                return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPRRR");
 
             default:
                 Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED Top Level status: {0}", status);
@@ -541,8 +541,6 @@ namespace NachoCore.ActiveSync
             }
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
-            } else if (BEContext.ProtoControl.SyncStrategy.IsMoreSyncNeeded ()) {
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC0");
             } else {
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
             }
@@ -562,11 +560,7 @@ namespace NachoCore.ActiveSync
                 }
                 PendingList.Clear ();
             }
-            if (BEContext.ProtoControl.SyncStrategy.IsMoreSyncNeeded ()) {
-                return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "SYNCRESYNC1");
-            } else {
-                return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS1");
-            }
+            return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS1");
         }
 
         public override void StatusInd (bool didSucceed)

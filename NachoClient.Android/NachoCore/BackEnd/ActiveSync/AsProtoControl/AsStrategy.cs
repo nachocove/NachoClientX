@@ -549,17 +549,20 @@ namespace NachoCore.ActiveSync
                     // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
                     EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
                 }
+                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: EmailCalendarSm.State/ContactsTasksSm.State");
                 return true;
             }
             // if a within-scope folder has to-client stuff waiting on the server, then true.
             // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
             if (areExpecting || IsQuickFetch) {
+                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: areExpecting == {0}, IsQuickFetch == {1}", areExpecting, IsQuickFetch);
                 return true;
             }
             // if there is a sync-based operation pending, then true.
             var waiting = McPending.QueryEligible (BEContext.Account.Id)
                 .Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
             if (0 != waiting.Count ()) {
+                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: QueryEligible/IsSyncCommand == {0}", waiting.Count ());
                 return true;
             }
             return false;
