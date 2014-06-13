@@ -50,7 +50,7 @@ namespace NachoClient.iOS
         }
 
         [Export ("initWithRequest:cachedResponse:client:")]
-        public CidImageProtocol (NSUrlRequest request, NSCachedUrlResponse cachedResponse, NSUrlProtocolClient client) 
+        public CidImageProtocol (NSUrlRequest request, NSCachedUrlResponse cachedResponse, NSUrlProtocolClient client)
             : base (request, cachedResponse, client)
         {
         }
@@ -62,17 +62,29 @@ namespace NachoClient.iOS
                 if (null == image) {
                     Log.Error (Log.LOG_UI, "CidImageProtocol: RenderContentId returned null {0}", value);
                 } else {
-                    var scaledImage = image.Scale (new SizeF (320.0f, image.Size.Height * (320.0f / image.Size.Width)));
-                    using (var response = new NSUrlResponse (Request.Url, "image/jpeg", -1, null)) {
-                        Client.ReceivedResponse (this, response, NSUrlCacheStoragePolicy.NotAllowed);
-                        this.InvokeOnMainThread (delegate {
-                            using (var data = scaledImage.AsJPEG ()) {
-                                Client.DataLoaded (this, data);
-                            }
-                            Client.FinishedLoading (this);
-                        });
+                    if (Request.Url.RelativeString.EndsWith (".png")) {
+                        using (var data = image.AsPNG ()) {
+                            FinishLoading (data, "image/png");
+                        }
+                    } else if (Request.Url.RelativeString.EndsWith (".jpg")) {
+                        using (var data = image.AsJPEG ()) {
+                            FinishLoading (data, "image/jpeg");
+                        }
+                    } else {
+                        Log.Error (Log.LOG_UI, "CidImageProtocol: unknown extension {0}", Request.Url);
                     }
                 }
+            }
+        }
+
+        protected void FinishLoading (NSData data, string subtype)
+        {
+            using (var response = new NSUrlResponse (Request.Url, subtype, -1, null)) {
+                Client.ReceivedResponse (this, response, NSUrlCacheStoragePolicy.NotAllowed);
+                this.InvokeOnMainThread (delegate {
+                    Client.DataLoaded (this, data);
+                    Client.FinishedLoading (this);
+                });
             }
         }
 

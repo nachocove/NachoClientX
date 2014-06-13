@@ -47,6 +47,17 @@ namespace NachoCore.Model
                            accountId, folderId, folderEntryId, classCode);
             return maps.SingleOrDefault ();
         }
+
+        public static List<McMapFolderFolderEntry> QueryByFolderEntryIdClassCode (int accountId, int folderEntryId, 
+            McFolderEntry.ClassCodeEnum classCode)
+        {
+            var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
+                " mm.AccountId = ? AND " +
+                " mm.FolderEntryId = ? AND " +
+                " mm.ClassCode = ?",
+                accountId, folderEntryId, classCode);
+            return maps.ToList ();
+        }
     }
 }
 

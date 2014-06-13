@@ -860,6 +860,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
       <Link>NachoCore\Utils\NcAssert.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTask.cs">
+      <Link>NachoCore\Utils\NcTask.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPath.cs">
+      <Link>NachoCore\Model\McPath.cs</Link>
+    </Compile>
     <Compile Include="NachoUI.iOS\Support\DateBarView.cs" />
   </ItemGroup>
   <ItemGroup>

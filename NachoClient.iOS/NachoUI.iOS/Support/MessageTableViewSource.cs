@@ -39,6 +39,11 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
+        public void RefreshEmailMessages()
+        {
+            messageThreads.Refresh ();
+        }
+
         protected bool NoMessageThreads ()
         {
             return ((null == messageThreads) || (0 == messageThreads.Count ()));
@@ -98,16 +103,16 @@ namespace NachoClient.iOS
             owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
         }
 
-        protected const int USER_IMAGE_TAG = 101;
-        protected const int USER_CHILI_TAG = 102;
-        protected const int USER_CHECKMARK_TAG = 103;
-        protected const int FROM_TAG = 104;
-        protected const int SUBJECT_TAG = 105;
-        protected const int SUMMARY_TAG = 106;
-        protected const int REMINDER_ICON_TAG = 107;
-        protected const int REMINDER_TEXT_TAG = 108;
-        protected const int ATTACHMENT_TAG = 109;
-        protected const int RECEIVED_DATE_TAG = 110;
+        protected const int USER_IMAGE_TAG = 99101;
+        protected const int USER_CHILI_TAG = 99102;
+        protected const int USER_CHECKMARK_TAG = 99103;
+        protected const int FROM_TAG = 99104;
+        protected const int SUBJECT_TAG = 99105;
+        protected const int SUMMARY_TAG = 99106;
+        protected const int REMINDER_ICON_TAG = 99107;
+        protected const int REMINDER_TEXT_TAG = 99108;
+        protected const int ATTACHMENT_TAG = 99109;
+        protected const int RECEIVED_DATE_TAG = 99110;
 
         [MonoTouch.Foundation.Export ("MultiSelectTapSelector:")]
         public void MultiSelectTapSelector (UIGestureRecognizer sender)
@@ -386,8 +391,8 @@ namespace NachoClient.iOS
 
             // User image view
             // TODO: user images
-            var userImageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var emailOfSender = Pretty.EmailString(message.From);
+            var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+            var emailOfSender = Pretty.EmailString (message.From);
             string sender = Pretty.SenderString (message.From);
 
             int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
@@ -395,18 +400,18 @@ namespace NachoClient.iOS
             userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
 
             // User chili view
-            var userChiliView = cell.ViewWithTag (USER_CHILI_TAG) as UIImageView;
+            var userChiliView = cell.ContentView.ViewWithTag (USER_CHILI_TAG) as UIImageView;
             userChiliView.Hidden = (compactMode || (!message.isHot ()));
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
 
             // Subject label view
-            var subjectLabelView = cell.ViewWithTag (SUBJECT_TAG) as UILabel;
+            var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
 
             // Summary label view
-            var summaryLabelView = cell.ViewWithTag (SUMMARY_TAG) as UILabel;
+            var summaryLabelView = cell.ContentView.ViewWithTag (SUMMARY_TAG) as UILabel;
             summaryLabelView.Hidden = compactMode;
             if (!compactMode) {
                 if (null == message.Summary) {
@@ -419,12 +424,14 @@ namespace NachoClient.iOS
             }
 
             // Reminder image view and label
-            var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
-            var reminderLabelView = cell.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            if ((!compactMode) && message.HasDueDate ()) {
+            var reminderImageView = cell.ContentView.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
+            var reminderLabelView = cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
+            if ((!compactMode) && (message.HasDueDate () || message.IsDeferred ())) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
-                if (message.IsOverdue ()) {
+                if (message.IsDeferred ()) {
+                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagDeferUntil);
+                } else if (message.IsOverdue ()) {
                     reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
                 } else {
                     reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
@@ -435,7 +442,7 @@ namespace NachoClient.iOS
             }
 
             // Received label view
-            var receivedLabelView = cell.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
+            var receivedLabelView = cell.ContentView.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
             receivedLabelView.Text = Pretty.CompactDateString (message.DateReceived);
             receivedLabelView.SizeToFit ();
             var receivedLabelRect = receivedLabelView.Frame;
@@ -444,14 +451,14 @@ namespace NachoClient.iOS
             receivedLabelView.Frame = receivedLabelRect;
 
             // Attachment image view
-            var attachmentImageView = cell.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
+            var attachmentImageView = cell.ContentView.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
             attachmentImageView.Hidden = false;
             var attachmentImageRect = attachmentImageView.Frame;
             attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
 
             // From label view
-            var fromLabelView = cell.ViewWithTag (FROM_TAG) as UILabel;
+            var fromLabelView = cell.ContentView.ViewWithTag (FROM_TAG) as UILabel;
             var fromLabelRect = fromLabelView.Frame;
             fromLabelRect.Width = attachmentImageRect.X - 65;
             fromLabelView.Frame = fromLabelRect;

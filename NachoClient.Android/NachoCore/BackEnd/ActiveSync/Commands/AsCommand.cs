@@ -38,9 +38,12 @@ namespace NachoCore.ActiveSync
         // Both get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
         // The sublass is responsible for re-writing each from dispatched to something else.
         // This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
-        // is responsible for clearing PendingSingle/PendingList.
+        // is responsible for clearing PendingSingle/PendingList. 
+        // Because of threading, the PendingResolveLockObj must be locked before resolving.
+        // Any resolved pending objects must be removed from PendingSingle/PendingList before unlock.
         protected McPending PendingSingle;
         protected List<McPending> PendingList;
+        protected object PendingResolveLockObj;
         protected NcResult SuccessInd;
         protected NcResult FailureInd;
         protected Object LockObj = new Object ();
@@ -66,6 +69,7 @@ namespace NachoCore.ActiveSync
             CommandName = commandName;
             BEContext = beContext;
             PendingList = new List<McPending> ();
+            PendingResolveLockObj = new object ();
         }
         // Virtual Methods.
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
@@ -93,21 +97,19 @@ namespace NachoCore.ActiveSync
                 Op.Cancel ();
                 // Don't null Op here - we might be calling Execute() on another thread. Let GC get it.
             }
-            // FIXME - there is a race-condition when dealing with Pending. The Op may be concurrently manipulating.
-            if (null != PendingSingle) {
-                PendingList.Add (PendingSingle);
-                PendingSingle = null;
-            }
-            foreach (var pending in PendingList) {
+            lock (PendingResolveLockObj) {
+                ConsolidatePending ();
+                foreach (var pending in PendingList) {
                 /* Q: Do we need another state? We need to be smart about the case where
                  * the cancel comes after the op has been run against the server. The op
                  * may fail the 2nd time because the item exists. Don't want to bug the user.
                  */
-                if (McPending.StateEnum.Dispatched == pending.State) {
-                    pending.ResolveAsDeferredForce ();
+                    if (McPending.StateEnum.Dispatched == pending.State) {
+                        pending.ResolveAsDeferredForce ();
+                    }
                 }
+                PendingList.Clear ();
             }
-            PendingList.Clear ();
         }
 
         public virtual bool UseWbxml (AsHttpOperation Sender)
@@ -203,7 +205,7 @@ namespace NachoCore.ActiveSync
 
         public virtual Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
-            PendingApply (pending => {
+            PendingNonResolveApply (pending => {
                 pending.ResponseHttpStatusCode = (uint)response.StatusCode;
             });
             return null;
@@ -222,21 +224,23 @@ namespace NachoCore.ActiveSync
         // we need to clean up pending.
         public virtual void PostProcessEvent (Event evt)
         {
-            ConsolidatePending ();
-            if ((uint)SmEvt.E.HardFail == evt.EventCode) {
-                foreach (var pending in PendingList) {
-                    if (McPending.StateEnum.Dispatched == pending.State) {
-                        pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
+            lock (PendingResolveLockObj) {
+                ConsolidatePending ();
+                if ((uint)SmEvt.E.HardFail == evt.EventCode) {
+                    foreach (var pending in PendingList) {
+                        if (McPending.StateEnum.Dispatched == pending.State) {
+                            pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
+                        }
+                    }
+                } else {
+                    foreach (var pending in PendingList) {
+                        if (McPending.StateEnum.Dispatched == pending.State) {
+                            pending.ResolveAsDeferredForce ();
+                        }
                     }
                 }
-            } else {
-                foreach (var pending in PendingList) {
-                    if (McPending.StateEnum.Dispatched == pending.State) {
-                        pending.ResolveAsDeferredForce ();
-                    }
-                }
+                PendingList.Clear ();
             }
-            PendingList.Clear ();
         }
         // Sub-class can override if there is a way to break-up the pending list (e.g. Sync).
         // If not returning false, this function must fix-up all pending before returning.
@@ -245,21 +249,25 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public virtual void ResoveAllFailed (NcResult.WhyEnum why)
+        public virtual void ResolveAllFailed (NcResult.WhyEnum why)
         {
-            ConsolidatePending ();
-            foreach (var pending in PendingList) {
-                pending.ResolveAsHardFail (BEContext.ProtoControl, why);
+            lock (PendingResolveLockObj) {
+                ConsolidatePending ();
+                foreach (var pending in PendingList) {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, why);
+                }
+                PendingList.Clear ();
             }
-            PendingList.Clear ();
         }
 
-        public virtual void ResoveAllDeferred ()
+        public virtual void ResolveAllDeferred ()
         {
-            ConsolidatePending ();
-            // FIXME - do we have a loop issue here?
-            foreach (var pending in PendingList) {
-                pending.ResolveAsDeferredForce ();
+            lock (PendingResolveLockObj) {
+                ConsolidatePending ();
+                foreach (var pending in PendingList) {
+                    pending.ResolveAsDeferredForce ();
+                }
+                PendingList.Clear ();
             }
         }
 
@@ -273,20 +281,32 @@ namespace NachoCore.ActiveSync
 
         protected delegate void PendingAction (McPending pending);
 
-        private void PendingApply (PendingAction action)
+        protected void PendingNonResolveApply (PendingAction action)
         {
-            var tmpPendingList = PendingList.ToList ();
-            if (null != PendingSingle) {
-                tmpPendingList.Add (PendingSingle);
+            lock (PendingResolveLockObj) {
+                if (null != PendingSingle) {
+                    action (PendingSingle);
+                }
+                foreach (var pending in PendingList) {
+                    action (pending);
+                }
             }
-            foreach (var pending in tmpPendingList) {
-                action (pending);
+        }
+
+        protected void PendingResolveApply (PendingAction action)
+        {
+            lock (PendingResolveLockObj) {
+                ConsolidatePending ();
+                foreach (var pending in PendingList) {
+                    action (pending);
+                }
+                PendingList.Clear ();
             }
         }
 
         protected Event CompleteAsHardFail (uint status, NcResult.WhyEnum why)
         {
-            PendingApply (pending => {
+            PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsHardFail (BEContext.ProtoControl, why);
@@ -299,7 +319,7 @@ namespace NachoCore.ActiveSync
         protected Event CompleteAsUserBlocked (uint status, 
                                                McPending.BlockReasonEnum reason, NcResult.WhyEnum why)
         {
-            PendingApply (pending => {
+            PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl, reason, why);
@@ -311,7 +331,7 @@ namespace NachoCore.ActiveSync
 
         protected Event CompleteAsTempFail (uint status)
         {
-            PendingApply (pending => {
+            PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsDeferredForce ();
@@ -370,7 +390,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.StatusCode.MessagePreviouslySent_118:
                 // If server says previously sent, then we succeeded!
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
                 });
@@ -410,7 +430,7 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.SyncStateCorrupt_134:
             case Xml.StatusCode.SyncStateAlreadyExists_135:
             case Xml.StatusCode.SyncStateVersionInvalid_136:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "TLS132-6");
@@ -424,26 +444,26 @@ namespace NachoCore.ActiveSync
                 var protocolState = BEContext.ProtocolState;
                 protocolState.IsWipeRequired = true;
                 protocolState.Update ();
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS140");
 
             case Xml.StatusCode.LegacyDeviceOnStrictPolicy_141:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 
             case Xml.StatusCode.DeviceNotProvisioned_142:
             case Xml.StatusCode.PolicyRefresh_143:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
 
             case Xml.StatusCode.InvalidPolicyKey_144:
-                PendingApply (pending => {
+                PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
                 BEContext.ProtocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;

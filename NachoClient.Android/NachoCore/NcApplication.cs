@@ -49,18 +49,23 @@ namespace NachoCore
         // method can be used to post to StatusIndEvent from outside NcApplication.
         private NcApplication ()
         {
+            // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
+            // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
+            // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
+            // VIA THE UI THREAD ON STARTUP. ORDER MATTERS - KNOW BEFORE YOU MODIFY!
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
                 aex.Handle ((ex) => {
                     Log.Error(Log.LOG_SYS, "UnobservedTaskException: {0}", ex.ToString());
+                    var faulted = NcTask.FindFaulted ();
+                    foreach (var name in faulted) {
+                        Log.Error(Log.LOG_SYS, "Faulted task: {0}", name);
+                    }
                     return false;
                 });
             };
-            // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
-            // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A Task.Run() IN YOUR INIT
-            // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
-            // VIA THE UI THREAD ON STARTUP.
+            NcTask.Start ();
             NcModel.Instance.Nop ();
             AsXmlFilterSet.Initialize ();
             BackEnd.Instance.Owner = this;
@@ -100,8 +105,9 @@ namespace NachoCore
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
             NcCapture.PauseAll ();
-            // NcTimer.Stop () should go last.
+            // NcTask/Timer.Stop () should go last.
             NcTimer.Stop ();
+            NcTask.Stop ();
         }
 
         public void QuickCheck (uint seconds)

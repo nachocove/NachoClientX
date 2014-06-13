@@ -37,25 +37,37 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl,
-                    NcResult.Info (NcResult.SubKindEnum.Info_FolderDeleteSucceeded));
+                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
+                pathElem.Delete ();
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl,
+                        NcResult.Info (NcResult.SubKindEnum.Info_FolderDeleteSucceeded));
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "FDELSUCCESS");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Special_3:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
-                        NcResult.WhyEnum.SpecialFolder));
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                            NcResult.WhyEnum.SpecialFolder));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPEC");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Missing_4:
-                if (0 == PendingSingle.DefersRemaining) {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                        NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
-                            NcResult.WhyEnum.MissingOnServer));
-                    return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPEC");
-                } else {
-                    PendingSingle.ResolveAsDeferredForce ();
-                    return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC1");
+                lock (PendingResolveLockObj) {
+                    if (null == PendingSingle) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPECC");
+                    } else if (0 == PendingSingle.DefersRemaining) {
+                        PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
+                            NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                                NcResult.WhyEnum.MissingOnServer));
+                        PendingSingle = null;
+                        return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPEC");
+                    } else {
+                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle = null;
+                        return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC1");
+                    }
                 }
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.ServerError_6:
@@ -65,23 +77,31 @@ namespace NachoCore.ActiveSync
                  */
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingSingle.ResolveAsDeferredForce ();
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsDeferredForce ();
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC2");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.ReSync_9:
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
-                PendingSingle.ResolveAsDeferredForce ();
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsDeferredForce ();
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC3");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.BadFormat_10:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAIL1");
 
             default:
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAIL2");
             }
         }

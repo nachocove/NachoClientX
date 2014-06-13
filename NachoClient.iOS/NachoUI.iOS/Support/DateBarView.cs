@@ -106,15 +106,7 @@ namespace NachoClient.iOS
 
         public void UpdateButtons () {
             int i = 0;
-            int dayOffset = 0;
-            var today = this.ViewDate.DayOfWeek.ToString ();
-            foreach (var day in Days) {
-                if (day == today){
-                    dayOffset = dayOffset - (i);
-                    break;
-                }
-                i++;
-            }
+            int dayOffset = -(IndexOfDayOfWeek(DateTime.Today.DayOfWeek.ToString()));
             i = 0;
             while (i < 7) {
                 UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
@@ -126,7 +118,6 @@ namespace NachoClient.iOS
                 button.Font = A.Font_AvenirNextDemiBold17;
                 i++;
                 dayOffset++;
-
             }
 
         } 
@@ -144,8 +135,6 @@ namespace NachoClient.iOS
             }
 
         } 
-
-
           
     }
 }

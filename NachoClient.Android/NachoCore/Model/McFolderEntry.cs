@@ -28,11 +28,15 @@ namespace NachoCore.Model
         [Indexed]
         public string ServerId { get; set; }
 
+        [Indexed]
+        public bool IsAwaitingDelete { get; set; }
+
         public static T QueryByServerId<T> (int accountId, string serverId) where T : McFolderEntry, new()
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
                     " f.AccountId = ? AND " + 
+                    " f.IsAwaitingDelete = 0 AND " +
                     " f.ServerId = ? ", 
                     typeof(T).Name), 
                 accountId, serverId).SingleOrDefault ();

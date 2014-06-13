@@ -121,6 +121,8 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
+            UIToolbar.Appearance.BackgroundColor = UIColor.White;
+            UIBarButtonItem.Appearance.TintColor = A.Color_29CCBE;
 
             var navigationTitleTextAttributes = new UITextAttributes ();
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
@@ -434,8 +436,8 @@ namespace NachoClient.iOS
             var Mo = NcModel.Instance;
             var Be = BackEnd.Instance;
 
-            var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-            var tmpServer = Mo.Db.Table<McServer> ().Single (rec => rec.Id == account.ServerId);
+            var account = McAccount.QueryById<McAccount> (accountId);
+            var tmpServer = McServer.QueryById<McServer> (account.ServerId);
 
             var credView = new UIAlertView ();
 

@@ -393,7 +393,7 @@ namespace NachoCore.Utils
         public static void ResumeAll ()
         {
             lock (ClassLockObj) {
-                const int reportPeriodMsec = 30 * 1000;
+                const int reportPeriodMsec = 30 * 60 * 1000; // every 30 min
                 if (null == SleepWatch) {
                     SleepWatch = (IStopwatch) Activator.CreateInstance (StopwatchClass);
                 }

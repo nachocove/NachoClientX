@@ -8,6 +8,7 @@ using Android.App;
 using Android.OS;
 using Android.Telephony;
 using NachoClient.AndroidClient;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -79,9 +80,9 @@ namespace NachoPlatform
             public override void OnReceive (Context context, Intent intent)
             {
                 // NOTE: This is called using the UI thread, so need to Task.Run here.
-                Task.Run (delegate {
+                NcTask.Run (delegate {
                     NetStatus.Instance.Fire ();
-                });
+                }, "NetStatusBroadcastReceiver:OnReceive");
             }
         }
     }

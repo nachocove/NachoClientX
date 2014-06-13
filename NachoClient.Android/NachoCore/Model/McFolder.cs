@@ -21,9 +21,6 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwaitingCreate { get; set; }
 
-        [Indexed]
-        public bool IsAwaitingDelete { get; set; }
-
         public const string AsSyncKey_Initial = "0";
         public const string AsRootServerId = "0";
 
@@ -65,6 +62,18 @@ namespace NachoCore.Model
                                        string displayName,
                                        Xml.FolderHierarchy.TypeCode folderType)
         {
+            // client-owned folder can't be created inside synced folder
+            if (parentId != "0") {
+                var parentFolder = McFolder.QueryById<McFolder> (parentId.ToInt ());
+                NcAssert.NotNull (parentFolder, "ParentId does not correspond to an existing folder");
+                NcAssert.True (parentFolder.IsClientOwned == isClientOwned, "Child folder's isClientOwned field must match parent's field");
+                NcAssert.True (parentFolder.AccountId == accountId, "Child folder's AccountId must match parent's AccountId");
+            }
+
+            if (isHidden) {
+                NcAssert.True (isClientOwned, "Synced folders cannot be hidden");
+            }
+
             var folder = new McFolder () {
                 AsSyncKey = AsSyncKey_Initial,
                 AsSyncMetaToClientExpected = false,
@@ -77,6 +86,16 @@ namespace NachoCore.Model
                 Type = folderType,
             };
             return folder;
+        }
+
+        public override int Update ()
+        {
+            if (IsHidden) {
+                NcAssert.True (IsClientOwned, "Cannot update synced folders to be hidden");
+            }
+
+            int retval = base.Update ();
+            return retval;
         }
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
@@ -119,6 +138,7 @@ namespace NachoCore.Model
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
                           " f.Type = ? AND " +
                           " f.ParentId = ? AND " +
                           " f.DisplayName = ?",
@@ -134,6 +154,7 @@ namespace NachoCore.Model
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
                           " f.Type = ? ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
@@ -172,6 +193,7 @@ namespace NachoCore.Model
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
                           " f.ParentId = ? ",
                               accountId, parentId);
             return folders.ToList ();
@@ -214,7 +236,7 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            // Delete anything in the folder and any map entries (recursively).
+            // Delete anything in the folder and any sub-folders/map entries (recursively).
             var contentMaps = McMapFolderFolderEntry.QueryByFolderId (AccountId, Id);
             foreach (var map in contentMaps) {
                 map.Delete ();
@@ -240,9 +262,7 @@ namespace NachoCore.Model
                     break;
 
                 case McItem.ClassCodeEnum.Folder:
-                    var folder = McFolderEntry.QueryById<McFolder> (map.FolderEntryId);
-                    // recursion.
-                    folder.Delete ();
+                    NcAssert.True (false);
                     break;
 
                 default:
@@ -250,14 +270,27 @@ namespace NachoCore.Model
                     break;
                 }
             }
+            // Delete any sub-folders.
+            var subs = McFolder.QueryByParentId (AccountId, ServerId);
+            foreach (var sub in subs) {
+                // Recusion.
+                sub.Delete ();
+            }
             return base.Delete ();
         }
 
-        public NcResult Link (McFolderEntry obj)
+        private static ClassCodeEnum ClassCodeEnumFromObj (McFolderEntry obj)
         {
             var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
             NcAssert.True (null != getClassCode);
-            ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
+            return (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
+        }
+
+        public NcResult Link (McItem obj)
+        {
+            ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
+            NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
+            NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);
             if (null != existing) {
@@ -272,11 +305,19 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Unlink (McFolderEntry obj)
+        public static NcResult UnlinkAll (McItem obj)
         {
-            var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
-            NcAssert.True (null != getClassCode);
-            ClassCodeEnum classCode = (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
+            ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
+            var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (obj.AccountId, obj.Id, classCode);
+            foreach (var map in maps) {
+                map.Delete ();
+            }
+            return NcResult.OK ();
+        }
+
+        public NcResult Unlink (McItem obj)
+        {
+            ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);
             if (null == existing) {
@@ -290,7 +331,7 @@ namespace NachoCore.Model
         {
             // TODO: USE SQL UPDATE.
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          "f.AccountId = ? ",
+                " f.AccountId = ? ",
                               accountId);
             foreach (var folder in folders) {
                 folder.AsSyncKey = AsSyncKey_Initial;

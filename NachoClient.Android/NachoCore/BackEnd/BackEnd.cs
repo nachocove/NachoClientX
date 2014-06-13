@@ -189,42 +189,42 @@ namespace NachoCore
 
         public void Start (int accountId)
         {
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
                 if (! HasServiceFromAccountId (accountId)) {
                     EstablishService (accountId);
                 }
                 ServiceFromAccountId (accountId).Execute ();
-            });
+            }, "Start");
         }
 
         public void ForceSync (int accountId)
         {
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
                 ServiceFromAccountId (accountId).ForceSync ();
-            });
+            }, "ForceSync");
         }
 
         public void CertAskResp (int accountId, bool isOkay)
         {
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 ServiceFromAccountId (accountId).CertAskResp (isOkay);
-            });
+            }, "CertAskResp");
         }
 
         public void ServerConfResp (int accountId, bool forceAutodiscovery)
         {
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 ServiceFromAccountId (accountId).ServerConfResp (forceAutodiscovery);
-            });
+            }, "ServerConfResp");
         }
 
         public void CredResp (int accountId)
         {
-            Task.Run (delegate {
+            NcTask.Run (delegate {
                 ServiceFromAccountId (accountId).CredResp ();
-            });
+            }, "CredResp");
         }
 
         public void Cancel (int accountId, string token)
@@ -381,18 +381,14 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).MoveTaskCmd (taskId, destFolderId);
         }
 
-        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType,
-                                 bool IsClientOwned, bool isHidden)
+        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
         {
-            return ServiceFromAccountId (accountId).CreateFolderCmd (destFolderId, displayName, folderType,
-                IsClientOwned, isHidden);
+            return ServiceFromAccountId (accountId).CreateFolderCmd (destFolderId, displayName, folderType);
         }
 
-        public string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType,
-                                 bool IsClientOwned, bool isHidden)
+        public string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
         {
-            return ServiceFromAccountId (accountId).CreateFolderCmd (DisplayName, folderType,
-                IsClientOwned, isHidden);
+            return ServiceFromAccountId (accountId).CreateFolderCmd (DisplayName, folderType);
         }
 
         public string DeleteFolderCmd (int accountId, int folderId)

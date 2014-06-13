@@ -496,11 +496,9 @@ namespace NachoCore.Model
             return retval;
         }
 
-        public override int Delete ()
+        public override void DeleteAncillary ()
         {
-            int retval = base.Delete ();
             DeleteAncillaryData (NcModel.Instance.Db);
-            return retval;
         }
 
         private NcResult DeleteAncillaryData (SQLiteConnection db)

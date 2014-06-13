@@ -36,27 +36,24 @@ namespace NachoClient.iOS
 
             // Multiple buttons spaced evently
             ToolbarItems = new UIBarButtonItem[] {
-                flexibleSpaceButton,
+                replyButton,
+                replyAllButton,
                 forwardButton,
                 flexibleSpaceButton,
-                replyAllButton,
-                flexibleSpaceButton,
-                replyButton,
-                flexibleSpaceButton,
+                saveButton,
+                deleteButton
             };
 
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                deleteButton,
-                checkButton,
-                clockButton,
-                foldersButton,
+                deferButton,
+                quickReplyButton
             };
 
-            clockButton.Clicked += (object sender, EventArgs e) => {
+            deferButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToMessagePriority", this);
             };
-            foldersButton.Clicked += (object sender, EventArgs e) => {
+            saveButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToMessageAction", this);
             };
             replyButton.Clicked += (object sender, EventArgs e) => {
@@ -72,10 +69,10 @@ namespace NachoClient.iOS
                 DeleteThisMessage ();
                 NavigationController.PopViewControllerAnimated (true);
             };
-            checkButton.Clicked += (object sender, EventArgs e) => {
-                ArchiveThisMessage ();
-                NavigationController.PopViewControllerAnimated (true);
-            };
+//            checkButton.Clicked += (object sender, EventArgs e) => {
+//                ArchiveThisMessage ();
+//                NavigationController.PopViewControllerAnimated (true);
+//            };
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -96,7 +93,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = false;
             }
             CreateView ();
-            MyLayout ();
+            ConfigureView ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -228,18 +225,18 @@ namespace NachoClient.iOS
             NcEmailArchiver.Move (m, folder);
         }
 
+        const int USER_IMAGE_TAG = 101;
+        const int FROM_TAG = 102;
+        const int SUBJECT_TAG = 103;
+        const int REMINDER_TEXT_TAG = 104;
+        const int REMINDER_ICON_TAG = 105;
+        const int ATTACHMENT_TAG = 106;
+        const int RECEIVED_DATE_TAG = 107;
+        const int SEPARATOR_TAG = 108;
+        const int MESSAGE_PART_TAG = 300;
+
         protected void CreateView ()
         {
-            var m = thread.SingleMessageSpecialCase ();
-
-            attachments = McAttachment.QueryByItemId<McEmailMessage> (m.AccountId, m.Id);
-
-            // Start fresh
-            var subviews = scrollView.Subviews;
-            foreach (var s in subviews) {
-                s.RemoveFromSuperview ();
-            }
-
             view = new UIView ();
             scrollView.AddSubview (view);
 
@@ -260,31 +257,167 @@ namespace NachoClient.iOS
             };
             scrollView.AddGestureRecognizer (doubletap);
 
-            if (null != m.Subject) {
-                var subject = new UILabel (new RectangleF (0.0f, 0.0f, 320.0f, 1.0f));
-                subject.Text = m.Subject;
-                subject.Font = UIFont.BoldSystemFontOfSize (19.0f);
-                subject.Lines = 0;
-                subject.LineBreakMode = UILineBreakMode.WordWrap;
-                subject.SizeToFit ();
-                view.AddSubview (subject);
-            }
+            // User image view
+            var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
+            userImageView.Layer.CornerRadius = 20;
+            userImageView.Layer.MasksToBounds = true;
+            userImageView.Tag = USER_IMAGE_TAG;
+            view.AddSubview (userImageView);
 
-            var bodyPath = m.GetBodyPath ();
+            // From label view
+            // Font will vary bold or regular, depending on isRead.
+            // Size fields will be recalculated after text is known.
+            var fromLabelView = new UILabel (new RectangleF (65, 20, 150, 20));
+            fromLabelView.Font = A.Font_AvenirNextDemiBold17;
+            fromLabelView.TextColor = A.Color_0F424C;
+            fromLabelView.Tag = FROM_TAG;
+            view.AddSubview (fromLabelView);
+
+            // Subject label view
+            // Size fields will be recalculated after text is known.
+            var subjectLabelView = new UILabel (new RectangleF (65, 40, 250, 20));
+            subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
+            subjectLabelView.Font = A.Font_AvenirNextMedium14;
+            subjectLabelView.TextColor = A.Color_0F424C;
+            subjectLabelView.Tag = SUBJECT_TAG;
+            view.AddSubview (subjectLabelView);
+
+            // Reminder image view
+            var reminderImageView = new UIImageView (new RectangleF (65, 64, 12, 12));
+            reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
+            reminderImageView.Tag = REMINDER_ICON_TAG;
+            view.AddSubview (reminderImageView);
+
+            // Reminder label view
+            var reminderLabelView = new UILabel (new RectangleF (87, 60, 230, 20));
+            reminderLabelView.Font = A.Font_AvenirNextRegular14;
+            reminderLabelView.TextColor = A.Color_9B9B9B;
+            reminderLabelView.Tag = REMINDER_TEXT_TAG;
+            view.AddSubview (reminderLabelView);
+
+            // Attachment image view
+            // Attachment 'x' will be adjusted to be left of date received field
+            var attachmentImageView = new UIImageView (new RectangleF (200, 18, 16, 16));
+            attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
+            attachmentImageView.Tag = ATTACHMENT_TAG;
+            view.AddSubview (attachmentImageView);
+
+            // Received label view
+            var receivedLabelView = new UILabel (new RectangleF (220, 18, 100, 20));
+            receivedLabelView.Font = A.Font_AvenirNextRegular14;
+            receivedLabelView.TextColor = A.Color_9B9B9B;
+            receivedLabelView.TextAlignment = UITextAlignment.Right;
+            receivedLabelView.Tag = RECEIVED_DATE_TAG;
+            view.AddSubview (receivedLabelView);
+
+            // Separator
+            var separatorView = new UIView (new RectangleF (0, 80, 320, 1));
+            separatorView.BackgroundColor = A.Color_NachoNowBackground;
+            separatorView.Tag = SEPARATOR_TAG;
+            view.AddSubview (separatorView);
+        }
+
+        protected void ConfigureView ()
+        {
+            var message = thread.SingleMessageSpecialCase ();
+            attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
+
+            var userImageView = View.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+            var emailOfSender = Pretty.EmailString (message.From);
+            string sender = Pretty.SenderString (message.From);
+
+            int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
+            UIColor circleColor = Util.IntToUIColor (circleColorNum);
+            userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
+
+            // Subject label view
+            var subjectLabelView = View.ViewWithTag (SUBJECT_TAG) as UILabel;
+            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+
+            // Reminder image view and label
+            var ySeparator = 60;
+            var reminderImageView = View.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
+            var reminderLabelView = View.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
+            if (message.HasDueDate () || message.IsDeferred ()) {
+                ySeparator = 80;
+                reminderImageView.Hidden = false;
+                reminderLabelView.Hidden = false;
+                if (message.IsDeferred ()) {
+                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagDueAsUtc ());
+                } else if (message.IsOverdue ()) {
+                    reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
+                } else {
+                    reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
+                }
+            } else {
+                reminderImageView.Hidden = true;
+                reminderLabelView.Hidden = true;
+            }
+            var separatorView = View.ViewWithTag (SEPARATOR_TAG);
+            separatorView.Frame = new RectangleF (0, ySeparator, View.Frame.Width, 1);
+
+            // Received label view
+            var receivedLabelView = View.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
+            receivedLabelView.Text = Pretty.CompactDateString (message.DateReceived);
+            receivedLabelView.SizeToFit ();
+            var receivedLabelRect = receivedLabelView.Frame;
+            receivedLabelRect.X = View.Frame.Width - 15 - receivedLabelRect.Width;
+            receivedLabelRect.Height = 20;
+            receivedLabelView.Frame = receivedLabelRect;
+
+            // Attachment image view
+            var attachmentImageView = View.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
+            attachmentImageView.Hidden = false;
+            var attachmentImageRect = attachmentImageView.Frame;
+            attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
+            attachmentImageView.Frame = attachmentImageRect;
+
+            // From label view
+            var fromLabelView = View.ViewWithTag (FROM_TAG) as UILabel;
+            var fromLabelRect = fromLabelView.Frame;
+            fromLabelRect.Width = attachmentImageRect.X - 65;
+            fromLabelView.Frame = fromLabelRect;
+            fromLabelView.Text = Pretty.SenderString (message.From);
+            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
+
+            var bodyPath = message.GetBodyPath ();
             if (null != bodyPath) {
                 using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                    var message = bodyParser.ParseMessage ();
-                    PlatformHelpers.motd = message; // for cid handler
-                    MimeHelpers.DumpMessage (message, 0);
+                    var mime = bodyParser.ParseMessage ();
+                    PlatformHelpers.motd = mime; // for cid handler
+                    MimeHelpers.DumpMessage (mime, 0);
                     var list = new List<MimeEntity> ();
-                    MimeHelpers.MimeDisplayList (message, ref list);
+                    MimeHelpers.MimeDisplayList (mime, ref list);
                     RenderDisplayList (list);
                 }
             }
 
-            CreateAttachmentSection ();
+            LayoutView ();
+        }
 
+        protected void LayoutView ()
+        {
+            var maxWidth = View.Frame.Width;
+
+            var separatorView = view.ViewWithTag (SEPARATOR_TAG);
+            var yOffset = separatorView.Frame.Y + separatorView.Frame.Height;
+
+            for (int i = 0; i < view.Subviews.Count (); i++) {
+                var v = view.Subviews [i];
+                if (MESSAGE_PART_TAG == v.Tag) {
+                    var frame = v.Frame;
+                    frame.Y = yOffset;
+                    v.Frame = frame;
+                    yOffset += frame.Height;
+                    if (frame.Width > maxWidth) {
+                        maxWidth = frame.Width;
+                    }
+                }
+            }
+            view.Frame = new RectangleF (0.0f, 0.0f, maxWidth, yOffset);
+            scrollView.ContentSize = new SizeF (maxWidth, yOffset);
+            scrollView.SetNeedsDisplay ();
         }
 
         [MonoTouch.Foundation.Export ("DoubleTapSelector:")]
@@ -295,27 +428,6 @@ namespace NachoClient.iOS
             } else {
                 scrollView.SetZoomScale (1.0f, true);
             }
-            MyLayout ();
-        }
-
-        protected void MyLayout ()
-        {
-            float x = 320.0f;
-            float y = 0.0f;
-            for (int i = 0; i < view.Subviews.Count (); i++) {
-                var v = view.Subviews [i];
-                var f = v.Frame;
-                f.Y = y;
-                v.Frame = f;
-                y += f.Height;
-                if (f.Width > x) {
-                    x = f.Width;
-                }
-            }
-
-            view.Frame = new RectangleF (0.0f, 0.0f, x, y);
-            scrollView.ContentSize = new SizeF (x, y);
-            scrollView.SetNeedsDisplay ();
         }
 
         protected void CreateAttachmentSection ()
@@ -420,6 +532,7 @@ namespace NachoClient.iOS
             label.LineBreakMode = UILineBreakMode.WordWrap;
             label.Text = text;
             label.SizeToFit ();
+            label.Tag = MESSAGE_PART_TAG;
             view.AddSubview (label);
         }
 
@@ -428,91 +541,36 @@ namespace NachoClient.iOS
             var image = PlatformHelpers.RenderImage (part);
 
             // FIXME: Hard-coded width
-            float width = 320.0f;
+            float width = View.Frame.Width;
             float height = image.Size.Height * (width / image.Size.Width);
             image = image.Scale (new SizeF (width, height));
 
             var iv = new UIImageView (image);
+            iv.Tag = MESSAGE_PART_TAG;
             view.AddSubview (iv);
 
         }
-
-        string magic = @"
-            var style = document.createElement(""style""); 
-            document.head.appendChild(style); 
-            style.innerHTML = ""html{-webkit-text-size-adjust: auto;}"";
-            var viewPortTag=document.createElement('meta');
-            viewPortTag.id=""viewport"";
-            viewPortTag.name = ""viewport"";
-            viewPortTag.content = ""width=device-width; initial-scale=1.0;"";
-            document.getElementsByTagName('head')[0].appendChild(viewPortTag);
-        ";
 
         void RenderHtml (MimePart part)
         {
             var textPart = part as TextPart;
             var html = textPart.Text;
 
-            //Log.Info (Log.LOG_RENDER, "Html element string:\n{0}", html);
+            var nsError = new NSError ();
+            var nsAttributes = new NSAttributedStringDocumentAttributes ();
+            nsAttributes.DocumentType = NSDocumentType.HTML;
+            var attributedString = new NSAttributedString (html, nsAttributes, ref nsError);
+            var tv = new UITextView (new RectangleF (0, 0, View.Frame.Width, 1));
+            tv.AttributedText = attributedString;
+            tv.AutoresizingMask = UIViewAutoresizing.FlexibleBottomMargin;
+            tv.UserInteractionEnabled = false;
+            tv.SizeToFit ();
+            tv.Tag = MESSAGE_PART_TAG;
 
-            int i = 0;
-
-            var web = new UIWebView (UIScreen.MainScreen.Bounds);
-            web.BackgroundColor = UIColor.White;
-            web.ContentMode = UIViewContentMode.ScaleAspectFit;
-            web.ScrollView.PagingEnabled = false;
-            web.ScrollView.ScrollEnabled = true;
-            web.ScrollView.MultipleTouchEnabled = false;
-
-            view.AddSubview (web);
-
-            web.LoadHtmlString (html, null);
-            web.Alpha = 0.0f;
-
-            web.LoadStarted += delegate {
-                // this is called several times
-                if (i++ == 0) {
-                    ;
-                }
-            };
-            web.LoadFinished += delegate {
-                if (--i == 0) {
-                    // we stopped loading
-                    web.StopLoading ();
-                    // Size viewport and text
-                    web.EvaluateJavascript (magic);
-                    System.Drawing.RectangleF frame = web.Frame;
-                    frame.Height = 1;
-                    frame.Width = 320;
-                    web.Frame = frame;
-                    frame.Height = web.ScrollView.ContentSize.Height > View.Bounds.Height ? View.Bounds.Height : web.ScrollView.ContentSize.Height;
-                    Log.Info (Log.LOG_UI, "frame = {0}", frame);
-
-                    web.Frame = frame;
-                    web.Alpha = 1.0f;
-                    view.Frame = frame;
-                    MyLayout ();
-                    Log.Info (Log.LOG_UI, "content size = {0}", scrollView.ContentSize);
-
-                }
-            };
-            web.LoadError += (webview, args) => {
-                // we stopped loading
-                if (web != null) {
-                    web.LoadHtmlString (String.Format ("<html><center><font size=+5 color='red'>{0}:<br>{1}</font></center></html>", "An error occurred:", args.Error.LocalizedDescription), null);
-                }
-            };
-            web.ShouldStartLoad += delegate(UIWebView webView, NSUrlRequest request, UIWebViewNavigationType navigationType) {
-                if (UIWebViewNavigationType.LinkClicked == navigationType) {
-                    UIApplication.SharedApplication.OpenUrl (request.Url);
-                    return false;
-                }
-                NachoCore.Utils.Log.Info (Log.LOG_UI, "Html element link: {0}", request.Url);
-                return true;
-            };
-
+            view.Add (tv);
         }
-        // Gets the decoded text content.
+
+        /// Gets the decoded text content.
         public string GetText (TextPart text)
         {
             return text.Text;
@@ -582,6 +640,7 @@ namespace NachoClient.iOS
             //            root.Add (section);
 
             var dvc = new DialogViewController (root);
+            dvc.View.Tag = MESSAGE_PART_TAG;
             view.AddSubview (dvc.View);
         }
 

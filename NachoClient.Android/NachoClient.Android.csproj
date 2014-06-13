@@ -270,6 +270,8 @@
     <Compile Include="NachoCore\Model\McPendDep.cs" />
     <Compile Include="NachoCore\Utils\GatedMemoryStream.cs" />
     <Compile Include="NachoCore\Utils\NcAssert.cs" />
+    <Compile Include="NachoCore\Utils\NcTask.cs" />
+    <Compile Include="NachoCore\Model\McPath.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
