@@ -217,7 +217,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDelay ()
         {
-            DelayTimer = new NcTimer (DelayTimerCallback, null, Convert.ToInt32 (HttpOpSm.Arg),
+            DelayTimer = new NcTimer ("AsHttpOperation:Delay", DelayTimerCallback, null, Convert.ToInt32 (HttpOpSm.Arg),
                 System.Threading.Timeout.Infinite);
         }
 
@@ -400,7 +400,7 @@ namespace NachoCore.ActiveSync
                 // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
                 // assume the IHttpClient instance has been abandoned.
                 var myClient = Client;
-                TimeoutTimer = new NcTimer (TimeoutTimerCallback, myClient, Timeout, 
+                TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, myClient, Timeout, 
                     System.Threading.Timeout.InfiniteTimeSpan);
                 try {
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());

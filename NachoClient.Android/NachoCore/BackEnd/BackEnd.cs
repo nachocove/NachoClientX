@@ -126,7 +126,7 @@ namespace NachoCore
         {
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
 
-            QuickTimeoutTimer = new NcTimer (
+            QuickTimeoutTimer = new NcTimer ("BackEnd",
                 (object state) => { 
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete);
                     foreach (var account in accounts) {

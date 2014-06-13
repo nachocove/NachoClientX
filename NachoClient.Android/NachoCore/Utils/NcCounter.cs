@@ -91,7 +91,7 @@ namespace NachoCore.Utils
 
                 // Create a new timer if necessary
                 if (0 < _ReportPeriod) {
-                    Timer = new NcTimer (NcCounter.Callback, this, 
+                    Timer = new NcTimer ("NcCounter", NcCounter.Callback, this, 
                         new TimeSpan (deltaTick), new TimeSpan (0, 0, _ReportPeriod));
                 }
 

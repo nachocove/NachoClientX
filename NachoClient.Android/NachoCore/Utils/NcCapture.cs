@@ -403,7 +403,7 @@ namespace NachoCore.Utils
                 }
                 if (null == ReportTimer) {
                     // Report once every 30 min
-                    ReportTimer = new NcTimer (NcCapture.Callback, null, dueTime, reportPeriodMsec);
+                    ReportTimer = new NcTimer ("NcCapture", NcCapture.Callback, null, dueTime, reportPeriodMsec);
                 }
                 foreach (string kind in PerKind.Keys) {
                     ResumeKind (kind);

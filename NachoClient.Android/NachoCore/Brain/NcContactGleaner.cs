@@ -29,7 +29,7 @@ namespace NachoCore.Brain
 
         public static void Start ()
         {
-            Invoker = new NcTimer (InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 1));
+            Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 1));
             Invoker.Stfu = true;
         }
 

@@ -581,7 +581,7 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_AS, "Execute called while network is down.");
                 return;
             }
-            PendingOnTimeTimer = new NcTimer (state => {
+            PendingOnTimeTimer = new NcTimer ("AsProtoControl", state => {
                 McPending.MakeEligibleOnTime (Account.Id);
             }, null, 1000, 2000);
             PendingOnTimeTimer.Stfu = true;
