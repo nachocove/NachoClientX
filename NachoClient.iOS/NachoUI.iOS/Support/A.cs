@@ -9,9 +9,11 @@ namespace NachoClient.iOS
     public class A
     {
         protected static UIFont _Font_AvenirNextDemiBold17 = null;
+        protected static UIFont _Font_AvenirNextRegular28 = null;
         protected static UIFont _Font_AvenirNextRegular17 = null;
         protected static UIFont _Font_AvenirNextRegular14 = null;
         protected static UIFont _Font_AvenirNextRegular12 = null;
+        protected static UIFont _Font_AvenirNextMedium24 = null;
         protected static UIFont _Font_AvenirNextMedium14 = null;
         protected static UIFont _Font_AvenirNextUltraLight64 = null;
         protected static UIFont _Font_AvenirNextUltraLight32 = null;
@@ -24,6 +26,10 @@ namespace NachoClient.iOS
         protected static UIColor _Color_11464F = null;
         protected static UIColor _Color_29CCBE = null;
         protected static UIColor _Color_FEBA32 = null;
+        protected static UIColor _Color_0B3239 = null;
+        protected static UIColor _Color_154750 = null;
+        protected static UIColor _Color_808080 = null;
+
         protected static UIColor _Color_NachoNowBackground = null;
 
         public A ()
@@ -57,12 +63,31 @@ namespace NachoClient.iOS
             }
         }
 
+        public static UIFont Font_AvenirNextRegular28 {
+            get {
+                if (null == _Font_AvenirNextRegular28) {
+                    _Font_AvenirNextRegular28 = UIFont.FromName ("AvenirNext-Regular", 28);
+                }
+                return _Font_AvenirNextRegular28;
+            }
+        }
+
         public static UIFont Font_AvenirNextRegular14 {
             get {
                 if (null == _Font_AvenirNextRegular14) {
                     _Font_AvenirNextRegular14 = UIFont.FromName ("AvenirNext-Regular", 14);
                 }
                 return _Font_AvenirNextRegular14;
+            }
+        }
+
+
+        public static UIFont Font_AvenirNextMedium24 {
+            get {
+                if (null == _Font_AvenirNextMedium24) {
+                    _Font_AvenirNextMedium24 = UIFont.FromName ("AvenirNext-Regular", 24);
+                }
+                return _Font_AvenirNextMedium24;
             }
         }
 
@@ -171,6 +196,33 @@ namespace NachoClient.iOS
                     _Color_FEBA32 = UIColor.FromRGB (0xfe, 0xba, 0x32);
                 }
                 return _Color_FEBA32;
+            }
+        }
+
+        public static UIColor Color_154750 {
+            get {
+                if (null == _Color_154750) {
+                    _Color_154750 = UIColor.FromRGB (0x15, 0x47, 0x50);
+                }
+                return _Color_154750;
+            }
+        }
+
+        public static UIColor Color_0B3239 {
+            get {
+                if (null == _Color_0B3239) {
+                    _Color_0B3239 = UIColor.FromRGB (0x0b, 0x32, 0x39);
+                }
+                return _Color_0B3239;
+            }
+        }
+
+        public static UIColor Color_808080 {
+            get {
+                if (null == _Color_808080) {
+                    _Color_808080 = UIColor.FromRGB (0x80, 0x80, 0x80);
+                }
+                return _Color_808080;
             }
         }
 
