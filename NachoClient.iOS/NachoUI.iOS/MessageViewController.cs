@@ -26,6 +26,10 @@ namespace NachoClient.iOS
         protected UIView attachmentsView;
         protected List<McAttachment> attachments;
 
+        protected int htmlBusy;
+        protected int deferLayout;
+        protected object deferLayoutLock = new object ();
+
         public MessageViewController (IntPtr handle) : base (handle)
         {
         }
@@ -336,11 +340,11 @@ namespace NachoClient.iOS
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
 
             // Reminder image view and label
-            var ySeparator = 60;
+            var ySeparator = 75;
             var reminderImageView = View.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = View.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
             if (message.HasDueDate () || message.IsDeferred ()) {
-                ySeparator = 80;
+                ySeparator = 95;
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 if (message.IsDeferred ()) {
@@ -381,6 +385,9 @@ namespace NachoClient.iOS
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
+            htmlBusy = 0;
+            deferLayout = 1;
+
             var bodyPath = message.GetBodyPath ();
             if (null != bodyPath) {
                 using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
@@ -394,7 +401,9 @@ namespace NachoClient.iOS
                 }
             }
 
-            LayoutView ();
+            if (0 == DeferLayoutDecrement ()) {
+                LayoutView ();
+            }
         }
 
         protected void LayoutView ()
@@ -403,6 +412,8 @@ namespace NachoClient.iOS
 
             var separatorView = view.ViewWithTag (SEPARATOR_TAG);
             var yOffset = separatorView.Frame.Y + separatorView.Frame.Height;
+
+            yOffset += 15;
 
             for (int i = 0; i < view.Subviews.Count (); i++) {
                 var v = view.Subviews [i];
@@ -552,24 +563,76 @@ namespace NachoClient.iOS
 
         }
 
+        string magic = @"
+            var style = document.createElement(""style""); 
+            document.head.appendChild(style); 
+            style.innerHTML = ""html{-webkit-text-size-adjust: auto; word-wrap: break-word;}"";
+            var viewPortTag=document.createElement('meta');
+            viewPortTag.id=""viewport"";
+            viewPortTag.name = ""viewport"";
+            viewPortTag.content = ""width=device-width; initial-scale=1.0;"";
+            document.getElementsByTagName('head')[0].appendChild(viewPortTag);
+        ";
+
         void RenderHtml (MimePart part)
         {
             var textPart = part as TextPart;
             var html = textPart.Text;
 
-            var nsError = new NSError ();
-            var nsAttributes = new NSAttributedStringDocumentAttributes ();
-            nsAttributes.DocumentType = NSDocumentType.HTML;
-            var attributedString = new NSAttributedString (html, nsAttributes, ref nsError);
-            var tv = new UITextView (new RectangleF (0, 0, View.Frame.Width, 1));
-            tv.AttributedText = attributedString;
-            tv.AutoresizingMask = UIViewAutoresizing.FlexibleBottomMargin;
-            tv.UserInteractionEnabled = false;
-            tv.SizeToFit ();
-            tv.Tag = MESSAGE_PART_TAG;
+            var wv = new UIWebView (new RectangleF (0, 0, View.Frame.Width, 1));
+            wv.ScrollView.Bounces = false;
+            wv.ContentMode = UIViewContentMode.ScaleAspectFit;
+            wv.BackgroundColor = UIColor.White;
+            wv.Tag = MESSAGE_PART_TAG;
+            view.Add (wv);
 
-            view.Add (tv);
+            wv.LoadStarted += (object sender, EventArgs e) => {
+                htmlBusy += 1;
+            };
+
+            wv.LoadFinished += (object sender, EventArgs e) => {
+                htmlBusy -= 1;
+                if (0 == htmlBusy) {
+                    if (0 == DeferLayoutDecrement ()) {
+                        wv.EvaluateJavascript (magic);
+                        var frame = wv.Frame;
+                        frame.Width = View.Frame.Width;
+                        frame.Height = (wv.ScrollView.ContentSize.Height > View.Bounds.Height) ? View.Bounds.Height : wv.ScrollView.ContentSize.Height;
+                        wv.Frame = frame;
+                        LayoutView ();
+                    }
+                }
+            };
+
+            wv.LoadError += (object sender, UIWebErrorArgs e) => {
+                if (0 == DeferLayoutDecrement ()) {
+                    LayoutView ();
+                }
+            };
+
+            DeferLayoutIncrement ();
+            wv.LoadHtmlString (html, null);
         }
+
+        //        void RenderHtml (MimePart part)
+        //        {
+        //            var textPart = part as TextPart;
+        //            var html = textPart.Text;
+        //
+        //            var nsError = new NSError ();
+        //            var nsAttributes = new NSAttributedStringDocumentAttributes ();
+        //            nsAttributes.DocumentType = NSDocumentType.HTML;
+        //            var attributedString = new NSAttributedString (html, nsAttributes, ref nsError);
+        //            var tv = new UITextView (new RectangleF (0, 0, View.Frame.Width, 1));
+        //            tv.AttributedText = attributedString;
+        //            tv.AutoresizingMask = UIViewAutoresizing.FlexibleBottomMargin;
+        //            tv.UserInteractionEnabled = false;
+        //            tv.SizeToFit ();
+        //
+        //            tv.Tag = MESSAGE_PART_TAG;
+        //
+        //            view.Add (tv);
+        //        }
 
         /// Gets the decoded text content.
         public string GetText (TextPart text)
@@ -660,6 +723,21 @@ namespace NachoClient.iOS
                 PlatformHelpers.DisplayAttachment (this, a);
             } else {
                 PlatformHelpers.DownloadAttachment (a);
+            }
+        }
+
+        protected void DeferLayoutIncrement ()
+        {
+            lock (deferLayoutLock) {
+                deferLayout += 1;
+            }
+        }
+
+        protected int DeferLayoutDecrement ()
+        {
+            lock (deferLayoutLock) {
+                deferLayout -= 1;
+                return deferLayout;
             }
         }
     }
