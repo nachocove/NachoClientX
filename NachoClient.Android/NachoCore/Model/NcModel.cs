@@ -18,13 +18,13 @@ namespace NachoCore.Model
         private string Documents { set; get; }
         public SQLiteConnection Db { get
             {
-                //var threadId = Thread.CurrentThread.ManagedThreadId;
-                int threadId = 0;
+                var threadId = Thread.CurrentThread.ManagedThreadId;
                 SQLiteConnection db = null;
                 if (!DbConns.TryGetValue (threadId, out db)) {
                     db = new SQLiteConnection (DbFileName, 
                         SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, 
                         storeDateTimeAsTicks: true);
+                    db.BusyTimeout = TimeSpan.FromSeconds (5.0);
                     DbConns.TryAdd (threadId, db);
                 }
                 return db;
