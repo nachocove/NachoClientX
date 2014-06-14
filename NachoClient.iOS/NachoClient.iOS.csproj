@@ -80,6 +80,8 @@
         <Command type="AfterBuild" command="${SolutionDir}/hockeyapp_upload.py --ios ${TargetDir}" />
       </CustomCommands>
     </CustomCommands>
+    <MtouchUseSGen>true</MtouchUseSGen>
+    <MtouchUseRefCounting>true</MtouchUseRefCounting>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
