@@ -255,7 +255,7 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 priorityInbox.Refresh ();
                 carouselView.ReloadData ();
-                inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
+                inboxSource.RefreshEmailMessages ();
                 inboxTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
