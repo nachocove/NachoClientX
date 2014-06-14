@@ -104,15 +104,16 @@ namespace NachoClient.iOS
         }
 
         protected const int USER_IMAGE_TAG = 99101;
-        protected const int USER_CHILI_TAG = 99102;
-        protected const int USER_CHECKMARK_TAG = 99103;
-        protected const int FROM_TAG = 99104;
-        protected const int SUBJECT_TAG = 99105;
-        protected const int SUMMARY_TAG = 99106;
-        protected const int REMINDER_ICON_TAG = 99107;
-        protected const int REMINDER_TEXT_TAG = 99108;
-        protected const int ATTACHMENT_TAG = 99109;
-        protected const int RECEIVED_DATE_TAG = 99110;
+        protected const int USER_LABEL_TAG = 99102;
+        protected const int USER_CHILI_TAG = 99103;
+        protected const int USER_CHECKMARK_TAG = 99104;
+        protected const int FROM_TAG = 99105;
+        protected const int SUBJECT_TAG = 99106;
+        protected const int SUMMARY_TAG = 99107;
+        protected const int REMINDER_ICON_TAG = 99108;
+        protected const int REMINDER_TEXT_TAG = 99109;
+        protected const int ATTACHMENT_TAG = 99110;
+        protected const int RECEIVED_DATE_TAG = 99111;
 
         [MonoTouch.Foundation.Export ("MultiSelectTapSelector:")]
         public void MultiSelectTapSelector (UIGestureRecognizer sender)
@@ -249,6 +250,25 @@ namespace NachoClient.iOS
                 userImageTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
                 userImageView.AddGestureRecognizer (userImageTap);
                 userImageView.UserInteractionEnabled = true;
+
+                // User userLabelView view, if no image
+                var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+                userLabelView.Font = A.Font_AvenirNextRegular24;
+                userLabelView.TextColor = UIColor.White;
+                userLabelView.TextAlignment = UITextAlignment.Center;
+                userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                userLabelView.Layer.CornerRadius = 20;
+                userLabelView.Layer.MasksToBounds = true;
+                userLabelView.Tag = USER_LABEL_TAG;
+                cell.ContentView.AddSubview (userLabelView);
+
+                // Set up multi-select on user label
+                var userLabelTap = new UITapGestureRecognizer ();
+                userLabelTap.NumberOfTapsRequired = 1;
+                userLabelTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
+                userImageView.AddGestureRecognizer (userLabelTap);
+                userImageView.UserInteractionEnabled = true;
+
 
                 // User chili view
                 var chiliY = 72;
@@ -389,14 +409,21 @@ namespace NachoClient.iOS
             }
 
             // User image view
-            // TODO: user images
             var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var emailOfSender = Pretty.EmailString (message.From);
-            string sender = Pretty.SenderString (message.From);
+            var userLabelView = cell.ContentView.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            userImageView.Hidden = true;
+            userLabelView.Hidden = true;
 
-            int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
-            UIColor circleColor = Util.IntToUIColor (circleColorNum);
-            userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
+            var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+
+            if (null != userImage) {
+                userImageView.Hidden = false;
+                userImageView.Image = userImage;
+            } else {
+                userLabelView.Hidden = false;
+                userLabelView.Text = Util.NameToLetters (Pretty.SenderString (message.From));
+                userLabelView.BackgroundColor = Util.ColorOfSender (message.AccountId, Pretty.EmailString (message.From));
+            }
 
             // User chili view
             var userChiliView = cell.ContentView.ViewWithTag (USER_CHILI_TAG) as UIImageView;

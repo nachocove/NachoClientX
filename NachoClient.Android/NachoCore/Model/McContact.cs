@@ -21,7 +21,9 @@ namespace NachoCore.Model
     public class McContactStringIndex
     {
         public int Id { set; get; }
+
         public int ContactId { set; get; }
+
         public string Value { set; get; }
 
         public McContact GetContact ()
@@ -170,7 +172,7 @@ namespace NachoCore.Model
         /// User-defined label if one exists
         public string Label { get; set; }
 
-        public McContact GetContact()
+        public McContact GetContact ()
         {
             return NcModel.Instance.Db.Get<McContact> (ContactId);
         }
@@ -584,7 +586,7 @@ namespace NachoCore.Model
             HasReadAncillaryData = true;
             return ForceReadAncillaryData ();
         }
-           
+
         public NcResult ForceReadAncillaryData ()
         {
             var db = NcModel.Instance.Db;
@@ -950,11 +952,11 @@ namespace NachoCore.Model
                                               "SELECT c.* FROM McContact AS c " +
                                               " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
                                               " WHERE " +
+                                              "s.Value = ? AND " +
+                                              "s.Type = ? AND " +
                                               " c.AccountId = ? AND " +
-                                              " c.IsAwaitingDelete = 0 AND " +
-                                              " s.Type = ? AND " +
-                                              " s.Value = ? ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress).ToList ();
+                                              " c.IsAwaitingDelete = 0 ",
+                                              emailAddress, McContactStringType.EmailAddress, accountId).ToList ();
             return contactList;
         }
 
@@ -1085,7 +1087,8 @@ namespace NachoCore.Model
             }
         }
 
-        public static void UpdateUserCircleColor(int circleColor, string userAddress)
+        // FIXME: Should make sure s.Type is email address
+        public static void UpdateUserCircleColor (int circleColor, string userAddress)
         {
             NcModel.Instance.Db.Query<McContact> (
                 "UPDATE McContact SET CircleColor = ? WHERE Id IN" +

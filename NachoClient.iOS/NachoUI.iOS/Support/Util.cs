@@ -504,6 +504,29 @@ namespace NachoClient
             return circleColor;
         }
 
+        // FIXME: Store the color, no the index, in the db
+        public static UIColor ColorOfSender(int accountId, string emailAddress)
+        {
+            var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            foreach(var contact in contacts) {
+                if(0 < contact.CircleColor) {
+                    return colors[contact.CircleColor];
+                }
+            }
+            var random = new Random ();
+            int randomNumber = random.Next (1, 9);
+            foreach (var contact in contacts) {
+                contact.CircleColor = randomNumber;
+                contact.Update ();
+            }
+            return colors[randomNumber];
+        }
+
+        public static UIImage ImageOfSender (int accountId, string emailAddress)
+        {
+            return null;
+        }
+
         #endregion
     }
 }
