@@ -785,7 +785,7 @@ namespace Test.iOS
             
         public enum PhonySt : uint
         {
-            UITest = (AsProtoControl.Lst.CalRespW + 1),
+            UITest = (AsProtoControl.Lst.QOpW + 1),
             Last = UITest,
         };
 
@@ -793,7 +793,7 @@ namespace Test.iOS
         {
             new public enum E : uint
             {
-                MoveUITest = (AsProtoControl.CtlEvt.E.CalResp + 1),
+                MoveUITest = (AsProtoControl.CtlEvt.E.PkQOop + 1),
                 Last = MoveUITest,
             };
         }
