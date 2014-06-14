@@ -73,9 +73,9 @@ namespace NachoClient.iOS
                 }
             };
             saveButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("NachoNowToMessageAction", this);
+                var h = new SegueHolder(TableView);
+                PerformSegue ("NachoNowToMessageAction", h);
             };
-
 
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);

@@ -39,7 +39,7 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
-        public void RefreshEmailMessages()
+        public void RefreshEmailMessages ()
         {
             messageThreads.Refresh ();
         }
@@ -587,10 +587,23 @@ namespace NachoClient.iOS
             NcEmailArchiver.Archive (message);
         }
 
+        public List<McEmailMessage> GetSelectedMessages ()
+        {
+            var messageList = new List<McEmailMessage> ();
+
+            foreach (var messageThreadIndex in MultiSelect) {
+                var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
+                var message = messageThread.SingleMessageSpecialCase ();
+                messageList.Add (message);
+            }
+            return messageList;
+        }
+
         public void MultiSelectDelete (UITableView tableView)
         {
-            foreach (var messageThreadIndex in MultiSelect) {
-                DeleteThisMessage (messageThreads.GetEmailThread (messageThreadIndex));
+            var messageList = GetSelectedMessages ();
+            foreach (var message in messageList) {
+                NcEmailArchiver.Delete (message);
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
@@ -598,8 +611,9 @@ namespace NachoClient.iOS
 
         public void MultiSelectMove (UITableView tableView, McFolder folder)
         {
-            foreach (var messageThreadIndex in MultiSelect) {
-                MoveThisMessage (messageThreads.GetEmailThread (messageThreadIndex), folder);
+            var messageList = GetSelectedMessages ();
+            foreach (var message in messageList) {
+                NcEmailArchiver.Move (message, folder);
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
@@ -634,7 +648,16 @@ namespace NachoClient.iOS
         /// </summary>
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            Log.Info (Log.LOG_UI, "MessageTableViewSource: FolderSelected");
+            NcAssert.True (MultiSelectActive ());
+            NcAssert.True (cookie is SegueHolder);
+            var h = cookie as SegueHolder;
+            var t = h.value as UITableView;
+            var messageList = GetSelectedMessages ();
+            foreach (var message in messageList) {
+                NcEmailArchiver.Move (message, folder);
+            }
+            MultiSelect.Clear ();
+            MultiSelectToggle (t);  
         }
 
         /// <summary>
