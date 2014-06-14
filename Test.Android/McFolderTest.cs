@@ -202,8 +202,8 @@ namespace Test.iOS
                 List<McFolder> retrieved1 = McFolder.QueryByParentId (1, "1");
                 Assert.AreEqual (0, retrieved1.Count, "Should not retrieve any folders if none have been added");
 
-                CreateFolder (1, parentId: "0");
-                CreateFolder (1, parentId: "1");
+                var folder1 = CreateFolder (1, parentId: "0", serverId: "2");
+                CreateFolder (1, parentId: folder1.ServerId);
 
                 List<McFolder> retrieved2 = McFolder.QueryByParentId (1, "5");
                 Assert.AreEqual (0, retrieved2.Count, "Should return empty list of folders if none were found");
@@ -212,11 +212,11 @@ namespace Test.iOS
             [Test]
             public void TestSingleFolderRetrieved ()
             {
-                CreateFolder (1, parentId: "0");
-                McFolder folder2 = CreateFolder (1, parentId: "1");
-                CreateFolder (1, parentId: "2");
+                var folder1 = CreateFolder (1, parentId: "0", serverId: "5");
+                var folder2 = CreateFolder (1, parentId: folder1.ServerId, serverId: "6");
+                CreateFolder (1, parentId: folder2.ServerId);
 
-                List<McFolder> retrieved = McFolder.QueryByParentId (1, parentId: "1");
+                List<McFolder> retrieved = McFolder.QueryByParentId (1, parentId: folder1.ServerId);
                 Assert.AreEqual (1, retrieved.Count, "Should return a single folder if only one folder has a parent id");
                 FoldersAreEqual (folder2, retrieved.FirstOrDefault (), "Returned folder should match created folder");
             }
@@ -224,17 +224,17 @@ namespace Test.iOS
             [Test]
             public void TestMultipleFoldersRetrieved ()
             {
-                CreateFolder (1, parentId: "0");
-                CreateFolder (1, parentId: "1");
-                CreateFolder (1, parentId: "1");
-                CreateFolder (1, parentId: "1");
-                CreateFolder (1, parentId: "2");
+                var parent = CreateFolder (1, parentId: "0", serverId: "5");
+                var folder2 = CreateFolder (1, parentId: parent.ServerId, serverId: "6");
+                CreateFolder (1, parentId: folder2.ServerId, serverId: "7");
+                CreateFolder (1, parentId: parent.ServerId, serverId: "8");
+                CreateFolder (1, parentId: parent.ServerId, serverId: "9");
 
-                List<McFolder> retrieved = McFolder.QueryByParentId (1, "1");
+                List<McFolder> retrieved = McFolder.QueryByParentId (1, parent.ServerId);
                 Assert.AreEqual (3, retrieved.Count, "Should return correct number of folders with matching parent id");
                 foreach (McFolder folder in retrieved) {
                     Assert.AreEqual (1, folder.AccountId, "Account id's should match expected");
-                    Assert.AreEqual ("1", folder.ParentId, "Parent id's should match expected");
+                    Assert.AreEqual (parent.ServerId, folder.ParentId, "Parent id's should match expected");
                 }
             }
         }
@@ -758,9 +758,8 @@ namespace Test.iOS
         }
     }
 
-    public class BaseMcFolderTest
+    public class BaseMcFolderTest : CommonFolderOps
     {
-        public const string defaultServerId = "Default Server Id";
 
         [SetUp]
         public void SetUp ()
@@ -778,41 +777,6 @@ namespace Test.iOS
             Assert.AreEqual (expected.ServerId, actual.ServerId, testDesc);
             Assert.AreEqual (expected.DisplayName, actual.DisplayName, testDesc);
             Assert.AreEqual (expected.Type, actual.Type, testDesc);
-        }
-
-        public T CreateUniqueItem<T> (int accountId, string serverId = defaultServerId) where T : McItem, new ()
-        {
-            T newItem = new T ();
-            newItem.AccountId = accountId;
-            newItem.ServerId = serverId;
-            newItem.Insert ();
-            return newItem;
-        }
-
-        public McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
-            string serverId = defaultServerId, string name = "Default name", TypeCode typeCode = TypeCode.UserCreatedGeneric_1,
-            bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "0", 
-            bool syncMetaToClient = true)
-        {
-            McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, parentId, serverId, name, typeCode);
-
-            folder.IsAwaitingDelete = isAwaitingDelete;
-            folder.IsAwaitingCreate = isAwaitingCreate;
-            folder.AsSyncKey = asSyncKey;
-            folder.AsSyncMetaToClientExpected = syncMetaToClient;
-
-            if (autoInsert) { folder.Insert (); }
-            return folder;
-        }
-
-        public void TestForNachoExceptionFailure (Action action, string message)
-        {
-            try {
-                action ();
-                Assert.Fail (message);
-            } catch (NachoAssertionFailure e) {
-                Log.Info (Log.LOG_TEST, "NachoAssertFailure message: {0}", e.Message);
-            }
         }
     }
 }
