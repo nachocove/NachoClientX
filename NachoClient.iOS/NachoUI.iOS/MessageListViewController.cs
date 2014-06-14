@@ -73,7 +73,7 @@ namespace NachoClient.iOS
                 }
             };
             saveButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageToMessageAction", this);
+                PerformSegue ("NachoNowToMessageAction", this);
             };
 
 
