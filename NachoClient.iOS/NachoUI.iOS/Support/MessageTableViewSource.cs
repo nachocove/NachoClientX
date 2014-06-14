@@ -377,7 +377,6 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureMessageCell (UITableViewCell cell, int messageThreadIndex)
         {
-            Console.Write ("ConfigureMessageCell");
             // Save thread index
             cell.ContentView.Tag = messageThreadIndex;
 
