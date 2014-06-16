@@ -582,7 +582,7 @@ namespace NachoCore.ActiveSync
 
         protected virtual void DoReDisc ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc, "ASCDRESYNC");
+            OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReDisc, "ASCDREDISC");
         }
 
         protected virtual void DoUiGetCred ()

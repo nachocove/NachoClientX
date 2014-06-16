@@ -327,9 +327,19 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
+        public static void AsSetExpected (int accountId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? AND f.IsClientOwned = 0",
+                accountId);
+            foreach (var folder in folders) {
+                folder.AsSyncMetaToClientExpected = true;
+                folder.Update ();
+            }
+        }
+
         public static void AsResetState (int accountId)
         {
-            // TODO: USE SQL UPDATE.
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                 " f.AccountId = ? ",
                               accountId);
