@@ -74,6 +74,7 @@ namespace NachoCore.Model
 
         private NcModel ()
         {
+            NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             DbFileName = Path.Combine (Documents, "db");
             Initialize ();
