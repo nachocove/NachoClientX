@@ -764,8 +764,7 @@ namespace Test.iOS
         [SetUp]
         public void SetUp ()
         {
-            Log.Info (Log.LOG_TEST, "Setup started");
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+            base.SetUp ();
         }
 
         public void FoldersAreEqual (McFolder expected, McFolder actual, string testDesc)

@@ -252,6 +252,18 @@ namespace Test.iOS
 
     public class CommonTestOps
     {
+        public void SetUp ()
+        {
+            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+           
+            // turn off telemetry logging for tests
+            LogSettings settings = Log.SharedInstance.Settings;
+            settings.Error.DisableTelemetry ();
+            settings.Warn.DisableTelemetry ();
+            settings.Info.DisableTelemetry ();
+            settings.Debug.DisableTelemetry ();
+        }
+
         public void TestForNachoExceptionFailure (Action action, string message)
         {
             try {

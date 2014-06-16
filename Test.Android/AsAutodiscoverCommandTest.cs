@@ -458,7 +458,7 @@ namespace Test.iOS
         }
     }
 
-    public class AsAutodiscoverCommandTest
+    public class AsAutodiscoverCommandTest : CommonTestOps
     {
         private static AsAutodiscoverCommand autodCommand { get; set; }
         private static MockContext mockContext { get; set; }
@@ -468,7 +468,7 @@ namespace Test.iOS
         [SetUp]
         public void Setup ()
         {
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+            base.SetUp ();
 
             MockDnsQueryRequest.ProvideDnsQueryResponseMessage = null;
 
