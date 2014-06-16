@@ -41,6 +41,14 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
+        private void MarkFoldersPinged ()
+        {
+            foreach (var folder in FoldersInRequest) {
+                folder.AsSyncLastPing = DateTime.UtcNow;
+                folder.Update ();
+            }
+        }
+
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             McProtocolState update;
@@ -49,10 +57,11 @@ namespace NachoCore.ActiveSync
             switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
 
             case Xml.Ping.StatusCode.NoChanges_1:
+                MarkFoldersPinged ();
                 return Event.Create ((uint)SmEvt.E.Success, "PINGNOCHG");
             
             case Xml.Ping.StatusCode.Changes_2:
-                // FIXME - move to Strat.
+                MarkFoldersPinged ();
                 var folders = doc.Root.Element (m_ns + Xml.Ping.Folders).Elements (m_ns + Xml.Ping.Folder);
                 foreach (var xmlFolder in folders) {
                     var folder = NcModel.Instance.Db.Table<McFolder> ().
@@ -86,7 +95,6 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.TempFail, "PINGSE", null, "Xml.Ping.StatusCode.ServerError");
 
             default:
-                // FIXME - how do we want to handle unknown status codes?
                 Log.Error (Log.LOG_AS, "AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD1");
             }

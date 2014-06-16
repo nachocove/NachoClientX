@@ -586,7 +586,9 @@ namespace NachoCore.ActiveSync
                 fewer.Add (defCal);
                 folders.Remove (defCal);
             }
-            return folders.OrderBy (x => x.AsSyncLastSuccess).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
+            var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
+            fewer.AddRange (stalest);
+            return fewer;
         }
     }
 }

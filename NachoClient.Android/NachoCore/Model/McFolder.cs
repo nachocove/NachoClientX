@@ -37,7 +37,7 @@ namespace NachoCore.Model
         // When we GetChanges, AsSyncMetaWindowSize tells the number-of-messages-window.
         public uint AsSyncMetaWindowSize { get; set; }
         // Updated when a Sync works on this folder. When we hit MaxFolders limit, this decides who goes next.
-        public DateTime AsSyncLastSuccess { get; set; }
+        public DateTime AsSyncLastPing { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
