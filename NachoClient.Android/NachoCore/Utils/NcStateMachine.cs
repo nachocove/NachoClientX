@@ -180,23 +180,6 @@ namespace NachoCore.Utils
             }
         }
 
-        /// <summary>
-        /// Posts at most one event (best effort - not a guarantee).
-        /// </summary>
-        /// <param name="eventCode">Event code.</param>
-        /// <param name="mnemonic">Mnemonic.</param>
-        public void PostAtMostOneEvent (uint eventCode, string mnemonic)
-        {
-            foreach (var elem in EventQ) {
-                var inQEvent = (Event)elem;
-                if (eventCode == inQEvent.EventCode) {
-                    Log.Info (Log.LOG_STATE, "SM{0}: E={1} already in queue.", NameAndId (), EventName [eventCode]);
-                    return;
-                }
-            }
-            PostEvent (eventCode, mnemonic);
-        }
-
         public void PostEvent (uint eventCode, string mnemonic)
         {
             PostEvent (eventCode, mnemonic, null, null);
