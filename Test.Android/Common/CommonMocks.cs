@@ -235,14 +235,19 @@ namespace Test.iOS
 
         public McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
             string serverId = defaultServerId, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
-            bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "0", 
-            bool syncMetaToClient = true)
+            bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "-1", 
+            bool syncMetaToClient = false)
         {
             McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, parentId, serverId, name, typeCode);
 
             folder.IsAwaitingDelete = isAwaitingDelete;
             folder.IsAwaitingCreate = isAwaitingCreate;
-            folder.AsSyncKey = asSyncKey;
+
+            if (asSyncKey == "-1") {
+                asSyncKey = null;
+            } else {
+                folder.AsSyncKey = asSyncKey;
+            }
             folder.AsSyncMetaToClientExpected = syncMetaToClient;
 
             if (autoInsert) { folder.Insert (); }

@@ -464,10 +464,10 @@ namespace Test.iOS
             [Test]
             public void ShouldNotBreakDefaultFolder ()
             {
-                McFolder folder1 = CreateFolder (1, isClientOwned: true);
+                McFolder folder1 = CreateFolder (1, isClientOwned: false);
                 McFolder.AsResetState (1);
 
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
+                McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved1, "Folder should be the same after resetting state");
                 FlagsAreReset (retrieved1, "Folder flags should be correct when reset");
             }
@@ -475,12 +475,12 @@ namespace Test.iOS
             [Test]
             public void ShouldResetFolderSyncKey ()
             {
-                McFolder folder1 = CreateFolder (1, asSyncKey: "10", isClientOwned: true);
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
+                McFolder folder1 = CreateFolder (1, asSyncKey: "10", isClientOwned: false);
+                McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual ("10", retrieved1.AsSyncKey, "AsSyncKey should be set correctly before reset event");
                 McFolder.AsResetState (1);
 
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, defaultServerId);
+                McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
                 FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
             }
@@ -488,13 +488,13 @@ namespace Test.iOS
             [Test]
             public void ShouldResetSyncMetaFlag ()
             {
-                McFolder folder1 = CreateFolder (1, syncMetaToClient: false, isClientOwned: true);
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
+                McFolder folder1 = CreateFolder (1, syncMetaToClient: false, isClientOwned: false);
+                McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
                 McFolder.AsResetState (1);
 
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (1, defaultServerId);
-                FoldersAreEqual (folder1, retrieved1, "Folder core values should not be modified by AsResetState");
+                McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
+                FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
                 FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
 
                 // set both at the same time
@@ -502,7 +502,7 @@ namespace Test.iOS
                 folder1.AsSyncKey = "10";
                 folder1.Update ();
                 McFolder.AsResetState (1);
-                McFolder retrieved3 = McFolder.GetClientOwnedFolder (1, defaultServerId);
+                McFolder retrieved3 = McFolder.QueryById<McFolder> (folder1.Id);
                 FlagsAreReset (retrieved3, "Both folder flags should have been reset correctly");
             }
 
@@ -510,15 +510,15 @@ namespace Test.iOS
             public void ShouldOnlyResetStateForAccountId ()
             {
                 // only reset state for the specified account id
-                CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);
-                CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: true);  // only this folder should be retrieved
+                var folder1 = CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: false);
+                var folder2 = CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: false);  // only this folder should be retrieved
 
                 McFolder.AsResetState (1);
-                McFolder retrieved1 = McFolder.GetClientOwnedFolder (1, defaultServerId);
+                McFolder retrieved1 = McFolder.QueryById<McFolder> (folder2.Id);
                 FlagsAreReset (retrieved1, "Both folder flags should have been reset correctly");
 
                 // check that folder1's flags _were not_ reset
-                McFolder retrieved2 = McFolder.GetClientOwnedFolder (2, defaultServerId);
+                McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual ("10", retrieved2.AsSyncKey, "Sync key should not be reset");
                 Assert.AreEqual (false, retrieved2.AsSyncMetaToClientExpected, "AsSyncMetaToClientExpected should not be reset");
             }
