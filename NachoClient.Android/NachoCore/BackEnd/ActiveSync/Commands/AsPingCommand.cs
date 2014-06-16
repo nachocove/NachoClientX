@@ -10,7 +10,6 @@ namespace NachoCore.ActiveSync
 {
     public class AsPingCommand : AsCommand
     {
-        private bool m_hitMaxFolders = false;
         private List<McFolder> FoldersInRequest;
 
         public AsPingCommand (IBEContext dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
@@ -27,17 +26,12 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            uint foldersLeft = BEContext.ProtocolState.MaxFolders;
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
 
             foreach (var folder in FoldersInRequest) {
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
                     new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
                     new XElement (m_ns + Xml.Ping.Class, Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type))));
-                if (0 == (--foldersLeft)) {
-                    m_hitMaxFolders = true;
-                    break;
-                }
             }
             var ping = new XElement (m_ns + Xml.Ping.Ns);
             ping.Add (new XElement (m_ns + Xml.Ping.HeartbeatInterval, BEContext.ProtocolState.HeartbeatInterval.ToString ()));
@@ -55,9 +49,6 @@ namespace NachoCore.ActiveSync
             switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
 
             case Xml.Ping.StatusCode.NoChanges_1:
-                if (m_hitMaxFolders) {
-                    return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGNOCHGMAX");
-                }
                 return Event.Create ((uint)SmEvt.E.Success, "PINGNOCHG");
             
             case Xml.Ping.StatusCode.Changes_2:
