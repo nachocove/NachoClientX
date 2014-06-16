@@ -241,10 +241,9 @@ namespace Test.iOS
     public class BaseProtoApisTest : CommonFolderOps
     {
         [SetUp]
-        public void SetUp ()
+        public new void SetUp ()
         {
-            Log.Info (Log.LOG_TEST, "Setup started");
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+            base.SetUp ();
         }
 
         public McAccount CreateAccount (int pcsId = 5)

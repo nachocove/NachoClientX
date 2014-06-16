@@ -762,7 +762,7 @@ namespace Test.iOS
     {
 
         [SetUp]
-        public void SetUp ()
+        public new void SetUp ()
         {
             base.SetUp ();
         }

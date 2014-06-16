@@ -466,7 +466,7 @@ namespace Test.iOS
         public const int TimeoutTime = 1000;
 
         [SetUp]
-        public void Setup ()
+        public new void SetUp ()
         {
             base.SetUp ();
 
