@@ -457,6 +457,32 @@ namespace Test.iOS
         }
 
         [TestFixture]
+        public class TestAsSetExpected : BaseMcFolderTest
+        {
+            [Test]
+            public void ShouldNotSetClientFolder ()
+            {
+                int accountId = 1;
+                var folder = CreateFolder (accountId, isClientOwned: true);
+                McFolder.AsSetExpected (accountId);
+                var received = McFolder.QueryById<McFolder> (folder.Id);
+                Assert.AreEqual (false, received.AsSyncMetaToClientExpected, "Should not set meta to true on client-owned folder");
+                FoldersAreEqual (folder, received, "Should not modify client-owned folder");
+            }
+
+            [Test]
+            public void ShouldSetSyncedFolder ()
+            {
+                int accountId = 1;
+                var folder = CreateFolder (accountId, isClientOwned: false, syncMetaToClient: false);
+                McFolder.AsSetExpected (accountId);
+                var received = McFolder.QueryById<McFolder> (folder.Id);
+                Assert.AreEqual (true, received.AsSyncMetaToClientExpected, "Should set meta to true on synced folder");
+                FoldersAreEqual (folder, received, "Should not modify non-meta fields");
+            }
+        }
+
+        [TestFixture]
         public class TestResetState : BaseMcFolderTest
         {
             private const string serverId = "Server Id";
