@@ -10,7 +10,7 @@ namespace NachoCore.ActiveSync
 {
     public class AsPingCommand : AsCommand
     {
-        private List<McFolder> FoldersInRequest;
+        private IEnumerable<McFolder> FoldersInRequest;
 
         public AsPingCommand (IBEContext dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
         {

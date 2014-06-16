@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
@@ -568,9 +569,24 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public List<McFolder> PingKit ()
+        public IEnumerable<McFolder> PingKit ()
         {
-            return FolderListProvider (false);
+            var folders = FolderListProvider (false);
+            if (BEContext.ProtocolState.MaxFolders >= folders.Count) {
+                return folders;
+            }
+            List<McFolder> fewer = new List<McFolder> ();
+            var defInbox = folders.FirstOrDefault (x => x.Type == Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            if (null != defInbox) {
+                fewer.Add (defInbox);
+                folders.Remove (defInbox);
+            }
+            var defCal = folders.FirstOrDefault (x => x.Type == Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            if (null != defCal) {
+                fewer.Add (defCal);
+                folders.Remove (defCal);
+            }
+            return folders.OrderBy (x => x.AsSyncLastSuccess).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
         }
     }
 }

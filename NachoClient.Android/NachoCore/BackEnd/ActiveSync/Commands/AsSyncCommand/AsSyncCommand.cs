@@ -404,6 +404,7 @@ namespace NachoCore.ActiveSync
                     // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                     folder.AsSyncKey = xmlSyncKey.Value;
                     folder.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                    folder.AsSyncLastSuccess = DateTime.UtcNow;
                 } else {
                     Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
                 }
