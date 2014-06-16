@@ -433,6 +433,7 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce ();
                 });
+                McFolder.AsSetExpected (BEContext.Account.Id);
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "TLS132-6");
 
             case Xml.StatusCode.CommandNotSupported_137:
@@ -575,6 +576,9 @@ namespace NachoCore.ActiveSync
             OwnerSm.PostEvent ((uint)SmEvt.E.HardFail, "ASCDHARD0");
         }
 
+        // Note: we don't do McFolder.AsSetExpected() here, because this Action function
+        // is intended for propagating a ReSync to another SM. The originator of the ReSync
+        // must have called AsSetExpected().
         protected virtual void DoReSync ()
         {
             OwnerSm.PostEvent ((uint)AsProtoControl.AsEvt.E.ReSync, "ASCDRESYNC");

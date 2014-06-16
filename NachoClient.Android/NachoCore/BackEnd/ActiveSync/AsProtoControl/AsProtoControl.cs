@@ -844,12 +844,18 @@ namespace NachoCore.ActiveSync
                 defaultInbox.AsSyncMetaToClientExpected = true;
                 defaultInbox.Update ();
             }
+            var defaultCal = McFolder.GetDefaultCalendarFolder (Account.Id);
+            if (null != defaultCal) {
+                defaultCal.AsSyncMetaToClientExpected = true;
+                defaultCal.Update ();
+            }
             // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
             SyncStrategy.RequestQuickFetch = true;
             if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
                 Log.Warn (Log.LOG_AS, "Execute called while network is down.");
                 return;
             }
+            // Don't need to call McFolder.AsSetExpected() - see above!
             Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
