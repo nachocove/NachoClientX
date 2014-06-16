@@ -161,6 +161,9 @@
     <Compile Include="..\Test.Android\AsProtoControlApisTest.cs">
       <Link>AsProtoControlApisTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\AsNcStateMachineTest.cs">
+      <Link>AsNcStateMachineTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
