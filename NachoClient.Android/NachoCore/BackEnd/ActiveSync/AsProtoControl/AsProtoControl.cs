@@ -588,21 +588,21 @@ namespace NachoCore.ActiveSync
 
             // There isn't really a way to tell whether we are executing currently or not!
             // All states are required to handle the Launch event gracefully, so we just send it.
-            Sm.PostAtMostOneEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
         }
 
         public override void CredResp ()
         {
-            Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetCred, "ASPCUSC");
+            Sm.PostEvent ((uint)CtlEvt.E.UiSetCred, "ASPCUSC");
         }
 
         public override void ServerConfResp (bool forceAutodiscovery)
         {
             if (forceAutodiscovery) {
-                Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
+                Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
             } else {
                 Server = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
-                Sm.PostAtMostOneEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
+                Sm.PostEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
             }
         }
 
@@ -856,7 +856,7 @@ namespace NachoCore.ActiveSync
                 return;
             }
             // Don't need to call McFolder.AsSetExpected() - see above!
-            Sm.PostAtMostOneEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
+            Sm.PostEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
         public override void Cancel (string token)
