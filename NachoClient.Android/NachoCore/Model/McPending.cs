@@ -223,6 +223,7 @@ namespace NachoCore.Model
         {
             State = StateEnum.Dispatched;
             Update ();
+            Log.Info (Log.LOG_SYNC, "Pending:MarkDispached:{0}", Id);
         }
 
         public void MarkPredBlocked (int predPendingId)
@@ -235,6 +236,7 @@ namespace NachoCore.Model
             } else {
                 Update ();
             }
+            Log.Info (Log.LOG_SYNC, "Pending:MarkPredBlocked:{0}", Id);
         }
 
         private bool CanDepend ()
@@ -398,11 +400,13 @@ namespace NachoCore.Model
             }
             State = StateEnum.Deleted;
             Update ();
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}", Id);
             // FIXME: Find a clean way to send UpdateQ event to TL SM.
             UnblockSuccessors ();
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
             // accurate.
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}", Id);
             Delete ();
         }
 
@@ -410,6 +414,7 @@ namespace NachoCore.Model
         {
             NcAssert.True (StateEnum.Dispatched == State);
             State = StateEnum.Deleted;
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}", Id);
             Delete ();
         }
 
@@ -424,6 +429,7 @@ namespace NachoCore.Model
             control.StatusInd (result, new [] { Token });
             State = StateEnum.Failed;
             Update ();
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}", Id);
         }
 
         private NcResult.SubKindEnum DefaultErrorSubKind ()
@@ -495,6 +501,7 @@ namespace NachoCore.Model
                 if (0 == remaining.Count ()) {
                     succ.State = StateEnum.Eligible;
                     succ.Update ();
+                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}=>{1}", Id, succ.Id);
                 }
             }
             return (0 != successors.Count);
@@ -510,6 +517,7 @@ namespace NachoCore.Model
                     pending.State = StateEnum.Eligible;
                 }
                 pending.Update ();
+                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFSync:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
         }
@@ -520,6 +528,7 @@ namespace NachoCore.Model
             foreach (var pending in makeEligible) {
                 pending.State = StateEnum.Eligible;
                 pending.Update ();
+                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnSync:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
         }
@@ -530,6 +539,7 @@ namespace NachoCore.Model
             foreach (var pending in makeEligible) {
                 pending.State = StateEnum.Eligible;
                 pending.Update ();
+                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnTime:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
         }
@@ -552,6 +562,7 @@ namespace NachoCore.Model
                 DeferredReason = reason;
                 State = StateEnum.Deferred;
                 Update ();
+                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferred:{0}", Id);
             }
         }
 
@@ -575,6 +586,7 @@ namespace NachoCore.Model
             DeferredReason = DeferredEnum.UntilTime;
             DeferredUntilTime = DateTime.UtcNow;
             Update ();
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferredForce:{0}", Id);
         }
 
         public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
@@ -589,6 +601,7 @@ namespace NachoCore.Model
             control.StatusInd (result, new [] { Token });
             State = StateEnum.UserBlocked;
             Update ();
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsUserBlocked:{0}", Id);
         }
 
         public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)
@@ -658,6 +671,7 @@ namespace NachoCore.Model
             if (null != Item) {
                 Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
             }
+            Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
             return 1;
         }
 
@@ -709,6 +723,7 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_SYNC, "McPending.Delete: RunInTransaction: {0}", ex);
                 return 0;
             }
+            Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
             return 1;
         }
 
