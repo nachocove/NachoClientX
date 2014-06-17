@@ -121,6 +121,9 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_INIT, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
+            if (0 < BuildInfo.Source.Length) {
+                Log.Info (Log.LOG_INIT, "Source Info: {0}", BuildInfo.Source);
+            }
 
             Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
 

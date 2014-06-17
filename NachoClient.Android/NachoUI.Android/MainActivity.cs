@@ -74,6 +74,9 @@ namespace NachoClient.AndroidClient
 
             Log.Info (Log.LOG_UI, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
+            if (0 < BuildInfo.Source.Length) {
+                Log.Info (Log.LOG_INIT, "Source Info: {0}", BuildInfo.Source);
+            }
 
             PopulateSidebarMenu ();
 
