@@ -1,4 +1,3 @@
-//#define CRASHLYTICS
 using System;
 using System.IO;
 using System.Linq;
@@ -17,16 +16,12 @@ using NachoCore.Brain;
 using NachoPlatform;
 using NachoClient.iOS;
 using SQLite;
-#if (CRASHLYTICS)
-using CrashlyticsBinding;
-#endif
 using NachoCore.Wbxml;
 using MonoTouch.ObjCRuntime;
 using ParseBinding;
 using NachoClient.Build;
-#if (!CRASHLYTICS)
 using HockeyApp;
-#endif
+
 namespace NachoClient.iOS
 {
     // The UIApplicationDelegate for the application. This class is responsible for launching the
@@ -63,28 +58,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            #if (CRASHLYTICS)
-            // Debugger is causing Crashlytics to crash the app. See the following as a solution
-            // http://stackoverflow.com/questions/14499334/how-to-prevent-ios-crash-reporters-from-crashing-monotouch-apps
-            IntPtr sigbus = Marshal.AllocHGlobal (512);
-            IntPtr sigsegv = Marshal.AllocHGlobal (512);
-
-            // Store Mono SIGSEGV and SIGBUS handlers
-            sigaction (Signal.SIGBUS, IntPtr.Zero, sigbus);
-            sigaction (Signal.SIGSEGV, IntPtr.Zero, sigsegv);
-
-            // Start Crashlytics
-            Crashlytics crash = Crashlytics.SharedInstance ();
-            crash.DebugMode = true;
-            crash = Crashlytics.StartWithAPIKey ("5aff8dc5f7ff465089df2453cd07d6cd21880b74", 10.0);
-
-            // Restore Mono SIGSEGV and SIGBUS handlers
-            sigaction (Signal.SIGBUS, sigbus, IntPtr.Zero);
-            sigaction (Signal.SIGSEGV, sigsegv, IntPtr.Zero);
-
-            Marshal.FreeHGlobal (sigbus);
-            Marshal.FreeHGlobal (sigsegv);
-            #else
             //We MUST wrap our setup in this block to wire up
             // Mono's SIGSEGV and SIGBUS signals
             HockeyApp.Setup.EnableCustomCrashReporting (() => {
@@ -113,7 +86,6 @@ namespace NachoClient.iOS
                 TaskScheduler.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative(e.Exception);
             });
-            #endif
         }
 
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
