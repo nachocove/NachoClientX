@@ -173,6 +173,9 @@
     <Compile Include="..\Test.Android\McPendingTest.cs">
       <Link>McPendingTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\Common\CommonUtils.cs">
+      <Link>CommonUtils.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

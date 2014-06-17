@@ -6,6 +6,8 @@ using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using ProtoOps = Test.iOS.CommonProtoControlOps;
+using FolderOps = Test.iOS.CommonFolderOps;
 
 
 namespace Test.iOS
@@ -35,9 +37,9 @@ namespace Test.iOS
             public void TestCreateFolderCmd ()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
-                var destFolder = CreateFolder (accountId, isClientOwned: true);
+                var destFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
                 TestForNachoExceptionFailure (() => {
                     protoControl.CreateFolderCmd (destFolder.Id, "New folder name", TypeCode.Unknown_18);
@@ -47,10 +49,10 @@ namespace Test.iOS
             private void TestCreatingItem<T> (Action <AsProtoControl, int, int> action) where T : McItem, new()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
-                var clientFolder = CreateFolder (accountId, isClientOwned: true);
-                var clientItem = CreateUniqueItem<T> (accountId);
+                var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
+                var clientItem = FolderOps.CreateUniqueItem<T> (accountId);
                 clientFolder.Link (clientItem);
 
                 TestForNachoExceptionFailure (() => {
@@ -81,10 +83,10 @@ namespace Test.iOS
             private void TestUpdatingItem<T> (Action <AsProtoControl, int> action) where T : McItem, new()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
-                var clientFolder = CreateFolder (accountId, isClientOwned: true);
-                var clientItem = CreateUniqueItem<T> (accountId);
+                var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
+                var clientItem = FolderOps.CreateUniqueItem<T> (accountId);
                 clientFolder.Link (clientItem);
 
                 TestForNachoExceptionFailure (() => {
@@ -121,10 +123,10 @@ namespace Test.iOS
             public void TestDeleteFolderCmd ()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
-                var clientFolder = CreateFolder (accountId, isClientOwned: true);
-                var otherFolder = CreateFolder (accountId, isClientOwned: true, parentId: clientFolder.ServerId);
+                var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
+                var otherFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, parentId: clientFolder.ServerId);
 
                 TestForNachoExceptionFailure (() => {
                     protoControl.DeleteFolderCmd (otherFolder.Id);
@@ -134,10 +136,10 @@ namespace Test.iOS
             private void TestDeletingItem<T> (Action <AsProtoControl, int> action) where T : McItem, new()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
-                var clientFolder = CreateFolder (accountId, isClientOwned: true);
-                var clientItem = CreateUniqueItem<T> (accountId);
+                var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
+                var clientItem = FolderOps.CreateUniqueItem<T> (accountId);
                 clientFolder.Link (clientItem);
 
                 TestForNachoExceptionFailure (() => {
@@ -173,19 +175,19 @@ namespace Test.iOS
             public void TestMoveFolderCmd ()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
                 // cannot move client-owned folder to non-client-owned folder
-                var folder1 = CreateFolder (accountId, isClientOwned: true);
-                var destFolder1 = CreateFolder (accountId, isClientOwned: false);
+                var folder1 = FolderOps.CreateFolder (accountId, isClientOwned: true);
+                var destFolder1 = FolderOps.CreateFolder (accountId, isClientOwned: false);
 
                 TestForNachoExceptionFailure (() => {
                     protoControl.MoveFolderCmd (folder1.Id, destFolder1.Id);
                 }, "Should not be able to move client-owned folder to non-client-owned folder");
 
                 // cannot move non-client-owned fodler to client-owned folder
-                var folder2 = CreateFolder (accountId, isClientOwned: false);
-                var destFolder2 = CreateFolder (accountId, isClientOwned: true);
+                var folder2 = FolderOps.CreateFolder (accountId, isClientOwned: false);
+                var destFolder2 = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
                 TestForNachoExceptionFailure (() => {
                     protoControl.MoveFolderCmd (folder2.Id, destFolder2.Id);
@@ -195,24 +197,24 @@ namespace Test.iOS
             private void TestMovingItem<T> (Action<AsProtoControl, T, McFolder> action) where T : McItem, new()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
                 // cannot move item from client-owned to non-client-owned folder
-                var folder1 = CreateFolder (accountId, isClientOwned: true);
-                var item = CreateUniqueItem<T> (accountId);
+                var folder1 = FolderOps.CreateFolder (accountId, isClientOwned: true);
+                var item = FolderOps.CreateUniqueItem<T> (accountId);
                 folder1.Link (item);
 
-                var destFolder1 = CreateFolder (accountId, isClientOwned: false);
+                var destFolder1 = FolderOps.CreateFolder (accountId, isClientOwned: false);
 
                 TestForNachoExceptionFailure (() => {
                     action (protoControl, item, destFolder1);
                 }, "Should not be able to move item from client-owned to non-client-owned folder");
 
                 // cannot move item from non-client-owned to client-owned folder
-                var folder2 = CreateFolder (accountId, isClientOwned: false);
+                var folder2 = FolderOps.CreateFolder (accountId, isClientOwned: false);
                 folder2.Link (item);
 
-                var destFolder2 = CreateFolder (accountId, isClientOwned: true);
+                var destFolder2 = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
                 TestForNachoExceptionFailure (() => {
                     action (protoControl, item, destFolder2);
@@ -227,9 +229,9 @@ namespace Test.iOS
             public void TestRenameFolderCmd ()
             {
                 int accountId = 1;
-                var protoControl = CreateProtoControl (accountId);
+                var protoControl = ProtoOps.CreateProtoControl (accountId);
 
-                var clientFolder = CreateFolder (accountId, isClientOwned: true);
+                var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
                 TestForNachoExceptionFailure (() => {
                     protoControl.RenameFolderCmd (clientFolder.Id, "New display name");
@@ -238,45 +240,12 @@ namespace Test.iOS
         }
     }
 
-    public class BaseProtoApisTest : CommonFolderOps
+    public class BaseProtoApisTest : CommonTestOps
     {
         [SetUp]
         public new void SetUp ()
         {
             base.SetUp ();
-        }
-
-        public McAccount CreateAccount (int pcsId = 5)
-        {
-            var account = new McAccount () {
-                EmailAddr = "johnd@foo.utopiasystems.net",
-                ServerId = 1,
-                ProtocolStateId = pcsId,
-            };
-            account.Insert ();
-
-            return account;
-        }
-
-        public McProtocolState CreateProtocolState ()
-        {
-            McProtocolState pcs = new McProtocolState ();
-            pcs.Insert ();
-
-            return pcs;
-        }
-
-        public AsProtoControl CreateProtoControl (int accountId)
-        {
-            MockOwner mockOwner = new MockOwner ();
-
-            var pcs = CreateProtocolState ();
-            CreateAccount (pcs.Id);
-            NcTask.Start ();
-
-            AsProtoControl protoControl = new AsProtoControl (mockOwner, accountId);
-
-            return protoControl;
         }
     }
 }
