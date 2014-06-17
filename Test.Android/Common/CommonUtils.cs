@@ -32,6 +32,9 @@ namespace Test.iOS
 
         public static AsProtoControl CreateProtoControl (int accountId)
         {
+            // clean static property
+            MockOwner.Status = null;
+
             MockOwner mockOwner = new MockOwner ();
 
             var pcs = CreateProtocolState ();

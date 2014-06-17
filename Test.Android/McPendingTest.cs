@@ -1,26 +1,36 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using NachoCore.Model;
 using NUnit.Framework;
+using NachoCore.Model;
+using NachoCore.Utils;
+using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
+using ProtoOps = Test.iOS.CommonProtoControlOps;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
+using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
 
-namespace Test.Android
+
+namespace Test.iOS
 {
-    public class McPendingTest
+    public class BaseMcPendingTest : CommonTestOps
     {
         [SetUp]
-        public void Setup ()
+        public void SetUp ()
         {
-            NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
+            base.SetUp ();
         }
 
-        private McPending CreatePending (int accountId)
+        public McPending CreatePending (int accountId)
         {
             var pending = new McPending (accountId);
             pending.Insert ();
             return pending;
         }
+    }
+
+    public class McPendingTest : BaseMcPendingTest
+    {
+        /* Dependencies */
 
         [Test]
         public void DependencyTest ()
@@ -104,6 +114,8 @@ namespace Test.Android
             }
         }
 
+        /* Dispatched */
+
         [Test]
         public void DispatchedTest ()
         {
@@ -114,12 +126,53 @@ namespace Test.Android
             Assert.AreEqual (StateEnum.Dispatched, retrieved.State, "MarkDispatched () should set state to Dispatched");
         }
 
+        /* Resolve as user blocked */
+
         [Test]
-        public void ResolveBlockedErrorResult ()
+        public void ResolveBlockedEligiblePending ()
         {
+            // resolve with eligible pending
             int accountId = 1;
             var pending = CreatePending (accountId);
-//            pending.ResolveAsUserBlocked ();
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, WhyEnum.AccessDeniedOrBlocked);
+            }, "Should throw NachoExceptionFailure if ResolveAsUsertBlocked is called on eligible pending");
+        }
+
+        [Test]
+        public void ResolveBlockedNonErrorResult ()
+        {
+            // ResolveAsUserBlocked with a non-Error NcResult.
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, NcResult.OK ());
+            }, "Should throw NachoExceptionFailure if ResolveAsUserBlocked is called with a non-error result");
+        }
+
+        [Test]
+        public void ResolveBlockedPending ()
+        {
+            // ResolveAsUserBlocked with an error NcResult and non-eligible pending should succeed
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.Operation = McPending.Operations.FolderCreate;
+            pending.MarkDispached ();
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+
+            var whyReason = WhyEnum.AccessDeniedOrBlocked;
+            var whyResult = NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed, whyReason);
+            pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, whyReason);
+
+            string resultMessage = "Should update status with error result if resolve successful"; 
+            Assert.AreEqual (whyResult.Why, MockOwner.Status.Why, resultMessage);
+            Assert.AreEqual (whyResult.SubKind, MockOwner.Status.SubKind, resultMessage);
+
+            var retrieved = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (StateEnum.UserBlocked, retrieved.State, "State should be UserBlocked in DB after successful ResolveAsUserBlocked call");
         }
     }
 }
