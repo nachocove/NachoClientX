@@ -550,14 +550,19 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = AirSync.ClassCode.Email;
             // Alpha order.
+            public const string Category = "Category";
+            public const string Categories = "Categories";
+            public const string DbCategories = "Categories";
             public const string Cc = "Cc";
             public const string CompleteTime = "CompleteTime";
+            public const string ContentClass = "ContentClass";
             public const string DateReceived = "DateReceived";
             public const string DisplayTo = "DisplayTo";
             public const string Flag = "Flag";
             public const string FlagType = "FlagType";
             public const string From = "From";
             public const string Importance = "Importance";
+            public const string InternetCPID = "InternetCPID";
             public const string MessageClass = "MessageClass";
             public const string Read = "Read";
             public const string ReplyTo = "ReplyTo";
@@ -580,6 +585,9 @@ namespace NachoCore.ActiveSync
             public const string Ns = "Email2";
             // Alpha order.
             public const string ConversationId = "ConversationId";
+            public const string ConversationIndex = "ConversationIndex";
+            public const string LastVerbExecuted = "LastVerbExecuted";
+            public const string LastVerbExecutionTime = "LastVerbExecutionTime";
             public const string ReceivedAsBcc = "ReceivedAsBcc";
             public const string UmAttDuration = "UmAttDuration";
             public const string UmAttOrder = "UmAttOrder";

@@ -1,0 +1,577 @@
+﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//
+using System;
+using System.Xml.Linq;
+using NUnit.Framework;
+using NachoCore;
+using NachoCore.Utils;
+using NachoCore.Model;
+using NachoCore.ActiveSync;
+using System.Security.Cryptography.X509Certificates;
+using SQLite;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using MimeKit;
+using System.Reflection;
+using System.Collections;
+
+
+namespace Test.Common
+{
+    [TestFixture]
+    public class NcEmailTest : NcTestBase
+    {
+        public class MockDataSource : IBEContext
+        {
+            public IProtoControlOwner Owner { set; get; }
+
+            public AsProtoControl ProtoControl { set; get; }
+
+            public McProtocolState ProtocolState { get; set; }
+
+            public McServer Server { get; set; }
+
+            public McAccount Account { get; set; }
+
+            public McCred Cred { get; set; }
+
+            public MockDataSource ()
+            {
+                Owner = new MockProtoControlOwner ();
+                Account = new McAccount ();
+                Account.Id = 1;
+            }
+        }
+
+        public class MockProtoControlOwner : IProtoControlOwner
+        {
+            public string AttachmentsDir { set; get; }
+
+            public void CredReq (ProtoControl sender)
+            {
+            }
+
+            public void ServConfReq (ProtoControl sender)
+            {
+            }
+
+            public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+            {
+            }
+
+            public void StatusInd (ProtoControl sender, NcResult status)
+            {
+            }
+
+            public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+            {
+            }
+
+            public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+            {
+            }
+        }
+
+        //Creates a string that represents an XML email 
+        public string createXMLEmail(string serverID, List<McEmailMessageCategory> categories){
+
+            string categoriesString = "";
+            if (null == categories){
+                categoriesString = @"           <Categories xmlns=""Email"" />";
+            }
+            else if (categories.Count () == 0) {
+                categoriesString = @"           <Categories xmlns=""Email"" />";
+            } else {
+                categoriesString = @"           <Categories xmlns=""Email"" >";
+                foreach (var mc in categories) {
+                    categoriesString +=  "\n" + @"                <Category> " + mc.Name.Trim() +  @"</Category>";
+                }
+                categoriesString +=  "\n" +  @"            </Categories>" + "\n";
+            }
+
+            string XMLEmailTemplate = @"
+           <Add xmlns = ""AirSync"">
+          <ServerId> " + serverID + @"</ServerId>
+          <ApplicationData>
+            <To xmlns=""Email"">""Nacho Nerds"" &lt;nerds@nachocove.com&gt;</To>
+            <From xmlns=""Email"">""Henry Kwok"" &lt;henryk@nachocove.com&gt;</From>
+        <Subject xmlns=""Email"">Telemetry summary [2014-06-05T16:56:32.433Z]</Subject>
+            <DateReceived xmlns=""Email"">2014-06-05T16:57:11.641Z</DateReceived>
+            <DisplayTo xmlns=""Email"">Nacho Nerds</DisplayTo>
+            <ThreadTopic xmlns=""Email"">Telemetry summary [2014-06-05T16:56:32.433Z]</ThreadTopic>
+            <Read xmlns=""Email"">1</Read>
+            <Attachments xmlns=""AirSyncBase"">
+              <Attachment>
+                <DisplayName>errors_2014_06_05T16_56_32_433Z.txt.zip</DisplayName>
+                <FileReference>5%3a4%3a0</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>11159</EstimatedDataSize>
+              </Attachment>
+              <Attachment>
+                <DisplayName>warnings_2014_06_05T16_56_32_433Z.txt.zip</DisplayName>
+                <FileReference>5%3a4%3a1</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>79374</EstimatedDataSize>
+              </Attachment>
+            </Attachments>
+            <Body xmlns=""AirSyncBase"">
+              <Type>4</Type>
+              <EstimatedDataSize>308849</EstimatedDataSize>
+              <Data />
+            </Body>
+            <MessageClass xmlns=""Email"">IPM.Note</MessageClass>
+            <InternetCPID xmlns=""Email"">20127</InternetCPID>
+            <Flag xmlns=""Email"" />
+            <ContentClass xmlns=""Email"">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns=""AirSyncBase"">2</NativeBodyType>
+            <ConversationId xmlns=""Email2"">mu4nI+aBpEq/thAPoth/ZQ==</ConversationId>
+            <ConversationIndex xmlns=""Email2"">Ac+A3zE=</ConversationIndex>" + "\n"
+                + categoriesString +    
+                @"</ApplicationData>
+            </Add>";
+
+            //Console.WriteLine(XMLEmailTemplate);
+
+            return XMLEmailTemplate;
+        }
+
+        [Test]
+        public void InsertWithoutCategories()
+        {
+            McEmailMessage testEmail = InsertEmailIntoDB ("5:4", null);
+            Assert.True (testEmail.Categories.Count == 0);
+        }
+
+        [Test]
+        public void InsertWithCategories()
+        {
+            McEmailMessage testeEmail = InsertEmailIntoDB ("5:4", getCategories ());
+            Assert.True (testeEmail.Categories.Count > 0);
+        }
+
+        [Test]
+        public void EmptyOptionalFields()
+        {
+            var emptyOptionalsXML = System.Xml.Linq.XElement.Parse (EmptyOptionalsXML);
+            McEmailMessage emptyOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(emptyOptionalsXML, new MockNcFolder());
+
+            Assert.IsNull (emptyOptionalsEmail.To);
+            Assert.IsNull (emptyOptionalsEmail.From);
+            Assert.IsNull (emptyOptionalsEmail.Cc);
+            Assert.IsNull (emptyOptionalsEmail.DisplayTo);
+            Assert.IsNull (emptyOptionalsEmail.InReplyTo);
+            Assert.True (emptyOptionalsEmail.Categories.Count == 0);
+
+        }
+
+        [Test]
+        public void SetOptionalFields()
+        {
+            var setOptionalsXML = System.Xml.Linq.XElement.Parse (CategoryTestXML);
+            McEmailMessage setOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (setOptionalsXML, new MockNcFolder ());
+            Assert.NotNull (setOptionalsEmail.To);
+            Assert.NotNull (setOptionalsEmail.From);
+            Assert.NotNull (setOptionalsEmail.DisplayTo);
+            Assert.NotNull (setOptionalsEmail.Importance);
+            Assert.NotNull (setOptionalsEmail.Categories);
+        }
+
+        [Test]
+        public void SameRecordTwice()
+        {
+            var firstXMLcopy = System.Xml.Linq.XElement.Parse (CategoryTestXML);
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(firstXMLcopy, new MockNcFolder());
+            bool failedCopyInsert = false;
+
+            try{
+                email1.Insert();
+            }
+            catch {
+                failedCopyInsert = true;
+            }
+            Assert.True (failedCopyInsert);
+        }
+
+        [Test]
+        public void DeleteRecordTwice()
+        {
+            List<McEmailMessageCategory> categories = getCategories ();
+            List<McEmailMessage> email = new List<McEmailMessage> ();
+            email.Add (InsertEmailIntoDB (getServerIDs (1) [0], categories));
+            Assert.True(email [0].Delete () > 0);
+            Assert.Throws<System.InvalidOperationException> ( () => email[0].Delete());
+
+        }
+
+        [Test]
+        public void UpdateAfterDelete()
+        {
+            List<McEmailMessageCategory> categories = getCategories ();
+            List<McEmailMessage> email = new List<McEmailMessage> ();
+            email.Add (InsertEmailIntoDB (getServerIDs (1) [0], categories));
+            email [0].Delete ();
+            Assert.Throws<NcAssert.NachoAssertionFailure>( () => email [0].Update ());
+        }
+
+        [Test]
+        public void UpdateToIncludeCategories()
+        {
+            var noCategoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", null));
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(noCategoriesXML, new MockNcFolder());
+
+            Assert.True (email1.Categories.Count == 0);
+            email1.Categories = getCategories ();
+            email1.Update ();
+            Assert.True (email1.Categories.Count > 0);
+        }
+
+        [Test]
+        public void UpdateWithSameCategories()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories()));
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(categoriesXML, new MockNcFolder());
+            List<McEmailMessageCategory> categories = email1.Categories;
+
+            AssertListsAreEquals (categories, email1.Categories);
+            email1.Categories = categories;
+            email1.Update();
+            AssertListsAreEquals (categories, email1.Categories);
+        }
+
+        [Test]
+        public void UpdateCategories()
+        {
+            List<McEmailMessageCategory> catList = new List<McEmailMessageCategory> ();
+            catList.Add (getCategories () [0]);
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", catList));
+
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(categoriesXML, new MockNcFolder());
+
+            Assert.True (email1.Categories.Count == 1 && email1.Categories[0].Name.Trim().Equals(catList[0].Name.Trim()));
+            email1.Categories = getCategories ();
+            email1.Update ();
+            Assert.True (email1.Categories.Count == 6);
+        }
+
+        [Test]
+        public void UpdateRemovesCategories()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories()));
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(categoriesXML, new MockNcFolder());
+
+            Assert.True (email1.Categories.Count == 6);
+            email1.Categories.Clear();
+            email1.Update ();
+            Assert.True (email1.Categories.Count == 0);
+        }
+
+
+        //Check this
+        [Test]
+        public void ReadRecordWithoutAncillary()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
+            Assert.True(email2.getInternalCategoriesList().Count() == 0);
+        }
+
+        [Test]
+        public void BackToBackUpdates()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+
+            List<McEmailMessageCategory> oneItem = new List<McEmailMessageCategory> ();
+            oneItem.Add (getCategories () [0]);
+
+            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
+
+            Assert.True (email2.Categories.Count == 6);
+            email2.Categories.Clear ();
+            email2.Update ();
+            Assert.True (email2.Categories.Count == 0);
+            email2.Categories = oneItem;
+            email2.Update ();
+            Assert.True (email2.Categories.Count == 1);
+
+            email2.To = "No Recip.";
+            email2.Categories.Add (getCategories() [2]);
+            email2.Update ();
+
+            McEmailMessage email3 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
+
+            Assert.True (email3.To.Equals ("No Recip.") && email3.Categories.Count == 2);
+
+            email3.To = "Mark";
+            email3.From = "Zuckerburg";
+            email3.Cc = "Jonah Hill";
+            email3.Subject = "FaceBook";
+            email3.Categories = getCategories ();
+            email3.Update ();
+
+            McEmailMessage email4 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
+
+            Assert.True (
+                email4.To.Equals ("Mark") &&
+                email4.From.Equals ("Zuckerburg") &&
+                email4.Cc.Equals ("Jonah Hill") &&
+                email4.Subject.Equals ("FaceBook") &&
+                email4.Categories.Count == 6);
+        }
+
+        [Test]
+        public void ChangeNonAncillaryFieldUpdate()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories()));
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(categoriesXML, new MockNcFolder());
+            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First();
+
+            email2.Cc = "ChangedTheCC";
+            List<McEmailMessageCategory> listPreUpdate = email2.Categories;
+            email2.Update ();
+            List<McEmailMessageCategory> listPostUpdate = email2.Categories;
+
+            AssertListsAreEquals (listPreUpdate, listPostUpdate);
+        }
+
+        [Test]
+        public void ChangeAncillaryFieldUpdate()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories()));
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail(categoriesXML, new MockNcFolder());
+            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First();
+
+            Assert.True(email2.Categories[0].Name.Trim().Equals("Green"));
+            email2.Categories[0].Name = "ChangedTheName";
+            email2.Update ();
+            Assert.True(email2.Categories[0].Name.Trim().Equals("ChangedTheName"));
+        }
+
+        private static void AssertListsAreEquals (IList actualList, IList expectedList)
+        {
+            if (actualList.Count != expectedList.Count)
+                Assert.Fail ("Property {0}.{1} does not match. Expected IList containing {2} elements but was IList containing {3} elements",  expectedList.Count, actualList.Count);
+
+            for (int i = 0; i < actualList.Count; i++)
+                if (!Equals (actualList [i], expectedList [i]))
+                    Assert.Fail ("Property {0}.{1} does not match. Expected IList with element {1} equals to {2} but was IList with element {1} equals to {3}",  expectedList [i], actualList [i]);
+        }
+
+
+        public McEmailMessage InsertEmailIntoDB(string serverID, List<McEmailMessageCategory> categories)
+        {
+            var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (createXMLEmail(serverID, categories));
+            McEmailMessage insertedEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXMLCommand, new MockNcFolder());
+            Console.WriteLine("TESTLOG: Inserted Email: ServerID: " + insertedEmail.ServerId.ToString() + " AccountID: " + insertedEmail.AccountId.ToString() + " ID: " + insertedEmail.Id.ToString() + "  ");
+            return insertedEmail;
+        }
+
+        public List<McEmailMessageCategory> getCategories()
+        {
+            List<McEmailMessageCategory> categories = new List<McEmailMessageCategory> ();
+            string[] categoriesNames = { "Green", "Red", "Blue", "Important", "Boring", "Fun" };
+            foreach (string s in categoriesNames)
+            {
+                categories.Add (new McEmailMessageCategory (s));
+            }
+
+            return categories;
+        }
+
+        public List<string> getServerIDs(int howMany){
+
+            List<string> serverIDs = new List<string> ();
+            for (int i = 0; i < howMany; i++) {
+                serverIDs.Add ("5:" + i.ToString ());
+            }
+
+            return serverIDs;
+        }
+
+        [Test]
+        public void UpdateEmailSet(){
+            List<McEmailMessageCategory> categories = getCategories ();
+            List<McEmailMessage> email = new List<McEmailMessage> ();
+            List<McEmailMessageCategory> updatedCategories = new List<McEmailMessageCategory> ();
+            updatedCategories.Add (categories [0]);
+            updatedCategories.Add (categories [1]);
+            List<string> serverIds = getServerIDs (6);
+            for (int i = 0; i < 6; i++) {
+                email.Add(InsertEmailIntoDB (serverIds [i], categories));
+
+                for (int j = 0; j < email [i].Categories.Count (); j++) {
+                    string spaces = "".PadRight(10 - email [i].Categories [j].Name.Length);
+                    Console.WriteLine ("DB: " + email [i].Categories [j].Name + spaces +  " ORIGINAL: " + categories [j].Name);
+                }
+
+
+                email [i].Categories = updatedCategories;
+                email [i].Update ();
+
+                for (int j = 0; j < email [i].Categories.Count (); j++) {
+                    string spaces = "".PadRight(10 - email [i].Categories [j].Name.Length);
+                    Console.WriteLine ("DB: " + email [i].Categories [j].Name + spaces + " ORIGINAL: " + updatedCategories [j].Name);
+                    string word1 = email [i].Categories [j].Name.Trim();
+                    string word2 = updatedCategories [j].Name.Trim();
+                    Assert.True (word1.CompareTo (word2) == 0);
+                }
+            }
+        }
+
+        [Test]
+        public void DeleteAnEmailTest(){
+            List<McEmailMessageCategory> categories = getCategories ();
+            List<McEmailMessage> email = new List<McEmailMessage> ();
+            email.Add (InsertEmailIntoDB (getServerIDs (1) [0], categories));
+            email [0].Delete ();
+        }
+
+
+        [Test]
+        public void EmailCategories(){
+            var c01 = new McEmailMessageCategory ("test");
+
+            c01.ParentId = 5;
+            c01.Insert ();
+
+            var c02 = NcModel.Instance.Db.Get<McEmailMessageCategory> (x => x.ParentId == 5);
+            Assert.IsNotNull (c02);
+            Assert.AreEqual (c02.Id, 1);
+            Assert.AreEqual (c02.ParentId, 5);
+            Assert.AreEqual (c02.Name, "test");
+
+            var c03 = NcModel.Instance.Db.Get<McEmailMessageCategory> (x => x.Name == "test");
+            Assert.IsNotNull (c03);
+            Assert.AreEqual (c03.Id, 1);
+            Assert.AreEqual (c03.ParentId, 5);
+            Assert.AreEqual (c03.Name, "test");
+
+            c03.Name = "changed";
+            c03.Update ();
+
+            Assert.AreEqual (NcModel.Instance.Db.Table<McEmailMessageCategory> ().Count (), 1);
+
+            Assert.Throws<System.InvalidOperationException> (() => NcModel.Instance.Db.Get<McEmailMessageCategory> (x => x.Name == "test"));
+
+            var c05 = NcModel.Instance.Db.Get<McEmailMessageCategory> (x => x.Name == "changed");
+            Assert.IsNotNull (c05);
+            Assert.AreEqual (c05.Id, 1);
+            Assert.AreEqual (c05.ParentId, 5);
+            Assert.AreEqual (c05.Name, "changed");
+
+            var c06 = new McEmailMessageCategory ("second");
+            c06.ParentId = 5;
+            c06.Insert ();
+            var c07 = new McEmailMessageCategory ("do not see");
+            c07.ParentId = 6;
+            c07.Insert ();
+
+            Assert.AreEqual (3, NcModel.Instance.Db.Table<McEmailMessageCategory> ().Count ());
+
+            var c10 = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == 5);
+            Assert.AreEqual (2, c10.Count ());
+            foreach (var c in c10) {
+                Assert.IsTrue (c.Name.Equals ("changed") || c.Name.Equals ("second"));
+            }
+        }
+
+        [Test]
+        public void EmailCategoriesTest()
+        {
+            Console.WriteLine (CategoryTestXML);
+            var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (CategoryTestXML);
+            Assert.IsNotNull (categoriesXMLCommand);
+            Assert.AreEqual (categoriesXMLCommand.Name.LocalName, Xml.AirSync.Add);
+            McEmailMessage helloCategory = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXMLCommand, new MockNcFolder());
+            Assert.AreEqual (2, helloCategory.Categories.Count);
+        }
+
+        public string CategoryTestXML = @"
+           <Add xmlns = ""AirSync"">
+          <ServerId>5:4</ServerId>
+          <ApplicationData>
+            <To xmlns=""Email"">""Nacho Nerds"" &lt;nerds@nachocove.com&gt;</To>
+            <From xmlns=""Email"">""Henry Kwok"" &lt;henryk@nachocove.com&gt;</From>
+        <Subject xmlns=""Email"">Telemetry summary [2014-06-05T16:56:32.433Z]</Subject>
+            <DateReceived xmlns=""Email"">2014-06-05T16:57:11.641Z</DateReceived>
+            <DisplayTo xmlns=""Email"">Nacho Nerds</DisplayTo>
+            <ThreadTopic xmlns=""Email"">Telemetry summary [2014-06-05T16:56:32.433Z]</ThreadTopic>
+            <Read xmlns=""Email"">1</Read>
+            <Attachments xmlns=""AirSyncBase"">
+              <Attachment>
+                <DisplayName>errors_2014_06_05T16_56_32_433Z.txt.zip</DisplayName>
+                <FileReference>5%3a4%3a0</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>11159</EstimatedDataSize>
+              </Attachment>
+              <Attachment>
+                <DisplayName>warnings_2014_06_05T16_56_32_433Z.txt.zip</DisplayName>
+                <FileReference>5%3a4%3a1</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>79374</EstimatedDataSize>
+              </Attachment>
+            </Attachments>
+            <Body xmlns=""AirSyncBase"">
+              <Type>4</Type>
+              <EstimatedDataSize>308849</EstimatedDataSize>
+              <Data nacho-body-id=""1"" />
+            </Body>
+            <MessageClass xmlns=""Email"">IPM.Note</MessageClass>
+            <Importance xmlns=""Email"">1</Importance>
+            <InternetCPID xmlns=""Email"">20127</InternetCPID>
+            <Flag xmlns=""Email"" />
+            <ContentClass xmlns=""Email"">urn:content-classes:message</ContentClass>
+            <NativeBodyType xmlns=""AirSyncBase"">2</NativeBodyType>
+            <ConversationId xmlns=""Email2"">mu4nI+aBpEq/thAPoth/ZQ==</ConversationId>
+            <ConversationIndex xmlns=""Email2"">Ac+A3zE=</ConversationIndex>
+            <Categories xmlns=""Email"">
+              <Category>Green category</Category>
+              <Category>Blue category</Category>
+            </Categories>
+          </ApplicationData>
+            </Add>";
+
+        public string EmptyOptionalsXML = @"
+           <Add xmlns = ""AirSync"">
+          <ServerId>5:4</ServerId>
+          <ApplicationData>
+            <ThreadTopic xmlns=""Email"">Telemetry summary [2014-06-05T16:56:32.433Z]</ThreadTopic>
+            <Read xmlns=""Email"">1</Read>
+            <Attachments xmlns=""AirSyncBase"">
+              <Attachment>
+                <DisplayName>errors_2014_06_05T16_56_32_433Z.txt.zip</DisplayName>
+                <FileReference>5%3a4%3a0</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>11159</EstimatedDataSize>
+              </Attachment>
+              <Attachment>
+                <DisplayName>warnings_2014_06_05T16_56_32_433Z.txt.zip</DisplayName>
+                <FileReference>5%3a4%3a1</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>79374</EstimatedDataSize>
+              </Attachment>
+            </Attachments>
+            <Body xmlns=""AirSyncBase"">
+              <Type>4</Type>
+              <EstimatedDataSize>308849</EstimatedDataSize>
+              <Data nacho-body-id=""1"" />
+            </Body>
+            <MessageClass xmlns=""Email"">IPM.Note</MessageClass>
+            <InternetCPID xmlns=""Email"">20127</InternetCPID>
+            <Flag xmlns=""Email"" />
+            <ContentClass xmlns=""Email"">urn:content-classes:message</ContentClass>
+            <ConversationId xmlns=""Email2"">mu4nI+aBpEq/thAPoth/ZQ==</ConversationId>
+            <ConversationIndex xmlns=""Email2"">Ac+A3zE=</ConversationIndex>
+            <Categories xmlns=""Email"" />
+          </ApplicationData>
+            </Add>";
+
+    }
+
+}
+
+

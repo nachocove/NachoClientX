@@ -10,6 +10,10 @@ using SQLite;
 using NachoCore;
 using NachoCore.Utils;
 using MimeKit;
+using System.Xml.Linq;
+using NachoCore.Model;
+
+
 
 namespace NachoCore.Model
 {
@@ -43,7 +47,19 @@ namespace NachoCore.Model
         }
     }
 
-    public class McEmailMessage : McItem
+    public partial class McEmailMessageCategory : McObject
+    {
+        /// Parent Calendar or Exception item index.
+        [Indexed]
+        public Int64 ParentId { get; set; }
+
+        /// Name of category
+        [MaxLength (256)]
+        public string Name { get; set; }
+    }
+
+
+    public partial class McEmailMessage : McItem
     {
         private const string CrLf = "\r\n";
         private const string ColonSpace = ": ";
@@ -100,6 +116,45 @@ namespace NachoCore.Model
 
         /// MIME header References: message ids, crlf separated (optional)
         public string References { set; get; }
+
+
+        /// Specifies how the e-mail is stored on the server (optional)
+        public byte NativeBodyType { set; get; }
+
+
+        /// MIME original code page ID
+        public string InternetCPID { set; get; }
+
+
+        /// Set of timestamps used to generation conversation tree
+        public byte[] ConversationIndex { set; get; }
+
+
+        /// Specifies the content class of the data (optional) - Must be 'urn:content-classes:message' for email
+        public string ContentClass { set; get; }
+
+
+        [Ignore]
+        /// Internal list of category elements
+        protected List<McEmailMessageCategory> _Categories{ get; set; }
+
+
+
+        [Ignore]
+        /// List of xml attachments for the email
+        public IEnumerable<XElement> xmlAttachments { get; set; }
+
+
+        /// Last action (fwd, rply, etc.) that was taken on the message- Used to display an icon (optional)
+        public int LastVerbExecuted { set; get; }
+
+
+        /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
+        public DateTime LastVerbExecutionTime { set; get; }
+
+
+
+
 
         ///
         /// <Flag> STUFF.
@@ -184,6 +239,11 @@ namespace NachoCore.Model
             contactScore = Math.Max (contactScore, GetMaxContactScore (Cc));
 
             return ContentScore + contactScore;
+        }
+
+        public List<McEmailMessageCategory> getInternalCategoriesList()
+        {
+            return _Categories;
         }
 
         /// TODO: Support other types besides mime!
@@ -294,11 +354,7 @@ namespace NachoCore.Model
                 x.ThreadTopic == topic).ToList ();
         }
 
-        public override void DeleteAncillary ()
-        {
-            DeleteBody ();
-            DeleteAttachments ();
-        }
+
 
         public static ClassCodeEnum GetClassCode ()
         {
@@ -450,6 +506,124 @@ namespace NachoCore.Model
                     yield return ie.Current.GetMessage ();
                 }
             }
+        }
+    }
+
+    public partial class McEmailMessage
+    {
+        protected Boolean isDeleted;
+        protected Boolean isAncillaryInMemory;
+
+        public McEmailMessage () : base ()
+        {
+            _Categories = new List<McEmailMessageCategory> ();
+            isDeleted = false;
+            isAncillaryInMemory = false;
+        }
+
+        [Ignore]
+        public List<McEmailMessageCategory> Categories
+        {
+            get {
+                ReadAncillaryData ();
+                return _Categories;
+            }
+            set {
+                _Categories = value;
+            }
+        }
+
+        protected NcResult ReadAncillaryData ()
+        {
+            NcAssert.True (!isDeleted);
+            if (!isAncillaryInMemory) {
+                ForceReadAncillaryData ();
+            }
+            return NcResult.OK ();
+        }
+
+        protected NcResult ForceReadAncillaryData ()
+        {
+            SQLiteConnection db = NcModel.Instance.Db;
+            _Categories = db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+            isAncillaryInMemory = true;
+            return NcResult.OK ();
+        }
+
+        protected void InsertAncillaryData (SQLiteConnection db){
+            InsertCategories (db);
+        }
+
+        protected NcResult InsertCategories (SQLiteConnection db) 
+        {
+            foreach (var c in _Categories) {
+                c.SetParent (this);
+                db.Insert (c);
+            }
+            return NcResult.OK ();
+        }
+
+        protected void DeleteAncillaryData(SQLiteConnection db)
+        {
+            DeleteCategoriesData (db);
+        }
+
+        protected void DeleteCategoriesData(SQLiteConnection db)
+        {
+            db.BeginTransaction ();
+                db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
+            db.Commit ();
+        }
+
+        public override int Insert ()
+        {
+            NcAssert.True (!isDeleted);
+            int retval = base.Insert ();
+            InsertAncillaryData (NcModel.Instance.Db);
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            int retval = base.Update ();
+            NcAssert.True (!isDeleted);
+            DeleteAncillaryData (NcModel.Instance.Db);
+            InsertAncillaryData (NcModel.Instance.Db);
+            return retval;
+        }
+
+        public override int Delete ()
+        {
+            DeleteBody ();
+            DeleteAttachments ();
+            DeleteAncillaryData (NcModel.Instance.Db);
+            isDeleted = true;
+            return base.Delete ();
+        }
+    }
+
+    public partial class McEmailMessageCategory
+    {
+        public McEmailMessageCategory ()
+        {
+            Id = 0;
+            ParentId = 0;
+            Name = null;
+        }
+        public McEmailMessageCategory(string name, int parentId)
+        {
+            Name = name;
+            ParentId = parentId;
+        }
+
+        public McEmailMessageCategory (string name) : this ()
+        {
+            Name = name;
+        }
+            
+        public void SetParent (McEmailMessage r)
+        {
+            ParentId = r.Id;
         }
     }
 }
