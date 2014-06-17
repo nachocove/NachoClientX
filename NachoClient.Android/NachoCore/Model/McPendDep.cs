@@ -31,11 +31,11 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Execute ("DELETE FROM McPendDep WHERE PredId = ?", predId);
         }
 
-        public static McPendDep QueryByPredId (int predId)
+        public static List<McPendDep> QueryByPredId (int predId)
         {
             return NcModel.Instance.Db.Query<McPendDep> ("SELECT f.* FROM McPendDep AS f WHERE " +
                 " f.PredId = ? ", 
-                predId).SingleOrDefault ();
+                predId);
         }
     }
 }
