@@ -194,7 +194,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -370,7 +370,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="AttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="PUz-nc-h33" customClass="AttendeeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="CVB-up-ERg">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -783,7 +783,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -867,7 +867,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -877,7 +877,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="378"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="334"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -1048,6 +1048,7 @@
                         <outlet property="archiveButton" destination="lwU-bJ-z6E" id="Ads-ZI-Vvl"/>
                         <outlet property="deferButton" destination="Tpu-Ah-KZ5" id="vgx-iP-oBs"/>
                         <outlet property="deleteButton" destination="PNM-D1-huA" id="QKl-7t-grl"/>
+                        <outlet property="fixedSpaceButton" destination="UsM-1P-89h" id="8E5-Jv-pXr"/>
                         <outlet property="flexibleSpaceButton" destination="hYC-KD-Xk0" id="ekc-yV-Qi3"/>
                         <outlet property="forwardButton" destination="mmY-Kk-Ld8" id="yz0-CK-zzG"/>
                         <outlet property="quickReplyButton" destination="AWp-LH-tHp" id="6MW-Mf-t6t"/>
@@ -1070,6 +1071,7 @@
                         <barButtonItem image="toolbar-icn-fwd.png" id="mmY-Kk-Ld8" userLabel="Bar Button Item - Forward"/>
                         <barButtonItem style="plain" systemItem="flexibleSpace" id="hYC-KD-Xk0"/>
                         <barButtonItem image="icn-archive.png" id="lwU-bJ-z6E" userLabel="Bar Button Item - Archive"/>
+                        <barButtonItem width="25" style="plain" systemItem="fixedSpace" id="UsM-1P-89h"/>
                         <barButtonItem image="toolbar-icn-move.png" id="Tcg-BD-64n" userLabel="Bar Button Item - Save"/>
                         <barButtonItem image="toolbar-icn-delete.png" id="PNM-D1-huA" userLabel="Bar Button Item - Delete"/>
                     </items>
@@ -1447,20 +1449,20 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="gkM-dU-I3K"/>
+        <segue reference="c79-xS-Npa"/>
         <segue reference="vRC-Oi-s8D"/>
-        <segue reference="p6V-c0-caL"/>
         <segue reference="Oi3-nV-lAC"/>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="i3N-5g-evG"/>
         <segue reference="Pu5-w4-aps"/>
+        <segue reference="p6V-c0-caL"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="ebP-h4-BhC"/>
         <segue reference="PxE-UU-EfC"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="lVj-NH-yQq"/>
+        <segue reference="gkM-dU-I3K"/>
         <segue reference="qB9-ce-7gT"/>
+        <segue reference="qvr-mL-sd9"/>
         <segue reference="P29-wJ-GoN"/>
+        <segue reference="G1z-aV-19B"/>
         <segue reference="nAp-rc-bND"/>
     </inferredMetricsTieBreakers>
 </document>

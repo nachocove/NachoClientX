@@ -22,6 +22,9 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
 
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem fixedSpaceButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem flexibleSpaceButton { get; set; }
 
 		[Outlet]
@@ -44,6 +47,11 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (archiveButton != null) {
+				archiveButton.Dispose ();
+				archiveButton = null;
+			}
+
 			if (deferButton != null) {
 				deferButton.Dispose ();
 				deferButton = null;
@@ -89,9 +97,9 @@ namespace NachoClient.iOS
 				scrollView = null;
 			}
 
-			if (archiveButton != null) {
-				archiveButton.Dispose ();
-				archiveButton = null;
+			if (fixedSpaceButton != null) {
+				fixedSpaceButton.Dispose ();
+				fixedSpaceButton = null;
 			}
 		}
 	}
