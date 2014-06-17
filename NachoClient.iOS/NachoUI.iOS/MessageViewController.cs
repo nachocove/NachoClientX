@@ -23,7 +23,7 @@ namespace NachoClient.iOS
     {
         public McEmailMessageThread thread;
         protected UIView view;
-        protected UIView attachmentsView;
+        protected UIView attachmentListView;
         protected List<McAttachment> attachments;
 
         protected int htmlBusy;
@@ -41,11 +41,11 @@ namespace NachoClient.iOS
             // Multiple buttons spaced evently
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
-                replyAllButton,
-                forwardButton,
                 flexibleSpaceButton,
                 archiveButton,
+                fixedSpaceButton,
                 saveButton,
+                fixedSpaceButton,
                 deleteButton
             };
 
@@ -62,13 +62,7 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageViewToMessageAction", this);
             };
             replyButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Reply));
-            };
-            replyAllButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.ReplyAll));
-            };
-            forwardButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Forward));
+                ReplyActionSheet ();
             };
             archiveButton.Clicked += (object sender, EventArgs e) => {
                 ArchiveThisMessage ();
@@ -79,16 +73,10 @@ namespace NachoClient.iOS
                 NavigationController.PopViewControllerAnimated (true);
             };
 
-            // Watch for changes from the back end
-            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
-                var s = (StatusIndEventArgs)e;
-                if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
-                    RefreshAttachmentSection ();
-                }
-            };
+            FetchAttachments ();
+            CreateView ();
 
             MarkAsRead ();
-
         }
 
         public override void ViewWillAppear (bool animated)
@@ -97,8 +85,8 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = false;
             }
-            CreateView ();
             ConfigureView ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -107,6 +95,50 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if ((NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) || (NcResult.SubKindEnum.Error_AttDownloadFailed == s.Status.SubKind)) {
+                FetchAttachments ();
+                ConfigureAttachments ();
+            }
+        }
+
+        protected void FetchAttachments ()
+        {
+            var message = thread.SingleMessageSpecialCase ();
+            attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
+        }
+
+        protected void ReplyActionSheet ()
+        {
+            var actionSheet = new UIActionSheet ();
+            actionSheet.Add ("Reply");
+            actionSheet.Add ("Reply All");
+            actionSheet.Add ("Forward");
+            actionSheet.Add ("Cancel");
+
+            actionSheet.CancelButtonIndex = 3;
+
+            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Reply));
+                    break;
+                case 1:
+                    PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.ReplyAll));
+                    break;
+                case 2:
+                    PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Forward));
+                    break;
+                case 3:
+                    break; // Cancel
+                }
+            };
+            actionSheet.ShowFromToolbar (NavigationController.Toolbar);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -235,10 +267,13 @@ namespace NachoClient.iOS
         const int SUBJECT_TAG = 103;
         const int REMINDER_TEXT_TAG = 104;
         const int REMINDER_ICON_TAG = 105;
-        const int ATTACHMENT_TAG = 106;
+        const int ATTACHMENT_ICON_TAG = 106;
         const int RECEIVED_DATE_TAG = 107;
         const int SEPARATOR_TAG = 108;
         const int MESSAGE_PART_TAG = 300;
+        const int ATTACHMENT_VIEW_TAG = 301;
+        const int ATTACHMENT_NAME_TAG = 302;
+        const int ATTACHMENT_STATUS_TAG = 303;
 
         protected void CreateView ()
         {
@@ -304,8 +339,15 @@ namespace NachoClient.iOS
             // Attachment 'x' will be adjusted to be left of date received field
             var attachmentImageView = new UIImageView (new RectangleF (200, 18, 16, 16));
             attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
-            attachmentImageView.Tag = ATTACHMENT_TAG;
+            attachmentImageView.Tag = ATTACHMENT_ICON_TAG;
             view.AddSubview (attachmentImageView);
+
+            var tapAttachmentIconGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+                onAttachmentIconSelected (obj);
+            });
+            tapAttachmentIconGestureRecognizer.Enabled = true;
+            attachmentImageView.UserInteractionEnabled = true;
+            attachmentImageView.AddGestureRecognizer (tapAttachmentIconGestureRecognizer);
 
             // Received label view
             var receivedLabelView = new UILabel (new RectangleF (220, 18, 100, 20));
@@ -320,6 +362,43 @@ namespace NachoClient.iOS
             separatorView.BackgroundColor = A.Color_NachoNowBackground;
             separatorView.Tag = SEPARATOR_TAG;
             view.AddSubview (separatorView);
+
+            // Attachments
+
+            attachmentListView = new UIView ();
+            attachmentListView.Tag = ATTACHMENT_VIEW_TAG;
+
+            for (int i = 0; i < attachments.Count; i++) {
+                var attachmentView = new UIView (new RectangleF (0, i * 61, View.Frame.Width, 61));
+                attachmentView.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
+                attachmentView.Layer.BorderWidth = 1;
+                attachmentView.Tag = i;
+                attachmentListView.AddSubview (attachmentView);
+
+                var icon = new UIImageView (new RectangleF (15, 22, 16, 16));
+                icon.Image = UIImage.FromBundle ("icn-attach-files");
+                attachmentView.AddSubview (icon);
+
+                var name = new UILabel (new RectangleF (49, 10, View.Frame.Width, 20));
+                name.Font = A.Font_AvenirNextMedium14;
+                name.TextColor = A.Color_808080;
+                name.Tag = ATTACHMENT_NAME_TAG;
+                attachmentView.AddSubview (name);
+
+                var status = new UILabel (new RectangleF (49, 30, View.Frame.Width, 20));
+                status.Font = A.Font_AvenirNextMedium14;
+                status.TextColor = A.Color_808080;
+                status.Tag = ATTACHMENT_STATUS_TAG;
+                attachmentView.AddSubview (status);
+
+                // Tap the calendar thumb to hid the calendar again
+                var tapGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+                    onAttachmentSelected (obj);
+                });
+                tapGestureRecognizer.Enabled = true;
+                attachmentView.AddGestureRecognizer (tapGestureRecognizer);
+            }
+            attachmentListView.Frame = new RectangleF (0, 0, View.Frame.Width, 61 * attachments.Count);
         }
 
         protected void ConfigureView ()
@@ -371,8 +450,8 @@ namespace NachoClient.iOS
             receivedLabelView.Frame = receivedLabelRect;
 
             // Attachment image view
-            var attachmentImageView = View.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
-            attachmentImageView.Hidden = false;
+            var attachmentImageView = View.ViewWithTag (ATTACHMENT_ICON_TAG) as UIImageView;
+            attachmentImageView.Hidden = (0 == attachments.Count);
             var attachmentImageRect = attachmentImageView.Frame;
             attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
@@ -388,6 +467,14 @@ namespace NachoClient.iOS
             htmlBusy = 0;
             deferLayout = 1;
 
+            // TODO: Revisit
+            for (int i = 0; i < view.Subviews.Count (); i++) {
+                var v = view.Subviews [i];
+                if (MESSAGE_PART_TAG == v.Tag) {
+                    v.RemoveFromSuperview ();
+                }
+            }
+
             var bodyPath = message.GetBodyPath ();
             if (null != bodyPath) {
                 using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
@@ -401,8 +488,31 @@ namespace NachoClient.iOS
                 }
             }
 
+            ConfigureAttachments ();
+
             if (0 == DeferLayoutDecrement ()) {
                 LayoutView ();
+            }
+        }
+
+        protected void ConfigureAttachments ()
+        {
+            for (int i = 0; i < attachments.Count; i++) {
+                var attachment = attachments [i];
+                var attachmentView = attachmentListView.ViewWithTag (i);
+                var name = attachmentView.ViewWithTag (ATTACHMENT_NAME_TAG) as UILabel;
+                name.Text = attachment.DisplayName;
+                var status = attachmentView.ViewWithTag (ATTACHMENT_STATUS_TAG) as UILabel;
+                if (attachment.IsInline) {
+                    status.Text = "Is an inline attachment.";
+                } else if (attachment.IsDownloaded) {
+                    status.Text = "Attachment is downloaded.";
+                } else if (0 < attachment.PercentDownloaded) {
+                    status.Text = "Attachment is downloading.";
+                } else {
+                    status.Text = "Touch to download attachment.";
+                }
+                attachmentView.SetNeedsDisplay ();
             }
         }
 
@@ -415,9 +525,12 @@ namespace NachoClient.iOS
 
             yOffset += 15;
 
+            attachmentListView.RemoveFromSuperview ();
+            view.AddSubview (attachmentListView);
+
             for (int i = 0; i < view.Subviews.Count (); i++) {
                 var v = view.Subviews [i];
-                if (MESSAGE_PART_TAG == v.Tag) {
+                if ((MESSAGE_PART_TAG == v.Tag) || (ATTACHMENT_VIEW_TAG == v.Tag)) {
                     var frame = v.Frame;
                     frame.Y = yOffset;
                     v.Frame = frame;
@@ -439,74 +552,6 @@ namespace NachoClient.iOS
                 scrollView.SetZoomScale (2.0f, true);
             } else {
                 scrollView.SetZoomScale (1.0f, true);
-            }
-        }
-
-        protected void CreateAttachmentSection ()
-        {
-            if (0 == attachments.Count) {
-                return;
-            }
-
-            var root = new RootElement ("");
-            var section = new ThinSection ();
-            root.Add (section);
-
-            foreach (var a in attachments) {
-                StyledStringElement s;
-                if (a.IsInline) {
-                    s = new StyledStringElement (a.DisplayName, "Is inline", UITableViewCellStyle.Subtitle);
-                } else if (a.IsDownloaded) {
-                    s = new StyledStringElement (a.DisplayName, "Is downloaded", UITableViewCellStyle.Subtitle);
-                    s.Tapped += delegate {
-                        var id = a.Id;
-                        attachmentAction (id);
-                    };
-                } else if (a.PercentDownloaded > 0) {
-                    s = new StyledStringElement (a.DisplayName, "Downloading...", UITableViewCellStyle.Subtitle);
-                } else {
-                    s = new StyledStringElement (a.DisplayName, "Is not downloaded", UITableViewCellStyle.Subtitle);
-                    s.Tapped += delegate {
-                        var id = a.Id;
-                        attachmentAction (id);
-                    };
-                }
-                section.Add (s);
-            }
-
-            var dvc = new DialogViewController (root);
-            attachmentsView = dvc.View;
-            view.AddSubview (attachmentsView);
-        }
-        // TOOD: Verify cells are in attachment order
-        protected void RefreshAttachmentSection ()
-        {
-            // Use 'this' to get non-null from delegate callback
-            if (null == this.attachmentsView) {
-                return;
-            }
-            var tv = this.attachmentsView as UITableView;
-            if (null == tv) {
-                Log.Error (Log.LOG_UI, "expected UITableView in RefreshAttachmentSection");
-                return;
-            }
-
-            var m = thread.SingleMessageSpecialCase ();
-            attachments = McAttachment.QueryByItemId<McEmailMessage> (m.AccountId, m.Id);
-
-            for (int i = 0; i < attachments.Count; i++) {
-                var a = attachments [i];
-                var c = tv.VisibleCells [i];
-                NcAssert.True (null != a);
-                NcAssert.True (null != c);
-                NcAssert.True (a.DisplayName.Equals (c.TextLabel.Text));
-                if (a.IsDownloaded) {
-                    c.DetailTextLabel.Text = "Is downloaded";
-                } else if (a.PercentDownloaded > 0) {
-                    c.DetailTextLabel.Text = "Downloading...";
-                } else {
-                    c.DetailTextLabel.Text = "Is not downloaded";
-                }
             }
         }
 
@@ -593,12 +638,12 @@ namespace NachoClient.iOS
             wv.LoadFinished += (object sender, EventArgs e) => {
                 htmlBusy -= 1;
                 if (0 == htmlBusy) {
+                    wv.EvaluateJavascript (magic);
+                    var frame = wv.Frame;
+                    frame.Width = View.Frame.Width;
+                    frame.Height = (wv.ScrollView.ContentSize.Height > View.Bounds.Height) ? View.Bounds.Height : wv.ScrollView.ContentSize.Height;
+                    wv.Frame = frame;
                     if (0 == DeferLayoutDecrement ()) {
-                        wv.EvaluateJavascript (magic);
-                        var frame = wv.Frame;
-                        frame.Width = View.Frame.Width;
-                        frame.Height = (wv.ScrollView.ContentSize.Height > View.Bounds.Height) ? View.Bounds.Height : wv.ScrollView.ContentSize.Height;
-                        wv.Frame = frame;
                         LayoutView ();
                     }
                 }
@@ -716,14 +761,22 @@ namespace NachoClient.iOS
             // TODO: Map meeting uid to calendar record; update status
         }
 
-        void attachmentAction (int attachmentId)
+
+        protected void onAttachmentSelected (UITapGestureRecognizer obj)
         {
-            var a = McAttachment.QueryById<McAttachment> (attachmentId);
-            if (a.IsDownloaded) {
-                PlatformHelpers.DisplayAttachment (this, a);
+            var attachmentView = obj.View;
+            var attachment = attachments [attachmentView.Tag];
+
+            if (attachment.IsDownloaded) {
+                PlatformHelpers.DisplayAttachment (this, attachment);
             } else {
-                PlatformHelpers.DownloadAttachment (a);
+                PlatformHelpers.DownloadAttachment (attachment);
             }
+        }
+
+        protected void onAttachmentIconSelected(UITapGestureRecognizer obj)
+        {
+            scrollView.ScrollRectToVisible (attachmentListView.Frame, true);
         }
 
         protected void DeferLayoutIncrement ()

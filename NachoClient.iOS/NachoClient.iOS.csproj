@@ -1035,6 +1035,8 @@
     <BundleResource Include="Resources\icn-archive-pressed%402x.png" />
     <BundleResource Include="Resources\icn-archive.png" />
     <BundleResource Include="Resources\icn-archive%402x.png" />
+    <BundleResource Include="Resources\icn-attach-files.png" />
+    <BundleResource Include="Resources\icn-attach-files%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
