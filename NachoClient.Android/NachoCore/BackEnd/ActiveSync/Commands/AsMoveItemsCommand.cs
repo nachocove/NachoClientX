@@ -49,6 +49,7 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
+            NcAssert.True (null != PendingSingle);
             // We can aggregate multiple move operations in one command if we want to.
             var move = new XElement (m_ns + Xml.Mov.MoveItems,
                            new XElement (m_ns + Xml.Mov.Move,
