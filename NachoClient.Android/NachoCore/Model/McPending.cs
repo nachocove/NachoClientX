@@ -23,6 +23,12 @@ namespace NachoCore.Model
         {
             AccountId = accountId;
         }
+
+        public McPending (int accountId, McItem item) : this (accountId)
+        {
+            Item = item;
+        }
+
         // These are the things that we can do.
         public enum Operations
         {
@@ -171,6 +177,9 @@ namespace NachoCore.Model
         // command is executed against the server (Create/Update/Send/Forward/Reply).
         public int ItemId { set; get; }
 
+        // NOT a property. Used to increment refcount during Insert().
+        private McItem Item;
+
         // ****************************************************
         // PROPERTIES SPECIFIC TO OPERATIONS (effectively subclasses)
 
@@ -270,7 +279,7 @@ namespace NachoCore.Model
 
             case Operations.FolderUpdate:
                 return (Operations.FolderCreate == pred.Operation || Operations.FolderUpdate == pred.Operation)
-                    && pred.ServerId == ParentId;
+                && pred.ServerId == ParentId;
 
             case Operations.CalRespond:
                 return Operations.CalRespond == pred.Operation && pred.ServerId == ServerId;
@@ -611,73 +620,96 @@ namespace NachoCore.Model
                 return true;
             });
         }
-            
+
         public override int Insert ()
         {
-            if (!CanDepend ()) {
-                return base.Insert ();
-            }
-            // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
-            // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
-            // Note that items might get deleted out from under us.
-            var pendq = Query (AccountId).OrderByDescending (x => x.Id);
             var predIds = new List<int> ();
-            foreach (var elem in pendq) {
-                if (DependsUpon (elem)) {
-                    predIds.Add (elem.Id);
-                }
+            try {
+                NcModel.Instance.Db.RunInTransaction (() => {
+                    if (CanDepend ()) {
+                        // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
+                        // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
+                        // Note that items might get deleted out from under us.
+                        var pendq = Query (AccountId).OrderByDescending (x => x.Id);
+                        foreach (var elem in pendq) {
+                            if (DependsUpon (elem)) {
+                                predIds.Add (elem.Id);
+                            }
+                        }
+                        if (0 != predIds.Count) {
+                            State = StateEnum.PredBlocked;
+                        }
+                    }
+                    if (null != Item) {
+                        ItemId = Item.Id;
+                        Item.PendingRefCount++;
+                        Item.Update ();
+                    }
+                    base.Insert ();
+                    foreach (var predId in predIds) {
+                        var pendDep = new McPendDep (predId, Id);
+                        pendDep.Insert ();
+                    }
+                });
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_SYNC, "McPending.Insert: RunInTransaction: {0}", ex);
+                return 0;
             }
-            // FIXME Need to have insert and dep insert(s) be a transaction.
-            if (0 != predIds.Count) {
-                State = StateEnum.PredBlocked;
+            if (null != Item) {
+                Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
             }
-            var retval = base.Insert ();
-            foreach (var predId in predIds) {
-                var pendDep = new McPendDep (predId, Id);
-                pendDep.Insert ();
-            }
-            return retval;
+            return 1;
         }
 
         public override int Delete ()
         {
             McItem item = null;
-            if (0 != ItemId) {
-                switch (Operation) {
-                case Operations.EmailSend:
-                case Operations.EmailForward:
-                case Operations.EmailReply:
-                    item = McObject.QueryById<McEmailMessage> (ItemId);
-                    break;
+            try {
+                NcModel.Instance.Db.RunInTransaction (() => {
+                    if (0 != ItemId) {
+                        switch (Operation) {
+                        case Operations.EmailSend:
+                        case Operations.EmailForward:
+                        case Operations.EmailReply:
+                            item = McObject.QueryById<McEmailMessage> (ItemId);
+                            break;
 
-                case Operations.CalCreate:
-                case Operations.CalUpdate:
-                    item = McObject.QueryById<McCalendar> (ItemId);
-                    break;
+                        case Operations.CalCreate:
+                        case Operations.CalUpdate:
+                            item = McObject.QueryById<McCalendar> (ItemId);
+                            break;
 
-                case Operations.ContactCreate:
-                case Operations.ContactUpdate:
-                    item = McObject.QueryById<McContact> (ItemId);
-                    break;
+                        case Operations.ContactCreate:
+                        case Operations.ContactUpdate:
+                            item = McObject.QueryById<McContact> (ItemId);
+                            break;
 
-                case Operations.TaskCreate:
-                case Operations.TaskUpdate:
-                    item = McObject.QueryById<McTask> (ItemId);
-                    break;
+                        case Operations.TaskCreate:
+                        case Operations.TaskUpdate:
+                            item = McObject.QueryById<McTask> (ItemId);
+                            break;
 
-                default:
-                    Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
-                    NcAssert.True (false);
-                    break;
-                }
-                NcAssert.NotNull (item);
-                NcAssert.True (0 < item.PendingRefCount);
-                item.PendingRefCount--;
-                if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
-                    item.Delete ();
-                }
+                        default:
+                            Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
+                            NcAssert.True (false);
+                            break;
+                        }
+                        NcAssert.NotNull (item);
+                        NcAssert.True (0 < item.PendingRefCount);
+                        item.PendingRefCount--;
+                        item.Update ();
+                        Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
+                        if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
+                            item.Delete ();
+                        }
+                    }
+                    base.Delete ();
+                });
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_SYNC, "McPending.Delete: RunInTransaction: {0}", ex);
+                return 0;
             }
-            return base.Delete ();
+            return 1;
         }
 
         // Query APIs for any & all to call.
@@ -753,7 +785,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (x => 
                 x.AccountId == accountId &&
-                x.Token == token)
+            x.Token == token)
                     .SingleOrDefault ();
         }
 
@@ -853,7 +885,7 @@ namespace NachoCore.Model
             }
             return (updateNeeded) ? DbActionEnum.Update : DbActionEnum.DoNothing;
         }
-       
+
         public bool FolderCompletelyDominates (string serverId)
         {
             // FIXME - build and check path.

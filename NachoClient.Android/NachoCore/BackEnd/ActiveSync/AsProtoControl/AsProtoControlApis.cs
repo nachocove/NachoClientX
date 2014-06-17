@@ -66,15 +66,10 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, emailMessage) {
                 Operation = McPending.Operations.EmailSend,
-                ItemId = emailMessageId
             };
-
             pending.Insert ();
-
-            emailMessage.PendingRefCount++;
-            emailMessage.Update ();
 
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSEND");
@@ -93,15 +88,10 @@ namespace NachoCore.ActiveSync
             var pendingCalCre = NcModel.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
             var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, emailMessage) {
                 Operation = McPending.Operations.EmailSend,
-                ItemId = emailMessageId,
             };
-
             pending.Insert ();
-
-            emailMessage.PendingRefCount++;
-            emailMessage.Update ();
 
             // 0 means pending has already been completed & deleted.
             if (0 != pendingCalCreId) {
@@ -116,6 +106,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.StateEnum.Failed:
+                    // FIXME needs to be a transaction.
                     return null;
 
                 case McPending.StateEnum.Deleted:
@@ -149,17 +140,13 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, newEmailMessage) {
                 Operation = Op,
-                ItemId = newEmailMessageId,
                 ServerId = refdEmailMessage.ServerId,
                 ParentId = folder.ServerId,
                 Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
             };
             pending.Insert ();
-
-            newEmailMessage.PendingRefCount++;
-            newEmailMessage.Update ();
 
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSMF");
@@ -222,7 +209,7 @@ namespace NachoCore.ActiveSync
         }
 
         private string MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
-            McItem item, McFolder srcFolder, int destFolderId)
+                                    McItem item, McFolder srcFolder, int destFolderId)
         {
             if (null == srcFolder) {
                 return null;
@@ -439,17 +426,12 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, cal) {
                 Operation = McPending.Operations.CalCreate,
-                ItemId = calId,
                 ParentId = folder.ServerId,
                 ClientId = cal.ClientId,
             };
-
             pending.Insert ();
-
-            cal.PendingRefCount++;
-            cal.Update ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
@@ -473,16 +455,12 @@ namespace NachoCore.ActiveSync
             var primeFolder = folders.First ();
             NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
 
-            var pending = new McPending (Account.Id) {
-                ItemId = calId,
+            var pending = new McPending (Account.Id, cal) {
                 Operation = McPending.Operations.CalUpdate,
                 ParentId = primeFolder.ServerId,
                 ServerId = cal.ServerId,
             };   
             pending.Insert ();
-
-            cal.PendingRefCount++;
-            cal.Update ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
@@ -543,17 +521,12 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, contact) {
                 Operation = McPending.Operations.ContactCreate,
-                ItemId = contactId,
                 ParentId = folder.ServerId,
                 ClientId = contact.ClientId,
             };
-
             pending.Insert ();
-
-            contact.PendingRefCount++;
-            contact.Update ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
@@ -577,16 +550,12 @@ namespace NachoCore.ActiveSync
             var primeFolder = folders.First ();
             NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, contact) {
                 Operation = McPending.Operations.ContactUpdate,
-                ItemId = contactId,
                 ParentId = primeFolder.ServerId,
                 ServerId = contact.ServerId,
             };   
             pending.Insert ();
-
-            contact.PendingRefCount++;
-            contact.Update ();
 
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
@@ -646,17 +615,12 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, task) {
                 Operation = McPending.Operations.TaskCreate,
-                ItemId = taskId,
                 ParentId = folder.ServerId,
                 ClientId = task.ClientId,
             };
-
             pending.Insert ();
-
-            task.PendingRefCount++;
-            task.Update ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             NcTask.Run (delegate {
@@ -680,16 +644,12 @@ namespace NachoCore.ActiveSync
             var primeFolder = folders.First ();
             NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
 
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, task) {
                 Operation = McPending.Operations.TaskUpdate,
-                ItemId = taskId,
                 ParentId = primeFolder.ServerId,
                 ServerId = task.ServerId,
             };   
             pending.Insert ();
-
-            task.PendingRefCount++;
-            task.Update ();
 
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGTSK");
