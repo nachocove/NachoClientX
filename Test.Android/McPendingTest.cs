@@ -4,10 +4,13 @@ using System;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.ActiveSync;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
 using ProtoOps = Test.iOS.CommonProtoControlOps;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
+using Operations = NachoCore.Model.McPending.Operations;
+using SubKindEnum = NachoCore.Utils.NcResult.SubKindEnum;
 
 
 namespace Test.iOS
@@ -173,6 +176,123 @@ namespace Test.iOS
 
             var retrieved = McPending.QueryById<McPending> (pending.Id);
             Assert.AreEqual (StateEnum.UserBlocked, retrieved.State, "State should be UserBlocked in DB after successful ResolveAsUserBlocked call");
+        }
+
+        /* Resolve As Success */
+        [Test]
+        public void ResolveAsSuccessExceptions ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            pending.Operation = Operations.EmailDelete;
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsSuccess (protoControl);
+            }, "Should throw NachoExceptionFailure when attempting to ResolveAsSuccess a pending object that is not dispatched");
+
+            NcResult result = NcResult.Info (SubKindEnum.Error_AlreadyInFolder);
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsSuccess (protoControl, result);
+            }, "Should throw NachoExceptionFailure when attempting to ResolveAsSuccess a pending object that is not dispatched");
+        }
+
+        [Test]
+        public void ResolveAsSuccessOnDispatched ()
+        {
+            // Operation CalCreate
+            TestResolveAsSuccessWithOperation (Operations.CalCreate, SubKindEnum.Info_CalendarCreateSucceeded, "CalCreate", (pending, control) => {
+                pending.ResolveAsSuccess (control);
+            });
+
+            SetUp (); // refresh database, or else new account creation fails on duplicate account email
+
+            // Operation EmailSend
+            TestResolveAsSuccessWithOperation (Operations.EmailSend, SubKindEnum.Info_EmailMessageMarkedReadSucceeded, "Email", (pending, control) => {
+                var result = NcResult.Info (SubKindEnum.Info_EmailMessageMarkedReadSucceeded);
+                pending.ResolveAsSuccess (control, result);
+            });
+        }
+
+        private void TestResolveAsSuccessWithOperation (McPending.Operations operation, SubKindEnum subKind, string operationName,
+            Action<McPending, AsProtoControl> doResolve)
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.Operation = operation;
+            pending.MarkDispached ();
+
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            doResolve (pending, protoControl);
+
+            Assert.AreEqual (subKind, MockOwner.Status.SubKind, "ResolveAsSuccess should set correct Status for: {0}", operationName);
+
+            var retrieved = McPending.QueryById<McPending> (pending.Id);
+            Assert.Null (retrieved, "Should delete pending from DB after it is resolved as success");
+        }
+
+        [Test]
+        public void ResolveAsSuccessWithSuccessor ()
+        {
+            int accountId = 1;
+
+            // Create an Eligible state McPending and an Eligible McPending successor.
+            var pending = CreatePending (accountId);
+            pending.Operation = Operations.EmailMarkRead;
+
+            var successor = CreatePending (accountId);
+            successor.Operation = Operations.EmailSetFlag;
+
+            // Create dependency using MarkPredBlocked().
+            successor.MarkPredBlocked (pending.Id);
+
+            // Verify dependencies (McPendDep).
+            var pendDeps = McPendDep.QueryByPredId (pending.Id);
+            Assert.AreEqual (1, pendDeps.Count, "Sanity check: Should have one pend dep after MarkPredBlocked");
+
+            // Verify Eligible/PredBlocked states in DB.
+            var retPending = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (StateEnum.Eligible, retPending.State, "Pending item should have state Eligible");
+
+            var retSuccessor = McPending.QueryById<McPending> (successor.Id);
+            Assert.AreEqual (StateEnum.PredBlocked, retSuccessor.State, "Successor should have state PredBlocked");
+
+            // MarkDispatched ()
+            pending.MarkDispached ();
+
+            // ResolveAsSuccess (ProtoControl control) on predecessor.
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            pending.ResolveAsSuccess (protoControl);
+
+            // Verify Info_EmailMessageMarkedReadSucceeded StatusInd.
+            Assert.AreEqual (SubKindEnum.Info_EmailMessageMarkedReadSucceeded, MockOwner.Status.SubKind, "ResolveAsSuccess on predecessor should set StatusInd correctly");
+
+            // Verify predecessor deleted from DB.
+            retPending = McPending.QueryById<McPending> (pending.Id);
+            Assert.Null (retPending, "ResolveAsSuccess should delete predecessor from the database");
+
+            // Verify no dependencies in DB (McPendDep).
+            pendDeps = McPendDep.QueryByPredId (pending.Id);
+            Assert.AreEqual (0, pendDeps.Count, "ResolveAsSuccess should remove dependencies in DB");
+
+            // Verify successor now Eligible in DB.
+            retSuccessor = McPending.QueryById<McPending> (successor.Id);
+            Assert.AreEqual (StateEnum.Eligible, retSuccessor.State, "ResolveAsSuccess should set successor to Eligible in DB");
+        }
+
+        [Test]
+        public void ResolveAsSuccessWithBadResult ()
+        {
+            // ResolveAsSuccess with non-Info NcResult.
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+
+            pending.MarkDispached ();
+
+            TestForNachoExceptionFailure (() => {
+                var result = NcResult.OK ();
+                pending.ResolveAsSuccess (protoControl, result);
+            }, "Should throw NachoExceptionFailure if ResolveAsSuccess is called with a non-Info result");
         }
     }
 }
