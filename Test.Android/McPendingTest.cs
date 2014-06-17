@@ -103,6 +103,16 @@ namespace Test.Android
                 }
             }
         }
+
+        [Test]
+        public void DispatchedTest ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+            var retrieved = McObject.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (StateEnum.Dispatched, retrieved.State, "MarkDispatched () should set state to Dispatched");
+        }
     }
 }
 
