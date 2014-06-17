@@ -180,7 +180,7 @@ namespace Test.iOS
 
         /* Resolve As Success */
         [Test]
-        public void ResolveAsSuccessExceptions ()
+        public void ResolveAsSuccessNotDispatched ()
         {
             int accountId = 1;
             var pending = CreatePending (accountId);
@@ -297,7 +297,7 @@ namespace Test.iOS
 
         /* Resolve as Cancelled */
         [Test]
-        public void ResolveAsCancelledException ()
+        public void ResolveAsCancelledNotDispatched ()
         {
             int accountId = 1;
             var pending = CreatePending (accountId);
@@ -323,7 +323,77 @@ namespace Test.iOS
         }
 
         /* Resolve As Hard Fail */
+        [Test]
+        public void ResolveAsHardFailNotDispatched ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
 
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsHardFail (protoControl, WhyEnum.AccessDeniedOrBlocked);
+            }, "Should not allow ResolveAsHardFail to be called on non-dispatched methods");
+        }
+
+        [Test]
+        public void TestResolveAsHardFailForResult ()
+        {
+            var subKind = SubKindEnum.Error_FolderCreateFailed;
+            var why = WhyEnum.AccessDeniedOrBlocked;
+            var result = NcResult.Error (subKind, why);
+
+            TestResolveAsHardFail (subKind, why, (pending, protoControl) => {
+                pending.ResolveAsHardFail (protoControl, result);
+            });
+        }
+
+        [Test]
+        public void TestResolveAsHardFailForWhy ()
+        {
+            var subKind = SubKindEnum.Error_FolderCreateFailed;
+            var why = WhyEnum.AccessDeniedOrBlocked;
+
+            TestResolveAsHardFail (subKind, why, (pending, protoControl) => {
+                pending.ResolveAsHardFail (protoControl, why);
+            });
+        }
+
+        private void TestResolveAsHardFail (SubKindEnum subKind, WhyEnum why, Action<McPending, AsProtoControl> action)
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.Operation = Operations.FolderCreate;
+            pending.MarkDispached ();
+
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            action (pending, protoControl);
+
+            // Verify ResultKind, ResultSubKind and ResultWhy stored in DB.
+            var retrieved = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (NcResult.KindEnum.Error, retrieved.ResultKind, "ResolveAsHardFail should set Kind correctly in the DB");
+            Assert.AreEqual (subKind, retrieved.ResultSubKind, "ResolveAsHardFail should set SubKind correctly in the DB");
+            Assert.AreEqual (why, retrieved.ResultWhy, "ResolveAsHardFail should set Why correctly in the DB");
+
+            // Verify failed state in the DB
+            Assert.AreEqual (StateEnum.Failed, retrieved.State, "ResolveAsHardFail should set State to Failed");
+
+            Assert.AreEqual (subKind, MockOwner.Status.SubKind, "ResolveAsHardFail should set StatusInd to subKind");
+        }
+
+        [Test]
+        public void ResolveAsHardFailNonErrorResult ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+
+            var result = NcResult.OK ();
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsHardFail (protoControl, result);
+            }, "Should throw NachoExceptionFailure if ResolveAsHardFail is called with a non-error result");
+        }
     }
 }
 
