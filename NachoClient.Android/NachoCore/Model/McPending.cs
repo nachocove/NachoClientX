@@ -228,6 +228,96 @@ namespace NachoCore.Model
             }
         }
 
+        private bool CanDepend ()
+        {
+            switch (Operation) {
+            case Operations.FolderCreate:
+            case Operations.FolderDelete:
+            case Operations.FolderUpdate:
+            case Operations.CalRespond:
+            case Operations.CalMove:
+            case Operations.ContactMove:
+            case Operations.EmailMove:
+            case Operations.TaskMove:
+            case Operations.CalCreate:
+            case Operations.ContactCreate:
+            case Operations.TaskCreate:
+            case Operations.CalUpdate:
+            case Operations.CalDelete:
+            case Operations.ContactUpdate:
+            case Operations.ContactDelete:
+            case Operations.EmailClearFlag:
+            case Operations.EmailMarkFlagDone:
+            case Operations.EmailMarkRead:
+            case Operations.EmailSetFlag:
+            case Operations.EmailDelete:
+            case Operations.TaskUpdate:
+            case Operations.TaskDelete:
+                return true;
+            }
+            return false;
+        }
+
+        private bool DependsUpon (McPending pred)
+        {
+            switch (Operation) {
+            case Operations.FolderCreate:
+                return Operations.FolderCreate == pred.Operation && pred.ServerId == ParentId;
+
+            case Operations.FolderDelete:
+                // FIXME - this could create too many McPendDeps. 
+                return true;
+
+            case Operations.FolderUpdate:
+                return (Operations.FolderCreate == pred.Operation || Operations.FolderUpdate == pred.Operation)
+                    && pred.ServerId == ParentId;
+
+            case Operations.CalRespond:
+                return Operations.CalRespond == pred.Operation && pred.ServerId == ServerId;
+
+            case Operations.CalMove:
+            case Operations.ContactMove:
+            case Operations.EmailMove:
+            case Operations.TaskMove:
+                switch (pred.Operation) {
+                case Operations.FolderCreate:
+                    return pred.ServerId == ParentId || pred.ServerId == DestParentId;
+
+                case Operations.CalCreate:
+                case Operations.CalUpdate:
+                case Operations.ContactCreate:
+                case Operations.ContactUpdate:
+                case Operations.EmailClearFlag:
+                case Operations.EmailMarkFlagDone:
+                case Operations.EmailMarkRead:
+                case Operations.EmailSetFlag:
+                case Operations.TaskCreate:
+                case Operations.TaskUpdate:
+                    return pred.ServerId == ServerId;
+                }
+                return false;
+
+            case Operations.CalCreate:
+            case Operations.ContactCreate:
+            case Operations.TaskCreate:
+                return Operations.FolderCreate == pred.Operation && pred.ServerId == ParentId;
+
+            case Operations.CalUpdate:
+            case Operations.CalDelete:
+            case Operations.ContactUpdate:
+            case Operations.ContactDelete:
+            case Operations.EmailClearFlag:
+            case Operations.EmailMarkFlagDone:
+            case Operations.EmailMarkRead:
+            case Operations.EmailSetFlag:
+            case Operations.EmailDelete:
+            case Operations.TaskUpdate:
+            case Operations.TaskDelete:
+                return pred.ServerId == ServerId;
+            }
+            return false;
+        }
+
         public void ResolveAsSuccess (ProtoControl control)
         {
             // Pick the default SubKind based on the Operation.
@@ -390,11 +480,14 @@ namespace NachoCore.Model
         public bool UnblockSuccessors ()
         {
             var successors = QuerySuccessors (AccountId, Id);
-            foreach (var succ in successors) {
-                succ.State = StateEnum.Eligible;
-                succ.Update ();
-            }
             McPendDep.DeleteAllSucc (Id);
+            foreach (var succ in successors) {
+                var remaining = McPendDep.QueryBySuccId (succ.Id);
+                if (0 == remaining.Count ()) {
+                    succ.State = StateEnum.Eligible;
+                    succ.Update ();
+                }
+            }
             return (0 != successors.Count);
         }
 
@@ -517,6 +610,33 @@ namespace NachoCore.Model
                 y.ResolveAsDeferredForce ();
                 return true;
             });
+        }
+            
+        public override int Insert ()
+        {
+            if (!CanDepend ()) {
+                return base.Insert ();
+            }
+            // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
+            // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
+            // Note that items might get deleted out from under us.
+            var pendq = Query (AccountId).OrderByDescending (x => x.Id);
+            var predIds = new List<int> ();
+            foreach (var elem in pendq) {
+                if (DependsUpon (elem)) {
+                    predIds.Add (elem.Id);
+                }
+            }
+            // FIXME Need to have insert and dep insert(s) be a transaction.
+            if (0 != predIds.Count) {
+                State = StateEnum.PredBlocked;
+            }
+            var retval = base.Insert ();
+            foreach (var predId in predIds) {
+                var pendDep = new McPendDep (predId, Id);
+                pendDep.Insert ();
+            }
+            return retval;
         }
 
         public override int Delete ()

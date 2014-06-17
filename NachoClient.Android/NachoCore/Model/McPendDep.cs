@@ -1,6 +1,8 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -17,6 +19,11 @@ namespace NachoCore.Model
         {
             PredId = predId;
             SuccId = succId;
+        }
+
+        public static IEnumerable<McPendDep> QueryBySuccId (int succId)
+        {
+            return NcModel.Instance.Db.Query<McPendDep> ("SELECT * FROM McPendDep WHERE SuccId = ?", succId);
         }
 
         public static void DeleteAllSucc (int predId)
