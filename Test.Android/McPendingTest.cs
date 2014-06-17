@@ -294,6 +294,36 @@ namespace Test.iOS
                 pending.ResolveAsSuccess (protoControl, result);
             }, "Should throw NachoExceptionFailure if ResolveAsSuccess is called with a non-Info result");
         }
+
+        /* Resolve as Cancelled */
+        [Test]
+        public void ResolveAsCancelledException ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+
+            TestForNachoExceptionFailure (() => {
+                pending.ResolveAsCancelled ();
+            }, "Should throw NachoExceptionFailure when ResolveAsCancelled is called on a non-dispatched pending object");
+        }
+
+        [Test]
+        public void TestResolveAsCancelled ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+            var retrievedSanity = McPending.QueryById<McPending> (pending.Id);
+            Assert.NotNull (retrievedSanity);
+
+            pending.ResolveAsCancelled ();
+
+            var retrieved = McPending.QueryById<McPending> (pending.Id);
+            Assert.Null (retrieved, "Resolved as cancelled should delete pending object fromd DB");
+        }
+
+        /* Resolve As Hard Fail */
+
     }
 }
 
