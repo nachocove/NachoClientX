@@ -869,6 +869,9 @@
       <Link>NachoCore\Model\McPath.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\DateBarView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcRateLimiter.cs">
+      <Link>NachoCore\Utils\NcRateLimiter.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

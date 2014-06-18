@@ -58,6 +58,8 @@ namespace NachoCore.Utils
             Info_FolderSyncSucceeded,
             Info_MeetingResponseSucceeded,
             Info_SearchCommandSucceeded,
+            Info_ViewScrollingStarted,
+            Info_ViewScrollingStopped,
             // Warning.
             // Error.
             Error_InvalidParameter,

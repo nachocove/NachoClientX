@@ -1040,6 +1040,24 @@ namespace NachoClient.iOS
                 }
 
             }
+
+            public override void CarouselWillBeginDragging (iCarousel carousel)
+            {
+                Log.Info (Log.LOG_UI, "DraggingStarted");
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            }
+
+            public override void CarouselDidEndDragging (iCarousel carousel, bool decelerate)
+            {
+                Log.Info (Log.LOG_UI, "DraggingEnded");
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            }
         }
     }
 }
