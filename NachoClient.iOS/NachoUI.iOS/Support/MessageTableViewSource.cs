@@ -704,6 +704,32 @@ namespace NachoClient.iOS
         {
             owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
         }
+
+        public override void DraggingStarted (UIScrollView scrollView)
+        {
+            Log.Info (Log.LOG_UI, "DraggingStarted");
+//            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+//                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+//            });
+        }
+
+        public override void DecelerationEnded (UIScrollView scrollView)
+        {
+            Log.Info (Log.LOG_UI, "DecelerationEnded");
+//            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+//                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+//            });
+        }
+
+        public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
+        {
+            if (!willDecelerate) {
+                Log.Info (Log.LOG_UI, "DraggingEnded");
+//                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+//                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+//                });
+            }
+        }
     }
 }
 
