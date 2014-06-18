@@ -13,8 +13,6 @@ using MimeKit;
 using System.Xml.Linq;
 using NachoCore.Model;
 
-
-
 namespace NachoCore.Model
 {
     public enum MessageDeferralType
@@ -57,7 +55,6 @@ namespace NachoCore.Model
         [MaxLength (256)]
         public string Name { get; set; }
     }
-
 
     public partial class McEmailMessage : McItem
     {
@@ -117,44 +114,31 @@ namespace NachoCore.Model
         /// MIME header References: message ids, crlf separated (optional)
         public string References { set; get; }
 
-
         /// Specifies how the e-mail is stored on the server (optional)
         public byte NativeBodyType { set; get; }
-
 
         /// MIME original code page ID
         public string InternetCPID { set; get; }
 
-
         /// Set of timestamps used to generation conversation tree
         public byte[] ConversationIndex { set; get; }
 
-
         /// Specifies the content class of the data (optional) - Must be 'urn:content-classes:message' for email
         public string ContentClass { set; get; }
-
 
         [Ignore]
         /// Internal list of category elements
         protected List<McEmailMessageCategory> _Categories{ get; set; }
 
-
-
         [Ignore]
         /// List of xml attachments for the email
         public IEnumerable<XElement> xmlAttachments { get; set; }
 
-
         /// Last action (fwd, rply, etc.) that was taken on the message- Used to display an icon (optional)
         public int LastVerbExecuted { set; get; }
 
-
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
-
-
-
-
 
         ///
         /// <Flag> STUFF.
@@ -241,7 +225,7 @@ namespace NachoCore.Model
             return ContentScore + contactScore;
         }
 
-        public List<McEmailMessageCategory> getInternalCategoriesList()
+        public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
             return _Categories;
         }
@@ -354,8 +338,6 @@ namespace NachoCore.Model
                 x.ThreadTopic == topic).ToList ();
         }
 
-
-
         public static ClassCodeEnum GetClassCode ()
         {
             return McFolderEntry.ClassCodeEnum.Email;
@@ -405,7 +387,7 @@ namespace NachoCore.Model
 
         public const int minHotScore = 1;
 
-        public bool isHot()
+        public bool isHot ()
         {
             return (minHotScore < this.ContentScore);
         }
@@ -522,8 +504,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McEmailMessageCategory> Categories
-        {
+        public List<McEmailMessageCategory> Categories {
             get {
                 ReadAncillaryData ();
                 return _Categories;
@@ -550,11 +531,12 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected void InsertAncillaryData (SQLiteConnection db){
+        protected void InsertAncillaryData (SQLiteConnection db)
+        {
             InsertCategories (db);
         }
 
-        protected NcResult InsertCategories (SQLiteConnection db) 
+        protected NcResult InsertCategories (SQLiteConnection db)
         {
             foreach (var c in _Categories) {
                 c.SetParent (this);
@@ -563,16 +545,14 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected void DeleteAncillaryData(SQLiteConnection db)
+        protected void DeleteAncillaryData (SQLiteConnection db)
         {
             DeleteCategoriesData (db);
         }
 
-        protected void DeleteCategoriesData(SQLiteConnection db)
+        protected void DeleteCategoriesData (SQLiteConnection db)
         {
-            db.BeginTransaction ();
-                db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
-            db.Commit ();
+            db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
         }
 
         public override int Insert ()
@@ -610,7 +590,8 @@ namespace NachoCore.Model
             ParentId = 0;
             Name = null;
         }
-        public McEmailMessageCategory(string name, int parentId)
+
+        public McEmailMessageCategory (string name, int parentId)
         {
             Name = name;
             ParentId = parentId;
@@ -620,7 +601,7 @@ namespace NachoCore.Model
         {
             Name = name;
         }
-            
+
         public void SetParent (McEmailMessage r)
         {
             ParentId = r.Id;

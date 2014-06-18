@@ -47,8 +47,6 @@ namespace NachoCore.ActiveSync
         public const string CompactDateTimeFmt2 = "yyyyMMddTHHmmssfffZ";
         public const string DateTimeFmt1 = "yyyy-MM-ddTHH:mm:ss.fffZ";
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
-       
-
 
         private static string XmlFromBool (bool value)
         {
@@ -263,7 +261,6 @@ namespace NachoCore.ActiveSync
             }
         }
 
-
         /// <returns>
         /// A list of attendees not yet associated with an NcCalendar or NcException. Not null.
         /// </returns>
@@ -329,19 +326,20 @@ namespace NachoCore.ActiveSync
 
         public static List<McEmailMessageCategory> ParseEmailCategories (XNamespace ns, XElement categories)
         {
-            NcAssert.True (null != categories);
-            NcAssert.True (categories.Name.LocalName.Equals (Xml.Email.Categories));
-
             var list = new List<McEmailMessageCategory> ();
+            if (categories.Elements ().Count() != 0) {
 
-            foreach (var category in categories.Elements()) {
-                NcAssert.True (category.Name.LocalName.Equals (Xml.Email.Category));
-                var n = new McEmailMessageCategory (category.Value);
-                list.Add (n);
+                NcAssert.True (null != categories);
+                NcAssert.True (categories.Name.LocalName.Equals (Xml.Email.Categories));
+
+                foreach (var category in categories.Elements()) {
+                    NcAssert.True (category.Name.LocalName.Equals (Xml.Email.Category));
+                    var n = new McEmailMessageCategory (category.Value);
+                    list.Add (n);
+                }
             }
             return list;
         }
-       
 
         /// <summary>
         /// Parses the recurrence section of a calendar item, or the recurrence section of a task item.
@@ -409,7 +407,7 @@ namespace NachoCore.ActiveSync
 
             Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions);
             foreach (var exception in exceptions.Elements()) {
-                 NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
+                NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
                 e.attendees = new List<McAttendee> ();
                 e.categories = new List<McCalendarCategory> ();
@@ -478,7 +476,7 @@ namespace NachoCore.ActiveSync
                             if (null != saveAttr) {
                                 e.BodyId = int.Parse (saveAttr.Value);
                             } else {
-                                var body = McBody.Save(bodyElement.Value); 
+                                var body = McBody.Save (bodyElement.Value); 
                                 e.BodyId = body.Id;
                             }
                         } else {
@@ -560,7 +558,7 @@ namespace NachoCore.ActiveSync
                         if (null != saveAttr) {
                             c.BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = McBody.Save(bodyElement.Value); 
+                            var body = McBody.Save (bodyElement.Value); 
                             c.BodyId = body.Id;
                         }
                     } else {
@@ -630,7 +628,8 @@ namespace NachoCore.ActiveSync
             return NcResult.OK (c);
         }
 
-        public NcResult ParseEmail (XNamespace ns, XElement command){
+        public NcResult ParseEmail (XNamespace ns, XElement command)
+        {
 
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
             NcAssert.True (null != serverId);
@@ -638,7 +637,7 @@ namespace NachoCore.ActiveSync
             McEmailMessage emailMessage = new McEmailMessage ();
             emailMessage.ServerId = serverId.Value;
             var appData = command.Element (ns + Xml.AirSync.ApplicationData);
-            NcAssert.True (null != appData);
+            NcAssert.NotNull (appData);
 
 
             emailMessage.xmlAttachments = null;
@@ -649,7 +648,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.xmlAttachments = child.Elements (m_baseNs + Xml.AirSyncBase.Attachment);
                     break;
                 case Xml.AirSyncBase.Body:
-                    emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt();
+                    emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != bodyElement) {
@@ -657,7 +656,7 @@ namespace NachoCore.ActiveSync
                         if (null != saveAttr) {
                             emailMessage.BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = McBody.Save(bodyElement.Value); 
+                            var body = McBody.Save (bodyElement.Value); 
                             emailMessage.BodyId = body.Id;
                         }
                     } else {
@@ -840,7 +839,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.ConversationId = child.Value;
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
-                    emailMessage.NativeBodyType = (byte) child.Value.ToInt();
+                    emailMessage.NativeBodyType = (byte)child.Value.ToInt ();
                     break;
                 case  Xml.Email.InternetCPID:
                     emailMessage.InternetCPID = child.Value;
@@ -849,15 +848,13 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                    if (!child.Value.Equals("")) {
                         XNamespace nsEmail = "Email";
-                        var categories = AsHelpers.ParseEmailCategories(nsEmail, child);
+                        var categories = AsHelpers.ParseEmailCategories (nsEmail, child);
                         if (0 == emailMessage.Categories.Count) {
                             emailMessage.Categories = categories;
                         } else {
                             emailMessage.Categories.AddRange (categories);
                         }
-                    }
                     break;
                 case Xml.Email2.LastVerbExecuted:
                     emailMessage.LastVerbExecuted = child.Value.ToInt ();
@@ -888,7 +885,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public void InsertAttachments(McEmailMessage msg)
+        public void InsertAttachments (McEmailMessage msg)
         {
             XNamespace email2Ns = Xml.Email2.Ns;
             if (null != msg.xmlAttachments) {
@@ -920,7 +917,7 @@ namespace NachoCore.ActiveSync
                         }
                         var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
                         if (null != isInline) {
-                            attachment.IsInline =  ParseXmlBoolean (isInline);
+                            attachment.IsInline = ParseXmlBoolean (isInline);
                         }
                         var xmlUmAttDuration = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttDuration);
                         if (null != xmlUmAttDuration) {
@@ -935,13 +932,6 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
-
-
-
-
-
-
-
 
         /// <summary>
         /// Tries the set string from xml.

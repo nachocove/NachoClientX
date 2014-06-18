@@ -20,7 +20,7 @@ namespace NachoCore.ActiveSync
         {
             return ProcessEmailItem (command, folder, true);
         }
-            
+
         public static McEmailMessage ProcessEmailItem (XElement command, McFolder folder, bool isAdd)
         {   
             AsHelpers aHelp = new AsHelpers ();
@@ -45,7 +45,6 @@ namespace NachoCore.ActiveSync
                 }
                 emailMessage.Insert ();
             } else {
-                //***CheckThis***
                 emailMessage.AccountId = folder.AccountId;
                 emailMessage.Id = eMsg.Id;
                 emailMessage.Update ();
@@ -58,7 +57,6 @@ namespace NachoCore.ActiveSync
             aHelp.InsertAttachments (emailMessage);
             return emailMessage;
         }
-
     }
 }
 

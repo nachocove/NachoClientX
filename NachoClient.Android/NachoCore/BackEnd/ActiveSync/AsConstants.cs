@@ -552,7 +552,6 @@ namespace NachoCore.ActiveSync
             // Alpha order.
             public const string Category = "Category";
             public const string Categories = "Categories";
-            public const string DbCategories = "Categories";
             public const string Cc = "Cc";
             public const string CompleteTime = "CompleteTime";
             public const string ContentClass = "ContentClass";
