@@ -18,7 +18,7 @@ namespace Test.iOS
     public class BaseMcPendingTest : CommonTestOps
     {
         [SetUp]
-        public void SetUp ()
+        public new void SetUp ()
         {
             base.SetUp ();
         }
@@ -38,28 +38,25 @@ namespace Test.iOS
         [Test]
         public void DependencyTest ()
         {
-            int accountId = 1;
+            int firstAccount = 1;
+            int secondAccount = 2;
 
-            var pendA = CreatePending (accountId);
-            var succA1 = CreatePending (accountId);
-            var succA2 = CreatePending (accountId);
-            var succA3 = CreatePending (accountId);
+            var pendA = CreatePending (firstAccount);
+            var succA1 = CreatePending (firstAccount);
+            var succA2 = CreatePending (firstAccount);
+            var succA3 = CreatePending (firstAccount);
 
             McPending[] groupA = { pendA, succA1, succA2, succA3 };
 
-            var pendB = CreatePending (accountId);
-            var succB1 = CreatePending (accountId);
-            var succB2 = CreatePending (accountId);
-            var succB3 = CreatePending (accountId);
+            var pendB = CreatePending (secondAccount);
+            var succB1 = CreatePending (secondAccount);
+            var succB2 = CreatePending (secondAccount);
+            var succB3 = CreatePending (secondAccount);
 
             McPending[] groupB = { pendB, succB1, succB2, succB3 };
 
             // start from second item in each group and mark the predecessor of each as blocked
             foreach (McPending[] group in new[] {groupA, groupB}) {
-                for (int i = 1; i < group.Length; ++i) {
-                    group [i].MarkPredBlocked (group [0].Id);
-                }
-
                 var pendDeps = McPendDep.QueryByPredId (group [0].Id);
                 Assert.AreEqual (3, pendDeps.Count, "Should create a pendDep for each successor");
                 foreach (McPendDep pendDep in pendDeps) {
@@ -77,8 +74,8 @@ namespace Test.iOS
                 }
             }
 
-            pendA.UnblockSuccessors ();
             for (int i = 1; i < groupA.Length; ++i) {
+                groupA [i - 1].UnblockSuccessors (); // unblock successors for groupA
                 var item = McPending.QueryById<McPending> (groupA [i].Id);
                 Assert.AreEqual (StateEnum.Eligible, item.State, "Unblocked group A successors should have Eligible state");
             }
@@ -96,9 +93,9 @@ namespace Test.iOS
                 Assert.AreEqual (groupB [0].Id, pendDep.PredId, "PendDeps should keep correct id");
             }
 
-            // unblock successors for groupB
-            pendB.UnblockSuccessors ();
+
             for (int i = 1; i < groupB.Length; ++i) {
+                groupB [i - 1].UnblockSuccessors (); // unblock successors for groupB
                 var item = McPending.QueryById<McPending> (groupB [i].Id);
                 Assert.AreEqual (StateEnum.Eligible, item.State, "Unblocked group B successors should have Eligible state");
             }
@@ -241,9 +238,6 @@ namespace Test.iOS
 
             var successor = CreatePending (accountId);
             successor.Operation = Operations.EmailSetFlag;
-
-            // Create dependency using MarkPredBlocked().
-            successor.MarkPredBlocked (pending.Id);
 
             // Verify dependencies (McPendDep).
             var pendDeps = McPendDep.QueryByPredId (pending.Id);
