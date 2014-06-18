@@ -47,6 +47,7 @@ namespace NachoCore.Model
             Db.CreateTable<McMapFolderFolderEntry> ();
             Db.CreateTable<McFolder> ();
             Db.CreateTable<McEmailMessage> ();
+            Db.CreateTable<McEmailMessageCategory> ();
             Db.CreateTable<McAttachment> ();
             Db.CreateTable<McContact> ();
             Db.CreateTable<McContactDateAttribute> ();

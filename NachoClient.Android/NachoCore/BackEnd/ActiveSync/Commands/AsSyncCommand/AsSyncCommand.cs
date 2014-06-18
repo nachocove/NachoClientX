@@ -599,7 +599,7 @@ namespace NachoCore.ActiveSync
             return true;
         }
         // TODO - make this a generic extension.
-        private bool ParseXmlBoolean (XElement bit)
+        private static bool ParseXmlBoolean (XElement bit)
         {
             if (bit.IsEmpty) {
                 return true;
