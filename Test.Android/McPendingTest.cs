@@ -439,19 +439,19 @@ namespace Test.iOS
             var onFail = NcResult.Error (SubKindEnum.Error_AlreadyInFolder);
             pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
 
-            ResolvedAssertions (pending.Id);
+            ResolvedAssertions (pending.Id, eligibleAfter);
 
             // Repeat with ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why).
             var pending2 = CreatePending (accountId);
             pending2.MarkDispached ();
 
             var why = WhyEnum.AccessDeniedOrBlocked;
-            pending.ResolveAsDeferred (protoControl, eligibleAfter, why);
+            pending2.ResolveAsDeferred (protoControl, eligibleAfter, why);
 
-            ResolvedAssertions (pending2.Id);
+            ResolvedAssertions (pending2.Id, eligibleAfter);
         }
 
-        private void ResolvedAssertions (int pendId)
+        private void ResolvedAssertions (int pendId, DateTime eligibleAfter)
         {
             var retrieved = McPending.QueryById<McPending> (pendId);
             // Verify state is Deferred in DB.
@@ -462,6 +462,47 @@ namespace Test.iOS
 
             // Verify UntilTime == eligibleAfter in the DB.
             Assert.AreEqual (eligibleAfter, retrieved.DeferredUntilTime, "Should set UntilTime in DB to eligibleAfter param");
+        }
+
+        [Test]
+        public void TestMaxDefers ()
+        {
+            int accountId = 1;
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var eligibleAfter = DateTime.UtcNow.AddSeconds (3.0);
+            var subKind = SubKindEnum.Error_AlreadyInFolder; 
+            var why = WhyEnum.AccessDeniedOrBlocked;
+            var onFail = NcResult.Error (subKind, why);
+
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+
+            McPending retrieved;
+            for (int i = 0; i < McPending.KMaxDeferCount; ++i) {
+                pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
+
+                // Verify state is Deferred in DB.
+                retrieved = McPending.QueryById<McPending> (pending.Id);
+                Assert.AreEqual (eligibleAfter, retrieved.DeferredUntilTime, "Should set UntilTime in DB to eligibleAfter param");
+                Assert.AreEqual (StateEnum.Deferred, retrieved.State, "Should set state to deferred");
+
+                McPending.MakeEligibleOnTime (accountId);
+                retrieved = McPending.QueryById<McPending> (pending.Id);
+                Assert.AreEqual (StateEnum.Eligible, retrieved.State, "MakeEligibleOnTime should set state to eligible in DB");
+            }
+
+            // resolve with UTC now
+            pending.ResolveAsDeferred (protoControl, DateTime.UtcNow, onFail);
+
+            retrieved = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (NcResult.KindEnum.Error, retrieved.ResultKind, "Should set result kind to error");
+            Assert.AreEqual (subKind, retrieved.ResultSubKind, "Should set subKind correctly");
+            Assert.AreEqual (why, retrieved.ResultWhy, "Should set Why correctly");
+            // verify failed state in DB
+            Assert.AreEqual (StateEnum.Failed, retrieved.State, "Should set state to failed");
+
+            // verify StatusInd
+            Assert.AreEqual (onFail.SubKind, MockOwner.Status.SubKind);
         }
     }
 }

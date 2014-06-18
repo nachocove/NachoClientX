@@ -553,7 +553,6 @@ namespace NachoCore.Model
         public void ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
         {
             NcAssert.True (StateEnum.Dispatched == State);
-            NcAssert.True (DeferredEnum.UntilTime != reason);
             // Added check in case of any bug causing underflow.
             if (0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
                 ResolveAsHardFail (control, onFail);
