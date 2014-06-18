@@ -8,7 +8,7 @@ using NUnit.Framework;
 
 namespace Test.iOS
 {
-    public class CommonProtoControlOps
+    public class CommonProtoControlOps : CommonTestOps
     {
         public static McAccount CreateAccount (int pcsId = 5)
         {
@@ -30,7 +30,7 @@ namespace Test.iOS
             return pcs;
         }
 
-        public static AsProtoControl CreateProtoControl (int accountId)
+        public static AsProtoControl CreateProtoControl (int accountId = defaultAccountId)
         {
             // clean static property
             MockOwner.Status = null;
@@ -47,7 +47,7 @@ namespace Test.iOS
         }
     }
 
-    public class CommonFolderOps
+    public class CommonFolderOps : CommonTestOps
     {
         public const string defaultServerId = "5";
 
@@ -84,6 +84,8 @@ namespace Test.iOS
 
     public class CommonTestOps
     {
+        public const int defaultAccountId = 1;
+
         public void SetUp ()
         {
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());

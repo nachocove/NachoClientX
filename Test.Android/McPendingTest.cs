@@ -5,6 +5,7 @@ using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using System.Linq;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
 using ProtoOps = Test.iOS.CommonProtoControlOps;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
@@ -18,15 +19,18 @@ namespace Test.iOS
 {
     public class BaseMcPendingTest : CommonTestOps
     {
+
         [SetUp]
         public new void SetUp ()
         {
             base.SetUp ();
         }
 
-        public McPending CreatePending (int accountId)
+        public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete)
         {
             var pending = new McPending (accountId);
+            pending.ServerId = serverId;
+            pending.Operation = operation;
             pending.Insert ();
             return pending;
         }
@@ -42,17 +46,17 @@ namespace Test.iOS
             int firstAccount = 1;
             int secondAccount = 2;
 
-            var pendA = CreatePending (firstAccount);
-            var succA1 = CreatePending (firstAccount);
-            var succA2 = CreatePending (firstAccount);
-            var succA3 = CreatePending (firstAccount);
+            var pendA = CreatePending (accountId: firstAccount);
+            var succA1 = CreatePending (accountId: firstAccount);
+            var succA2 = CreatePending (accountId: firstAccount);
+            var succA3 = CreatePending (accountId: firstAccount);
 
             McPending[] groupA = { pendA, succA1, succA2, succA3 };
 
-            var pendB = CreatePending (secondAccount);
-            var succB1 = CreatePending (secondAccount);
-            var succB2 = CreatePending (secondAccount);
-            var succB3 = CreatePending (secondAccount);
+            var pendB = CreatePending (accountId: secondAccount);
+            var succB1 = CreatePending (accountId: secondAccount);
+            var succB2 = CreatePending (accountId: secondAccount);
+            var succB3 = CreatePending (accountId: secondAccount);
 
             McPending[] groupB = { pendB, succB1, succB2, succB3 };
 
@@ -94,7 +98,6 @@ namespace Test.iOS
                 Assert.AreEqual (groupB [0].Id, pendDep.PredId, "PendDeps should keep correct id");
             }
 
-
             for (int i = 1; i < groupB.Length; ++i) {
                 groupB [i - 1].UnblockSuccessors (); // unblock successors for groupB
                 var item = McPending.QueryById<McPending> (groupB [i].Id);
@@ -115,13 +118,44 @@ namespace Test.iOS
             }
         }
 
+        [Test]
+        public void SingleSuccessor ()
+        {
+            var pending1 = CreatePending (serverId: "FirstPending", operation: Operations.CalCreate);
+            var pending2 = CreatePending (serverId: "SecondPending", operation: Operations.CalCreate);
+
+            // Insert a successor McPending that is dependent upon BOTH predecessors.
+            var successor = CreatePending (serverId: "Successor", operation: Operations.FolderDelete); // delete always blocks
+
+            // UnblockSuccessors() on the 1st predecessor.
+            pending1.UnblockSuccessors ();
+
+            // Verify that the successor is still blocked.
+            var retrieved = McPending.QueryById<McPending> (successor.Id);
+            Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "Successor should still be blocked if only one pred has unblocked");
+
+            // Verify that there is only one McPendDep remaining between the second predecessor and the successor.
+            var pendDeps = McPendDep.QueryBySuccId (successor.Id);
+            Assert.AreEqual (1, pendDeps.Count (), "Should only have one remaining McPendDep");
+
+            // UnblockSuccessors() on the 2nd predecessor.
+            pending2.UnblockSuccessors ();
+
+            // Verify that the successor is now marked Eligible.
+            retrieved = McPending.QueryById<McPending> (successor.Id);
+            Assert.AreEqual (StateEnum.Eligible, retrieved.State, "Unblocking second pred should set state of pending to eligible");
+
+            // Verify that all McPendDep associated with the test case are deleted.
+            pendDeps = McPendDep.QueryBySuccId (successor.Id);
+            Assert.AreEqual (0, pendDeps.Count (), "All pend deps should have been deleted");
+        }
+
         /* Dispatched */
 
         [Test]
         public void DispatchedTest ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.MarkDispached ();
             var retrieved = McObject.QueryById<McPending> (pending.Id);
             Assert.AreEqual (StateEnum.Dispatched, retrieved.State, "MarkDispatched () should set state to Dispatched");
@@ -133,9 +167,8 @@ namespace Test.iOS
         public void ResolveBlockedEligiblePending ()
         {
             // resolve with eligible pending
-            int accountId = 1;
-            var pending = CreatePending (accountId);
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var pending = CreatePending ();
+            var protoControl = ProtoOps.CreateProtoControl ();
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, WhyEnum.AccessDeniedOrBlocked);
             }, "Should throw NachoExceptionFailure if ResolveAsUsertBlocked is called on eligible pending");
@@ -145,10 +178,9 @@ namespace Test.iOS
         public void ResolveBlockedNonErrorResult ()
         {
             // ResolveAsUserBlocked with a non-Error NcResult.
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.MarkDispached ();
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, NcResult.OK ());
             }, "Should throw NachoExceptionFailure if ResolveAsUserBlocked is called with a non-error result");
@@ -158,11 +190,10 @@ namespace Test.iOS
         public void ResolveBlockedPending ()
         {
             // ResolveAsUserBlocked with an error NcResult and non-eligible pending should succeed
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.Operation = McPending.Operations.FolderCreate;
             pending.MarkDispached ();
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
 
             var whyReason = WhyEnum.AccessDeniedOrBlocked;
             var whyResult = NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed, whyReason);
@@ -180,9 +211,8 @@ namespace Test.iOS
         [Test]
         public void ResolveAsSuccessNotDispatched ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var pending = CreatePending ();
+            var protoControl = ProtoOps.CreateProtoControl ();
             pending.Operation = Operations.EmailDelete;
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsSuccess (protoControl);
@@ -214,12 +244,11 @@ namespace Test.iOS
         private void TestResolveAsSuccessWithOperation (McPending.Operations operation, SubKindEnum subKind, string operationName,
             Action<McPending, AsProtoControl> doResolve)
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.Operation = operation;
             pending.MarkDispached ();
 
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
             doResolve (pending, protoControl);
 
             Assert.AreEqual (subKind, MockOwner.Status.SubKind, "ResolveAsSuccess should set correct Status for: {0}", operationName);
@@ -231,13 +260,11 @@ namespace Test.iOS
         [Test]
         public void ResolveAsSuccessWithSuccessor ()
         {
-            int accountId = 1;
-
             // Create an Eligible state McPending and an Eligible McPending successor.
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.Operation = Operations.EmailMarkRead;
 
-            var successor = CreatePending (accountId);
+            var successor = CreatePending ();
             successor.Operation = Operations.EmailSetFlag;
 
             // Verify dependencies (McPendDep).
@@ -255,7 +282,7 @@ namespace Test.iOS
             pending.MarkDispached ();
 
             // ResolveAsSuccess (ProtoControl control) on predecessor.
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
             pending.ResolveAsSuccess (protoControl);
 
             // Verify Info_EmailMessageMarkedReadSucceeded StatusInd.
@@ -278,9 +305,8 @@ namespace Test.iOS
         public void ResolveAsSuccessWithBadResult ()
         {
             // ResolveAsSuccess with non-Info NcResult.
-            int accountId = 1;
-            var pending = CreatePending (accountId);
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var pending = CreatePending ();
+            var protoControl = ProtoOps.CreateProtoControl ();
 
             pending.MarkDispached ();
 
@@ -294,8 +320,7 @@ namespace Test.iOS
         [Test]
         public void ResolveAsCancelledNotDispatched ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
 
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsCancelled ();
@@ -305,8 +330,7 @@ namespace Test.iOS
         [Test]
         public void TestResolveAsCancelled ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.MarkDispached ();
             var retrievedSanity = McPending.QueryById<McPending> (pending.Id);
             Assert.NotNull (retrievedSanity);
@@ -321,9 +345,8 @@ namespace Test.iOS
         [Test]
         public void ResolveAsHardFailNotDispatched ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var pending = CreatePending ();
+            var protoControl = ProtoOps.CreateProtoControl ();
 
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsHardFail (protoControl, WhyEnum.AccessDeniedOrBlocked);
@@ -355,12 +378,11 @@ namespace Test.iOS
 
         private void TestResolveAsHardFail (SubKindEnum subKind, WhyEnum why, Action<McPending, AsProtoControl> action)
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.Operation = Operations.FolderCreate;
             pending.MarkDispached ();
 
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
             action (pending, protoControl);
 
             // Verify ResultKind, ResultSubKind and ResultWhy stored in DB.
@@ -378,11 +400,10 @@ namespace Test.iOS
         [Test]
         public void ResolveAsHardFailNonErrorResult ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.MarkDispached ();
 
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
 
             var result = NcResult.OK ();
             TestForNachoExceptionFailure (() => {
@@ -394,15 +415,14 @@ namespace Test.iOS
         public void ResolveAsDeferredNonDispatched ()
         {
             // Test ResolveAsDeferredForce
-            int accountId = 1;
-            var pending1 = CreatePending (accountId);
+            var pending1 = CreatePending ();
             TestForNachoExceptionFailure (() => {
                 pending1.ResolveAsDeferredForce ();
             }, "Should throw NachoExceptionFailure if ResolveAsDeferredForce is called on a non-dispatched pending object");
 
             // Test ResolveAsDeferred
-            var pending2 = CreatePending (accountId);
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var pending2 = CreatePending ();
+            var protoControl = ProtoOps.CreateProtoControl ();
 
             var reason = DeferredEnum.UntilFSync;
             var result = NcResult.Error ("There was an error");
@@ -414,8 +434,7 @@ namespace Test.iOS
         [Test]
         public void TestResolveAsDeferredForce ()
         {
-            int accountId = 1;
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.MarkDispached ();
             pending.ResolveAsDeferredForce ();
 
@@ -428,12 +447,11 @@ namespace Test.iOS
         [Test]
         public void TestResolveAsDeferred ()
         {
-            int accountId = 1;
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
             var eligibleAfter = DateTime.UtcNow.AddSeconds (3.0);
 
             // ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult onFail) with eligibleAfter in the future.
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
             pending.MarkDispached ();
 
             var onFail = NcResult.Error (SubKindEnum.Error_AlreadyInFolder);
@@ -442,7 +460,7 @@ namespace Test.iOS
             ResolvedAssertions (pending.Id, eligibleAfter);
 
             // Repeat with ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why).
-            var pending2 = CreatePending (accountId);
+            var pending2 = CreatePending ();
             pending2.MarkDispached ();
 
             var why = WhyEnum.AccessDeniedOrBlocked;
@@ -468,14 +486,13 @@ namespace Test.iOS
         public void TestMaxDefers ()
         {
             double waitSeconds = 0.5;
-            int accountId = 1;
-            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var protoControl = ProtoOps.CreateProtoControl ();
             var eligibleAfter = DateTime.UtcNow.AddSeconds (waitSeconds);
             var subKind = SubKindEnum.Error_AlreadyInFolder; 
             var why = WhyEnum.AccessDeniedOrBlocked;
             var onFail = NcResult.Error (subKind, why);
 
-            var pending = CreatePending (accountId);
+            var pending = CreatePending ();
 
             McPending retrieved;
             for (int i = 0; i < McPending.KMaxDeferCount; ++i) {
@@ -488,7 +505,7 @@ namespace Test.iOS
                 Assert.AreEqual (StateEnum.Deferred, retrieved.State, "Should set state to deferred");
 
                 System.Threading.Thread.Sleep ((int)(waitSeconds * 1000));
-                McPending.MakeEligibleOnTime (accountId);
+                McPending.MakeEligibleOnTime (defaultAccountId);
                 retrieved = McPending.QueryById<McPending> (pending.Id);
                 Assert.AreEqual (StateEnum.Eligible, retrieved.State, "MakeEligibleOnTime should set state to eligible in DB");
             }
