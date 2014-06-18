@@ -73,7 +73,7 @@ namespace NachoCore.Model
         private static OperationCaptures UpdateCaptures;
 
         [PrimaryKey, AutoIncrement, Unique]
-        public int Id { get; set; }
+        public virtual int Id { get; set; }
         // Optimistic concurrency control
         public DateTime LastModified { get; set; }
 
@@ -115,7 +115,7 @@ namespace NachoCore.Model
 
         public virtual int Delete ()
         {
-            NcAssert.True (0 != Id);
+            NcAssert.True (0 < Id);
             NcCapture capture = DeleteCaptures.Find (ClassName ());
             capture.Start ();
             int rc = NcModel.Instance.Db.Delete (this);
@@ -126,7 +126,7 @@ namespace NachoCore.Model
 
         public virtual int Update ()
         {
-            NcAssert.True (0 != Id);
+            NcAssert.True (0 < Id);
             NcCapture capture = UpdateCaptures.Find (ClassName ());
             capture.Start ();
             int rc = NcModel.Instance.Db.Update (this);

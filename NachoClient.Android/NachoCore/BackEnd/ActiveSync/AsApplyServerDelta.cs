@@ -21,6 +21,7 @@ namespace NachoCore.ActiveSync
 
         public void ProcessDelta ()
         {
+            // FIXME - process like in McPending - pull an array.
             McPending pending;
             for (pending = McPending.GetOldestYoungerThanId (AccountId, PriorPendingId);
                 null != pending;
@@ -28,6 +29,7 @@ namespace NachoCore.ActiveSync
                 PriorPendingId = pending.Id;
 
                 if (McPending.StateEnum.Dispatched == pending.State) {
+                    // FIXME - what if there is an impact? will it cause this pending to fail?
                     continue;
                 }
 

@@ -485,26 +485,29 @@ namespace NachoClient.iOS
         public override void DraggingStarted (UIScrollView scrollView)
         {
             Log.Info (Log.LOG_UI, "DraggingStarted");
-//            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-//                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
-//            });
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             Log.Info (Log.LOG_UI, "DecelerationEnded");
-//            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-//                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
-//            });
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
                 Log.Info (Log.LOG_UI, "DraggingEnded");
-//                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-//                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
-//                });
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
             }
         }
     }
