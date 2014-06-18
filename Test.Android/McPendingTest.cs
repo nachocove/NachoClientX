@@ -467,18 +467,19 @@ namespace Test.iOS
         [Test]
         public void TestMaxDefers ()
         {
+            double waitSeconds = 0.5;
             int accountId = 1;
             var protoControl = ProtoOps.CreateProtoControl (accountId);
-            var eligibleAfter = DateTime.UtcNow.AddSeconds (3.0);
+            var eligibleAfter = DateTime.UtcNow.AddSeconds (waitSeconds);
             var subKind = SubKindEnum.Error_AlreadyInFolder; 
             var why = WhyEnum.AccessDeniedOrBlocked;
             var onFail = NcResult.Error (subKind, why);
 
             var pending = CreatePending (accountId);
-            pending.MarkDispached ();
 
             McPending retrieved;
             for (int i = 0; i < McPending.KMaxDeferCount; ++i) {
+                pending.MarkDispached ();
                 pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
 
                 // Verify state is Deferred in DB.
@@ -486,11 +487,13 @@ namespace Test.iOS
                 Assert.AreEqual (eligibleAfter, retrieved.DeferredUntilTime, "Should set UntilTime in DB to eligibleAfter param");
                 Assert.AreEqual (StateEnum.Deferred, retrieved.State, "Should set state to deferred");
 
+                System.Threading.Thread.Sleep ((int)(waitSeconds * 1000));
                 McPending.MakeEligibleOnTime (accountId);
                 retrieved = McPending.QueryById<McPending> (pending.Id);
                 Assert.AreEqual (StateEnum.Eligible, retrieved.State, "MakeEligibleOnTime should set state to eligible in DB");
             }
 
+            pending.MarkDispached ();
             // resolve with UTC now
             pending.ResolveAsDeferred (protoControl, DateTime.UtcNow, onFail);
 
