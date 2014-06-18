@@ -524,6 +524,43 @@ namespace Test.iOS
             // verify StatusInd
             Assert.AreEqual (onFail.SubKind, MockOwner.Status.SubKind);
         }
+
+        [Test]
+        public void IntegrationTest ()
+        {
+            // Create a 1nd Eligible state McPending.
+            var pending = CreatePending ();
+            pending.MarkDispached ();
+            var protoControl = ProtoOps.CreateProtoControl ();
+
+            // resolve deferred with reason UntilSync
+            var reason = DeferredEnum.UntilSync;
+            var subKind = SubKindEnum.Error_AlreadyInFolder; 
+            var why = WhyEnum.AccessDeniedOrBlocked;
+            var onFail = NcResult.Error (subKind, why);
+
+            pending.ResolveAsDeferred (protoControl, reason, onFail);
+            VerifyStateAndReason (pending.Id, StateEnum.Deferred, reason);
+
+            // Create a 2nd Eligible state McPending.
+            var secPending = CreatePending ();
+            secPending.MarkDispached ();
+
+            // Resolve as deferred with UTC Now
+            var eligibleAfter = DateTime.UtcNow.AddSeconds (0.5);
+            secPending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
+            VerifyStateAndReason (secPending.Id, StateEnum.Deferred, reason);
+
+            // Find only the 1st using QueryDeferredSync (int accountId).
+        }
+
+        private void VerifyStateAndReason (int pendId, StateEnum state, DeferredEnum reason)
+        {
+            // Verify state and reason in DB.
+            var retrieved = McPending.QueryById<McPending> (pendId);
+            Assert.AreEqual (StateEnum.Deferred, retrieved.State, "State should be set correctly in DB");
+            Assert.AreEqual (reason, retrieved.DeferredReason, "Should set deferred reason in DB");
+        }
     }
 }
 
