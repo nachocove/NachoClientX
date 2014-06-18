@@ -11,6 +11,7 @@ using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
 using Operations = NachoCore.Model.McPending.Operations;
 using SubKindEnum = NachoCore.Utils.NcResult.SubKindEnum;
+using DeferredEnum = NachoCore.Model.McPending.DeferredEnum;
 
 
 namespace Test.iOS
@@ -387,6 +388,80 @@ namespace Test.iOS
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsHardFail (protoControl, result);
             }, "Should throw NachoExceptionFailure if ResolveAsHardFail is called with a non-error result");
+        }
+
+        [Test]
+        public void ResolveAsDeferredNonDispatched ()
+        {
+            // Test ResolveAsDeferredForce
+            int accountId = 1;
+            var pending1 = CreatePending (accountId);
+            TestForNachoExceptionFailure (() => {
+                pending1.ResolveAsDeferredForce ();
+            }, "Should throw NachoExceptionFailure if ResolveAsDeferredForce is called on a non-dispatched pending object");
+
+            // Test ResolveAsDeferred
+            var pending2 = CreatePending (accountId);
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+
+            var reason = DeferredEnum.UntilFSync;
+            var result = NcResult.Error ("There was an error");
+            TestForNachoExceptionFailure (() => {
+                pending2.ResolveAsDeferred (protoControl, reason, result);
+            }, "Should throw NachoExceptionFailure if ResolveAsDeferred is called on a non-dispatched pending object");
+        }
+
+        [Test]
+        public void TestResolveAsDeferredForce ()
+        {
+            int accountId = 1;
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+            pending.ResolveAsDeferredForce ();
+
+            var retrieved = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (StateEnum.Deferred, retrieved.State, "ResolveAsDeferredForce should set state to deferred in DB");
+            Assert.AreEqual (DeferredEnum.UntilTime, retrieved.DeferredReason, "Should set deferred reason to until time in DB");
+            Assert.IsTrue ((retrieved.DeferredUntilTime - DateTime.UtcNow).Seconds < 10, "Deferred Until Time should be within 10 seconds of UTC now");
+        }
+
+        [Test]
+        public void TestResolveAsDeferred ()
+        {
+            int accountId = 1;
+            var protoControl = ProtoOps.CreateProtoControl (accountId);
+            var eligibleAfter = DateTime.UtcNow.AddSeconds (3.0);
+
+            // ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult onFail) with eligibleAfter in the future.
+            var pending = CreatePending (accountId);
+            pending.MarkDispached ();
+
+            var onFail = NcResult.Error (SubKindEnum.Error_AlreadyInFolder);
+            pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
+
+            ResolvedAssertions (pending.Id);
+
+            // Repeat with ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why).
+            var pending2 = CreatePending (accountId);
+            pending2.MarkDispached ();
+
+            var why = WhyEnum.AccessDeniedOrBlocked;
+            pending.ResolveAsDeferred (protoControl, eligibleAfter, why);
+
+            ResolvedAssertions (pending2.Id);
+        }
+
+        private void ResolvedAssertions (int pendId)
+        {
+            var retrieved = McPending.QueryById<McPending> (pendId);
+            // Verify state is Deferred in DB.
+            Assert.AreEqual (StateEnum.Deferred, retrieved.State, "Should set state to deferred in DB");
+
+            // Verify reason is UntilTime in DB.
+            Assert.AreEqual (DeferredEnum.UntilTime, retrieved.DeferredReason, "Should set deferred reason to until time in DB");
+
+            // Verify UntilTime == eligibleAfter in the DB.
+            Assert.AreEqual (eligibleAfter, retrieved.DeferredUntilTime, "Should set UntilTime in DB to eligibleAfter param");
         }
     }
 }
