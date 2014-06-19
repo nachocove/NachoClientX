@@ -624,6 +624,9 @@ namespace NachoClient.iOS
 
             var wv = new UIWebView (new RectangleF (0, 0, View.Frame.Width, 1));
             wv.ScrollView.Bounces = false;
+            wv.ScrollView.ScrollEnabled = true;
+            wv.ScrollView.PagingEnabled = false;
+            wv.ScrollView.MultipleTouchEnabled = false;
             wv.ContentMode = UIViewContentMode.ScaleAspectFit;
             wv.BackgroundColor = UIColor.White;
             wv.Tag = MESSAGE_PART_TAG;
@@ -648,6 +651,7 @@ namespace NachoClient.iOS
             };
 
             wv.LoadError += (object sender, UIWebErrorArgs e) => {
+                htmlBusy -= 1;
                 if (0 == DeferLayoutDecrement ()) {
                     LayoutView ();
                 }

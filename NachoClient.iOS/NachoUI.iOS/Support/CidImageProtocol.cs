@@ -61,6 +61,7 @@ namespace NachoClient.iOS
             using (var image = PlatformHelpers.RenderContentId (value)) {
                 if (null == image) {
                     Log.Error (Log.LOG_UI, "CidImageProtocol: RenderContentId returned null {0}", value);
+                    Client.FinishedLoading (this);
                 } else {
                     if (Request.Url.RelativeString.EndsWith (".png")) {
                         using (var data = image.AsPNG ()) {
@@ -72,6 +73,9 @@ namespace NachoClient.iOS
                         }
                     } else {
                         Log.Error (Log.LOG_UI, "CidImageProtocol: unknown extension {0}", Request.Url);
+                        using (var data = image.AsJPEG ()) {
+                            FinishLoading (data, "image/jpeg");
+                        }
                     }
                 }
             }
