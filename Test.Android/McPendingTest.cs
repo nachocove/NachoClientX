@@ -13,6 +13,7 @@ using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
 using Operations = NachoCore.Model.McPending.Operations;
 using SubKindEnum = NachoCore.Utils.NcResult.SubKindEnum;
 using DeferredEnum = NachoCore.Model.McPending.DeferredEnum;
+using System.Collections.Generic;
 
 
 namespace Test.iOS
@@ -525,8 +526,7 @@ namespace Test.iOS
             Assert.AreEqual (onFail.SubKind, MockOwner.Status.SubKind);
         }
 
-        [Test]
-        public void IntegrationTest ()
+        private void TestWithSyncTypeAndReason (DeferredEnum reason, Action<McPending> makeEligible, Func <List<McPending>> querySyncType)
         {
             // Create a 1nd Eligible state McPending.
             var pending = CreatePending ();
@@ -534,7 +534,6 @@ namespace Test.iOS
             var protoControl = ProtoOps.CreateProtoControl ();
 
             // resolve deferred with reason UntilSync
-            var reason = DeferredEnum.UntilSync;
             var subKind = SubKindEnum.Error_AlreadyInFolder; 
             var why = WhyEnum.AccessDeniedOrBlocked;
             var onFail = NcResult.Error (subKind, why);
@@ -549,9 +548,73 @@ namespace Test.iOS
             // Resolve as deferred with UTC Now
             var eligibleAfter = DateTime.UtcNow.AddSeconds (0.5);
             secPending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
-            VerifyStateAndReason (secPending.Id, StateEnum.Deferred, reason);
+            VerifyStateAndReason (secPending.Id, StateEnum.Deferred, DeferredEnum.UntilTime);
 
             // Find only the 1st using QueryDeferredSync (int accountId).
+            var firstPend = querySyncType ();
+            System.Threading.Thread.Sleep (500);
+            var secondPend = McPending.QueryDeferredUntilNow (defaultAccountId);
+
+            Assert.AreEqual (1, firstPend.Count, "Should return a single object");
+            Assert.AreEqual (reason, firstPend.FirstOrDefault ().DeferredReason, "Deferred reason (UntilSync) should be set to UntilSync");
+
+            Assert.AreEqual (1, secondPend.Count, "Should only have one UntilTime object in DB");
+            Assert.AreEqual (DeferredEnum.UntilTime, secondPend.FirstOrDefault ().DeferredReason, "Deferred reason (UntilTime) should be stored in DB");
+
+            makeEligible (pending);
+
+            // Verify only the 1st is in Eligible state in DB.
+            var firstRetr = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreEqual (StateEnum.Eligible, firstRetr.State, "Only the 1st should be in the eligible state in DB");
+
+            var secRetr = McPending.QueryById<McPending> (secPending.Id);
+            Assert.AreNotEqual (StateEnum.Eligible, secRetr.State);
+
+            // ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail) with reason UntilSync again on the 1st.
+            firstRetr.MarkDispached ();
+            firstRetr.ResolveAsDeferred (protoControl, reason, onFail);
+
+            McPending.MakeEligibleOnTime (defaultAccountId);
+
+            // Verify only the 2nd is in Eligible state in DB.
+            firstRetr = McPending.QueryById<McPending> (pending.Id);
+            Assert.AreNotEqual (StateEnum.Eligible, firstRetr.State, "First pending object's state should not be eligible");
+
+            secRetr = McPending.QueryById<McPending> (secPending.Id);
+            Assert.AreEqual (StateEnum.Eligible, secRetr.State, "Second object's pending state should be set to eligible");
+        }
+
+        [Test]
+        public void TestDeferredForOnSync ()
+        {
+            var reason = DeferredEnum.UntilSync;
+            Action<McPending> syncOp = (pend) => McPending.MakeEligibleOnSync (defaultAccountId);
+            Func <List<McPending>> querySyncType = () => McPending.QueryDeferredSync (defaultAccountId);
+            TestWithSyncTypeAndReason (reason, syncOp, querySyncType);
+        }
+
+        [Test]
+        public void TestDeferredForFSync ()
+        {
+            var reason = DeferredEnum.UntilFSync;
+            Action<McPending> syncOp = (pend) => McPending.MakeEligibleOnFSync (defaultAccountId);
+            Func <List<McPending>> querySyncType = () => McPending.QueryDeferredFSync (defaultAccountId);
+            TestWithSyncTypeAndReason (reason, syncOp, querySyncType);
+        }
+
+        [Test]
+        public void TestDeferredForFSyncThenSync ()
+        {
+            var reason = DeferredEnum.UntilFSyncThenSync;
+            Action<McPending> syncOp = (pend) => {
+                McPending.MakeEligibleOnFSync (defaultAccountId);
+                var firstPending = McPending.QueryById<McPending> (pend.Id);
+                Assert.AreEqual (StateEnum.Deferred, firstPending.State, "State should still be deferred in DB");
+                Assert.AreEqual (DeferredEnum.UntilSync, firstPending.DeferredReason, "Deferred reason should have chend to UntilSync");
+                McPending.MakeEligibleOnSync (defaultAccountId);
+            };
+            Func <List<McPending>> querySyncType = () => McPending.QueryDeferredFSync (defaultAccountId);
+            TestWithSyncTypeAndReason (reason, syncOp, querySyncType);
         }
 
         private void VerifyStateAndReason (int pendId, StateEnum state, DeferredEnum reason)
