@@ -214,17 +214,6 @@ namespace NachoCore.Model
             return score;
         }
 
-        public int GetScore ()
-        {
-            /// SCORING - Return the sum of the content score and 
-            /// and the max contact score.
-            int contactScore = GetMaxContactScore (To);
-            contactScore = Math.Max (contactScore, GetMaxContactScore (From));
-            contactScore = Math.Max (contactScore, GetMaxContactScore (Cc));
-
-            return ContentScore + contactScore;
-        }
-
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
             return _Categories;
@@ -574,6 +563,11 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
+            if (!IsRead) {
+                McContact sender = GetFromContact ();
+                sender.IncrementEmailsDeleted ();
+                sender.Update ();
+            }
             DeleteBody ();
             DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);

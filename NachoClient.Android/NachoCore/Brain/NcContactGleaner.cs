@@ -20,16 +20,13 @@ namespace NachoCore.Brain
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
-            var nextMsg = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
-            if (null == nextMsg) {
-                return;
-            }
-            GleanContacts (nextMsg.AccountId, nextMsg);
+            NcBrainEvent brainEvent = new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN);
+            NcBrain.SharedInstance.Enqueue (brainEvent);
         }
 
         public static void Start ()
         {
-            Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 1));
+            Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 30));
             Invoker.Stfu = true;
         }
 
@@ -47,6 +44,72 @@ namespace NachoCore.Brain
         {
             emailMessage.HasBeenGleaned = true;
             NcModel.Instance.Db.Update (emailMessage);
+        }
+
+        private static void GleanContact (MailboxAddress mbAddr, int accountId, 
+            McFolder gleanedFolder, McEmailMessage emailMessage)
+        {
+            var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
+            if (0 == contacts.Count &&
+                MaxSaneAddressLength >= mbAddr.Address.Length &&
+                !mbAddr.Address.Contains ("noreply") &&
+                !mbAddr.Address.Contains ("no-reply") &&
+                !mbAddr.Address.Contains ("donotreply")) {
+                // Create a new gleaned contact.
+                var contact = new McContact () {
+                    AccountId = accountId,
+                    Source = McItem.ItemSource.Internal,
+                    RefCount = 1,
+                };
+
+                // Try to parse the display name into first / middle / last name
+                string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
+                switch (items.Length) {
+                case 2:
+                    if (0 < mbAddr.Name.IndexOf (',')) {
+                        // Last name, First name
+                        contact.LastName = items [0];
+                        contact.FirstName = items [1];
+                    } else {
+                        // First name, Last name
+                        contact.FirstName = items [0];
+                        contact.LastName = items [1];
+                    }
+                    break;
+                case 3:
+                    if (-1 == mbAddr.Name.IndexOf (',')) {
+                        contact.FirstName = items [0];
+                        contact.MiddleName = items [1];
+                        contact.LastName = items [2];
+                    }
+                    break;
+                }
+
+                NcModel.Instance.Db.Insert (contact);
+                gleanedFolder.Link (contact);
+
+                var strattr = new McContactStringAttribute () {
+                    Name = "Email1Address",
+                    Value = mbAddr.Address,
+                    Type = McContactStringType.EmailAddress,
+                    ContactId = contact.Id,
+                };
+
+                // Update statistics
+                contact.EmailsReceived += 1;
+                if (emailMessage.IsRead) {
+                    contact.EmailsReplied += 1;
+                }
+                // TODO - Get the reply state
+                NcModel.Instance.Db.Insert (strattr);
+            } else {
+                // Update the refcount on the existing contact.
+                foreach (var contact in contacts) {
+                    // TODO: need update count using timestamp check.
+                    contact.RefCount += 1;
+                    NcModel.Instance.Db.Update (contact);
+                }
+            }
         }
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
@@ -109,61 +172,7 @@ namespace NachoCore.Brain
                 foreach (var addrsList in addrsLists) {
                     foreach (var addr in addrsList) {
                         if (addr is MailboxAddress) {
-                            MailboxAddress mbAddr = addr as MailboxAddress;
-                            var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
-                            if (0 == contacts.Count &&
-                                MaxSaneAddressLength >= mbAddr.Address.Length &&
-                                !mbAddr.Address.Contains ("noreply") &&
-                                !mbAddr.Address.Contains ("no-reply") &&
-                                !mbAddr.Address.Contains ("donotreply")) {
-                                // Create a new gleaned contact.
-                                var contact = new McContact () {
-                                    AccountId = accountId,
-                                    Source = McItem.ItemSource.Internal,
-                                    RefCount = 1,
-                                };
-
-                                // Try to parse the display name into first / middle / last name
-                                string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
-                                switch (items.Length) {
-                                case 2:
-                                    if (0 < mbAddr.Name.IndexOf (',')) {
-                                        // Last name, First name
-                                        contact.LastName = items [0];
-                                        contact.FirstName = items [1];
-                                    } else {
-                                        // First name, Last name
-                                        contact.FirstName = items [0];
-                                        contact.LastName = items [1];
-                                    }
-                                    break;
-                                case 3:
-                                    if (-1 == mbAddr.Name.IndexOf (',')) {
-                                        contact.FirstName = items [0];
-                                        contact.MiddleName = items [1];
-                                        contact.LastName = items [2];
-                                    }
-                                    break;
-                                }
-
-                                NcModel.Instance.Db.Insert (contact);
-                                gleanedFolder.Link (contact);
-
-                                var strattr = new McContactStringAttribute () {
-                                    Name = "Email1Address",
-                                    Value = mbAddr.Address,
-                                    Type = McContactStringType.EmailAddress,
-                                    ContactId = contact.Id,
-                                };
-                                NcModel.Instance.Db.Insert (strattr);
-                            } else {
-                                // Update the refcount on the existing contact.
-                                foreach (var contact in contacts) {
-                                    // TODO: need update count using timestamp check.
-                                    contact.RefCount += 1;
-                                    NcModel.Instance.Db.Update (contact);
-                                }
-                            }
+                            GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
                         }
                     }
                 }

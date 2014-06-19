@@ -658,6 +658,9 @@ namespace NachoCore.Model
         {
             int retval = base.Update ();
             InsertAncillaryData (NcModel.Instance.Db);
+            if (null != SyncInfo) {
+                SyncInfo.Update ();
+            }
             return retval;
         }
 

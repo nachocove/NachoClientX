@@ -56,11 +56,13 @@ namespace NachoCore.Model
             Db.CreateTable<McFolder> ();
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McEmailMessageCategory> ();
+            Db.CreateTable<McEmailMessageScoreSyncInfo> ();
             Db.CreateTable<McAttachment> ();
             Db.CreateTable<McContact> ();
             Db.CreateTable<McContactDateAttribute> ();
             Db.CreateTable<McContactStringAttribute> ();
             Db.CreateTable<McContactAddressAttribute> ();
+            Db.CreateTable<McContactScoreSyncInfo> ();
             Db.CreateTable<McPolicy> ();
             Db.CreateTable<McProtocolState> ();
             Db.CreateTable<McServer> ();

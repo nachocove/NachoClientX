@@ -273,6 +273,13 @@
     <Compile Include="NachoCore\Utils\NcTask.cs" />
     <Compile Include="NachoCore\Model\McPath.cs" />
     <Compile Include="NachoCore\Utils\NcRateLimiter.cs" />
+    <Compile Include="NachoCore\Model\IScorable.cs" />
+    <Compile Include="NachoCore\Brain\NcBrain.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainEvent.cs" />
+    <Compile Include="NachoCore\Model\McContactScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessageScore.cs" />
+    <Compile Include="NachoCore\Utils\Scoring.cs" />
+    <Compile Include="NachoCore\Brain\NcEmailAnalyzer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
