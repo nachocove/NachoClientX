@@ -507,7 +507,10 @@ namespace NachoClient
         // FIXME: Store the color, no the index, in the db
         public static UIColor ColorOfSender(int accountId, string emailAddress)
         {
-            var contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            var contacts = McContact.QueryLikeEmailAddress (accountId, emailAddress);
+            if (0 == contacts.Count) {
+                return colors [0]; // no matches; return default color
+            }
             foreach(var contact in contacts) {
                 if(0 < contact.CircleColor) {
                     return colors[contact.CircleColor];
