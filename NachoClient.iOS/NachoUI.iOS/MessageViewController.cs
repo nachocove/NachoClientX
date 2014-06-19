@@ -597,7 +597,6 @@ namespace NachoClient.iOS
         {
             var image = PlatformHelpers.RenderImage (part);
 
-            // FIXME: Hard-coded width
             float width = View.Frame.Width;
             float height = image.Size.Height * (width / image.Size.Width);
             image = image.Scale (new SizeF (width, height));
@@ -605,7 +604,6 @@ namespace NachoClient.iOS
             var iv = new UIImageView (image);
             iv.Tag = MESSAGE_PART_TAG;
             view.AddSubview (iv);
-
         }
 
         string magic = @"
