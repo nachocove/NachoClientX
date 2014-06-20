@@ -225,6 +225,7 @@ namespace NachoCore.Model
             return ContentScore + contactScore;
         }
 
+        //Used for testing purposes
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
             return _Categories;
@@ -558,27 +559,66 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             NcAssert.True (!isDeleted);
-            int retval = base.Insert ();
-            InsertAncillaryData (NcModel.Instance.Db);
-            return retval;
+
+            //FIXME better default returnVal
+            int returnVal = -1; 
+
+            try 
+            {
+                NcModel.Instance.Db.RunInTransaction (() => {
+                    returnVal = base.Insert ();
+                    InsertAncillaryData (NcModel.Instance.Db);
+                });
+            }
+            catch (SQLiteException ex) 
+            {
+                Log.Error(Log.LOG_EMAIL,"Error inserting the email. No changes were made to the DB", ex.Message);
+            }
+                
+            return returnVal;
         }
 
         public override int Update ()
         {
-            int retval = base.Update ();
             NcAssert.True (!isDeleted);
-            DeleteAncillaryData (NcModel.Instance.Db);
-            InsertAncillaryData (NcModel.Instance.Db);
-            return retval;
+
+            //FIXME better default returnVal
+            int returnVal = -1;  
+
+            try 
+            {
+                NcModel.Instance.Db.RunInTransaction (() => {
+                    returnVal = base.Update ();
+                    if(!isAncillaryInMemory){
+                        ForceReadAncillaryData();
+                    }
+                    DeleteAncillaryData (NcModel.Instance.Db);
+                    InsertAncillaryData (NcModel.Instance.Db);
+                });
+            }
+            catch (SQLiteException ex) 
+            {
+                Log.Error(Log.LOG_EMAIL,"Error updating the email. No changes were made to the DB: {0}", ex.Message);
+            }
+
+            return returnVal;
         }
 
-        public override int Delete ()
+        public override void DeleteAncillary ()
         {
             DeleteBody ();
             DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);
-            isDeleted = true;
-            return base.Delete ();
+        }
+            
+        public override int Delete ()
+        {
+            //FIXME better default returnVal
+            int returnVal = base.Delete ();
+            if (0 != returnVal || -1 != returnVal) {
+                isDeleted = true;
+            }
+            return returnVal;
         }
     }
 

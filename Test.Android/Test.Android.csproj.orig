@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}</ProjectGuid>
+    <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Test.Android</RootNamespace>
+    <AndroidApplication>True</AndroidApplication>
+    <AndroidResgenFile>Resources\Resource.designer.cs</AndroidResgenFile>
+    <AndroidResgenClass>Resource</AndroidResgenClass>
+    <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
+    <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
+    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <AssemblyName>Test.Android</AssemblyName>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;__MOBILE__;__ANDROID__;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <ConsolePause>false</ConsolePause>
+    <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <DefineConstants>__MOBILE__;__ANDROID__;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="Mono.Android" />
+    <Reference Include="Xamarin.Android.NUnitLite" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="Xamarin.Android.Support.v4">
+      <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v4.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+    </Reference>
+    <Reference Include="MimeKit">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\MimeKit.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Android">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="DnDns.Android">
+      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.Android\bin\Release\DnDns.Android.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="MainActivity.cs" />
+    <Compile Include="Resources\Resource.designer.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NcCalendarTest.cs" />
+    <Compile Include="LogTest.cs" />
+    <Compile Include="NcResultTest.cs" />
+    <Compile Include="NcObjectTest.cs" />
+    <Compile Include="NcContactTest.cs" />
+    <Compile Include="AsHttpOperationTest.cs" />
+    <Compile Include="EmailAddressHelperTest.cs" />
+    <Compile Include="NcXmlFilterTest.cs" />
+    <Compile Include="ExtensionTest.cs" />
+    <Compile Include="AsAutodiscoverCommandTest.cs" />
+    <Compile Include="Common\CommonMocks.cs" />
+    <Compile Include="McMutablesTest.cs" />
+    <Compile Include="McPendDepTest.cs" />
+    <Compile Include="NcTestBase.cs" />
+    <Compile Include="NcCaptureTest.cs" />
+    <Compile Include="McFolderTest.cs" />
+    <Compile Include="AsProtoControlApisTest.cs" />
+    <Compile Include="AsNcStateMachineTest.cs" />
+<<<<<<< HEAD
+    <Compile Include="NcEmailTest.cs" />
+=======
+    <Compile Include="NcRateLimiterTest.cs" />
+>>>>>>> a8f3a5e105ad0fea73bc16eb5934ee50b5f68bc8
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\AboutResources.txt" />
+    <None Include="Assets\AboutAssets.txt" />
+    <None Include="Properties\AndroidManifest.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\Icon.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
+      <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
+      <Name>NachoClient.Android</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Assets\xsd\" />
+    <Folder Include="Common\" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Request\Ping.xsd">
+      <Link>Assets\xsd\Request\Ping.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\Response\Ping.xsd">
+      <Link>Assets\xsd\Response\Ping.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
+      <Link>Assets\xsd\common\airsyncbase.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\calendar.xsd">
+      <Link>Assets\xsd\common\calendar.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
+      <Link>Assets\xsd\common\contacts.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\contacts2.xsd">
+      <Link>Assets\xsd\common\contacts2.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\documentlibrary.xsd">
+      <Link>Assets\xsd\common\documentlibrary.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\email.xsd">
+      <Link>Assets\xsd\common\email.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\email2.xsd">
+      <Link>Assets\xsd\common\email2.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\itemoperations.xsd">
+      <Link>Assets\xsd\common\itemoperations.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\provision.xsd">
+      <Link>Assets\xsd\common\provision.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\rightsmanagement.xsd">
+      <Link>Assets\xsd\common\rightsmanagement.xsd</Link>
+    </AndroidAsset>
+    <AndroidAsset Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
+      <Link>Assets\xsd\common\tasks.xsd</Link>
+    </AndroidAsset>
+  </ItemGroup>
+  <ItemGroup>
+    <XamarinComponentReference Include="xamandroidsupportv7appcompat">
+      <Version>7.18.0</Version>
+      <Visible>False</Visible>
+    </XamarinComponentReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\utopiasystems.cer" />
+  </ItemGroup>
+</Project>

@@ -50,10 +50,24 @@ namespace NachoCore.Model
         {
             McFolder.UnlinkAll (this);
             NcAssert.True (100000 > PendingRefCount);
+
+            //FIXME initialize to better defualt returnVal
+            int returnVal = -1;
+
             if (0 == PendingRefCount) {
-                var retval = base.Delete ();
-                DeleteAncillary ();
-                return retval;
+
+                try {
+                    NcModel.Instance.Db.RunInTransaction (() => 
+                    {
+                        returnVal = base.Delete();
+                        DeleteAncillary();
+                    });
+                    return returnVal;
+                } catch (SQLiteException ex) {
+                    Log.Error(Log.LOG_EMAIL,"Error deleting the email. No changes were made to the DB", ex.Message);
+                    return returnVal;
+                }
+                    
             } else {
                 IsAwaitingDelete = true;
                 Update ();
