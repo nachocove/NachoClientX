@@ -597,7 +597,6 @@ namespace NachoClient.iOS
         {
             var image = PlatformHelpers.RenderImage (part);
 
-            // FIXME: Hard-coded width
             float width = View.Frame.Width;
             float height = image.Size.Height * (width / image.Size.Width);
             image = image.Scale (new SizeF (width, height));
@@ -605,7 +604,6 @@ namespace NachoClient.iOS
             var iv = new UIImageView (image);
             iv.Tag = MESSAGE_PART_TAG;
             view.AddSubview (iv);
-
         }
 
         string magic = @"
@@ -626,6 +624,9 @@ namespace NachoClient.iOS
 
             var wv = new UIWebView (new RectangleF (0, 0, View.Frame.Width, 1));
             wv.ScrollView.Bounces = false;
+            wv.ScrollView.ScrollEnabled = true;
+            wv.ScrollView.PagingEnabled = false;
+            wv.ScrollView.MultipleTouchEnabled = false;
             wv.ContentMode = UIViewContentMode.ScaleAspectFit;
             wv.BackgroundColor = UIColor.White;
             wv.Tag = MESSAGE_PART_TAG;
@@ -650,6 +651,7 @@ namespace NachoClient.iOS
             };
 
             wv.LoadError += (object sender, UIWebErrorArgs e) => {
+                htmlBusy -= 1;
                 if (0 == DeferLayoutDecrement ()) {
                     LayoutView ();
                 }

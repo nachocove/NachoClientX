@@ -960,6 +960,21 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContact> QueryLikeEmailAddress (int accountId, string emailAddress)
+        {
+            var emailWildcard = "%" + emailAddress + "%";
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                " WHERE " +
+                "s.Value LIKE ? AND " +
+                "s.Type = ? AND " +
+                " c.AccountId = ? AND " +
+                " c.IsAwaitingDelete = 0 ",
+                emailWildcard, McContactStringType.EmailAddress, accountId).ToList ();
+            return contactList;
+        }
+
         public static List<McContact> QueryByEmailAddressInFolder (int accountId, int folderId, string emailAddress)
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
