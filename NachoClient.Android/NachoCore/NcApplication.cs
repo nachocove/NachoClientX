@@ -99,6 +99,7 @@ namespace NachoCore
         {
             // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
             MonitorStart ();
+            NcModel.Instance.Info ();
             NcModel.Instance.EngageRateLimiter ();
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();

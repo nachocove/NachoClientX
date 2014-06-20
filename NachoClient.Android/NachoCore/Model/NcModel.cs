@@ -108,6 +108,11 @@ namespace NachoCore.Model
         {
         }
 
+        public void Info ()
+        {
+            Log.Info (Log.LOG_SYS, "SQLite version number {0}", SQLite3.LibVersionNumber ());
+        }
+
         public void EngageRateLimiter ()
         {
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs ea) => {
