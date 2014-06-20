@@ -44,9 +44,11 @@ namespace NachoCore
         public delegate void SearchContactsRespCallbackDele (int accountId, string prefix, string token);
 
         public SearchContactsRespCallbackDele SearchContactsRespCallback { set; get; }
+
         public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
+
         private NcApplication ()
         {
             // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
@@ -57,10 +59,10 @@ namespace NachoCore
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
                 aex.Handle ((ex) => {
-                    Log.Error(Log.LOG_SYS, "UnobservedTaskException: {0}", ex.ToString());
+                    Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", ex.ToString ());
                     var faulted = NcTask.FindFaulted ();
                     foreach (var name in faulted) {
-                        Log.Error(Log.LOG_SYS, "Faulted task: {0}", name);
+                        Log.Error (Log.LOG_SYS, "Faulted task: {0}", name);
                     }
                     return false;
                 });
@@ -74,6 +76,7 @@ namespace NachoCore
 
         private static volatile NcApplication instance;
         private static object syncRoot = new Object ();
+        private NcTimer MonitorTimer;
 
         public static NcApplication Instance {
             get {
@@ -95,6 +98,7 @@ namespace NachoCore
         public void Start ()
         {
             // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
+            MonitorStart ();
             NcModel.Instance.EngageRateLimiter ();
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();
@@ -104,12 +108,30 @@ namespace NachoCore
         public void Stop ()
         {
             // THIS IS THE BEST PLADE TO PUT Stop FUNCTIONS - WHEN SERVICE NEEDS TO BE SHUTDOWN BEFORE SLEEP/EXIT.
+            MonitorStop ();
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
             NcCapture.PauseAll ();
             // NcTask/Timer.Stop () should go last.
             NcTimer.Stop ();
             NcTask.Stop ();
+        }
+
+        public void MonitorStart ()
+        {
+            MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
+                MonitorReport ();
+            }, null, new TimeSpan (0, 0, 60), System.Threading.Timeout.InfiniteTimeSpan);
+        }
+
+        public void MonitorStop ()
+        {
+            MonitorTimer.Dispose ();
+        }
+
+        public void MonitorReport ()
+        {
+            Log.Info (Log.LOG_SYS, "Monitor:Total Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
         }
 
         public void QuickCheck (uint seconds)
