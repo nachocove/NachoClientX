@@ -11,13 +11,20 @@ namespace NachoCore.Model
 {
     public sealed class NcModel
     {
+        private string Documents;
+
+        public NcRateLimter RateLimiter { set; get; }
+
         public string FilesDir { set; get; }
+
         public string AttachmentsDir { set; get; }
+
         public string BodiesDir { set; get; }
+
         public string DbFileName { set; get; }
-        private string Documents { set; get; }
-        public SQLiteConnection Db { get
-            {
+
+        public SQLiteConnection Db {
+            get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 SQLiteConnection db = null;
                 if (!DbConns.TryGetValue (threadId, out db)) {
@@ -35,6 +42,7 @@ namespace NachoCore.Model
 
         private void Initialize ()
         {
+            RateLimiter = new NcRateLimter (4, 0.250);
             FilesDir = Path.Combine (Documents, "files");
             Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
             AttachmentsDir = Path.Combine (Documents, "attachments");
@@ -98,6 +106,18 @@ namespace NachoCore.Model
 
         public void Nop ()
         {
+        }
+
+        public void EngageRateLimiter ()
+        {
+            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs ea) => {
+                var siea = (StatusIndEventArgs)ea;
+                if (siea.Status.SubKind == NcResult.SubKindEnum.Info_ViewScrollingStarted) {
+                    RateLimiter.Enabled = true;
+                } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_ViewScrollingStopped) {
+                    RateLimiter.Enabled = false;
+                }
+            };
         }
 
         public void Reset (string dbFileName)

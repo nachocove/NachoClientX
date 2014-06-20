@@ -40,6 +40,24 @@ namespace Test.Common
             }
             Assert.True (!rl.TakeToken ());
         }
+
+        [Test]
+        public void Sleepy ()
+        {
+            var rl = new NcRateLimter (100.0, 0.25);
+            rl.Enabled = true;
+            Assert.NotNull (rl);
+            var start = DateTime.UtcNow;
+            for (var i = 0; i < 25; i++) {
+                Assert.True (rl.TakeToken ());
+            }
+            rl.TakeTokenOrSleep ();
+            Assert.True ((DateTime.UtcNow - start).TotalSeconds >= 0.25);
+            for (var i = 0; i < 24; i++) {
+                Assert.True (rl.TakeToken ());
+            }
+            Assert.True (!rl.TakeToken ());
+        }
     }
 }
 

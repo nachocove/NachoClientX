@@ -44,9 +44,9 @@ namespace NachoCore
         public delegate void SearchContactsRespCallbackDele (int accountId, string prefix, string token);
 
         public SearchContactsRespCallbackDele SearchContactsRespCallback { set; get; }
+        public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
-        // method can be used to post to StatusIndEvent from outside NcApplication.
         private NcApplication ()
         {
             // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
@@ -69,6 +69,7 @@ namespace NachoCore
             NcModel.Instance.Nop ();
             AsXmlFilterSet.Initialize ();
             BackEnd.Instance.Owner = this;
+            UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
         }
 
         private static volatile NcApplication instance;
@@ -94,6 +95,7 @@ namespace NachoCore
         public void Start ()
         {
             // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
+            NcModel.Instance.EngageRateLimiter ();
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();
             NcCapture.ResumeAll ();
@@ -116,7 +118,7 @@ namespace NachoCore
             // If start is called while wating for the QuickCheck, the system keeps going after the QuickCheck completes.
             BackEnd.Instance.QuickCheck (seconds);
         }
-
+        // method can be used to post to StatusIndEvent from outside NcApplication.
         public void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
             if (null != StatusIndEvent) {

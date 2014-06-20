@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Threading;
 
 namespace NachoCore.Utils
 {
@@ -8,6 +9,7 @@ namespace NachoCore.Utils
     {
         public NcRateLimter (double nPerSecond, double refreshSeconds)
         {
+            LockObj = new object ();
             Allowance = (int)(nPerSecond * refreshSeconds);
             NcAssert.True (0 < Allowance);
             RefreshMsecs = (int)(refreshSeconds * 1000.0);
@@ -16,15 +18,19 @@ namespace NachoCore.Utils
         }
 
         public bool Enabled { set; get; }
-        private int RefreshMsecs;
-        private int Allowance;
+
+        public int RefreshMsecs { get; set; }
+        public int Allowance { get; set; }
+        private object LockObj;
         private DateTime LastRefresh;
         private int Remaining;
 
-        private void Refresh ()
+        public void Refresh ()
         {
-            LastRefresh = DateTime.UtcNow;
-            Remaining = Allowance;
+            lock (LockObj) {
+                LastRefresh = DateTime.UtcNow;
+                Remaining = Allowance;
+            }
         }
 
         public bool TakeToken ()
@@ -32,14 +38,25 @@ namespace NachoCore.Utils
             if (!Enabled) {
                 return true;
             }
-            if (LastRefresh.AddMilliseconds(RefreshMsecs) < DateTime.UtcNow) {
-                Refresh ();
-            }
-            if (0 < Remaining) {
-                --Remaining;
-                return true;
+            lock (LockObj) {
+                if (LastRefresh.AddMilliseconds (RefreshMsecs) < DateTime.UtcNow) {
+                    Refresh ();
+                }
+                if (0 < Remaining) {
+                    --Remaining;
+                    return true;
+                }
             }
             return false;
+        }
+
+        public void TakeTokenOrSleep ()
+        {
+            while (!TakeToken ()) {
+                var duration = (int)(LastRefresh.AddMilliseconds (RefreshMsecs) - DateTime.UtcNow).TotalMilliseconds;
+                duration = (0 < duration) ? duration : 1;
+                Thread.Sleep (duration);
+            }
         }
     }
 }

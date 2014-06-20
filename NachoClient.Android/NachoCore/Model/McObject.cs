@@ -105,6 +105,9 @@ namespace NachoCore.Model
         public virtual int Insert ()
         {
             NcAssert.True (0 == Id);
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
+            }
             NcCapture capture = InsertCaptures.Find (ClassName ());
             capture.Start ();
             int rc =  NcModel.Instance.Db.Insert (this);
@@ -127,6 +130,9 @@ namespace NachoCore.Model
         public virtual int Update ()
         {
             NcAssert.True (0 < Id);
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
+            }
             NcCapture capture = UpdateCaptures.Find (ClassName ());
             capture.Start ();
             int rc = NcModel.Instance.Db.Update (this);
