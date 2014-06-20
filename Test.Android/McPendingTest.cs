@@ -35,6 +35,14 @@ namespace Test.iOS
             pending.Insert ();
             return pending;
         }
+
+        public void PendingsAreEqual (McPending pend1, McPending pend2)
+        {
+            Assert.AreEqual (pend1.State, pend2.State, "Pending objects should have the same State");
+            Assert.AreEqual (pend1.DeferredReason, pend2.DeferredReason, "Pending objects should have the same deferred reason");
+            Assert.AreEqual (pend1.Id, pend2.Id, "Pending objects should have the same Id");
+            Assert.AreEqual (pend1.AccountId, pend2.AccountId, "Pending objects should have the same AccountId");
+        }
     }
 
     public class McPendingTest : BaseMcPendingTest
@@ -623,6 +631,98 @@ namespace Test.iOS
             var retrieved = McPending.QueryById<McPending> (pendId);
             Assert.AreEqual (StateEnum.Deferred, retrieved.State, "State should be set correctly in DB");
             Assert.AreEqual (reason, retrieved.DeferredReason, "Should set deferred reason in DB");
+        }
+
+        [Test]
+        public void TestBasicMcPendingQuery ()
+        {
+            var pending = CreatePending (accountId: 1);
+            CreatePending (accountId: 2); // other pending
+            var retrieved = McPending.Query (1);
+            Assert.AreEqual (1, retrieved.Count, "Should retrieve pending from correct account");
+            PendingsAreEqual (pending, retrieved.FirstOrDefault ());
+        }
+
+        [Test]
+        public void TestGetOldestYoungerThanId ()
+        {
+            var old = CreatePending ();
+            var mid = CreatePending ();
+            CreatePending (); // young
+            CreatePending (accountId: 5); // otherAccount
+            var retrieved = McPending.GetOldestYoungerThanId (defaultAccountId, old.Id);
+            PendingsAreEqual (mid, retrieved);
+        }
+
+        [Test]
+        public void TestQueryEligible ()
+        {
+            var pendElig = CreatePending ();
+            CreatePending (); // pending but not eligible
+            CreatePending (accountId: 5); // pending in other account
+            var retrieved = McPending.QueryEligible (defaultAccountId);
+            PendingsAreEqual (pendElig, retrieved.FirstOrDefault ());
+        }
+
+        [Test]
+        public void TestQueryPredecessors ()
+        {
+            CreatePending (); // first
+            CreatePending (); // second
+            var third = CreatePending ();
+            CreatePending (accountId: 5); // pending object in another account
+            var retrieved = McPending.QueryPredecessors (defaultAccountId, third.Id);
+            Assert.AreEqual (2, retrieved.Count);
+        }
+
+        [Test]
+        public void TestQuerySuccessors ()
+        {
+            var first = CreatePending ();
+            CreatePending (); // second
+            CreatePending (); // third
+            CreatePending (accountId: 5); // pending object in another account
+            var retrieved = McPending.QuerySuccessors (defaultAccountId, first.Id);
+            Assert.AreEqual (2, retrieved.Count);
+        }
+
+        [Test]
+        public void TestQueryDeferredUntilNow ()
+        {
+            double waitSeconds = 0.5;
+            var protoControl = ProtoOps.CreateProtoControl ();
+            var inFuture = DateTime.UtcNow.AddSeconds (waitSeconds);
+            var inPast = DateTime.UtcNow.AddSeconds (-waitSeconds);
+            var subKind = SubKindEnum.Error_AlreadyInFolder; 
+            var why = WhyEnum.AccessDeniedOrBlocked;
+            var onFail = NcResult.Error (subKind, why);
+
+            var pendFuture = CreatePending ();
+            pendFuture.MarkDispached ();
+            pendFuture.ResolveAsDeferred (protoControl, inFuture, onFail);
+
+            var pendPast = CreatePending ();
+            pendPast.MarkDispached ();
+            pendPast.ResolveAsDeferred (protoControl, inPast, onFail);
+
+            var pendOtherAccount = CreatePending (accountId: 5);
+            pendOtherAccount.MarkDispached ();
+            pendOtherAccount.ResolveAsDeferred (protoControl, inPast, onFail);
+
+            var retrieved = McPending.QueryDeferredUntilNow (defaultAccountId);
+            Assert.AreEqual (1, retrieved.Count);
+            PendingsAreEqual (pendPast, retrieved.FirstOrDefault ());
+        }
+
+        [Test]
+        public void TestQueryFirstEligibleByOperation ()
+        {
+            var firstPend = CreatePending (operation: Operations.CalUpdate);
+            CreatePending (operation: Operations.CalUpdate); // second pending object
+            CreatePending (operation: Operations.CalUpdate); // pending object in another account
+
+            var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, Operations.CalUpdate);
+            PendingsAreEqual (firstPend, retrieved);
         }
     }
 }
