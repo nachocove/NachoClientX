@@ -37,11 +37,14 @@ namespace NachoCore.Utils
         // string to that object. NSMutableString cannot use that optimization
         // because it is mutable. This way we can create a NSString that has
         // a positive ref. count.
-        private NSMutableString SafeNSString (string key)
+        private NSString SafeNSString (string key)
         {
-            NSMutableString nsString = new NSMutableString ();
-            nsString.SetString (new NSString (key));
-            return nsString;
+            //NSMutableString nsString = new NSMutableString ();
+            //nsString.SetString (new NSString (key));
+            //return nsString;
+            var retval = new NSString (key);
+            GC.KeepAlive (key);
+            return retval;
         }
 
         public void AddString (string key, string value)
@@ -75,7 +78,7 @@ namespace NachoCore.Utils
                 Epoch = new DateTime (1970, 1, 1, 0, 0, 0);
             }
             double elapsedTime = date.Subtract (Epoch).TotalSeconds;
-            NSMutableString nsKey = SafeNSString (key);
+            NSString nsKey = SafeNSString (key);
             NSDate nsDate = NSDate.FromTimeIntervalSince1970 (elapsedTime);
             Add (nsKey, nsDate);
         }
