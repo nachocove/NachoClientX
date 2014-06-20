@@ -20,19 +20,49 @@ namespace Test.iOS
 {
     public class BaseMcPendingTest : CommonTestOps
     {
+        public AsProtoControl protoControl;
 
         [SetUp]
         public new void SetUp ()
         {
             base.SetUp ();
+            protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
         }
 
-        public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete)
+        public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
+            string token = "", string clientId = "", string parentId = "")
         {
             var pending = new McPending (accountId);
             pending.ServerId = serverId;
             pending.Operation = operation;
+            pending.Token = token;
+            pending.ClientId = clientId;
+            pending.ParentId = parentId;
             pending.Insert ();
+            return pending;
+        }
+
+        public McPending CreateDeferredPending (DeferredEnum reason, int accountId = defaultAccountId)
+        {
+            var onFail = NcResult.Error ("There was an error");
+
+            // create pending
+            var pending = CreatePending (accountId: accountId);
+            pending.MarkDispached ();
+            pending.ResolveAsDeferred (protoControl, reason, onFail);
+            return pending;
+        }
+
+        public McPending CreateDeferredWithSeconds (double seconds, int accountId = defaultAccountId)
+        {
+            var onFail = NcResult.Error ("There was an error");
+
+            var pending = CreatePending ();
+            pending.MarkDispached ();
+
+            // Resolve as deferred with UTC Now
+            var eligibleAfter = DateTime.UtcNow.AddSeconds (seconds);
+            pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
             return pending;
         }
 
@@ -177,7 +207,6 @@ namespace Test.iOS
         {
             // resolve with eligible pending
             var pending = CreatePending ();
-            var protoControl = ProtoOps.CreateProtoControl ();
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, WhyEnum.AccessDeniedOrBlocked);
             }, "Should throw NachoExceptionFailure if ResolveAsUsertBlocked is called on eligible pending");
@@ -189,7 +218,6 @@ namespace Test.iOS
             // ResolveAsUserBlocked with a non-Error NcResult.
             var pending = CreatePending ();
             pending.MarkDispached ();
-            var protoControl = ProtoOps.CreateProtoControl ();
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsUserBlocked (protoControl, BlockReasonEnum.AdminRemediation, NcResult.OK ());
             }, "Should throw NachoExceptionFailure if ResolveAsUserBlocked is called with a non-error result");
@@ -202,7 +230,6 @@ namespace Test.iOS
             var pending = CreatePending ();
             pending.Operation = McPending.Operations.FolderCreate;
             pending.MarkDispached ();
-            var protoControl = ProtoOps.CreateProtoControl ();
 
             var whyReason = WhyEnum.AccessDeniedOrBlocked;
             var whyResult = NcResult.Error (NcResult.SubKindEnum.Error_FolderCreateFailed, whyReason);
@@ -221,7 +248,6 @@ namespace Test.iOS
         public void ResolveAsSuccessNotDispatched ()
         {
             var pending = CreatePending ();
-            var protoControl = ProtoOps.CreateProtoControl ();
             pending.Operation = Operations.EmailDelete;
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsSuccess (protoControl);
@@ -237,28 +263,27 @@ namespace Test.iOS
         public void ResolveAsSuccessOnDispatched ()
         {
             // Operation CalCreate
-            TestResolveAsSuccessWithOperation (Operations.CalCreate, SubKindEnum.Info_CalendarCreateSucceeded, "CalCreate", (pending, control) => {
-                pending.ResolveAsSuccess (control);
+            TestResolveAsSuccessWithOperation (Operations.CalCreate, SubKindEnum.Info_CalendarCreateSucceeded, "CalCreate", (pending) => {
+                pending.ResolveAsSuccess (protoControl);
             });
 
             SetUp (); // refresh database, or else new account creation fails on duplicate account email
 
             // Operation EmailSend
-            TestResolveAsSuccessWithOperation (Operations.EmailSend, SubKindEnum.Info_EmailMessageMarkedReadSucceeded, "Email", (pending, control) => {
+            TestResolveAsSuccessWithOperation (Operations.EmailSend, SubKindEnum.Info_EmailMessageMarkedReadSucceeded, "Email", (pending) => {
                 var result = NcResult.Info (SubKindEnum.Info_EmailMessageMarkedReadSucceeded);
-                pending.ResolveAsSuccess (control, result);
+                pending.ResolveAsSuccess (protoControl, result);
             });
         }
 
         private void TestResolveAsSuccessWithOperation (McPending.Operations operation, SubKindEnum subKind, string operationName,
-            Action<McPending, AsProtoControl> doResolve)
+            Action<McPending> doResolve)
         {
             var pending = CreatePending ();
             pending.Operation = operation;
             pending.MarkDispached ();
 
-            var protoControl = ProtoOps.CreateProtoControl ();
-            doResolve (pending, protoControl);
+            doResolve (pending);
 
             Assert.AreEqual (subKind, MockOwner.Status.SubKind, "ResolveAsSuccess should set correct Status for: {0}", operationName);
 
@@ -291,7 +316,6 @@ namespace Test.iOS
             pending.MarkDispached ();
 
             // ResolveAsSuccess (ProtoControl control) on predecessor.
-            var protoControl = ProtoOps.CreateProtoControl ();
             pending.ResolveAsSuccess (protoControl);
 
             // Verify Info_EmailMessageMarkedReadSucceeded StatusInd.
@@ -315,7 +339,6 @@ namespace Test.iOS
         {
             // ResolveAsSuccess with non-Info NcResult.
             var pending = CreatePending ();
-            var protoControl = ProtoOps.CreateProtoControl ();
 
             pending.MarkDispached ();
 
@@ -355,7 +378,6 @@ namespace Test.iOS
         public void ResolveAsHardFailNotDispatched ()
         {
             var pending = CreatePending ();
-            var protoControl = ProtoOps.CreateProtoControl ();
 
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsHardFail (protoControl, WhyEnum.AccessDeniedOrBlocked);
@@ -369,7 +391,7 @@ namespace Test.iOS
             var why = WhyEnum.AccessDeniedOrBlocked;
             var result = NcResult.Error (subKind, why);
 
-            TestResolveAsHardFail (subKind, why, (pending, protoControl) => {
+            TestResolveAsHardFail (subKind, why, (pending) => {
                 pending.ResolveAsHardFail (protoControl, result);
             });
         }
@@ -380,19 +402,18 @@ namespace Test.iOS
             var subKind = SubKindEnum.Error_FolderCreateFailed;
             var why = WhyEnum.AccessDeniedOrBlocked;
 
-            TestResolveAsHardFail (subKind, why, (pending, protoControl) => {
+            TestResolveAsHardFail (subKind, why, (pending) => {
                 pending.ResolveAsHardFail (protoControl, why);
             });
         }
 
-        private void TestResolveAsHardFail (SubKindEnum subKind, WhyEnum why, Action<McPending, AsProtoControl> action)
+        private void TestResolveAsHardFail (SubKindEnum subKind, WhyEnum why, Action<McPending> action)
         {
             var pending = CreatePending ();
             pending.Operation = Operations.FolderCreate;
             pending.MarkDispached ();
 
-            var protoControl = ProtoOps.CreateProtoControl ();
-            action (pending, protoControl);
+            action (pending);
 
             // Verify ResultKind, ResultSubKind and ResultWhy stored in DB.
             var retrieved = McPending.QueryById<McPending> (pending.Id);
@@ -412,8 +433,6 @@ namespace Test.iOS
             var pending = CreatePending ();
             pending.MarkDispached ();
 
-            var protoControl = ProtoOps.CreateProtoControl ();
-
             var result = NcResult.OK ();
             TestForNachoExceptionFailure (() => {
                 pending.ResolveAsHardFail (protoControl, result);
@@ -431,7 +450,6 @@ namespace Test.iOS
 
             // Test ResolveAsDeferred
             var pending2 = CreatePending ();
-            var protoControl = ProtoOps.CreateProtoControl ();
 
             var reason = DeferredEnum.UntilFSync;
             var result = NcResult.Error ("There was an error");
@@ -456,8 +474,7 @@ namespace Test.iOS
         [Test]
         public void TestResolveAsDeferred ()
         {
-            var protoControl = ProtoOps.CreateProtoControl ();
-            var eligibleAfter = DateTime.UtcNow.AddSeconds (3.0);
+            var eligibleAfter = DateTime.UtcNow.AddSeconds (0.5);
 
             // ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult onFail) with eligibleAfter in the future.
             var pending = CreatePending ();
@@ -495,7 +512,6 @@ namespace Test.iOS
         public void TestMaxDefers ()
         {
             double waitSeconds = 0.5;
-            var protoControl = ProtoOps.CreateProtoControl ();
             var eligibleAfter = DateTime.UtcNow.AddSeconds (waitSeconds);
             var subKind = SubKindEnum.Error_AlreadyInFolder; 
             var why = WhyEnum.AccessDeniedOrBlocked;
@@ -536,31 +552,19 @@ namespace Test.iOS
 
         private void TestWithSyncTypeAndReason (DeferredEnum reason, Action<McPending> makeEligible, Func <List<McPending>> querySyncType)
         {
-            // Create a 1nd Eligible state McPending.
-            var pending = CreatePending ();
-            pending.MarkDispached ();
-            var protoControl = ProtoOps.CreateProtoControl ();
+            double waitTime = 0.5;
 
-            // resolve deferred with reason UntilSync
-            var subKind = SubKindEnum.Error_AlreadyInFolder; 
-            var why = WhyEnum.AccessDeniedOrBlocked;
-            var onFail = NcResult.Error (subKind, why);
-
-            pending.ResolveAsDeferred (protoControl, reason, onFail);
+            // Create a 1nd Eligible state McPending and resolve deferred with reason UntilSync
+            var pending = CreateDeferredPending (reason);
             VerifyStateAndReason (pending.Id, StateEnum.Deferred, reason);
 
-            // Create a 2nd Eligible state McPending.
-            var secPending = CreatePending ();
-            secPending.MarkDispached ();
-
-            // Resolve as deferred with UTC Now
-            var eligibleAfter = DateTime.UtcNow.AddSeconds (0.5);
-            secPending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
+            // Create a 2nd Eligible state McPending and resolve as deferred with UTC Now
+            var secPending = CreateDeferredWithSeconds (waitTime);
             VerifyStateAndReason (secPending.Id, StateEnum.Deferred, DeferredEnum.UntilTime);
 
             // Find only the 1st using QueryDeferredSync (int accountId).
             var firstPend = querySyncType ();
-            System.Threading.Thread.Sleep (500);
+            System.Threading.Thread.Sleep ((int)(waitTime * 1000));
             var secondPend = McPending.QueryDeferredUntilNow (defaultAccountId);
 
             Assert.AreEqual (1, firstPend.Count, "Should return a single object");
@@ -579,6 +583,7 @@ namespace Test.iOS
             Assert.AreNotEqual (StateEnum.Eligible, secRetr.State);
 
             // ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail) with reason UntilSync again on the 1st.
+            var onFail = NcResult.Error ("There was an error");
             firstRetr.MarkDispached ();
             firstRetr.ResolveAsDeferred (protoControl, reason, onFail);
 
@@ -687,31 +692,109 @@ namespace Test.iOS
         }
 
         [Test]
+        public void TestQueryDeferredFSync ()
+        {
+            var fsyncReason = DeferredEnum.UntilFSync;
+            var fsyncsyncReason = DeferredEnum.UntilFSyncThenSync;
+
+            CreateDeferredPending (fsyncReason); // first
+            CreateDeferredPending (fsyncsyncReason); // second
+            var third = CreateDeferredPending (fsyncReason, accountId: 5);
+
+            var retrieved = McPending.QueryDeferredFSync (defaultAccountId);
+            Assert.AreEqual (2, retrieved.Count, "Should only retrieve folders with correct accountId");
+            for (int i = 0; i < retrieved.Count; ++i) {
+                Assert.AreNotEqual (third.Id, retrieved [i].Id);
+            }
+        }
+
+        [Test]
+        public void TestQueryDeferredSync ()
+        {
+            var pending = CreateDeferredPending (DeferredEnum.UntilSync);
+            CreateDeferredPending (DeferredEnum.UntilSync, accountId: 5);
+            var retrieved = McPending.QueryDeferredSync (defaultAccountId);
+            Assert.AreEqual (1, retrieved.Count, "Query should only return object in the specified account");
+            PendingsAreEqual (pending, retrieved.FirstOrDefault ());
+        }
+
+        [Test]
         public void TestQueryDeferredUntilNow ()
         {
             double waitSeconds = 0.5;
-            var protoControl = ProtoOps.CreateProtoControl ();
-            var inFuture = DateTime.UtcNow.AddSeconds (waitSeconds);
-            var inPast = DateTime.UtcNow.AddSeconds (-waitSeconds);
-            var subKind = SubKindEnum.Error_AlreadyInFolder; 
-            var why = WhyEnum.AccessDeniedOrBlocked;
-            var onFail = NcResult.Error (subKind, why);
 
-            var pendFuture = CreatePending ();
-            pendFuture.MarkDispached ();
-            pendFuture.ResolveAsDeferred (protoControl, inFuture, onFail);
-
-            var pendPast = CreatePending ();
-            pendPast.MarkDispached ();
-            pendPast.ResolveAsDeferred (protoControl, inPast, onFail);
-
-            var pendOtherAccount = CreatePending (accountId: 5);
-            pendOtherAccount.MarkDispached ();
-            pendOtherAccount.ResolveAsDeferred (protoControl, inPast, onFail);
+            CreateDeferredWithSeconds (waitSeconds); // pendFuture
+            var pendPast = CreateDeferredWithSeconds (-waitSeconds);
+            CreateDeferredWithSeconds (waitSeconds, accountId: 5); // pendOtherAccount 
 
             var retrieved = McPending.QueryDeferredUntilNow (defaultAccountId);
             Assert.AreEqual (1, retrieved.Count);
             PendingsAreEqual (pendPast, retrieved.FirstOrDefault ());
+        }
+
+        [Test]
+        public void TestQueryByToken ()
+        {
+            string token = "5";
+            string other = "10";
+            TestQueryBySomeValue (token, other, () => McPending.QueryByToken (defaultAccountId, token));
+        }
+
+        [Test]
+        public void TestQueryByClientId ()
+        {
+            string clientId = "5";
+            string other = "10";
+            TestQueryBySomeValue (clientId, other, () => McPending.QueryByClientId (defaultAccountId, clientId));
+        }
+
+        [Test]
+        public void TestQueryByServerId ()
+        {
+            string serverId = "5";
+            string other = "10";
+            TestQueryBySomeValue (serverId, other, () => McPending.QueryByServerId (defaultAccountId, serverId));
+        }
+
+        // this function executes queries that return a single object
+        private void TestQueryBySomeValue (string firstVal, string secVal, Func<McPending> doQuery)
+        {
+            var firstPending = CreatePending (serverId: firstVal, token: firstVal, clientId: firstVal);
+            CreatePending (serverId: secVal, token: secVal, clientId: secVal);
+            CreatePending (accountId: 5, serverId: firstVal, token: firstVal, clientId: firstVal);
+
+            var retrieved = doQuery ();
+
+            Assert.NotNull (retrieved);
+            PendingsAreEqual (firstPending, retrieved);
+        }
+
+        [Test]
+        public void TestQueryByOperation ()
+        {
+            Operations operation = Operations.CalUpdate;
+            TestQueryBySomeValueForList (() => McPending.QueryByOperation (defaultAccountId, operation), operation: operation);
+        }
+
+        [Test]
+        public void TestQueryEligiblebyServerId ()
+        {
+            string serverId = "1";
+            string otherVal = "2";
+            TestQueryBySomeValueForList (() => McPending.QueryEligibleByFolderServerId (defaultAccountId, serverId), serverId, otherVal);
+        }
+
+        // this function executes queries that return lists
+        private void TestQueryBySomeValueForList (Func<List<McPending>> doQuery, string firstVal = "1", string secVal = "2",
+            Operations operation = Operations.CalCreate)
+        {
+            var firstPending = CreatePending (operation: operation, parentId: firstVal, serverId: "1");
+            CreatePending (operation: operation, parentId: secVal, serverId: "2");
+            CreatePending (accountId: 5, operation: operation, parentId: firstVal, serverId: "3");
+
+            var retrieved = doQuery ();
+
+            PendingsAreEqual (firstPending, retrieved.FirstOrDefault ());
         }
 
         [Test]
