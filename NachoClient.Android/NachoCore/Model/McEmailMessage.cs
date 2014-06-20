@@ -572,7 +572,7 @@ namespace NachoCore.Model
             }
             catch (SQLiteException ex) 
             {
-                Log.Error(Log.LOG_EMAIL,"Error inserting the email. No changes were made to the DB", ex.Message);
+                Log.Error(Log.LOG_EMAIL,"Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
             }
                 
             return returnVal;
@@ -598,7 +598,7 @@ namespace NachoCore.Model
             }
             catch (SQLiteException ex) 
             {
-                Log.Error(Log.LOG_EMAIL,"Error updating the email. No changes were made to the DB: {0}", ex.Message);
+                Log.Error(Log.LOG_EMAIL,"Updating the email failed: {0} No changes were made to the DB.", ex.Message);
             }
 
             return returnVal;

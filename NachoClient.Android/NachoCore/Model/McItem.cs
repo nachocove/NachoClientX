@@ -64,7 +64,7 @@ namespace NachoCore.Model
                     });
                     return returnVal;
                 } catch (SQLiteException ex) {
-                    Log.Error(Log.LOG_EMAIL,"Error deleting the email. No changes were made to the DB", ex.Message);
+                    Log.Error(Log.LOG_EMAIL,"Deleting the email failed: {0} No changes were made to the DB.", ex.Message);
                     return returnVal;
                 }
                     
