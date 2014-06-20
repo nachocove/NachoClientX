@@ -121,7 +121,8 @@ namespace NachoCore
         {
             MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
                 MonitorReport ();
-            }, null, new TimeSpan (0, 0, 60), System.Threading.Timeout.InfiniteTimeSpan);
+            }, null, TimeSpan.Zero, new TimeSpan (0, 0, 60));
+            MonitorTimer.Stfu = true;
         }
 
         public void MonitorStop ()
