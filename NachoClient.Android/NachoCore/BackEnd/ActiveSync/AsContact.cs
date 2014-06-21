@@ -259,7 +259,7 @@ namespace NachoCore.ActiveSync
 
             XNamespace m_baseNs = Xml.AirSyncBase.Ns;
 
-            Log.Info (Log.LOG_CALENDAR, "AsContact FromXML\n{0}", applicationData);
+            Log.Debug (Log.LOG_XML, "AsContact FromXML\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Body:

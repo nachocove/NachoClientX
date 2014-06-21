@@ -13,7 +13,7 @@ def create_log_options():
         print >>f, 'namespace NachoCore.Utils'
         print >>f, '{'
         print >>f, '    public partial class LogSettings {'
-        print >>f, '        public const ulong CONSOLE_SETTINGS = 0xffffffffffffffff;'
+        print >>f, '        public const ulong CONSOLE_SETTINGS = 0xffffffffffffffff & ~Log.LOG_XML;'
         print >>f, '        // WBXML and state machines have specialized telemetry API. So, their'
         print >>f, '        // logs are not sent to telemetry.'
         print >>f, '        public const ulong TELEMETRY_SETTINGS = 0xffffffffffffffff & ~Log.LOG_XML;'
