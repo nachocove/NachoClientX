@@ -39,12 +39,9 @@ namespace NachoCore.Utils
         // a positive ref. count.
         private NSString SafeNSString (string key)
         {
-            //NSMutableString nsString = new NSMutableString ();
-            //nsString.SetString (new NSString (key));
-            //return nsString;
-            var retval = new NSString (key);
-            GC.KeepAlive (key);
-            return retval;
+            NSMutableString nsString = new NSMutableString ();
+            nsString.SetString (new NSString (key));
+            return nsString;
         }
 
         public void AddString (string key, string value)
@@ -66,8 +63,8 @@ namespace NachoCore.Utils
         {
             NcAssert.True (null != key);
             NcAssert.True (null != value);
-            //NcAssert.True (0 < key.RetainCount);
-            //NcAssert.True (0 < value.RetainCount);
+            NcAssert.True (0 < key.RetainCount);
+            NcAssert.True (0 < value.RetainCount);
             Dict.Add (key, value);
         }
 
