@@ -202,6 +202,7 @@ namespace NachoCore.ActiveSync
             emailMessage.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
             }, "DeleteEmailCmd");

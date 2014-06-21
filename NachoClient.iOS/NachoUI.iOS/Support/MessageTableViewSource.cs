@@ -604,6 +604,7 @@ namespace NachoClient.iOS
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
         {
+            Log.Debug (Log.LOG_UI, "DeleteThisMessage");
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (message);
         }
