@@ -140,11 +140,12 @@ namespace SQLite
 		private TimeSpan _busyTimeout;
 		private Dictionary<string, TableMapping> _mappings = null;
 		private Dictionary<string, TableMapping> _tables = null;
-		private System.Diagnostics.Stopwatch _sw;
-		private long _elapsedMilliseconds = 0;
+        public System.Diagnostics.Stopwatch StopWatch;
+        public long ElapsedMilliseconds = 0;
 
 		private int _transactionDepth = 0;
 		private Random _rand = new Random ();
+        public object SerializationLock = new object ();
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 		internal static readonly Sqlite3DatabaseHandle NullHandle = default(Sqlite3DatabaseHandle);
@@ -154,6 +155,8 @@ namespace SQLite
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
+
+        public bool SerializeOperations { get; set; }
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -613,22 +616,32 @@ namespace SQLite
 		public int Execute (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			
-			if (TimeExecution) {
-				if (_sw == null) {
-					_sw = new Stopwatch ();
-				}
-				_sw.Reset ();
-				_sw.Start ();
-			}
+            int r = -1;
+            Action action = delegate {
+                if (TimeExecution) {
+                    if (StopWatch == null) {
+                        StopWatch = new Stopwatch ();
+                    }
+                    StopWatch.Reset ();
+                    StopWatch.Start ();
+                }
 
-			var r = cmd.ExecuteNonQuery ();
+                r = cmd.ExecuteNonQuery ();
+
+                if (TimeExecution) {
+                    StopWatch.Stop ();
+                    ElapsedMilliseconds += StopWatch.ElapsedMilliseconds;
+                    Debug.WriteLine (string.Format ("Finished in {0} ms", StopWatch.ElapsedMilliseconds));
+                }  
+            };
 			
-			if (TimeExecution) {
-				_sw.Stop ();
-				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
-			}
+            if (SerializeOperations) {
+                lock (SerializationLock) {
+                    action ();
+                }
+            } else {
+                action ();
+            }
 			
 			return r;
 		}
@@ -636,23 +649,33 @@ namespace SQLite
 		public T ExecuteScalar<T> (string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
+            T r = default(T);
+            Action action = delegate {
+                if (TimeExecution) {
+                    if (StopWatch == null) {
+                        StopWatch = new Stopwatch ();
+                    }
+                    StopWatch.Reset ();
+                    StopWatch.Start ();
+                }
 			
-			if (TimeExecution) {
-				if (_sw == null) {
-					_sw = new Stopwatch ();
-				}
-				_sw.Reset ();
-				_sw.Start ();
-			}
+                r = cmd.ExecuteScalar<T> ();
 			
-			var r = cmd.ExecuteScalar<T> ();
-			
-			if (TimeExecution) {
-				_sw.Stop ();
-				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
-			}
-			
+                if (TimeExecution) {
+                    StopWatch.Stop ();
+                    ElapsedMilliseconds += StopWatch.ElapsedMilliseconds;
+                    Debug.WriteLine (string.Format ("Finished in {0} ms", StopWatch.ElapsedMilliseconds));
+                }
+            };
+
+            if (SerializeOperations) {
+                lock (SerializationLock) {
+                    action ();
+                }
+            } else {
+                action ();
+            }
+
 			return r;
 		}
 
@@ -1290,25 +1313,50 @@ namespace SQLite
 			}
 			
 			var insertCmd = map.GetInsertCommand (this, extra);
-			int count;
+            int count = -1;
 
-			lock (insertCmd) {
-				// We lock here to protect the prepared statement returned via GetInsertCommand.
-				// A SQLite prepared statement can be bound for only one operation at a time.
-				try {
-					count = insertCmd.ExecuteNonQuery (vals);
-				} catch (SQLiteException ex) {
-					if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
-						throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
-					}
-					throw;
-				}
+            Action action = delegate {
+                lock (insertCmd) {
+                    // We lock here to protect the prepared statement returned via GetInsertCommand.
+                    // A SQLite prepared statement can be bound for only one operation at a time.
+                    if (TimeExecution) {
+                        if (StopWatch == null) {
+                            StopWatch = new Stopwatch ();
+                        }
+                        StopWatch.Reset ();
+                        StopWatch.Start ();
+                    }
 
-				if (map.HasAutoIncPK) {
-					var id = SQLite3.LastInsertRowid (Handle);
-					map.SetAutoIncPK (obj, id);
-				}
-			}
+                    try {
+                        count = insertCmd.ExecuteNonQuery (vals);
+                    } catch (SQLiteException ex) {
+                        if (SQLite3.ExtendedErrCode (this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull) {
+                            throw NotNullConstraintViolationException.New (ex.Result, ex.Message, map, obj);
+                        }
+                        throw;
+                    }
+
+                    if (map.HasAutoIncPK) {
+                        var id = SQLite3.LastInsertRowid (Handle);
+                        map.SetAutoIncPK (obj, id);
+                    }
+
+                    if (TimeExecution) {
+                        StopWatch.Stop ();
+                        ElapsedMilliseconds += StopWatch.ElapsedMilliseconds;
+                                        Debug.WriteLine (string.Format ("Finished in {0} ms", StopWatch.ElapsedMilliseconds));
+                    } 
+                }
+            };
+
+            if (SerializeOperations) {
+                lock (SerializationLock) {
+                    action ();
+                }
+            } else {
+                action ();
+            }
+
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Insert);
 
@@ -2859,8 +2907,35 @@ namespace SQLite
 
 		public IEnumerator<T> GetEnumerator ()
 		{
-			if (!_deferred)
-				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+            if (!_deferred) {
+                IEnumerator<T> retval = null;
+                Action action = delegate {
+                    if (Connection.TimeExecution) {
+                        if (Connection.StopWatch == null) {
+                            Connection.StopWatch = new Stopwatch ();
+                        }
+                        Connection.StopWatch.Reset ();
+                        Connection.StopWatch.Start ();
+                    }
+
+                    retval = GenerateCommand ("*").ExecuteQuery<T> ().GetEnumerator ();
+
+                    if (Connection.TimeExecution) {
+                        Connection.StopWatch.Stop ();
+                        Connection.ElapsedMilliseconds += Connection.StopWatch.ElapsedMilliseconds;
+                        Debug.WriteLine (string.Format ("Finished in {0} ms", Connection.StopWatch.ElapsedMilliseconds));
+                    } 
+                };
+
+                if (Connection.SerializeOperations) {
+                    lock (Connection.SerializationLock) {
+                        action ();
+                    }
+                } else {
+                    action ();
+                }
+                return retval;
+            }
 
 			return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
 		}

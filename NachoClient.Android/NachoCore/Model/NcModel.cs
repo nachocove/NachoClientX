@@ -11,6 +11,8 @@ namespace NachoCore.Model
 {
     public sealed class NcModel
     {
+        public const bool DbTimingMode = false;
+
         private string Documents;
 
         public NcRateLimter RateLimiter { set; get; }
@@ -25,15 +27,31 @@ namespace NachoCore.Model
 
         public SQLiteConnection Db {
             get {
-                var threadId = Thread.CurrentThread.ManagedThreadId;
+                #pragma warning disable 162
+                int threadId;
+                if (DbTimingMode) {
+                    threadId = 0;
+                } else {
+                    threadId = Thread.CurrentThread.ManagedThreadId;
+                }
                 SQLiteConnection db = null;
                 if (!DbConns.TryGetValue (threadId, out db)) {
-                    db = new SQLiteConnection (DbFileName, 
-                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
-                        storeDateTimeAsTicks: true);
+                    var dbFlags = SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite;
+                    if (DbTimingMode) {
+                        dbFlags |= SQLiteOpenFlags.FullMutex;
+                    } else {
+                        dbFlags |= SQLiteOpenFlags.NoMutex;
+                    }
+                    db = new SQLiteConnection (DbFileName, dbFlags, storeDateTimeAsTicks: true);
+                    if (DbTimingMode) {
+                        db.Trace = true;
+                        db.TimeExecution = true;
+                        db.SerializeOperations = true;
+                    }
                     db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                     DbConns.TryAdd (threadId, db);
                 }
+                #pragma warning restore 162
                 return db;
             } 
         }
@@ -118,7 +136,11 @@ namespace NachoCore.Model
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_ViewScrollingStarted) {
-                    RateLimiter.Enabled = true;
+                    #pragma warning disable 162
+                    if (DbTimingMode) {
+                        RateLimiter.Enabled = true;
+                    }
+                    #pragma warning restore 162
                 } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_ViewScrollingStopped) {
                     RateLimiter.Enabled = false;
                 }
