@@ -66,8 +66,8 @@ namespace NachoCore.Utils
         {
             NcAssert.True (null != key);
             NcAssert.True (null != value);
-            NcAssert.True (0 < key.RetainCount);
-            NcAssert.True (0 < value.RetainCount);
+            //NcAssert.True (0 < key.RetainCount);
+            //NcAssert.True (0 < value.RetainCount);
             Dict.Add (key, value);
         }
 
