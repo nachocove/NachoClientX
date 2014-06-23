@@ -30,7 +30,7 @@ namespace Test.iOS
         }
 
         public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
-            string token = "", string clientId = "", string parentId = "")
+            string token = "", string clientId = "", string parentId = "", string destId = "")
         {
             var pending = new McPending (accountId);
             pending.ServerId = serverId;
@@ -38,6 +38,7 @@ namespace Test.iOS
             pending.Token = token;
             pending.ClientId = clientId;
             pending.ParentId = parentId;
+            pending.DestParentId = destId;
             pending.Insert ();
             return pending;
         }
@@ -822,6 +823,201 @@ namespace Test.iOS
 
                 var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, Operations.CalUpdate);
                 PendingsAreEqual (firstPend, retrieved);
+            }
+        }
+
+        public class TestDependencyCreation : BaseMcPendingTest
+        {
+            private void TestItemCreateDep (Operations op)
+            {
+                var serverId = "1";
+                var blocker = CreatePending (operation: Operations.FolderCreate, serverId: serverId);
+                var secondPend = CreatePending (operation: op, parentId: blocker.ServerId); // gets blocked
+
+                var retrieved = McPending.QueryById<McPending> (secondPend.Id);
+                PendingsAreEqual (secondPend, retrieved);
+                Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "Creating a folder whose parent is still awaiting creation should set folder state to PredBlocked");
+
+                var otherServerId = "2";
+                var thirdPend = CreatePending (operation: op, serverId: otherServerId);
+
+                retrieved = McPending.QueryById<McPending> (thirdPend.Id);
+                Assert.AreEqual (StateEnum.Eligible, retrieved.State, "State should not be PredBlocked if second folder added has a unique serverId");
+            }
+
+            [Test]
+            public void TestFolderCreate ()
+            {
+                var op = Operations.FolderCreate;
+                TestItemCreateDep (op);
+            }
+
+            [Test]
+            public void TestCalCreate ()
+            {
+                var op = Operations.CalCreate;
+                TestItemCreateDep (op);
+            }
+
+            [Test]
+            public void TestContactCreate ()
+            {
+                var op = Operations.ContactCreate;
+                TestItemCreateDep (op);
+            }
+
+            [Test]
+            public void TestTaskCreate ()
+            {
+                var op = Operations.TaskCreate;
+                TestItemCreateDep (op);
+            }
+
+            [Test]
+            public void TestFolderDeleteDep ()
+            {
+                var op = Operations.FolderDelete;
+                var firstPend = CreatePending (operation: op);
+
+                var retrieved = McPending.QueryById<McPending> (firstPend.Id);
+                Assert.AreEqual (StateEnum.Eligible, retrieved.State, "First FolderDelete pending object should be eligible");
+
+                var secPend = CreatePending (operation: op);
+
+                retrieved = McPending.QueryById<McPending> (secPend.Id);
+                Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "Second FolderDelete pending object that is inserted should have State PredBlocked");
+            }
+
+            [Test]
+            public void TestFolderUpdateDep ()
+            {
+                var op = Operations.FolderUpdate;
+                DoFolderUpdateDep (1, op);
+
+                op = Operations.FolderCreate;
+                DoFolderUpdateDep (2, op);
+            }
+
+            private void DoFolderUpdateDep (int accountId, Operations op)
+            {
+                var serverId = "1";
+                var firstPend = CreatePending (accountId: accountId, operation: op, serverId: serverId);
+                var secPend = CreatePending (accountId: accountId, operation: Operations.FolderUpdate, serverId: firstPend.ServerId);
+
+                var retrieved = McPending.QueryById<McPending> (secPend.Id);
+                Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "Second FolderUpdate command on one folder should have PredBlocked state");
+            }
+
+            [Test]
+            public void TestMeetingResponseDep ()
+            {
+                var op = Operations.CalRespond;
+                var serverId = "1";
+                var firstPend = CreatePending (operation: op, serverId: serverId);
+                var secPend = CreatePending (operation: op, serverId: firstPend.ServerId);
+
+                var retrieved = McPending.QueryById<McPending> (secPend.Id);
+                Assert.AreEqual (StateEnum.PredBlocked, retrieved.State);
+            }
+
+            [Test]
+            public void TestCalMoveDep ()
+            {
+                var op = Operations.CalMove;
+                var serverId = "5";
+
+                TestItemMoveDep (op, serverId);
+            }
+
+            [Test]
+            public void TestContactMoveDep ()
+            {
+                var op = Operations.CalMove;
+                var serverId = "5";
+
+                TestItemMoveDep (op, serverId);
+            }
+
+            [Test]
+            public void TestEmailMoveDep ()
+            {
+                var op = Operations.CalMove;
+                var serverId = "5";
+
+                TestItemMoveDep (op, serverId);
+            }
+
+            [Test]
+            public void TestTaskMoveDep ()
+            {
+                var op = Operations.CalMove;
+                var serverId = "5";
+
+                TestItemMoveDep (op, serverId);
+            }
+
+            private void TestItemMoveDep (Operations op, string serverId)
+            {
+                NcResult result = NcResult.Info (SubKindEnum.Info_ContactMoveSucceeded);
+
+                // Create pending object to block other pending operations
+                var blocker = CreatePending (serverId: serverId, operation: Operations.FolderCreate);
+
+                TestMoveAfterFolderCreate (blocker, op, result);
+                TestMoveIntoOtherPending (blocker, op, result, shouldBlock: true);
+
+                // remove FolderCreate blocker
+                blocker.MarkDispached ();
+                blocker.ResolveAsSuccess (protoControl, result);
+
+                // make a CalCreate blocker
+                var calBlocker = CreatePending (serverId: serverId, operation: Operations.CalCreate);
+
+                TestMoveAfterCalCreate (blocker, op, result);
+                TestMoveIntoOtherPending (blocker, op, result, shouldBlock: false);
+
+                // remove CalCreate blocker
+                calBlocker.MarkDispached ();
+                calBlocker.ResolveAsSuccess (protoControl, result);
+            }
+
+            private void TestMoveAfterFolderCreate (McPending blocker, Operations op, NcResult result)
+            {
+                // Test that Move Op is blocked when pred has Op FolderCreate
+                var parIdPend = CreatePending (parentId: blocker.ServerId, operation: op);
+                var retrieved = McPending.QueryById<McPending> (parIdPend.Id);
+
+                Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove operation should be blocked by FolderCreate if serverId's are equal");
+
+                parIdPend.MarkDispached ();
+                parIdPend.ResolveAsSuccess (protoControl, result);
+            }
+
+            private void TestMoveIntoOtherPending (McPending blocker, Operations op, NcResult result, bool shouldBlock)
+            {
+                // Test that Move op is blocked when dest folder has Op FolderCreate
+                var destIdPend = CreatePending (destId: blocker.ServerId, operation: op);
+                var retrieved = McPending.QueryById<McPending> (destIdPend.Id);
+
+                if (shouldBlock) {
+                    Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove operation should be blocked by FolderCreate if destParentId == pred.ServerId");
+                } else {
+                    Assert.AreNotEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove operation should not be blocked by CalCreate if destParentId == pred.ServerId");
+                }
+
+                destIdPend.MarkDispached ();
+                destIdPend.ResolveAsSuccess (protoControl, result);
+            }
+
+            private void TestMoveAfterCalCreate (McPending blocker, Operations op, NcResult result)
+            {
+                // Test that Move Op is blocked when pred has Op Cal Create
+                var pend = CreatePending (serverId: blocker.ServerId, operation: op);
+                var retrieved = McPending.QueryById<McPending> (pend.Id);
+
+                Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove op should be blocked when pred has Op CalCreate");
+                pend.MarkDispached ();
+                pend.ResolveAsSuccess (protoControl, result);
             }
         }
     }
