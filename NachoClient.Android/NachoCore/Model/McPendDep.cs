@@ -35,7 +35,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McPendDep> ("SELECT f.* FROM McPendDep AS f WHERE " +
                 " f.PredId = ? ", 
-                predId);
+                predId).ToList ();
         }
     }
 }

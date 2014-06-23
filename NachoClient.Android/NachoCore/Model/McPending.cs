@@ -281,7 +281,7 @@ namespace NachoCore.Model
 
             case Operations.FolderUpdate:
                 return (Operations.FolderCreate == pred.Operation || Operations.FolderUpdate == pred.Operation)
-                && pred.ServerId == ParentId;
+                    && pred.ServerId == ServerId;
 
             case Operations.CalRespond:
                 return Operations.CalRespond == pred.Operation && pred.ServerId == ServerId;
