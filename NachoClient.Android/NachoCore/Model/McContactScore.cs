@@ -3,6 +3,7 @@
 using SQLite;
 using System;
 using System.Xml.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using NachoCore.Utils;
 
@@ -12,6 +13,16 @@ namespace NachoCore.Model
     {   
         // Score version of this object
         public int ScoreVersion { get; set; }
+
+        /// Time variance state machine type
+        public int TimeVarianceType { get; set; }
+
+        /// Time variance state machine current state
+        public int TimeVarianceState { get; set; }
+
+        public double Score { get; set; }
+
+        public bool NeedUpdate { get; set; }
 
         // DO NOT update these fields directly. Use IncrementXXX methods instead.
         // Otherwise, the delta will not be saved correctly. ORM does not allow
@@ -90,11 +101,18 @@ namespace NachoCore.Model
             SyncInfo = null;
         }
 
+        private void MarkDependencies ()
+        {
+            MarkDependentEmailMessages ();
+            // TODO - mark dependent meetings later
+        }
+
         public void IncrementEmailsReceived (int count=1)
         {
             EmailsReceived += count;
             GetScoreSyncInfo ();
             SyncInfo.EmailsReceived += count;
+            MarkDependencies ();
         }
 
         public void IncrementEmailsRead (int count=1)
@@ -102,6 +120,7 @@ namespace NachoCore.Model
             EmailsRead += count;
             GetScoreSyncInfo ();
             SyncInfo.EmailsRead += count;
+            MarkDependencies ();
         }
 
         public void IncrementEmailsReplied (int count=1)
@@ -109,6 +128,7 @@ namespace NachoCore.Model
             EmailsReplied += count;
             GetScoreSyncInfo ();
             SyncInfo.EmailsReplied += count;
+            MarkDependencies ();
         }
 
         public void IncrementEmailsArchived (int count=1)
@@ -116,6 +136,7 @@ namespace NachoCore.Model
             EmailsArchived += count;
             GetScoreSyncInfo ();
             SyncInfo.EmailsArchived += count;
+            MarkDependencies ();
         }
 
         public void IncrementEmailsDeleted (int count=1)
@@ -123,6 +144,7 @@ namespace NachoCore.Model
             EmailsDeleted += count;
             GetScoreSyncInfo ();
             SyncInfo.EmailsDeleted += count;
+            MarkDependencies ();
         }
 
         public void UploadScore ()
@@ -138,6 +160,19 @@ namespace NachoCore.Model
         {
             Log.Debug (Log.LOG_BRAIN, "contact id = {0}", Id);
             return false;
+        }
+
+        public void MarkDependentEmailMessages ()
+        {
+            // TODO - It seems that SQLite cannot do an INNER JOIN in UPDATE. Do it the sledge hammer
+            // now and figure out how to do it efficiently later
+            List<McEmailMessage> emailMesageList = McEmailMessageDependency.QueryDependenciesByContactId (Id);
+            if (null != emailMesageList) {
+                foreach (McEmailMessage m in emailMesageList) {
+                    m.NeedUpdate = true;
+                    m.Update ();
+                }
+            }
         }
     }
 

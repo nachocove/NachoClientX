@@ -57,6 +57,7 @@ namespace NachoCore.Model
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McEmailMessageCategory> ();
             Db.CreateTable<McEmailMessageScoreSyncInfo> ();
+            Db.CreateTable<McEmailMessageDependency> ();
             Db.CreateTable<McAttachment> ();
             Db.CreateTable<McContact> ();
             Db.CreateTable<McContactDateAttribute> ();

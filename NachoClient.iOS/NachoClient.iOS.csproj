@@ -893,6 +893,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcEmailAnalyzer.cs">
       <Link>NachoCore\Brain\NcEmailAnalyzer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McDependency.cs">
+      <Link>NachoCore\Model\McDependency.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTimeVariance.cs">
+      <Link>NachoCore\Brain\NcTimeVariance.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

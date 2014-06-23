@@ -280,6 +280,8 @@
     <Compile Include="NachoCore\Model\McEmailMessageScore.cs" />
     <Compile Include="NachoCore\Utils\Scoring.cs" />
     <Compile Include="NachoCore\Brain\NcEmailAnalyzer.cs" />
+    <Compile Include="NachoCore\Model\McDependency.cs" />
+    <Compile Include="NachoCore\Brain\NcTimeVariance.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -38,6 +39,22 @@ namespace NachoCore.Utils
                 out_score += Weights [n] * scores [n];
             }
             return out_score;
+        }
+    }
+
+    public class MaxScoreCombiner : IScoreCombiner
+    {
+        private int NumScores { get; set; }
+
+        public MaxScoreCombiner (int numScores=0)
+        {
+            NumScores = numScores;
+        }
+
+        public double Combine (params double [] scores)
+        {
+            NcAssert.True (scores.Length > 0);
+            return scores.Max ();
         }
     }
 }

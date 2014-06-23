@@ -190,14 +190,6 @@ namespace NachoCore.ActiveSync
             };   
             pending.Insert ();
 
-            // SCORING - Email read? If not, it's going to cost you
-            if (!emailMessage.IsRead) {
-                McContact sender = emailMessage.GetFromContact ();
-                if (null != sender) {
-                    sender.UpdateScore ("delete unread", -1);
-                }
-            }
-
             // Delete the actual item.
             emailMessage.Delete ();
 
@@ -292,15 +284,6 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ServerId,
             };   
             markUpdate.Insert ();
-
-            // SCORING - Email read. Has it been an hour?
-            Log.Info (Log.LOG_BRAIN, "EMAIL DATE:", emailMessage.DateReceived);
-            if (emailMessage.DateReceived.AddHours (1.0) > DateTime.Now) {
-                McContact sender = emailMessage.GetFromContact ();
-                if (null != sender) {
-                    sender.UpdateScore ("timely read", +1);
-                }
-            }
 
             // Mark the actual item.
             emailMessage.IsRead = true;

@@ -135,8 +135,6 @@ namespace NachoCore.Model
 
         /// Nickname for the contact
         public string NickName { get; set; }
-        // "Hotness" of the contact. Currently, updated by the emails.
-        public int Score { get; set; }
 
         // Color of contact's profile circle if they have not set their photo or a photo cannot be found
         public int CircleColor { get; set; }
@@ -1112,13 +1110,6 @@ namespace NachoCore.Model
                 "UPDATE McContact SET CircleColor = ? WHERE Id IN" +
                 " (SELECT ContactId FROM McContactStringAttribute WHERE Value = ?)",
                 circleColor, userAddress);
-        }
-
-        public void UpdateScore (string reason, int score)
-        {
-            Log.Info (Log.LOG_BRAIN, "SCORE: {0} {1} {2}", DisplayName, score, reason);
-            Score += score;
-            Update ();
         }
 
         /// TODO: VIPness should be in its own member

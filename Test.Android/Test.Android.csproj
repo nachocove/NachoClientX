@@ -92,6 +92,7 @@
     <Compile Include="McPendingTest.cs" />
     <Compile Include="Common\CommonUtils.cs" />
     <Compile Include="NcApplicationTest.cs" />
+    <Compile Include="NcEmailMessageDependency.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
