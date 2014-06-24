@@ -29,7 +29,7 @@ namespace Test.iOS
             protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
         }
 
-        public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
+        public static McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
             string token = "", string clientId = "", string parentId = "", string destId = "", McItem item = null)
         {
             McPending pending;
@@ -48,18 +48,18 @@ namespace Test.iOS
             return pending;
         }
 
-        public McPending CreateDeferredPending (DeferredEnum reason, int accountId = defaultAccountId)
+        public static McPending CreateDeferredPending (AsProtoControl pctrl, DeferredEnum reason, int accountId = defaultAccountId)
         {
             var onFail = NcResult.Error ("There was an error");
 
             // create pending
             var pending = CreatePending (accountId: accountId);
             pending.MarkDispached ();
-            pending.ResolveAsDeferred (protoControl, reason, onFail);
+            pending.ResolveAsDeferred (pctrl, reason, onFail);
             return pending;
         }
 
-        public McPending CreateDeferredWithSeconds (double seconds, int accountId = defaultAccountId)
+        public static McPending CreateDeferredWithSeconds (AsProtoControl pctrl, double seconds, int accountId = defaultAccountId)
         {
             var onFail = NcResult.Error ("There was an error");
 
@@ -68,11 +68,11 @@ namespace Test.iOS
 
             // Resolve as deferred with UTC Now
             var eligibleAfter = DateTime.UtcNow.AddSeconds (seconds);
-            pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
+            pending.ResolveAsDeferred (pctrl, eligibleAfter, onFail);
             return pending;
         }
 
-        public void PendingsAreEqual (McPending pend1, McPending pend2)
+        public static void PendingsAreEqual (McPending pend1, McPending pend2)
         {
             Assert.AreEqual (pend1.State, pend2.State, "Pending objects should have the same State");
             Assert.AreEqual (pend1.DeferredReason, pend2.DeferredReason, "Pending objects should have the same deferred reason");
@@ -574,11 +574,11 @@ namespace Test.iOS
                 double waitTime = 0.5;
 
                 // Create a 1nd Eligible state McPending and resolve deferred with reason UntilSync
-                var pending = CreateDeferredPending (reason);
+                var pending = CreateDeferredPending (protoControl, reason);
                 VerifyStateAndReason (pending.Id, StateEnum.Deferred, reason);
 
                 // Create a 2nd Eligible state McPending and resolve as deferred with UTC Now
-                var secPending = CreateDeferredWithSeconds (waitTime);
+                var secPending = CreateDeferredWithSeconds (protoControl, waitTime);
                 VerifyStateAndReason (secPending.Id, StateEnum.Deferred, DeferredEnum.UntilTime);
 
                 // Find only the 1st using QueryDeferredSync (int accountId).
@@ -708,9 +708,9 @@ namespace Test.iOS
                 var fsyncReason = DeferredEnum.UntilFSync;
                 var fsyncsyncReason = DeferredEnum.UntilFSyncThenSync;
 
-                CreateDeferredPending (fsyncReason); // first
-                CreateDeferredPending (fsyncsyncReason); // second
-                var third = CreateDeferredPending (fsyncReason, accountId: 5);
+                CreateDeferredPending (protoControl, fsyncReason); // first
+                CreateDeferredPending (protoControl, fsyncsyncReason); // second
+                var third = CreateDeferredPending (protoControl, fsyncReason, accountId: 5);
 
                 var retrieved = McPending.QueryDeferredFSync (defaultAccountId);
                 Assert.AreEqual (2, retrieved.Count, "Should only retrieve folders with correct accountId");
@@ -722,8 +722,8 @@ namespace Test.iOS
             [Test]
             public void TestQueryDeferredSync ()
             {
-                var pending = CreateDeferredPending (DeferredEnum.UntilSync);
-                CreateDeferredPending (DeferredEnum.UntilSync, accountId: 5);
+                var pending = CreateDeferredPending (protoControl, DeferredEnum.UntilSync);
+                CreateDeferredPending (protoControl, DeferredEnum.UntilSync, accountId: 5);
                 var retrieved = McPending.QueryDeferredSync (defaultAccountId);
                 Assert.AreEqual (1, retrieved.Count, "Query should only return object in the specified account");
                 PendingsAreEqual (pending, retrieved.FirstOrDefault ());
@@ -734,9 +734,9 @@ namespace Test.iOS
             {
                 double waitSeconds = 0.5;
 
-                CreateDeferredWithSeconds (waitSeconds); // pendFuture
-                var pendPast = CreateDeferredWithSeconds (-waitSeconds);
-                CreateDeferredWithSeconds (waitSeconds, accountId: 5); // pendOtherAccount 
+                CreateDeferredWithSeconds (protoControl, waitSeconds); // pendFuture
+                var pendPast = CreateDeferredWithSeconds (protoControl, -waitSeconds);
+                CreateDeferredWithSeconds (protoControl, waitSeconds, accountId: 5); // pendOtherAccount 
 
                 var retrieved = McPending.QueryDeferredUntilNow (defaultAccountId);
                 Assert.AreEqual (1, retrieved.Count);

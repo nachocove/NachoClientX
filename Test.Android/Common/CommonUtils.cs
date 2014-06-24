@@ -51,7 +51,7 @@ namespace Test.iOS
     {
         public const string defaultServerId = "5";
 
-        public static T CreateUniqueItem<T> (int accountId, string serverId = defaultServerId) where T : McItem, new ()
+        public static T CreateUniqueItem<T> (int accountId = defaultAccountId, string serverId = defaultServerId) where T : McItem, new ()
         {
             T newItem = new T ();
             newItem.AccountId = accountId;
