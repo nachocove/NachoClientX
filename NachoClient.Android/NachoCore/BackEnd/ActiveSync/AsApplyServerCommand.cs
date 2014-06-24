@@ -7,18 +7,18 @@ using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
-    public abstract class AsApplyServerDelta
+    public abstract class AsApplyServerCommand
     {
         protected int AccountId;
         protected List<McPending.ReWrite> ReWrites;
 
-        public AsApplyServerDelta (int accountId)
+        public AsApplyServerCommand (int accountId)
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();
         }
 
-        public void ProcessDelta ()
+        public void ProcessServerCommand ()
         {
             foreach (var pending in McPending.Query (AccountId).OrderBy (x => x.Id)) {
                 if (McPending.StateEnum.Dispatched == pending.State) {

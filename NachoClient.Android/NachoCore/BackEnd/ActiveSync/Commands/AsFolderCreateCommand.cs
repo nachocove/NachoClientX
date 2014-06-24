@@ -50,7 +50,7 @@ namespace NachoCore.ActiveSync
                     PlaceholderId = PendingSingle.ServerId,
                     FinalServerId = serverId,
                 };
-                applyFolderCreate.ProcessDelta ();
+                applyFolderCreate.ProcessServerCommand ();
 
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
@@ -121,7 +121,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private class ApplyCreateFolder : AsApplyServerDelta
+        private class ApplyCreateFolder : AsApplyServerCommand
         {
             public string FinalServerId { set; get; }
 

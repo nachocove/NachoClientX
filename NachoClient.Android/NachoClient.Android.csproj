@@ -127,7 +127,6 @@
     <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\MessageListFragment.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerDelta.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsConstants.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsContact.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsHelpers.cs" />
@@ -291,6 +290,7 @@
     <Compile Include="NachoCore\Utils\PlatformTimer.cs" />
     <Compile Include="NachoCore\Utils\NcPausableTimer.cs" />
     <Compile Include="NachoCore\Utils\NcDistribution.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
