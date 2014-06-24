@@ -30,9 +30,14 @@ namespace Test.iOS
         }
 
         public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
-            string token = "", string clientId = "", string parentId = "", string destId = "")
+            string token = "", string clientId = "", string parentId = "", string destId = "", McItem item = null)
         {
-            var pending = new McPending (accountId);
+            McPending pending;
+            if (item != null) {
+                pending = new McPending (accountId, item);
+            } else {
+                pending = new McPending (accountId);
+            }
             pending.ServerId = serverId;
             pending.Operation = operation;
             pending.Token = token;
@@ -1018,6 +1023,118 @@ namespace Test.iOS
                 Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove op should be blocked when pred has Op CalCreate");
                 pend.MarkDispached ();
                 pend.ResolveAsSuccess (protoControl, result);
+            }
+        }
+
+
+        public class DeleteAndRefCount : BaseMcPendingTest
+        {
+            private McFolder commonFolder;
+            private string defaultServerId;
+
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                commonFolder = CommonFolderOps.CreateFolder (accountId: defaultAccountId);
+                defaultServerId = "3";
+            }
+
+            [Test]
+            public void TestPendingDelete ()
+            {
+                // Item should not be deleted if McPending.Delete () is called when refCount > 0 AND isAwaitingDelete == True
+                var item = CreateAndLinkItem ();
+
+                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                var secPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                firstPend.MarkDispached ();
+                secPend.MarkDispached ();
+
+                Assert.AreEqual (2, item.PendingRefCount, "PendingRefCount should be 2 after 2 pending items are added");
+                TestItemExistsWithQueries (item);
+
+                item.Delete ();
+
+                firstPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
+
+                var retrievedItem = McObject.QueryById<McCalendar> (item.Id);
+                Assert.AreEqual (1, retrievedItem.PendingRefCount, "PendingRefCount should be 1 after 1 pending item is resolved successfully");
+
+                // Item should be deleted if McPending.Delete () is called when the refCount is 0 AND isAwaitingDelete == True
+                secPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
+                retrievedItem = McObject.QueryById<McCalendar> (item.Id);
+                Assert.IsNull (retrievedItem, "Item that isAwaitingDelete should be deleted when refCount reaches 0");
+            }
+
+            [Test]
+            public void TestNotPendingDelete ()
+            {
+                // Item should not be deleted when refCount reaches 0 if isAwaitingDelete is false
+                var item = CreateAndLinkItem ();
+
+                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                var secPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                firstPend.MarkDispached ();
+                secPend.MarkDispached ();
+
+                firstPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
+                secPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
+
+                var retrieved = TestItemExistsWithQueries (item);
+                Assert.AreEqual (0, retrieved.PendingRefCount, "Ref Count should be 0 after all pendings have been resolved on an item not awaiting delete");
+            }
+
+            [Test]
+            public void TestDeletingItemWhenRefCountZero ()
+            {
+                // Item should be deleted by McItem.Delete () if refCount == 0
+                var item = CreateAndLinkItem ();
+
+                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                firstPend.MarkDispached ();
+
+                firstPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
+
+                // Verify the item has not been deleted; use McItem queries
+                var retrieved = TestItemExistsWithQueries (item);
+
+                retrieved.Delete ();
+
+                // Verify the item has been deleted
+                retrieved = McObject.QueryById<McCalendar> (item.Id);
+                Assert.Null (retrieved, "Should be able to fully delete an item if its PendingRefCount == 0");
+            }
+
+            [Test]
+            public void TestNcAsserts ()
+            {
+                var item = CommonFolderOps.CreateUniqueItem<McCalendar> (defaultAccountId);
+                commonFolder.Link (item);
+
+                item.PendingRefCount = 100001;
+                item.Update ();
+
+                TestForNachoExceptionFailure (() => {
+                    item.Delete ();
+                }, "Should throw an exception when trying to delete McItem if PendingRefCount > 100000");
+            }
+
+            private McItem CreateAndLinkItem ()
+            {
+                var item = CommonFolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, defaultServerId);
+                commonFolder.Link (item);
+                return item;
+            }
+
+            private McItem TestItemExistsWithQueries (McItem item)
+            {
+                var foundItem = McItem.QueryByClientId<McCalendar> (defaultAccountId, item.ClientId);
+                Assert.NotNull (foundItem, "Item should not be null and should be able to be retrieved by ClientId");
+                var foundItems = McItem.QueryByFolderId<McCalendar> (defaultAccountId, commonFolder.Id);
+                Assert.AreEqual (1, foundItems.Count, "Item should exist in and be the only item in the folder");
+                Assert.AreEqual (item.Id, foundItems.FirstOrDefault ().Id, "Item in folder should match expected");
+                return foundItem;
             }
         }
     }

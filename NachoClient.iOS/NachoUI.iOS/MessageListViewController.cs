@@ -30,6 +30,9 @@ namespace NachoClient.iOS
 
         protected HashSet<int> MultiSelect = null;
 
+        protected NcCapture ReloadCapture;
+        private string ReloadCaptureName;
+
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads);
@@ -45,11 +48,14 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            ReloadCaptureName = "MessageListViewController.Reload";
+            NcCapture.AddKind (ReloadCaptureName);
+            ReloadCapture = NcCapture.Create (ReloadCaptureName);
+
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
             this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
-
 
             using (var nachoImage = UIImage.FromBundle ("navbar-icn-inbox-active")) {
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
@@ -167,7 +173,10 @@ namespace NachoClient.iOS
         public void ReloadDataMaintainingPosition (bool endRefreshing)
         {
             messageSource.RefreshEmailMessages ();
+
+            ReloadCapture.Start ();
             TableView.ReloadData ();
+            ReloadCapture.Stop ();
 
 //            // Refresh in background    
 //            System.Threading.ThreadPool.QueueUserWorkItem (delegate {
