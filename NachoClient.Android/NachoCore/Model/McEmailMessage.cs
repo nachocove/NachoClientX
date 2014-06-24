@@ -543,6 +543,7 @@ namespace NachoCore.Model
             if (!IsRead) {
                 McContact sender = GetFromContact ();
                 sender.IncrementEmailsDeleted ();
+                sender.ForceReadAncillaryData ();
                 sender.Update ();
             }
             DeleteBody ();

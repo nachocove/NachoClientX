@@ -35,7 +35,9 @@ namespace NachoCore.Model
         public double GetScore ()
         {
             McContact sender = GetFromContact ();
-            NcAssert.True (null != sender);
+            if (null == sender) {
+                return 0.0;
+            }
 
             // TODO - Combine with content score... once we have such value
             return sender.GetScore ();
@@ -53,22 +55,26 @@ namespace NachoCore.Model
         {
             if (0 == ScoreVersion) {
                 McContact sender = GetFromContact ();
-                NcAssert.NotNull (sender, "sender can't be null!");
-                if (!DownloadScore ()) {
-                    // Analyze sender
-                    sender.IncrementEmailsReceived ();
-                    if (IsRead) {
-                        sender.IncrementEmailsRead ();
+                if (null != sender) {
+                    if (!DownloadScore ()) {
+                        // Analyze sender
+                        sender.IncrementEmailsReceived ();
+                        if (IsRead) {
+                            sender.IncrementEmailsRead ();
+                        }
+                        // TODO - How to determine if the email has been replied?
+                        sender.ForceReadAncillaryData ();
+                        sender.Update ();
                     }
-                    // TODO - How to determine if the email has been replied?
-                    sender.Update ();
+                    // Add Sender dependency
+                    McEmailMessageDependency dep = new McEmailMessageDependency ();
+                    dep.EmailMessageId = Id;
+                    dep.ContactId = sender.Id;
+                    dep.ContactType = "Sender";
+                    dep.Insert ();
+                } else {
+                    Log.Warn (Log.LOG_BRAIN, "bad From field: {0}", From);
                 }
-                // Add Sender dependency
-                McEmailMessageDependency dep = new McEmailMessageDependency ();
-                dep.EmailMessageId = Id;
-                dep.ContactId = sender.Id;
-                dep.ContactType = "Sender";
-                dep.Insert ();
 
                 ScoreVersion++;
             }

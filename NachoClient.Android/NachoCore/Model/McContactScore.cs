@@ -76,6 +76,7 @@ namespace NachoCore.Model
                 ScoreVersion++;
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
+            ForceReadAncillaryData ();
             Update ();
         }
 
