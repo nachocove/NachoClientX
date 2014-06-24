@@ -177,7 +177,6 @@ namespace NachoClient.iOS
             ReloadCapture.Start ();
             TableView.ReloadData ();
             ReloadCapture.Stop ();
-            Console.WriteLine ("FOO: {0}", NcCapture.Summarize (ReloadCaptureName));
 
 //            // Refresh in background    
 //            System.Threading.ThreadPool.QueueUserWorkItem (delegate {

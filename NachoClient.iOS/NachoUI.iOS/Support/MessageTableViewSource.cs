@@ -55,7 +55,6 @@ namespace NachoClient.iOS
             RefreshCapture.Start ();
             messageThreads.Refresh ();
             RefreshCapture.Stop ();
-            Console.WriteLine ("FOO: {0}", NcCapture.Summarize (RefreshCaptureName));
         }
 
         protected bool NoMessageThreads ()
@@ -530,7 +529,6 @@ namespace NachoClient.iOS
                 checkView = ViewWithImageName ("check");
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    Console.WriteLine ("Did swipe Checkmark cell");
                     ArchiveThisMessage (messageThread);
                 });
                 crossView = ViewWithImageName ("cross");
@@ -629,7 +627,6 @@ namespace NachoClient.iOS
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (message);
             ArchiveCaptureMessage.Stop ();
-            Console.WriteLine ("Foo: {0}", NcCapture.Summarize(ArchiveMessageCaptureName));
         }
 
         public List<McEmailMessage> GetSelectedMessages ()
