@@ -17,6 +17,11 @@ class McContactScoreSyncInfo(Base):
                       autoload=True,
                       autoload_with=model_db.ModelDb.engine)
 
+class McContactStringAttribute(Base):
+    __table__ = Table('McContactStringAttribute', model_db.ModelDb.metadata,
+                      autoload=True,
+                      autoload_with=model_db.ModelDb.engine)
+
 
 class McEmailMessage(Base):
     __table__ = Table('McEmailMessage', model_db.ModelDb.metadata,

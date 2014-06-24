@@ -43,6 +43,10 @@ def reset():
     for c in session.query(McContact).all():
         print '[DELETE] contact %d' % c.Id
         session.delete(c)
+    for cs in session.query(McContactStringAttribute).all():
+        print '[DELETE] contact string %d' % cs.Id
+        session.delete(cs)
+
     session.commit()
 
 if __name__ == '__main__':
