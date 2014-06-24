@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -125,7 +125,6 @@
     <Compile Include="NachoCore\Adapters\NachoFolders.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\MessageListFragment.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerDelta.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsConstants.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsContact.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsHelpers.cs" />
@@ -273,6 +272,7 @@
     <Compile Include="NachoCore\Utils\NcTask.cs" />
     <Compile Include="NachoCore\Model\McPath.cs" />
     <Compile Include="NachoCore\Utils\NcRateLimiter.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

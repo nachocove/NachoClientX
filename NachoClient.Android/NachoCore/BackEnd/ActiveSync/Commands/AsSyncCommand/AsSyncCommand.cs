@@ -413,11 +413,11 @@ namespace NachoCore.ActiveSync
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                 switch (status) {
                 case Xml.AirSync.StatusCode.Success_1:
-                    var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
-                    ProcessCollectionCommands (folder, xmlCommands);
-
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
+
+                    var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
+                    ProcessCollectionCommands (folder, xmlCommands);
 
                     lock (PendingResolveLockObj) {
                         // Any pending not already resolved gets resolved as Success.
