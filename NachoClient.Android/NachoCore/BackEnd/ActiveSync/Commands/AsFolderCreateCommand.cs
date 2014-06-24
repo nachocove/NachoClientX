@@ -132,7 +132,7 @@ namespace NachoCore.ActiveSync
             {
             }
 
-            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+            protected override List<McPending.ReWrite> ApplyCommandToPending (McPending pending, 
                 out McPending.DbActionEnum action,
                 out bool cancelDelta)
             {
@@ -154,7 +154,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            protected override void ApplyDeltaToModel ()
+            protected override void ApplyCommandToModel ()
             {
                 var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
                 if (null != target) {

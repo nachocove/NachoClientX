@@ -674,6 +674,21 @@ namespace NachoCore.Model
             return 1;
         }
 
+        public McItem QueryItemUsingServerId ()
+        {
+            switch (Operation) {
+            case Operations.EmailMove:
+                return McFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+            case Operations.CalMove:
+                return McFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
+            case Operations.ContactMove:
+                return McFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
+            case Operations.TaskMove:
+                return McFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
+            }
+            return null;
+        }
+
         public override int Delete ()
         {
             McItem item = null;
@@ -844,37 +859,14 @@ namespace NachoCore.Model
                         rec.AccountId == accountId &&
             rec.ServerId == serverId);
         }
-        // For re-write McPending objects on sync conflict resolution.
         public class ReWrite
         {
-            public delegate bool IsMatchDelegate (McPending McPending);
-
-            public IsMatchDelegate IsMatch;
-
-            public delegate DbActionEnum PerformReWriteDelegate (McPending pending);
-
-            public PerformReWriteDelegate PerformReWrite;
-
-            public enum LocalActionEnum
-            {
-                ReplaceField,
-                MoveToLostAndFound,
-                Delete,
+            public enum ObjActionEnum {
+                ReWriteServerParentIdString,
             };
-
-            public enum FieldEnum
-            {
-                ServerId,
-                ParentId,
-            };
-
-            public LocalActionEnum Action { get; set; }
-
-            public FieldEnum Field { get; set; }
-
-            public string Match { get; set; }
-
-            public string ReplaceWith { get; set; }
+            public ObjActionEnum ObjAction;
+            public string MatchString;
+            public string ReplaceString;
         }
 
         public enum DbActionEnum
@@ -888,10 +880,18 @@ namespace NachoCore.Model
         {
             bool updateNeeded = false;
             foreach (var reWrite in reWrites) {
-                switch (reWrite.Field) {
-                case ReWrite.FieldEnum.ServerId:
-                    if (null != ServerId && ServerId == reWrite.Match) {
-                        ServerId = reWrite.ReplaceWith;
+                switch (reWrite.ObjAction) {
+                case ReWrite.ObjActionEnum.ReWriteServerParentIdString:
+                    if (ServerId == reWrite.MatchString) {
+                        ServerId = reWrite.ReplaceString;
+                        updateNeeded = true;
+                    }
+                    if (ParentId == reWrite.MatchString) {
+                        ParentId = reWrite.ReplaceString;
+                        updateNeeded = true;
+                    }
+                    if (DestParentId == reWrite.MatchString) {
+                        DestParentId = reWrite.ReplaceString;
                         updateNeeded = true;
                     }
                     break;
@@ -900,10 +900,51 @@ namespace NachoCore.Model
             return (updateNeeded) ? DbActionEnum.Update : DbActionEnum.DoNothing;
         }
 
-        public bool FolderCompletelyDominates (string serverId)
+        public void ConvertToEmailSend ()
         {
-            // FIXME - build and check path.
+            NcAssert.True (false);
+            // FIXME. NYI.
+        }
+
+        public bool CommandDominatesParentId (string cmdServerId)
+        {
+            return McPath.Dominates (AccountId, cmdServerId, ParentId);
+        }
+
+        public bool CommandDominatesServerId (string cmdServerId)
+        {
+            return McPath.Dominates (AccountId, cmdServerId, ServerId);
+        }
+
+        public bool CommandDominatesDestParentId (string cmdServerId)
+        {
+            return McPath.Dominates (AccountId, cmdServerId, DestParentId);
+        }
+
+        public bool CommandDominatesItem (string cmdServerId)
+        {
+            switch (Operation) {
+            case Operations.EmailSend:
+            case Operations.EmailForward:
+            case Operations.EmailReply:
+                var parents = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, ItemId);
+                if (0 == parents.Count) {
+                    return false;
+                }
+                NcAssert.True (1 == parents.Count);
+                var parent = parents [0];
+                return (parent.ServerId == cmdServerId || McPath.Dominates (AccountId, cmdServerId, parent.ServerId));
+
+            default:
+                NcAssert.True (false);
+                break;
+            }
             return false;
+        }
+
+        public bool ServerIdDominatesCommand (string cmdServerId)
+        {
+            return McPath.Dominates (AccountId, ServerId, cmdServerId);
         }
     }
 

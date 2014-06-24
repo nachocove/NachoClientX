@@ -23,49 +23,58 @@ namespace NachoCore.ActiveSync
             {
             }
 
-            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+            protected override List<McPending.ReWrite> ApplyCommandToPending (McPending pending, 
                 out McPending.DbActionEnum action,
-                out bool cancelDelta)
+                out bool cancelCommand)
             {
-                action = McPending.DbActionEnum.DoNothing;
-                cancelDelta = false;
                 switch (pending.Operation) {
                 case McPending.Operations.FolderCreate:
+                    cancelCommand = false;
                     if (pending.DisplayName == DisplayName &&
                         pending.ParentId == ParentId) {
-                        if (pending.FolderCreate_Type == FolderType) {
-                            // Delete the pending folder create.
+                        if (pending.FolderCreate_Type != FolderType) {
+                            pending.DisplayName = pending.DisplayName + " Client-Created";
+                            action = McPending.DbActionEnum.Update;
+                            return null;
+                        } else {
                             action = McPending.DbActionEnum.Delete;
-                            // Add a re-write to replace the FolderCreate's GUID with the real ServerId henceforth.
-                            var guid = pending.ServerId;
                             return new List<McPending.ReWrite> () {
                                 new McPending.ReWrite () {
-                                    // FIXME Search TBA Path too.
-                                    IsMatch = (subject) => subject.ServerId == guid,
-                                    PerformReWrite = (subject) => {
-                                        // FIXME be able to update the Path too.
-                                        subject.ServerId = guid;
-                                        return McPending.DbActionEnum.Update;
-                                    },
-                                }
+                                    ObjAction = McPending.ReWrite.ObjActionEnum.ReWriteServerParentIdString,
+                                    MatchString = pending.ServerId, // The GUID.
+                                    ReplaceString = ServerId,
+                                },
                             };
-
-                        } else {
-                            // Just alter the display name to alert the user.
-                            pending.DisplayName = pending.DisplayName + " Client-Created";
-                            pending.Update ();
                         }
                     }
-                    break;
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.FolderDelete:
+                    action = McPending.DbActionEnum.DoNothing;
+                    cancelCommand = pending.ServerIdDominatesCommand (ServerId);
+                    return null;
+
+                case McPending.Operations.FolderUpdate:
+                    cancelCommand = false;
+                    if (pending.DestParentId == ParentId &&
+                        pending.DisplayName == DisplayName &&
+                        pending.FolderCreate_Type == FolderType) {
+                        pending.DisplayName = pending.DisplayName + " Client-Moved";
+                        action = McPending.DbActionEnum.Update;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
 
                 default:
-                    // No other operations are affected by FolderSync:Add.
-                    break;
+                    action = McPending.DbActionEnum.DoNothing;
+                    cancelCommand = false;
+                    return null;
                 }
-                return null;
             }
 
-            protected override void ApplyDeltaToModel ()
+            protected override void ApplyCommandToModel ()
             {
                 var account = McAccount.QueryById<McAccount> (AccountId);
                 var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);
