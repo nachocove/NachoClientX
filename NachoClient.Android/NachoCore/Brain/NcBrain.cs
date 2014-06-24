@@ -33,29 +33,86 @@ namespace NachoCore.Brain
             EventQueue.Enqueue (brainEvent);
         }
 
-        private void GleanContacts (int count)
+        private int GleanContacts (int count)
         {
-            // Look for a list of emails 
-            while (0 < count) {
+            // Look for a list of emails
+            int numGleaned = 0;
+            while (numGleaned < count) {
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
                 if (null == emailMessage) {
-                    return;
+                    return numGleaned;
                 }
+                Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
                 NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage);
-                count--;
+                numGleaned++;
             }
+            return numGleaned;
         }
 
-        private void AnalyzeEmails (int count)
+        private int AnalyzeContacts (int count)
         {
-            while (0 < count) {
+            int numAnalyzed = 0;
+            while (numAnalyzed < count) {
+                McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
+                if (null == contact) {
+                    return numAnalyzed;
+                }
+                Log.Info (Log.LOG_BRAIN, "analyze contact {0}", contact.Id);
+                contact.ScoreObject ();
+                numAnalyzed++;
+            }
+            return numAnalyzed;
+        }
+
+        private int AnalyzeEmails (int count)
+        {
+            int numAnalyzed = 0;
+            while (numAnalyzed < count) {
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
                 if (null == emailMessage) {
-                    return;
+                    return numAnalyzed;
                 }
+                Log.Info (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
                 emailMessage.ScoreObject ();
-                count--;
+                numAnalyzed++;
             }
+            return numAnalyzed;
+        }
+
+        private int UpdateContactScores (int count)
+        {
+            int numUpdated = 0;
+            while (numUpdated < count) {
+                McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.NeedUpdate).FirstOrDefault ();
+                if (null == contact) {
+                    return numUpdated;
+                }
+                Log.Info (Log.LOG_BRAIN, "update score of contact {0}", contact.Id);
+                contact.Score = contact.GetScore ();
+                contact.NeedUpdate = false;
+                contact.Update ();
+
+                numUpdated++;
+            }
+            return numUpdated;
+        }
+
+        private int UpdateEmailMessageScores (int count)
+        {
+            int numUpdated = 0;
+            while (numUpdated < count) {
+                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.NeedUpdate).FirstOrDefault ();
+                if (null == emailMessage) {
+                    return numUpdated;
+                }
+                Log.Info (Log.LOG_BRAIN, "update score of email message {0}", emailMessage.Id);
+                emailMessage.Score = emailMessage.GetScore ();
+                emailMessage.NeedUpdate = false;
+                emailMessage.Update ();
+
+                numUpdated++;
+            }
+            return numUpdated;
         }
 
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
@@ -71,12 +128,26 @@ namespace NachoCore.Brain
 
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
-            Log.Debug (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
+            Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
 
             switch (brainEvent.Type) {
             case NcBrainEventType.PERIODIC_GLEAN:
-                GleanContacts (100);
-                AnalyzeEmails (100);
+                const int NUM_ENTRIES = 100;
+                if (NUM_ENTRIES == GleanContacts (NUM_ENTRIES)) {
+                    break;
+                }
+                if (NUM_ENTRIES == AnalyzeContacts (NUM_ENTRIES)) {
+                    break;
+                }
+                if (NUM_ENTRIES == AnalyzeEmails (NUM_ENTRIES)) {
+                    break;
+                }
+                if (NUM_ENTRIES == UpdateContactScores (NUM_ENTRIES)) {
+                    break;
+                }
+                if (NUM_ENTRIES == UpdateEmailMessageScores (NUM_ENTRIES)) {
+                    break;
+                }
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 GleanContacts (int.MaxValue);
@@ -92,6 +163,7 @@ namespace NachoCore.Brain
 
         private void Process ()
         {
+            McEmailMessage.StartTimeVariance ();
             while (true) {
                 var brainEvent = EventQueue.Dequeue ();
                 if (NcBrainEventType.TERMINATE == brainEvent.Type) {

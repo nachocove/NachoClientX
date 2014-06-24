@@ -53,6 +53,7 @@ namespace NachoCore.Model
         {
             if (0 == ScoreVersion) {
                 McContact sender = GetFromContact ();
+                NcAssert.NotNull (sender, "sender can't be null!");
                 if (!DownloadScore ()) {
                     // Analyze sender
                     sender.IncrementEmailsReceived ();
@@ -165,6 +166,8 @@ namespace NachoCore.Model
             DateTime deferredUntil = DateTime.MinValue;
             NcTimeVariance tv = null;
 
+            Log.Debug (Log.LOG_BRAIN, "Initialize time variance for email message id {0}", Id);
+
             ExtractDateTimeFromPair (FlagDeferUntil, FlagUtcDeferUntil, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
             if (!IsValidDateTime (deadline) && !IsValidDateTime (deferredUntil)) {
@@ -178,6 +181,12 @@ namespace NachoCore.Model
                     TimeVarianceState = 0;
                 }
             } else {
+                if (null != tv) {
+                    // We are going to replace the current time variance state machine.
+                    // Properly dispose the old one first to make sure its timer will
+                    // not fire and interfere will the new one.
+                    tv.Dispose ();
+                }
                 if (!IsValidDateTime (deferredUntil)) {
                     /// Deadline only
                     TimeVarianceType = (int)NcTimeVarianceType.DEADLINE;
@@ -222,11 +231,10 @@ namespace NachoCore.Model
             /// Look for all email messages that are:
             ///
             // 1. ScoreVersion is non-zero
-            // 2. TimeVarianceType is non-zero
-            // 3. TimeVarianceState is non-zero
+            // 2. TimeVarianceType is not DONE
             List<McEmailMessage> emailMessageList =
                 NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage AS m " +
-                "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != 0 AND m.TimeVarianceState != 0");
+                "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ?", NcTimeVarianceType.DONE);
             foreach (McEmailMessage emailMessage in emailMessageList) {
                 emailMessage.InitializeTimeVariance ();
             }

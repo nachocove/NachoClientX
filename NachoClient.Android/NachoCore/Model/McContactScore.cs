@@ -76,6 +76,7 @@ namespace NachoCore.Model
                 ScoreVersion++;
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
+            Update ();
         }
 
         private void GetScoreSyncInfo ()

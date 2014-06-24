@@ -160,6 +160,14 @@ namespace NachoCore.Brain
             }
         }
 
+        public void Dispose ()
+        {
+            if (null != EventTimer) {
+                EventTimer.Dispose ();
+                EventTimer = null;
+            }
+        }
+
         public static void PauseAll ()
         {
             foreach (NcTimeVariance tv in ActiveList.Values) {
