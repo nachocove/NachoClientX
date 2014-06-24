@@ -22,11 +22,22 @@ namespace NachoClient.iOS
         protected bool compactMode;
         public IMessageTableViewSourceDelegate owner;
 
+        protected NcCapture ArchiveCaptureMessage;
+        protected NcCapture RefreshCapture;
+        private string ArchiveMessageCaptureName;
+        private string RefreshCaptureName;
+
         public MessageTableViewSource ()
         {
             owner = null;
             allowMultiSelect = true;
             MultiSelect = new HashSet<int> ();
+            ArchiveMessageCaptureName = "MessageTableViewSource.ArchiveMessage";
+            NcCapture.AddKind (ArchiveMessageCaptureName);
+            ArchiveCaptureMessage = NcCapture.Create (ArchiveMessageCaptureName);
+            RefreshCaptureName = "MessageTableViewSource.Refresh";
+            NcCapture.AddKind (RefreshCaptureName);
+            RefreshCapture = NcCapture.Create (RefreshCaptureName);
         }
 
         public void SetCompactMode (bool compactMode)
@@ -41,7 +52,10 @@ namespace NachoClient.iOS
 
         public void RefreshEmailMessages ()
         {
+            RefreshCapture.Start ();
             messageThreads.Refresh ();
+            RefreshCapture.Stop ();
+            Console.WriteLine ("FOO: {0}", NcCapture.Summarize (RefreshCaptureName));
         }
 
         protected bool NoMessageThreads ()
@@ -266,8 +280,8 @@ namespace NachoClient.iOS
                 var userLabelTap = new UITapGestureRecognizer ();
                 userLabelTap.NumberOfTapsRequired = 1;
                 userLabelTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
-                userImageView.AddGestureRecognizer (userLabelTap);
-                userImageView.UserInteractionEnabled = true;
+                userLabelView.AddGestureRecognizer (userLabelTap);
+                userLabelView.UserInteractionEnabled = true;
 
 
                 // User chili view
@@ -611,8 +625,11 @@ namespace NachoClient.iOS
 
         public void ArchiveThisMessage (McEmailMessageThread messageThread)
         {
+            ArchiveCaptureMessage.Start ();
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (message);
+            ArchiveCaptureMessage.Stop ();
+            Console.WriteLine ("Foo: {0}", NcCapture.Summarize(ArchiveMessageCaptureName));
         }
 
         public List<McEmailMessage> GetSelectedMessages ()
