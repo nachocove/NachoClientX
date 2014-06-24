@@ -636,29 +636,32 @@ namespace NachoCore.ActiveSync
                 var classCode = GetClassCode (command, folder);
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
+                    var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
+                        ClassCode = classCode,
+                        XmlCommand = command,
+                        Folder = folder,
+                    };
+                    applyAdd.ProcessServerCommand ();
+                    var xmlApplicationData = command.ElementAnyNs ("ApplicationData");
                     switch (classCode) {
-                    case Xml.AirSync.ClassCode.Contacts:
-                        HadContactSetChanges = true;
-                        ServerSaysAddContact (command, folder);
-                        break;
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageSetChanges = true;
-                        var emailMessage = ServerSaysAddEmail (command, folder);
-                        if (null != emailMessage && Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
-                            false == emailMessage.IsRead) {
-                            HadNewUnreadEmailMessageInInbox = true;
+                        if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
+                            null != xmlApplicationData) {
+                            var xmlRead = xmlApplicationData.ElementAnyNs ("Read");
+                            if (null != xmlRead && "0" == xmlRead.Value) {
+                                HadNewUnreadEmailMessageInInbox = true;
+                            }
                         }
+                        break;
+                    case Xml.AirSync.ClassCode.Contacts:
+                        HadContactSetChanges = true;
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
                         HadCalendarSetChanges = true;
-                        ServerSaysAddCalendarItem (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
                         HadTaskSetChanges = true;
-                        ServerSaysAddTask (command, folder);
-                        break;
-                    default:
-                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
                     break;

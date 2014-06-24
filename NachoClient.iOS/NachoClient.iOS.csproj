@@ -872,6 +872,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

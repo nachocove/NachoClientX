@@ -273,6 +273,7 @@
     <Compile Include="NachoCore\Model\McPath.cs" />
     <Compile Include="NachoCore\Utils\NcRateLimiter.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
