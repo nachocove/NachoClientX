@@ -872,6 +872,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcRateLimiter.cs">
       <Link>NachoCore\Utils\NcRateLimiter.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\PriorityView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

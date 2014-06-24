@@ -7,6 +7,8 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using MonoTouch.CoreAnimation;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
@@ -41,54 +43,95 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            INachoMessageEditorParent own = owner;
             base.ViewDidLoad ();
+            owner = own;
 
-            DateTime earliestDelay = DateTime.MaxValue;
-            foreach (var message in thread) {
-                if (earliestDelay > message.FlagUtcDeferUntil) {
-                    earliestDelay = message.FlagUtcDeferUntil;
+            float frameHeight = 420;
+            float frameWidth = 280;
+
+            PriorityView priorityView = new PriorityView (new RectangleF (20, 70, frameWidth, frameHeight));
+            priorityView.MakeButtonLabels ();
+            priorityView.Layer.CornerRadius = 15.0f;
+            priorityView.ClipsToBounds = true;
+            priorityView.BackgroundColor = UIColor.White;
+            priorityView.AddEscapeButton ();
+            UIButton escapeButton = priorityView.AddEscapeButton ();
+            priorityView.AddDeferMessageLabel ();
+            var buttonsList = priorityView.MakeActionButtons ();
+
+            for (int i = 0; i < 9; i++) {
+                switch (i) {
+
+                case 0:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        CreateMeeting ();
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-newevent"), UIControlState.Normal);
+                    break;
+                case 1:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        //Clicked On Nacho
+                        //TODO
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("inbox-icn-chilli"), UIControlState.Normal);
+                    break;
+                case 2:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        //TODO
+                        //Cole's going to work on custom datepicker
+                        CreateDeadline ();
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("inbox-icn-deadline@2x"), UIControlState.Normal);
+                    break;
+                case 3:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        DelayRequest (MessageDeferralType.Later);
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
+                    break;
+                case 4:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        DelayRequest (MessageDeferralType.Tonight);
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
+                    break;
+                case 5:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        DelayRequest (MessageDeferralType.Tomorrow);
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
+                    break;
+                case 6:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        DelayRequest (MessageDeferralType.NextWeek);
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
+                    break;
+                case 7:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        DelayRequest (MessageDeferralType.NextMonth);
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
+                    break;
+                case 8:
+                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
+                        //TODO
+                        //Cole's going to work on custom datepicker
+                        DelayRequest (MessageDeferralType.Custom);
+                    };
+                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
+                    break;
+                default:
+                    break;
                 }
             }
 
-            if (DateTime.UtcNow > earliestDelay) {
-                ;
-            } else if (1 == thread.Count) {
-                currentDelayLabel.Text = String.Format ("Deferred until {0}.", earliestDelay);
-            } else {
-                currentDelayLabel.Text = String.Format ("Visible after {0}.", earliestDelay);
-            }
-
-            meetingButton.TouchUpInside += (object sender, EventArgs e) => {
-                CreateMeeting ();
-            };
-            taskButton.TouchUpInside += (object sender, EventArgs e) => {
-                CreateTask ();
-            };
-            deadlineButton.TouchUpInside += (object sender, EventArgs e) => {
-                CreateDeadline ();
-            };
-            laterButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Later);
-            };
-            tonightButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Tonight);
-            };
-            tomorrowButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Tomorrow);
-            };
-            nextWeekButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.NextWeek);
-            };
-            nextMonthButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.NextMonth);
-            };
-            deferDatePicker.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Custom);
-            };
-            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
+            escapeButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
 
+            View.AddSubview (priorityView);
         }
 
         /// Touch anywhere else, and we'll close this view
