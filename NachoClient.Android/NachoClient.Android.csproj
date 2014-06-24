@@ -291,6 +291,7 @@
     <Compile Include="NachoCore\Utils\NcPausableTimer.cs" />
     <Compile Include="NachoCore\Utils\NcDistribution.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

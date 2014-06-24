@@ -10,12 +10,13 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        public void ServerSaysAddTask (XElement command, McFolder folder)
+        public static void ServerSaysAddTask (XElement command, McFolder folder)
         {
-            var xmlServerId = command.Element (m_ns + Xml.AirSync.ServerId);
-            var applicationData = command.Element (m_ns + Xml.AirSync.ApplicationData);
+            XNamespace Ns = Xml.AirSync.Ns;
+            var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
+            var applicationData = command.Element (Ns + Xml.AirSync.ApplicationData);
             var task = new McTask () {
-                AccountId = BEContext.Account.Id,
+                AccountId = folder.AccountId,
             };
             var result = task.FromXmlApplicationData (applicationData);
             if (result.isOK ()) {
