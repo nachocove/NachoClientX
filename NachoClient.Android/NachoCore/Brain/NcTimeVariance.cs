@@ -76,6 +76,9 @@ namespace NachoCore.Brain
         {
             State_ = 1;
             MaxState = 1;
+            if (null == ActiveList) {
+                ActiveList = new ConcurrentDictionary<string, NcTimeVariance> ();
+            }
             NcAssert.True (!ActiveList.ContainsKey (Description));
             ActiveList[Description] = this;
             CallBack = null;
@@ -106,48 +109,61 @@ namespace NachoCore.Brain
                 DateTime eventTime = NextEventTime ();
                 DateTime now = DateTime.Now;
                 if (eventTime.Ticks > now.Ticks) {
-                    EventTimer = new NcTimer (TimerDescription (), Advance, this,
-                        eventTime.Ticks - now.Ticks, Timeout.Infinite);
+                    int dueTime = (int)(eventTime - now).TotalMilliseconds;
+                    EventTimer = new NcTimer (TimerDescription (), AdvanceCallback, this,
+                            dueTime, Timeout.Infinite);
                 } else {
-                    if (null != CallBack) {
-                        CallBack (State);
-                    }
-                    Cleanup ();
+                    Advance ();
                 }
             } else {
                 Cleanup ();
             }
         }
 
-        public virtual void Start()
+        public virtual void Start ()
         {
             Resume ();
         }
 
         private void Cleanup ()
         {
-            if (null != EventTimer) {
-                EventTimer.Dispose ();
-                EventTimer = null; // make it eligible for GC
-            }
+            Pause ();
             NcTimeVariance dummy;
             bool didRemoved = ActiveList.TryRemove (Description, out dummy);
             NcAssert.True (didRemoved);
         }
 
-        public virtual void Advance (object obj)
+        public static void AdvanceCallback (object obj)
         {
-            NcAssert.True (this == obj);
+            NcTimeVariance tv = obj as NcTimeVariance;
+            tv.Advance ();
+        }
 
+        private void FindNextState ()
+        {
+            NcAssert.True (State_ < MaxState);
+            State_++;
+            while (DateTime.Now > NextEventTime ()) {
+                if (MaxState > State_) {
+                    State_++;
+                } else {
+                    State_ = 0;
+                    break;
+                }
+            }
+        }
+
+        public virtual void Advance ()
+        {
             // Update state
             if (MaxState == State_) {
                 State_ = 0;
             } else {
-                State_++;
+                FindNextState ();
             }
 
             // Throw away the fired timer. 
-            EventTimer.Dispose ();
+            Pause ();
             if (null != CallBack) {
                 CallBack (State);
             }
@@ -298,7 +314,7 @@ namespace NachoCore.Brain
             MaxState = 8;
         }
 
-        public override double AdjustScore (double Score)
+        public override double AdjustScore (double score)
         {
             double factor;
             switch (State) {
@@ -333,7 +349,7 @@ namespace NachoCore.Brain
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown aging state {0}", State));
             }
 
-            return Score * factor;
+            return score * factor;
         }
 
         protected override DateTime NextEventTime ()

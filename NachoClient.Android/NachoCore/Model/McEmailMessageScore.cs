@@ -24,6 +24,9 @@ namespace NachoCore.Model
         /// Time variance state machine current state
         public int TimeVarianceState { get; set; }
 
+        /// Time variance state machine object itself
+        private NcTimeVariance TimeVarianceSM { get; set; }
+
         public double Score { get; set; }
 
         public bool NeedUpdate { get; set; } 
@@ -34,13 +37,19 @@ namespace NachoCore.Model
 
         public double GetScore ()
         {
+            double score = 0.0;
+
             McContact sender = GetFromContact ();
             if (null == sender) {
-                return 0.0;
+                return score;
             }
 
             // TODO - Combine with content score... once we have such value
-            return sender.GetScore ();
+            score = sender.GetScore ();
+            if (null != TimeVarianceSM) {
+                score = TimeVarianceSM.AdjustScore (score);
+            }
+            return score;
         }
 
         private void UpdateScore ()
@@ -82,6 +91,7 @@ namespace NachoCore.Model
                 // TODO - Analyze thread, content
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
+            InitializeTimeVariance ();
             Score = GetScore ();
             NeedUpdate = false;
             Update ();
@@ -170,9 +180,15 @@ namespace NachoCore.Model
         {
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
-            NcTimeVariance tv = null;
 
             Log.Debug (Log.LOG_BRAIN, "Initialize time variance for email message id {0}", Id);
+
+            if (null != TimeVarianceSM) {
+                // We are going to replace the current time variance state machine.
+                // Properly dispose the old one first to make sure its timer will
+                // not fire and interfere will the new one.
+                TimeVarianceSM.Dispose ();
+            }
 
             ExtractDateTimeFromPair (FlagDeferUntil, FlagUtcDeferUntil, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
@@ -181,41 +197,36 @@ namespace NachoCore.Model
                 if (NcTimeVarianceType.AGING != (NcTimeVarianceType)TimeVarianceType) {
                     TimeVarianceType = (int)NcTimeVarianceType.AGING;
                     TimeVarianceState = 1;
-                    tv = new NcAgingTimeVariance (TimeVarianceDescription (), DateReceived);
+                    TimeVarianceSM = (NcTimeVariance)new NcAgingTimeVariance (TimeVarianceDescription (), DateReceived);
                 } else {
                     TimeVarianceType = (int)NcTimeVarianceType.DONE;
                     TimeVarianceState = 0;
+                    TimeVarianceSM = null;
                 }
             } else {
-                if (null != tv) {
-                    // We are going to replace the current time variance state machine.
-                    // Properly dispose the old one first to make sure its timer will
-                    // not fire and interfere will the new one.
-                    tv.Dispose ();
-                }
                 if (!IsValidDateTime (deferredUntil)) {
                     /// Deadline only
                     TimeVarianceType = (int)NcTimeVarianceType.DEADLINE;
-                    tv = new NcDeadlineTimeVariance (TimeVarianceDescription (), deadline);
+                    TimeVarianceSM = (NcTimeVariance)new NcDeadlineTimeVariance (TimeVarianceDescription (), deadline);
                 } else if (!IsValidDateTime (deadline)) {
                     /// Deference only
                     TimeVarianceType = (int)NcTimeVarianceType.DEFERENCE;
-                    tv = new NcDeadlineTimeVariance (TimeVarianceDescription (), deferredUntil);
+                    TimeVarianceSM = (NcTimeVariance)new NcDeadlineTimeVariance (TimeVarianceDescription (), deferredUntil);
                 } else if (deadline < deferredUntil) {
                     /// Deadline first
                     TimeVarianceType = (int)NcTimeVarianceType.DEADLINE;
-                    tv = new NcDeadlineTimeVariance (TimeVarianceDescription (), deadline);
+                    TimeVarianceSM = (NcTimeVariance)new NcDeadlineTimeVariance (TimeVarianceDescription (), deadline);
                 } else {
                     /// Deference first
                     TimeVarianceType = (int)NcTimeVarianceType.DEFERENCE;
-                    tv = new NcDeferenceTimeVariance (TimeVarianceDescription (), deferredUntil);
+                    TimeVarianceSM = (NcTimeVariance)new NcDeferenceTimeVariance (TimeVarianceDescription (), deferredUntil);
                 }
                 TimeVarianceState = 1;
             }
-            if (null != tv) {
+            if (null != TimeVarianceSM) {
                 Update ();
-                tv.CallBack = TimeVarianceCallBack;
-                tv.Start ();
+                TimeVarianceSM.CallBack = TimeVarianceCallBack;
+                TimeVarianceSM.Start ();
             }
         }
 
