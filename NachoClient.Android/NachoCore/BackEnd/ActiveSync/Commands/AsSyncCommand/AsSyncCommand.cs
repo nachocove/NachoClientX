@@ -636,8 +636,10 @@ namespace NachoCore.ActiveSync
                 var classCode = GetClassCode (command, folder);
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
+                    var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
                         ClassCode = classCode,
+                        ServerId = addServerId,
                         XmlCommand = command,
                         Folder = folder,
                     };
@@ -666,8 +668,10 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 case Xml.AirSync.Change:
+                    var chgServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     var applyChange = new ApplyItemChange (BEContext.Account.Id) {
                         ClassCode = classCode,
+                        ServerId = chgServerId,
                         XmlCommand = command,
                         Folder = folder,
                     };
