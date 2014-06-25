@@ -1,0 +1,13 @@
+plistlib.py is included in standard python distribution starting in 2.6.
+However, the version in 2.6 / 2.7 does not support binary plist files.
+This (resolved) bug tracks this issue:
+
+http://bugs.python.org/issue14455
+
+Since Info.plist is binary XML, we download a newer version mentioned in
+the bug:
+
+http://bugs.python.org/file25075/plistlib.py
+
+We need this feature because iOS Info.plist is in binary format.
+
