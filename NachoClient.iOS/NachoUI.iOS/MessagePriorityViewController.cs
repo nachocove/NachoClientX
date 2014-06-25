@@ -65,12 +65,6 @@ namespace NachoClient.iOS
             View.AddSubview (priorityView);
         }
 
-        /// Touch anywhere else, and we'll close this view
-        public override void TouchesBegan (NSSet touches, UIEvent evt)
-        {
-            owner.DismissChildMessageEditor (this);
-        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             var blurry = segue.DestinationViewController as BlurryViewController;
