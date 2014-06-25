@@ -12,7 +12,7 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { get; set; }
 
-        [Unique]
+        [Indexed]
         public string ServerId { get; set; }
 
         public McPath ()
@@ -27,6 +27,9 @@ namespace NachoCore.Model
         public static bool Dominates (int accountId, string topId, string bottomId)
         {
             var node = QueryByServerId (accountId, bottomId);
+            if (null == node) {
+                return false;
+            }
             while (McFolder.AsRootServerId != node.ParentId) {
                 if (topId == node.ParentId) {
                     return true;
@@ -53,7 +56,7 @@ namespace NachoCore.Model
         public static McPath QueryByServerId (int accountId, string serverId)
         {
             var path = NcModel.Instance.Db.Table<McPath> ().Where (pe => 
-                pe.ServerId == serverId && pe.AccountId == accountId).Single ();
+                pe.ServerId == serverId && pe.AccountId == accountId).SingleOrDefault ();
             return path;
         }
     }

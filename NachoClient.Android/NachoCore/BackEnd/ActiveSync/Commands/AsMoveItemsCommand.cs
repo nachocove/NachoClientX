@@ -87,10 +87,16 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "MIID");
 
             case Xml.Mov.StatusCode.Success_3:
+                var xmlSrcMsgId = xmlResponse.Element (m_ns + Xml.Mov.SrcMsgId);
+                if (null == xmlSrcMsgId || null == xmlSrcMsgId.Value) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "MINOSRC");
+                }
+                var oldServerId = xmlSrcMsgId.Value;
+                var newServerId = oldServerId;
                 var xmlDstMsgId = xmlResponse.Element (m_ns + Xml.Mov.DstMsgId);
                 if (null != xmlDstMsgId) {
-                    // We need to re-write the ServerId. TODO verify that SrcMsgId matches pending's ServerId.
-                    var SrcMsgId = xmlResponse.Element (m_ns + Xml.Mov.SrcMsgId).Value;
+                    // We need to re-write the ServerId.
+                    newServerId = xmlDstMsgId.Value;
                     McItem item = null;
                     switch (ClassCode) {
                     case McFolderEntry.ClassCodeEnum.Email:
@@ -115,10 +121,17 @@ namespace NachoCore.ActiveSync
                     }
                     if (null != item) {
                         // The item may have been subsequently deleted.
-                        item.ServerId = xmlDstMsgId.Value;
+                        item.ServerId = newServerId;
                         item.Update ();
                     }
                 }
+                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, oldServerId);
+                pathElem.Delete ();
+                pathElem = new McPath (BEContext.Account.Id);
+                pathElem.ServerId = newServerId;
+                pathElem.ParentId = PendingSingle.DestParentId;
+                pathElem.Insert ();
+
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);
                 });
