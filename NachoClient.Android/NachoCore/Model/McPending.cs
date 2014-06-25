@@ -116,6 +116,9 @@ namespace NachoCore.Model
         public const uint KMaxDeferCount = 5;
         // Always valid.
         [Indexed]
+        public float Priority { set; get; }
+        // Always valid.
+        [Indexed]
         public StateEnum State { set; get; }
         // Always valid.
         [Indexed]
@@ -281,7 +284,7 @@ namespace NachoCore.Model
 
             case Operations.FolderUpdate:
                 return (Operations.FolderCreate == pred.Operation || Operations.FolderUpdate == pred.Operation)
-                    && pred.ServerId == ServerId;
+                && pred.ServerId == ServerId;
 
             case Operations.CalRespond:
                 return Operations.CalRespond == pred.Operation && pred.ServerId == ServerId;
@@ -642,7 +645,7 @@ namespace NachoCore.Model
                         // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
                         // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
                         // Note that items might get deleted out from under us.
-                        var pendq = Query (AccountId).OrderByDescending (x => x.Id);
+                        var pendq = Query (AccountId).OrderByDescending (x => x.Priority);
                         foreach (var elem in pendq) {
                             if (DependsUpon (elem)) {
                                 predIds.Add (elem.Id);
@@ -658,6 +661,8 @@ namespace NachoCore.Model
                         Item.Update ();
                     }
                     base.Insert ();
+                    Priority = Id;
+                    base.Update ();
                     foreach (var predId in predIds) {
                         var pendDep = new McPendDep (predId, Id);
                         pendDep.Insert ();
@@ -746,12 +751,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McPending> ()
                     .Where (x => x.AccountId == accountId)
-                    .OrderBy (x => x.Id).ToList ();
-        }
-
-        public static McPending GetOldestYoungerThanId (int accountId, int priorId)
-        {
-            return Query (accountId).FirstOrDefault<McPending> (x => x.Id > priorId);
+                .OrderBy (x => x.Priority).ToList ();
         }
 
         public static List<McPending> QueryEligible (int accountId)
@@ -759,7 +759,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Eligible
-            ).OrderBy (x => x.Id).ToList ();
+            ).OrderBy (x => x.Priority).ToList ();
         }
 
         public static List<McPending> QueryPredecessors (int accountId, int succId)
@@ -768,7 +768,7 @@ namespace NachoCore.Model
                 "SELECT p.* FROM McPending AS p JOIN McPendDep AS m ON p.Id = m.PredId WHERE " +
                 "p.AccountId = ? AND " +
                 "m.SuccId = ? " +
-                "ORDER BY Id ASC",
+                "ORDER BY Priority ASC",
                 accountId, succId).ToList ();
         }
 
@@ -779,7 +779,7 @@ namespace NachoCore.Model
                 "p.AccountId = ? AND " +
                 "p.State = ? AND " +
                 "m.PredId = ? " +
-                "ORDER BY Id ASC",
+                "ORDER BY Priority ASC",
                 accountId, (uint)StateEnum.PredBlocked, predId).ToList ();
         }
 
@@ -789,7 +789,7 @@ namespace NachoCore.Model
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             (rec.DeferredReason == DeferredEnum.UntilFSync ||
-            rec.DeferredReason == DeferredEnum.UntilFSyncThenSync)).OrderBy (x => x.Id).ToList ();
+            rec.DeferredReason == DeferredEnum.UntilFSyncThenSync)).OrderBy (x => x.Priority).ToList ();
         }
 
         public static List<McPending> QueryDeferredSync (int accountId)
@@ -797,7 +797,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
-            rec.DeferredReason == DeferredEnum.UntilSync).OrderBy (x => x.Id).ToList ();
+            rec.DeferredReason == DeferredEnum.UntilSync).OrderBy (x => x.Priority).ToList ();
         }
 
         public static List<McPending> QueryDeferredUntilNow (int accountId)
@@ -807,7 +807,7 @@ namespace NachoCore.Model
             rec.State == StateEnum.Deferred &&
             rec.DeferredReason == DeferredEnum.UntilTime &&
             rec.DeferredUntilTime < DateTime.UtcNow
-            ).OrderBy (x => x.Id).ToList ();
+            ).OrderBy (x => x.Priority).ToList ();
         }
 
         public static McPending QueryByToken (int accountId, string token)
@@ -823,24 +823,24 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                     .Where (rec =>
                         rec.AccountId == accountId &&
-            rec.Operation == operation).ToList ();
+            rec.Operation == operation).OrderBy (x => x.Priority).ToList ();
         }
 
         public static McPending QueryFirstEligibleByOperation (int accountId, McPending.Operations operation)
         {
             return NcModel.Instance.Db.Table<McPending> ()
-                    .FirstOrDefault (rec =>
+                .Where (rec =>
                         rec.AccountId == accountId &&
             rec.Operation == operation &&
-            rec.State == StateEnum.Eligible);
+            rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).FirstOrDefault ();
         }
 
         public static McPending QueryByClientId (int accountId, string clientId)
         {
             return NcModel.Instance.Db.Table<McPending> ()
-                    .FirstOrDefault (rec =>
+                .Where (rec =>
                         rec.AccountId == accountId &&
-            rec.ClientId == clientId);
+            rec.ClientId == clientId).OrderBy (x => x.Priority).FirstOrDefault ();
         }
 
         public static List<McPending> QueryEligibleByFolderServerId (int accountId, string folderServerId)
@@ -849,21 +849,24 @@ namespace NachoCore.Model
                     .Where (rec =>
                         rec.AccountId == accountId &&
             rec.ParentId == folderServerId &&
-            rec.State == StateEnum.Eligible).ToList ();
+            rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).ToList ();
         }
 
         public static McPending QueryByServerId (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Table<McPending> ()
-                    .FirstOrDefault (rec =>
+                .Where (rec =>
                         rec.AccountId == accountId &&
-            rec.ServerId == serverId);
+            rec.ServerId == serverId).OrderBy (x => x.Priority).FirstOrDefault ();
         }
+
         public class ReWrite
         {
-            public enum ObjActionEnum {
+            public enum ObjActionEnum
+            {
                 ReWriteServerParentIdString,
             };
+
             public ObjActionEnum ObjAction;
             public string MatchString;
             public string ReplaceString;
@@ -946,19 +949,6 @@ namespace NachoCore.Model
         {
             return McPath.Dominates (AccountId, ServerId, cmdServerId);
         }
-    }
-
-
-    public class McPendingPath : McObject
-    {
-        // Foreign key.
-        [Indexed]
-        public int PendingId { set; get; }
-        // The path component.
-        [Indexed]
-        public string ServerId { set; get; }
-        // The location within the path, where 0 is the top (child of root).
-        public uint Order { set; get; }
     }
 }
 
