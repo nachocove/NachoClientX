@@ -671,17 +671,6 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestGetOldestYoungerThanId ()
-            {
-                var old = CreatePending ();
-                var mid = CreatePending ();
-                CreatePending (); // young
-                CreatePending (accountId: 5); // otherAccount
-                var retrieved = McPending.GetOldestYoungerThanId (defaultAccountId, old.Id);
-                PendingsAreEqual (mid, retrieved);
-            }
-
-            [Test]
             public void TestQueryEligible ()
             {
                 var pendElig = CreatePending ();

@@ -533,7 +533,7 @@ namespace NachoCore.ActiveSync
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             NcAssert.True (null != applicationData);
 
-            Log.Info (Log.LOG_CALENDAR, "ParseCalendar\n{0}", applicationData);
+            Log.Debug (Log.LOG_XML, "ParseCalendar\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 // Containers

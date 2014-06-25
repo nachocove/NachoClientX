@@ -793,26 +793,26 @@ namespace NachoCore.ActiveSync
             var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
             switch (status) {
             case Xml.AirSync.StatusCode.Success_1:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
                 break;
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
             case Xml.AirSync.StatusCode.ClientError_6:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsHardFail (BEContext.ProtoControl, 
                     NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
                 break;
 
             case Xml.AirSync.StatusCode.ServerWins_7:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                     NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
                 break;
 
             case Xml.AirSync.StatusCode.NoSpace_9:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                     McPending.BlockReasonEnum.UserRemediation,
                     NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
@@ -820,7 +820,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.AirSync.StatusCode.LimitReWait_14:
                 Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
                 break;
@@ -830,7 +830,7 @@ namespace NachoCore.ActiveSync
                 if (null != Limit) {
                     protocolState.AsSyncLimit = (uint)Limit;
                 }
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
                 break;
@@ -839,7 +839,7 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.NotFound_8:
                 // Note: we don't send partial Sync requests.
             case Xml.AirSync.StatusCode.ResendFull_13:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResponsegXmlStatus = (uint)status; // FIXME move this up.
                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                     NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
@@ -893,13 +893,13 @@ namespace NachoCore.ActiveSync
                     switch (status) {
                     case Xml.AirSync.StatusCode.ProtocolError_4:
                     case Xml.AirSync.StatusCode.ClientError_6:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsHardFail (BEContext.ProtoControl, 
                             NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
                         break;
 
                     case Xml.AirSync.StatusCode.ServerWins_7:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsHardFail (BEContext.ProtoControl,
                             NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
                         break;
@@ -907,14 +907,14 @@ namespace NachoCore.ActiveSync
                     case Xml.AirSync.StatusCode.NotFound_8:
                         folder.AsSyncMetaToClientExpected = true;
                         folder.Update ();
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
                             McPending.DeferredEnum.UntilSync,
                             NcResult.Error (NcResult.SubKindEnum.Error_ObjectNotFoundOnServer));
                         break;
 
                     case Xml.AirSync.StatusCode.NoSpace_9:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                             McPending.BlockReasonEnum.UserRemediation,
                             NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
@@ -922,7 +922,7 @@ namespace NachoCore.ActiveSync
 
                     case Xml.AirSync.StatusCode.LimitReWait_14:
                         Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                         break;
 
@@ -932,14 +932,14 @@ namespace NachoCore.ActiveSync
                             protocolState.AsSyncLimit = (uint)Limit;
                             protocolState.Update ();
                         }
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                         break;
 
                     default:
                         // Note: we don't send partial Sync requests.
                     case Xml.AirSync.StatusCode.ResendFull_13:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResponsegXmlStatus = (uint)status;
                         pending.ResolveAsHardFail (BEContext.ProtoControl,
                             NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
