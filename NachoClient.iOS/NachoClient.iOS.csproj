@@ -941,6 +941,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

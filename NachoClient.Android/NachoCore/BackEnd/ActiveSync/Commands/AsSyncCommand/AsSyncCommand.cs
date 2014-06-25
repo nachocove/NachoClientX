@@ -666,22 +666,24 @@ namespace NachoCore.ActiveSync
                     }
                     break;
                 case Xml.AirSync.Change:
+                    var applyChange = new ApplyItemChange (BEContext.Account.Id) {
+                        ClassCode = classCode,
+                        XmlCommand = command,
+                        Folder = folder,
+                    };
+                    applyChange.ProcessServerCommand ();
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageChanges = true;
-                        ServerSaysChangeEmail (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
                         HadCalendarChanges = true;
-                        ServerSaysChangeCalendarItem (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
                         HadContactChanges = true;
-                        ServerSaysChangeContact (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
                         HadTaskChanges = true;
-                        ServerSaysChangeTask (command, folder);
                         break;
                     default:
                         Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
@@ -691,34 +693,23 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.Delete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
+                        ClassCode = classCode,
+                        ServerId = delServerId,
+                    };
+                    applyDelete.ProcessServerCommand ();
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageSetChanges = true;
-                        var emailMessage = McFolderEntry.QueryByServerId<McEmailMessage> (BEContext.Account.Id, delServerId);
-                        if (null != emailMessage) {
-                            emailMessage.Delete ();
-                        }
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
                         HadCalendarSetChanges = true;
-                        var cal = McFolderEntry.QueryByServerId<McCalendar> (BEContext.Account.Id, delServerId);
-                        if (null != cal) {
-                            cal.Delete ();
-                        }
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
                         HadContactSetChanges = true;
-                        var contact = McFolderEntry.QueryByServerId<McContact> (BEContext.Account.Id, delServerId);
-                        if (null != contact) {
-                            contact.Delete ();
-                        }
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
                         HadTaskSetChanges = true;
-                        var task = McFolderEntry.QueryByServerId<McTask> (BEContext.Account.Id, delServerId);
-                        if (null != task) {
-                            task.Delete ();
-                        }
                         break;
                     default:
                         Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);

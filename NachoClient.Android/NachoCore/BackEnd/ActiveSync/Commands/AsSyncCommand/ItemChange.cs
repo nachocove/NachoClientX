@@ -10,7 +10,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        private class ApplyItemAdd : AsApplyServerCommand
+        private class ApplyItemChange : AsApplyServerCommand
         {
             public string ClassCode { get; set; }
 
@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
 
             public McFolder Folder { get; set; }
 
-            public ApplyItemAdd (int accountId)
+            public ApplyItemChange (int accountId)
                 : base (accountId)
             {
             }
@@ -35,17 +35,17 @@ namespace NachoCore.ActiveSync
             protected override void ApplyCommandToModel ()
             {
                 switch (ClassCode) {
-                case Xml.AirSync.ClassCode.Contacts:
-                    ServerSaysAddContact (XmlCommand, Folder);
-                    break;
                 case Xml.AirSync.ClassCode.Email:
-                    ServerSaysAddEmail (XmlCommand, Folder);
+                    ServerSaysChangeEmail (XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Calendar:
-                    ServerSaysAddCalendarItem (XmlCommand, Folder);
+                    ServerSaysChangeCalendarItem (XmlCommand, Folder);
+                    break;
+                case Xml.AirSync.ClassCode.Contacts:
+                    ServerSaysChangeContact (XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Tasks:
-                    ServerSaysAddTask (XmlCommand, Folder);
+                    ServerSaysChangeTask (XmlCommand, Folder);
                     break;
                 default:
                     Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + ClassCode);

@@ -10,15 +10,13 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        private class ApplyItemAdd : AsApplyServerCommand
+        private class ApplyItemDelete : AsApplyServerCommand
         {
             public string ClassCode { get; set; }
 
-            public XElement XmlCommand { get; set; }
+            public string ServerId { get; set; }
 
-            public McFolder Folder { get; set; }
-
-            public ApplyItemAdd (int accountId)
+            public ApplyItemDelete (int accountId)
                 : base (accountId)
             {
             }
@@ -34,22 +32,26 @@ namespace NachoCore.ActiveSync
 
             protected override void ApplyCommandToModel ()
             {
+                McItem item = null;
                 switch (ClassCode) {
-                case Xml.AirSync.ClassCode.Contacts:
-                    ServerSaysAddContact (XmlCommand, Folder);
-                    break;
                 case Xml.AirSync.ClassCode.Email:
-                    ServerSaysAddEmail (XmlCommand, Folder);
+                    item = McFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
                     break;
                 case Xml.AirSync.ClassCode.Calendar:
-                    ServerSaysAddCalendarItem (XmlCommand, Folder);
+                    item = McFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
+                    break;
+                case Xml.AirSync.ClassCode.Contacts:
+                    item = McFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
                     break;
                 case Xml.AirSync.ClassCode.Tasks:
-                    ServerSaysAddTask (XmlCommand, Folder);
+                    item = McFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
                     break;
                 default:
                     Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + ClassCode);
                     break;
+                }
+                if (null != item) {
+                    item.Delete ();
                 }
             }
         }
