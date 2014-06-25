@@ -148,7 +148,7 @@ class App:
                 continue
             return type_
         else:
-            raise ValueError('unknown release type value %s' % str(app.release_type))
+            raise ValueError('unknown release type value %s' % str(release_type_value))
 
     def __init__(self, hockeyapp_obj, app_id=None,
                  title=None, bundle_id=None, platform=None, release_type=None):
