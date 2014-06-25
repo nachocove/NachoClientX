@@ -193,38 +193,6 @@ namespace NachoCore.Model
         /// Summary is extracted in gleaner
         public string Summary { set; get; }
 
-        /// The score based on content. The current attribute that
-        /// affects this value is the number of messages in the thread.
-        public int ContentScore { set; get; }
-
-        private int GetMaxContactScore (string emailAddressString)
-        {
-            // TODO: Test this
-            int score = int.MinValue;
-            var addresses = NcEmailAddress.ParseString (emailAddressString);
-            foreach (var address in addresses) {
-                var emailAddress = address as MailboxAddress;
-                if (null != emailAddress) {
-                    List<McContact> contactList = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
-                    foreach (McContact contact in contactList) {
-                        score = Math.Max (score, contact.Score);
-                    }
-                }
-            }
-            return score;
-        }
-
-        public int GetScore ()
-        {
-            /// SCORING - Return the sum of the content score and 
-            /// and the max contact score.
-            int contactScore = GetMaxContactScore (To);
-            contactScore = Math.Max (contactScore, GetMaxContactScore (From));
-            contactScore = Math.Max (contactScore, GetMaxContactScore (Cc));
-
-            return ContentScore + contactScore;
-        }
-
         //This is strictly used for testing purposes
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
