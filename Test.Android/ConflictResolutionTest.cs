@@ -3,6 +3,7 @@
 using System;
 using NUnit.Framework;
 using NachoCore.ActiveSync;
+using System.Linq;
 using ProtoOps = Test.iOS.CommonProtoControlOps;
 using Operations = NachoCore.Model.McPending.Operations;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
@@ -29,24 +30,39 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                FolderCmd = CreateFolderSyncCmd ();
                 ProtoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
+                FolderCmd = CreateFolderSyncCmd ();
             }
 
             public AsFolderSyncCommand CreateFolderSyncCmd ()
             {
-                var context = new MockContext ();
+                var context = new MockContext (ProtoControl);
+                context.Server = CreateServer ();
                 var folderCmd = new AsFolderSyncCommand (context);
                 folderCmd.HttpClientType = typeof(MockHttpClient);
                 folderCmd.DnsQueryRequestType = typeof(MockDnsQueryRequest);
                 return folderCmd;
             }
 
-            public McFolder CreateFolder (int destId, string name, TypeCode type)
+            private McServer CreateServer ()
+            {
+                var phonyServer = McServer.Create (CommonMockData.MockUri);
+                return phonyServer;
+            }
+
+            public McFolder CreateFolder (int destId, string name, TypeCode type, string parentId)
             {
                 ProtoControl.CreateFolderCmd (destId, name, type);
-                var found = McFolder.GetUserFolder (defaultAccountId, type, destId, name);
+                var found = GetCreatedFolder (defaultAccountId, type, parentId, name);
                 return found;
+            }
+
+            private McFolder GetCreatedFolder (int accountId, TypeCode type, string parentId, string name)
+            {
+                var found = McFolder.QueryByParentId (accountId, parentId).Where (folder => folder.Type == type)
+                    .Where (folder => folder.DisplayName == name).ToList ();
+                Assert.AreEqual (1, found.Count, "Found too many matching folders after FolderCreateCmd");
+                return found.FirstOrDefault ();
             }
 
             public T DoCreateItemCmd<T> (McFolder folder, Func<int, int, string> createCmd) where T : McItem, new()
@@ -71,13 +87,13 @@ namespace Test.iOS
 
                 var topFolderName = "Top-Level-Folder";
                 var topFolderType = TypeCode.UserCreatedGeneric_1;
-                var pendTopFolder = CreateFolder (0, topFolderName, topFolderType);
+                var pendTopFolder = CreateFolder (-1, topFolderName, topFolderType, "0");
 
-                var subCalFolder = CreateFolder (pendTopFolder.Id, "Sub-Cal-Folder", TypeCode.UserCreatedCal_13);
-                var subTaskFolder = CreateFolder (pendTopFolder.Id, "Sub-Task-Folder", TypeCode.UserCreatedTasks_15);
+                var subCalFolder = CreateFolder (pendTopFolder.Id, "Sub-Cal-Folder", TypeCode.UserCreatedCal_13, pendTopFolder.ServerId);
+                var subTaskFolder = CreateFolder (pendTopFolder.Id, "Sub-Task-Folder", TypeCode.UserCreatedTasks_15, pendTopFolder.ServerId);
 
                 bool didFinish = folderCreateEvent.WaitOne (1000);
-                Assert.IsTrue (didFinish, "Operation did not finish");
+                Assert.IsTrue (didFinish, "Folder creation did not finish");
 
                 ExecuteConflictTest ();
 
@@ -88,8 +104,8 @@ namespace Test.iOS
 
                 string expectedServerId = "0";  // Should match ServerId in SyncResponseXml
                 Assert.AreEqual (expectedServerId, foundTopFolder.ServerId, "Top level folder's ServerId should match ServerId sent from server");
-                Assert.AreEqual (expectedServerId, subCalFolder.ParentId, "Sub folders' ParentId's should match ServerId sent from server");
-                Assert.AreEqual (expectedServerId, subTaskFolder.ParentId, "Sub folders' ParentId's should match ServerId sent from server")
+                Assert.AreEqual (expectedServerId, foundCalFolder.ParentId, "Sub folders' ParentId's should match ServerId sent from server");
+                Assert.AreEqual (expectedServerId, foundTaskFolder.ParentId, "Sub folders' ParentId's should match ServerId sent from server");
             }
         }
 
@@ -115,7 +131,7 @@ namespace Test.iOS
                 FolderCmd.Execute (sm);
 
                 bool didFinish = autoResetEvent.WaitOne (2000);
-                Assert.IsTrue (didFinish, "Operation did not finish");
+                Assert.IsTrue (didFinish, "FolderCmd operation did not finish");
             }
 
             public NcStateMachine CreatePhonyProtoSm (Action action)
