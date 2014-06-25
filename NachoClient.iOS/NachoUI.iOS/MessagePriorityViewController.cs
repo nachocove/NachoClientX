@@ -7,6 +7,8 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using MonoTouch.CoreAnimation;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
@@ -15,7 +17,8 @@ namespace NachoClient.iOS
         public McEmailMessageThread thread;
         protected INachoMessageEditorParent owner;
 
-        enum DatePickerActionType
+
+        public enum DatePickerActionType
         {
             None,
             Defer,
@@ -41,54 +44,25 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            INachoMessageEditorParent own = owner;
             base.ViewDidLoad ();
+            owner = own;
 
-            DateTime earliestDelay = DateTime.MaxValue;
-            foreach (var message in thread) {
-                if (earliestDelay > message.FlagUtcDeferUntil) {
-                    earliestDelay = message.FlagUtcDeferUntil;
-                }
-            }
+            float frameHeight = 420;
+            float frameWidth = 280;
 
-            if (DateTime.UtcNow > earliestDelay) {
-                ;
-            } else if (1 == thread.Count) {
-                currentDelayLabel.Text = String.Format ("Deferred until {0}.", earliestDelay);
-            } else {
-                currentDelayLabel.Text = String.Format ("Visible after {0}.", earliestDelay);
-            }
-
-            meetingButton.TouchUpInside += (object sender, EventArgs e) => {
-                CreateMeeting ();
-            };
-            taskButton.TouchUpInside += (object sender, EventArgs e) => {
-                CreateTask ();
-            };
-            deadlineButton.TouchUpInside += (object sender, EventArgs e) => {
-                CreateDeadline ();
-            };
-            laterButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Later);
-            };
-            tonightButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Tonight);
-            };
-            tomorrowButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Tomorrow);
-            };
-            nextWeekButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.NextWeek);
-            };
-            nextMonthButton.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.NextMonth);
-            };
-            deferDatePicker.TouchUpInside += (object sender, EventArgs e) => {
-                DelayRequest (MessageDeferralType.Custom);
-            };
-            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (true, null);
-            };
-
+            PriorityView priorityView = new PriorityView (new RectangleF (20, 70, frameWidth, frameHeight));
+            priorityView.SetOwner (this);
+            priorityView.initButtonManager ();
+            priorityView.MakeButtonLabels ();
+            priorityView.Layer.CornerRadius = 15.0f;
+            priorityView.ClipsToBounds = true;
+            priorityView.BackgroundColor = UIColor.White;
+            priorityView.AddEscapeButton ();
+            priorityView.AddEscapeButton ();
+            priorityView.AddDeferMessageLabel ();
+            priorityView.MakeActionButtons ();
+            View.AddSubview (priorityView);
         }
 
         /// Touch anywhere else, and we'll close this view
@@ -130,43 +104,43 @@ namespace NachoClient.iOS
             }));
         }
 
-        void DelayRequest (MessageDeferralType request)
+        public void DelayRequest (string request)
         {
             DateTime now = DateTime.Now;
 
             switch (request) {
-            case MessageDeferralType.Later:
-            case MessageDeferralType.Tonight:
-            case MessageDeferralType.Tomorrow:
-            case MessageDeferralType.NextWeek:
-            case MessageDeferralType.MonthEnd:
-            case MessageDeferralType.NextMonth:
-            case MessageDeferralType.Forever:
-                NcMessageDeferral.DeferThread (thread, request);
+            case "Later":
+            case "Tonight":
+            case "Tomorrow":
+            case "NextWeek":
+            case "MonthEnd":
+            case "NextMonth":
+            case "Forever":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Forever);
                 owner.DismissChildMessageEditor (this);
                 return;
-            case MessageDeferralType.Custom:
+            case "Custom":
                 datePickerAction = DatePickerActionType.Defer;
                 PerformSegue ("MessagePriorityToDatePicker", this);
                 break;
-            case MessageDeferralType.None:
+            case "None":
             default:
                 NcAssert.CaseError ();
                 return;
             }
         }
 
-        void CreateMeeting ()
+        public void CreateMeeting ()
         {
             owner.CreateMeetingEmailForMessage (this, thread);
         }
 
-        void CreateTask ()
+        public void CreateTask ()
         {
             owner.CreateTaskForEmailMessage (this, thread);
         }
 
-        void CreateDeadline ()
+        public void CreateDeadline ()
         {
             datePickerAction = DatePickerActionType.Deadline;
             PerformSegue ("MessagePriorityToDatePicker", this);

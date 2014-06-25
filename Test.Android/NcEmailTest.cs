@@ -239,6 +239,25 @@ namespace Test.Common
         }
 
         [Test]
+        public void UpdateNonCategoryField ()
+        {
+            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+
+            Assert.True (email1.Categories.Count == 6);
+            Assert.True (email1.getInternalCategoriesList ().Count == 6);
+
+            email1.AccountId = 1;
+            email1.Update();
+
+            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE AccountId=?", 1)[0];
+            email2.IsRead = true;
+            email2.Update ();
+            Assert.True (email2.Categories.Count == 6);
+
+        }
+
+        [Test]
         public void UpdateCategories ()
         {
             List<McEmailMessageCategory> catList = new List<McEmailMessageCategory> ();

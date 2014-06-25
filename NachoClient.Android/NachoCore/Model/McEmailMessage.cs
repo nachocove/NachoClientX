@@ -193,6 +193,39 @@ namespace NachoCore.Model
         /// Summary is extracted in gleaner
         public string Summary { set; get; }
 
+        /// The score based on content. The current attribute that
+        /// affects this value is the number of messages in the thread.
+        public int ContentScore { set; get; }
+
+        private int GetMaxContactScore (string emailAddressString)
+        {
+            // TODO: Test this
+            int score = int.MinValue;
+            var addresses = NcEmailAddress.ParseString (emailAddressString);
+            foreach (var address in addresses) {
+                var emailAddress = address as MailboxAddress;
+                if (null != emailAddress) {
+                    List<McContact> contactList = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
+                    foreach (McContact contact in contactList) {
+                        score = Math.Max (score, contact.Score);
+                    }
+                }
+            }
+            return score;
+        }
+
+        public int GetScore ()
+        {
+            /// SCORING - Return the sum of the content score and 
+            /// and the max contact score.
+            int contactScore = GetMaxContactScore (To);
+            contactScore = Math.Max (contactScore, GetMaxContactScore (From));
+            contactScore = Math.Max (contactScore, GetMaxContactScore (Cc));
+
+            return ContentScore + contactScore;
+        }
+
+        //This is strictly used for testing purposes
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
             return _Categories;
@@ -497,9 +530,9 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected void InsertAncillaryData (SQLiteConnection db)
+        protected NcResult InsertAncillaryData (SQLiteConnection db)
         {
-            InsertCategories (db);
+            return InsertCategories (db);
         }
 
         protected NcResult InsertCategories (SQLiteConnection db)
@@ -524,21 +557,52 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             NcAssert.True (!isDeleted);
-            int retval = base.Insert ();
-            InsertAncillaryData (NcModel.Instance.Db);
-            return retval;
+
+            //FIXME better default returnVal
+            int returnVal = -1; 
+
+            try 
+            {
+                NcModel.Instance.Db.RunInTransaction (() => {
+                    returnVal = base.Insert ();
+                    InsertAncillaryData (NcModel.Instance.Db);
+                });
+            }
+            catch (SQLiteException ex) 
+            {
+                Log.Error(Log.LOG_EMAIL,"Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
+            }
+                
+            return returnVal;
         }
 
         public override int Update ()
         {
-            int retval = base.Update ();
             NcAssert.True (!isDeleted);
-            DeleteAncillaryData (NcModel.Instance.Db);
-            InsertAncillaryData (NcModel.Instance.Db);
-            return retval;
+
+            //FIXME better default returnVal
+            int returnVal = -1;  
+
+            try 
+            {
+                NcModel.Instance.Db.RunInTransaction (() => {
+                    returnVal = base.Update ();
+                    if(!isAncillaryInMemory){
+                        ForceReadAncillaryData();
+                    }
+                    DeleteAncillaryData (NcModel.Instance.Db);
+                    InsertAncillaryData (NcModel.Instance.Db);
+                });
+            }
+            catch (SQLiteException ex) 
+            {
+                Log.Error(Log.LOG_EMAIL,"Updating the email failed: {0} No changes were made to the DB.", ex.Message);
+            }
+
+            return returnVal;
         }
 
-        public override int Delete ()
+        public override void DeleteAncillary ()
         {
             if (!IsRead) {
                 McContact sender = GetFromContact ();
@@ -549,8 +613,16 @@ namespace NachoCore.Model
             DeleteBody ();
             DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);
-            isDeleted = true;
-            return base.Delete ();
+        }
+            
+        public override int Delete ()
+        {
+            //FIXME better default returnVal
+            int returnVal = base.Delete ();
+            if (0 != returnVal || -1 != returnVal) {
+                isDeleted = true;
+            }
+            return returnVal;
         }
     }
 
