@@ -500,7 +500,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
@@ -848,6 +848,10 @@ namespace NachoCore.ActiveSync
             if (null != defaultCal) {
                 defaultCal.AsSyncMetaToClientExpected = true;
                 defaultCal.Update ();
+            }
+            if (null == defaultInbox && null == defaultCal) {
+                Log.Info (Log.LOG_AS, "ForceSync called before initial account Sync - ignoring.");
+                return;
             }
             // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
             SyncStrategy.RequestQuickFetch = true;

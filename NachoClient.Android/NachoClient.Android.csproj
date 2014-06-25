@@ -33,8 +33,8 @@
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -49,8 +49,8 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="BeforeBuild" command="${SolutionDir}/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/mk_log_settings.py" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -273,6 +273,15 @@
     <Compile Include="NachoCore\Utils\NcTask.cs" />
     <Compile Include="NachoCore\Model\McPath.cs" />
     <Compile Include="NachoCore\Utils\NcRateLimiter.cs" />
+    <Compile Include="NachoCore\Model\IScorable.cs" />
+    <Compile Include="NachoCore\Brain\NcBrain.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainEvent.cs" />
+    <Compile Include="NachoCore\Model\McContactScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessageScore.cs" />
+    <Compile Include="NachoCore\Utils\Scoring.cs" />
+    <Compile Include="NachoCore\Brain\NcEmailAnalyzer.cs" />
+    <Compile Include="NachoCore\Model\McDependency.cs" />
+    <Compile Include="NachoCore\Brain\NcTimeVariance.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

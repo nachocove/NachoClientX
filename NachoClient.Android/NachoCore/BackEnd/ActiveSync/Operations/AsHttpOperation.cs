@@ -344,7 +344,7 @@ namespace NachoCore.ActiveSync
             }
             request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             if (null != doc) {
-                Log.Info (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
+                Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
                     var stream = doc.ToWbxmlStream (Owner.IsContentLarge (this), cToken);
                     var content = new StreamContent (stream);
@@ -537,14 +537,14 @@ namespace NachoCore.ActiveSync
                                 return Final (statusEvent);
                             }
                         }
-                        Log.Info (Log.LOG_AS, "{0} response:\n{1}", CommandName, responseDoc);
+                        Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
-                        Log.Info (Log.LOG_AS, "{0} response:\n{1}", CommandName, responseDoc);
+                        Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:

@@ -547,7 +547,6 @@ namespace NachoCore.ActiveSync
             // if we're not in the ultimate state(s), then true.
             if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
                 if (!areExpecting && !IsQuickFetch) {
-                    // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
                     EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
                 }
                 Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: EmailCalendarSm.State/ContactsTasksSm.State");

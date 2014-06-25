@@ -59,10 +59,21 @@ namespace NachoCore
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
                 aex.Handle ((ex) => {
-                    Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", ex.ToString ());
+                    var message = ex.ToString();
+                    Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
                     var faulted = NcTask.FindFaulted ();
                     foreach (var name in faulted) {
                         Log.Error (Log.LOG_SYS, "Faulted task: {0}", name);
+                    }
+                    if (ex is InvalidCastException && message.Contains ("WriteRequestAsyncCB")) {
+                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB");
+                        // FIXME XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
+                        return true;
+                    }
+                    if (ex is System.Net.WebException && message.Contains ("EndGetResponse")) {
+                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: WebException with EndGetResponse");
+                        // FIXME XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
+                        return true;
                     }
                     return false;
                 });

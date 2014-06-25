@@ -42,7 +42,7 @@ namespace NachoCore.Model
 
         private void Initialize ()
         {
-            RateLimiter = new NcRateLimter (4, 0.250);
+            RateLimiter = new NcRateLimter (16, 0.250);
             FilesDir = Path.Combine (Documents, "files");
             Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
             AttachmentsDir = Path.Combine (Documents, "attachments");
@@ -56,11 +56,14 @@ namespace NachoCore.Model
             Db.CreateTable<McFolder> ();
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McEmailMessageCategory> ();
+            Db.CreateTable<McEmailMessageScoreSyncInfo> ();
+            Db.CreateTable<McEmailMessageDependency> ();
             Db.CreateTable<McAttachment> ();
             Db.CreateTable<McContact> ();
             Db.CreateTable<McContactDateAttribute> ();
             Db.CreateTable<McContactStringAttribute> ();
             Db.CreateTable<McContactAddressAttribute> ();
+            Db.CreateTable<McContactScoreSyncInfo> ();
             Db.CreateTable<McPolicy> ();
             Db.CreateTable<McProtocolState> ();
             Db.CreateTable<McServer> ();

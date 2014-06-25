@@ -236,6 +236,11 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
+        public static void ServerEndMoveToClientOwned (int accountId, string serverId, string desParentId)
+        {
+            // FIXME - Aaron to implement.
+        }
+
         public override int Delete ()
         {
             // Delete anything in the folder and any sub-folders/map entries (recursively).

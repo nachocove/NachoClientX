@@ -35,14 +35,6 @@ namespace NachoCore.ActiveSync
             }
 
             if (justCreated) {
-                /// SCORING - Score based on the # of emails in the thread.
-                List<McEmailMessage> emailThread = 
-                    McEmailMessage.QueryByThreadTopic (emailMessage.AccountId, emailMessage.ThreadTopic);
-                if (0 < emailThread.Count) {
-                    emailMessage.ContentScore += emailThread.Count;
-                    Log.Info (Log.LOG_BRAIN, "SCORE: ThreadTopic={0}, Subject={1}, ContentScore={2}", 
-                        emailMessage.ThreadTopic, emailMessage.Subject, emailMessage.ContentScore);
-                }
                 emailMessage.Insert ();
             } else {
                 emailMessage.AccountId = folder.AccountId;

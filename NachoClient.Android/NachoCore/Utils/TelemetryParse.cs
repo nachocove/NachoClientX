@@ -37,7 +37,7 @@ namespace NachoCore.Utils
         // string to that object. NSMutableString cannot use that optimization
         // because it is mutable. This way we can create a NSString that has
         // a positive ref. count.
-        private NSMutableString SafeNSString (string key)
+        private NSString SafeNSString (string key)
         {
             NSMutableString nsString = new NSMutableString ();
             nsString.SetString (new NSString (key));
@@ -75,7 +75,7 @@ namespace NachoCore.Utils
                 Epoch = new DateTime (1970, 1, 1, 0, 0, 0);
             }
             double elapsedTime = date.Subtract (Epoch).TotalSeconds;
-            NSMutableString nsKey = SafeNSString (key);
+            NSString nsKey = SafeNSString (key);
             NSDate nsDate = NSDate.FromTimeIntervalSince1970 (elapsedTime);
             Add (nsKey, nsDate);
         }
@@ -109,64 +109,70 @@ namespace NachoCore.Utils
                 Thread.Sleep (5000);
             }
         }
-            
+           
+        public static string dummy = "";
+        private string XammitNonConstIfy (string consty)
+        {
+            return string.Format ("{0}{1}", consty, dummy);
+        }
+
         public void SendEvent (TelemetryEvent tEvent)
         {
             NSMutableDictionaryEx dict = new NSMutableDictionaryEx ();
 
-            dict.AddString ("client", CurrentUser.Username);
-            dict.AddDate ("timestamp", tEvent.Timestamp);
-            dict.AddString ("os_type", Device.Instance.OsType ());
-            dict.AddString ("os_version", Device.Instance.OsVersion ());
-            dict.AddString ("device_model", Device.Instance.Model ());
-            dict.AddString ("build_version", BuildInfo.Version);
+            dict.AddString (XammitNonConstIfy ("client"), CurrentUser.Username);
+            dict.AddDate (XammitNonConstIfy ("timestamp"), tEvent.Timestamp);
+            dict.AddString (XammitNonConstIfy ("os_type"), Device.Instance.OsType ());
+            dict.AddString (XammitNonConstIfy ("os_version"), Device.Instance.OsVersion ());
+            dict.AddString (XammitNonConstIfy ("device_model"), Device.Instance.Model ());
+            dict.AddString (XammitNonConstIfy ("build_version"), BuildInfo.Version);
 
             if (tEvent.IsLogEvent ()) {
                 switch (tEvent.Type) {
                 case TelemetryEventType.ERROR:
-                    dict.AddString ("event_type", "ERROR");
+                    dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("ERROR"));
                     break;
                 case TelemetryEventType.WARN:
-                    dict.AddString ("event_type", "WARN");
+                    dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("WARN"));
                     break;
                 case TelemetryEventType.INFO:
-                    dict.AddString ("event_type", "INFO");
+                    dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("INFO"));
                     break;
                 case TelemetryEventType.DEBUG:
-                    dict.AddString ("event_type", "DEBUG");
+                    dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("DEBUG"));
                     break;
                 default:
                     NcAssert.True (false);
                     break;
                 }
-                dict.AddString ("message", tEvent.Message);
+                dict.AddString (XammitNonConstIfy ("message"), tEvent.Message);
             } else if (tEvent.IsWbxmlEvent ()) {
                 switch (tEvent.Type) {
                 case TelemetryEventType.WBXML_REQUEST:
-                    dict.AddString ("event_type", "WBXML_REQUEST");
+                    dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("WBXML_REQUEST"));
                     break;
                 case TelemetryEventType.WBXML_RESPONSE:
-                    dict.AddString ("event_type", "WBXML_RESPONSE");
+                    dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("WBXML_RESPONSE"));
                     break;
                 default:
                     NcAssert.True (false);
                     break;
                 }
-                dict.AddData ("wbxml", tEvent.Wbxml);
+                dict.AddData (XammitNonConstIfy ("wbxml"), tEvent.Wbxml);
             } else if (tEvent.IsCounterEvent ()) {
-                dict.AddString ("event_type", "COUNTER");
-                dict.AddString ("counter_name", tEvent.CounterName);
-                dict.AddInteger ("count", tEvent.Count);
-                dict.AddDate ("counter_start", tEvent.CounterStart);
-                dict.AddDate ("counter_end", tEvent.CounterEnd);
+                dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("COUNTER"));
+                dict.AddString (XammitNonConstIfy ("counter_name"), tEvent.CounterName);
+                dict.AddInteger (XammitNonConstIfy ("count") , tEvent.Count);
+                dict.AddDate (XammitNonConstIfy ("counter_start"), tEvent.CounterStart);
+                dict.AddDate (XammitNonConstIfy ("counter_end"), tEvent.CounterEnd);
             } else if (tEvent.IsCaptureEvent()) {
-                dict.AddString ("event_type", "CAPTURE");
-                dict.AddString ("capture_name", tEvent.CaptureName);
-                dict.AddInteger ("count", tEvent.Count);
-                dict.AddInteger ("average", tEvent.Average);
-                dict.AddInteger ("min", tEvent.Min);
-                dict.AddInteger ("max", tEvent.Max);
-                dict.AddInteger ("stddev", tEvent.StdDev);
+                dict.AddString (XammitNonConstIfy ("event_type"), XammitNonConstIfy ("CAPTURE"));
+                dict.AddString (XammitNonConstIfy ("capture_name"), tEvent.CaptureName);
+                dict.AddInteger (XammitNonConstIfy ("count"), tEvent.Count);
+                dict.AddInteger (XammitNonConstIfy ("average"), tEvent.Average);
+                dict.AddInteger (XammitNonConstIfy ("min"), tEvent.Min);
+                dict.AddInteger (XammitNonConstIfy ("max"), tEvent.Max);
+                dict.AddInteger (XammitNonConstIfy ("stddev"), tEvent.StdDev);
             } else {
                 NcAssert.True (false);
             }

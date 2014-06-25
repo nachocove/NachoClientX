@@ -315,7 +315,7 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcDeferUntil < ? " +
-                " ORDER BY e.ContentScore DESC, e.DateReceived DESC LIMIT 20",
+                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT 20",
                 accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
@@ -363,11 +363,9 @@ namespace NachoCore.Model
             // Use a set to eliminate duplicates
             HashSet<McContact> contactSet = new HashSet<McContact> ();
 
-            Log.Info (Log.LOG_BRAIN, "SCORE: emailAddressString={0}", emailAddressString);
             foreach (var address in addresses) {
                 var emailAddress = address as MailboxAddress;
                 if (null != emailAddress) {
-                    Log.Info (Log.LOG_BRAIN, "SCORE: emailAddress={0}", emailAddress.Address);
                     List<McContact> queryResult = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
                     if (0 == queryResult.Count) {
                         Log.Warn (Log.LOG_BRAIN, "Unknown email address {0}", emailAddress);
@@ -386,11 +384,11 @@ namespace NachoCore.Model
             return contactList;
         }
 
-        public const int minHotScore = 1;
+        public const double minHotScore = 0.1;
 
         public bool isHot ()
         {
-            return (minHotScore < this.ContentScore);
+            return (minHotScore < this.GetScore ());
         }
 
         public bool IsDeferred ()
@@ -606,6 +604,12 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
+            if (!IsRead) {
+                McContact sender = GetFromContact ();
+                sender.IncrementEmailsDeleted ();
+                sender.ForceReadAncillaryData ();
+                sender.Update ();
+            }
             DeleteBody ();
             DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);
