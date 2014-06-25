@@ -28,11 +28,12 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public void ServerSaysChangeTask (XElement command, McFolder folder)
+        public static void ServerSaysChangeTask (XElement command, McFolder folder)
         {
-            var xmlServerId = command.Element (m_ns + Xml.AirSync.ServerId);
-            var applicationData = command.Element (m_ns + Xml.AirSync.ApplicationData);
-            var task = McTask.QueryByServerId<McTask> (BEContext.Account.Id, xmlServerId.Value);
+            XNamespace Ns = Xml.AirSync.Ns;
+            var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
+            var applicationData = command.Element (Ns + Xml.AirSync.ApplicationData);
+            var task = McTask.QueryByServerId<McTask> (folder.AccountId, xmlServerId.Value);
             if (null == task) {
                 Log.Error (Log.LOG_AS, "Bad state - getting Update for non-existent Task, ServerId {0}", xmlServerId.Value);
                 ServerSaysAddTask (command, folder);

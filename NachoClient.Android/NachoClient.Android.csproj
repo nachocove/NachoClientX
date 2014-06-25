@@ -274,6 +274,8 @@
     <Compile Include="NachoCore\Utils\NcRateLimiter.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
