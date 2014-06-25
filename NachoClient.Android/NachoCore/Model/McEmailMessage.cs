@@ -225,7 +225,7 @@ namespace NachoCore.Model
             return ContentScore + contactScore;
         }
 
-        //Used for testing purposes
+        //This is strictly used for testing purposes
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
             return _Categories;
@@ -532,9 +532,9 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected void InsertAncillaryData (SQLiteConnection db)
+        protected NcResult InsertAncillaryData (SQLiteConnection db)
         {
-            InsertCategories (db);
+            return InsertCategories (db);
         }
 
         protected NcResult InsertCategories (SQLiteConnection db)

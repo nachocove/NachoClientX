@@ -17,7 +17,8 @@ namespace NachoClient.iOS
         public McEmailMessageThread thread;
         protected INachoMessageEditorParent owner;
 
-        enum DatePickerActionType
+
+        public enum DatePickerActionType
         {
             None,
             Defer,
@@ -51,86 +52,16 @@ namespace NachoClient.iOS
             float frameWidth = 280;
 
             PriorityView priorityView = new PriorityView (new RectangleF (20, 70, frameWidth, frameHeight));
+            priorityView.SetOwner (this);
+            priorityView.initButtonManager ();
             priorityView.MakeButtonLabels ();
             priorityView.Layer.CornerRadius = 15.0f;
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = UIColor.White;
             priorityView.AddEscapeButton ();
-            UIButton escapeButton = priorityView.AddEscapeButton ();
+            priorityView.AddEscapeButton ();
             priorityView.AddDeferMessageLabel ();
-            var buttonsList = priorityView.MakeActionButtons ();
-
-            for (int i = 0; i < 9; i++) {
-                switch (i) {
-
-                case 0:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        CreateMeeting ();
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-newevent"), UIControlState.Normal);
-                    break;
-                case 1:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        //Clicked On Nacho
-                        //TODO
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("inbox-icn-chilli"), UIControlState.Normal);
-                    break;
-                case 2:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        //TODO
-                        //Cole's going to work on custom datepicker
-                        CreateDeadline ();
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("inbox-icn-deadline@2x"), UIControlState.Normal);
-                    break;
-                case 3:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        DelayRequest (MessageDeferralType.Later);
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
-                    break;
-                case 4:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        DelayRequest (MessageDeferralType.Tonight);
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
-                    break;
-                case 5:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        DelayRequest (MessageDeferralType.Tomorrow);
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
-                    break;
-                case 6:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        DelayRequest (MessageDeferralType.NextWeek);
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
-                    break;
-                case 7:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        DelayRequest (MessageDeferralType.NextMonth);
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
-                    break;
-                case 8:
-                    buttonsList [i].TouchUpInside += (object sender, EventArgs e) => {
-                        //TODO
-                        //Cole's going to work on custom datepicker
-                        DelayRequest (MessageDeferralType.Custom);
-                    };
-                    buttonsList [i].SetImage (UIImage.FromBundle ("navbar-icn-defer"), UIControlState.Normal);
-                    break;
-                default:
-                    break;
-                }
-            }
-
-            escapeButton.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (true, null);
-            };
-
+            priorityView.MakeActionButtons ();
             View.AddSubview (priorityView);
         }
 
@@ -173,43 +104,43 @@ namespace NachoClient.iOS
             }));
         }
 
-        void DelayRequest (MessageDeferralType request)
+        public void DelayRequest (string request)
         {
             DateTime now = DateTime.Now;
 
             switch (request) {
-            case MessageDeferralType.Later:
-            case MessageDeferralType.Tonight:
-            case MessageDeferralType.Tomorrow:
-            case MessageDeferralType.NextWeek:
-            case MessageDeferralType.MonthEnd:
-            case MessageDeferralType.NextMonth:
-            case MessageDeferralType.Forever:
-                NcMessageDeferral.DeferThread (thread, request);
+            case "Later":
+            case "Tonight":
+            case "Tomorrow":
+            case "NextWeek":
+            case "MonthEnd":
+            case "NextMonth":
+            case "Forever":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Forever);
                 owner.DismissChildMessageEditor (this);
                 return;
-            case MessageDeferralType.Custom:
+            case "Custom":
                 datePickerAction = DatePickerActionType.Defer;
                 PerformSegue ("MessagePriorityToDatePicker", this);
                 break;
-            case MessageDeferralType.None:
+            case "None":
             default:
                 NcAssert.CaseError ();
                 return;
             }
         }
 
-        void CreateMeeting ()
+        public void CreateMeeting ()
         {
             owner.CreateMeetingEmailForMessage (this, thread);
         }
 
-        void CreateTask ()
+        public void CreateTask ()
         {
             owner.CreateTaskForEmailMessage (this, thread);
         }
 
-        void CreateDeadline ()
+        public void CreateDeadline ()
         {
             datePickerAction = DatePickerActionType.Deadline;
             PerformSegue ("MessagePriorityToDatePicker", this);
