@@ -14,6 +14,8 @@ namespace NachoCore.ActiveSync
         {
             public string ClassCode { get; set; }
 
+            public string ServerId { get; set; }
+
             public XElement XmlCommand { get; set; }
 
             public McFolder Folder { get; set; }
@@ -27,9 +29,17 @@ namespace NachoCore.ActiveSync
                                                                               out McPending.DbActionEnum action,
                                                                               out bool cancelCommand)
             {
-                cancelCommand = false;
-                action = McPending.DbActionEnum.DoNothing;
-                return null;
+                switch (pending.Operation) {
+                case McPending.Operations.FolderDelete:
+                    cancelCommand = pending.ServerIdDominatesCommand (ServerId);
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                default:
+                    cancelCommand = false;
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+                }
             }
 
             protected override void ApplyCommandToModel ()

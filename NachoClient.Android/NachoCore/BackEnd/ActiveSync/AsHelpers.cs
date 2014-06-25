@@ -885,6 +885,18 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        public static bool EmailMessageHasAttachment (XElement command, int attachId)
+        {
+            // FIXME - need to implement.
+            return true;
+        }
+
+        public static bool TimeOrLocationChanged (XElement command, string serverId)
+        {
+            // FIXME - need to implement.
+            return false;
+        }
+
         public void InsertAttachments (McEmailMessage msg)
         {
             XNamespace email2Ns = Xml.Email2.Ns;

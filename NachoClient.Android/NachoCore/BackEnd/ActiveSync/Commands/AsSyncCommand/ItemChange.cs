@@ -14,6 +14,8 @@ namespace NachoCore.ActiveSync
         {
             public string ClassCode { get; set; }
 
+            public string ServerId { get; set; }
+
             public XElement XmlCommand { get; set; }
 
             public McFolder Folder { get; set; }
@@ -27,9 +29,81 @@ namespace NachoCore.ActiveSync
                                                                               out McPending.DbActionEnum action,
                                                                               out bool cancelCommand)
             {
-                cancelCommand = false;
-                action = McPending.DbActionEnum.DoNothing;
-                return null;
+                switch (pending.Operation) {
+                case McPending.Operations.FolderDelete:
+                    cancelCommand = pending.ServerIdDominatesCommand (ServerId);
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.AttachmentDownload:
+                    cancelCommand = false;
+                    action = (pending.ServerId == ServerId &&
+                        !AsHelpers.EmailMessageHasAttachment (XmlCommand, pending.AttachmentId)) ?
+                        McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.CalRespond:
+                    cancelCommand = false;
+                    action = (pending.ServerId == ServerId &&
+                        AsHelpers.TimeOrLocationChanged (XmlCommand, ServerId)) ?
+                        McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.EmailMove:
+                case McPending.Operations.CalMove:
+                case McPending.Operations.ContactMove:
+                case McPending.Operations.TaskMove:
+                    cancelCommand = false;
+                    if (pending.ServerId == ServerId) {
+                        // FIXME - need to Alter the command to INSERT the Item in the new location.
+                        // FIXME - need to DELETE the item from the old location.
+                        action = McPending.DbActionEnum.Delete;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
+                case McPending.Operations.EmailForward:
+                case McPending.Operations.EmailReply:
+                    cancelCommand = false;
+                    if (pending.ServerId == ServerId) {
+                        pending.ConvertToEmailSend ();
+                        action = McPending.DbActionEnum.Update;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
+                case McPending.Operations.EmailDelete:
+                case McPending.Operations.CalDelete:
+                case McPending.Operations.ContactDelete:
+                case McPending.Operations.TaskDelete:
+                    cancelCommand = (pending.ServerId == ServerId);
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.EmailClearFlag:
+                case McPending.Operations.EmailMarkFlagDone:
+                case McPending.Operations.EmailMarkRead:
+                case McPending.Operations.EmailSetFlag:
+                    // FIXME - need analysis to know what to do.
+                    cancelCommand = false;
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.CalUpdate:
+                case McPending.Operations.ContactUpdate:
+                case McPending.Operations.TaskUpdate:
+                    cancelCommand = false;
+                    action = (pending.ServerId == ServerId) ?
+                    McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                default:
+                    cancelCommand = false;
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+                }
             }
 
             protected override void ApplyCommandToModel ()
