@@ -637,6 +637,10 @@ namespace NachoCore.ActiveSync
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
                     var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    var pathElem = new McPath (BEContext.Account.Id);
+                    pathElem.ServerId = addServerId;
+                    pathElem.ParentId = folder.ServerId;
+                    pathElem.Insert ();
                     var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
                         ClassCode = classCode,
                         ServerId = addServerId,
@@ -697,6 +701,8 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.Delete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
+                    pathElem.Delete ();
                     var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
                         ClassCode = classCode,
                         ServerId = delServerId,
