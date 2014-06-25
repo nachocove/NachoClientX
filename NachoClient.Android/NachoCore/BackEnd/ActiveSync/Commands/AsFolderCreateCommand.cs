@@ -136,7 +136,7 @@ namespace NachoCore.ActiveSync
                 out McPending.DbActionEnum action,
                 out bool cancelDelta)
             {
-                // FIXME - need a McPending method that acts on ALL ServerId fields.
+                // TODO - need a McPending method that acts on ALL ServerId fields.
                 action = McPending.DbActionEnum.DoNothing;
                 cancelDelta = false;
                 if (null != pending.ServerId && pending.ServerId == PlaceholderId) {
