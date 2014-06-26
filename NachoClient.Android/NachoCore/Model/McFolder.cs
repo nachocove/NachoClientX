@@ -241,8 +241,25 @@ namespace NachoCore.Model
         {
             // FIXME - Aaron to implement.
             var destFolder = GetClientOwnedFolder (accountId, destParentId);
+            NcAssert.NotNull (destFolder, "Destination folder should exist");
 
-            McFolderEntry.QueryByServerId<McFolder> (accountId, serverId);
+            var potentialFolder = McFolderEntry.QueryByServerId<McFolder> (accountId, serverId);
+            var potentialItem = McFolderEntry.QueryByServerId<McItem> (accountId, serverId);
+
+            if (potentialFolder != null && potentialItem == null) {
+                potentialFolder.ParentId = destParentId;
+                potentialFolder.Update ();
+
+                var maps = McMapFolderFolderEntry.QueryByFolderId (accountId, potentialFolder.Id);
+                foreach (McMapFolderFolderEntry map in maps) {
+
+                }
+            } else if (potentialItem != null && potentialFolder == null) {
+                McFolder.UnlinkAll (potentialItem);
+                destFolder.Link (potentialItem);
+            } else {
+                NcAssert.True (false, "Could not find item or folder, or found both with the same ServerId");
+            }
         }
 
         public override int Delete ()
