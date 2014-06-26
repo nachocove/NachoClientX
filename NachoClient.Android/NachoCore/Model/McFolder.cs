@@ -239,26 +239,35 @@ namespace NachoCore.Model
         // move an item or folder from a sync'd folder to a client-owned folder
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
         {
-            // FIXME - Aaron to implement.
             var destFolder = GetClientOwnedFolder (accountId, destParentId);
             NcAssert.NotNull (destFolder, "Destination folder should exist");
 
             var potentialFolder = McFolderEntry.QueryByServerId<McFolder> (accountId, serverId);
-            var potentialItem = McFolderEntry.QueryByServerId<McItem> (accountId, serverId);
+            var potentialItem = McFolderEntry.QueryAllForServerId (accountId, serverId);
 
             if (potentialFolder != null && potentialItem == null) {
+                NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
+                potentialFolder.IsClientOwned = true;
                 potentialFolder.ParentId = destParentId;
                 potentialFolder.Update ();
 
-                var maps = McMapFolderFolderEntry.QueryByFolderId (accountId, potentialFolder.Id);
-                foreach (McMapFolderFolderEntry map in maps) {
-
-                }
+                RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
             } else if (potentialItem != null && potentialFolder == null) {
-                McFolder.UnlinkAll (potentialItem);
-                destFolder.Link (potentialItem);
+                McFolder.UnlinkAll ((McItem)potentialItem);
+                destFolder.Link ((McItem)potentialItem);
             } else {
                 NcAssert.True (false, "Could not find item or folder, or found both with the same ServerId");
+            }
+        }
+
+        // change all isClientOwned flags in a directory to true;
+        private static void RecursivelyChangeFlags (int accountId, string parentServerId)
+        {
+            var children = McFolder.QueryByParentId (accountId, parentServerId);
+            foreach (McFolder child in children) {
+                child.IsClientOwned = true;
+                child.Update ();
+                RecursivelyChangeFlags (accountId, child.ServerId);
             }
         }
 
