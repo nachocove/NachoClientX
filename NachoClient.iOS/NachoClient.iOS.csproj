@@ -176,7 +176,7 @@
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
     <Reference Include="HockeyApp.iOS">
-      <HintPath>HockeyApp\hockeyappios-3.5.4.2\lib\ios\HockeyApp.iOS.dll</HintPath>
+      <HintPath>HockeyApp\hockeyappios-3.5.5\lib\ios\HockeyApp.iOS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
