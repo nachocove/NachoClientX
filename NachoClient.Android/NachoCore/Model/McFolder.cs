@@ -236,9 +236,13 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static void ServerEndMoveToClientOwned (int accountId, string serverId, string desParentId)
+        // move an item or folder from a sync'd folder to a client-owned folder
+        public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
         {
             // FIXME - Aaron to implement.
+            var destFolder = GetClientOwnedFolder (accountId, destParentId);
+
+            McFolderEntry.QueryByServerId<McFolder> (accountId, serverId);
         }
 
         public override int Delete ()
