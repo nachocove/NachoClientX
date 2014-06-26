@@ -558,6 +558,156 @@ namespace Test.iOS
         }
 
         [TestFixture]
+        public class TestMovingItems : BaseMcFolderTest
+        {
+            private string TestServerEndMoveFolderToClientOwned (Action<string> makeSubEntry)
+            {
+                // Set up item and destination folder
+                string itemServerId = "11";
+                string destServerId = "12";
+
+                var destFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: destServerId, isClientOwned: true);
+
+                // Allow caller to create folders or items inside the owner folder
+                makeSubEntry (itemServerId);
+
+                McFolder.ServerEndMoveToClientOwned (defaultAccountId, itemServerId, destServerId);
+                return destFolder.ServerId;
+            }
+
+            private McFolder TestFolderMovedCorrectly (string destServerId, McFolder folder)
+            {
+                // Test that folder was moved correctly
+                var foundFolders = McFolder.QueryByParentId (defaultAccountId, destServerId);
+                Assert.AreEqual (1, foundFolders.Count, "Should move folder with subItems to client-owned folder with matching destFolderId");
+                var foundFolder = foundFolders.FirstOrDefault ();
+                Assert.AreEqual (folder.Id, foundFolder, "Should move correct item into client-owned folder");
+                Assert.AreEqual (true, foundFolder.IsClientOwned, "Should set moved item to client-owned");
+
+                return foundFolder;
+            }
+
+            [Test]
+            public void TestMovingEmptyFolderToClientOwned ()
+            {
+                // should move empty folder with matching ServerId to client-owned folder with matching destFolderId
+                McFolder folder = new McFolder (); // must assign default value
+
+                var destServerId = TestServerEndMoveFolderToClientOwned ((itemServerId) => {
+                    folder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: itemServerId, isClientOwned: false);
+                });
+
+                TestFolderMovedCorrectly (destServerId, folder);
+            }
+
+            [Test]
+            public void TestMovingFolderWithItemsToClientOwned ()
+            {
+                // should move folder with items and matching ServerId to client-owned folder
+                McFolder folder = new McFolder (); // must assign default value
+                McItem subItem1;
+                McItem subItem2;
+
+                var destServerId = TestServerEndMoveFolderToClientOwned ((itemServerId) => {
+                    folder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: itemServerId, isClientOwned: false);
+                    subItem1 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: "50");
+                    subItem2 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: "51");
+                    folder.Link (subItem1);
+                    folder.Link (subItem2);
+                });
+
+                var foundFolder = TestFolderMovedCorrectly (destServerId, folder);
+
+                // Test that the folder's sub-items got moved correctly
+                var foundItems = McItem.QueryByFolderId<McEmailMessage> (defaultAccountId, foundFolder.Id);
+                Assert.AreEqual (2, foundItems.Count, "Should move subItems to client-owned folder with matching destFolderId");
+            }
+
+            [Test]
+            public void TestMovingFolderWithSubFoldersToClientOwned ()
+            {
+                // should move folder with subfolders to client-owned folder recursively
+                McFolder folder = new McFolder ();
+
+                var destServerId = TestServerEndMoveFolderToClientOwned ((itemServerId) => {
+                    folder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: itemServerId, isClientOwned: false);
+                    FolderOps.CreateFolder (accountId: defaultAccountId, parentId: itemServerId);
+                    FolderOps.CreateFolder (accountId: defaultAccountId, parentId: itemServerId);
+                });
+
+                TestFolderMovedCorrectly (destServerId, folder);
+                var foundSubFolders = McFolder.QueryByParentId (defaultAccountId, destServerId);
+                Assert.AreEqual (2, foundSubFolders.Count, "Should move subFolders recursively to client-owned folder with matching destFolderId");
+            }
+
+            [Test]
+            public void TestMovingSingleItemToClientOwned ()
+            {
+                // should move synced item with matching ServerId to client-owned folder with matching destFolderId
+                // Set up current folder and destination folder
+                string ownerServerId = "10";
+                string itemServerId = "11";
+                string destServerId = "12";
+
+                var ownerFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: ownerServerId, isClientOwned: false);
+                var destFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: destServerId, isClientOwned: true);
+
+                var item = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: itemServerId);
+                ownerFolder.Link (item);
+
+                McFolder.ServerEndMoveToClientOwned (defaultAccountId, itemServerId, destServerId);
+                TestMovedToClientOwned (item, destFolder.ServerId);
+            }
+
+            private void TestMovedToClientOwned (McFolderEntry item, string folderServerId)
+            {
+                // Test that everything has been moved to the destination folder and retains it's correct structure
+                var foundItems = McFolder.QueryByParentId (defaultAccountId, folderServerId);
+                Assert.AreEqual (1, foundItems.Count, "Should move item with matching ServerId to client-owned folder with matching destFolderId");
+                var foundItem = foundItems.FirstOrDefault ();
+                Assert.AreEqual (item.Id, foundItem, "Should move correct item into client-owned folder");
+                Assert.AreEqual (true, foundItem.IsClientOwned, "Should move item to client-owned folder and set the item to client-owned");
+            }
+
+            [Test]
+            public void TestNcAsserts ()
+            {
+                // should NcAssert if no folder matches destFolderId
+                string goodItemServerId = "50";
+                string badDestFolderId = "51";
+                FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: goodItemServerId);
+
+                TestForNachoExceptionFailure (() => {
+                    McFolder.ServerEndMoveToClientOwned (defaultAccountId, goodItemServerId, badDestFolderId);
+                }, "Should throw NcAssert if moving synced item to destFolder with bad Id");
+
+                // should NcAssert if no folder entry matches serverId
+                string badItemServerId = "60";
+                string goodDestFolderId = "61";
+                FolderOps.CreateFolder (accountId: defaultAccountId, serverId: goodDestFolderId);
+
+                TestForNachoExceptionFailure (() => {
+                    McFolder.ServerEndMoveToClientOwned (defaultAccountId, badItemServerId, goodDestFolderId);
+                }, "Should throw NcAssert if trying to move a synced item but none matches the ServerId param");
+
+                // should NcAssert if the folder entry you are trying to move is already client-owned
+                string alreadyClientOwned = "70";
+                string ownerFolder = "71";
+                string destFolderId = "72";
+
+                var owner = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: ownerFolder);
+                var item = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: alreadyClientOwned);
+                owner.Link (item);
+
+                FolderOps.CreateFolder (accountId: defaultAccountId, serverId: destFolderId);
+
+                TestForNachoExceptionFailure (() => {
+                    McFolder.ServerEndMoveToClientOwned (defaultAccountId, alreadyClientOwned, destFolderId);
+                }, "Should throw NcAssert if trying to move an item that is already client-owned");
+            }
+        }
+
+        [TestFixture]
         public class TestDelete : BaseMcFolderTest
         {
             [Test]
