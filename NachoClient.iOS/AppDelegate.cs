@@ -481,8 +481,9 @@ namespace NachoClient.iOS
 
         public override string ApplicationLogForCrashManager (BITCrashManager crashManager)
         {
-            string log = String.Format ("Version: {0}\nBuild Number: {1}\n",
-                BuildInfo.Version, BuildInfo.BuildNumber);
+            string launchTime = String.Format("{0:O}", DateTime.UtcNow);
+            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\n",
+                BuildInfo.Version, BuildInfo.BuildNumber, launchTime);
             if (IsDevelopmentBuild) {
                 log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
                 "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
