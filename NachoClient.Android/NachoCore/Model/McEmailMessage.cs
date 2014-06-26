@@ -574,9 +574,11 @@ namespace NachoCore.Model
         {
             if (!IsRead) {
                 McContact sender = GetFromContact ();
-                sender.IncrementEmailsDeleted ();
-                sender.ForceReadAncillaryData ();
-                sender.Update ();
+                if (null != sender) {
+                    sender.IncrementEmailsDeleted ();
+                    sender.ForceReadAncillaryData ();
+                    sender.Update ();
+                }
             }
             DeleteBody ();
             DeleteAttachments ();
