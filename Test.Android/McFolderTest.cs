@@ -581,7 +581,7 @@ namespace Test.iOS
                 var foundFolders = McFolder.QueryByParentId (defaultAccountId, destServerId);
                 Assert.AreEqual (1, foundFolders.Count, "Should move folder with subItems to client-owned folder with matching destFolderId");
                 var foundFolder = foundFolders.FirstOrDefault ();
-                Assert.AreEqual (folder.Id, foundFolder, "Should move correct item into client-owned folder");
+                Assert.AreEqual (folder.Id, foundFolder.Id, "Should move correct item into client-owned folder");
                 Assert.AreEqual (true, foundFolder.IsClientOwned, "Should set moved item to client-owned");
 
                 return foundFolder;
@@ -635,8 +635,8 @@ namespace Test.iOS
                     FolderOps.CreateFolder (accountId: defaultAccountId, parentId: itemServerId);
                 });
 
-                TestFolderMovedCorrectly (destServerId, folder);
-                var foundSubFolders = McFolder.QueryByParentId (defaultAccountId, destServerId);
+                var found = TestFolderMovedCorrectly (destServerId, folder);
+                var foundSubFolders = McFolder.QueryByParentId (defaultAccountId, found.ServerId);
                 Assert.AreEqual (2, foundSubFolders.Count, "Should move subFolders recursively to client-owned folder with matching destFolderId");
             }
 
@@ -656,17 +656,16 @@ namespace Test.iOS
                 ownerFolder.Link (item);
 
                 McFolder.ServerEndMoveToClientOwned (defaultAccountId, itemServerId, destServerId);
-                TestMovedToClientOwned (item, destFolder.ServerId);
+                TestMovedToClientOwned (item, destFolder);
             }
 
-            private void TestMovedToClientOwned (McFolderEntry item, string folderServerId)
+            private void TestMovedToClientOwned (McFolderEntry item, McFolder folder)
             {
                 // Test that everything has been moved to the destination folder and retains it's correct structure
-                var foundItems = McFolder.QueryByParentId (defaultAccountId, folderServerId);
+                var foundItems = McItem.QueryByFolderId<McEmailMessage> (defaultAccountId, folder.Id);
                 Assert.AreEqual (1, foundItems.Count, "Should move item with matching ServerId to client-owned folder with matching destFolderId");
                 var foundItem = foundItems.FirstOrDefault ();
-                Assert.AreEqual (item.Id, foundItem, "Should move correct item into client-owned folder");
-                Assert.AreEqual (true, foundItem.IsClientOwned, "Should move item to client-owned folder and set the item to client-owned");
+                Assert.AreEqual (item.Id, foundItem.Id, "Should move correct item into client-owned folder");
             }
 
             [Test]
