@@ -49,8 +49,7 @@ namespace NachoClient.iOS
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
                 // Xaramin does not produce .dSYM files. So, there is nothing to
-                // upload to Crashlytics which does not show any crash report
-                // that it cannot symbolicate.
+                // upload to HockeyApp.
                 //
                 // For an explanation, see:
                 // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
@@ -71,6 +70,10 @@ namespace NachoClient.iOS
                 // Enable automatic reporting
                 manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
                 manager.CrashManager.EnableOnDeviceSymbolication = true;
+                manager.CrashManager.Delegate = new HockeyAppCrashDelegate ();
+                if (BuildInfo.Version.StartsWith("DEV")) {
+                    manager.DebugLogEnabled = true;
+                }
 
                 //Start the manager
                 manager.StartManager ();
@@ -461,6 +464,52 @@ namespace NachoClient.iOS
         {
             // UI FIXME - ask user and call CertAskResp async'ly.
             NcApplication.Instance.CertAskResp (accountId, true);
+        }
+    }
+
+    public class HockeyAppCrashDelegate : BITCrashManagerDelegate
+    {
+        private bool IsDevelopmentBuild {
+            get {
+                return BuildInfo.Version.StartsWith ("DEV");
+            }
+        }
+
+        public HockeyAppCrashDelegate () : base ()
+        {
+        }
+
+        public override string ApplicationLogForCrashManager (BITCrashManager crashManager)
+        {
+            string log = String.Format ("Version: {0}\nBuild Number: {1}\n",
+                BuildInfo.Version, BuildInfo.BuildNumber);
+            if (IsDevelopmentBuild) {
+                log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
+                "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
+            }
+            return log;
+        }
+
+        /// For some reason, UserName in HockeyApp web portal has a UUID prefixing the user name.
+        /// On a narrow or normal browser window width, the user name is hidden. So, repeat it
+        /// in contact again.
+        private string UserName ()
+        {
+            string userName = null;
+            if (IsDevelopmentBuild) {
+                userName = BuildInfo.User;
+            }
+            return userName;
+        }
+
+        public override string UserEmailForCrashManager (BITCrashManager crashManager)
+        {
+            return UserName ();
+        }
+
+        public override string UserNameForCrashManager (BITCrashManager crashManager)
+        {
+            return UserName ();
         }
     }
 }
