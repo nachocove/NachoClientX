@@ -41,6 +41,24 @@ namespace Test.iOS
         public List<McPath> GrandChildren;
     }
 
+    public class McPathNode
+    {
+        public McPathNode (McPath root)
+        {
+            Root = root;
+            Children = new List<McPathNode> ();
+        }
+            
+        public McPathNode (McPath root, List<McPathNode> children)
+        {
+            Root = root;
+            Children = children;
+        }
+
+        public McPath Root;
+        public List<McPathNode> Children;
+    }
+
     [TestFixture]
     public class McPathTest : BaseMcPathTest
     {
@@ -54,68 +72,98 @@ namespace Test.iOS
             var tree2 = CreateTree (accountId2);
 
             // delete all of the account 1 nodes by deleting the root node
-            var root1 = tree1.Root;
-            root1.Delete ();
+            tree1.Root.Delete ();
 
-            var root2 = tree2.Root;
-            ValidateTree (accountId2, root2, tree2.Children, tree2.GrandChildren);
+            ValidateTree (accountId2, tree2);
+        }
+
+        [Test]
+        public void TestNodesAreSpecificToAccount ()
+        {
+            int accountId1 = 1;
+            int accountId2 = 2;
+
+            var tree1 = CreateTree (accountId1);
+            var tree2 = CreateTree (accountId2);
+
+            // Verify that you CAN’T find account 2 nodes using QueryByServerId w/account 1.
+            ValidateTree (accountId1, tree2, childrenExpected: false);
+        }
+
+        [Test]
+        public void TestDomination ()
+        {
+            int accountId1 = 1;
+            int accountId2 = 2;
+
+            var tree1 = CreateTree (accountId1);
+            var tree2 = CreateTree (accountId2);
+
+
+
+            tree1.Root.Delete ();
+            ValidateTree (accountId2, tree2);
         }
 
         // returns the root node
-        private McPathTree CreateTree (int accountId)
+        private McPathNode CreateTree (int accountId, uint numSubChildren = 3)
         {
-            List<McPath> firstLayer = new List<McPath> ();
-            List<McPath> secondLayer = new List<McPath> ();
-
             var root = CreatePath (accountId, serverId: "0");
+            var node = new McPathNode (root);
 
             // create children, each with a different serverId
             int serverId = 1;
-            var children = CreateChildPaths (accountId, root, ref serverId);
-            firstLayer.AddRange (children);
+            CreateChildren (accountId, node, ref serverId, 2);
 
-            foreach (McPath child in children) {
-                var grandChildren = CreateChildPaths (accountId, child, ref serverId);
-                secondLayer.AddRange (grandChildren);
-            }
+            ValidateTree (accountId, node);
 
-            ValidateTree (accountId, root, firstLayer, secondLayer);
-
-            return new McPathTree (root, firstLayer, secondLayer);
+            return node;
         }
 
-        private void ValidateTree (int accountId, McPath root, List<McPath> children, List<McPath> grandChildren)
+        private void CreateChildren (int accountId, McPathNode parent, ref int serverId, int numLayers)
         {
-            if (children.Count == 0) {
+            if (numLayers == 0) {
+                return;
+            }
+
+            for (int i = 0; i < 3; ++i) {
+                var newPath = CreatePath (accountId, parentId: parent.Root.ServerId, serverId: serverId.ToString ());
+                var newNode = new McPathNode (newPath);
+                parent.Children.Add (newNode);
+                serverId++;
+            }
+
+            foreach (McPathNode child in parent.Children) {
+                CreateChildren (accountId, child, ref serverId, numLayers - 1);
+            }
+        }
+
+        private void ValidateTree (int accountId, McPathNode node, bool childrenExpected = true)
+        {
+            if (node.Children.Count == 0) {
                 return;
             }
 
             // find root
-            var foundRoot = McPath.QueryById<McPath> (root.Id);
+            var foundRoot = McPath.QueryById<McPath> (node.Root.Id);
             Assert.NotNull (foundRoot, "Root should not have been deleted");
 
             // find children
-            var foundChildren = McPath.QueryByParentId (accountId, root.ServerId);
+            var foundChildren = McPath.QueryByParentId (accountId, node.Root.ServerId);
             Assert.AreEqual (3, foundChildren.ToList ().Count, "Should have correct number of children");
+
             var sortedChildren = foundChildren.OrderBy (c => c.ServerId).ToList ();
 
             for (int i = 0; i < sortedChildren.Count; ++i) {
-                Assert.AreEqual (children [i].Id, sortedChildren [i].Id, "Children should be inserted correctly");
-                if (grandChildren.Count != 0) {
-                    ValidateTree (accountId, children [i], grandChildren.GetRange (3 * i, 3), new List<McPath> ());
+                // validate or invalidate tree based on whether the object id's match expected
+                if (childrenExpected) {
+                    Assert.AreEqual (node.Children [i].Root.Id, sortedChildren [i].Id, "Children should be inserted correctly");
+                } else {
+                    Assert.AreNotEqual (node.Children [i].Root.Id, sortedChildren [i].Id, "This tree should not have matching children");
                 }
-            }
-        }
 
-        private List<McPath> CreateChildPaths (int accountId, McPath path, ref int serverId)
-        {
-            List<McPath> tree = new List<McPath> ();
-            for (int i = 0; i < 3; ++i) {
-                var newPath = CreatePath (accountId, parentId: path.ServerId, serverId: serverId.ToString ());
-                tree.Add (newPath);
-                serverId++;
+                ValidateTree (accountId, node.Children [i], childrenExpected: childrenExpected);
             }
-            return tree;
         }
     }
 }
