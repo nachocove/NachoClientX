@@ -27,32 +27,12 @@ namespace Test.iOS
         }
     }
 
-    public class McPathTree
-    {
-        public McPathTree (McPath root, List<McPath> children, List<McPath> grandChildren)
-        {
-            Root = root;
-            Children = children;
-            GrandChildren = grandChildren;
-        }
-
-        public McPath Root;
-        public List<McPath> Children;
-        public List<McPath> GrandChildren;
-    }
-
     public class McPathNode
     {
         public McPathNode (McPath root)
         {
             Root = root;
             Children = new List<McPathNode> ();
-        }
-            
-        public McPathNode (McPath root, List<McPathNode> children)
-        {
-            Root = root;
-            Children = children;
         }
 
         public McPath Root;
@@ -83,7 +63,7 @@ namespace Test.iOS
             int accountId1 = 1;
             int accountId2 = 2;
 
-            var tree1 = CreateTree (accountId1);
+            CreateTree (accountId1); // first tree
             var tree2 = CreateTree (accountId2);
 
             // Verify that you CAN’T find account 2 nodes using QueryByServerId w/account 1.
@@ -99,20 +79,50 @@ namespace Test.iOS
             var tree1 = CreateTree (accountId1);
             var tree2 = CreateTree (accountId2);
 
+            bool topEqualsBottom = McPath.Dominates (accountId1, tree1.Root.ServerId, tree1.Root.ServerId);
+            Assert.IsFalse (topEqualsBottom, "Dominates should return false when topId == bottomId");
 
+            TraverseTreeWithOp (tree1, (top, bottom) => {
+                bool directDescendent = McPath.Dominates (accountId1, top.Root.ServerId, bottom.Root.ServerId);
+                Assert.IsTrue (directDescendent, "Dominates should return true when bottomId is a direct descendant of topId");
+            });
+
+            TraverseTreeWithOp (tree1, (top, bottom) => {
+                foreach (McPathNode child in bottom.Children) {
+                    bool indirectDescendent = McPath.Dominates (accountId1, top.Root.ServerId, child.Root.ServerId);
+                    Assert.IsTrue (indirectDescendent, "Dominates should return true when bottomId is an indirect descendant of topId");
+                }
+            });
+
+            bool topIdFound = McPath.Dominates (accountId1, "500", tree1.Children [0].Root.ServerId);
+            Assert.IsFalse (topIdFound, "Dominates should be false when topId is not found");
+
+            bool bottomIdFound = McPath.Dominates (accountId1, tree1.Root.ServerId, "500");
+            Assert.IsFalse (bottomIdFound, "Dominates should be false when bottomId is not found");
 
             tree1.Root.Delete ();
             ValidateTree (accountId2, tree2);
         }
 
+        // traverse the tree, comparing all child and parent elements at each level
+        private void TraverseTreeWithOp (McPathNode root, Action<McPathNode, McPathNode> compare)
+        {
+            var top = root;
+
+            foreach (McPathNode bottom in top.Children) {
+                compare (top, bottom);
+                TraverseTreeWithOp (bottom, compare);
+            }
+        }
+
         // returns the root node
         private McPathNode CreateTree (int accountId, uint numSubChildren = 3)
         {
-            var root = CreatePath (accountId, serverId: "0");
+            var root = CreatePath (accountId, serverId: "1", parentId: "0");
             var node = new McPathNode (root);
 
             // create children, each with a different serverId
-            int serverId = 1;
+            int serverId = 2;
             CreateChildren (accountId, node, ref serverId, 2);
 
             ValidateTree (accountId, node);
@@ -152,7 +162,7 @@ namespace Test.iOS
             var foundChildren = McPath.QueryByParentId (accountId, node.Root.ServerId);
             Assert.AreEqual (3, foundChildren.ToList ().Count, "Should have correct number of children");
 
-            var sortedChildren = foundChildren.OrderBy (c => c.ServerId).ToList ();
+            var sortedChildren = foundChildren.OrderBy (c => Convert.ToInt32 (c.ServerId)).ToList ();
 
             for (int i = 0; i < sortedChildren.Count; ++i) {
                 // validate or invalidate tree based on whether the object id's match expected
