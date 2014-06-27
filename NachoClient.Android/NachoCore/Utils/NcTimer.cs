@@ -92,7 +92,7 @@ namespace NachoCore.Utils
             Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} disposed", Id, Who);
         }
 
-        public static void Stop ()
+        public static void StopService ()
         {
             lock (StaticLockObj) {
                 while (0 < ActiveTimers.Count) {
