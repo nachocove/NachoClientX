@@ -30,10 +30,11 @@ namespace NachoCore.Model
             if (null == node) {
                 return false;
             }
-            while (McFolder.AsRootServerId != node.ParentId) {
+            while (node != null && McFolder.AsRootServerId != node.ParentId) {
                 if (topId == node.ParentId) {
                     return true;
                 }
+                node = QueryByServerId (accountId, node.ParentId);
             }
             return false;
         }
