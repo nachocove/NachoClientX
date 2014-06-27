@@ -126,11 +126,9 @@ namespace NachoCore.Model
             });
             try {
                 Db.RunInTransaction (action);
-            } catch {
+            } finally {
                 NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
-                throw;
             }
-            NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
         }
 
         public void Nop ()
