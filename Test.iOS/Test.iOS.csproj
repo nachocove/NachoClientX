@@ -182,6 +182,9 @@
     <Compile Include="..\Test.Android\ConflictResolutionTest.cs">
       <Link>ConflictResolutionTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McPathTest.cs">
+      <Link>McPathTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
