@@ -137,15 +137,17 @@ namespace Test.iOS
         public McAccount Account { set; get; }
         public McCred Cred { set; get; }
 
-        public MockContext ()
+        public MockContext (AsProtoControl protoControl = null)
         {
             Owner = new MockOwner ();
-            ProtoControl = null; // Should not be accessed.
-            ProtocolState = new McProtocolState ();
+            ProtoControl = protoControl;
+            var protoState = new McProtocolState ();
+            protoState.Insert ();
+            ProtocolState = protoState;
             // READ AsPolicyKey
             // R/W AsProtocolVersion
             // READ InitialProvisionCompleted
-            Server = null; // Should not be accessed.
+            Server = null; 
             Account = new McAccount () {
                 Id = 1,
                 EmailAddr = "johnd@foo.utopiasystems.net",
@@ -165,14 +167,17 @@ namespace Test.iOS
         public static NcResult Status { get; set; }
 
         // Use these to check which error code was posted
-        public void StatusInd (ProtoControl sender, NcResult status) {
+        public void StatusInd (ProtoControl sender, NcResult status)
+        {
             Status = status;
         }
-        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens) {
+        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+        {
             Status = status;
         }
 
-        public MockOwner () {
+        public MockOwner ()
+        {
             Status = null;
         }
 
