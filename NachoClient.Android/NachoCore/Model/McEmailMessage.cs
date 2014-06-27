@@ -572,6 +572,7 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
             if (!IsRead) {
                 McContact sender = GetFromContact ();
                 if (null != sender) {

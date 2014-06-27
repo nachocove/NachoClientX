@@ -44,35 +44,32 @@ namespace NachoCore.Model
         public virtual void DeleteAncillary ()
         {
             // Sub-class overrides and adds post-delete ancillary data cleanup.
+            // We'd prefer to make this abstract, but SQLite.Net can't tolerate it.
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
         }
 
         public override int Delete ()
         {
-            McFolder.UnlinkAll (this);
             NcAssert.True (100000 > PendingRefCount);
-
-            //FIXME initialize to better defualt returnVal
-            int returnVal = -1;
-
-            if (0 == PendingRefCount) {
-
-                try {
-                    NcModel.Instance.Db.RunInTransaction (() => 
-                    {
-                        returnVal = base.Delete();
-                        DeleteAncillary();
-                    });
-                    return returnVal;
-                } catch (SQLiteException ex) {
-                    Log.Error(Log.LOG_EMAIL,"Deleting the email failed: {0} No changes were made to the DB.", ex.Message);
-                    return returnVal;
-                }
-                    
-            } else {
-                IsAwaitingDelete = true;
-                Update ();
-                return 0;
+            var returnVal = -1;
+            try {
+                NcModel.Instance.RunInTransaction (() => {
+                    McFolder.UnlinkAll (this);
+                    if (0 == PendingRefCount) {
+                        var result = base.Delete ();
+                        DeleteAncillary ();
+                        returnVal = result;
+                    } else {
+                        IsAwaitingDelete = true;
+                        Update ();
+                        returnVal = 0;
+                    }
+                });
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_EMAIL, "Deleting the email failed: {0} No changes were made to the DB.", ex.Message);
+                return -1;
             }
+            return returnVal;
         }
 
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McItem, new()

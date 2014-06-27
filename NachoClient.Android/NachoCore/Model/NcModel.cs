@@ -39,6 +39,7 @@ namespace NachoCore.Model
         }
 
         private ConcurrentDictionary<int, SQLiteConnection> DbConns;
+        private ConcurrentDictionary<int, int> TransDepth;
 
         private void Initialize ()
         {
@@ -50,6 +51,7 @@ namespace NachoCore.Model
             BodiesDir = Path.Combine (Documents, "bodies");
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
             DbConns = new ConcurrentDictionary<int, SQLiteConnection> ();
+            TransDepth = new ConcurrentDictionary<int, int> ();
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McCred> ();
             Db.CreateTable<McMapFolderFolderEntry> ();
@@ -105,6 +107,30 @@ namespace NachoCore.Model
                 }
                 return instance; 
             }
+        }
+
+        public bool IsInTransaction ()
+        {
+            int depth = 0;
+            return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
+        }
+
+        public void RunInTransaction (Action action)
+        {
+            // DO NOT ADD LOGGING IN THIS FUNCTION.
+            var threadId = Thread.CurrentThread.ManagedThreadId;
+            int exitValue = 0;
+            TransDepth.AddOrUpdate (threadId, 1, (key, oldValue) => {
+                exitValue = oldValue;
+                return oldValue + 1;
+            });
+            try {
+                Db.RunInTransaction (action);
+            } catch {
+                NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
+                throw;
+            }
+            NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
         }
 
         public void Nop ()
