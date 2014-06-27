@@ -7,6 +7,7 @@ using NachoCore.Utils;
 using NachoCore.ActiveSync;
 using System.Linq;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
+using FolderOps = Test.iOS.CommonFolderOps;
 using ProtoOps = Test.iOS.CommonProtoControlOps;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
@@ -37,6 +38,7 @@ namespace Test.iOS
                 pending = new McPending (accountId, item);
             } else {
                 pending = new McPending (accountId);
+                pending.ServerId = serverId;
             }
             pending.ServerId = serverId;
             pending.Operation = operation;
@@ -818,6 +820,34 @@ namespace Test.iOS
                 var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, Operations.CalUpdate);
                 PendingsAreEqual (firstPend, retrieved);
             }
+
+            [Test]
+            public void TestQueryItemUsingServerId ()
+            {
+                string serverId = "3";
+
+                Action<McItem, Operations> testQuery = (item, op) => {
+                    var itemPend = CreatePending (serverId: serverId, operation: Operations.EmailMove, item: item);
+                    var foundItem = itemPend.QueryItemUsingServerId ();
+                    FolderOps.ItemsAreEqual (item, foundItem);
+                };
+
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: serverId);
+                testQuery (email, Operations.EmailMove);
+
+                var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: serverId);
+                testQuery (cal, Operations.CalMove);
+
+                var contact = FolderOps.CreateUniqueItem<McContact> (serverId: serverId);
+                testQuery (contact, Operations.ContactMove);
+
+                var task = FolderOps.CreateUniqueItem<McTask> (serverId: serverId);
+                testQuery (task, Operations.TaskMove);
+
+                var badPend = CreatePending (serverId: serverId, operation: Operations.AttachmentDownload);
+                var noItem = badPend.QueryItemUsingServerId ();
+                Assert.Null (noItem, "Should return null if a non-move operation is queried");
+            }
         }
 
         public class TestDependencyCreation : BaseMcPendingTest
@@ -1025,7 +1055,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                commonFolder = CommonFolderOps.CreateFolder (accountId: defaultAccountId);
+                commonFolder = FolderOps.CreateFolder (accountId: defaultAccountId);
                 defaultServerId = "3";
             }
 
@@ -1098,7 +1128,7 @@ namespace Test.iOS
             [Test]
             public void TestNcAsserts ()
             {
-                var item = CommonFolderOps.CreateUniqueItem<McCalendar> (defaultAccountId);
+                var item = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId);
                 commonFolder.Link (item);
 
                 item.PendingRefCount = 100001;
@@ -1111,7 +1141,7 @@ namespace Test.iOS
 
             private McItem CreateAndLinkItem ()
             {
-                var item = CommonFolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, defaultServerId);
+                var item = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, defaultServerId);
                 commonFolder.Link (item);
                 return item;
             }

@@ -61,6 +61,13 @@ namespace Test.iOS
             return newItem;
         }
 
+        public static void ItemsAreEqual (McItem item1, McItem item2)
+        {
+            Assert.AreEqual (item1.Id, item2.Id, "Equivalent items should have the same Id");
+            Assert.AreEqual (item1.AccountId, item2.AccountId, "Equivalent items should have the same AccountId");
+            Assert.AreEqual (item2.ServerId, item2.ServerId, "Equivalent items should have the same ServerId");
+        }
+
         public static McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
             string serverId = defaultServerId, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
             bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "-1", 
