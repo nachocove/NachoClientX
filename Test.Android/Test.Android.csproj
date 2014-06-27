@@ -99,6 +99,7 @@
     <Compile Include="NcPausableTimerTest.cs" />
     <Compile Include="NcDistributionTest.cs" />
     <Compile Include="ConflictResolutionTest.cs" />
+    <Compile Include="McPathTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
