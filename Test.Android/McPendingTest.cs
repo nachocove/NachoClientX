@@ -83,7 +83,7 @@ namespace Test.iOS
 
     public class McPendingTest 
     {
-        public class TestDependencies :BaseMcPendingTest
+        public class TestDependencies : BaseMcPendingTest
         {
             [Test]
             public void BasicDependencyTest ()

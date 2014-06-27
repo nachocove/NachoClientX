@@ -93,6 +93,7 @@
     <Compile Include="Common\CommonUtils.cs" />
     <Compile Include="NcApplicationTest.cs" />
     <Compile Include="ConflictResolutionTest.cs" />
+    <Compile Include="McPathTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
