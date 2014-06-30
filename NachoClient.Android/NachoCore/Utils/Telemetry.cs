@@ -415,6 +415,9 @@ namespace NachoCore.Utils
             NcCapture.AddKind (CAPTURE_NAME);
             NcCapture transactionTime = NcCapture.Create(CAPTURE_NAME);
 
+            while (!BackEnd.IsUseable ()) {
+                NcTask.Delay (5000, TaskHandle.Token);
+            }
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good
@@ -450,6 +453,7 @@ namespace NachoCore.Utils
 
     public interface ITelemetryBE
     {
+        bool IsUseable ();
         void SendEvent (TelemetryEvent tEvent);
     }
 }

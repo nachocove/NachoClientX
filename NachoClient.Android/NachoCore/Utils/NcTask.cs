@@ -69,6 +69,7 @@ namespace NachoCore.Utils
         public static void StopService ()
         {
             Cts.Cancel ();
+            WaitAny (new Task[] { Delay (2 * MaxCancellationTestInterval) });
             foreach (var pair in TaskMap) {
                 try {
                     var taskRef = pair.Key;
