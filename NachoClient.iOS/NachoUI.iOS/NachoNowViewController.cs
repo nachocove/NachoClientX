@@ -36,7 +36,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
@@ -55,7 +54,7 @@ namespace NachoClient.iOS
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
             };
-
+              
             cancelButton.Clicked += (object sender, EventArgs e) => {
                 if (null != inboxSource) {
                     inboxSource.MultiSelectCancel (inboxTableView);
