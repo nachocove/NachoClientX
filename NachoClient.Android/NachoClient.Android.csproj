@@ -284,6 +284,7 @@
     <Compile Include="NachoCore\Brain\NcEmailAnalyzer.cs" />
     <Compile Include="NachoCore\Model\McDependency.cs" />
     <Compile Include="NachoCore\Brain\NcTimeVariance.cs" />
+    <Compile Include="NachoCore\Brain\NcScoreCombiner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

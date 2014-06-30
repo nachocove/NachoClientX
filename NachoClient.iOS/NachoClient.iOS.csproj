@@ -917,6 +917,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\UcAttachmentBlock.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAttachmentBlock.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcScoreCombiner.cs">
+      <Link>NachoCore\Brain\NcScoreCombiner.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
