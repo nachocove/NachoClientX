@@ -657,6 +657,14 @@ namespace NachoClient.iOS
                 }
             };
 
+            wv.ShouldStartLoad += delegate(UIWebView webView, NSUrlRequest request, UIWebViewNavigationType navigationType) {
+                if (UIWebViewNavigationType.LinkClicked == navigationType) {
+                    UIApplication.SharedApplication.OpenUrl (request.Url);
+                    return false;
+                }
+                return true;
+            };
+
             DeferLayoutIncrement ();
             wv.LoadHtmlString (html, null);
         }
