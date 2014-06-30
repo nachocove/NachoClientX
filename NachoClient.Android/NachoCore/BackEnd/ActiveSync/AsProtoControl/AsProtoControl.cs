@@ -717,6 +717,10 @@ namespace NachoCore.ActiveSync
 
         private void DoPick ()
         {
+            // Stop any executing command await (possibly Sync or Ping) and due to
+            // threading race condition we must clear any event possibly posted by a non-cancelled-in-time await.
+            StopCurrentOp ();
+            Sm.ClearEventQueue ();
             // We pick between Ping, Sync and doing a McPending.
             // Only do Ping if nothing else to do.
             if (McPending.QueryEligible (Account.Id).Any ()) {
