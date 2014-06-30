@@ -78,7 +78,7 @@ namespace NachoCore
                     return false;
                 });
             };
-            NcTask.Start ();
+            NcTask.StartService ();
             NcModel.Instance.Nop ();
             AsXmlFilterSet.Initialize ();
             BackEnd.Instance.Owner = this;
@@ -124,9 +124,9 @@ namespace NachoCore
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
             NcCapture.PauseAll ();
-            // NcTask/Timer.Stop () should go last.
-            NcTimer.Stop ();
-            NcTask.Stop ();
+            // NcTask/Timer.StopService () should go last.
+            NcTimer.StopService ();
+            NcTask.StopService ();
         }
 
         public void MonitorStart ()

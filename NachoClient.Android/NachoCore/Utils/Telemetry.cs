@@ -261,7 +261,7 @@ namespace NachoCore.Utils
 
         private ITelemetryBE BackEnd;
 
-        private Thread ProcessThread;
+        private NcTask TaskHandle;
 
         NcCounter[] Counters;
   
@@ -399,8 +399,10 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            ProcessThread = new Thread (new ThreadStart (this.Process<T>));
-            ProcessThread.Start ();
+            TaskHandle = NcTask.Run (() => {
+                EventQueue.Token = TaskHandle.Token;
+                Process<T> ();
+            }, "Telemetry");
         }
 
         private void Process<T> () where T : ITelemetryBE, new()
@@ -425,7 +427,9 @@ namespace NachoCore.Utils
                     dbEvent = McTelemetryEvent.QueryOne ();
                     if (null == dbEvent) {
                         // No pending event. Wait for one.
-                        DbUpdated.WaitOne ();
+                        while (!DbUpdated.WaitOne (TaskHandle.PreferredCancellationTestInterval)) {
+                            TaskHandle.Token.ThrowIfCancellationRequested ();
+                        }
                         continue;
                     }
                     tEvent = dbEvent.GetTelemetryEvent ();

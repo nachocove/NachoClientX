@@ -3,17 +3,30 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NachoCore.Utils
 {
-    public class NcTask
+    public class NcTask : Task
     {
-        static ConcurrentDictionary<WeakReference,string> TaskMap;
+        const int MaxCancellationTestInterval = 250;
+        static private ConcurrentDictionary<WeakReference,string> TaskMap;
+        static private CancellationTokenSource Cts = new CancellationTokenSource ();
 
-        public static void Start ()
+        public CancellationToken Token { set; get; }
+        public int PreferredCancellationTestInterval { set; get; }
+
+        private NcTask (Action action) : base (action, Cts.Token)
+        {
+            Token = Cts.Token;
+            PreferredCancellationTestInterval = MaxCancellationTestInterval;
+        }
+
+        public static void StartService ()
         {
             TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+            Cts = new CancellationTokenSource ();
         }
 
         public static List<string> FindFaulted ()
@@ -34,10 +47,10 @@ namespace NachoCore.Utils
             return faulted;
         }
 
-        public static Task Run (Action action, string name)
+        public static NcTask Run (Action action, string name)
         {
             WeakReference taskRef = null;
-            var task = new Task (delegate {
+            var task = new NcTask (delegate {
                 action.Invoke ();
                 Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
                 if (!TaskMap.TryRemove (taskRef, out name)) {
@@ -53,8 +66,9 @@ namespace NachoCore.Utils
             return task;
         }
 
-        public static void Stop ()
+        public static void StopService ()
         {
+            Cts.Cancel ();
             foreach (var pair in TaskMap) {
                 try {
                     var taskRef = pair.Key;

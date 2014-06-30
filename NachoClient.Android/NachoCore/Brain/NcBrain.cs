@@ -19,13 +19,16 @@ namespace NachoCore.Brain
             }
         }
 
-        private Task TaskHandle;
+        private NcTask TaskHandle;
         private NcQueue<NcBrainEvent> EventQueue;
 
         public NcBrain ()
         {
             EventQueue = new NcQueue<NcBrainEvent> ();
-            TaskHandle = NcTask.Run (Process, "Brain");
+            TaskHandle = NcTask.Run (() => {
+                EventQueue.Token = TaskHandle.Token;
+                Process ();
+            }, "Brain");
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
