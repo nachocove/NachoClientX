@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 import sys
 import os
 import xml.sax
-import datetime
+from datetime import datetime
 import subprocess
 from xml.sax.handler import ContentHandler
 
@@ -52,8 +52,7 @@ def create_buildinfo(options):
         print >>f, '    {'
         print >>f, '        public const string Version = "%s";' % version
         print >>f, '        public const string BuildNumber = "%s";' % build_number
-        print >>f, '        public const string Time = "%s";' % \
-                   datetime.datetime.strftime(datetime.datetime.now(), '%m/%d/%Y %H:%M:%S')
+        print >>f, '        public const string Time = "%s";' % datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         print >>f, '        public const string User = "%s";' % get_username()
         if source is not None:
             print >>f, '        public const string Source = "%s";' % source
@@ -108,8 +107,13 @@ def determine_build(proj_root):
     else:
         build_number = 1
 
-    # Write back the build number
-    with open(path, 'w') as f:
+    # Write the build number to a new build number file.
+    # When the build is successfully complete, the new file replaces
+    # .build_number. This way, the build number only advances on successful
+    # builds and we will have build number gaps in telemetry. It is hard to
+    # determine whether those gaps are from build failures or telemetry bugs.
+    new_path = path + '.new'
+    with open(new_path, 'w') as f:
         print >> f, build_number
 
     return str(build_number)
