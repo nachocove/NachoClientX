@@ -9,6 +9,7 @@ using System.Linq;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
 using FolderOps = Test.iOS.CommonFolderOps;
 using ProtoOps = Test.iOS.CommonProtoControlOps;
+using PathOps = Test.iOS.CommonPathOps;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
 using Operations = NachoCore.Model.McPending.Operations;
@@ -1154,6 +1155,94 @@ namespace Test.iOS
                 Assert.AreEqual (1, foundItems.Count, "Item should exist in and be the only item in the folder");
                 Assert.AreEqual (item.Id, foundItems.FirstOrDefault ().Id, "Item in folder should match expected");
                 return foundItem;
+            }
+        }
+
+        public class TestCommandDomination : BaseMcPendingTest
+        {
+            [Test]
+            public void TestDomination ()
+            {
+                int accountId = 1;
+
+                // make McPending with different ServerId, ParentId, and DestId vals
+                var pend = CreatePending (accountId: accountId, serverId: "4", parentId: "2", destId: "3");
+
+                var top = new PathOps.McPathNode (PathOps.CreatePath (accountId, "1", "0"));
+                var parent = new PathOps.McPathNode (PathOps.CreatePath (accountId, "2", "1"));
+                var dest = new PathOps.McPathNode (PathOps.CreatePath (accountId, "3", "1"));
+                var item = new PathOps.McPathNode (PathOps.CreatePath (accountId, "4", "2"));
+                var bottom = new PathOps.McPathNode (PathOps.CreatePath (accountId, "5", "4"));
+
+                // add nodes to their parents
+                top.Children.Add (parent);
+                top.Children.Add (dest);
+                parent.Children.Add (item);
+                item.Children.Add (bottom);
+
+                // CommandDominatesParentId
+                bool domParentId = pend.CommandDominatesParentId (top.Root.ServerId);
+                Assert.IsTrue (domParentId, "CommandDominatesParentId should return true if param is parent of parent");
+                domParentId = pend.CommandDominatesParentId (dest.Root.ServerId);
+                Assert.IsFalse (domParentId, "Sibling of parent should not dominate parent id");
+                domParentId = pend.CommandDominatesParentId (bottom.Root.ServerId);
+                Assert.IsFalse (domParentId, "Child of item should not dominate parent Id");
+
+                // CommandDominatesServerId
+                bool domServerId = pend.CommandDominatesServerId (top.Root.ServerId);
+                Assert.IsTrue (domServerId, "Parent of parent should dominate item");
+                domServerId = pend.CommandDominatesServerId (dest.Root.ServerId);
+                Assert.IsFalse (domServerId, "Sibling of parent should not dominate item");
+                domServerId = pend.CommandDominatesServerId (bottom.Root.ServerId);
+                Assert.IsFalse (domServerId, "Child of item does not dominate serverId");
+
+                // CommandDominatesDestParentId
+                bool domDestParentId = pend.CommandDominatesDestParentId (top.Root.ServerId);
+                Assert.IsTrue (domDestParentId, "Parent of destParent should dominate");
+                domDestParentId = pend.CommandDominatesDestParentId (parent.Root.ServerId);
+                Assert.IsFalse (domDestParentId, "Sibling of destParent should not dominate it");
+                domDestParentId = pend.CommandDominatesDestParentId (item.Root.ServerId);
+                Assert.IsFalse (domDestParentId, "Item should not dominate destParent");
+            }
+
+            [Test]
+            public void TestPendingItemNotInFolder ()
+            {
+                var folder = FolderOps.CreateFolder (accountId: 1, parentId: "0", serverId: "1");
+                var emailPend = CreatePending (accountId: 1, parentId: "1", serverId: "2", operation: Operations.EmailSend);
+
+                var domItem = emailPend.CommandDominatesItem (folder.ServerId);
+                Assert.IsFalse (domItem, "CommandDominatesItem should return false if the item is NOT in a folder");
+            }
+
+            [Test]
+            public void TestPendingItemInSyncedFolder ()
+            {
+                // create McPath tree
+                int accountId = 1;
+
+                var parent = new PathOps.McPathNode (PathOps.CreatePath (accountId, "1", "0"));
+                var item = new PathOps.McPathNode (PathOps.CreatePath (accountId, "2", "1"));
+                var bottom = new PathOps.McPathNode (PathOps.CreatePath (accountId, "3", "2"));
+
+                // add nodes to their parents
+                parent.Children.Add (item);
+                item.Children.Add (bottom);
+
+                // create folder, item, and pending
+                var folder = FolderOps.CreateFolder (accountId: accountId, serverId: parent.Root.ServerId);
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: accountId, serverId: item.Root.ServerId);
+                folder.Link (email);
+                var emailPend = CreatePending (accountId: accountId, parentId: folder.ServerId, operation: Operations.EmailReply, serverId: email.ServerId, item: email);
+
+                var domItemServerId = emailPend.CommandDominatesItem (email.ServerId);
+                Assert.IsTrue (domItemServerId, "CommandDominatesItem should return true when the item ServerId matches the argument");
+
+                var domfolderServerId = emailPend.CommandDominatesItem (folder.ServerId);
+                Assert.IsTrue (domfolderServerId, "CommandDominatesItem should return true when the argument dominates the item ServerId");
+
+                var domNotDom = emailPend.CommandDominatesItem (bottom.Root.ServerId);
+                Assert.IsFalse (domNotDom, "CommandDominatesItem should not return true when the argument does not dominate the item");
             }
         }
     }
