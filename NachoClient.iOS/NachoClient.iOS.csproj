@@ -908,6 +908,15 @@
     <Compile Include="NachoUI.iOS\Support\PriorityView.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionView.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionTableView.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
+    <Compile Include="NachoUI.iOS\MessageComposeViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageComposeViewController.designer.cs">
+      <DependentUpon>MessageComposeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\UcAttachmentBlock.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\IUcAttachmentBlock.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

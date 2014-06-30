@@ -260,7 +260,7 @@ namespace NachoClient.iOS
                 blurry.CaptureView (this.View);
             }
             if (segue.Identifier == "NachoNowToCompose") {
-                var vc = (ComposeViewController)segue.DestinationViewController;
+                var vc = (MessageComposeViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 if (null == h) {
                     // Composing a message

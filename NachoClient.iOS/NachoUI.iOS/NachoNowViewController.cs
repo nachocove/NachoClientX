@@ -194,7 +194,7 @@ namespace NachoClient.iOS
                 return; // Nothing to do
             }
             if (segue.Identifier == "NachoNowToCompose") {
-                var vc = (ComposeViewController)segue.DestinationViewController;
+                var vc = (MessageComposeViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 if (null == h) {
                     // Composing a message
@@ -818,19 +818,19 @@ namespace NachoClient.iOS
                     
                 var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
                 replyButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, ComposeViewController.Reply);
+                    onReplyButtonClicked (view, MessageComposeViewController.Reply);
                 };
                 preventBarButtonGC.Add (replyButton);
 
                 var replyAllButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply-all"), UIBarButtonItemStyle.Plain, null);
                 replyAllButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, ComposeViewController.ReplyAll);
+                    onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
                 };
                 preventBarButtonGC.Add (replyAllButton);
 
                 var forwardButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-fwd"), UIBarButtonItemStyle.Plain, null);
                 forwardButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, ComposeViewController.Forward);
+                    onReplyButtonClicked (view, MessageComposeViewController.Forward);
                 };
                 preventBarButtonGC.Add (forwardButton);
 

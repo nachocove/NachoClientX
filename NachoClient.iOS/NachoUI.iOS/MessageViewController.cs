@@ -126,13 +126,13 @@ namespace NachoClient.iOS
             actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                 switch (b.ButtonIndex) {
                 case 0:
-                    PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Reply));
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.Reply));
                     break;
                 case 1:
-                    PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.ReplyAll));
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.ReplyAll));
                     break;
                 case 2:
-                    PerformSegue ("MessageViewToComposeView", new SegueHolder (ComposeViewController.Forward));
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.Forward));
                     break;
                 case 3:
                     break; // Cancel
@@ -157,8 +157,8 @@ namespace NachoClient.iOS
                 var vc = (MessageActionViewController)segue.DestinationViewController;
                 vc.SetOwner (this, thread);
             }
-            if (segue.Identifier == "MessageViewToComposeView") {
-                var vc = (ComposeViewController)segue.DestinationViewController;
+            if (segue.Identifier == "MessageViewToCompose") {
+                var vc = (MessageComposeViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 vc.Action = (string)h.value;
                 vc.ActionThread = thread;
@@ -776,7 +776,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void onAttachmentIconSelected(UITapGestureRecognizer obj)
+        protected void onAttachmentIconSelected (UITapGestureRecognizer obj)
         {
             scrollView.ScrollRectToVisible (attachmentListView.Frame, true);
         }
