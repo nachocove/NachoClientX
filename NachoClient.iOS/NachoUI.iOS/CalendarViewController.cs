@@ -18,17 +18,25 @@ namespace NachoClient.iOS
         INachoCalendar calendar;
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
+        public DateTime selectedDate = new DateTime ();
+        public int selectedDateTag = 0;
+        public int todayWeekTag = 0;
+        public int todayMonthTag = 0;
 
+        UIPanGestureRecognizer DateDotWeekPanGestureRecognizer = null;
+        UIPanGestureRecognizer DateDotMonthPanGestureRecognizer = null;
+        UIPanGestureRecognizer DateDotToggleOpenMonthPanGestureRecognizer = null;
+        UIPanGestureRecognizer DateDotToggleCloseMonthPanGestureRecognizer = null;
+
+        public static bool BasicView = false;
         public bool UseDeviceCalendar;
         protected bool adjustScrollPosition = true;
-
 
         public CalendarViewController (IntPtr handle) : base (handle)
         {
             var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
             a.TextColor = UIColor.LightGray;
         }
-
 
         public override void ViewDidLoad ()
         {
@@ -41,51 +49,27 @@ namespace NachoClient.iOS
 
             // Multiple buttons on the left side
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { newCalEventButton, todayButton };
             using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToNachoNow", this);
             };
+            using (var todayImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                todayButton.Image = todayImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+            todayButton.Clicked += (object sender, EventArgs e) => {
+                ReturnToToday ();
+            };
+            newCalEventButton.Clicked += (object sender, EventArgs e) => {
+
+            };
 
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
             calendarSource.SetCalendar (NcCalendarManager.Instance);
             calendarTableView.Source = calendarSource;
-
-            var titleView = new UIView (new RectangleF (0, 0, 70, 44));
-            var titleLabel = new UILabel (new RectangleF (0, 0, 70, 44));
-            titleLabel.Font = A.Font_AvenirNextDemiBold17;
-            titleLabel.AdjustsFontSizeToFitWidth = true;
-            titleLabel.TextColor = UIColor.White;
-            titleLabel.Text = "Calendar";
-            titleView.Add (titleLabel);
-
-            UITapGestureRecognizer doubletap = new UITapGestureRecognizer();
-            doubletap.NumberOfTapsRequired = 2; // double tap
-            doubletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector("DoubleTapSelector:"));
-            titleView.AddGestureRecognizer (doubletap);
-            this.NavigationItem.TitleView = titleView;
-            DateDotView.Frame = (new RectangleF (0, 0, 320, 78));
-            DateDotView.ClipsToBounds = true;
-            DateDotView.BackgroundColor =  UIColor.White;
-
-            UIPanGestureRecognizer DateDotPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                DateDotPan (obj);
-            });
-            DateDotPanGestureRecognizer.Enabled = true;
-            DateDotPanGestureRecognizer.MaximumNumberOfTouches = 1;
-            DateDotView.AddGestureRecognizer (DateDotPanGestureRecognizer);
-            DateDotPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            this.View.AddSubview (DateDotView);
-
-            DateDotView.SetOwner (this);
-            DateDotView.MakeDayLabels ();
-            DateDotView.MakeDateButtons ();
-            DateDotView.UpdateButtons ();
-            currentDate = DateDotView.ViewDate;
 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
@@ -102,9 +86,72 @@ namespace NachoClient.iOS
                     calendarTableView.ReloadData ();
                 }
             };
+
+            var titleView = new UIView (new RectangleF (0, 0, 70, 44));
+            var titleLabel = new UILabel (new RectangleF (0, 0, 70, 44));
+            titleLabel.Font = A.Font_AvenirNextDemiBold17;
+            titleLabel.AdjustsFontSizeToFitWidth = true;
+            titleLabel.TextColor = UIColor.White;
+            titleLabel.Text = "Calendar";
+            titleView.Add (titleLabel);
+
+            this.NavigationItem.TitleView = titleView;
+            DateDotView.Frame = (new RectangleF (0, 0, 320, 78));
+            DateDotView.ClipsToBounds = true;
+            DateDotView.BackgroundColor = UIColor.White;
+
+            DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotWeekPan (obj);
+            });
+            DateDotWeekPanGestureRecognizer.Enabled = false;
+            DateDotWeekPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotWeekPanGestureRecognizer);
+
+            DateDotToggleOpenMonthPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotToggleOpenMonthPan (obj);
+            });
+            DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
+            DateDotToggleOpenMonthPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotToggleOpenMonthPanGestureRecognizer);
+            DateDotToggleOpenMonthPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+
+            DateDotToggleCloseMonthPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotToggleCloseMonthPan (obj);
+            });
+            DateDotToggleCloseMonthPanGestureRecognizer.Enabled = false;
+            DateDotToggleCloseMonthPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotToggleCloseMonthPanGestureRecognizer);
+            DateDotToggleCloseMonthPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+
+            DateDotMonthPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotMonthPan (obj);
+            });
+            DateDotMonthPanGestureRecognizer.Enabled = false;
+            DateDotMonthPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotMonthPanGestureRecognizer);
+            DateDotMonthPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            this.View.AddSubview (DateDotView);
+
+            DateDotView.SetOwner (this);
+            DateDotView.MakeDayLabels ();
+            DateDotView.MakeDateDotButtons ();
+
+            DateDotView.ViewDate = DateTime.Today;
+            currentDate = DateTime.Today;
+            selectedDate = DateTime.Today;
+
+            todayMonthTag = DateDotView.GetMonthTag (DateTime.Today);
+            DateDotView.UpdateButtons ();
+            View.BringSubviewToFront (DateDotView);
+            ConfigureBasicView ();
+
         }
-
-
 
         public override void ViewWillAppear (bool animated)
         {
@@ -166,54 +213,83 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (true, null);
         }
 
+        protected void ConfigureBasicView ()
+        {
+            // Enabled gestures
+            DateDotWeekPanGestureRecognizer.Enabled = true;
+            DateDotToggleOpenMonthPanGestureRecognizer.Enabled = true;
+            BasicView = true;
+        }
 
-        public static UIImageView copyImage = new UIImageView (new RectangleF (0, 0, 320, 78));
+        protected void ConfigureMonthView ()
+        {
+            DateDotMonthPanGestureRecognizer.Enabled = true;
+            DateDotToggleCloseMonthPanGestureRecognizer.Enabled = true;
+            BasicView = false;
+        }
+
+        protected void DisableGestureRecognizers ()
+        {
+            DateDotWeekPanGestureRecognizer.Enabled = false;
+            DateDotMonthPanGestureRecognizer.Enabled = false;
+            DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
+            DateDotToggleCloseMonthPanGestureRecognizer.Enabled = false;
+        }
+
+        public static UIImageView copyWeekImage = new UIImageView (new RectangleF (0, 0, 320, 78));
         public float startingX = 0;
         public float xOffset = 0;
-        public int todayOffset = 0;
-        public bool directionFlagSet = false;
         public int directionFlag = 0;
         public DateTime currentDate = new DateTime ();
 
         /// <summary>
         /// Gesture handler for date dots pan/swipe
         /// </summary>
-        private void DateDotPan (UIPanGestureRecognizer obj)
+        private void DateDotWeekPan (UIPanGestureRecognizer obj)
         {
             if (UIGestureRecognizerState.Began == obj.State) {
                 startingX = obj.TranslationInView (this.View).X;
                 var Image = Util.caputureView (DateDotView);
-                copyImage.Image = Image;
-                this.View.AddSubview (copyImage);
-                this.View.BringSubviewToFront (copyImage);
+                copyWeekImage.Image = Image;
                 Image.Dispose ();
                 return;
             }
 
             if (UIGestureRecognizerState.Changed == obj.State) {
-
                 xOffset = obj.TranslationInView (this.View).X;
-                if (0 > xOffset) { //Swipe left
-                    if (!directionFlagSet & directionFlag != 1) {
-                        directionFlag = 1;
-                        DateDotView.ViewDate = currentDate.AddDays (7);
-                        DateDotView.UpdateButtons ();
-                    }
+                //offset must be greater than |5| to be sure user is swiping horizontially rather than vertically
+                if ((5 < xOffset) || (-5 > xOffset)) {
+                    DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
+                    if (0 > xOffset) { //Swipe left
+                        if (directionFlag != 1) {
 
-                    var difference = Math.Abs (xOffset - startingX);
-                    copyImage.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
-                    DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
-                } 
-                else { //Swipe right
-                    if (!directionFlagSet & directionFlag != 2) {
-                        directionFlag = 2;
-                        DateDotView.ViewDate = currentDate.AddDays (-7);
-                        DateDotView.UpdateButtons ();
-                    }
+                            this.View.AddSubview (copyWeekImage);
+                            this.View.BringSubviewToFront (copyWeekImage);
+                            directionFlag = 1;
+                            DateDotView.ViewDate = currentDate.AddDays (7);
+                            DateDotView.ToggleButtons (-1);
+                            DateDotView.UpdateButtons ();
+                            DateDotView.ViewDate = currentDate;
+                        }
 
-                    var difference = Math.Abs (xOffset - startingX);
-                    copyImage.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, 39);
-                    DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2) + difference, 39);
+                        var difference = Math.Abs (xOffset - startingX);
+                        copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
+                        DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
+                    } else { //Swipe right
+                        if (directionFlag != 2) {
+                            this.View.AddSubview (copyWeekImage);
+                            this.View.BringSubviewToFront (copyWeekImage);
+                            directionFlag = 2;
+                            DateDotView.ViewDate = currentDate.AddDays (-7);
+                            DateDotView.ToggleButtons (-1);
+                            DateDotView.UpdateButtons ();
+                            DateDotView.ViewDate = currentDate;
+                        }
+
+                        var difference = Math.Abs (xOffset - startingX);
+                        copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
+                        DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
+                    }
                 }
                 return;
             }
@@ -222,27 +298,24 @@ namespace NachoClient.iOS
                 if (xOffset < -(DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X < -500) { 
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            copyWeekImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
-
                         }
                     );
-                    todayOffset--;
                     currentDate = currentDate.AddDays (7);
                     DateDotView.ViewDate = currentDate;
+
                 } else if (xOffset > (DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X > 500) {
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            copyWeekImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
-
                         }
                     );
-                    todayOffset++;
                     currentDate = currentDate.AddDays (-7);
                     DateDotView.ViewDate = currentDate;
                 } else {
@@ -251,23 +324,20 @@ namespace NachoClient.iOS
                     if (0 > xOffset) {
                         UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
                             () => {
-                                this.View.BringSubviewToFront (copyImage);
-                                copyImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                this.View.BringSubviewToFront (copyWeekImage);
+                                copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-
-
                             },
                             () => {
                                 DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 this.View.BringSubviewToFront (DateDotView);
                             }
                         );
-                    } 
-                    else {
+                    } else {
                         UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
                             () => {
-                                this.View.BringSubviewToFront (copyImage);
-                                copyImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                this.View.BringSubviewToFront (copyWeekImage);
+                                copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             },
                             () => {
@@ -278,71 +348,472 @@ namespace NachoClient.iOS
 
                     }
                 }
+
+                ConfigureBasicView ();
                 directionFlag = 0;
                 return;
             }
         }
 
-        [MonoTouch.Foundation.Export("DoubleTapSelector:")]
-        public void OnDoubleTap (UIGestureRecognizer sender) {
-            var Image = Util.caputureView (DateDotView);
-            copyImage.Image = Image;
-            this.View.AddSubview (copyImage);
-            this.View.BringSubviewToFront (copyImage);
-            Image.Dispose ();
+        public static UIImageView copyMonthImage = new UIImageView (new RectangleF (0, 0, 320, 300));
+        public float startingXMonth = 0;
+        public float xOffsetMonth = 0;
 
-            if (0 > todayOffset) {
-            
-                DateDotView.ViewDate = DateTime.Today;
-                DateDotView.UpdateButtons ();
-                copyImage.Center = new PointF ((DateDotView.Frame.Width / 2), 39);
-                DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), 39);
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        copyImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                        DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                    },
-                    () => {
-
-                    }
-                );
-                DateDotView.ViewDate = DateTime.Today;
-                currentDate = DateDotView.ViewDate;
-                todayOffset = 0;
+        private void DateDotMonthPan (UIPanGestureRecognizer obj)
+        {
+            if (UIGestureRecognizerState.Began == obj.State) {
+                startingXMonth = obj.TranslationInView (this.View).X;
+                var Image = Util.caputureView (DateDotView);
+                copyMonthImage.Image = Image;
+                Image.Dispose ();
+                return;
             }
-            if (0 < todayOffset) {
-            
-                DateDotView.ViewDate = DateTime.Today;
-                DateDotView.UpdateButtons ();
-                copyImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        copyImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                        DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                    },
-                    () => {
+
+            if (UIGestureRecognizerState.Changed == obj.State) {
+                xOffset = obj.TranslationInView (this.View).X;
+                //offset must be greater than |5| to be sure user is swiping vertically rather than horizontially
+                if ((5 < xOffset) || (-5 > xOffset)) {
+                    this.View.AddSubview (copyMonthImage);
+                    this.View.BringSubviewToFront (copyMonthImage);
+                    this.View.BringSubviewToFront (calendarTableView);
+
+                    DateDotToggleCloseMonthPanGestureRecognizer.Enabled = false;
+                    if (0 > xOffset) { //Swipe left
+                        if (directionFlag != 1) {
+                            directionFlag = 1;
+                            DateDotView.ViewDate = currentDate.AddMonths (1);
+                            DateDotView.ToggleButtons (-1);
+                            DateDotView.UpdateButtonsMonth ();
+                        }
+
+                        var difference = Math.Abs (xOffset - startingXMonth);
+                        copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2) + 5);
+                        DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2) + 5);
+                    } else { //Swipe right
+                        if (directionFlag != 2) {
+                            directionFlag = 2;
+                            DateDotView.ViewDate = currentDate.AddMonths (-1);
+                            DateDotView.ToggleButtons (-1);
+                            DateDotView.UpdateButtonsMonth ();
+
+                        }
+
+                        var difference = Math.Abs (xOffset - startingXMonth);
+                        copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2) + 5);
+                        DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2) + 5);
+                    }
+                }
+                return;
+            }
+
+            if (UIGestureRecognizerState.Ended == obj.State) {
+                if (xOffset < -(DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X < -500) { 
+                    var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
+                    UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                        () => {
+                            copyMonthImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)));
+                        },
+                        () => {
+                            this.View.BringSubviewToFront (DateDotView);
+                            this.View.BringSubviewToFront (calendarTableView);
+                        }
+                    );
+                    currentDate = currentDate.AddMonths (1);
+                    DateDotView.ViewDate = currentDate;
+
+                } else if (xOffset > (DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X > 500) {
+                    var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
+                    UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                        () => {
+                            copyMonthImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)));
+                        },
+                        () => {
+                            this.View.BringSubviewToFront (DateDotView);
+                            this.View.BringSubviewToFront (calendarTableView);
+                        }
+                    );
+                    currentDate = currentDate.AddMonths (-1);
+                    DateDotView.ViewDate = currentDate;
+                } else {
+                    DateDotView.ViewDate = currentDate;
+                    DateDotView.UpdateButtonsMonth ();
+                    if (0 > xOffset) {
+                        UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
+                            () => {
+                                this.View.BringSubviewToFront (copyMonthImage);
+                                this.View.BringSubviewToFront (calendarTableView);
+                                copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            },
+                            () => {
+                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                copyMonthImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                this.View.BringSubviewToFront (DateDotView);
+                                this.View.BringSubviewToFront (calendarTableView);
+                            }
+                        );
+                    } else {
+                        UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
+                            () => {
+                                this.View.BringSubviewToFront (copyMonthImage);
+                                this.View.BringSubviewToFront (calendarTableView);
+                                copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            },
+                            () => {
+                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                copyMonthImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                this.View.BringSubviewToFront (DateDotView);
+                                this.View.BringSubviewToFront (calendarTableView);
+                            }
+                        );
 
                     }
-                );
-
-                currentDate = DateDotView.ViewDate;
-                todayOffset = 0;
+                }
+                ConfigureMonthView ();
+                directionFlag = 0;
+                return;
             }
         }
 
-        public void ScrollToDate(DateBarView view, int buttonLabel) {
-            var difference = view.ViewDate.Day - buttonLabel;
-            var date = view.ViewDate.AddDays (-difference);
-            int index = DateBarView.IndexOfDayOfWeek (date.DayOfWeek.ToString ());
-            view.ToggleButtons (index);
-            calendarSource.ScrollToDate (calendarTableView, date);
+        float yOffset = 0;
+        bool UpdateMB = false;
+
+        private void DateDotToggleOpenMonthPan (UIPanGestureRecognizer obj)
+        {
+            int rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
+            if (UIGestureRecognizerState.Began == obj.State) {
+                UpdateMB = false;
+                return;
+            }
+
+            if (UIGestureRecognizerState.Changed == obj.State) {
+                yOffset = obj.TranslationInView (this.View).Y;
+
+                if (yOffset > 5) {
+                    if (!UpdateMB) {
+                        DateDotView.MakeDateVisable ();
+                        UIView.Animate (.2, 0, UIViewAnimationOptions.CurveEaseOut,
+                            () => {
+                                DateDotView.Center = new PointF (160, 44);
+                            },
+                            () => {
+                            }
+                        );
+                        UpdateMB = true;
+                    }
+                    DateDotWeekPanGestureRecognizer.Enabled = false;
+                    DateDotMonthPanGestureRecognizer.Enabled = false;
+                    if ((46 * (rows - 1)) - 3 > yOffset) {
+                        calendarTableView.Center = new PointF ((float)163, (float)291.5 + yOffset);
+                    }
+                }
+                return;
+            }
+
+            if (UIGestureRecognizerState.Ended == obj.State) {
+                if (yOffset > 60 || obj.VelocityInView (DateDotView).Y > 500) {
+                    UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
+                        () => {
+
+                            DateDotView.Frame = new RectangleF (0, 5, 320, 70 + (46 * (rows)));
+                            calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)));
+                            View.BringSubviewToFront (calendarTableView);
+                            copyMonthImage.Hidden = false;
+                            DateDotMonthPanGestureRecognizer.Enabled = true;
+                            DateDotView.UpdateButtonsMonth ();
+                        },
+                        () => {
+                            DisableGestureRecognizers ();
+                            ConfigureMonthView ();
+                        }
+                    );
+                } else {
+                    UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
+                        () => {
+
+                            DateDotView.Frame = new RectangleF (0, 0, 320, 78);
+                            DateDotView.Center = new PointF (160, 39);
+                            calendarTableView.Center = new PointF ((float)163, (float)291.5);
+                            copyMonthImage.Hidden = true;
+                            DateDotView.ViewWithTag (200).Hidden = true;
+                            DateDotWeekPanGestureRecognizer.Enabled = true;
+
+                        },
+                        () => {
+                            DisableGestureRecognizers ();
+                            ConfigureBasicView ();
+                        }
+                    );
+                }
+
+                return;
+            }
         }
-    
-    
+
+        private void DateDotToggleCloseMonthPan (UIPanGestureRecognizer obj)
+        {
+            int rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
+            if (UIGestureRecognizerState.Began == obj.State) {
+                return;
+            }
+
+            if (UIGestureRecognizerState.Changed == obj.State) {
+                yOffset = obj.TranslationInView (this.View).Y;
+                if (yOffset < -5) {
+                    DateDotMonthPanGestureRecognizer.Enabled = false;
+                    if (288.5 + (46 * (rows - 1)) + yOffset < 288.5 + (46 * (rows - 1)) && 288.5 + (46 * (rows - 1)) + yOffset > 291.5) {
+                        calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)) + yOffset);
+                    }
+                    return;
+                }
+            }
+
+            if (UIGestureRecognizerState.Ended == obj.State) {
+                if (yOffset < -60 || obj.VelocityInView (DateDotView).Y > 500) {
+                    UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
+                        () => {
+                            DateDotView.Frame = new RectangleF (0, 0, 320, 78);
+                            DateDotView.Center = new PointF (160, 39);
+                            calendarTableView.Center = new PointF ((float)163, (float)291.5);
+                            copyMonthImage.Hidden = true;
+                            DisableGestureRecognizers ();
+                            ConfigureBasicView ();
+                            DateDotView.ViewWithTag (200).Hidden = true;
+                            if (DateDotView.ViewDate.Month != selectedDate.Month) {
+                                DateDotView.ViewDate = DateDotView.GetFirstDay (DateDotView.ViewDate);
+                                DateDotView.ToggleButtons (-1);
+                                currentDate = DateDotView.ViewDate;
+                            } else {
+                                DateDotView.ViewDate = selectedDate;
+                                DateDotView.ToggleButtons (-1);
+                                DateDotView.UpdateButtons ();
+                                currentDate = selectedDate;
+                            }
+                        },
+                        () => {
+                        }
+                    );
+                } else if (yOffset >= -60) {
+                    UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
+                        () => {
+                            DateDotView.Frame = new RectangleF (0, 5, 320, 70 + (46 * (rows)));
+                            DateDotView.Center = new PointF (160, 155);
+                            calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)));
+                            View.BringSubviewToFront (calendarTableView);
+                            copyMonthImage.Hidden = false;
+                            DisableGestureRecognizers ();
+                            ConfigureMonthView ();
+                        },
+                        () => {
+                            currentDate = selectedDate;
+                        }
+                    );
+                }
+                return;
+            }
+        }
+
+        public void ScrollToDate (DateBarView view, UIButton button)
+        {
+            var tempDate = view.ViewDate;
+            var label = button.TitleLabel.Text.ToString ();
+            if (false == BasicView) {
+                int sameMonth = 100; 
+                if (106 > button.Tag && 23 <= Convert.ToInt32 (label)) {
+                    tempDate = view.ViewDate.AddMonths (-1);
+                    var difference = tempDate.Day - Convert.ToInt32 (label);
+                    var date = tempDate.AddDays (-difference);
+                    selectedDate = date;
+                    var viewDateTag = DateDotView.GetMonthTag (view.ViewDate);
+                    sameMonth = DateDotView.IsButtonInMonth (viewDateTag, view.ViewDate, date);
+                    if (date.Month != view.ViewDate.Month && 0 == sameMonth) {
+                        currentDate = view.ViewDate;
+                    } else {
+                        currentDate = selectedDate;
+                    }
+                    selectedDateTag = button.Tag;
+                    view.ToggleButtons (selectedDateTag);
+                    calendarSource.ScrollToDate (calendarTableView, date);
+
+                } else if (128 < button.Tag && 1 <= Convert.ToInt32 (label) && 6 >= Convert.ToInt32 (label)) {
+                    tempDate = view.ViewDate.AddMonths (1);
+                    var difference = tempDate.Day - Convert.ToInt32 (label);
+                    var date = tempDate.AddDays (-difference);
+                    selectedDate = date;
+                    var viewDateTag = DateDotView.GetMonthTag (view.ViewDate);
+                    sameMonth = DateDotView.IsButtonInMonth (viewDateTag, view.ViewDate, date);
+                    if (date.Month != view.ViewDate.Month && 0 == sameMonth) {
+                        currentDate = view.ViewDate;
+                    } else {
+                        currentDate = selectedDate;
+                    }
+                    selectedDateTag = button.Tag;
+                    view.ToggleButtons (selectedDateTag);
+                    calendarSource.ScrollToDate (calendarTableView, date);
+
+                } else {
+                    var difference = view.ViewDate.Day - Convert.ToInt32 (label);
+                    var date = view.ViewDate.AddDays (-difference);
+                    selectedDate = date;
+                    currentDate = selectedDate;
+                    selectedDateTag = button.Tag;
+                    calendarSource.ScrollToDate (calendarTableView, date);
+
+                }
+            } else {
+                var difference = view.ViewDate.Day - Convert.ToInt32 (label);
+                var date = view.ViewDate;
+                if (-10 > difference) {
+                    date = date.AddMonths (-1);
+                    date = date.AddDays (-difference);
+
+                } else if (10 < difference) {
+                    date = date.AddMonths (1);
+                    date = date.AddDays (-difference);
+
+                } else {
+                    date = view.ViewDate.AddDays (-difference);
+                }
+                selectedDate = date;
+                currentDate = selectedDate;
+                selectedDateTag = button.Tag;
+                calendarSource.ScrollToDate (calendarTableView, date);
+            }
+        }
+
+        public void ReturnToToday ()
+        {
+            int returnWeek = DateDotView.IsButtonInWeek (todayWeekTag, DateTime.Today, DateDotView.ViewDate);
+            int returnMonth = DateDotView.IsButtonInMonth (todayMonthTag, DateTime.Today, DateDotView.ViewDate);
+            if (BasicView) {
+                var Image = Util.caputureView (DateDotView);
+                copyWeekImage.Image = Image;
+                this.View.AddSubview (copyWeekImage);
+                this.View.BringSubviewToFront (copyWeekImage);
+                Image.Dispose ();
+
+                if (-1 == returnWeek) {
+
+                    DateDotView.ViewDate = DateTime.Today;
+                    selectedDate = DateTime.Today;
+                    selectedDateTag = todayWeekTag;
+                    DateDotView.ToggleButtons (-1);
+                    DateDotView.UpdateButtons ();
+                    copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), 39);
+                    DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), 39);
+                    UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                        () => {
+                            copyWeekImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                        },
+                        () => {
+
+                        }
+                    );
+                    currentDate = DateDotView.ViewDate;
+                } else if (1 == returnWeek) {
+
+                    DateDotView.ViewDate = DateTime.Today;
+                    selectedDate = DateTime.Today;
+                    selectedDateTag = todayWeekTag;
+                    DateDotView.ToggleButtons (-1);
+                    DateDotView.UpdateButtons ();
+                    copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                        () => {
+                            copyWeekImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                        },
+                        () => {
+
+                        }
+                    );
+                    currentDate = DateDotView.ViewDate;
+                } else {
+                    if (selectedDateTag != todayWeekTag) {
+                        DateDotView.ViewDate = DateTime.Today;
+                        selectedDate = DateTime.Today;
+                        selectedDateTag = todayWeekTag;
+                        DateDotView.ToggleButtons (-1);
+                        DateDotView.UpdateButtons ();
+                    }
+                    this.View.BringSubviewToFront (DateDotView);
+                }
+
+
+            } else {
+
+                var Image = Util.caputureView (DateDotView);
+                copyMonthImage.Image = Image;
+                this.View.AddSubview (copyMonthImage);
+                this.View.BringSubviewToFront (copyMonthImage);
+                this.View.BringSubviewToFront (calendarTableView);
+                Image.Dispose ();
+
+                if (-1 == returnMonth) {
+
+                    DateDotView.ViewDate = DateTime.Today;
+                    selectedDate = DateTime.Today;
+                    selectedDateTag = todayMonthTag;
+                    DateDotView.ToggleButtons (-1);
+                    DateDotView.UpdateButtonsMonth ();
+                    var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
+                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                        () => {
+                            copyMonthImage.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)));
+                        },
+                        () => {
+
+                        }
+                    );
+
+                    currentDate = DateDotView.ViewDate;
+                } else if (1 == returnMonth) {
+
+                    DateDotView.ViewDate = DateTime.Today;
+                    selectedDate = DateTime.Today;
+                    selectedDateTag = todayMonthTag;
+                    DateDotView.ToggleButtons (-1);
+                    DateDotView.UpdateButtonsMonth ();
+                    var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
+                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    DateDotView.Center = new PointF (UIScreen.MainScreen.Bounds.Right + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                        () => {
+                            copyMonthImage.Center = new PointF (UIScreen.MainScreen.Bounds.Left - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            calendarTableView.Center = new PointF ((float)163, (float)288.5 + (46 * (rows - 1)));
+                        },
+                        () => {
+
+                        }
+                    );
+                    currentDate = DateDotView.ViewDate;
+                } else {
+                    if (selectedDateTag != todayMonthTag) {
+                        DateDotView.ViewDate = DateTime.Today;
+                        selectedDate = DateTime.Today;
+                        selectedDateTag = todayMonthTag;
+                        DateDotView.ToggleButtons (-1);
+                        DateDotView.UpdateButtonsMonth ();
+                    }
+                    this.View.BringSubviewToFront (DateDotView);
+                    this.View.BringSubviewToFront (calendarTableView);
+                }
+            }
+            calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
+        }
+
     }
-
-
-
 
 }

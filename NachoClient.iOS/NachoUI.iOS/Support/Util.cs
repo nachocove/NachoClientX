@@ -234,7 +234,7 @@ namespace NachoClient
             }
             return sb.ToString ();
         }
-
+            
         public static RootElement MakeProgressRoot (string caption)
         {
             return new RootElement (caption) {
