@@ -146,13 +146,10 @@ namespace NachoClient.iOS
             currentDate = DateTime.Today;
             selectedDate = DateTime.Today;
 
-
-
             todayMonthTag = DateDotView.GetMonthTag (DateTime.Today);
             DateDotView.UpdateButtons ();
             View.BringSubviewToFront (DateDotView);
             ConfigureBasicView ();
-            calendarSource.ScrollToDate (calendarTableView, DateTime.Today.AddDays(1));
 
         }
 
