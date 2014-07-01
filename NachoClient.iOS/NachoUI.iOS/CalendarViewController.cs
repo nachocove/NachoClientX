@@ -18,10 +18,10 @@ namespace NachoClient.iOS
         INachoCalendar calendar;
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
-        public static DateTime selectedDate = new DateTime ();
-        public static int selectedDateTag = 0;
-        public static int todayWeekTag = 0;
-        public static int todayMonthTag = 0;
+        public DateTime selectedDate = new DateTime ();
+        public int selectedDateTag = 0;
+        public int todayWeekTag = 0;
+        public int todayMonthTag = 0;
 
         UIPanGestureRecognizer DateDotWeekPanGestureRecognizer = null;
         UIPanGestureRecognizer DateDotMonthPanGestureRecognizer = null;
@@ -257,9 +257,9 @@ namespace NachoClient.iOS
 
             if (UIGestureRecognizerState.Changed == obj.State) {
                 xOffset = obj.TranslationInView (this.View).X;
-                if (xOffset > 5 || xOffset < -5) {
+                //offset must be greater than |5| to be sure user is swiping horizontially rather than vertically
+                if ((5 < xOffset) || (-5 > xOffset)) {
                     DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
-                    //ConfigureBasicView ();
                     if (0 > xOffset) { //Swipe left
                         if (directionFlag != 1) {
 
@@ -371,7 +371,8 @@ namespace NachoClient.iOS
 
             if (UIGestureRecognizerState.Changed == obj.State) {
                 xOffset = obj.TranslationInView (this.View).X;
-                if (xOffset > 5 || xOffset < -5) {
+                //offset must be greater than |5| to be sure user is swiping vertically rather than horizontially
+                if ((5 < xOffset) || (-5 > xOffset)) {
                     this.View.AddSubview (copyMonthImage);
                     this.View.BringSubviewToFront (copyMonthImage);
                     this.View.BringSubviewToFront (calendarTableView);

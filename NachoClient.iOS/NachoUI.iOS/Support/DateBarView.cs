@@ -125,7 +125,7 @@ namespace NachoClient.iOS
         public void UpdateButtons ()
         {   
             int dayOffset = -(IndexOfDayOfWeek (this.ViewDate.DayOfWeek.ToString ()));
-            int selectedIndex = IndexOfDayOfWeek (CalendarViewController.selectedDate.DayOfWeek.ToString ());
+            int selectedIndex = IndexOfDayOfWeek (owner.selectedDate.DayOfWeek.ToString ());
             int i = 0;
             while (i < 7) {
                 UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
@@ -137,16 +137,16 @@ namespace NachoClient.iOS
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
                 if (!todayWeekTagSet) {
-                    if (selectedIndex == i && CalendarViewController.selectedDate.Day.ToString () == date) {
-                        CalendarViewController.todayWeekTag = button.Tag;
+                    if (selectedIndex == i && owner.selectedDate.Day.ToString () == date) {
+                        owner.todayWeekTag = button.Tag;
                         todayWeekTagSet = true;
                     }
 
                 }
-                if (selectedIndex == i && CalendarViewController.selectedDate.Day.ToString () == date) {
+                if (selectedIndex == i && owner.selectedDate.Day.ToString () == date) {
                     button.Selected = true;
                     button.BackgroundColor = A.Color_FEBA32;
-                    CalendarViewController.selectedDateTag = button.Tag;
+                    owner.selectedDateTag = button.Tag;
                 } else {
                     button.Selected = false;
                     button.BackgroundColor = A.Color_NachoNowBackground;
@@ -177,17 +177,17 @@ namespace NachoClient.iOS
             var firstDate = GetFirstDay (this.ViewDate);
             int rows = RowsInAMonth (this.ViewDate);
             int dayOffset = IndexOfDayOfWeek (firstDate.DayOfWeek.ToString ());
-            var numDays = DaysInMonth (this.ViewDate);
+            var numDays = DateTime.DaysInMonth (this.ViewDate.Year, this.ViewDate.Month);
             int i = 0;
             int dayIncrement = -dayOffset;
             while (i < dayOffset) {
                 UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                 string date = firstDate.AddDays (dayIncrement).Day.ToString ();
                 DateTime buttonDate = firstDate.AddDays (dayIncrement);
-                if (CalendarViewController.selectedDate == buttonDate) {
+                if (owner.selectedDate == buttonDate) {
                     button.Selected = true;
                     button.BackgroundColor = A.Color_FEBA32;
-                    CalendarViewController.selectedDateTag = button.Tag;
+                    owner.selectedDateTag = button.Tag;
                 } else {
                     button.Selected = false;
                     button.BackgroundColor = UIColor.White;
@@ -207,10 +207,10 @@ namespace NachoClient.iOS
                 UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                 string date = firstDate.AddDays (dayIncrement).Day.ToString ();
                 DateTime buttonDate = firstDate.AddDays (dayIncrement);
-                if (CalendarViewController.selectedDate == buttonDate) {
+                if (owner.selectedDate == buttonDate) {
                     button.Selected = true;
                     button.BackgroundColor = A.Color_FEBA32;
-                    CalendarViewController.selectedDateTag = button.Tag;
+                    owner.selectedDateTag = button.Tag;
                 } else {
                     button.Selected = false;
                     button.BackgroundColor = A.Color_NachoNowBackground;
@@ -231,10 +231,10 @@ namespace NachoClient.iOS
                 UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                 string date = firstDate.AddDays (dayIncrement).Day.ToString ();
                 DateTime buttonDate = firstDate.AddDays (dayIncrement);
-                if (CalendarViewController.selectedDate == buttonDate) {
+                if (owner.selectedDate == buttonDate) {
                     button.Selected = true;
                     button.BackgroundColor = A.Color_FEBA32;
-                    CalendarViewController.selectedDateTag = button.Tag;
+                    owner.selectedDateTag = button.Tag;
                 } else {
                     button.Selected = false;
                     button.BackgroundColor = UIColor.White;
@@ -258,7 +258,7 @@ namespace NachoClient.iOS
                 var firstDate = GetFirstDay (this.ViewDate);
                 int rows = RowsInAMonth (this.ViewDate);
                 int dayOffset = IndexOfDayOfWeek (firstDate.DayOfWeek.ToString ());
-                var numDays = DaysInMonth (this.ViewDate);
+                var numDays = DateTime.DaysInMonth (this.ViewDate.Year, this.ViewDate.Month);
                 int i = 0;
                 while (i < dayOffset) {
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
@@ -362,24 +362,6 @@ namespace NachoClient.iOS
                 return 5;
             }
 
-        }
-
-        public int DaysInMonth (DateTime date)
-        {
-            if (date.Month.ToString () == "1" || date.Month.ToString () == "3" ||
-                date.Month.ToString () == "5" || date.Month.ToString () == "7" ||
-                date.Month.ToString () == "8" || date.Month.ToString () == "10" ||
-                date.Month.ToString () == "12") {
-                return 31;
-            } else if (date.Month.ToString () == "4" || date.Month.ToString () == "6" ||
-                       date.Month.ToString () == "9" || date.Month.ToString () == "11") {
-                return 30;
-            } else {
-                if (0 == date.Year % 4) {
-                    return 29;
-                }
-                return 28;
-            }
         }
 
         public int IsButtonInWeek (int baseButtonTag, DateTime baseButtonDate, DateTime newDate)
