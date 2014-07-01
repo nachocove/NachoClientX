@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using NachoCore.Model;
 
@@ -261,7 +262,7 @@ namespace NachoCore.Utils
 
         private ITelemetryBE BackEnd;
 
-        private Thread ProcessThread;
+        private Task TaskHandle;
 
         NcCounter[] Counters;
   
@@ -399,8 +400,10 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            ProcessThread = new Thread (new ThreadStart (this.Process<T>));
-            ProcessThread.Start ();
+            TaskHandle = NcTask.Run (() => {
+                EventQueue.Token = NcTask.Cts.Token;
+                Process<T> ();
+            }, "Telemetry");
         }
 
         private void Process<T> () where T : ITelemetryBE, new()
@@ -413,6 +416,10 @@ namespace NachoCore.Utils
             NcCapture.AddKind (CAPTURE_NAME);
             NcCapture transactionTime = NcCapture.Create(CAPTURE_NAME);
 
+            while (!BackEnd.IsUseable ()) {
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
+            }
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good
@@ -425,7 +432,9 @@ namespace NachoCore.Utils
                     dbEvent = McTelemetryEvent.QueryOne ();
                     if (null == dbEvent) {
                         // No pending event. Wait for one.
-                        DbUpdated.WaitOne ();
+                        while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
+                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                        }
                         continue;
                     }
                     tEvent = dbEvent.GetTelemetryEvent ();
@@ -446,6 +455,7 @@ namespace NachoCore.Utils
 
     public interface ITelemetryBE
     {
+        bool IsUseable ();
         void SendEvent (TelemetryEvent tEvent);
     }
 }

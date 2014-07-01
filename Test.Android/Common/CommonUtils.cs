@@ -39,7 +39,7 @@ namespace Test.iOS
 
             var pcs = CreateProtocolState ();
             CreateAccount (pcs.Id);
-            NcTask.Start ();
+            NcTask.StartService ();
 
             AsProtoControl protoControl = new AsProtoControl (mockOwner, accountId);
 

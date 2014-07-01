@@ -3,17 +3,21 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NachoCore.Utils
 {
     public class NcTask
     {
-        static ConcurrentDictionary<WeakReference,string> TaskMap;
+        public const int MaxCancellationTestInterval = 100;
+        private static ConcurrentDictionary<WeakReference,string> TaskMap;
+        public static CancellationTokenSource Cts = new CancellationTokenSource ();
 
-        public static void Start ()
+        public static void StartService ()
         {
             TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+            Cts = new CancellationTokenSource ();
         }
 
         public static List<string> FindFaulted ()
@@ -24,7 +28,7 @@ namespace NachoCore.Utils
                     var taskRef = pair.Key;
                     if (taskRef.IsAlive) {
                         if (((Task)taskRef.Target).IsFaulted) {
-                            faulted.Add(pair.Value);
+                            faulted.Add (pair.Value);
                         }
                     }
                 } catch {
@@ -37,7 +41,23 @@ namespace NachoCore.Utils
         public static Task Run (Action action, string name)
         {
             WeakReference taskRef = null;
-            var task = new Task (delegate {
+            var task = Task.Run (delegate {
+                Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
+                action.Invoke ();
+                Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
+                if (!TaskMap.TryRemove (taskRef, out name)) {
+                    Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
+                }
+            }, Cts.Token);
+            taskRef = new WeakReference (task);
+            if (!TaskMap.TryAdd (taskRef, name)) {
+                Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
+            }
+            return task;
+            /*
+            WeakReference taskRef = null;
+            var task = new NcTask (delegate {
+                Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
                 action.Invoke ();
                 Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
                 if (!TaskMap.TryRemove (taskRef, out name)) {
@@ -51,16 +71,22 @@ namespace NachoCore.Utils
             task.Start ();
             Log.Info (Log.LOG_SYS, "Task {0} started.", name);
             return task;
+            */
         }
 
-        public static void Stop ()
+        public static void StopService ()
         {
+            Cts.Cancel ();
+            Task.WaitAny (new Task[] { Task.Delay (4 * MaxCancellationTestInterval) });
             foreach (var pair in TaskMap) {
                 try {
                     var taskRef = pair.Key;
                     if (taskRef.IsAlive) {
                         if (!((Task)taskRef.Target).IsCompleted) {
                             Log.Error (Log.LOG_SYS, "Task {0} still running", pair.Value);
+                        }
+                        if (!((Task)taskRef.Target).IsCanceled) {
+                            Log.Info (Log.LOG_SYS, "Task {0} cancelled", pair.Value);
                         }
                     }
                 } catch {
