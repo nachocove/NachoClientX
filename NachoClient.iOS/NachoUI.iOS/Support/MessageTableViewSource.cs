@@ -27,6 +27,10 @@ namespace NachoClient.iOS
         private string ArchiveMessageCaptureName;
         private string RefreshCaptureName;
 
+
+        // Short-term cache from GetHeight to GetCell
+        private Dictionary<int, McEmailMessage> messageCache;
+
         public MessageTableViewSource ()
         {
             owner = null;
@@ -38,6 +42,7 @@ namespace NachoClient.iOS
             RefreshCaptureName = "MessageTableViewSource.Refresh";
             NcCapture.AddKind (RefreshCaptureName);
             RefreshCapture = NcCapture.Create (RefreshCaptureName);
+            messageCache = new Dictionary<int, McEmailMessage> ();
         }
 
         public void SetCompactMode (bool compactMode)
@@ -53,6 +58,7 @@ namespace NachoClient.iOS
         public void RefreshEmailMessages ()
         {
             RefreshCapture.Start ();
+            messageCache.Clear ();
             messageThreads.Refresh ();
             RefreshCapture.Stop ();
         }
@@ -104,6 +110,7 @@ namespace NachoClient.iOS
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             var message = messageThread.SingleMessageSpecialCase ();
+            messageCache [indexPath.Row] = message;
             return HeightForMessage (message);
         }
 
@@ -344,6 +351,7 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (reminderImageView);
 
                 // Reminder label view
+
                 var reminderLabelView = new UILabel (new RectangleF (87, 115, 230, 20));
                 reminderLabelView.Font = A.Font_AvenirNextRegular14;
                 reminderLabelView.TextColor = A.Color_9B9B9B;
@@ -418,8 +426,14 @@ namespace NachoClient.iOS
             // Save thread index
             cell.ContentView.Tag = messageThreadIndex;
 
+            McEmailMessage message;
             var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
-            var message = messageThread.SingleMessageSpecialCase ();
+
+            if (messageCache.TryGetValue (messageThreadIndex, out message)) {
+                messageCache.Remove (messageThreadIndex);
+            } else {
+                message = messageThread.SingleMessageSpecialCase ();
+            }
 
             var cellWidth = cell.Frame.Width;
             if (compactMode) {
@@ -439,8 +453,13 @@ namespace NachoClient.iOS
                 userImageView.Image = userImage;
             } else {
                 userLabelView.Hidden = false;
-                userLabelView.Text = Util.NameToLetters (Pretty.SenderString (message.From));
-                userLabelView.BackgroundColor = Util.ColorOfSender (message.AccountId, Pretty.EmailString (message.From));
+                if ((null == message.cachedFromLetters) || (0 == message.cachedFromColor)) {
+                    message.cachedFromLetters = Util.NameToLetters (Pretty.SenderString (message.From));
+                    message.cachedFromColor = Util.ColorIndexOfSender (message.AccountId, Pretty.EmailString (message.From));
+                    message.Update ();
+                }
+                userLabelView.Text = message.cachedFromLetters;
+                userLabelView.BackgroundColor = Util.ColorOfSenderMap(message.cachedFromColor);
             }
 
             // User chili view
@@ -496,7 +515,7 @@ namespace NachoClient.iOS
 
             // Attachment image view
             var attachmentImageView = cell.ContentView.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
-            attachmentImageView.Hidden = false;
+            attachmentImageView.Hidden = !message.cachedHasAttachments;
             var attachmentImageRect = attachmentImageView.Frame;
             attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
@@ -507,7 +526,7 @@ namespace NachoClient.iOS
             fromLabelRect.Width = attachmentImageRect.X - 65;
             fromLabelView.Frame = fromLabelRect;
             fromLabelView.Text = Pretty.SenderString (message.From);
-            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
+            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
 
             ConfigureSwipes (cell as MCSwipeTableViewCell, messageThread);
             ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);

@@ -646,6 +646,7 @@ namespace NachoCore.ActiveSync
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Attachments:
                     emailMessage.xmlAttachments = child.Elements (m_baseNs + Xml.AirSyncBase.Attachment);
+                    emailMessage.cachedHasAttachments = true;
                     break;
                 case Xml.AirSyncBase.Body:
                     emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();

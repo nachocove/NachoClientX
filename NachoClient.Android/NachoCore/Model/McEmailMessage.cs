@@ -69,6 +69,8 @@ namespace NachoCore.Model
 
         /// Email address of the sender (optional)
         public string From { set; get; }
+        public int cachedFromColor { set; get; }
+        public string cachedFromLetters { set; get; }
 
         /// Subject of the message (optional)
         public string Subject { set; get; }
@@ -133,6 +135,9 @@ namespace NachoCore.Model
         [Ignore]
         /// List of xml attachments for the email
         public IEnumerable<XElement> xmlAttachments { get; set; }
+
+        /// Cache a bit that says we have attachments
+        public bool cachedHasAttachments { get; set; }
 
         /// Last action (fwd, rply, etc.) that was taken on the message- Used to display an icon (optional)
         public int LastVerbExecuted { set; get; }
@@ -356,7 +361,7 @@ namespace NachoCore.Model
 
         public bool isHot ()
         {
-            return (minHotScore < this.GetScore ());
+            return (minHotScore < this.Score );
         }
 
         public bool IsDeferred ()
