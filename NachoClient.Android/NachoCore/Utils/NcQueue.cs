@@ -15,7 +15,14 @@ namespace NachoCore.Utils
     {
         private Queue<T> _Queue;
         private object Lock;
-        private Semaphore ProducedCount;
+        private SemaphoreSlim ProducedCount;
+
+        private CancellationToken _Token;
+        public CancellationToken Token {
+            set {
+                _Token = value;
+            }
+        }
 
         private ulong _NumEnqueue;
         public ulong NumEnqueue {
@@ -63,7 +70,7 @@ namespace NachoCore.Utils
         {
             _Queue = new Queue<T> ();
             Lock = new object ();
-            ProducedCount = new Semaphore (0, Int32.MaxValue);
+            ProducedCount = new SemaphoreSlim (0, Int32.MaxValue);
             _NumEnqueue = 0;
             _NumDequeue = 0;
             _NumEnqueueBytes = 0;
@@ -96,7 +103,7 @@ namespace NachoCore.Utils
 
         public T Dequeue ()
         {
-            ProducedCount.WaitOne ();
+            ProducedCount.Wait (_Token);
             lock (Lock) {
                 T obj = (T)_Queue.Dequeue ();
                 _NumDequeueBytes += obj.GetSize ();
