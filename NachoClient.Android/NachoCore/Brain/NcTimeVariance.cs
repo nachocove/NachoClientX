@@ -135,7 +135,7 @@ namespace NachoCore.Brain
             Resume ();
         }
 
-        private void Cleanup ()
+        public void Cleanup ()
         {
             Pause ();
             NcTimeVariance dummy;
@@ -183,14 +183,6 @@ namespace NachoCore.Brain
                 Cleanup ();
             } else {
                 Resume ();
-            }
-        }
-
-        public void Dispose ()
-        {
-            if (null != EventTimer) {
-                EventTimer.Dispose ();
-                EventTimer = null;
             }
         }
 
