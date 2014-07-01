@@ -262,8 +262,6 @@ namespace NachoCore.Utils
 
         private ITelemetryBE BackEnd;
 
-        private Task TaskHandle;
-
         NcCounter[] Counters;
   
         public Telemetry ()
@@ -400,7 +398,7 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            TaskHandle = NcTask.Run (() => {
+            NcTask.Run (() => {
                 EventQueue.Token = NcTask.Cts.Token;
                 Process<T> ();
             }, "Telemetry");
