@@ -79,12 +79,13 @@ namespace NachoCore.ActiveSync
                             break;
                         case Xml.FolderHierarchy.Delete:
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
-                            pathElem.Delete ();
                             var applyDelete = new ApplyFolderDelete (BEContext.Account.Id) {
                                 ServerId = serverId,
                             };
                             applyDelete.ProcessServerCommand ();
+                            // The path information can't be deleted until *after* conflict analysis is complete.
+                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
+                            pathElem.Delete ();
                             break;
                         }
                     }
