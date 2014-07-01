@@ -107,6 +107,11 @@ namespace NachoClient.iOS
             return HeightForMessage (message);
         }
 
+        public override float EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
+        {
+            return NORMAL_ROW_HEIGHT;
+        }
+
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             if (MultiSelectActive ()) {

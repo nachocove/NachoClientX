@@ -82,6 +82,11 @@ namespace NachoClient.iOS
             return HeightForCalendarEvent (c);
         }
 
+        public override float EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
+        {
+            return 69.0F;
+        }
+
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
