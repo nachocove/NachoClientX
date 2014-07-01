@@ -117,7 +117,7 @@ namespace NachoCore.Model
 
         public void RunInTransaction (Action action)
         {
-            // DO NOT ADD LOGGING IN THIS FUNCTION.
+            // DO NOT ADD LOGGING IN THE TRANSACTION, BECAUSE WE DON'T WANT LOGGING WRITES TO GET LUMPED IN.
             var threadId = Thread.CurrentThread.ManagedThreadId;
             int exitValue = 0;
             TransDepth.AddOrUpdate (threadId, 1, (key, oldValue) => {
@@ -125,7 +125,20 @@ namespace NachoCore.Model
                 return oldValue + 1;
             });
             try {
-                Db.RunInTransaction (action);
+                var whoa = DateTime.UtcNow.AddSeconds (5.0);
+                do {
+                    try {
+                        Db.RunInTransaction (action);
+                        break;
+                    } catch (SQLiteException ex) {
+                        if (ex.Message.Contains ("Busy")) {
+                            Log.Warn (Log.LOG_SYS, "Caught a Busy");
+                        } else {
+                            Log.Error (Log.LOG_SYS, "Caught a non-Busy: {0}", ex);
+                            throw;
+                        }
+                    }
+                } while (DateTime.UtcNow < whoa);
             } finally {
                 NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
             }
