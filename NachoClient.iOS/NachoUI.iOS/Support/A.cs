@@ -33,6 +33,12 @@ namespace NachoClient.iOS
         protected static UIColor _Color_808080 = null;
 
         protected static UIColor _Color_NachoNowBackground = null;
+        protected static UIColor _Color_NachoBlack = null;
+        protected static UIColor _Color_NachoGreen = null;
+        protected static UIColor _Color_NachoRed = null;
+        protected static UIColor _Color_NachoYellow = null;
+        protected static UIColor _Color_NachoBlue = null;
+
 
         public A ()
         {
@@ -252,6 +258,51 @@ namespace NachoClient.iOS
                     _Color_NachoNowBackground = UIColor.FromHSB (0.524f, 0.030f, 0.914f);
                 }
                 return _Color_NachoNowBackground;
+            }
+        }
+
+        public static UIColor Color_NachoGreen {
+            get {
+                if (null == _Color_NachoGreen) {
+                    _Color_NachoGreen = UIColor.FromRGB (0x15, 0x47, 0x50);
+                }
+                return _Color_NachoGreen;
+            }
+        }
+
+        public static UIColor Color_NachoRed {
+            get {
+                if (null == _Color_NachoRed) {
+                    _Color_NachoRed = UIColor.FromRGB (0xeb, 0x4c, 0x2f);
+                }
+                return _Color_NachoRed;
+            }
+        }
+
+        public static UIColor Color_NachoYellow {
+            get {
+                if (null == _Color_NachoYellow) {
+                    _Color_NachoYellow = UIColor.FromRGB (0xff, 0xcc, 0x33);
+                }
+                return _Color_NachoYellow;
+            }
+        }
+
+        public static UIColor Color_NachoBlack {
+            get {
+                if (null == _Color_NachoBlack) {
+                    _Color_NachoBlack = UIColor.FromRGB (0x0b, 032, 0x39);
+                }
+                return _Color_NachoBlack;
+            }
+        }
+
+        public static UIColor Color_NachoBlue {
+            get {
+                if (null == _Color_NachoBlue) {
+                    _Color_NachoBlue = UIColor.FromRGB (0x1c, 0xce, 0xc2);
+                }
+                return _Color_NachoBlue;
             }
         }
     }

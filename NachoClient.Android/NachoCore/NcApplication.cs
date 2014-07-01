@@ -115,6 +115,7 @@ namespace NachoCore
             BackEnd.Instance.Start ();
             NcContactGleaner.Start ();
             NcCapture.ResumeAll ();
+            NcTimeVariance.ResumeAll ();
         }
 
         public void Stop ()
@@ -124,6 +125,7 @@ namespace NachoCore
             BackEnd.Instance.Stop ();
             NcContactGleaner.Stop ();
             NcCapture.PauseAll ();
+            NcTimeVariance.PauseAll ();
             // NcTask/Timer.Stop () should go last.
             NcTimer.Stop ();
             NcTask.Stop ();

@@ -39,8 +39,16 @@ namespace NachoCore.Brain
         public delegate void TimeVarianceCallBack (int state);
 
         /// A list of all active Time variance state machine
-        private static ConcurrentDictionary<string, NcTimeVariance> ActiveList;
-        
+        protected static ConcurrentDictionary<string, NcTimeVariance> _ActiveList;
+        public static ConcurrentDictionary<string, NcTimeVariance> ActiveList {
+            get {
+                if (null == _ActiveList) {
+                    _ActiveList = new ConcurrentDictionary<string, NcTimeVariance> ();
+                }
+                return _ActiveList;
+            }
+        }
+
         /// State is just an integer that increments. Note that state 0 is
         /// reserved for terminated state.
         private int State_ { get; set; }
@@ -58,7 +66,12 @@ namespace NachoCore.Brain
         // needed. Otherwise, we'll need a timer for every 
         private NcTimer EventTimer;
 
-        public string Description { get; set; }
+        protected string _Description { get; set; }
+        public string Description {
+            get {
+                return _Description;
+            }
+        }
 
         public TimeVarianceCallBack CallBack;
 
@@ -76,9 +89,6 @@ namespace NachoCore.Brain
         {
             State_ = 1;
             MaxState = 1;
-            if (null == ActiveList) {
-                ActiveList = new ConcurrentDictionary<string, NcTimeVariance> ();
-            }
             NcAssert.True (!ActiveList.ContainsKey (Description));
             ActiveList[Description] = this;
             CallBack = null;
@@ -86,7 +96,7 @@ namespace NachoCore.Brain
 
         public NcTimeVariance (string description)
         {
-            Description = description;
+            _Description = description;
             Initialize ();
         }
 
@@ -191,7 +201,7 @@ namespace NachoCore.Brain
             }
         }
 
-        public static void ResuemAll ()
+        public static void ResumeAll ()
         {
             foreach (NcTimeVariance tv in ActiveList.Values) {
                 tv.Resume ();

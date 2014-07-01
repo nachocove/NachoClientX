@@ -182,6 +182,9 @@
     <Compile Include="..\Test.Android\NcEmailMessageDependency.cs">
       <Link>NcEmailMessageDependency.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcScoreCombinerTest.cs">
+      <Link>NcScoreCombinerTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

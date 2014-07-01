@@ -81,8 +81,6 @@ namespace NachoCore.Model
                     dep.ContactId = sender.Id;
                     dep.ContactType = "Sender";
                     dep.Insert ();
-                } else {
-                    Log.Warn (Log.LOG_BRAIN, "bad From field: {0}", From);
                 }
 
                 ScoreVersion++;
