@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NachoCore.Brain;
 using NachoCore.Model;
@@ -59,17 +60,19 @@ namespace NachoCore
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
                 aex.Handle ((ex) => {
-                    var message = ex.ToString();
+                    var message = ex.ToString ();
                     Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
                     var faulted = NcTask.FindFaulted ();
                     foreach (var name in faulted) {
                         Log.Error (Log.LOG_SYS, "Faulted task: {0}", name);
                     }
-                    if (ex is InvalidCastException && message.Contains ("WriteRequestAsyncCB")) {
-                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB");
+                    if (ex is InvalidCastException &&
+                        (message.Contains ("WriteRequestAsyncCB") || message.Contains ("GetResponseAsyncCB"))) {
+                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB/GetResponseAsyncCB");
                         // FIXME XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
                         return true;
                     }
+
                     if (ex is System.Net.WebException && message.Contains ("EndGetResponse")) {
                         Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: WebException with EndGetResponse");
                         // FIXME XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
@@ -110,11 +113,16 @@ namespace NachoCore
         {
             // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
             MonitorStart ();
+            Log.Info (Log.LOG_LIFECYCLE, "MonitorStarted");
             NcModel.Instance.Info ();
             NcModel.Instance.EngageRateLimiter ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcModel.Instance Started");
             BackEnd.Instance.Start ();
+            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Instance.Started");
             NcContactGleaner.Start ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcContactGleaner.Started");
             NcCapture.ResumeAll ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcCapture.ResumeAll'd");
         }
 
         public void Stop ()
@@ -144,7 +152,12 @@ namespace NachoCore
 
         public void MonitorReport ()
         {
-            Log.Info (Log.LOG_SYS, "Monitor:Total Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
+            Log.Info (Log.LOG_SYS, "Monitor: Total Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
+            int workerThreads, completionPortThreads;
+            ThreadPool.GetMinThreads (out workerThreads, out completionPortThreads);
+            Log.Info (Log.LOG_SYS, "Monitor: Min Threads {0}/{1}", workerThreads, completionPortThreads);
+            ThreadPool.GetMaxThreads (out workerThreads, out completionPortThreads);
+            Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
         }
 
         public void QuickCheck (uint seconds)

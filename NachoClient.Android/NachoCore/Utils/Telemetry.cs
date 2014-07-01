@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using NachoCore.Model;
 
@@ -261,7 +262,7 @@ namespace NachoCore.Utils
 
         private ITelemetryBE BackEnd;
 
-        private NcTask TaskHandle;
+        private Task TaskHandle;
 
         NcCounter[] Counters;
   
@@ -400,7 +401,7 @@ namespace NachoCore.Utils
                 return;
             }
             TaskHandle = NcTask.Run (() => {
-                EventQueue.Token = TaskHandle.Token;
+                EventQueue.Token = NcTask.Cts.Token;
                 Process<T> ();
             }, "Telemetry");
         }
@@ -416,7 +417,8 @@ namespace NachoCore.Utils
             NcCapture transactionTime = NcCapture.Create(CAPTURE_NAME);
 
             while (!BackEnd.IsUseable ()) {
-                NcTask.Delay (5000, TaskHandle.Token);
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
             }
             while (true) {
                 // TODO - We need to be smart about when we run. 
@@ -430,8 +432,8 @@ namespace NachoCore.Utils
                     dbEvent = McTelemetryEvent.QueryOne ();
                     if (null == dbEvent) {
                         // No pending event. Wait for one.
-                        while (!DbUpdated.WaitOne (TaskHandle.PreferredCancellationTestInterval)) {
-                            TaskHandle.Token.ThrowIfCancellationRequested ();
+                        while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
+                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
                         continue;
                     }

@@ -10,6 +10,7 @@ namespace NachoCore.Brain
     public class NcBrain
     {
         private static NcBrain _SharedInstance;
+
         public static NcBrain SharedInstance {
             get {
                 if (null == _SharedInstance) {
@@ -19,14 +20,13 @@ namespace NachoCore.Brain
             }
         }
 
-        private NcTask TaskHandle;
         private NcQueue<NcBrainEvent> EventQueue;
 
         public NcBrain ()
         {
             EventQueue = new NcQueue<NcBrainEvent> ();
-            TaskHandle = NcTask.Run (() => {
-                EventQueue.Token = TaskHandle.Token;
+            NcTask.Run (() => {
+                EventQueue.Token = NcTask.Cts.Token;
                 Process ();
             }, "Brain");
         }
