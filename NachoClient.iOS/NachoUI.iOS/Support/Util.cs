@@ -346,6 +346,7 @@ namespace NachoClient
         public static UIColor sevenColor = new UIColor (10.0f / 255.0f, 217.0f / 255.0f, 150.0f / 255.0f, 1.0f);
         public static UIColor eightColor = new UIColor (34.0f / 255.0f, 20.0f / 255.0f, 98.0f / 255.0f, 1.0f);
         public static List<UIColor> colors = new List<UIColor> () {
+            UIColor.Clear,
             UIColor.LightGray,
             greenColor,
             redColor,
@@ -489,7 +490,7 @@ namespace NachoClient
             var query = McContact.QueryByEmailAddress (accountId, emailAddress);
             int circleColor = 0;
             Random random = new Random ();
-            int randomNumber = random.Next (1, 9);
+            int randomNumber = random.Next (2, 10);
             foreach (var person in query) {
                 var colorNum = person.CircleColor;
                 if (person.Picture != null) {
@@ -504,25 +505,30 @@ namespace NachoClient
             return circleColor;
         }
 
+        public static UIColor ColorOfSenderMap(int colorIndex)
+        {
+            return colors [colorIndex];
+        }
+
         // FIXME: Store the color, no the index, in the db
-        public static UIColor ColorOfSender(int accountId, string emailAddress)
+        public static int ColorIndexOfSender(int accountId, string emailAddress)
         {
             var contacts = McContact.QueryLikeEmailAddress (accountId, emailAddress);
             if (0 == contacts.Count) {
-                return colors [0]; // no matches; return default color
+                return 1; // no matches; return default color
             }
             foreach(var contact in contacts) {
                 if(0 < contact.CircleColor) {
-                    return colors[contact.CircleColor];
+                    return contact.CircleColor;
                 }
             }
             var random = new Random ();
-            int randomNumber = random.Next (1, 9);
+            int randomNumber = random.Next (2, 10);
             foreach (var contact in contacts) {
                 contact.CircleColor = randomNumber;
                 contact.Update ();
             }
-            return colors[randomNumber];
+            return randomNumber;
         }
 
         public static UIImage ImageOfSender (int accountId, string emailAddress)
