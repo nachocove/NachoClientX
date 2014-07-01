@@ -68,7 +68,7 @@ namespace NachoCore
 
         public int IndexOfDate (DateTime target)
         {
-            target = target.Date.AddMilliseconds (1.0);
+            //target = target.Date.AddMilliseconds (1.0);
             for (var i = 0; i < listOfDaysThatHaveEvents.Count; i++) {
                 if (listOfDaysThatHaveEvents [i] >= target) {
                     return i;
