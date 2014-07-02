@@ -69,7 +69,6 @@ namespace NachoClient.iOS
 
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
 
-            sendButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
             NavigationItem.RightBarButtonItem = sendButton;
 
             attachButton.SetTitle (" Attach Files", UIControlState.Normal);
