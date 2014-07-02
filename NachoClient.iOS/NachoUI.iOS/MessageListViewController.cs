@@ -172,11 +172,13 @@ namespace NachoClient.iOS
 
         public void ReloadDataMaintainingPosition (bool endRefreshing)
         {
+            NachoClient.Util.HighPriority ();
             messageSource.RefreshEmailMessages ();
-
             ReloadCapture.Start ();
             TableView.ReloadData ();
             ReloadCapture.Stop ();
+            NachoClient.Util.RegularPriority ();
+
 
 //            // Refresh in background    
 //            System.Threading.ThreadPool.QueueUserWorkItem (delegate {
@@ -242,6 +244,8 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            // In case we exit during scrolling
+            NachoClient.Util.RegularPriority ();
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

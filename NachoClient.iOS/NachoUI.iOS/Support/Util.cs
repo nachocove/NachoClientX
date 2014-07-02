@@ -536,6 +536,27 @@ namespace NachoClient
             return null;
         }
 
+        public static void HighPriority()        {
+
+            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "DraggingStarted");
+                      NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                               Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                               Account = ConstMcAccount.NotAccountSpecific,
+                         });
+
+        }
+
+        public static void RegularPriority()        {
+            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "DecelerationEnded");
+                       NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                            Account = ConstMcAccount.NotAccountSpecific,
+                           });
+        }
+
+       
+       
+
         #endregion
     }
 }

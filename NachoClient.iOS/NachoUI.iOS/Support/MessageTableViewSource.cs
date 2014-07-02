@@ -459,7 +459,7 @@ namespace NachoClient.iOS
                     message.Update ();
                 }
                 userLabelView.Text = message.cachedFromLetters;
-                userLabelView.BackgroundColor = Util.ColorOfSenderMap(message.cachedFromColor);
+                userLabelView.BackgroundColor = Util.ColorOfSenderMap (message.cachedFromColor);
             }
 
             // User chili view
@@ -746,32 +746,21 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DraggingStarted");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoClient.Util.HighPriority ();
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DecelerationEnded");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoClient.Util.RegularPriority ();
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-                Log.Info (Log.LOG_UI, "DraggingEnded");
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                NachoClient.Util.RegularPriority ();
             }
         }
+
     }
 }
 
