@@ -60,6 +60,7 @@ namespace NachoCore
 
         private NcApplication ()
         {
+            ThreadPool.SetMinThreads (8, 6);
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
