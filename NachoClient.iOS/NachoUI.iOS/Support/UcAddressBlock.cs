@@ -55,7 +55,9 @@ namespace NachoClient.iOS
             get {
                 var l = new List<NcEmailAddress> ();
                 foreach (var address in list) {
-                    l.Add (address.address);
+                    if (UcAddressField.TEXT_FIELD == address.type) {
+                        l.Add (address.address);
+                    }
                 }
                 return l;
             }
