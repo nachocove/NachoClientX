@@ -920,6 +920,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcScoreCombiner.cs">
       <Link>NachoCore\Brain\NcScoreCombiner.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\IStopwatch.cs">
+      <Link>NachoCore\Utils\IStopwatch.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
+      <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
