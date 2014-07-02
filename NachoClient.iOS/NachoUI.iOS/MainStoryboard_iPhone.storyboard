@@ -188,8 +188,8 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem image="navbar-icn-menu.png" id="fxd-gq-OpJ" userLabel="Bar Button Item - revealButton"/>
                 <barButtonItem image="navbar-icn-newevent.png" id="0XF-CC-jLN" userLabel="Bar Button Item - newCalEventButton"/>
-                <barButtonItem title="Item" id="TQm-zA-PCB" userLabel="Bar Button Item - nachoButton"/>
-                <barButtonItem title="Item" id="RPJ-Y3-1md" userLabel="Bar Button Item - todayButton"/>
+                <barButtonItem image="navbar-icn-inbox.png" id="TQm-zA-PCB" userLabel="Bar Button Item - nachoButton"/>
+                <barButtonItem image="icn-calendar-top.png" id="RPJ-Y3-1md" userLabel="Bar Button Item - todayButton"/>
             </objects>
             <point key="canvasLocation" x="-1011" y="-1627"/>
         </scene>
@@ -1196,7 +1196,7 @@
                         <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
                 </button>
-                <barButtonItem title="Send" id="7vA-of-pNi" userLabel="Bar Button Item - sendButton"/>
+                <barButtonItem image="icn-send.png" id="7vA-of-pNi" userLabel="Bar Button Item - sendButton"/>
             </objects>
             <point key="canvasLocation" x="591" y="409"/>
         </scene>
@@ -1497,6 +1497,8 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="clock-3-48.png" width="48" height="48"/>
         <image name="icn-archive.png" width="24" height="24"/>
         <image name="icn-attach-files.png" width="16" height="16"/>
+        <image name="icn-calendar-top.png" width="24" height="24"/>
+        <image name="icn-send.png" width="24" height="24"/>
         <image name="list.png" width="20" height="18"/>
         <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
@@ -1518,19 +1520,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="FHc-YP-jWH"/>
-        <segue reference="eK3-Wd-Zbv"/>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="Oi3-nV-lAC"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="vah-yS-677"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="Afu-47-Kju"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="qSV-ar-VcH"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="eK3-Wd-Zbv"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="vah-yS-677"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="PxE-UU-EfC"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="Afu-47-Kju"/>
         <segue reference="EmX-Dp-jXs"/>
         <segue reference="Jfi-iv-ZLD"/>
     </inferredMetricsTieBreakers>

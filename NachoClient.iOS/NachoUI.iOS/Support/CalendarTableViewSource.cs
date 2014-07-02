@@ -84,7 +84,10 @@ namespace NachoClient.iOS
 
         public override float EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
         {
-            return 69.0F;
+            if (compactMode) {
+                return 69.0f;
+            }
+            return 87.0f;
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
