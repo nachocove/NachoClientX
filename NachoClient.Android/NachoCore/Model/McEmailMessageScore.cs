@@ -185,7 +185,7 @@ namespace NachoCore.Model
                 // We are going to replace the current time variance state machine.
                 // Properly dispose the old one first to make sure its timer will
                 // not fire and interfere will the new one.
-                TimeVarianceSM.Dispose ();
+                TimeVarianceSM.Cleanup ();
             }
 
             ExtractDateTimeFromPair (FlagDeferUntil, FlagUtcDeferUntil, ref deferredUntil);
