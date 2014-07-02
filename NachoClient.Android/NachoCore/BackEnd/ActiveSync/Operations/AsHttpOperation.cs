@@ -217,8 +217,9 @@ namespace NachoCore.ActiveSync
 
         private void DoDelay ()
         {
-            DelayTimer = new NcTimer ("AsHttpOperation:Delay", DelayTimerCallback, null, Convert.ToInt32 (HttpOpSm.Arg),
-                System.Threading.Timeout.Infinite);
+            var secs = Convert.ToInt32 (HttpOpSm.Arg);
+            Log.Info (Log.LOG_HTTP, "AsHttpOperation:Delay {0} seconds.", secs);
+            DelayTimer = new NcTimer ("AsHttpOperation:Delay", DelayTimerCallback, null, secs * 1000, System.Threading.Timeout.Infinite);
         }
 
         private void DoCancelDelayTimer ()

@@ -7,6 +7,7 @@ namespace NachoCore.Wbxml
 {
     public static class AsXmlFilterSet
     {
+        private static bool IsInitialized = false;
         private static NcXmlFilterSet _Requests = null;
         private static NcXmlFilterSet _Responses = null;
 
@@ -30,6 +31,9 @@ namespace NachoCore.Wbxml
 
         public static void Initialize ()
         {
+            if (IsInitialized) {
+                return;
+            }
             AsXmlFilterSet.Requests.Add (new AsXmlFilterAirSyncRequest ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterComposeMailRequest ());
             AsXmlFilterSet.Requests.Add (new AsXmlFilterFolderHierarchyRequest ());
@@ -75,6 +79,7 @@ namespace NachoCore.Wbxml
             AsXmlFilterSet.Responses.Add (new AsXmlFilterEmail2 ());
             AsXmlFilterSet.Responses.Add (new AsXmlFilterRightsManagement ());
             AsXmlFilterSet.Responses.Add (new AsXmlFilterTasks ());
+            IsInitialized = true;
         }
     }
 }

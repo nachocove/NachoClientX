@@ -12,8 +12,16 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore
 {
+    // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
+    // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
+    // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
+    // VIA THE UI THREAD ON STARTUP. ORDER MATTERS - KNOW BEFORE YOU MODIFY!
+
     public sealed class NcApplication : IBackEndOwner
     {
+        private const int KClass4EarlyShowSeconds = 5;
+        private const int KClass4LateShowSeconds = 15;
+
         public delegate void CredReqCallbackDele (int accountId);
 
         /// <summary>
@@ -52,10 +60,7 @@ namespace NachoCore
 
         private NcApplication ()
         {
-            // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
-            // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
-            // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
-            // VIA THE UI THREAD ON STARTUP. ORDER MATTERS - KNOW BEFORE YOU MODIFY!
+            ThreadPool.SetMinThreads (8, 6);
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
@@ -69,28 +74,28 @@ namespace NachoCore
                     if (ex is InvalidCastException &&
                         (message.Contains ("WriteRequestAsyncCB") || message.Contains ("GetResponseAsyncCB"))) {
                         Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB/GetResponseAsyncCB");
-                        // FIXME XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
+                        // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
                         return true;
                     }
 
                     if (ex is System.Net.WebException && message.Contains ("EndGetResponse")) {
                         Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: WebException with EndGetResponse");
-                        // FIXME XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
+                        // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
                         return true;
                     }
                     return false;
                 });
             };
-            NcTask.StartService ();
-            NcModel.Instance.Nop ();
-            AsXmlFilterSet.Initialize ();
-            BackEnd.Instance.Owner = this;
             UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
         }
 
         private static volatile NcApplication instance;
         private static object syncRoot = new Object ();
         private NcTimer MonitorTimer;
+        private NcTimer Class4EarlyShowTimer;
+        private NcTimer Class4LateShowTimer;
+
+        public event EventHandler Class4LateShowEvent;
 
         public static NcApplication Instance {
             get {
@@ -105,46 +110,95 @@ namespace NachoCore
             }
         }
 
-        public void Nop ()
+        public void StartClass1Services ()
         {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
+            NcTask.StartService ();
+            NcModel.Instance.Nop ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
         }
 
-        public void Start ()
+        public void StopClass1Services ()
         {
-            // THIS IS THE BEST PLACE TO PUT Start FUNCTIONS - WHEN SERVICE NEEDS TO BE TURNED ON AFTER INIT.
-            MonitorStart ();
-            Log.Info (Log.LOG_LIFECYCLE, "MonitorStarted");
-            NcModel.Instance.Info ();
-            NcModel.Instance.EngageRateLimiter ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcModel.Instance Started");
-            BackEnd.Instance.Start ();
-            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Instance.Started");
-            NcContactGleaner.Start ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcContactGleaner.Started");
-            NcCapture.ResumeAll ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcCapture.ResumeAll'd");
-            NcTimeVariance.ResumeAll ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcTimeVariance.ResumeAll'd");
-        }
-
-        public void Stop ()
-        {
-            // THIS IS THE BEST PLADE TO PUT Stop FUNCTIONS - WHEN SERVICE NEEDS TO BE SHUTDOWN BEFORE SLEEP/EXIT.
-            MonitorStop ();
-            BackEnd.Instance.Stop ();
-            NcContactGleaner.Stop ();
-            NcCapture.PauseAll ();
-            NcTimeVariance.PauseAll ();
-            // NcTask/Timer.StopService () should go last.
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services called.");
             NcTimer.StopService ();
             NcTask.StopService ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services exited.");
+        }
+
+        public void StartClass2Services ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services called.");
+            NcModel.Instance.EngageRateLimiter ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services exited.");
+        }
+
+        public void StopClass2Services ()
+        {
+            // Empty so far.
+            // No need to turn off the model rate limiter.
+        }
+
+        public void StartClass3Services ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services called.");
+            BackEnd.Instance.Owner = this;
+            BackEnd.Instance.EstablishService ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services exited.");
+        }
+
+        public void StopClass3Services ()
+        {
+            // Empty so far. 
+            // No harm in leaving inactive BackEnd data structures intact.
+        }
+
+        // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
+        public void StartClass4Services ()
+        {
+            MonitorStart (); // Has a deferred timer start inside.
+            Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
+                AsXmlFilterSet.Initialize ();
+                BackEnd.Instance.Start ();
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
+            }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
+            Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
+                NcModel.Instance.Info ();
+                NcContactGleaner.Start ();
+                NcCapture.ResumeAll ();
+                NcTimeVariance.ResumeAll ();
+                if (null != Class4LateShowEvent) {
+                    Class4LateShowEvent (this, EventArgs.Empty);
+                }
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer exited.");
+            }, null, new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
+        }
+
+        public void StopClass4Services ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
+            MonitorStop ();
+            if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
+                BackEnd.Instance.Stop ();
+            }
+
+            if (Class4LateShowTimer.DisposeAndCheckHasFired ()) {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
+                NcContactGleaner.Stop ();
+                NcCapture.PauseAll ();
+                NcTimeVariance.PauseAll ();
+            }
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services exited.");
         }
 
         public void MonitorStart ()
         {
             MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
                 MonitorReport ();
-            }, null, TimeSpan.Zero, new TimeSpan (0, 0, 60));
+            }, null, new TimeSpan (0, 0, 30), new TimeSpan (0, 0, 60));
             MonitorTimer.Stfu = true;
         }
 
@@ -165,7 +219,7 @@ namespace NachoCore
 
         public void QuickCheck (uint seconds)
         {
-            // Typically called after Stop(). Cause accounts to do a quick check for new messages.
+            // Needs Class-3 Services up. Cause accounts to do a quick check for new messages.
             // If start is called while wating for the QuickCheck, the system keeps going after the QuickCheck completes.
             BackEnd.Instance.QuickCheck (seconds);
         }

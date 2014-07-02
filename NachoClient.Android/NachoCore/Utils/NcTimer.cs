@@ -19,6 +19,7 @@ namespace NachoCore.Utils
         private static Object StaticLockObj = new Object ();
         // Used to prevent Dispose in the middle of a callback.
         private Object InstanceLockObj;
+        private bool HasFired = false;
 
         private TimerCallback PartialInit (TimerCallback c)
         {
@@ -43,6 +44,7 @@ namespace NachoCore.Utils
                             Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} fired.", Id, Who);
                         }
                         callback (state);
+                        HasFired = true;
                     }
                 }
             };
@@ -76,6 +78,12 @@ namespace NachoCore.Utils
         {
             Who = who;
             Timer = new Timer (PartialInit (c), o, i1, i2);
+        }
+
+        public bool DisposeAndCheckHasFired ()
+        {
+            Dispose ();
+            return HasFired;
         }
 
         public void Dispose ()
