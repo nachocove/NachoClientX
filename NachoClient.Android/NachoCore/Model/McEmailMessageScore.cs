@@ -62,6 +62,7 @@ namespace NachoCore.Model
 
         public void ScoreObject ()
         {
+            NcAssert.True (Scoring.Version > ScoreVersion);
             if (0 == ScoreVersion) {
                 McContact sender = GetFromContact ();
                 if (null != sender) {
@@ -174,17 +175,21 @@ namespace NachoCore.Model
             }
         }
 
-        private void InitializeTimeVariance ()
+        private void InitializeTimeVariance (bool fromCallback = false)
         {
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
 
             Log.Debug (Log.LOG_BRAIN, "Initialize time variance for email message id {0}", Id);
 
-            if (null != TimeVarianceSM) {
+            if (!fromCallback && (null != TimeVarianceSM)) {
                 // We are going to replace the current time variance state machine.
                 // Properly dispose the old one first to make sure its timer will
                 // not fire and interfere will the new one.
+                //
+                // Note that if called from callback, do not clean up because time
+                // variance state machine itself will clean up when it goes to
+                // the terminal state.
                 TimeVarianceSM.Cleanup ();
             }
 
@@ -232,7 +237,7 @@ namespace NachoCore.Model
         {
             if (0 == state) {
                 /// Check if there is any other time variance state machine to run
-                InitializeTimeVariance ();
+                InitializeTimeVariance (true);
             } else {
                 /// Recompute a new score and update it in the cache
                 Score = GetScore ();

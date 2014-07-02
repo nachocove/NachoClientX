@@ -36,6 +36,8 @@ namespace NachoCore.Brain
     /// time but their state machine must run.
     public class NcTimeVariance
     {
+        public const int STATE_TERMINATED = 0;
+
         public delegate void TimeVarianceCallBack (int state);
 
         /// A list of all active Time variance state machine
@@ -115,7 +117,7 @@ namespace NachoCore.Brain
 
         public void Resume ()
         {
-            if (0 != State_) {
+            if (STATE_TERMINATED != State_) {
                 DateTime eventTime = NextEventTime ();
                 DateTime now = DateTime.Now;
                 if (eventTime.Ticks > now.Ticks) {
@@ -149,15 +151,24 @@ namespace NachoCore.Brain
             tv.Advance ();
         }
 
+        private int AdvanceState ()
+        {
+            NcAssert.True (State_ <= MaxState);
+            if (MaxState == State_) {
+                State_ = STATE_TERMINATED;
+            } else {
+                State_++;
+            }
+            return State_;
+        }
+
         private void FindNextState ()
         {
-            NcAssert.True (State_ < MaxState);
-            State_++;
+            if (STATE_TERMINATED == AdvanceState ()) {
+                return;
+            }
             while (DateTime.Now > NextEventTime ()) {
-                if (MaxState > State_) {
-                    State_++;
-                } else {
-                    State_ = 0;
+                if (STATE_TERMINATED == AdvanceState ()) {
                     break;
                 }
             }
@@ -166,11 +177,7 @@ namespace NachoCore.Brain
         public virtual void Advance ()
         {
             // Update state
-            if (MaxState == State_) {
-                State_ = 0;
-            } else {
-                FindNextState ();
-            }
+            FindNextState ();
 
             // Throw away the fired timer. 
             Pause ();
@@ -179,11 +186,7 @@ namespace NachoCore.Brain
             }
 
             // Set up for next event if there is one
-            if (0 == State) {
-                Cleanup ();
-            } else {
-                Resume ();
-            }
+            Resume ();
         }
 
         public static void PauseAll ()
