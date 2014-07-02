@@ -234,7 +234,7 @@ namespace NachoClient
             }
             return sb.ToString ();
         }
-            
+
         public static RootElement MakeProgressRoot (string caption)
         {
             return new RootElement (caption) {
@@ -437,8 +437,7 @@ namespace NachoClient
                 if (0 < name.IndexOf (',')) {
                     // Last name, First name
                     Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                } 
-                else {
+                } else {
                     // First name, Last name
                     Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
                 }
@@ -447,12 +446,10 @@ namespace NachoClient
                 if (0 < name.IndexOf (',')) {
                     // Last name, First name
                     Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
-                } 
-                else if (-1 == name.IndexOf (',')) {
+                } else if (-1 == name.IndexOf (',')) {
                     if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
                         Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
-                    } 
-                    else {
+                    } else {
                         Initials = (names [0].Substring (0, 1)).ToCapitalized ();
                     }
                 }
@@ -464,7 +461,8 @@ namespace NachoClient
         /// <summary>
         /// Takes a screenshot of the view passed in and returns an image
         /// </summary>
-        public static UIImage caputureView(UIView view) {
+        public static UIImage caputureView (UIView view)
+        {
             UIGraphics.BeginImageContextWithOptions (view.Bounds.Size, false, 0.0f);
             view.Layer.RenderInContext (UIGraphics.GetCurrentContext ());
             var capturedImage = UIGraphics.GetImageFromCurrentImageContext ();
@@ -505,20 +503,20 @@ namespace NachoClient
             return circleColor;
         }
 
-        public static UIColor ColorOfSenderMap(int colorIndex)
+        public static UIColor ColorOfSenderMap (int colorIndex)
         {
             return colors [colorIndex];
         }
 
         // FIXME: Store the color, no the index, in the db
-        public static int ColorIndexOfSender(int accountId, string emailAddress)
+        public static int ColorIndexOfSender (int accountId, string emailAddress)
         {
             var contacts = McContact.QueryLikeEmailAddress (accountId, emailAddress);
             if (0 == contacts.Count) {
                 return 1; // no matches; return default color
             }
-            foreach(var contact in contacts) {
-                if(0 < contact.CircleColor) {
+            foreach (var contact in contacts) {
+                if (0 < contact.CircleColor) {
                     return contact.CircleColor;
                 }
             }
@@ -536,27 +534,24 @@ namespace NachoClient
             return null;
         }
 
-        public static void HighPriority()        {
-
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "DraggingStarted");
-                      NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                               Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
-                               Account = ConstMcAccount.NotAccountSpecific,
-                         });
-
+        public static void HighPriority ()
+        {
+            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority");
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
         }
 
-        public static void RegularPriority()        {
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "DecelerationEnded");
-                       NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
-                            Account = ConstMcAccount.NotAccountSpecific,
-                           });
+        public static void RegularPriority ()
+        {
+            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority");
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
         }
-
-       
-       
-
+            
         #endregion
     }
 }
