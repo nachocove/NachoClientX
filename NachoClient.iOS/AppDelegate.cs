@@ -201,13 +201,13 @@ namespace NachoClient.iOS
         // from the background.
         public override void OnActivated (UIApplication application)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: Called");
+            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
            
             NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: StartClass3Services complete");
+            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass3Services complete");
 
             NcApplication.Instance.StartClass4Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: StartClass4Services complete");
+            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
 
             Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
             NcApplication.Instance.StatusIndEvent += StatusIndReceiver;
@@ -217,7 +217,7 @@ namespace NachoClient.iOS
                 FinalShutdown (null);
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
-            Log.Info (Log.LOG_LIFECYCLE, "OnActiviated: Exit");
+            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
         }
 
         //
