@@ -590,7 +590,8 @@ namespace NachoClient.iOS
             }
 
             if (UIGestureRecognizerState.Ended == obj.State) {
-                if (yOffset < -60 || obj.VelocityInView (DateDotView).Y > 500) {
+                if  ((yOffset < -60) || (((yOffset < -5) && (obj.VelocityInView (DateDotView).Y < -500)))) {
+                    Console.WriteLine ("-----------Closed");
                     UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
                             DateDotView.Frame = new RectangleF (0, 0, View.Frame.Width, dateBarHeight);
@@ -616,6 +617,7 @@ namespace NachoClient.iOS
                         }
                     );
                 } else if (yOffset >= -60) {
+                    Console.WriteLine ("-----------Stayed");
                     UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
                             DateDotView.Frame = new RectangleF (0, 5, View.Frame.Width, (dateBarHeight - 8) + (dateBarRowHeight * (rows)));
@@ -633,6 +635,10 @@ namespace NachoClient.iOS
                         }
                     );
                 }
+                Console.WriteLine ("/////////////////////////////////////////");
+                Console.WriteLine ("yOffset: " + yOffset);
+                Console.WriteLine ("velocity: " + obj.VelocityInView (DateDotView).Y );
+                Console.WriteLine ("/////////////////////////////////////////");
                 return;
             }
         }
