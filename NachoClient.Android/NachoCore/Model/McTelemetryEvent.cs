@@ -11,8 +11,13 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McTelemetryEvent : McObject
+    public class McTelemetryEvent
     {
+        [PrimaryKey, AutoIncrement, Unique]
+        public virtual int Id { get; set; }
+        // Optimistic concurrency control
+        public DateTime LastModified { get; set; }
+
         public byte[] Data { set; get; }
 
         public McTelemetryEvent ()
@@ -40,11 +45,25 @@ namespace NachoCore.Model
         public static McTelemetryEvent QueryOne ()
         {
             List<McTelemetryEvent> eventList = 
-                NcModel.Instance.Db.Query<McTelemetryEvent> ("SELECT * FROM McTelemetryEvent LIMIT 1;");
+                NcModel.Instance.TeleDb.Query<McTelemetryEvent> ("SELECT * FROM McTelemetryEvent LIMIT 1;");
             if (1 == eventList.Count) {
                 return eventList [0];
             }
             return null;
+        }
+
+        public int Insert ()
+        {
+            NcAssert.True (0 == Id);
+            int rc =  NcModel.Instance.TeleDb.Insert (this);
+            return rc;
+        }
+
+        public int Delete ()
+        {
+            NcAssert.True (0 < Id);
+            int rc = NcModel.Instance.TeleDb.Delete (this);
+            return rc;
         }
     }
 }

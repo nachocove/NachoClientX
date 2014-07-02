@@ -23,6 +23,8 @@ namespace NachoCore.Model
 
         public string DbFileName { set; get; }
 
+        public string TeleDbFileName { set; get; }
+
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -38,18 +40,35 @@ namespace NachoCore.Model
             } 
         }
 
+        private SQLiteConnection _TeleDb = null;
+        public SQLiteConnection TeleDb {
+            get {
+                if (null == _TeleDb) {
+                    _TeleDb = new SQLiteConnection (TeleDbFileName,
+                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
+                        storeDateTimeAsTicks: true);
+                    _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                }
+                return _TeleDb;
+            }
+        }
+
         private ConcurrentDictionary<int, SQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
-        private void Initialize ()
+        private void InitalizeDirs ()
         {
-            RateLimiter = new NcRateLimter (16, 0.250);
             FilesDir = Path.Combine (Documents, "files");
             Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
             AttachmentsDir = Path.Combine (Documents, "attachments");
             Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
             BodiesDir = Path.Combine (Documents, "bodies");
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
+        }
+
+        private void InitializeDb ()
+        {
+            RateLimiter = new NcRateLimter (16, 0.250);
             DbConns = new ConcurrentDictionary<int, SQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
             Db.CreateTable<McAccount> ();
@@ -81,17 +100,24 @@ namespace NachoCore.Model
             Db.CreateTable<McTask> ();
             Db.CreateTable<McBody> ();
             Db.CreateTable<McFile> ();
-            Db.CreateTable<McTelemetryEvent> ();
             Db.CreateTable<McMutables> ();
             Db.CreateTable<McPath> ();
+        }
+
+        private void InitializeTeleDb ()
+        {
+            TeleDb.CreateTable<McTelemetryEvent> ();
         }
 
         private NcModel ()
         {
             NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            InitalizeDirs ();
             DbFileName = Path.Combine (Documents, "db");
-            Initialize ();
+            InitializeDb ();
+            TeleDbFileName = Path.Combine (Documents, "teledb");
+            InitializeTeleDb ();
         }
 
         private static volatile NcModel instance;
@@ -168,7 +194,7 @@ namespace NachoCore.Model
         public void Reset (string dbFileName)
         {
             DbFileName = dbFileName;
-            Initialize ();
+            InitializeDb ();
         }
     }
 }
