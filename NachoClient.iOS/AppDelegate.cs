@@ -54,7 +54,7 @@ namespace NachoClient.iOS
         private Timer ShutdownTimer = null;
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
-
+        private bool StartCrashReportingHasHappened = false;
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -140,7 +140,11 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
                 InvokeOnUIThread.Instance.Invoke (delegate {
-                    StartCrashReporting ();
+                    if (!StartCrashReportingHasHappened) {
+                        StartCrashReporting ();
+                        Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
+                        StartCrashReportingHasHappened = true;
+                    }
                 });
                 Telemetry.SharedInstance.Start<TelemetryBEParse> ();
                 Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
