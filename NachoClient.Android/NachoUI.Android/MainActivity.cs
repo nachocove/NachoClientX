@@ -127,7 +127,10 @@ namespace NachoClient.AndroidClient
                 if (null == savedInstanceState) {
                     ItemSelected (0);
                 }
-                NcApplication.Instance.Start ();
+                NcApplication.Instance.StartClass1Services ();
+                NcApplication.Instance.StartClass2Services ();
+                NcApplication.Instance.StartClass3Services ();
+                NcApplication.Instance.StartClass4Services ();
             }
 
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);

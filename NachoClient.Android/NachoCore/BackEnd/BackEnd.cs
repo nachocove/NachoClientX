@@ -88,6 +88,16 @@ namespace NachoCore
             Services = new ConcurrentDictionary<int, ProtoControl> ();
         }
 
+        public void EstablishService ()
+        {
+            var accounts = NcModel.Instance.Db.Table<McAccount> ();
+            foreach (var account in accounts) {
+                if (!HasServiceFromAccountId (account.Id)) {
+                    EstablishService (account.Id);
+                }
+            }
+        }
+
         public void Start ()
         {
             if (null != QuickTimeoutTimer) {
