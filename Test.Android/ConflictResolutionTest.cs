@@ -45,11 +45,15 @@ namespace Test.iOS
             public AsFolderSyncCommand FolderCmd;
 
             public string SyncResponseAdd = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>3</Count>\n    <Add>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Add>\n    <Add>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Sub-Cal-Folder</DisplayName>\n      <Type>13</Type>\n    </Add>\n    <Add>\n      <ServerId>3</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Sub-Task-Folder</DisplayName>\n      <Type>15</Type>\n    </Add>\n  </Changes>\n</FolderSync>\n";
+            public string SyncResponseAddSub = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Add>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Child-Folder</DisplayName>\n      <Type>1</Type>\n    </Add>\n  </Changes>\n</FolderSync>\n";
             public string SyncResponseDelete = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Delete>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Delete>\n  </Changes>\n</FolderSync>";
             public string SyncResponseDeleteSub = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Delete>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Child-Folder</DisplayName>\n      <Type>1</Type>\n    </Delete>\n  </Changes>\n</FolderSync>";
+            public string SyncResponseUpdateRename = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Update>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder (UPDATED BY SERVER)</DisplayName>\n      <Type>1</Type>\n    </Update>\n  </Changes>\n</FolderSync>\n";
+            public string SyncResponseUpdateMove = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Update>\n      <ServerId>1</ServerId>\n      <ParentId>2</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Update>\n  </Changes>\n</FolderSync>";
 
             // These names correspond to the DisplayName entries in the response XML messages
             public const string TopFolderName = "Top-Level-Folder";
+            public const string TopFolderServerUpdateName = "Top-Level-Folder (UPDATED BY SERVER)";
             public const string SubCalFolderName = "Sub-Cal-Folder";
             public const string SubTaskFolderName = "Sub-Task-Folder";
             public const string ChildFolderName = "Child-Folder";
@@ -143,9 +147,9 @@ namespace Test.iOS
                 ExecuteConflictTest (SyncResponseAdd);
 
                 // Assert that the correct changes to the Q and to the Model DB happen because of the FolderSync.
-                var foundTopFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
-                var foundCalFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, subCalFolder.ServerId);
-                var foundTaskFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, subTaskFolder.ServerId);
+                var foundTopFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, "1");
+                var foundCalFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, "2");
+                var foundTaskFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, "3");
 
                 string expectedServerId = "1";  // Should match ServerId in SyncResponseXml
                 Assert.AreEqual (expectedServerId, foundTopFolder.ServerId, "Top level folder's ServerId should match ServerId sent from server");
@@ -204,6 +208,7 @@ namespace Test.iOS
                 Assert.AreEqual ("1", foundTopFolder.ServerId, "Add a re-write from pending's ServerId (the guid) to command's ServerId");
             }
 
+            // TODO: Fix this test once code for "matching" (as opposed to dominating) has been written
             [Test]
             public void TestFolderSyncDelete ()
             {
@@ -241,7 +246,7 @@ namespace Test.iOS
                     token = ProtoControl.DeleteFolderCmd (topFolder.Id);
                 });
 
-                ExecuteConflictTest (SyncResponseAdd);
+                ExecuteConflictTest (SyncResponseAddSub);
 
                 var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
                 Assert.NotNull (pendDeleteOp, "Should not delete pending delete operation");
@@ -249,14 +254,9 @@ namespace Test.iOS
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
                 Assert.Null (foundParent, "DeleteFolderCmd should delete parent folder on which the command is called");
 
-                // look up the sub-folders from FolderSync:Add and make sure they have not been created (i.e. has server command been stopped?)
-                string calServerId = "2";
-                string taskServerId = "3";
-                var subCalFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, calServerId);
-                var subTaskFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, taskServerId);
-
-                Assert.Null (subCalFolder, "Should not create sub-folder in FolderSync:Add when FolderDelete pending dominates command's parentId");
-                Assert.Null (subTaskFolder, "Should not create sub-folder in FolderSync:Add when FolderDelete pending dominates command's parentId");
+                // find the child that is to be added in SyncResponseAddSub XML with ServerId==2
+                var foundChild = McFolder.QueryByServerId<McFolder> (defaultAccountId, "2");
+                Assert.Null (foundChild, "DeleteFolderCmd should cancel the server command if the pending's ServerId dominates the command's ServerId");
             }
 
             [Test]
@@ -372,6 +372,65 @@ namespace Test.iOS
                 // Pending rename should be deleted
                 var pendRenameOp = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (pendRenameOp, "Should delete pending RenameOp when FolderSync:Delete command's ServerId dominates pending's ServerId");
+            }
+
+            [Test]
+            public void TestFolderSyncServerUpdateRename ()
+            {
+                // If ServerId match, delete pending. Server wins.
+                var topFolder = CreateTopFolder ();
+                PathOps.CreatePath (defaultAccountId, topFolder.ServerId, topFolder.ParentId);
+
+                string newName = "Top-Level-Folder (UPDATED BY CLIENT)";
+                string token = "";
+                DoClientSideCmds (() => {
+                    token = ProtoControl.RenameFolderCmd (topFolder.Id, newName);
+                });
+
+                ExecuteConflictTest (SyncResponseUpdateRename);
+
+                // top-level folder should be updated by server, not client
+                var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
+                Assert.NotNull (foundParent, "Should not delete top-level folder");
+                Assert.AreEqual (TopFolderServerUpdateName, foundParent.DisplayName, "Folder name should be updated by the server, not the client");
+
+                // pending should be deleted
+                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (pendRenameOp, "Should delete pending RenameOp when FolderSync:Update (Rename) command's ServerId matches pending's ServerId");
+            }
+
+            [Test]
+            public void TestFolderSyncServerUpdateMove ()
+            {
+                // If ServerId match, delete pending. Server wins.
+                var topFolder = CreateTopFolder ();
+                PathOps.CreatePath (defaultAccountId, topFolder.ServerId, topFolder.ParentId);
+
+                // ServerId must match the serverId in SyncResponseUpdateMove XML
+                var destFolder = FolderOps.CreateFolder (defaultAccountId, parentId: "0", serverId: "2", name: "Dest-Folder", typeCode: TypeCode.UserCreatedGeneric_1);
+                PathOps.CreatePath (defaultAccountId, destFolder.ServerId, destFolder.ParentId);
+
+                // folder that the client will attempt to move the item into
+                var siblingFolder = FolderOps.CreateFolder (defaultAccountId, parentId: "0", serverId: "3", name: "Sibling", typeCode: TypeCode.UserCreatedGeneric_1);
+                PathOps.CreatePath (defaultAccountId, siblingFolder.ServerId, siblingFolder.ParentId);
+
+                string token = "";
+                DoClientSideCmds (() => {
+                    // make pending op; this op should never be executed
+                    token = ProtoControl.MoveFolderCmd (topFolder.Id, siblingFolder.Id);
+                });
+
+                // should move top folder into siblingFolder
+                ExecuteConflictTest (SyncResponseUpdateMove);
+
+                // top-level folder should be updated by server, not client
+                var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
+                Assert.NotNull (foundParent, "Should not delete top-level folder");
+                Assert.AreEqual (destFolder.ServerId, foundParent.ParentId, "Folder should be moved to the folder the server says it should move to");
+
+                // pending should be deleted
+                var pendMoveOp = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (pendMoveOp, "Should delete pending MoveOp when FolderSync:Update (Move) command's ServerId matches pending's ServerId");
             }
         }
 
