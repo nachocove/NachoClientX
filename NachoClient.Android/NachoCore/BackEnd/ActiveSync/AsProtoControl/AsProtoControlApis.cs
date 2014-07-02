@@ -61,6 +61,7 @@ namespace NachoCore.ActiveSync
 
         public override string SendEmailCmd (int emailMessageId)
         {
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0})", emailMessageId);
             var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
                 return null;
@@ -74,6 +75,7 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSEND");
             }, "SendEmailCmd");
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning", emailMessageId);
             return pending.Token;
         }
 

@@ -56,6 +56,7 @@ using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
 
+using NachoCore.Utils;
 namespace SQLite
 {
 	public class SQLiteException : Exception
@@ -939,7 +940,7 @@ namespace SQLite
 				} else {
 					Interlocked.Decrement (ref _transactionDepth);
 				}
-
+                Log.Error (Log.LOG_SYS, "SaveTransactionPoint exploded with retVal {0}", retVal);
 				throw;
 			}
 
@@ -1021,7 +1022,7 @@ namespace SQLite
 					}
 				}
 			}
-
+            Log.Error (Log.LOG_SYS, "DoSavePointExecute exploded with savepoint {0}", savepoint);
 			throw new ArgumentException ("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
 		}
 
