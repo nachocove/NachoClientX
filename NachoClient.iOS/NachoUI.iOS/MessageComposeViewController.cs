@@ -12,6 +12,7 @@ using MimeKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -24,6 +25,7 @@ namespace NachoClient.iOS
         public string Action;
         public McEmailMessageThread ActionThread;
         public INachoMessageEditorParent owner;
+        public bool showMenu;
         protected McAccount account;
 
 
@@ -68,6 +70,17 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
+
+            if (showMenu) {
+                // Navigation
+                revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+                revealButton.Target = this.RevealViewController ();
+                this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+                nachoButton.Clicked += (object sender, EventArgs e) => {
+                    PerformSegue ("ComposeToNachoNow", this);
+                };
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            }
 
             NavigationItem.RightBarButtonItem = sendButton;
 
@@ -582,6 +595,9 @@ namespace NachoClient.iOS
         public void SendMessage ()
         {
             var mimeMessage = new MimeMessage ();
+            var sentfrom = new TextPart ("html", "<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
+            var multipart = new Multipart ();
+
 
             foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
                 foreach (var a in view.AddressList) {
@@ -615,7 +631,12 @@ namespace NachoClient.iOS
                 body.Attachments.Add (attachment.FilePath ());
             }
 
-            mimeMessage.Body = body.ToMessageBody ();
+            multipart.Add (body.ToMessageBody());
+
+            multipart.Add (sentfrom);
+
+            mimeMessage.Body = multipart;
+            //mimeMessage.Body = body.ToMessageBody ();
 
             MimeHelpers.SendEmail (account.Id, mimeMessage);
 

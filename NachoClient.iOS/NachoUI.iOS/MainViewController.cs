@@ -18,7 +18,10 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            Delegate = new SWRevealDelegate ();
+//            Delegate = new SWRevealDelegate ();
+
+            RearViewRevealDisplacement = 0;
+            RearViewRevealWidth = View.Frame.Width;
         }
 
         public class SWRevealDelegate : SWRevealViewControllerDelegate

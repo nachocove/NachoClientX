@@ -19,7 +19,13 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIButton quckButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
@@ -32,9 +38,24 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (attachButton != null) {
+				attachButton.Dispose ();
+				attachButton = null;
+			}
+
 			if (contentView != null) {
 				contentView.Dispose ();
 				contentView = null;
+			}
+
+			if (quckButton != null) {
+				quckButton.Dispose ();
+				quckButton = null;
+			}
+
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
 			}
 
 			if (scrollView != null) {
@@ -47,19 +68,14 @@ namespace NachoClient.iOS
 				sendButton = null;
 			}
 
-			if (attachButton != null) {
-				attachButton.Dispose ();
-				attachButton = null;
-			}
-
-			if (quckButton != null) {
-				quckButton.Dispose ();
-				quckButton = null;
-			}
-
 			if (taskButton != null) {
 				taskButton.Dispose ();
 				taskButton = null;
+			}
+
+			if (nachoButton != null) {
+				nachoButton.Dispose ();
+				nachoButton = null;
 			}
 		}
 	}
