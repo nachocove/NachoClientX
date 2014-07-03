@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
             {
                 switch (pending.Operation) {
                 case McPending.Operations.FolderCreate:
-                    action = (pending.CommandDominatesParentId (ServerId)) ? 
+                    action = (pending.ParentId == ServerId || pending.CommandDominatesParentId (ServerId)) ? 
                         McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
                     cancelCommand = false;
                     return null;
