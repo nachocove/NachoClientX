@@ -59,9 +59,13 @@ namespace NachoCore.ActiveSync
                         if (pending.CommandDominatesDestParentId (ServerId)) {
                             McFolder.ServerEndMoveToClientOwned (AccountId, pending.ServerId, McFolder.ClientOwned_LostAndFound);
                             action = McPending.DbActionEnum.Delete;
+                            cancelCommand = false;
+                            return null;
                         } else if (pending.CommandDominatesParentId (ServerId)) {
-                            // FIXME - convert into SyncAdds (in-place).
+                            // FIXME - convert into SyncAdds (in-place). This means injecting new McPendings.
                             action = McPending.DbActionEnum.Delete;
+                            cancelCommand = false;
+                            return null;
                         }
                     }
                     action = McPending.DbActionEnum.DoNothing;
