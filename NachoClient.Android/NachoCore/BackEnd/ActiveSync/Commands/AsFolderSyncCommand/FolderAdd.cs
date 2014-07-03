@@ -32,7 +32,7 @@ namespace NachoCore.ActiveSync
                     cancelCommand = false;
                     if (pending.DisplayName == DisplayName &&
                         pending.ParentId == ParentId) {
-                        if (pending.FolderCreate_Type != FolderType) {
+                        if (pending.Folder_Type != FolderType) {
                             pending.DisplayName = pending.DisplayName + " Client-Created";
                             action = McPending.DbActionEnum.Update;
                             return null;
@@ -59,7 +59,7 @@ namespace NachoCore.ActiveSync
                     cancelCommand = false;
                     if (pending.DestParentId == ParentId &&
                         pending.DisplayName == DisplayName &&
-                        pending.FolderCreate_Type == FolderType) {
+                        pending.Folder_Type == FolderType) {
                         pending.DisplayName = pending.DisplayName + " Client-Moved";
                         action = McPending.DbActionEnum.Update;
                     } else {

@@ -763,7 +763,7 @@ namespace NachoCore.ActiveSync
                 ServerId = serverId,
                 ParentId = destFldServerId,
                 DisplayName = displayName,
-                FolderCreate_Type = folderType,
+                Folder_Type = folderType,
                 // Epoch intentionally not set.
             };
 
@@ -825,6 +825,7 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ParentId,
                 DestParentId = destFolder.ServerId,
                 DisplayName = folder.DisplayName,
+                Folder_Type = folder.Type,
             };
 
             upFolder.Insert ();
@@ -855,6 +856,7 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ParentId,
                 DestParentId = folder.ParentId, // Set only because Move & Rename map to the same EAS command.
                 DisplayName = displayName,
+                Folder_Type = folder.Type,
             };
 
             upFolder.Insert ();
