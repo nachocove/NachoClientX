@@ -930,13 +930,11 @@ namespace NachoCore.Model
             case Operations.EmailSend:
             case Operations.EmailForward:
             case Operations.EmailReply:
-                var parents = McFolder.QueryByFolderEntryId<McEmailMessage> (AccountId, ItemId);
-                if (0 == parents.Count) {
+                var item = McEmailMessage.QueryById<McEmailMessage> (ItemId);
+                if (item == null) {
                     return false;
                 }
-                NcAssert.True (1 == parents.Count);
-                var parent = parents [0];
-                return (parent.ServerId == cmdServerId || McPath.Dominates (AccountId, cmdServerId, parent.ServerId));
+                return (item.ServerId == cmdServerId || McPath.Dominates (AccountId, cmdServerId, item.ServerId));
 
             default:
                 NcAssert.True (false);

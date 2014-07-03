@@ -1206,13 +1206,21 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestPendingItemNotInFolder ()
+            public void TestPendingItemNotDom ()
             {
-                var folder = FolderOps.CreateFolder (accountId: 1, parentId: "0", serverId: "1");
-                var emailPend = CreatePending (accountId: 1, parentId: "1", serverId: "2", operation: Operations.EmailSend);
+                var parent = new PathOps.McPathNode (PathOps.CreatePath (defaultAccountId, "1", "0"));
+                var item = new PathOps.McPathNode (PathOps.CreatePath (defaultAccountId, "2", "1"));
+                var badItem = new PathOps.McPathNode (PathOps.CreatePath (defaultAccountId, "3", "1"));
 
-                var domItem = emailPend.CommandDominatesItem (folder.ServerId);
-                Assert.IsFalse (domItem, "CommandDominatesItem should return false if the item is NOT in a folder");
+                var folder = FolderOps.CreateFolder (accountId: defaultAccountId, parentId: parent.Root.ParentId, serverId: parent.Root.ServerId);
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: item.Root.ServerId);
+                folder.Link (email);
+                var emailPend = CreatePending (accountId: defaultAccountId, parentId: item.Root.ParentId, serverId: item.Root.ServerId, operation: Operations.EmailSend);
+                var badEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: badItem.Root.ServerId);
+                folder.Link (badEmail);
+
+                var domItem = emailPend.CommandDominatesItem (badEmail.ServerId);
+                Assert.IsFalse (domItem, "CommandDominatesItem should return false when the argument does not match or dominate");
             }
 
             [Test]
