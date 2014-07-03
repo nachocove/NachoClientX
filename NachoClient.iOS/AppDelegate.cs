@@ -157,23 +157,12 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
 
-            if (launchOptions != null) {
-                // we got some launch options from the OS, probably launched from a localNotification
-                if (launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
-                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
-                    var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                    if (localNotification.HasAction) {
-                        // something supposed to happen
-                        //FIXME - for now we'll pop up an alert saying we got new mail
-                        // what we will do in future is show the email or calendar invite body
-                        localNotification.ApplicationIconBadgeNumber = 0;
-                        var alert = new UIAlertView (localNotification.AlertAction, localNotification.AlertBody, null, null);
-                        alert.PerformSelector (new Selector ("show"), null, 0.1); // http://stackoverflow.com/questions/9040896
-                        Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Alert done");
-                    }
-                }
+            if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
+                var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
+                var emailMessageId = ((NSNumber)localNotification.UserInfo.ObjectForKey (NoteKey)).IntValue;
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
             }
-
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
             return true;
         }
@@ -372,7 +361,7 @@ namespace NachoClient.iOS
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "PerformFetch Called");
+            Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }
@@ -386,11 +375,9 @@ namespace NachoClient.iOS
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
-            Log.Info (Log.LOG_LIFECYCLE, "Recieved Local Notification");
-            if (notification.UserInfo != null) {
-                Log.Info (Log.LOG_LIFECYCLE, "User Info from localnotifocation");
-                // in future, we'll use this to open to right screen if we got launched from a notification
-            }
+            Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification called.");
+            var emailMessageId = ((NSNumber)notification.UserInfo.ObjectForKey (NoteKey)).IntValue;
+            Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
@@ -561,8 +548,7 @@ namespace NachoClient.iOS
                 }
                 var notif = new UILocalNotification () {
                     AlertAction = "Nacho Mail",
-                    AlertBody = ((null == message.Subject)? "(No Subject)" : message.Subject) +
-                        ", From " + message.From,
+                    AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
                     SoundName = UILocalNotification.DefaultSoundName,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), NoteKey),
                 };
