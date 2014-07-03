@@ -414,10 +414,11 @@ namespace Test.iOS
                 var siblingFolder = FolderOps.CreateFolder (defaultAccountId, parentId: "0", serverId: "3", name: "Sibling", typeCode: TypeCode.UserCreatedGeneric_1);
                 PathOps.CreatePath (defaultAccountId, siblingFolder.ServerId, siblingFolder.ParentId);
 
+                var renameString = "TopFolder (UPDATED BY CLIENT)";
                 string token = "";
                 DoClientSideCmds (() => {
                     // make pending op; this op should never be executed
-                    token = ProtoControl.MoveFolderCmd (topFolder.Id, siblingFolder.Id);
+                    token = ProtoControl.RenameFolderCmd (topFolder.Id, renameString);
                 });
 
                 // should move top folder into siblingFolder
@@ -427,10 +428,50 @@ namespace Test.iOS
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
                 Assert.NotNull (foundParent, "Should not delete top-level folder");
                 Assert.AreEqual (destFolder.ServerId, foundParent.ParentId, "Folder should be moved to the folder the server says it should move to");
+                Assert.AreNotEqual (renameString, foundParent.DisplayName, "Folder should not be renamed because server should overwrite pending rename");
 
                 // pending should be deleted
+                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (pendRenameOp, "Should delete pending MoveOp when FolderSync:Update (Move) command's ServerId matches pending's ServerId");
+            }
+        }
+
+        public class FolderUpdateMoveConfResTest : BaseConflictResTest
+        {
+            [Test]
+            public void TestFolderSyncAdd ()
+            {
+                var curParent = FolderOps.CreateFolder (defaultAccountId, parentId: "0", serverId: "3", name: "Cur-Parent-Folder", typeCode: TypeCode.UserCreatedGeneric_1);
+                PathOps.CreatePath (defaultAccountId, curParent.ServerId, curParent.ParentId);
+
+                var topFolder = CreateTopFolder ();
+                PathOps.CreatePath (defaultAccountId, topFolder.ServerId, topFolder.ParentId);
+
+                // name and type must match those same fields in SyncResponseAddSub
+                string clientChildServerId = "15"; // the serverId of the child from the client's perspective
+                var curChildOnClient = FolderOps.CreateFolder (defaultAccountId, parentId: curParent.ServerId, serverId: "15", name: ChildFolderName, typeCode: TypeCode.UserCreatedGeneric_1);
+                PathOps.CreatePath (defaultAccountId, curChildOnClient.ServerId, curChildOnClient.ParentId);
+
+                string token = "";
+                DoClientSideCmds (() => {
+                    token = ProtoControl.MoveFolderCmd (curChildOnClient.Id, topFolder.Id);
+                });
+
+                // should add equivalent folder to childFolder to topFolder
+                ExecuteConflictTest (SyncResponseAddSub);
+
+                // find child folder that existed on client and was moved
+                var foundChild = McFolder.QueryByServerId<McFolder> (defaultAccountId, clientChildServerId);
+                Assert.AreEqual (topFolder.ServerId, foundChild.ParentId, "Should move folder into folder defined by both client and server");
+
+                // find child folder added by server
+                var foundServerChild = McFolder.QueryByServerId<McFolder> (defaultAccountId, "2");
+                Assert.AreEqual (topFolder.ServerId, foundServerChild.ParentId, "Should move folder into folder defined by both client and server");
+
+                // should create a re-write to alter the pending's DisplayName
                 var pendMoveOp = McPending.QueryByToken (defaultAccountId, token);
-                Assert.Null (pendMoveOp, "Should delete pending MoveOp when FolderSync:Update (Move) command's ServerId matches pending's ServerId");
+                Assert.NotNull (pendMoveOp, "MoveOp should not be deleted");
+                Assert.AreEqual (ChildFolderName + " Client-Moved", pendMoveOp.DisplayName, "Should append suffix to note conflict");
             }
         }
 
