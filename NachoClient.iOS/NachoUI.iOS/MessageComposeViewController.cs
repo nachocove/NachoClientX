@@ -52,7 +52,7 @@ namespace NachoClient.iOS
 
         UIToolbar keyboardToolbar;
 
-        protected float LINE_HEIGHT = 30;
+        protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
 
@@ -106,7 +106,9 @@ namespace NachoClient.iOS
                 suppressLayout = false;
                 attachmentView.Hidden = false;
                 attachmentViewHR.Hidden = false;
+                attachmentView.SetCompact(false);
                 attachmentView.ConfigureView ();
+                attachmentView.PromptForAttachment();
             };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
@@ -300,7 +302,7 @@ namespace NachoClient.iOS
             toView.SetCompact (false, -1);
             ccView.SetCompact (false, -1);
             bccView.SetCompact (false, -1);
-            attachmentView.SetCompact (false, -1);
+            attachmentView.SetCompact (false);
 
             toViewHR.Hidden = false;
             ccViewHR.Hidden = false;
@@ -328,7 +330,7 @@ namespace NachoClient.iOS
             toView.SetCompact (true, -1);
             ccView.SetCompact (true, -1);
             bccView.SetCompact (true, -1);
-            attachmentView.SetCompact (true, -1);
+            attachmentView.SetCompact (true);
 
             suppressLayout = true;
             toView.ConfigureView ();

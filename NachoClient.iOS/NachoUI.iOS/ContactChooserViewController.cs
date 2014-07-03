@@ -126,6 +126,7 @@ namespace NachoClient.iOS
 
         public void ContactsChangedCallback (object sender, EventArgs e)
         {
+            NachoClient.Util.HighPriority ();
             firstList = NcContactManager.Instance.GetHotNachoContacts ();
             secondList = NcContactManager.Instance.GetNachoContacts ();
             if ((null == firstList) || (0 == firstList.Count ())) {
@@ -133,6 +134,7 @@ namespace NachoClient.iOS
                 secondList = null;
             }
             TableView.ReloadData ();
+            NachoClient.Util.RegularPriority ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -257,8 +259,10 @@ namespace NachoClient.iOS
                 return true;
             }
             // TODO: Make this work like EAS
+            NachoClient.Util.HighPriority ();
             var account = NcModel.Instance.Db.Table<McAccount> ().First ();
             searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
+            NachoClient.Util.RegularPriority ();
             return true;
         }
 

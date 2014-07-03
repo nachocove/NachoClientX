@@ -15,7 +15,7 @@ namespace NachoClient.iOS
 
     public class UcAttachmentCell : UIView
     {
-        protected const float LINE_HEIGHT = 30;
+        protected const float LINE_HEIGHT = 40;
         protected const float LEFT_INDENT = 15;
         protected const float LEFT_ADDRESS_INDENT = 57;
 
@@ -58,14 +58,13 @@ namespace NachoClient.iOS
         protected float parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
 
-        protected const int LINE_HEIGHT = 30;
+        protected const int LINE_HEIGHT = 40;
         protected const int LEFT_INDENT = 15;
         protected const int RIGHT_INDENT = 15;
 
         bool isCompact;
         UIView contentView;
         UILabel mainLabel;
-        UIButton chooserButton;
 
         public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth)
         {
@@ -80,7 +79,7 @@ namespace NachoClient.iOS
             CreateView ();
         }
 
-        public void SetCompact (bool isCompact, int moreCount)
+        public void SetCompact (bool isCompact)
         {
             this.isCompact = isCompact;
         }
@@ -105,16 +104,17 @@ namespace NachoClient.iOS
             mainLabel.Font = A.Font_AvenirNextRegular14;
             mainLabel.TextColor = A.Color_0B3239;
 
-            chooserButton = UIButton.FromType (UIButtonType.ContactAdd);
-            chooserButton.SizeToFit ();
-            chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, chooserButton.Frame.Height);
+            contentView.AddSubviews (new UIView[] { mainLabel });
 
-            chooserButton.TouchUpInside += (object sender, EventArgs e) => {
-                if (null != owner) {
-                    AttachFileActionSheet ();
-                }
-            };
-            contentView.AddSubviews (new UIView[] { mainLabel, chooserButton });
+            // Enabled & disable 'compact view' with a tap
+            var tap = new UITapGestureRecognizer ();
+            tap.AddTarget (() => {
+                isCompact = !isCompact;
+                ConfigureView ();
+            });
+            contentView.AddGestureRecognizer (tap);
+
+
         }
 
         public void Append (McAttachment attachment)
@@ -125,12 +125,18 @@ namespace NachoClient.iOS
 
             var tap = new UITapGestureRecognizer ();
             tap.AddTarget (() => {
-                AttachmentActionSheet(c);
+                AttachmentActionSheet (c);
             });
             c.AddGestureRecognizer (tap);
 
             Layout ();
             ConfigureView ();
+        }
+
+        public void PromptForAttachment ()
+        {
+            AttachFileActionSheet ();
+
         }
 
         public void Remove (UcAttachmentCell c)
@@ -152,6 +158,10 @@ namespace NachoClient.iOS
         {
             mainLabel.Text = String.Format ("Attachments ({0})", list.Count);
 
+            foreach (var c in list) {
+                c.Hidden = isCompact;
+            }
+
             if (null != owner) {
                 owner.AttachmentBlockNeedsLayout (this);
             }
@@ -165,13 +175,13 @@ namespace NachoClient.iOS
             mainLabel.Frame = new RectangleF (mainLabel.Frame.Location, mainLabelSize);
             AdjustXY (mainLabel, LEFT_INDENT, yOffset);
 
-            AdjustXY (chooserButton, parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, yOffset);
-
             yOffset += LINE_HEIGHT;
 
             foreach (var c in list) {
-                c.Frame = new RectangleF (0, yOffset, c.Frame.Width, c.Frame.Height);
-                yOffset += LINE_HEIGHT;
+                if (!c.Hidden) {
+                    c.Frame = new RectangleF (0, yOffset, c.Frame.Width, c.Frame.Height);
+                    yOffset += LINE_HEIGHT;
+                }
             }
 
             contentView.Frame = new RectangleF (0, 0, parentWidth, yOffset);
