@@ -530,10 +530,6 @@ namespace NachoClient.iOS
         private void BadgeNotifClear ()
         {
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
-            var existingNotif = UIApplication.SharedApplication.ScheduledLocalNotifications;
-            foreach (var notif in existingNotif) {
-                UIApplication.SharedApplication.CancelLocalNotification (notif);
-            }
             BadgeNotifAllowed = false;
             Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
 
@@ -559,19 +555,8 @@ namespace NachoClient.iOS
 
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
 
-            var existingNotif = UIApplication.SharedApplication.ScheduledLocalNotifications;
-            // O(N**2) alert, small N.
             foreach (var message in unreadAndHot) {
-                bool exists = false;
-                foreach (var oldNotif in existingNotif) {
-                    if (oldNotif.UserInfo.ContainsKey (NoteKey) &&
-                        message.Id == ((NSNumber)oldNotif.UserInfo.ValueForKey (NoteKey)).IntValue) {
-                        exists = true;
-                        Log.Info (Log.LOG_UI, "BadgeNotifUpdate: McEmailMessage.Id {0} has existing notification", message.Id);
-                        break;
-                    }
-                }
-                if (exists) {
+                if (message.HasBeenNotified) {
                     continue;
                 }
                 var notif = new UILocalNotification () {
@@ -579,8 +564,11 @@ namespace NachoClient.iOS
                     AlertBody = ((null == message.Subject)? "(No Subject)" : message.Subject) +
                         ", From " + message.From,
                     SoundName = UILocalNotification.DefaultSoundName,
+                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), NoteKey),
                 };
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                message.HasBeenNotified = true;
+                message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
             }
         }

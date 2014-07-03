@@ -88,6 +88,9 @@ namespace NachoCore.ActiveSync
             private CancellationTokenSource Cts;
             // Initialized at constructor, thereafter accessed anywhere.
             private CancellationToken Ct;
+            // Record re-dir source URLs to avoid any loops.
+            private List<Uri> ReDirSource = new List<Uri> ();
+            private Uri LastUri;
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
             {
@@ -140,7 +143,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.Success,
-                                    Act = DoRobotSuccess,
+                                    Act = DoRobotPostSuccess,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
@@ -150,22 +153,22 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotPostHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotPostHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReProv,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotPostHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReSync,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotPostHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
@@ -279,7 +282,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.Success,
-                                    Act = DoRobotUiCertAsk,
+                                    Act = DoRobotGotCert,
                                     State = (uint)RobotLst.OkWait
                                 },
                                 new Trans {
@@ -310,7 +313,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SharedEvt.E.SrvCertY,
-                                    Act = DoRobot302,
+                                    Act = DoRobotGotCertOk,
                                     State = (uint)RobotLst.ReDirWait
                                 },
                                 new Trans {
@@ -441,15 +444,32 @@ namespace NachoCore.ActiveSync
             // *********************************************************************************
             // Step Robot state machine action commands.
             // *********************************************************************************
+
+            private bool IsNotReDirLoop (Uri suspect)
+            {
+                if (ReDirSource.Contains (suspect)) {
+                    Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Re-direct loop: {1}.", Step, suspect);
+                    return false;
+                }
+                return true;
+            }
+
+            private AsHttpOperation HttpOpFactory ()
+            {
+                return new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
+                    HttpClientType = HttpClientType,
+                    Allow451Follow = false,
+                    DontReportCommResult = true,
+                    TriesLeft = 3,
+                };
+            }
+
             private void DoRobotHttp ()
             {
-                if (0 < RetriesLeft--) {
-                    HttpOp = new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
-                        HttpClientType = HttpClientType,
-                        Allow451Follow = false,
-                        DontReportCommResult = true,
-                        TriesLeft = 3,
-                    };
+                var currentUri = CurrentServerUri ();
+                if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
+                    HttpOp = HttpOpFactory ();
+                    LastUri = currentUri;
                     HttpOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRHHARD");
@@ -468,18 +488,20 @@ namespace NachoCore.ActiveSync
                 }
             }
 
+            private void DoRobotGotCertOk ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: User approved server SSL cert.", Step);
+                DoRobot302 ();
+            }
+
             private void DoRobot302 ()
             {
                 // NOTE: this handles the 302 case, NOT the <Redirect> in XML after 200 case.
-                // FIXME: catch loops by recording been-there URLs.
-                if (0 < Command.ReDirsLeft--) {
+                var currentUri = CurrentServerUri ();
+                if (IsNotReDirLoop (currentUri) && 0 < Command.ReDirsLeft--) {
                     RefreshRetries ();
-                    HttpOp = new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
-                        HttpClientType = HttpClientType,
-                        Allow451Follow = false,
-                        DontReportCommResult = true,
-                        TriesLeft = 3,
-                    };
+                    HttpOp = HttpOpFactory ();
+                    LastUri = currentUri;
                     HttpOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDR302HARD");
@@ -488,6 +510,12 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGet2ReDir ()
             {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET.", Step);
+                DoRobot2ReDir ();
+            }
+
+            private void DoRobot2ReDir ()
+            {
                 MethodToUse = HttpMethod.Post;
                 RefreshRetries ();
                 DoRobotGetServerCert ();
@@ -495,11 +523,12 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotDns2ReDir ()
             {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS SRV response.", Step);
                 // Make the successful SRV lookup seem like a 302 so that the code for
                 // the remaining flow is unified for both paths (GET/DNS).
                 IsReDir = true;
                 ReDirUri = new Uri (string.Format ("https://{0}/autodiscover/autodiscover.xml", SrDomain));
-                DoRobotGet2ReDir ();
+                DoRobot2ReDir ();
             }
 
             private async void DoRobotGetServerCert ()
@@ -516,6 +545,7 @@ namespace NachoCore.ActiveSync
                     client.Timeout = CertTimeout;
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
+                        LastUri = ReDirUri;
                         await client.GetAsync (ReDirUri).ConfigureAwait (false);
                     } catch (Exception ex) {
                         StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0", null, 
@@ -535,6 +565,12 @@ namespace NachoCore.ActiveSync
                 }
             }
 
+            private void DoRobotGotCert ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Retrieved sever SSL cert.", Step);
+                DoRobotUiCertAsk ();
+            }
+
             private void DoRobotUiCertAsk ()
             {
                 ForTopLevel (Event.Create ((uint)TlEvt.E.ServerCertAsk, "SRCERTASK", this));
@@ -550,10 +586,22 @@ namespace NachoCore.ActiveSync
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 
+            private void DoRobotPostSuccess ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST succeeded: {1}.", Step, LastUri);
+                DoRobotSuccess ();
+            }
+
             private void DoRobotSuccess ()
             {
                 NcAssert.NotNull (SrServerUri);
                 ForTopLevel (Event.Create ((uint)SmEvt.E.Success, "SRSUCCESS", this));
+            }
+
+            private void DoRobotPostHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST failed: {1}.", Step, LastUri);
+                DoRobotHardFail ();
             }
 
             private void DoRobotHardFail ()
@@ -577,7 +625,8 @@ namespace NachoCore.ActiveSync
             // *********************************************************************************
             // AsHttpOperationOwner callbacks.
             // *********************************************************************************
-            public Uri ServerUri (AsHttpOperation Sender)
+
+            private Uri CurrentServerUri ()
             {
                 if (IsReDir) {
                     return ReDirUri;
@@ -592,6 +641,11 @@ namespace NachoCore.ActiveSync
                 default:
                     throw new Exception ();
                 }
+            }
+
+            public Uri ServerUri (AsHttpOperation Sender)
+            {
+                return CurrentServerUri ();
             }
 
             public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
@@ -903,4 +957,3 @@ namespace NachoCore.ActiveSync
         }
     }
 }
-

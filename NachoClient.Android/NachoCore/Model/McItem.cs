@@ -26,6 +26,9 @@ namespace NachoCore.Model
         [Indexed]
         public uint PendingRefCount { get; set; }
 
+        // Platform-specific code sets this when a user-notification is sent.
+        public bool HasBeenNotified { get; set; }
+
         public McItem ()
         {
             // TODO - only really need to init ClientId for from-client creations.

@@ -108,6 +108,7 @@ namespace NachoCore.Model
             if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
                 NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
             }
+            LastModified = DateTime.UtcNow;
             NcCapture capture = InsertCaptures.Find (ClassName ());
             capture.Start ();
             int rc =  NcModel.Instance.Db.Insert (this);
@@ -133,6 +134,7 @@ namespace NachoCore.Model
             if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
                 NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
             }
+            LastModified = DateTime.UtcNow;
             NcCapture capture = UpdateCaptures.Find (ClassName ());
             capture.Start ();
             int rc = NcModel.Instance.Db.Update (this);
