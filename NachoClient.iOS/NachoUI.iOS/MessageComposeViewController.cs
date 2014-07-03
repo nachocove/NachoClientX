@@ -582,6 +582,9 @@ namespace NachoClient.iOS
         public void SendMessage ()
         {
             var mimeMessage = new MimeMessage ();
+            var sentfrom = new TextPart ("html", "<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
+            var multipart = new Multipart ();
+
 
             foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
                 foreach (var a in view.AddressList) {
@@ -615,7 +618,12 @@ namespace NachoClient.iOS
                 body.Attachments.Add (attachment.FilePath ());
             }
 
-            mimeMessage.Body = body.ToMessageBody ();
+            multipart.Add (body.ToMessageBody());
+
+            multipart.Add (sentfrom);
+
+            mimeMessage.Body = multipart;
+            //mimeMessage.Body = body.ToMessageBody ();
 
             MimeHelpers.SendEmail (account.Id, mimeMessage);
 
