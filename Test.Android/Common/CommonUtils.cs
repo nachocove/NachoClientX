@@ -54,11 +54,23 @@ namespace Test.iOS
 
         public static T CreateUniqueItem<T> (int accountId = defaultAccountId, string serverId = defaultServerId) where T : McItem, new ()
         {
-            T newItem = new T ();
-            newItem.AccountId = accountId;
-            newItem.ServerId = serverId;
+            T newItem = new T {
+                AccountId = accountId,
+                ServerId = serverId,
+            };
             newItem.Insert ();
             return newItem;
+        }
+
+        public static McAttachment CreateAttachment (McItem item, int accountId = defaultAccountId, string displayName = "")
+        {
+            var att =  new McAttachment {
+                AccountId = accountId,
+                DisplayName = displayName,
+                EmailMessageId = item.Id,
+            };
+            att.Insert ();
+            return att;
         }
 
         public static void ItemsAreEqual (McItem item1, McItem item2)
