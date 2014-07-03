@@ -321,10 +321,6 @@
       <Link>NachoCore\NcEnforcer.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
-    <Compile Include="NachoUI.iOS\ComposeViewController.cs" />
-    <Compile Include="NachoUI.iOS\ComposeViewController.designer.cs">
-      <DependentUpon>ComposeViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.designer.cs">
       <DependentUpon>ContactChooserViewController.cs</DependentUpon>

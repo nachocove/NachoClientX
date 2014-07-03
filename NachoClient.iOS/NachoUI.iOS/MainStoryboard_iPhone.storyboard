@@ -730,11 +730,7 @@
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
                         <barButtonItem key="leftBarButtonItem" image="list.png" id="puc-hC-DdW" userLabel="Bar Button Item - Menu"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="JfL-cu-kdr">
-                            <connections>
-                                <segue destination="lOe-mG-VS5" kind="push" identifier="FolderToCompose" id="ueb-Jn-ag7"/>
-                            </connections>
-                        </barButtonItem>
+                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="JfL-cu-kdr"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
@@ -748,46 +744,6 @@
                 <barButtonItem title="Item" id="KaA-7V-JQm" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-1435" y="-283"/>
-        </scene>
-        <!--Compose View Controller-->
-        <scene sceneID="ZXp-r6-B5Z">
-            <objects>
-                <tableViewController storyboardIdentifier="ComposeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="lOe-mG-VS5" customClass="ComposeViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eKQ-rC-jQc">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="U8X-bi-3p2">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="U8X-bi-3p2" id="kB5-me-rrb">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="lOe-mG-VS5" id="jix-Tw-UqB"/>
-                            <outlet property="delegate" destination="lOe-mG-VS5" id="wzO-9m-fCU"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" id="JwW-7f-PQA">
-                        <barButtonItem key="backBarButtonItem" title="Cancel" id="twb-2F-1L8"/>
-                        <barButtonItem key="rightBarButtonItem" title="Send" id="Mjb-px-NvT"/>
-                    </navigationItem>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <connections>
-                        <outlet property="SendButton" destination="Mjb-px-NvT" id="eeb-z0-QXe"/>
-                        <segue destination="Mow-Gy-F9N" kind="push" identifier="ComposeToContactChooser" id="RuD-fJ-2ag"/>
-                        <segue destination="bBy-CW-6ix" kind="push" identifier="ComposeToAttachments" id="sGK-tB-hv0"/>
-                        <segue destination="pKz-1u-PCL" kind="push" identifier="ComposeToFiles" id="P1G-aN-KBc"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="8CR-pi-522" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="608" y="-990"/>
         </scene>
         <!--Contact Search View Controller - Contacts-->
         <scene sceneID="qZb-fd-BvT">
@@ -1534,18 +1490,18 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     <inferredMetricsTieBreakers>
         <segue reference="kLB-ow-NqN"/>
         <segue reference="WNy-bM-xGW"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="Oi3-nV-lAC"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="Oi3-nV-lAC"/>
         <segue reference="vRC-Oi-s8D"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="PxE-UU-EfC"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="hxO-14-opZ"/>
         <segue reference="c79-xS-Npa"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="Afu-47-Kju"/>
         <segue reference="Zli-hF-qvP"/>
+        <segue reference="EmX-Dp-jXs"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="Jfi-iv-ZLD"/>
-        <segue reference="EmX-Dp-jXs"/>
     </inferredMetricsTieBreakers>
 </document>
