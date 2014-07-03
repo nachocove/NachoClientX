@@ -210,11 +210,10 @@ namespace Test.iOS
 
             // TODO: Fix this test once code for "matching" (as opposed to dominating) has been written
             [Test]
-            public void TestFolderSyncDelete ()
+            public void TestFolderSyncDeleteMatch ()
             {
-                // If the command's ServerId dominates the pending's ParentId, then the destination for the 
-                // new folder is being deleted by the server. 
-
+                // If the command's ServerId matches the pending's ParentId,
+                // then the destination for the new folder is being deleted by the server. 
                 var topFolder = CreateTopFolder ();
 
                 // Set up path: This is the client's "best understanding" of the servers point of view the last time they talked
@@ -226,6 +225,31 @@ namespace Test.iOS
                     token = ProtoControl.CreateFolderCmd (topFolder.Id, SubCalFolderName, TypeCode.UserCreatedCal_13); 
                 });
 
+                // deletes top folder
+                ExecuteConflictTest (SyncResponseDelete);
+
+                var subFolderPending = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (subFolderPending, "Should delete pending if the destination for the new folder is being deleted by the server");
+            }
+
+            [Test]
+            public void TestFolderSyncDeleteDominate ()
+            {
+                // If the command's ServerId dominates the pending's ParentId,
+                // then the destination for the new folder is being deleted by the server. 
+                var topFolder = CreateTopFolder ();
+                PathOps.CreatePath (defaultAccountId, topFolder.ServerId, topFolder.ParentId);
+
+                var childFolder = CreateChildFolder ();
+                PathOps.CreatePath (defaultAccountId, childFolder.ServerId, childFolder.ParentId);
+              
+                var token = "";
+                DoClientSideCmds (() => {
+                    // Create a subFolder of the top folder before client receives message to delete top folder
+                    token = ProtoControl.CreateFolderCmd (childFolder.Id, "GrandChild-Folder", TypeCode.UserCreatedGeneric_1); 
+                });
+
+                // deletes top folder
                 ExecuteConflictTest (SyncResponseDelete);
 
                 var subFolderPending = McPending.QueryByToken (defaultAccountId, token);
