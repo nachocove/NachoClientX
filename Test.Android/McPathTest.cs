@@ -9,34 +9,13 @@ using NachoCore.Model;
 
 namespace Test.iOS
 {
-    public class BaseMcPathTest : CommonTestOps
+    public class BaseMcPathTest : CommonPathOps
     {
         [SetUp]
         public new void SetUp ()
         {
             base.SetUp ();
         }
-
-        public McPath CreatePath (int accountId, string serverId = "", string parentId = "")
-        {
-            var path = new McPath (accountId);
-            path.ServerId = serverId;
-            path.ParentId = parentId;
-            path.Insert ();
-            return path;
-        }
-    }
-
-    public class McPathNode
-    {
-        public McPathNode (McPath root)
-        {
-            Root = root;
-            Children = new List<McPathNode> ();
-        }
-
-        public McPath Root;
-        public List<McPathNode> Children;
     }
 
     [TestFixture]

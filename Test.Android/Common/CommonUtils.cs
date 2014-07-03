@@ -5,6 +5,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace Test.iOS
 {
@@ -79,6 +80,30 @@ namespace Test.iOS
 
             if (autoInsert) { folder.Insert (); }
             return folder;
+        }
+    }
+
+    public class CommonPathOps : CommonTestOps
+    {
+        public static McPath CreatePath (int accountId, string serverId = "", string parentId = "")
+        {
+            var path = new McPath (accountId);
+            path.ServerId = serverId;
+            path.ParentId = parentId;
+            path.Insert ();
+            return path;
+        }
+
+        public class McPathNode
+        {
+            public McPathNode (McPath root)
+            {
+                Root = root;
+                Children = new List<McPathNode> ();
+            }
+
+            public McPath Root;
+            public List<McPathNode> Children;
         }
     }
 
