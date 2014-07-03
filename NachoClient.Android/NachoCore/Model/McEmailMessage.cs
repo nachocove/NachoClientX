@@ -312,6 +312,12 @@ namespace NachoCore.Model
                 x.ThreadTopic == topic).ToList ();
         }
 
+        public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
+                false == x.IsRead && since < x.LastModified).OrderByDescending (x => x.LastModified);
+        }
+
         public static ClassCodeEnum GetClassCode ()
         {
             return McFolderEntry.ClassCodeEnum.Email;
