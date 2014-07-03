@@ -15,6 +15,7 @@ using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -27,6 +28,7 @@ namespace NachoClient.iOS
         protected McFolder folder;
         protected McAccount account;
         protected NachoFolders calendars;
+        public bool showMenu;
 
         public CalendarItemViewController (IntPtr handle) : base (handle)
         {
@@ -66,6 +68,17 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            if (showMenu) {
+                // Navigation
+                revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+                revealButton.Target = this.RevealViewController ();
+                this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+                nachoButton.Clicked += (object sender, EventArgs e) => {
+                    PerformSegue ("CalendarItemToNachoNow", this);
+                };
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            }
 
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {

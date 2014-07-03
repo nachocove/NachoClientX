@@ -29,35 +29,6 @@ namespace NachoClient.iOS
         ///      "SidebarToHome"
         ///      "SidebarToAttachments"
 
-     
-        protected class SidebarMenu
-        {
-            public McFolder Folder;
-            public McItem.ItemSource Source;
-            public string DisplayName;
-            public string SegueName;
-            public string IconName;
-
-            public SidebarMenu (McFolder folder, string displayName, string segueName)
-            {
-                SegueName = segueName;
-                DisplayName = displayName;
-                Folder = folder;
-                Source = McItem.ItemSource.ActiveSync;
-            }
-
-            public SidebarMenu (McFolder folder, string displayName, string segueName, string iconName) :
-                this (folder, displayName, segueName)
-            {
-                IconName = iconName;
-            }
-        };
-
-        Section menu;
-        Section topMenu;
-        NachoFolders email;
-        NachoFolders contacts;
-        NachoFolders calendars;
         const string SidebarToFoldersSegueId = "SidebarToFolders";
         const string SidebarToContactsSegueId = "SidebarToContacts";
         const string SidebarToCalendarSegueId = "SidebarToCalendar";
@@ -70,8 +41,26 @@ namespace NachoClient.iOS
         const string SidebarToAttachmentsSegueId = "SidebarToAttachments";
         const string SidebarToTasksSegueId = "SidebarToTasks";
         const string SidebarToFilesSegueId = "SidebarToFiles";
+        const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
+        const string SidebarToNewEventSegueId = "SidebarToNewEvent";
 
-        public UITableView tableview;
+        protected class ButtonInfo
+        {
+            public string label { get; set; }
+
+            public string imageName { get; set; }
+
+            public string segueIdentifier { get; set; }
+
+            public ButtonInfo (string label, string imageName, string segueIdentifier)
+            {
+                this.label = label;
+                this.imageName = imageName;
+                this.segueIdentifier = segueIdentifier;
+            }
+        }
+
+        protected UIView contentView;
 
         public SidebarViewController (IntPtr handle) : base (handle)
         {
@@ -92,108 +81,83 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            // Start fresh
-            var subviews = View.Subviews;
-            foreach (var s in subviews) {
-                s.RemoveFromSuperview ();
-            }
 
-            // Fade out at top.
-            // TODO: Make this nicer
-            var top = new UIView (new RectangleF (0.0f, 0.0f, View.Frame.Width, 22.0f));
-            top.BackgroundColor = UIColor.Clear;
-            AddWhiteGradient (top);
-            View.AddSubview (top);
+            CreateView ();
+        }
 
-            topMenu = new ThinSection (UIColor.White);
-            menu = new SectionWithLineSeparator ();
+        const float BUTTON_SIZE = 60;
+        const float BUTTON_LABEL_HEIGHT = 20;
+        const float BUTTON_PADDING_HEIGHT = 25;
+        const float BUTTON_PADDING_WIDTH = 20;
 
-            email = new NachoFolders (NachoFolders.FilterForEmail);
-            contacts = new NachoFolders (NachoFolders.FilterForContacts);
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+        protected void CreateView ()
+        {
+            contentView = new UIView (View.Frame);
+            contentView.BackgroundColor = UIColor.Black;
+            View.AddSubview (contentView);
 
-            AddToTopMenu (new SidebarMenu (null, "Now!", SidebarToNachoNowSegueId, "Nacho-Cove-Icon"));
-            AddToMenu (new SidebarMenu (null, "Tasks", SidebarToTasksSegueId, "ic_action_time"));
-            AddToMenu (new SidebarMenu (null, "Deferred", SidebarToDeferredMessagesSegueId, "ic_action_time"));
-            AddToMenu (new SidebarMenu (null, "Attachments", SidebarToAttachmentsSegueId, "ic_action_attachment"));
-            AddToMenu (new SidebarMenu (null, "Files", SidebarToFilesSegueId, "ic_action_import_export"));
+            List<ButtonInfo> buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
+                new ButtonInfo ("Hot List", "menu-chili", SidebarToNachoNowSegueId),
+                new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
+                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
+                new ButtonInfo (null, null, null),
+                new ButtonInfo ("Inbox", "menu-contacts", SidebarToMessagesSegueId),
+                new ButtonInfo ("Calendar", "menu-calendar", SidebarToCalendarSegueId),
+                new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
+                new ButtonInfo (null, null, null),
+                new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
+                new ButtonInfo ("Attachments", "menu-attachments", SidebarToAttachmentsSegueId),
+                new ButtonInfo ("Folders", "menu-folders", SidebarToFoldersSegueId),
+                new ButtonInfo (null, null, null),
+                new ButtonInfo ("Settings", "menu-settings", SidebarToSettingsSegueId),
+                null,
+                new ButtonInfo ("Support", "menu-help", SidebarToHomeSegueId),
+            });
 
-            AddToMenu (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId, "ic_action_collection"));
+            var center = contentView.Center;
+            center.X = (320 / 2); // KLUDGE
+            center.Y = center.Y - (BUTTON_SIZE / 2);
 
-            for (int i = 0; i < email.Count (); i++) {
-                McFolder f = email.GetFolder (i);
-                AddToMenu (new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId));
-                if (f.DisplayName.Equals ("Inbox")) {
-                    AddToTopMenu (new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId, "ic_action_email"));
+            var xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
+            var yOffset = center.Y - (BUTTON_SIZE + BUTTON_LABEL_HEIGHT) - BUTTON_PADDING_HEIGHT;
+
+            foreach (var buttonInfo in buttonInfoList) {
+                if (null == buttonInfo) {
+                    xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
+                    continue;
                 }
-            }
-
-            AddToTopMenu (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId, "ic_action_group"));
-            AddToMenu (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId, "ic_action_group"));
-            for (int i = 0; i < contacts.Count (); i++) {
-                McFolder f = contacts.GetFolder (i);
-                AddToMenu (new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId));
-            }
-//            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
-//            deviceContacts.Source = McItem.ItemSource.Device;
-//            AddToMenu (deviceContacts);
-
-            AddToTopMenu (new SidebarMenu (null, "Calendar", SidebarToCalendarSegueId, "ic_action_event"));
-            AddToMenu (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId, "ic_action_event"));
-            for (int i = 0; i < calendars.Count (); i++) {
-                McFolder f = calendars.GetFolder (i);
-                AddToMenu (new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId));
-            }
-//            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
-//            deviceCalendar.Source = McItem.ItemSource.Device;
-//            AddToMenu (deviceCalendar);
-
-            AddToMenu (new SidebarMenu (null, "Help", SidebarToHomeSegueId, "ic_action_help"));
-            AddToMenu (new SidebarMenu (null, "Settings", SidebarToSettingsSegueId, "ic_action_settings"));
-            AddToMenu (new SidebarMenu (null, "Accounts", SidebarToAccountsSegueId, "ic_action_accounts"));
-
-            var root = new RootElement ("");
-            root.Add (topMenu);
-            root.Add (menu);
-            var dvc = new DialogViewController (root);
-            tableview = (UITableView)dvc.View;
-            tableview.SeparatorColor = UIColor.Clear;
-            tableview.BackgroundColor = UIColor.White;
-            View.AddSubview (tableview);
-            View.SendSubviewToBack (tableview);
-        }
-
-        protected StyledStringElement PrepareMenuElement (SidebarMenu m)
-        {
-            StyledStringElement e;
-            if (null == m.IconName) {
-                e = new StyledStringElementWithIndent (m.DisplayName);
-            } else {
-                using (var image = UIImage.FromBundle (m.IconName)) {
-                    var scaledImage = image.Scale (new System.Drawing.SizeF (22.0f, 22.0f));
-                    e = new StyledStringElementWithIcon (m.DisplayName, scaledImage);
+                if (null == buttonInfo.label) {
+                    xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
+                    yOffset += BUTTON_SIZE + BUTTON_LABEL_HEIGHT + BUTTON_PADDING_HEIGHT;
+                    continue;
                 }
+                var button = UIButton.FromType (UIButtonType.RoundedRect);
+                button.Layer.CornerRadius = (BUTTON_SIZE / 2);
+                button.Layer.MasksToBounds = true;
+                button.Layer.BorderColor = UIColor.White.CGColor;
+                button.Layer.BorderWidth = 1;
+                button.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
+                button.Center = new PointF (xOffset, yOffset);
+                button.SetImage (UIImage.FromBundle (buttonInfo.imageName), UIControlState.Normal);
+                button.TintColor = UIColor.White;
+                button.TouchUpInside += (object sender, EventArgs e) => {
+                    var identifer = buttonInfo.segueIdentifier;
+                    PerformSegue (identifer, new SegueHolder (null));
+                };
+                contentView.AddSubview (button);
+
+                var label = new UILabel ();
+                label.Text = buttonInfo.label;
+                label.TextColor = A.Color_FFFFFF;
+                label.Font = A.Font_AvenirNextRegular14;
+                label.TextAlignment = UITextAlignment.Center;
+                label.SizeToFit ();
+                label.Center = new PointF (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
+                contentView.AddSubview (label);
+
+                xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
             }
-            e.Tapped += () => {
-                FireSegue (m);
-            };
-            return e;
-        }
 
-        protected void AddToTopMenu (SidebarMenu m)
-        {
-            topMenu.Add (PrepareMenuElement (m));
-        }
-
-        protected void AddToMenu (SidebarMenu m)
-        {
-            menu.Add (PrepareMenuElement (m));
-        }
-
-        protected void FireSegue (SidebarMenu m)
-        {
-            var holder = new SegueHolder (m);
-            PerformSegue (m.SegueName, holder);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -202,28 +166,23 @@ namespace NachoClient.iOS
 
             UIViewController destViewController = (UIViewController)segue.DestinationViewController;
 
-            var holder = (SegueHolder)sender;
-            var m = (SidebarMenu)holder.value;
-
-            destViewController.Title = m.DisplayName;
-
             switch (segue.Identifier) {
             case SidebarToContactsSegueId:
                 {
                     ContactsViewController vc = (ContactsViewController)destViewController;
-                    vc.UseDeviceContacts = (m.Source == McItem.ItemSource.Device);
+                    vc.UseDeviceContacts = false;
                 }
                 break;
             case SidebarToCalendarSegueId:
                 {
                     CalendarViewController vc = (CalendarViewController)destViewController;
-                    vc.UseDeviceCalendar = (m.Source == McItem.ItemSource.Device);
+                    vc.UseDeviceCalendar = false;
                 }
                 break;
             case SidebarToMessagesSegueId:
                 {
                     MessageListViewController vc = (MessageListViewController)destViewController;
-                    var messageList = new NachoEmailMessages (m.Folder);
+                    var messageList = NcEmailManager.Inbox ();
                     vc.SetEmailMessages (messageList);
                 }
                 break;
@@ -232,6 +191,19 @@ namespace NachoClient.iOS
                     MessageListViewController vc = (MessageListViewController)destViewController;
                     var messageList = new NachoDeferredEmailMessages ();
                     vc.SetEmailMessages (messageList);
+                }
+                break;
+            case SidebarToNewEventSegueId:
+                {
+                    var vc = (CalendarItemViewController)destViewController;
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                    vc.showMenu = true;
+                }
+                break;
+            case SidebarToNewEmailSegueId:
+                {
+                    var vc = (MessageComposeViewController)destViewController;
+                    vc.showMenu = true;
                 }
                 break;
             default:
@@ -257,17 +229,6 @@ namespace NachoClient.iOS
             this.RevealViewController ().SetFrontViewPosition (FrontViewPosition.Left, true);
         }
 
-        public void AddWhiteGradient (UIView view)
-        {
-            var layer = new CAGradientLayer ();
-            var colors = new CGColor[] {
-                UIColor.White.CGColor,
-                UIColor.Clear.CGColor,
-            };
-            layer.Colors = colors;
-            layer.Frame = view.Frame;
-            view.Layer.AddSublayer (layer);
-        }
     }
 }
 

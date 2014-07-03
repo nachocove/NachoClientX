@@ -12,6 +12,7 @@ using MimeKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -24,6 +25,7 @@ namespace NachoClient.iOS
         public string Action;
         public McEmailMessageThread ActionThread;
         public INachoMessageEditorParent owner;
+        public bool showMenu;
         protected McAccount account;
 
 
@@ -68,6 +70,17 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
+
+            if (showMenu) {
+                // Navigation
+                revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+                revealButton.Target = this.RevealViewController ();
+                this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
+                nachoButton.Clicked += (object sender, EventArgs e) => {
+                    PerformSegue ("ComposeToNachoNow", this);
+                };
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            }
 
             NavigationItem.RightBarButtonItem = sendButton;
 

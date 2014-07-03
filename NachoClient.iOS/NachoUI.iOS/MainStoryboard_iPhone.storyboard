@@ -144,6 +144,8 @@
                         <segue destination="sao-Pd-u1t" kind="custom" identifier="SidebarToTasks" customClass="SWRevealViewControllerSegue" id="wOY-cG-Eg7"/>
                         <segue destination="pKz-1u-PCL" kind="custom" identifier="SidebarToFiles" customClass="SWRevealViewControllerSegue" id="i3N-5g-evG"/>
                         <segue destination="d8n-da-LP7" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="g6P-mU-XFC"/>
+                        <segue destination="HgO-45-h9V" kind="custom" identifier="SidebarToNewEvent" customClass="SWRevealViewControllerSegue" id="WNy-bM-xGW"/>
+                        <segue destination="tAw-fh-hJX" kind="custom" identifier="SidebarToNewEmail" customClass="SWRevealViewControllerSegue" id="HKc-NA-tOt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -198,7 +200,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -208,13 +210,18 @@
                         <outlet property="cancelButton" destination="sFR-r8-TDe" id="wgg-bq-bR2"/>
                         <outlet property="doneButton" destination="1VR-x3-yGz" id="ADN-jO-YUj"/>
                         <outlet property="editButton" destination="mEu-xP-156" id="72K-Lt-yXg"/>
+                        <outlet property="nachoButton" destination="RXs-aw-aVw" id="BFD-bs-a9e"/>
+                        <outlet property="revealButton" destination="ZwA-Qy-mcx" id="koW-1e-d6l"/>
                         <segue destination="PUz-nc-h33" kind="push" identifier="CalendarItemToAttendeeView" id="mSu-Hi-cds"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarItemToNachoNow" id="kLB-ow-NqN"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="edit" id="mEu-xP-156" userLabel="Bar Button Item - Edit"/>
                 <barButtonItem systemItem="done" id="1VR-x3-yGz" userLabel="Bar Button Item - Done"/>
                 <barButtonItem systemItem="cancel" id="sFR-r8-TDe" userLabel="Bar Button Item - Cancel"/>
+                <barButtonItem image="navbar-icn-inbox.png" id="RXs-aw-aVw" userLabel="Bar Button Item - nachoButton"/>
+                <barButtonItem image="navbar-icn-menu.png" id="ZwA-Qy-mcx" userLabel="Bar Button Item - revealButton"/>
             </objects>
             <point key="canvasLocation" x="-383" y="-1627"/>
         </scene>
@@ -223,7 +230,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="AttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="AttachmentViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -315,7 +322,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="FileListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="pKz-1u-PCL" customClass="FileListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="hJB-ay-mSN">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="436"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -787,7 +794,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -871,7 +878,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -881,7 +888,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="378"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="334"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -1165,13 +1172,16 @@
                     <connections>
                         <outlet property="attachButton" destination="jLf-LW-xg9" id="oGY-nT-pPz"/>
                         <outlet property="contentView" destination="Za1-Fi-gqx" id="Lgz-hX-jFU"/>
+                        <outlet property="nachoButton" destination="DhQ-FE-t8N" id="pay-Xl-oCF"/>
                         <outlet property="quckButton" destination="NJd-R3-mHv" id="TN2-HE-L4v"/>
+                        <outlet property="revealButton" destination="GJM-bv-Pbt" id="Q4t-B9-RDB"/>
                         <outlet property="scrollView" destination="Ad7-zj-0RZ" id="oxX-sO-fdG"/>
                         <outlet property="sendButton" destination="7vA-of-pNi" id="xiN-6Z-B9R"/>
                         <outlet property="taskButton" destination="WmS-2K-Dgt" id="eXM-YJ-TnQ"/>
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="ComposeToContactChooser" id="xrp-ey-B0j"/>
                         <segue destination="pKz-1u-PCL" kind="push" identifier="ComposeToFiles" id="Jfi-iv-ZLD"/>
                         <segue destination="bBy-CW-6ix" kind="push" identifier="ComposeToAttachments" id="EmX-Dp-jXs"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1197,6 +1207,8 @@
                     </state>
                 </button>
                 <barButtonItem image="icn-send.png" id="7vA-of-pNi" userLabel="Bar Button Item - sendButton"/>
+                <barButtonItem image="navbar-icn-menu.png" id="GJM-bv-Pbt" userLabel="Bar Button Item - revealButton"/>
+                <barButtonItem image="navbar-icn-inbox.png" id="DhQ-FE-t8N" userLabel="Bar Button Item - nachoButton"/>
             </objects>
             <point key="canvasLocation" x="591" y="409"/>
         </scene>
@@ -1520,20 +1532,20 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="qSV-ar-VcH"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="eK3-Wd-Zbv"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="kLB-ow-NqN"/>
+        <segue reference="WNy-bM-xGW"/>
+        <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="vah-yS-677"/>
-        <segue reference="FHc-YP-jWH"/>
+        <segue reference="Oi3-nV-lAC"/>
+        <segue reference="vRC-Oi-s8D"/>
+        <segue reference="ebP-h4-BhC"/>
         <segue reference="PxE-UU-EfC"/>
+        <segue reference="Afu-47-Kju"/>
         <segue reference="hxO-14-opZ"/>
         <segue reference="c79-xS-Npa"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="EmX-Dp-jXs"/>
+        <segue reference="Zli-hF-qvP"/>
+        <segue reference="xrp-ey-B0j"/>
         <segue reference="Jfi-iv-ZLD"/>
+        <segue reference="EmX-Dp-jXs"/>
     </inferredMetricsTieBreakers>
 </document>

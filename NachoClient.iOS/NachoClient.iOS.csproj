@@ -1100,6 +1100,28 @@
     <BundleResource Include="Resources\icn-calendar-top%402x.png" />
     <BundleResource Include="Resources\icn-send.png" />
     <BundleResource Include="Resources\icn-send%402x.png" />
+    <BundleResource Include="Resources\menu-attachments.png" />
+    <BundleResource Include="Resources\menu-attachments%402x.png" />
+    <BundleResource Include="Resources\menu-calendar.png" />
+    <BundleResource Include="Resources\menu-calendar%402x.png" />
+    <BundleResource Include="Resources\menu-chili.png" />
+    <BundleResource Include="Resources\menu-chili%402x.png" />
+    <BundleResource Include="Resources\menu-contacts.png" />
+    <BundleResource Include="Resources\menu-contacts%402x.png" />
+    <BundleResource Include="Resources\menu-deferred.png" />
+    <BundleResource Include="Resources\menu-deferred%402x.png" />
+    <BundleResource Include="Resources\menu-folders.png" />
+    <BundleResource Include="Resources\menu-folders%402x.png" />
+    <BundleResource Include="Resources\menu-help.png" />
+    <BundleResource Include="Resources\menu-help%402x.png" />
+    <BundleResource Include="Resources\menu-inbox.png" />
+    <BundleResource Include="Resources\menu-inbox%402x.png" />
+    <BundleResource Include="Resources\menu-new-email.png" />
+    <BundleResource Include="Resources\menu-new-email%402x.png" />
+    <BundleResource Include="Resources\menu-new-event.png" />
+    <BundleResource Include="Resources\menu-new-event%402x.png" />
+    <BundleResource Include="Resources\menu-settings.png" />
+    <BundleResource Include="Resources\menu-settings%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
