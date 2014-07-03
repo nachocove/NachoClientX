@@ -391,8 +391,13 @@ namespace NachoCore.ActiveSync
             if (att.IsDownloaded) {
                 return null;
             }
+            var emailMessage = McObject.QueryById<McEmailMessage> (att.EmailMessageId);
+            if (null == emailMessage) {
+                return null;
+            }
             var update = new McPending (Account.Id) {
                 Operation = McPending.Operations.AttachmentDownload,
+                ServerId = emailMessage.ServerId,
                 AttachmentId = attId,
             };
             update.Insert ();
