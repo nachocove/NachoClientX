@@ -930,10 +930,9 @@ namespace NachoCore.Model
             case Operations.EmailSend:
             case Operations.EmailForward:
             case Operations.EmailReply:
+                // if item is not in folder (see EmailSend), false is always implicitly returned (bc item is not in folder)
                 var item = McEmailMessage.QueryById<McEmailMessage> (ItemId);
-                if (item == null) {
-                    return false;
-                }
+                NcAssert.NotNull (item);
                 return (item.ServerId == cmdServerId || McPath.Dominates (AccountId, cmdServerId, item.ServerId));
 
             default:
