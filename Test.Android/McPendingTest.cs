@@ -1215,7 +1215,7 @@ namespace Test.iOS
                 var folder = FolderOps.CreateFolder (accountId: defaultAccountId, parentId: parent.Root.ParentId, serverId: parent.Root.ServerId);
                 var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: item.Root.ServerId);
                 folder.Link (email);
-                var emailPend = CreatePending (accountId: defaultAccountId, parentId: item.Root.ParentId, serverId: item.Root.ServerId, operation: Operations.EmailSend);
+                var emailPend = CreatePending (accountId: defaultAccountId, parentId: item.Root.ParentId, serverId: item.Root.ServerId, operation: Operations.EmailSend, item: email);
                 var badEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: badItem.Root.ServerId);
                 folder.Link (badEmail);
 
