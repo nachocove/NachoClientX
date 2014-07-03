@@ -215,6 +215,8 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "Monitor: Min Threads {0}/{1}", workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads (out workerThreads, out completionPortThreads);
             Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
+            Log.Info (Log.LOG_SYS, "Monitor: Comm Status {0}, Speed {1}", 
+                NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
         }
 
         public void QuickCheck (uint seconds)
