@@ -1022,7 +1022,7 @@ namespace SQLite
 					}
 				}
 			}
-            Log.Error (Log.LOG_SYS, "DoSavePointExecute exploded with savepoint {0}", savepoint);
+            Log.Error (Log.LOG_SYS, "DoSavePointExecute exploded with savepoint {0} {1}", savepoint, _transactionDepth);
 			throw new ArgumentException ("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
 		}
 
@@ -1051,6 +1051,7 @@ namespace SQLite
 		{
 			try {
 				var savePoint = SaveTransactionPoint ();
+                Log.Info (Log.LOG_SYS, "RunInTransaction with savepoint {0} {1}", savePoint, _transactionDepth);
 				action ();
 				Release (savePoint);
 			} catch (Exception) {
