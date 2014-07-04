@@ -287,6 +287,8 @@
     <Compile Include="NachoCore\Brain\NcScoreCombiner.cs" />
     <Compile Include="NachoCore\Utils\IStopwatch.cs" />
     <Compile Include="NachoCore\Utils\PlatformStopwatch.cs" />
+    <Compile Include="NachoCore\Utils\ITimer.cs" />
+    <Compile Include="NachoCore\Utils\PlatformTimer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
