@@ -8,7 +8,12 @@ namespace NachoCore.Utils
 {
     public class NcTimer
     {
-        public Timer Timer;
+        /// The class we use to instantiate a system timer. The default is System.Threading.Timer.
+        /// In unit test, it is replaced with MockTimer which allows us to simulate firing
+        /// of timers.
+        public static Type TimerClass = typeof(PlatformTimer);
+
+        public ITimer Timer;
         public TimerCallback callback;
         public bool Stfu { get; set; }
         public string Who { get; set; }
@@ -21,7 +26,7 @@ namespace NachoCore.Utils
         private Object InstanceLockObj;
         private bool HasFired = false;
 
-        private TimerCallback PartialInit (TimerCallback c)
+        protected TimerCallback PartialInit (TimerCallback c)
         {
             lock (StaticLockObj) {
                 Id = ++nextId;
@@ -53,31 +58,31 @@ namespace NachoCore.Utils
         public NcTimer (string who, TimerCallback c)
         {
             Who = who;
-            Timer = new Timer (PartialInit (c));
+            Timer = (ITimer)Activator.CreateInstance (TimerClass, PartialInit (c));
         }
 
         public NcTimer (string who, TimerCallback c, Object o, Int32 i1, Int32 i2)
         {
             Who = who;
-            Timer = new Timer (PartialInit (c), o, i1, i2);
+            Timer = (ITimer)Activator.CreateInstance (TimerClass, PartialInit (c), o, (Int32)i1, (Int32)i2);
         }
 
         public NcTimer (string who, TimerCallback c, Object o, Int64 i1, Int64 i2)
         {
             Who = who;
-            Timer = new Timer (PartialInit (c), o, i1, i2);
+            Timer = (ITimer)Activator.CreateInstance (TimerClass, PartialInit (c), o, i1, i2);
         }
 
         public NcTimer (string who, TimerCallback c, Object o, TimeSpan t1, TimeSpan t2)
         {
             Who = who;
-            Timer = new Timer (PartialInit (c), o, t1, t2);
+            Timer = (ITimer)Activator.CreateInstance (TimerClass, PartialInit (c), o, t1, t2);
         }
 
         public NcTimer (string who, TimerCallback c, Object o, UInt32 i1, UInt32 i2)
         {
             Who = who;
-            Timer = new Timer (PartialInit (c), o, i1, i2);
+            Timer = (ITimer)Activator.CreateInstance (TimerClass, PartialInit (c), o, i1, i2);
         }
 
         public bool DisposeAndCheckHasFired ()
