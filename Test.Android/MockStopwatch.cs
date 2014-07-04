@@ -7,9 +7,14 @@ namespace Test.common
 {
     public class MockStopwatch : IStopwatch
     {
-        public static long Tick;
+        private static long _CurrentMillisecond;
+        public static long CurrentMillisecond {
+            get {
+                return _CurrentMillisecond;
+            }
+        }
 
-        private long StartTick;
+        private long StartMillisecond;
         private long _ElapsedMilliseconds;
 
         public long ElapsedMilliseconds {
@@ -20,24 +25,24 @@ namespace Test.common
 
         public MockStopwatch ()
         {
-            StartTick = -1;
+            StartMillisecond = -1;
             _ElapsedMilliseconds = 0;
         }
 
         public void Start ()
         {
             Console.WriteLine ("MockStopwatch: Start");
-            StartTick = Tick;
+            StartMillisecond = CurrentMillisecond;
         }
 
         public void Stop ()
         {
             Console.WriteLine ("MockStopwatch: Stop");
-            if (-1 == StartTick) {
+            if (-1 == StartMillisecond) {
                 return;
             }
-            _ElapsedMilliseconds += Tick - StartTick;
-            StartTick = -1;
+            _ElapsedMilliseconds += CurrentMillisecond - StartMillisecond;
+            StartMillisecond = -1;
         }
 
         public void Reset ()
@@ -47,7 +52,7 @@ namespace Test.common
 
         public static void AddTick (long msec)
         {
-            Tick += msec;
+            _CurrentMillisecond += msec;
         }
     }
 }
