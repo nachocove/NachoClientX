@@ -29,7 +29,7 @@ namespace Test.common
         [TearDown]
         public void TearDown ()
         {
-            NcCapture.StopwatchClass = typeof(Stopwatch);
+            NcCapture.StopwatchClass = typeof(PlatformStopwatch);
             for (int n = 0; n < numCaptures; n++) {
                 if (null != captures [n]) {
                     captures [n].Dispose ();
