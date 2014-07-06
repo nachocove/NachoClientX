@@ -97,13 +97,13 @@ namespace NachoClient.iOS
             View.AddSubview (contentView);
 
             List<ButtonInfo> buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Hot List", "menu-chili", SidebarToNachoNowSegueId),
-                new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
-                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
-                new ButtonInfo (null, null, null),
                 new ButtonInfo ("Inbox", "menu-contacts", SidebarToMessagesSegueId),
                 new ButtonInfo ("Calendar", "menu-calendar", SidebarToCalendarSegueId),
                 new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
+                new ButtonInfo (null, null, null),
+                new ButtonInfo ("Hot List", "menu-chili", SidebarToNachoNowSegueId),
+                new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
+                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
                 new ButtonInfo ("Attachments", "menu-attachments", SidebarToAttachmentsSegueId),
@@ -116,10 +116,10 @@ namespace NachoClient.iOS
 
             var center = contentView.Center;
             center.X = (320 / 2); // KLUDGE
-            center.Y = center.Y - (BUTTON_SIZE / 2);
+            center.Y = center.Y;
 
             var xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
-            var yOffset = center.Y - (BUTTON_SIZE + BUTTON_LABEL_HEIGHT) - BUTTON_PADDING_HEIGHT;
+            var yOffset = center.Y - (1.5F * BUTTON_PADDING_HEIGHT) - (2F * (BUTTON_SIZE + BUTTON_LABEL_HEIGHT)) + (0.5F * BUTTON_SIZE);
 
             foreach (var buttonInfo in buttonInfoList) {
                 if (null == buttonInfo) {
@@ -158,6 +158,20 @@ namespace NachoClient.iOS
                 xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
             }
 
+            var dismissLabel = new UILabel ();
+            dismissLabel.Text = "Dismiss";
+            dismissLabel.TextColor = A.Color_FFFFFF;
+            dismissLabel.Font = A.Font_AvenirNextRegular12;
+            dismissLabel.TextAlignment = UITextAlignment.Center;
+            dismissLabel.SizeToFit ();
+            dismissLabel.Center = new PointF (320 / 2, View.Frame.Height - dismissLabel.Frame.Height);
+            contentView.AddSubview (dismissLabel);
+
+            var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+                this.RevealViewController ().RevealToggleAnimated(true);
+            });
+            dismissLabel.AddGestureRecognizer (tap);
+            dismissLabel.UserInteractionEnabled = true;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
