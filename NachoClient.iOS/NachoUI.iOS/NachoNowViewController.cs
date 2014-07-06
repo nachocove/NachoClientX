@@ -23,10 +23,13 @@ namespace NachoClient.iOS
         protected MessageTableViewSource inboxSource;
         protected CalendarTableViewSource calendarSource;
         UIPanGestureRecognizer inboxPanGestureRecognizer = null;
+        UILongPressGestureRecognizer inboxLongPressGestureRecognizer = null;
         UIPanGestureRecognizer calendarPanGestureRecognizer = null;
         //        UIPanGestureRecognizer calendarThumbPanGestureRecognizer = null;
         UITapGestureRecognizer calendarCloseTapGestureRecognizer = null;
         UITapGestureRecognizer carouselTapGestureRecognizer = null;
+        UISwipeGestureRecognizer carouselSwipeUpGestureRecognizer = null;
+        UISwipeGestureRecognizer carouselSwipeDownGestureRecognizer = null;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
@@ -81,7 +84,7 @@ namespace NachoClient.iOS
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
-            carouselTapGestureRecognizer.NumberOfTapsRequired = 1;
+            carouselTapGestureRecognizer.NumberOfTapsRequired = 2;
             carouselTapGestureRecognizer.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CarouselTapSelector:"));
             carouselTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return true;
@@ -94,6 +97,24 @@ namespace NachoClient.iOS
                 }
             };
             carouselView.AddGestureRecognizer (carouselTapGestureRecognizer);
+
+            carouselSwipeUpGestureRecognizer = new UISwipeGestureRecognizer ((UISwipeGestureRecognizer obj) => {
+                carouselSwipe (obj);
+            });
+            carouselSwipeUpGestureRecognizer.Direction = UISwipeGestureRecognizerDirection.Up;
+            carouselSwipeUpGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            carouselView.AddGestureRecognizer (carouselSwipeUpGestureRecognizer);
+
+            carouselSwipeDownGestureRecognizer = new UISwipeGestureRecognizer ((UISwipeGestureRecognizer obj) => {
+                carouselSwipe (obj);
+            });
+            carouselSwipeDownGestureRecognizer.Direction = UISwipeGestureRecognizerDirection.Down;
+            carouselSwipeDownGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            carouselView.AddGestureRecognizer (carouselSwipeUpGestureRecognizer);
 
             priorityInbox = NcEmailManager.PriorityInbox ();
 
@@ -128,7 +149,16 @@ namespace NachoClient.iOS
             inboxPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
-            inboxTableView.AddGestureRecognizer (inboxPanGestureRecognizer);
+//            inboxTableView.AddGestureRecognizer (inboxPanGestureRecognizer);
+
+            inboxLongPressGestureRecognizer = new UILongPressGestureRecognizer ((UILongPressGestureRecognizer obj) => {
+                inboxLongPress (obj);
+            });
+            inboxLongPressGestureRecognizer.Enabled = false;
+            inboxLongPressGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            inboxTableView.AddGestureRecognizer (inboxLongPressGestureRecognizer);
 
             // Pan the calendar down from the top
             calendarPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
@@ -268,6 +298,8 @@ namespace NachoClient.iOS
             calendarPanGestureRecognizer.Enabled = false;
             calendarCloseTapGestureRecognizer.Enabled = false;
             carouselTapGestureRecognizer.Enabled = false;
+            carouselSwipeUpGestureRecognizer.Enabled = false;
+            carouselSwipeDownGestureRecognizer.Enabled = false;
         }
 
         /// <summary>
@@ -315,8 +347,11 @@ namespace NachoClient.iOS
 
             // Enabled gestures
             inboxPanGestureRecognizer.Enabled = true;
+            inboxLongPressGestureRecognizer.Enabled = true;
             calendarPanGestureRecognizer.Enabled = true;
             carouselTapGestureRecognizer.Enabled = true;
+            carouselSwipeUpGestureRecognizer.Enabled = true;
+            carouselSwipeDownGestureRecognizer.Enabled = true;
         }
 
         /// <summary>
@@ -499,6 +534,45 @@ namespace NachoClient.iOS
             return clonedImage;
         }
 
+        public void inboxLongPress (UILongPressGestureRecognizer obj)
+        {
+            if (UIGestureRecognizerState.Ended != obj.State) {
+                return;
+            }
+
+            var actionSheet = new UIActionSheet ();
+            actionSheet.Add ("Make hot!");
+            actionSheet.Add ("Set priority");
+            actionSheet.Add ("Hide message");
+            actionSheet.Add ("Cancel");
+
+            actionSheet.CancelButtonIndex = 3;
+
+            var messageThread = inboxSource.GetFirstThread ();
+            if (null == messageThread) {
+                return;
+            }
+
+            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    var message = messageThread.SingleMessageSpecialCase ();
+                    message.UserAction = 1;
+                    message.Update();
+                    break;
+                case 1:
+                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                    break;
+                case 2:
+                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                    break;
+                case 3:
+                    break; // Cancel
+                }
+            };
+            actionSheet.ShowFromToolbar (NavigationController.Toolbar);
+        }
+
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
             UIView.Animate (0.2, new NSAction (
@@ -612,15 +686,41 @@ namespace NachoClient.iOS
             );
         }
 
+        public void carouselSwipe (UISwipeGestureRecognizer obj)
+        {
+            if (UISwipeGestureRecognizerDirection.Up == obj.Direction) {
+                var i = carouselView.CurrentItemIndex;
+                var messageThread = priorityInbox.GetEmailThread (i);
+                PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                return;
+            }
+            if (UISwipeGestureRecognizerDirection.Down == obj.Direction) {
+                var i = carouselView.CurrentItemIndex;
+                var messageThread = priorityInbox.GetEmailThread (i);
+                var message = messageThread.SingleMessageSpecialCase ();
+                message.UserAction = -1;
+                message.Update ();
+                return;
+            }
+            NcAssert.CaseError ();
+        }
+
         [MonoTouch.Foundation.Export ("CarouselTapSelector:")]
         public void OnDoubleTapCarousel (UIGestureRecognizer sender)
         {
             // FIXME: What to do on double tap?
         }
 
+        ///  IMessageTableViewSourceDelegate
         public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             PerformSegue (identifier, sender);
+        }
+
+        ///  IMessageTableViewSourceDelegate
+        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        {
+            PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox ()));
         }
 
         /// <summary>

@@ -55,6 +55,17 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
+        public McEmailMessageThread GetFirstThread()
+        {
+            if (null == this.messageThreads) {
+                return null;
+            }
+            if (0 == this.messageThreads.Count ()) {
+                return null;
+            }
+            return this.messageThreads.GetEmailThread (0);
+        }
+
         public void RefreshEmailMessages ()
         {
             RefreshCapture.Start ();
@@ -125,7 +136,7 @@ namespace NachoClient.iOS
                 return;
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
-            owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+            owner.MessageThreadSelected (messageThread);
         }
 
         protected const int USER_IMAGE_TAG = 99101;

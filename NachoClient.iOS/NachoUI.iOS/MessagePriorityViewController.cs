@@ -59,7 +59,6 @@ namespace NachoClient.iOS
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = UIColor.White;
             priorityView.AddEscapeButton ();
-            priorityView.AddEscapeButton ();
             priorityView.AddDeferMessageLabel ();
             priorityView.MakeActionButtons ();
             View.AddSubview (priorityView);
@@ -129,9 +128,12 @@ namespace NachoClient.iOS
             owner.CreateMeetingEmailForMessage (this, thread);
         }
 
-        public void CreateTask ()
+        public void AddChili ()
         {
-            owner.CreateTaskForEmailMessage (this, thread);
+            var message = thread.SingleMessageSpecialCase ();
+            message.UserAction = 1;
+            message.Update ();
+            owner.DismissChildMessageEditor (this);
         }
 
         public void CreateDeadline ()

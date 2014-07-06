@@ -47,7 +47,7 @@ namespace NachoClient.iOS
                 //For datepicker actions (CreateDeadline & Custom Defer) Cole is going to focus
                 //On those screens since he has been working with DatePickers. 
                 new ButtonInfo ("Meeting", "navbar-icn-newevent", () => owner.CreateMeeting ()),
-                new ButtonInfo ("Heat", "inbox-icn-chilli", () => owner.CreateMeeting ()),
+                new ButtonInfo ("Heat", "inbox-icn-chilli", () => owner.AddChili ()),
                 new ButtonInfo ("Deadline", "inbox-icn-deadline@2x", () => owner.CreateDeadline ()),
                 new ButtonInfo ("Later Today", "navbar-icn-defer", () => owner.DelayRequest ("Later")),
                 new ButtonInfo ("Tonight", "navbar-icn-defer", () => owner.DelayRequest ("Tonight")),

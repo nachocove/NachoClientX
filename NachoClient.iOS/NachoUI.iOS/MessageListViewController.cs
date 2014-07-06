@@ -78,7 +78,7 @@ namespace NachoClient.iOS
                 }
             };
             saveButton.Clicked += (object sender, EventArgs e) => {
-                var h = new SegueHolder(TableView);
+                var h = new SegueHolder (TableView);
                 PerformSegue ("NachoNowToMessageAction", h);
             };
 
@@ -314,9 +314,16 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
+        ///  IMessageTableViewSourceDelegate
         public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             PerformSegue (identifier, sender);
+        }
+
+        ///  IMessageTableViewSourceDelegate
+        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        {
+            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
         }
 
         /// <summary>

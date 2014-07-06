@@ -12,6 +12,9 @@ namespace NachoCore.Model
     {
         public int ScoreVersion { get; set; }
 
+        /// Did the user take explicit action?
+        public int UserAction { get; set; }
+
         /// How many times the email is read
         public int TimesRead { get; set; }
 
@@ -29,7 +32,7 @@ namespace NachoCore.Model
 
         public double Score { get; set; }
 
-        public bool NeedUpdate { get; set; } 
+        public bool NeedUpdate { get; set; }
 
         /// If there is update that is not uploaded to the synchronization server,
         /// this object is non-null and holds the update.
@@ -119,7 +122,7 @@ namespace NachoCore.Model
             SyncInfo = null;
         }
 
-        public void IncrementTimesRead (int count=1)
+        public void IncrementTimesRead (int count = 1)
         {
             TimesRead += count;
             GetScoreSyncInfo ();
