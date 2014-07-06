@@ -17,7 +17,7 @@ native.Android/src/tld-canon.h
 native.Android/jni/*.h
 native.Android/jni/*.c
 NachoClient.iOS/UploadDSym/nachomail/build
-NachoClient.*/.build_number
+NachoClient.*/.build_number*
 Test.*/.build_number
 NachoClient.*/BuildInfo.cs
 NachoClient.*/LogSettings.cs
