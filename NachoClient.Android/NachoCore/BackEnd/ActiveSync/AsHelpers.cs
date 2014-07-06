@@ -159,8 +159,8 @@ namespace NachoCore.ActiveSync
             if (null != cal.UID) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.UID, cal.UID));
             }
-            if (0 != cal.BodyType) {
-                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, cal.BodyType));
+            if (0 != cal.NativeBodyType) {
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, cal.NativeBodyType));
             }
             return xmlAppData;
         }
@@ -327,7 +327,7 @@ namespace NachoCore.ActiveSync
         public static List<McEmailMessageCategory> ParseEmailCategories (XNamespace ns, XElement categories)
         {
             var list = new List<McEmailMessageCategory> ();
-            if (categories.Elements ().Count() != 0) {
+            if (categories.Elements ().Count () != 0) {
 
                 NcAssert.True (null != categories);
                 NcAssert.True (categories.Name.LocalName.Equals (Xml.Email.Categories));
@@ -470,6 +470,7 @@ namespace NachoCore.ActiveSync
                         TrySetStringFromXml (e, child.Name.LocalName, child.Value);
                         break;
                     case Xml.AirSyncBase.Body:
+                        var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
                         var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                         if (null != bodyElement) {
                             var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
@@ -479,6 +480,7 @@ namespace NachoCore.ActiveSync
                                 var body = McBody.Save (bodyElement.Value); 
                                 e.BodyId = body.Id;
                             }
+                            e.BodyType = bodyType;
                         } else {
                             e.BodyId = 0;
                             Console.WriteLine ("Truncated message from server.");
@@ -552,6 +554,7 @@ namespace NachoCore.ActiveSync
                     c.recurrences.Add (recurrence);
                     break;
                 case Xml.AirSyncBase.Body:
+                    var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     if (null != bodyElement) {
                         var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
@@ -561,13 +564,14 @@ namespace NachoCore.ActiveSync
                             var body = McBody.Save (bodyElement.Value); 
                             c.BodyId = body.Id;
                         }
+                        c.BodyType = bodyType;
                     } else {
                         c.BodyId = 0;
                         Log.Info (Log.LOG_AS, "Truncated or zero-length message from server.");
                     }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
-                    c.BodyType = child.Value.ToInt ();
+                    c.NativeBodyType = child.Value.ToInt ();
                     break;
                 // Elements
                 case Xml.Calendar.AllDayEvent:
@@ -649,7 +653,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.cachedHasAttachments = true;
                     break;
                 case Xml.AirSyncBase.Body:
-                    emailMessage.BodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
+                    var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
                     if (null != bodyElement) {
@@ -660,6 +664,7 @@ namespace NachoCore.ActiveSync
                             var body = McBody.Save (bodyElement.Value); 
                             emailMessage.BodyId = body.Id;
                         }
+                        emailMessage.BodyType = bodyType;
                     } else {
                         emailMessage.BodyId = 0;
                         Console.WriteLine ("Truncated message from server.");
@@ -849,13 +854,13 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                        XNamespace nsEmail = "Email";
-                        var categories = AsHelpers.ParseEmailCategories (nsEmail, child);
-                        if (0 == emailMessage.Categories.Count) {
-                            emailMessage.Categories = categories;
-                        } else {
-                            emailMessage.Categories.AddRange (categories);
-                        }
+                    XNamespace nsEmail = "Email";
+                    var categories = AsHelpers.ParseEmailCategories (nsEmail, child);
+                    if (0 == emailMessage.Categories.Count) {
+                        emailMessage.Categories = categories;
+                    } else {
+                        emailMessage.Categories.AddRange (categories);
+                    }
                     break;
                 case Xml.Email2.LastVerbExecuted:
                     emailMessage.LastVerbExecuted = child.Value.ToInt ();

@@ -68,8 +68,12 @@ namespace NachoCore.Model
         /// The URL for the online meeting
         public string OnlineMeetingExternalLink { get; set; }
 
+        // Specifies the original format type of the item
+        public int NativeBodyType { get; set; }
+
         [Ignore]
         private List<McAttendee> DbAttendees { get; set; }
+
         [Ignore]
         private List<McCalendarCategory> DbCategories { get; set; }
     }
@@ -355,8 +359,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McAttendee> attendees
-        {
+        public List<McAttendee> attendees {
             get {
                 ReadAncillaryData ();
                 return DbAttendees;
@@ -368,8 +371,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McCalendarCategory> categories
-        {
+        public List<McCalendarCategory> categories {
             get {
                 ReadAncillaryData ();
                 return DbCategories;
@@ -385,7 +387,7 @@ namespace NachoCore.Model
             NcResult result = NcResult.OK ();
             if (!HasReadAncillaryData) {
                 result = ForceReadAncillaryData ();
-                if (result.isOK()) {
+                if (result.isOK ()) {
                     HasReadAncillaryData = true;
                 } else {
                     Log.Warn (Log.LOG_CALENDAR, "Fail to read calendar ancillary data (Id={0})", Id);
@@ -417,8 +419,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McException> exceptions
-        {
+        public List<McException> exceptions {
             get {
                 ReadAncillaryData ();
                 return DbExceptions;
@@ -430,8 +431,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McRecurrence> recurrences
-        {
+        public List<McRecurrence> recurrences {
             get {
                 ReadAncillaryData ();
                 return DbRecurrences;
@@ -441,7 +441,7 @@ namespace NachoCore.Model
                 DbRecurrences = value;
             }
         }
-            
+
         private NcResult ReadAncillaryData ()
         {
             if (!HasReadAncillaryData) {

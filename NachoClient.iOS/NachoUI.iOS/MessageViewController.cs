@@ -474,24 +474,40 @@ namespace NachoClient.iOS
                     v.RemoveFromSuperview ();
                 }
             }
-
-            var bodyPath = message.GetBodyPath ();
-            if (null != bodyPath) {
-                using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                    var mime = bodyParser.ParseMessage ();
-                    PlatformHelpers.motd = mime; // for cid handler
-                    MimeHelpers.DumpMessage (mime, 0);
-                    var list = new List<MimeEntity> ();
-                    MimeHelpers.MimeDisplayList (mime, ref list);
-                    RenderDisplayList (list);
-                }
-            }
+                
+            RenderBody (message);
 
             ConfigureAttachments ();
 
             if (0 == DeferLayoutDecrement ()) {
                 LayoutView ();
+            }
+        }
+
+        protected void RenderBody (McEmailMessage message)
+        {
+ 
+            var bodyPath = message.GetBodyPath ();
+            if (null == bodyPath) {
+                return;
+            }
+            switch (message.BodyType) {
+            case McBody.PlainText:
+                RenderTextString (message.GetBody());
+                break;
+            case McBody.HTML:
+                RenderHtmlString (message.GetBody());
+                break;
+            case McBody.RTF:
+                RenderRtfString (message.GetBody());
+                break;
+            case McBody.MIME:
+                RenderMime (bodyPath);
+                break;
+            default:
+                Log.Info (Log.LOG_EMAIL, "BodyType zero; likely old client");
+                RenderMime (bodyPath);
+                break;
             }
         }
 
@@ -555,6 +571,19 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void RenderMime (string bodyPath)
+        {
+            using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                var mime = bodyParser.ParseMessage ();
+                PlatformHelpers.motd = mime; // for cid handler
+                MimeHelpers.DumpMessage (mime, 0);
+                var list = new List<MimeEntity> ();
+                MimeHelpers.MimeDisplayList (mime, ref list);
+                RenderDisplayList (list);
+            }
+        }
+
         protected void RenderDisplayList (List<MimeEntity> list)
         {
             for (var i = 0; i < list.Count; i++) {
@@ -583,11 +612,33 @@ namespace NachoClient.iOS
         {
             var textPart = part as TextPart;
             var text = textPart.Text;
+            RenderTextString (text);
+        }
+
+        void RenderTextString (string text)
+        {
             var label = new UILabel (new RectangleF (0.0f, 0.0f, 320.0f, 1.0f));
             label.Lines = 0;
             label.Font = UIFont.SystemFontOfSize (17.0f);
             label.LineBreakMode = UILineBreakMode.WordWrap;
             label.Text = text;
+            label.SizeToFit ();
+            label.Tag = MESSAGE_PART_TAG;
+            view.AddSubview (label);
+        }
+
+        void RenderRtfString(string rtf)
+        {
+            var nsError = new NSError ();
+            var nsAttributes = new NSAttributedStringDocumentAttributes ();
+            nsAttributes.DocumentType = NSDocumentType.RTF;
+            var attributedString = new NSAttributedString (rtf, nsAttributes, ref nsError);
+            // Put attributed string into a label
+            var label = new UILabel (new RectangleF (0.0f, 0.0f, 320.0f, 1.0f));
+            label.Lines = 0;
+            label.Font = UIFont.SystemFontOfSize (17.0f);
+            label.LineBreakMode = UILineBreakMode.WordWrap;
+            label.AttributedText = attributedString;
             label.SizeToFit ();
             label.Tag = MESSAGE_PART_TAG;
             view.AddSubview (label);
@@ -621,7 +672,11 @@ namespace NachoClient.iOS
         {
             var textPart = part as TextPart;
             var html = textPart.Text;
+            RenderHtmlString (html);
+        }
 
+        void RenderHtmlString (string html)
+        {
             var wv = new UIWebView (new RectangleF (0, 0, View.Frame.Width, 1));
             wv.ScrollView.Bounces = false;
             wv.ScrollView.ScrollEnabled = true;

@@ -136,6 +136,9 @@ namespace NachoCore.Model
         /// Nickname for the contact
         public string NickName { get; set; }
 
+        // Specifies the original format type of the item
+        public int NativeBodyType { get; set; }
+
         // Color of contact's profile circle if they have not set their photo or a photo cannot be found
         public int CircleColor { get; set; }
 
@@ -818,8 +821,8 @@ namespace NachoCore.Model
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
             }
 
-            if (0 != BodyType) {
-                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, BodyType));
+            if (0 != NativeBodyType) {
+                xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.NativeBodyType, NativeBodyType));
             }
             if (null != Alias) {
                 xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Alias, Alias));

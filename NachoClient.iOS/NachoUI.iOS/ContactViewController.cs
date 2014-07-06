@@ -243,9 +243,7 @@ namespace NachoClient.iOS
             if (0 == m.BodyId) {
                 return;
             }
-            if (1 != m.BodyType) {
-                return;
-            }
+
             var body = m.GetBody ();
             if (null != body) {
                 var e = new MultilineElement (body);

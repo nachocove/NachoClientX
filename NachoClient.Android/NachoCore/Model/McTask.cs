@@ -134,7 +134,7 @@ namespace NachoCore.Model
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Body:
-                    // FIXME - capture Type too.
+                    var bodyType = child.Element (baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
                     var bodyElement = child.Element (baseNs + Xml.AirSyncBase.Data);
                     if (null != bodyElement) {
                         var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
@@ -144,6 +144,7 @@ namespace NachoCore.Model
                             var body = McBody.Save(bodyElement.Value); 
                             BodyId = body.Id;
                         }
+                        BodyType = bodyType;
                     } else {
                         BodyId = 0;
                     }

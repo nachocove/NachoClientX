@@ -5,8 +5,18 @@ namespace NachoCore.Model
 {
     public class McBody : McObject
     {
-        // FIXME - we should carry the encoding type (RTF, Mime, etc) here.
         public bool IsValid { get; set; }
+
+        /// Body type is stored in McItem, along with the item's index to McBody.
+        /// This circumvents reading db just to get body type. Most references to
+        /// bodies are to get its path, which is computed with the body id, without
+        /// reading from the database.
+        /// 
+        /// AirSync.TypeCode PlainText_1, Html_2, Rtf_3, Mime_4
+        public const int PlainText = 1;
+        public const int HTML = 2;
+        public const int RTF = 3;
+        public const int MIME = 4;
 
         public string Body {
             get { return Get (Id); }
@@ -45,19 +55,19 @@ namespace NachoCore.Model
             body.SaveDone ();
             return body;
         }
-            
+
         public FileStream SaveFileStream ()
         {
             return File.OpenWrite (GetBodyPath (Id));
         }
 
-        public static int Duplicate(int id)
+        public static int Duplicate (int id)
         {
             if (0 == id) {
                 return 0;
             }
-            var body = SaveStart();
-            File.Copy(GetBodyPath(id), GetBodyPath(body.Id));
+            var body = SaveStart ();
+            File.Copy (GetBodyPath (id), GetBodyPath (body.Id));
             body.SaveDone ();
             return body.Id;
         }

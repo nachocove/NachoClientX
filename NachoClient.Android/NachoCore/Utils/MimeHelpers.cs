@@ -121,11 +121,23 @@ namespace NachoCore.Utils
             if (null == path) {
                 return null;
             }
-            using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
-                var mimeParser = new MimeParser (fileStream, true);
-                var mimeMessage = mimeParser.ParseMessage ();
-                return ExtractSummary (mimeMessage);
+            if (McBody.MIME == message.GetBodyType()) {
+                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
+                    var mimeParser = new MimeParser (fileStream, true);
+                    var mimeMessage = mimeParser.ParseMessage ();
+                    return ExtractSummary (mimeMessage);
+                }
             }
+            if (McBody.PlainText == message.GetBodyType ()) {
+                var body = message.GetBody ();
+                if (null == body) {
+                    return null;
+                }
+                var raw = body.Substring (0, Math.Min (body.Length, 1000));
+                var cooked = System.Text.RegularExpressions.Regex.Replace(raw, @"\s+", " ");
+                return cooked;
+            }
+            return "No summary available.";
         }
 
         static public string ExtractSummary (MimeMessage mimeMessage)

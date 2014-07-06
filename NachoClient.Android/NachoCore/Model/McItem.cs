@@ -20,7 +20,7 @@ namespace NachoCore.Model
         /// Index of Body container
         public int BodyId { get; set; }
 
-        ///  AirSync.TypeCode; also NativeBodyType
+        /// Type of the transferred body
         public int BodyType { get; set; }
 
         [Indexed]
@@ -112,6 +112,11 @@ namespace NachoCore.Model
         public string GetBodyPath ()
         {
             return McBody.GetBodyPath (BodyId);
+        }
+
+        public int GetBodyType ()
+        {
+            return BodyType;
         }
 
         protected void DeleteBody ()

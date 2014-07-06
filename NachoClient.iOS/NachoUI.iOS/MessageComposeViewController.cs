@@ -30,7 +30,6 @@ namespace NachoClient.iOS
 
 
         bool suppressLayout;
-        bool showAttachments;
         float keyboardHeight;
 
         UcAddressBlock toView;

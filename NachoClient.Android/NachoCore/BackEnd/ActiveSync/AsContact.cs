@@ -211,6 +211,9 @@ namespace NachoCore.ActiveSync
         /// Index of Body container
         public int BodyId { get; set; }
 
+        /// Type of the body in the container
+        public int BodyType { get; set; }
+
         /// How the body stored on the server.
         /// Beware: Not documented in MS-ASCNTC.
         public int NativeBodyType { get; set; }
@@ -263,6 +266,7 @@ namespace NachoCore.ActiveSync
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Body:
+                    var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
                     var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
                     if (null != bodyElement) {
                         var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
@@ -272,6 +276,7 @@ namespace NachoCore.ActiveSync
                             var body = McBody.Save (bodyElement.Value);
                             c.BodyId = body.Id;
                         }
+                        c.BodyType = bodyType;
                     } else {
                         c.BodyId = 0;
                         Log.Info (Log.LOG_AS, "Truncated message or zero-length body from server.");
@@ -373,7 +378,7 @@ namespace NachoCore.ActiveSync
             n.ServerId = c.ServerId;
 
             n.BodyId = c.BodyId;
-            n.NativeBodyType = c.BodyType;
+            n.NativeBodyType = c.NativeBodyType;
 
             n.Alias = c.Alias;
             n.CompanyName = c.CompanyName;
@@ -471,7 +476,7 @@ namespace NachoCore.ActiveSync
             c.ServerId = ServerId;
 
             c.BodyId = BodyId;
-            c.BodyType = NativeBodyType;
+            c.NativeBodyType = NativeBodyType;
 
             c.Alias = Alias;
             c.CompanyName = CompanyName;
