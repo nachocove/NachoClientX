@@ -41,7 +41,6 @@ namespace NachoClient.iOS
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
-            this.View.AddGestureRecognizer (this.RevealViewController ().PanGestureRecognizer);
 
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { editButton };
