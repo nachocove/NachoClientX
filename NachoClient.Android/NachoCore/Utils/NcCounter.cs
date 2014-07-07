@@ -2,12 +2,24 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 
 namespace NachoCore.Utils
 {
-    public class NcCounter
+    public class NcCounter : IDisposable
     {
+        // Keep track of all instantiated NcCounter
+        private static ConcurrentDictionary<string, NcCounter> ActiveList_;
+        public static ConcurrentDictionary<string, NcCounter> ActiveList {
+            get {
+                if (null == ActiveList_) {
+                    ActiveList_ = new ConcurrentDictionary<string, NcCounter> ();
+                }
+                return ActiveList_;
+            }
+        }
+
         public string Name; // string used for reporting to telemetry
 
         // Configuration of the counter
@@ -19,7 +31,6 @@ namespace NachoCore.Utils
                 return _UpdateParent;
             }
         }
-
 
         // If true, it automatically resets the count when timer fires
         private bool _AutoReset;
@@ -91,7 +102,7 @@ namespace NachoCore.Utils
 
                 // Create a new timer if necessary
                 if (0 < _ReportPeriod) {
-                    Timer = new NcTimer ("NcCounter", NcCounter.Callback, this, 
+                    Timer = new NcPausableTimer ("NcCounter", NcCounter.Callback, this,
                         new TimeSpan (deltaTick), new TimeSpan (0, 0, _ReportPeriod));
                 }
 
@@ -118,7 +129,7 @@ namespace NachoCore.Utils
         // counters.
         private NcCounter Parent;
         private List<NcCounter> Children;
-        private NcTimer Timer;
+        private NcPausableTimer Timer;
         private Int64 _Count;
         public Int64 Count {
             get {
@@ -147,6 +158,7 @@ namespace NachoCore.Utils
 
         public NcCounter (string name, bool updateParent=false)
         {
+            NcAssert.True (!ActiveList.ContainsKey (name));
             Name = name;
             _Lock = new Mutex ();
             _AutoReset = false;
@@ -154,6 +166,9 @@ namespace NachoCore.Utils
             _UpdateParent = updateParent;
             Children = new List<NcCounter> ();
             UtcStart = DateTime.UtcNow;
+
+            bool added = ActiveList.TryAdd (name, this);
+            NcAssert.True (added);
         }
 
         public NcCounter AddChild (string name)
@@ -260,6 +275,28 @@ namespace NachoCore.Utils
             }
             ReportInternal (DateTime.UtcNow);
             UnlockDownward ();
+        }
+
+        public void Dispose ()
+        {
+            Timer.Dispose ();
+            NcCounter counter;
+            bool retval = ActiveList.TryRemove (Name, out counter);
+            NcAssert.True (retval && (this == counter));
+        }
+
+        public static void StopService ()
+        {
+            foreach (NcCounter c in ActiveList.Values) {
+                c.Timer.Pause ();
+            }
+        }
+
+        public static void StartService ()
+        {
+            foreach (NcCounter c in ActiveList.Values) {
+                c.Timer.Resume ();
+            }
         }
     }
 }

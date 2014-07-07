@@ -12,6 +12,10 @@ namespace Test.common
             get {
                 return _CurrentMillisecond;
             }
+            set {
+                NcAssert.True ((value > _CurrentMillisecond) || (0 == value));
+                _CurrentMillisecond = value;
+            }
         }
 
         private long StartMillisecond;
@@ -48,11 +52,6 @@ namespace Test.common
         public void Reset ()
         {
             _ElapsedMilliseconds = 0;
-        }
-
-        public static void AddTick (long msec)
-        {
-            _CurrentMillisecond += msec;
         }
     }
 }

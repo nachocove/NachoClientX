@@ -26,7 +26,7 @@ namespace NachoCore.Utils
         private Object InstanceLockObj;
         private bool HasFired = false;
 
-        protected TimerCallback PartialInit (TimerCallback c)
+        public TimerCallback PartialInit (TimerCallback c)
         {
             lock (StaticLockObj) {
                 Id = ++nextId;
