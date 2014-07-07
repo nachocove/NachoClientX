@@ -9,6 +9,7 @@ using FolderOps = Test.iOS.CommonFolderOps;
 using PathOps = Test.iOS.CommonPathOps;
 using Operations = NachoCore.Model.McPending.Operations;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using ClassCode = NachoCore.ActiveSync.Xml.AirSync.ClassCode;
 using NachoCore.Model;
 using System.Text;
 using NachoCore.Utils;
@@ -151,13 +152,15 @@ namespace Test.iOS
                 return item;
             }
                 
-            public static string MakeSingleChangeXml (string changeType, string serverId, string parentId, string displayName, TypeCode typeCode)
+            public static string SingleFolderChangeXml (string changeType, string serverId, string parentId, string displayName, TypeCode typeCode)
             {
-                return FolderHierarchyRoot (1, (ns) => new XElement (ns + changeType,
-                    new XElement (ns + "ServerId", serverId),
-                    new XElement (ns + "ParentId", parentId),
-                    new XElement (ns + "DisplayName", displayName),
-                    new XElement (ns + "Type", (int)typeCode)));
+                return FolderHierarchyRoot (1, (ns) => {
+                    return new XElement (ns + changeType,
+                        new XElement (ns + "ServerId", serverId),
+                        new XElement (ns + "ParentId", parentId),
+                        new XElement (ns + "DisplayName", displayName),
+                        new XElement (ns + "Type", (int)typeCode));
+                });
             }
 
             public static string FolderHierarchyRoot (int count, Func<XNamespace, XElement> operation)
@@ -175,17 +178,74 @@ namespace Test.iOS
 
             public static string AddSingleFolderXml (string serverId, string parentId, string displayName, TypeCode typeCode)
             {
-                return MakeSingleChangeXml ("Add", serverId, parentId, displayName, typeCode);
+                return SingleFolderChangeXml ("Add", serverId, parentId, displayName, typeCode);
             }
 
             public static string DeleteSingleFolderXml (string serverId, string parentId, string displayName, TypeCode typeCode)
             {
-                return MakeSingleChangeXml ("Delete", serverId, parentId, displayName, typeCode);
+                return SingleFolderChangeXml ("Delete", serverId, parentId, displayName, typeCode);
             }
 
             public static string UpdateSingleFolderXml (string serverId, string parentId, string displayName, TypeCode typeCode)
             {
-                return MakeSingleChangeXml ("Update", serverId, parentId, displayName, typeCode);
+                return SingleFolderChangeXml ("Update", serverId, parentId, displayName, typeCode);
+            }
+
+            // Generate mock AirSync response that has a "Commands" section (as opposed to a "Responses" section)
+            public static string AirSyncCmdHierarchyRoot (string parentId, Func<XNamespace, XElement> operation)
+            {
+                XNamespace ns = "AirSync";
+                XNamespace nsEmail = ClassCode.Email;
+                XNamespace nsCal = ClassCode.Calendar;
+                XNamespace nsCont = ClassCode.Contacts;
+                XNamespace nsTask = ClassCode.Tasks;
+
+                XElement tree = new XElement (ns + "Sync",
+                    new XAttribute (XNamespace.Xmlns + "tasks", nsTask),
+                    new XAttribute (XNamespace.Xmlns + "calendar", nsCal),
+                    new XAttribute (XNamespace.Xmlns + "contacts", nsCont),
+                    new XAttribute (XNamespace.Xmlns + "email", nsEmail),
+                                    new XElement (ns + "Collections",
+                                        new XElement (ns + "Collection",
+                                            new XElement (ns + "SyncKey", 7),
+                                            new XElement (ns + "CollectionId", parentId),
+                                            new XElement (ns + "Status", 1),
+                                            new XElement (ns + "Commands",
+                                                operation (ns)))));
+                return tree.ToString ();
+            }
+
+            // item-specific update code goes in operation lambda; must prefix with XNamespace of item
+            public static string SyncAddItemCmdXml (string serverId, string parentId, Func<XElement> operation)
+            {
+                return AirSyncCmdHierarchyRoot (parentId, (ns) => {
+                    return new XElement (ns + "Add",
+                        new XElement (ns + "ServerId", serverId),
+                        new XElement (ns + "ApplicationData", 
+                            operation ()));
+                });
+            }
+
+            // item-specific update code goes in operation lambda; must prefix with XNamespace of item
+            public static string SyncUpdateCmdItemXml (string clientId, string serverId, string parentId, string classCode, Func <XDocument> operation)
+            {
+                return AirSyncCmdHierarchyRoot (parentId, (ns) => {
+                    return new XElement (ns + "Change",
+                        new XElement (ns + "ServerId", serverId),
+                        new XElement (ns + "Class", classCode),
+                        new XElement (ns + "ApplicationData",
+                            operation ()));
+                });
+            }
+
+            // item-specific update code goes in operation lambda; must prefix with XNamespace of item
+            public static string SyncDeleteCmdItemXml (string serverId, string parentId, string classCode)
+            {
+                return AirSyncCmdHierarchyRoot (parentId, (ns) => {
+                    return new XElement (ns + "Delete",
+                        new XElement (ns + "ServerId", serverId),
+                        new XElement (ns + "Class", classCode));
+                });
             }
         }
 
@@ -594,12 +654,11 @@ namespace Test.iOS
             }
         }
 
-        [TestFixture]
+//        [TestFixture]
         public class TestSyncCmdAdd : BaseConfResTest
         {
-
-
-            [Test]
+            // create cal, contact, and task
+//            [Test]
             public void TestSyncAddMatch ()
             {
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
@@ -610,13 +669,26 @@ namespace Test.iOS
 
                 string token = null;
                 DoClientSideCmds (() => {
-                    token = ProtoControl.CreateContactCmd (cal.Id, topFolder.Id);
+                    token = ProtoControl.CreateCalCmd (cal.Id, topFolder.Id);
                 });
 
-//                ExecuteConflictTest (SyncCmd, )
+                string newSubject = "(UPDATED BY SERVER)";
+                XNamespace nsCal = ClassCode.Calendar;
+                var syncResponseXml = SyncAddItemCmdXml (cal.ServerId, topFolder.ServerId, () => {
+                    return new XElement (nsCal + newSubject);
+                });
+
+                ExecuteConflictTest (SyncCmd, syncResponseXml);
+
+                var foundItem = McItem.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
+                Assert.NotNull (foundItem, "Item should be added by server");
+                Assert.AreEqual (newSubject, foundItem.Subject, "Item should be added by server, not by client");
+
+                var pendResponseOp = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (pendResponseOp, "Pending operation should be deleted by SyncCommand");
             }
 
-            [Test]
+//            [Test]
             public void TestSyncAddDom ()
             {
                 // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
