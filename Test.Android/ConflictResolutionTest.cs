@@ -17,6 +17,9 @@ using System.Threading;
 
 
 /* Response code document: http://msdn.microsoft.com/en-us/library/ff631512(v=exchg.80).aspx */
+using System.Xml.Linq;
+
+
 namespace Test.iOS
 {
     public class CreatedFolder
@@ -45,12 +48,12 @@ namespace Test.iOS
             public AsFolderSyncCommand FolderCmd;
             public AsSyncCommand SyncCmd;
 
-            public string SyncResponseAdd = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>3</Count>\n    <Add>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Add>\n    <Add>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Sub-Cal-Folder</DisplayName>\n      <Type>13</Type>\n    </Add>\n    <Add>\n      <ServerId>3</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Sub-Task-Folder</DisplayName>\n      <Type>15</Type>\n    </Add>\n  </Changes>\n</FolderSync>\n";
-            public string SyncResponseAddSub = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Add>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Child-Folder</DisplayName>\n      <Type>1</Type>\n    </Add>\n  </Changes>\n</FolderSync>\n";
-            public string SyncResponseDelete = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Delete>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Delete>\n  </Changes>\n</FolderSync>";
-            public string SyncResponseDeleteSub = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Delete>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Child-Folder</DisplayName>\n      <Type>1</Type>\n    </Delete>\n  </Changes>\n</FolderSync>";
-            public string SyncResponseUpdateRename = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Update>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder (UPDATED BY SERVER)</DisplayName>\n      <Type>1</Type>\n    </Update>\n  </Changes>\n</FolderSync>\n";
-            public string SyncResponseUpdateMove = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>1</Count>\n    <Update>\n      <ServerId>1</ServerId>\n      <ParentId>2</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Update>\n  </Changes>\n</FolderSync>";
+            public string SyncResponseAddMultiple = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<FolderSync xmlns=\"FolderHierarchy\">\n  <Status>1</Status>\n  <SyncKey>1</SyncKey>\n  <Changes>\n    <Count>3</Count>\n    <Add>\n      <ServerId>1</ServerId>\n      <ParentId>0</ParentId>\n      <DisplayName>Top-Level-Folder</DisplayName>\n      <Type>1</Type>\n    </Add>\n    <Add>\n      <ServerId>2</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Sub-Cal-Folder</DisplayName>\n      <Type>13</Type>\n    </Add>\n    <Add>\n      <ServerId>3</ServerId>\n      <ParentId>1</ParentId>\n      <DisplayName>Sub-Task-Folder</DisplayName>\n      <Type>15</Type>\n    </Add>\n  </Changes>\n</FolderSync>\n";
+            public string SyncResponseAddSub = AddSingleFolderXml ("2", "1", "Child-Folder", TypeCode.UserCreatedGeneric_1);
+            public string SyncResponseDeleteTop = DeleteSingleFolderXml ("1", "0", "Top-Level-Folder", TypeCode.UserCreatedGeneric_1);
+            public string SyncResponseDeleteSub = DeleteSingleFolderXml ("2", "1", "Child-Folder", TypeCode.UserCreatedGeneric_1);
+            public string SyncResponseUpdateRenameTop = UpdateSingleFolderXml ("1", "0", "Top-Level-Folder (UPDATED BY SERVER)", TypeCode.UserCreatedGeneric_1);
+            public string SyncResponseUpdateMoveTop = UpdateSingleFolderXml ("1", "2", "Top-Level-Folder", TypeCode.UserCreatedGeneric_1);
 
             // These names correspond to the DisplayName entries in the response XML messages
             public const string TopFolderName = "Top-Level-Folder";
@@ -147,6 +150,43 @@ namespace Test.iOS
                 createCmd (item.Id, folder.Id);
                 return item;
             }
+                
+            public static string MakeSingleChangeXml (string changeType, string serverId, string parentId, string displayName, TypeCode typeCode)
+            {
+                return FolderHierarchyRoot (1, (ns) => new XElement (ns + changeType,
+                    new XElement (ns + "ServerId", serverId),
+                    new XElement (ns + "ParentId", parentId),
+                    new XElement (ns + "DisplayName", displayName),
+                    new XElement (ns + "Type", (int)typeCode)));
+            }
+
+            public static string FolderHierarchyRoot (int count, Func<XNamespace, XElement> operation)
+            {
+                XNamespace ns = "FolderHierarchy";
+                XElement tree = new XElement (ns + "FolderSync",
+                                    new XElement (ns + "Status", 1),
+                                    new XElement (ns + "SyncKey", 1),
+                                    new XElement (ns + "Changes",
+                                        new XElement (ns + "Count", count),
+                        operation (ns)
+                    ));
+                return tree.ToString ();
+            }
+
+            public static string AddSingleFolderXml (string serverId, string parentId, string displayName, TypeCode typeCode)
+            {
+                return MakeSingleChangeXml ("Add", serverId, parentId, displayName, typeCode);
+            }
+
+            public static string DeleteSingleFolderXml (string serverId, string parentId, string displayName, TypeCode typeCode)
+            {
+                return MakeSingleChangeXml ("Delete", serverId, parentId, displayName, typeCode);
+            }
+
+            public static string UpdateSingleFolderXml (string serverId, string parentId, string displayName, TypeCode typeCode)
+            {
+                return MakeSingleChangeXml ("Update", serverId, parentId, displayName, typeCode);
+            }
         }
 
         public class FolderCreateConfResTest : BaseConfResTest
@@ -163,7 +203,7 @@ namespace Test.iOS
                     CreateAndGetFolderWithCmd (topFolder.Id, SubTaskFolderName, TypeCode.UserCreatedTasks_15, topFolder.ServerId);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseAdd);
+                ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
 
                 // Assert that the correct changes to the Q and to the Model DB happen because of the FolderSync.
                 var foundTopFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, "1");
@@ -192,7 +232,7 @@ namespace Test.iOS
                     token = ProtoControl.CreateFolderCmd (-1, folderName, badType); 
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseAdd);
+                ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
 
                 var foundTopFolder = GetCreatedFolder (defaultAccountId, TypeCode.UserCreatedGeneric_1, "0", folderName);
                 var pending = McPending.QueryByToken (defaultAccountId, token);
@@ -214,7 +254,7 @@ namespace Test.iOS
                     token = ProtoControl.CreateFolderCmd (-1, folderName, type);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseAdd);
+                ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
 
                 var foundTopFolder = GetCreatedFolder (defaultAccountId, TypeCode.UserCreatedGeneric_1, "0", folderName);
                 var pending = McPending.QueryByToken (defaultAccountId, token);
@@ -242,7 +282,7 @@ namespace Test.iOS
                 });
 
                 // deletes top folder
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 var subFolderPending = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (subFolderPending, "Should delete pending if the destination for the new folder is being deleted by the server");
@@ -263,7 +303,7 @@ namespace Test.iOS
                 });
 
                 // deletes top folder
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 var subFolderPending = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (subFolderPending, "Should delete pending if the destination for the new folder is being deleted by the server");
@@ -308,7 +348,7 @@ namespace Test.iOS
                     token = ProtoControl.DeleteFolderCmd (topFolder.Id);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (pendDeleteOp, "Should delete pending FolderDelete because delete has already happened on server");
@@ -332,7 +372,7 @@ namespace Test.iOS
                     token = ProtoControl.DeleteFolderCmd (childFolder.Id);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (pendDeleteOp, "Should delete pending FolderDelete because delete of parent already happened on server");
@@ -386,7 +426,7 @@ namespace Test.iOS
                     token = ProtoControl.RenameFolderCmd (childFolder.Id, newName);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 // parent and child folder should be deleted by server cmd
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -412,7 +452,7 @@ namespace Test.iOS
                     token = ProtoControl.RenameFolderCmd (topFolder.Id, newName);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseUpdateRename);
+                ExecuteConflictTest (FolderCmd, SyncResponseUpdateRenameTop);
 
                 // top-level folder should be updated by server, not client
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -446,7 +486,7 @@ namespace Test.iOS
                 });
 
                 // should move top folder into siblingFolder
-                ExecuteConflictTest (FolderCmd, SyncResponseUpdateMove);
+                ExecuteConflictTest (FolderCmd, SyncResponseUpdateMoveTop);
 
                 // top-level folder should be updated by server, not client
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -517,7 +557,7 @@ namespace Test.iOS
                     token = ProtoControl.DnldAttCmd (att.Id);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 var foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, email.ServerId);
                 Assert.Null (foundEmail, "Server delete of parent folder should also delete email");
@@ -544,13 +584,42 @@ namespace Test.iOS
                     token = ProtoControl.RespondCalCmd (cal.Id, response);
                 });
 
-                ExecuteConflictTest (FolderCmd, SyncResponseDelete);
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 var foundCal = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
                 Assert.Null (foundCal, "Server delete of parent folder should also delete sub calendar");
 
                 var pendResponseOp = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (pendResponseOp, "Pending meeting response operation should be deleted when a folder that dominates the item is deleted");
+            }
+        }
+
+        [TestFixture]
+        public class TestSyncCmdAdd : BaseConfResTest
+        {
+
+
+            [Test]
+            public void TestSyncAddMatch ()
+            {
+                // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
+                var topFolder = CreateTopFolder (withPath: true);
+                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
+                topFolder.Link (cal);
+                PathOps.CreatePath (defaultAccountId, cal.ServerId, topFolder.ServerId);
+
+                string token = null;
+                DoClientSideCmds (() => {
+                    token = ProtoControl.CreateContactCmd (cal.Id, topFolder.Id);
+                });
+
+//                ExecuteConflictTest (SyncCmd, )
+            }
+
+            [Test]
+            public void TestSyncAddDom ()
+            {
+                // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
             }
         }
 
