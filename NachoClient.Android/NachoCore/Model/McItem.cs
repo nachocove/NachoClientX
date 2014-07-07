@@ -17,15 +17,20 @@ namespace NachoCore.Model
         [Indexed]
         public bool HasBeenGleaned { get; set; }
 
-        public enum BodyStateEnum { Whole, Truncated, Missing };
+        public enum BodyStateEnum { Whole_0 = 0, Truncated_1 = 1, Missing_2 = 2 };
         [Indexed]
         public BodyStateEnum BodyState { get; set; }
+
+        // Valid only when the body is Missing or Truncated.
+        public int EstimatedBodySize { get; set; }
 
         /// Index of Body container
         public int BodyId { get; set; }
 
         /// Type of the transferred body
         public int BodyType { get; set; }
+
+        public string BodyPreview { get; set; }
 
         [Indexed]
         public uint PendingRefCount { get; set; }
