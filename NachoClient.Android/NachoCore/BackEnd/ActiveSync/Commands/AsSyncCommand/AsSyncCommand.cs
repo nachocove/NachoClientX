@@ -161,7 +161,7 @@ namespace NachoCore.ActiveSync
         {
             var task = McObject.QueryById<McTask> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
-                new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
+                          new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
                 McFolderEntry.ClassCodeEnum.Tasks) {
                 add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Tasks));
@@ -208,9 +208,18 @@ namespace NachoCore.ActiveSync
                     var options = new XElement (m_ns + Xml.AirSync.Options);
                     switch (classCodeEnum) {
                     case McFolderEntry.ClassCodeEnum.Email:
-                    case McFolderEntry.ClassCodeEnum.Calendar:
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                            new XElement (m_baseNs + Xml.AirSync.TruncationSize, "128"),
+                            new XElement (m_baseNs + Xml.AirSync.AllOrNone, "1"),
+                            new XElement (m_baseNs + Xml.AirSync.Preview, "128")));
+                        break;
+
+                    case McFolderEntry.ClassCodeEnum.Calendar:
+                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSync.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
                             new XElement (m_baseNs + Xml.AirSync.TruncationSize, "100000000")));
@@ -766,8 +775,8 @@ namespace NachoCore.ActiveSync
             lock (PendingResolveLockObj) {
                 var pendingChanges = PendingList.Where (x => 
                 x.State == McPending.StateEnum.Dispatched &&
-                                 (x.Operation == McPending.Operations.CalUpdate ||
-                                 x.Operation == McPending.Operations.ContactUpdate));
+                                     (x.Operation == McPending.Operations.CalUpdate ||
+                                     x.Operation == McPending.Operations.ContactUpdate));
                 foreach (var pendingChange in pendingChanges) {
                     pendingChange.ResolveAsSuccess (BEContext.ProtoControl);
                 }

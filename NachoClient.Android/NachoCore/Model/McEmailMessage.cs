@@ -276,6 +276,22 @@ namespace NachoCore.Model
                 accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
+        public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int folderId, int limit)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                " e.BodyIsTruncated = 1 " +
+                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, limit);
+        }
+
         public static List<McEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McEmailMessageIndex> (

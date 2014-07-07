@@ -17,6 +17,10 @@ namespace NachoCore.Model
         [Indexed]
         public bool HasBeenGleaned { get; set; }
 
+        public enum BodyStateEnum { Whole, Truncated, Missing };
+        [Indexed]
+        public BodyStateEnum BodyState { get; set; }
+
         /// Index of Body container
         public int BodyId { get; set; }
 

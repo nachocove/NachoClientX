@@ -168,6 +168,7 @@ namespace NachoCore.ActiveSync
             public const string Ns = "AirSync";
             // Alpha order.
             public const string Add = "Add";
+            public const string AllOrNone = "AllOrNone";
             public const string ApplicationData = "ApplicationData";
             public const string BodyPreference = "BodyPreference";
             public const string Change = "Change";
@@ -187,6 +188,7 @@ namespace NachoCore.ActiveSync
             public const string MimeSupport = "MIMESupport";
             public const string MoreAvailable = "MoreAvailable";
             public const string Options = "Options";
+            public const string Preview = "Preview";
             public const string Responses = "Responses";
             public const string ServerId = "ServerId";
             public const string SoftDelete = "SoftDelete";
