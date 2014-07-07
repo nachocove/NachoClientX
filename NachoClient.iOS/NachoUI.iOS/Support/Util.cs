@@ -423,6 +423,22 @@ namespace NachoClient
             return image;
         }
 
+        public static UIImage DrawCalDot (UIColor circleColor)
+        {
+            var size = new SizeF (10, 10);
+            var origin = new PointF (0, 0);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (circleColor.CGColor);
+            ctx.FillEllipseInRect (new RectangleF (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
         /// <summary>
         /// Converts a users name into capitalized initials
         /// </summary>

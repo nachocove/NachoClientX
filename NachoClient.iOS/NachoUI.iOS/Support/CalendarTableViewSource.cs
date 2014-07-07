@@ -253,13 +253,13 @@ namespace NachoClient.iOS
             subjectLabelView.Hidden = compactMode;
             if (compactMode) {
                 compactSubjectLabelView.Text = subject;
-                dotView.Frame = new RectangleF (29, 23, 12, 12);
+                dotView.Frame = new RectangleF (30, 25, 9, 9);
 
             } else {
                 subjectLabelView.Text = subject;
-                dotView.Frame = new RectangleF (29, 18, 12, 12);
+                dotView.Frame = new RectangleF (30, 20, 9, 9);
             }
-            dotView.Image = UIImage.FromBundle ("cal-dot-icn");
+            dotView.Image = Util.DrawCalDot(A.Color_CalDotBlue);
 
             // Duration label view
             var durationLabelView = cell.ContentView.ViewWithTag (DURATION_TAG) as UILabel;
