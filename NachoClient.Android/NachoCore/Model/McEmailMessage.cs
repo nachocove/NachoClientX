@@ -287,7 +287,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.BodyIsTruncated = 1 " +
+                " e.BodyState != 0 " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
                 accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, limit);
         }
