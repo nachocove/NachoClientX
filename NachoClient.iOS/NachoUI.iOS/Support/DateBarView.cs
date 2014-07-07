@@ -265,12 +265,10 @@ namespace NachoClient.iOS
                     if (true == button.Selected) {
                         button.BackgroundColor = UIColor.White;
                         button.Selected = false;
-                        //button.Enabled = true;
                     } 
                     if (i == selectedButtonTag - 100) {
                         button.BackgroundColor = A.Color_FEBA32;
                         button.Selected = true;
-                        //button.Enabled = false;
                     }
                     i++;
                 }
@@ -280,12 +278,10 @@ namespace NachoClient.iOS
                     if (true == button.Selected) {
                         button.BackgroundColor = A.Color_NachoNowBackground;
                         button.Selected = false;
-                        //button.Enabled = true;
                     } 
                     if (i == selectedButtonTag - 100) {
                         button.BackgroundColor = A.Color_FEBA32;
                         button.Selected = true;
-                        //button.Enabled = false;
                     }
                     i++;
                 }
@@ -295,12 +291,10 @@ namespace NachoClient.iOS
                     if (true == button.Selected) {
                         button.BackgroundColor = UIColor.White;
                         button.Selected = false;
-                        //button.Enabled = true;
                     } 
                     if (i == selectedButtonTag - 100) {
                         button.BackgroundColor = A.Color_FEBA32;
                         button.Selected = true;
-                        //button.Enabled = false;
                     }
                     i++;
                 }
@@ -311,12 +305,9 @@ namespace NachoClient.iOS
                     if (i == selectedButtonTag - 100) {
                         button.BackgroundColor = A.Color_FEBA32;
                         button.Selected = true;
-                        //button.Enabled = false;
                     } else {
                         button.BackgroundColor = A.Color_NachoNowBackground;
                         button.Selected = false;
-                        //button.Enabled = true;
-
                     } 
                     i++;
                 }

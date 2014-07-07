@@ -1090,12 +1090,12 @@
     <BundleResource Include="Resources\icn-archive%402x.png" />
     <BundleResource Include="Resources\icn-attach-files.png" />
     <BundleResource Include="Resources\icn-attach-files%402x.png" />
+    <BundleResource Include="Resources\icn-send.png" />
+    <BundleResource Include="Resources\icn-send%402x.png" />
     <BundleResource Include="Resources\icn-calendar-top-pressed.png" />
     <BundleResource Include="Resources\icn-calendar-top-pressed%402x.png" />
     <BundleResource Include="Resources\icn-calendar-top.png" />
     <BundleResource Include="Resources\icn-calendar-top%402x.png" />
-    <BundleResource Include="Resources\icn-send.png" />
-    <BundleResource Include="Resources\icn-send%402x.png" />
     <BundleResource Include="Resources\menu-attachments.png" />
     <BundleResource Include="Resources\menu-attachments%402x.png" />
     <BundleResource Include="Resources\menu-calendar.png" />
