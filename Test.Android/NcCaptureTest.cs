@@ -42,7 +42,7 @@ namespace Test.common
         private void CaptureStartStop (NcCapture cap, string kind, long elapsed, string expected)
         {
             cap.Start ();
-            MockStopwatch.AddTick (elapsed);
+            MockStopwatch.CurrentMillisecond += elapsed;
             cap.Stop ();
             CaptureCheck (kind, expected);
         }
@@ -80,12 +80,12 @@ namespace Test.common
             Assert.False (captures [1].IsRunning);
             Assert.False (captures [2].IsRunning);
 
-            MockStopwatch.AddTick (40);
+            MockStopwatch.CurrentMillisecond += 40;
 
             captures [1].Start ();
             Assert.True (captures [1].IsRunning);
 
-            MockStopwatch.AddTick (80);
+            MockStopwatch.CurrentMillisecond += 80;
 
             NcCapture.PauseKind (thisKind1);
 
@@ -93,7 +93,7 @@ namespace Test.common
             Assert.True (captures [1].IsRunning);
             Assert.False (captures [2].IsRunning);
 
-            MockStopwatch.AddTick (160);
+            MockStopwatch.CurrentMillisecond += 160;
 
             NcCapture.ResumeKind (thisKind1);
 
@@ -101,7 +101,7 @@ namespace Test.common
             Assert.True (captures [1].IsRunning);
             Assert.False (captures [2].IsRunning);
 
-            MockStopwatch.AddTick (60);
+            MockStopwatch.CurrentMillisecond += 60;
 
             captures [0].Stop ();
 

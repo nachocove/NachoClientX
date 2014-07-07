@@ -95,6 +95,8 @@
     <Compile Include="NcEmailMessageDependency.cs" />
     <Compile Include="NcScoreCombinerTest.cs" />
     <Compile Include="MockStopwatch.cs" />
+    <Compile Include="MockTimer.cs" />
+    <Compile Include="NcPausableTimerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
