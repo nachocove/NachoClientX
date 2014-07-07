@@ -729,6 +729,7 @@ namespace NachoClient.iOS
                 selectedDate = date;
                 currentDate = selectedDate;
                 selectedDateTag = button.Tag;
+                calendarSource.ScrollToDate (calendarTableView, date);
             }
         }
 
