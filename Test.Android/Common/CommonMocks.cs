@@ -137,7 +137,7 @@ namespace Test.iOS
         public McAccount Account { set; get; }
         public McCred Cred { set; get; }
 
-        public MockContext (AsProtoControl protoControl = null)
+        public MockContext (AsProtoControl protoControl = null, McServer server = null)
         {
             Owner = new MockOwner ();
             ProtoControl = protoControl;
@@ -147,7 +147,7 @@ namespace Test.iOS
             // READ AsPolicyKey
             // R/W AsProtocolVersion
             // READ InitialProvisionCompleted
-            Server = null; 
+            Server = server; 
             Account = new McAccount () {
                 Id = 1,
                 EmailAddr = "johnd@foo.utopiasystems.net",
