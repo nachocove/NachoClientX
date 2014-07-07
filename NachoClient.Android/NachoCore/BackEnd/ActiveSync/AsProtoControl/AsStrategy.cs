@@ -12,8 +12,9 @@ namespace NachoCore.ActiveSync
 {
     public class AsStrategy : IAsStrategy
     {
-        public const uint KBaseOverallWindowSize = 10;
-        public const uint KBasePerFolderWindowSize = 7;
+        public const int KBaseOverallWindowSize = 150;
+        public const int KBasePerFolderWindowSize = 100;
+        public const int KBaseFetchLimit = 20;
 
         public enum ECLst : uint
         {
@@ -568,6 +569,18 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
+        public bool IsMoreFetchingNeeded ()
+        {
+            return false; // FIXME.
+            var folders = FolderListProvider (false);
+            foreach (var folder in folders) {
+                if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public IEnumerable<McFolder> PingKit ()
         {
             var folders = FolderListProvider (false);
@@ -588,6 +601,20 @@ namespace NachoCore.ActiveSync
             var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
             return fewer;
+        }
+
+        public IEnumerable<McEmailMessage> FetchKit ()
+        {
+            List<McEmailMessage> toFetch = new List<McEmailMessage> ();
+            var folders = FolderListProvider (false);
+            foreach (var folder in folders) {
+                var needs = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, KBaseFetchLimit);
+                toFetch.AddRange (needs);
+                if (KBaseFetchLimit <= toFetch.Count ()) {
+                    break;
+                }
+            }
+            return toFetch;
         }
     }
 }
