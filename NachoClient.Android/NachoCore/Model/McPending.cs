@@ -926,25 +926,51 @@ namespace NachoCore.Model
 
         public bool CommandDominatesItem (string cmdServerId)
         {
-            switch (Operation) {
-            case Operations.EmailSend:
-            case Operations.EmailForward:
-            case Operations.EmailReply:
-                // if item is not in folder (see EmailSend), false is always implicitly returned (bc item is not in folder)
-                var item = McEmailMessage.QueryById<McEmailMessage> (ItemId);
-                NcAssert.NotNull (item);
-                return (item.ServerId == cmdServerId || McPath.Dominates (AccountId, cmdServerId, item.ServerId));
-
-            default:
-                NcAssert.True (false);
-                break;
-            }
-            return false;
+            var item = GetItem ();
+            NcAssert.NotNull (item);
+            return (item.ServerId == cmdServerId || McPath.Dominates (AccountId, cmdServerId, item.ServerId));
         }
 
         public bool ServerIdDominatesCommand (string cmdServerId)
         {
             return McPath.Dominates (AccountId, ServerId, cmdServerId);
+        }
+
+        // returns item associated with pending
+        public McItem GetItem ()
+        {
+            switch (Operation) {
+            case Operations.CalCreate:
+            case Operations.CalDelete:
+            case Operations.CalMove:
+            case Operations.CalRespond:
+            case Operations.CalUpdate:
+                return McCalendar.QueryById<McCalendar> (ItemId);
+            case Operations.ContactCreate:
+            case Operations.ContactDelete:
+            case Operations.ContactMove:
+            case Operations.ContactSearch:
+            case Operations.ContactUpdate:
+                return McContact.QueryById<McContact> (ItemId);
+            case Operations.EmailClearFlag:
+            case Operations.EmailDelete:
+            case Operations.EmailForward:
+            case Operations.EmailMarkFlagDone:
+            case Operations.EmailMarkRead:
+            case Operations.EmailMove:
+            case Operations.EmailReply:
+            case Operations.EmailSend:
+            case Operations.EmailSetFlag:
+                return McContact.QueryById<McEmailMessage> (ItemId);
+            case Operations.TaskCreate:
+            case Operations.TaskDelete:
+            case Operations.TaskMove:
+            case Operations.TaskUpdate:
+                return McTask.QueryById<McTask> (ItemId);
+            default:
+                NcAssert.True (false);
+                return new McItem (); // silence warning
+            }
         }
     }
 }
