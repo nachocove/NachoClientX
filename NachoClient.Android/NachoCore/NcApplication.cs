@@ -83,6 +83,10 @@ namespace NachoCore
                         // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
                         return true;
                     }
+                    if (ex is System.IO.IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
+                        // XAMMIT. Known bug. AsHttpOperation will time-out and retry. No need to crash.
+                        return true;
+                    }
                     return false;
                 });
             };
