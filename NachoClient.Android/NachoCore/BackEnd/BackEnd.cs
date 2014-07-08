@@ -151,7 +151,7 @@ namespace NachoCore
             }
         }
 
-        private void EstablishService (int accountId)
+        public void EstablishService (int accountId)
         {
             // TODO: this is AS-specific.
             var service = new AsProtoControl (this, accountId);
