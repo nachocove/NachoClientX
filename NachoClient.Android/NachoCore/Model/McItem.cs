@@ -132,6 +132,15 @@ namespace NachoCore.Model
         {
             McBody.Delete (BodyId);
         }
+
+        public string GetBodyPreviewOrEmpty()
+        {
+            if (null == BodyPreview) {
+                return String.Empty;
+            } else {
+                return BodyPreview;
+            }
+        }
     }
 }
 

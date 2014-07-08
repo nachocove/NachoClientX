@@ -486,6 +486,11 @@ namespace NachoClient.iOS
 
         protected void RenderBody (McEmailMessage message)
         {
+            if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+                // TODO: Start body download
+                RenderTextString (message.GetBodyPreviewOrEmpty ());
+                return;
+            }
  
             var bodyPath = message.GetBodyPath ();
             if (null == bodyPath) {

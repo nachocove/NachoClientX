@@ -46,6 +46,24 @@ namespace NachoCore.Brain
             NcModel.Instance.Db.Update (emailMessage);
         }
 
+        /// TODO: I wanna be table driven!
+        protected static bool DoNotGlean (string address)
+        {
+            if (MaxSaneAddressLength < address.Length) {
+                return true;
+            }
+            if (address.Contains ("noreply")) {
+                return true;
+            }
+            if (address.Contains ("no-reply")) {
+                return true;
+            }
+            if (address.Contains ("donotreply")) {
+                return true;
+            }
+            return false;
+        }
+
         private static void GleanContact (MailboxAddress mbAddr, int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
         {
             // Don't glean when scrolling
@@ -53,18 +71,13 @@ namespace NachoCore.Brain
                 return;
             }
             var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
-            if (0 == contacts.Count &&
-                MaxSaneAddressLength >= mbAddr.Address.Length &&
-                !mbAddr.Address.Contains ("noreply") &&
-                !mbAddr.Address.Contains ("no-reply") &&
-                !mbAddr.Address.Contains ("donotreply")) {
+            if (0 == contacts.Count && !DoNotGlean (mbAddr.Address)) {
                 // Create a new gleaned contact.
                 var contact = new McContact () {
                     AccountId = accountId,
                     Source = McItem.ItemSource.Internal,
                     RefCount = 1,
                 };
-
                 // Try to parse the display name into first / middle / last name
                 string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
                 switch (items.Length) {
@@ -117,6 +130,49 @@ namespace NachoCore.Brain
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
+            var gleanedFolder = McFolder.GetGleanedFolder (accountId);
+            if (null == gleanedFolder) {
+                NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContacts gleandedFolder is null for account id {0}", accountId);
+                MarkAsGleaned (emailMessage);
+                return;
+            }
+            if ((McBody.MIME == emailMessage.BodyType) && (McItem.BodyStateEnum.Whole_0 == emailMessage.BodyState)) {
+                GleanContactsFromMime (accountId, gleanedFolder, emailMessage);
+            } else {
+                GleanContactsFromMcEmailMessage (accountId, gleanedFolder, emailMessage);
+            }
+            MarkAsGleaned (emailMessage);
+        }
+
+        public static void GleanContactsFromMcEmailMessage (int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
+        {
+            List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
+            if (null != emailMessage.To) {
+                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.To));
+            }
+            if (null != emailMessage.From) {
+                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.From));
+            }
+            if (null != emailMessage.Cc) {
+                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.Cc));
+            }
+            if (null != emailMessage.ReplyTo) {
+                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.ReplyTo));
+            }
+            if (null != emailMessage.Sender) {
+                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.Sender));
+            }
+            foreach (var addrsList in addrsLists) {
+                foreach (var addr in addrsList) {
+                    if (addr is MailboxAddress) {
+                        GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
+                    }
+                }
+            }
+        }
+
+        public static void GleanContactsFromMime (int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
+        {
             var path = emailMessage.GetBodyPath ();
             if (null == path) {
                 MarkAsGleaned (emailMessage);
@@ -130,13 +186,7 @@ namespace NachoCore.Brain
                 } catch (Exception e) {
                     // TODO: Find root cause
                     MarkAsGleaned (emailMessage);
-                    NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContacts exception ignored:\n{0}", e);
-                    return;
-                }
-                var gleanedFolder = McFolder.GetGleanedFolder (accountId);
-                if (null == gleanedFolder) {
-                    NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContacts gleandedFolder is null for account id {0}", accountId);
-                    MarkAsGleaned (emailMessage);
+                    NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContactsFromMime exception ignored:\n{0}", e);
                     return;
                 }
                 List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
@@ -169,9 +219,6 @@ namespace NachoCore.Brain
                 if (null != mimeMsg.References) {
                     emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
                 }
-                if (null == emailMessage.Summary) {
-                    emailMessage.Summary = MimeHelpers.ExtractSummary (mimeMsg);
-                }
                 foreach (var addrsList in addrsLists) {
                     foreach (var addr in addrsList) {
                         if (addr is MailboxAddress) {
@@ -180,7 +227,6 @@ namespace NachoCore.Brain
                     }
                 }
             }
-            MarkAsGleaned (emailMessage);
         }
     }
 }

@@ -693,6 +693,7 @@ namespace NachoClient.iOS
 
         /// <summary>
         /// Reply, ReplyAll, Forward
+        /// FIXME:  Wait for full text to arrive!
         /// </summary>
         void InitializeMessageForAction ()
         {
@@ -730,6 +731,7 @@ namespace NachoClient.iOS
                 bodyTextView.Text = fwdquotedText;
                 return;
             }
+
             string someText = MimeHelpers.ExtractTextPart (ActionMessage);
             string quotedText = QuoteForReply (someText);
             bodyTextView.Text = quotedText;

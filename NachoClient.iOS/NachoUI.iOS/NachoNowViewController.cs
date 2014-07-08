@@ -1012,11 +1012,7 @@ namespace NachoClient.iOS
 
                 // Summary label view
                 var summaryLabelView = view.ViewWithTag (SUMMARY_TAG) as UILabel;
-                if (null == message.Summary) {
-                    message.Summarize ();
-                }
-                NcAssert.NotNull (message.Summary);
-                summaryLabelView.Text = message.Summary;
+                summaryLabelView.Text = message.GetBodyPreviewOrEmpty();
 
 //                // Reminder image view and label
 //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;

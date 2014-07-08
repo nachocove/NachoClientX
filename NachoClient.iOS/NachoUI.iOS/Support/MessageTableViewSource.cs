@@ -488,12 +488,8 @@ namespace NachoClient.iOS
             var summaryLabelView = cell.ContentView.ViewWithTag (SUMMARY_TAG) as UILabel;
             summaryLabelView.Hidden = compactMode;
             if (!compactMode) {
-                if (null == message.Summary) {
-                    message.Summarize ();
-                }
-                NcAssert.True (null != message.Summary);
                 summaryLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
-                summaryLabelView.Text = message.Summary;
+                summaryLabelView.Text = message.GetBodyPreviewOrEmpty();
                 summaryLabelView.SizeToFit ();
             }
 
