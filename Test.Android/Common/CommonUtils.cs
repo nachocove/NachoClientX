@@ -36,14 +36,12 @@ namespace Test.iOS
             // clean static property
             MockOwner.Status = null;
 
-            MockOwner mockOwner = new MockOwner ();
-
             var pcs = CreateProtocolState ();
             CreateAccount (pcs.Id);
             NcTask.StartService ();
 
+            MockOwner mockOwner = new MockOwner ();
             AsProtoControl protoControl = new AsProtoControl (mockOwner, accountId);
-            protoControl.SyncStrategy = new MockStrategy ();
 
             return protoControl;
         }
