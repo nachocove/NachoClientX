@@ -654,11 +654,11 @@ namespace Test.iOS
             }
         }
 
-//        [TestFixture]
+        [TestFixture]
         public class TestSyncCmdAdd : BaseConfResTest
         {
             // create cal, contact, and task
-//            [Test]
+            [Test]
             public void TestSyncAddMatch ()
             {
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
@@ -688,7 +688,7 @@ namespace Test.iOS
                 Assert.Null (pendResponseOp, "Pending operation should be deleted by SyncCommand");
             }
 
-//            [Test]
+            [Test]
             public void TestSyncAddDom ()
             {
                 // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.

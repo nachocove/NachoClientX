@@ -69,7 +69,7 @@ namespace NachoCore.ActiveSync
 
         public AsProtoControl ProtoControl { set; get; }
 
-        public AsStrategy SyncStrategy { set; get; }
+        public IAsStrategy SyncStrategy { set; get; }
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
