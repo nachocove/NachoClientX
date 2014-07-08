@@ -253,6 +253,13 @@ namespace NachoClient.iOS
             bodyTextView.Font = A.Font_AvenirNextRegular14;
             bodyTextView.TextColor = A.Color_808080;
             bodyTextView.ContentInset = new UIEdgeInsets (0, 15, 0, -15);
+            bodyTextView.InsertText ("\n"+ "\n" +"This email sent by NachoMail");
+            var beginningRange = new NSRange (0, 0);
+            bodyTextView.SelectedRange = beginningRange;
+
+            //Need to be able to inserthtml here, but for now will do simple text input
+            //bodyTextView.InsertText ("<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
+
 
             View.BackgroundColor = UIColor.White;
 
@@ -343,6 +350,8 @@ namespace NachoClient.iOS
 
         protected void ConfigureBodyEditView ()
         {
+            // this might be the place that we set up our initializaiton text
+
             toView.Hidden = false;
             ccView.Hidden = true;
             bccView.Hidden = true;
@@ -596,9 +605,17 @@ namespace NachoClient.iOS
         public void SendMessage ()
         {
             var mimeMessage = new MimeMessage ();
-            var sentfrom = new TextPart ("html", "<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
-            var multipart = new Multipart ();
 
+            /* var sentfrom = new TextPart ("html", "<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
+           
+            var multipart = new Multipart ();
+            */
+
+            /* below lines break web-async. Need to see why
+             if (sentfrom.ContentDisposition == null) {
+                sentfrom.ContentDisposition = new ContentDisposition (ContentDisposition.Inline);
+            }
+            */
 
             foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
                 foreach (var a in view.AddressList) {
@@ -628,16 +645,17 @@ namespace NachoClient.iOS
             var body = new BodyBuilder ();
 
             body.TextBody = bodyTextView.Text;
+
             foreach (var attachment in attachmentView.AttachmentList) {
                 body.Attachments.Add (attachment.FilePath ());
             }
 
-            multipart.Add (body.ToMessageBody());
+            //multipart.Add (body.ToMessageBody());
 
-            multipart.Add (sentfrom);
+            //multipart.Add (sentfrom);
 
-            mimeMessage.Body = multipart;
-            //mimeMessage.Body = body.ToMessageBody ();
+            //mimeMessage.Body = multipart;
+            mimeMessage.Body = body.ToMessageBody ();
 
             MimeHelpers.SendEmail (account.Id, mimeMessage);
 
