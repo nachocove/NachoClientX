@@ -382,6 +382,28 @@ namespace NachoCore.ActiveSync
             return markFlagDone.Token;
         }
 
+        public override string DnldEmailBodyCmd (int emailMessageId)
+        {
+            McEmailMessage emailMessage;
+            McFolder folder;
+            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
+                return null;
+            }
+            if (McItem.BodyStateEnum.Whole_0 == emailMessage.BodyState) {
+                return null;
+            }
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailBodyDownload,
+                ServerId = emailMessage.ServerId,
+            };
+            pending.Insert ();
+
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDEBOD");
+            }, "DnldEmailBodyCmd");
+            return pending.Token;
+        }
+
         public override string DnldAttCmd (int attId)
         {
             var att = McObject.QueryById<McAttachment> (attId);
@@ -499,6 +521,28 @@ namespace NachoCore.ActiveSync
                 cal, srcFolder, destFolderId);
         }
 
+        public override string DnldCalBodyCmd (int calId)
+        {
+            McCalendar cal;
+            McFolder folder;
+            if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
+                return null;
+            }
+            if (McItem.BodyStateEnum.Whole_0 == cal.BodyState) {
+                return null;
+            }
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.CalBodyDownload,
+                ServerId = cal.ServerId,
+            };
+            pending.Insert ();
+
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDCALBOD");
+            }, "DnldCalBodyCmd");
+            return pending.Token;
+        }
+
         public override string CreateContactCmd (int contactId, int folderId)
         {
             McContact contact;
@@ -593,6 +637,28 @@ namespace NachoCore.ActiveSync
                 contact, srcFolder, destFolderId);
         }
 
+        public override string DnldContactBodyCmd (int contactId)
+        {
+            McContact contact;
+            McFolder folder;
+            if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder)) {
+                return null;
+            }
+            if (McItem.BodyStateEnum.Whole_0 == contact.BodyState) {
+                return null;
+            }
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.ContactBodyDownload,
+                ServerId = contact.ServerId,
+            };
+            pending.Insert ();
+
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDCONBOD");
+            }, "DnldContactBodyCmd");
+            return pending.Token;
+        }
+
         public override string CreateTaskCmd (int taskId, int folderId)
         {
             McTask task;
@@ -685,6 +751,28 @@ namespace NachoCore.ActiveSync
 
             return MoveItemCmd (McPending.Operations.TaskMove, NcResult.SubKindEnum.Info_TaskSetChanged,
                 task, srcFolder, destFolderId);
+        }
+
+        public override string DnldTaskBodyCmd (int taskId)
+        {
+            McTask task;
+            McFolder folder;
+            if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder)) {
+                return null;
+            }
+            if (McItem.BodyStateEnum.Whole_0 == task.BodyState) {
+                return null;
+            }
+            var pending = new McPending (Account.Id) {
+                Operation = McPending.Operations.TaskBodyDownload,
+                ServerId = task.ServerId,
+            };
+            pending.Insert ();
+
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDTBOD");
+            }, "DnldTaskBodyCmd");
+            return pending.Token;
         }
 
         public override string RespondCalCmd (int calId, NcResponseType response)

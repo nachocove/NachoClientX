@@ -38,7 +38,13 @@ namespace NachoCore.Model
             EmailForward,
             EmailReply,
             EmailSend,
-            AttachmentDownload,
+            EmailDelete,
+            EmailMove,
+            EmailMarkRead,
+            EmailSetFlag,
+            EmailClearFlag,
+            EmailMarkFlagDone,
+            EmailBodyDownload,
             // Note that pending searches aren't considered relevant across app
             // re-starts, and so they are purged from the DB on app launch.
             ContactSearch,
@@ -46,21 +52,19 @@ namespace NachoCore.Model
             ContactUpdate,
             ContactDelete,
             ContactMove,
-            EmailDelete,
-            EmailMove,
-            EmailMarkRead,
-            EmailSetFlag,
-            EmailClearFlag,
-            EmailMarkFlagDone,
+            ContactBodyDownload,
             CalCreate,
             CalUpdate,
             CalDelete,
             CalMove,
             CalRespond,
+            CalBodyDownload,
             TaskCreate,
             TaskUpdate,
             TaskDelete,
             TaskMove,
+            TaskBodyDownload,
+            AttachmentDownload,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -449,8 +453,6 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageReplyFailed;
             case Operations.EmailSend:
                 return NcResult.SubKindEnum.Error_EmailMessageSendFailed;
-            case Operations.AttachmentDownload:
-                return NcResult.SubKindEnum.Error_AttDownloadFailed;
             case Operations.EmailDelete:
                 return NcResult.SubKindEnum.Error_EmailMessageDeleteFailed;
             case Operations.EmailMove:
@@ -463,6 +465,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_EmailMessageClearFlagFailed;
             case Operations.EmailMarkFlagDone:
                 return NcResult.SubKindEnum.Error_EmailMessageMarkFlagDoneFailed;
+            case Operations.EmailBodyDownload:
+                return NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
             case Operations.CalCreate:
                 return NcResult.SubKindEnum.Error_CalendarCreateFailed;
             case Operations.CalUpdate:
@@ -471,12 +475,16 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_CalendarDeleteFailed;
             case Operations.CalRespond:
                 return NcResult.SubKindEnum.Error_MeetingResponseFailed;
+            case Operations.CalBodyDownload:
+                return NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed;
             case Operations.ContactCreate:
                 return NcResult.SubKindEnum.Error_ContactCreateFailed;
             case Operations.ContactUpdate:
                 return NcResult.SubKindEnum.Error_ContactUpdateFailed;
             case Operations.ContactDelete:
                 return NcResult.SubKindEnum.Error_ContactDeleteFailed;
+            case Operations.ContactBodyDownload:
+                return NcResult.SubKindEnum.Error_ContactBodyDownloadFailed;
             case Operations.TaskCreate:
                 return NcResult.SubKindEnum.Error_TaskCreateFailed;
             case Operations.TaskUpdate:
@@ -485,6 +493,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_TaskDeleteFailed;
             case Operations.ContactSearch:
                 return NcResult.SubKindEnum.Error_SearchCommandFailed;
+            case Operations.AttachmentDownload:
+                return NcResult.SubKindEnum.Error_AttDownloadFailed;
 
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
@@ -818,6 +828,15 @@ namespace NachoCore.Model
                         rec.AccountId == accountId &&
             rec.Operation == operation &&
             rec.State == StateEnum.Eligible);
+        }
+
+        public static IEnumerable<McPending> QueryFirstNEligibleByOperation (int accountId, 
+            McPending.Operations operation, int n)
+        {
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
+                rec.AccountId == accountId &&
+                rec.Operation == operation &&
+            rec.State == StateEnum.Eligible).OrderBy (x => x.Id).Take (n);
         }
 
         public static McPending QueryByClientId (int accountId, string clientId)

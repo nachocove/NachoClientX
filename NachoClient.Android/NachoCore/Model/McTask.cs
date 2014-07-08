@@ -128,7 +128,6 @@ namespace NachoCore.Model
 
         public NcResult FromXmlApplicationData (XElement applicationData)
         {
-            XNamespace baseNs = Xml.AirSyncBase.Ns;
             bool CompleteBeenSeen = false;
             bool DateCompletedSeen = false;
             foreach (var child in applicationData.Elements()) {

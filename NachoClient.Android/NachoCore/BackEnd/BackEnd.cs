@@ -302,6 +302,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).DnldAttCmd (attId);
         }
 
+        public string DnldEmailBodyCmd (int accountId, int emailMessageId)
+        {
+            return ServiceFromAccountId (accountId).DnldEmailBodyCmd (emailMessageId);
+        }
+
         public string CreateCalCmd (int accountId, int calId, int folderId)
         {
             return ServiceFromAccountId (accountId).CreateCalCmd (calId, folderId);
@@ -327,6 +332,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
         }
             
+        public string DnldCalBodyCmd (int accountId, int calId)
+        {
+            return ServiceFromAccountId (accountId).DnldCalBodyCmd (calId);
+        }
+
         public string MarkEmailReadCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
@@ -371,6 +381,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).MoveContactCmd (contactId, destFolderId);
         }
 
+        public string DnldContactBodyCmd (int accountId, int contactId)
+        {
+            return ServiceFromAccountId (accountId).DnldContactBodyCmd (contactId);
+        }
+
         public string CreateTaskCmd (int accountId, int taskId, int folderId)
         {
             return ServiceFromAccountId (accountId).CreateTaskCmd (taskId, folderId);
@@ -389,6 +404,11 @@ namespace NachoCore
         public string MoveTaskCmd (int accountId, int taskId, int destFolderId)
         {
             return ServiceFromAccountId (accountId).MoveTaskCmd (taskId, destFolderId);
+        }
+
+        public string DnldTaskBodyCmd (int accountId, int taskId)
+        {
+            return ServiceFromAccountId (accountId).DnldTaskBodyCmd (taskId);
         }
 
         public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
