@@ -42,6 +42,7 @@ namespace Test.iOS
 
             MockOwner mockOwner = new MockOwner ();
             AsProtoControl protoControl = new AsProtoControl (mockOwner, accountId);
+            protoControl.SyncStrategy = new MockStrategy ();
 
             return protoControl;
         }
