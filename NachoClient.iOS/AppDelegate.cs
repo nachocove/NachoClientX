@@ -146,6 +146,8 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
+            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
+                UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             NcApplication.Instance.CredReqCallback = CredReqCallback;
             NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
