@@ -47,6 +47,17 @@ namespace Test.Common
             var notdef = McMutables.GetOrCreate ("test", "keyT", "default");
             Assert.AreEqual (notdef, "notdef");
         }
+
+        [Test]
+        public void DeleteOne ()
+        {
+            McMutables.Set ("test", "key3", "value3");
+            var gotit = McMutables.Get ("test", "key3");
+            Assert.AreEqual ("value3", gotit);
+            McMutables.Delete ("test", "key3");
+            var notgot = McMutables.Get ("test", "key3");
+            Assert.IsNull (notgot);
+        }
     }
 }
 

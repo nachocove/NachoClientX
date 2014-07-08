@@ -102,6 +102,18 @@ namespace NachoClient.iOS
             });
         }
 
+        public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
+        {
+            PushAssist.Instance.SetDeviceToken (deviceToken.ToArray ());
+            Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications :{0}", deviceToken.ToString ());
+        }
+
+        public override void FailedToRegisterForRemoteNotifications (UIApplication application , NSError error)
+        {
+            PushAssist.Instance.ResetDeviceToken ();
+            Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
+        }
+
         // This method is common to both launching into the background and into the foreground.
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
@@ -125,7 +137,8 @@ namespace NachoClient.iOS
             navigationTitleTextAttributes.TextColor = A.Color_FFFFFF;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
-
+            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
+                UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             application.ApplicationIconBadgeNumber = 0;
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
