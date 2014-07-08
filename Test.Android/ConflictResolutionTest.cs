@@ -681,6 +681,8 @@ namespace Test.iOS
             [Test]
             public void TestSyncAddMatch ()
             {
+                BackEnd.Instance.EstablishService (defaultAccountId);
+
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
                 McItem cal = MakeSingleLayerPath<McCalendar> (topFolder);
