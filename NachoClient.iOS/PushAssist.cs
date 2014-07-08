@@ -146,12 +146,14 @@ namespace NachoClient.iOS
 
         public void SetDeviceToken (byte[] deviceToken)
         {
-            var existing = McMutables.Get (k_ios, k_devicetoken);
-            var b64tok = Convert.ToBase64String (deviceToken);
-            if (null == existing && b64tok != existing) {
-                McMutables.Set (k_ios, k_devicetoken, b64tok);
-                Sm.PostEvent ((uint)PAEvt.E.DevTok, "SETDEVTOK");
-            }
+            NcTask.Run (delegate {
+                var existing = McMutables.Get (k_ios, k_devicetoken);
+                var b64tok = Convert.ToBase64String (deviceToken);
+                if (null == existing && b64tok != existing) {
+                    McMutables.Set (k_ios, k_devicetoken, b64tok);
+                    Sm.PostEvent ((uint)PAEvt.E.DevTok, "SETDEVTOK");
+                }
+            }, "PushAssist");
         }
 
         public void ResetDeviceToken ()
