@@ -776,6 +776,7 @@ namespace NachoCore.ActiveSync
             // Alpha order.
             public const string Data = AirSyncBase.Data;
             public const string Fetch = "Fetch";
+            public const string Options = AirSync.Options;
             public const string Properties = "Properties";
             public const string Status = AirSync.Status;
             public const string Store = "Store";
