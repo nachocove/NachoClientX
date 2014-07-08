@@ -231,6 +231,16 @@ namespace Test.iOS
         public McFolder Folder;
         public List<McPending> PendList;
 
+        public MockStrategy ()
+        {
+            PendList = new List<McPending> ();
+        }
+
+        public MockStrategy (McFolder folder) : this ()
+        {
+            Folder = folder;
+        }
+
         public void ReportSyncResult (System.Collections.Generic.List<McFolder> folders) {}
 
         public Tuple<uint, System.Collections.Generic.List<Tuple<McFolder, System.Collections.Generic.List<McPending>>>> SyncKit ()
