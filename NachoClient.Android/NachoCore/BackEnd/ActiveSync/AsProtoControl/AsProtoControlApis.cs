@@ -395,6 +395,7 @@ namespace NachoCore.ActiveSync
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailBodyDownload,
                 ServerId = emailMessage.ServerId,
+                ParentId = folder.ServerId,
             };
             pending.Insert ();
 

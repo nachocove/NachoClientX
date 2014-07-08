@@ -45,7 +45,8 @@ namespace NachoCore.Brain
                 if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
+                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
+                    x.HasBeenGleaned == false && McItem.BodyStateEnum.Whole_0 == x.BodyState).FirstOrDefault ();
                 if (null == emailMessage) {
                     return numGleaned;
                 }
