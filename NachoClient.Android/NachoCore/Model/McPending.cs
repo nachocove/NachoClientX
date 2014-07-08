@@ -968,8 +968,7 @@ namespace NachoCore.Model
             case Operations.TaskUpdate:
                 return McTask.QueryById<McTask> (ItemId);
             default:
-                NcAssert.True (false);
-                return new McItem (); // silence warning
+                return null;
             }
         }
     }

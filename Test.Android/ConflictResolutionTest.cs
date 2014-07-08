@@ -17,6 +17,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using System.Collections.Generic;
+using NachoCore;
 
 
 namespace Test.iOS
@@ -656,6 +657,8 @@ namespace Test.iOS
             [Test]
             public void TestSyncAddMatch ()
             {
+                BackEnd.Instance.EstablishService (defaultAccountId);
+
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
                 var cal = FolderOps.CreateUniqueItem<McCalendar> ();
@@ -672,9 +675,12 @@ namespace Test.iOS
                 var foundCal = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
                 Assert.NotNull (foundCal, "Item should not be deleted; only moved to L&F");
 
-                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
-                Assert.NotNull (foundFolder, "Folder should not be deleted");
-                Assert.AreEqual (McFolder.ClientOwned_LostAndFound, foundFolder.ParentId, "Folder should have been moved to L&F");
+                var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
+                var foundParent = McMapFolderFolderEntry.QueryByFolderId (defaultAccountId, laf.Id);
+                Assert.AreEqual (foundCal.Id, foundParent.FirstOrDefault ().FolderEntryId, "Cal should be moved into L&F");
+
+                var foundPend = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
             }
 
             [Test]
