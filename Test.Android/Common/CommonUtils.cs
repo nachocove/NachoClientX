@@ -43,6 +43,7 @@ namespace Test.iOS
             NcTask.StartService ();
 
             AsProtoControl protoControl = new AsProtoControl (mockOwner, accountId);
+            protoControl.SyncStrategy = new MockStrategy ();
 
             return protoControl;
         }

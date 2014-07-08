@@ -294,6 +294,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
