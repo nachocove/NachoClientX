@@ -195,9 +195,6 @@ namespace NachoCore.Model
 
         /// Attachments are separate
 
-        /// Summary is extracted in gleaner
-        public string Summary { set; get; }
-
         //This is strictly used for testing purposes
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
@@ -234,15 +231,6 @@ namespace NachoCore.Model
             foreach (var toNix in atts) {
                 toNix.Delete ();
             }
-        }
-
-        public void Summarize ()
-        {
-            Summary = MimeHelpers.ExtractSummary (this);
-            if (null == Summary) {
-                Summary = " ";
-            }
-            this.Update ();
         }
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
