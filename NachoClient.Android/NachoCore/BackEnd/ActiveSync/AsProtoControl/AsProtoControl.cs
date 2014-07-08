@@ -848,7 +848,11 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.Operations.AttachmentDownload:
-                    SetCmd (new AsItemOperationsCommand (this));
+                case McPending.Operations.EmailBodyDownload:
+                case McPending.Operations.CalBodyDownload:
+                case McPending.Operations.ContactBodyDownload:
+                case McPending.Operations.TaskBodyDownload:
+                     SetCmd (new AsItemOperationsCommand (this));
                     break;
 
                 case McPending.Operations.CalRespond:

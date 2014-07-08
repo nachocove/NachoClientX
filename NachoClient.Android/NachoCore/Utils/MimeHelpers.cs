@@ -122,6 +122,9 @@ namespace NachoCore.Utils
                 return null;
             }
             if (McBody.MIME == message.GetBodyType()) {
+                if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+                    return null;
+                }
                 using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
                     var mimeParser = new MimeParser (fileStream, true);
                     var mimeMessage = mimeParser.ParseMessage ();
