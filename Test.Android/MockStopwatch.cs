@@ -3,7 +3,7 @@
 using System;
 using NachoCore.Utils;
 
-namespace Test.common
+namespace Test.Common
 {
     public class MockStopwatch : IStopwatch
     {

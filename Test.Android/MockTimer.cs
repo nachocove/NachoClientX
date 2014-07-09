@@ -5,7 +5,7 @@ using System.Threading;
 using System.Collections.Generic;
 using NachoCore.Utils;
 
-namespace Test.common
+namespace Test.Common
 {
     public class MockTimer : ITimer, IComparable
     {

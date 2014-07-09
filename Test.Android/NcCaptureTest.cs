@@ -7,7 +7,7 @@ using NUnit.Framework;
 using NachoCore;
 using NachoCore.Utils;
 
-namespace Test.common
+namespace Test.Common
 {
     [TestFixture]
     public class NcCaptureTest

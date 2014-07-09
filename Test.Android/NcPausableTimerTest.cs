@@ -5,7 +5,7 @@ using System.Threading;
 using NUnit.Framework;
 using NachoCore.Utils;
 
-namespace Test.common
+namespace Test.Common
 {
     public class NcPausableTimerTest
     {
