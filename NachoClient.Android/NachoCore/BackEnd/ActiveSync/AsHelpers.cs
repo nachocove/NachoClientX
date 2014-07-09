@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
             var bodyType = xmlBody.ElementAnyNs (Xml.AirSyncBase.Type).Value.ToInt ();
             var xmlData = xmlBody.ElementAnyNs (Xml.AirSyncBase.Data);
             var xmlEstimatedDataSize = xmlBody.ElementAnyNs (Xml.AirSyncBase.EstimatedDataSize);
-            var xmlTruncated = xmlBody.ElementsAnyNs (Xml.AirSyncBase.Truncated);
+            var xmlTruncated = xmlBody.ElementAnyNs (Xml.AirSyncBase.Truncated);
             var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
             if (null != xmlEstimatedDataSize) {
                 item.EstimatedBodySize = xmlEstimatedDataSize.Value.ToInt ();
