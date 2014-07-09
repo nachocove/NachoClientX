@@ -30,6 +30,8 @@ namespace NachoClient.iOS
         protected int deferLayout;
         protected object deferLayoutLock = new object ();
 
+        protected bool errorLoadingBody;
+
         public MessageViewController (IntPtr handle) : base (handle)
         {
         }
@@ -95,6 +97,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            StopSpinner ();
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
@@ -108,6 +111,14 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
                 Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
+                StopSpinner ();
+                ConfigureView ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
+                errorLoadingBody = true;
+                StopSpinner ();
                 ConfigureView ();
                 return;
             }
@@ -276,6 +287,7 @@ namespace NachoClient.iOS
         const int ATTACHMENT_ICON_TAG = 106;
         const int RECEIVED_DATE_TAG = 107;
         const int SEPARATOR_TAG = 108;
+        const int SPINNER_TAG = 109;
         const int MESSAGE_PART_TAG = 300;
         const int ATTACHMENT_VIEW_TAG = 301;
         const int ATTACHMENT_NAME_TAG = 302;
@@ -368,6 +380,13 @@ namespace NachoClient.iOS
             separatorView.BackgroundColor = A.Color_NachoNowBackground;
             separatorView.Tag = SEPARATOR_TAG;
             view.AddSubview (separatorView);
+
+            // Spinner
+            var spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
+            spinner.Center = View.Center;
+            spinner.HidesWhenStopped = true;
+            spinner.Tag = SPINNER_TAG;
+            view.AddSubview (spinner);
 
             // Attachments
 
@@ -492,8 +511,15 @@ namespace NachoClient.iOS
 
         protected void RenderBody (McEmailMessage message)
         {
+            if (errorLoadingBody) {
+                Log.Info (Log.LOG_EMAIL, "Previous download resulted in error");
+                RenderTextString ("Error loading body.");
+                return;
+            }
+
             if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
                 Log.Info (Log.LOG_EMAIL, "Starting download of whole message body");
+                StartSpinner ();
                 BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id);
                 RenderTextString (message.GetBodyPreviewOrEmpty ());
                 return;
@@ -505,13 +531,13 @@ namespace NachoClient.iOS
             }
             switch (message.BodyType) {
             case McBody.PlainText:
-                RenderTextString (message.GetBody());
+                RenderTextString (message.GetBody ());
                 break;
             case McBody.HTML:
-                RenderHtmlString (message.GetBody());
+                RenderHtmlString (message.GetBody ());
                 break;
             case McBody.RTF:
-                RenderRtfString (message.GetBody());
+                RenderRtfString (message.GetBody ());
                 break;
             case McBody.MIME:
                 RenderMime (bodyPath);
@@ -639,7 +665,7 @@ namespace NachoClient.iOS
             view.AddSubview (label);
         }
 
-        void RenderRtfString(string rtf)
+        void RenderRtfString (string rtf)
         {
             var nsError = new NSError ();
             var nsAttributes = new NSAttributedStringDocumentAttributes ();
@@ -869,6 +895,18 @@ namespace NachoClient.iOS
                 deferLayout -= 1;
                 return deferLayout;
             }
+        }
+
+        protected void StartSpinner ()
+        {
+            var spinner = View.ViewWithTag (SPINNER_TAG) as UIActivityIndicatorView;
+            spinner.StartAnimating ();
+        }
+
+        protected void StopSpinner ()
+        {
+            var spinner = View.ViewWithTag (SPINNER_TAG) as UIActivityIndicatorView;
+            spinner.StopAnimating ();
         }
     }
 }
