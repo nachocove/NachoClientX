@@ -59,6 +59,7 @@ namespace Test.iOS
             public const string TopFolderName = "Top-Level-Folder";
             public const string TopFolderServerUpdateName = "Top-Level-Folder (UPDATED BY SERVER)";
             public const string SubCalFolderName = "Sub-Cal-Folder";
+            public const string SubContactFolderName = "Sub-Contact-Folder";
             public const string SubTaskFolderName = "Sub-Task-Folder";
             public const string ChildFolderName = "Child-Folder";
 
@@ -122,19 +123,32 @@ namespace Test.iOS
             public McFolder CreateSubCalFolder (bool withPath = false)
             {
                 var type = TypeCode.UserCreatedCal_13;
-                var calFolder = FolderOps.CreateFolder (defaultAccountId, parentId: "1", serverId: "2", name: SubCalFolderName, typeCode: type);
+                var folder = FolderOps.CreateFolder (defaultAccountId, parentId: "1", serverId: "2", name: SubCalFolderName, typeCode: type);
                 if (withPath) {
-                    PathOps.CreatePath (defaultAccountId, calFolder.ServerId, calFolder.ParentId);
+                    PathOps.CreatePath (defaultAccountId, folder.ServerId, folder.ParentId);
                 }
-                return calFolder;
+                return folder;
+            }
+
+            public McFolder CreateSubContactFolder (bool withPath = false)
+            {
+                var type = TypeCode.UserCreatedContacts_14;
+                var folder = FolderOps.CreateFolder (defaultAccountId, parentId: "1", serverId: "4", name: SubContactFolderName, typeCode: type);
+                if (withPath) {
+                    PathOps.CreatePath (defaultAccountId, folder.ServerId, folder.ParentId);
+                }
+                return folder;
             }
 
             // Parent & Server Id's correspond to response XML
-            public McFolder CreateSubTaskFolder ()
+            public McFolder CreateSubTaskFolder (bool withPath = false)
             {
                 var type = TypeCode.UserCreatedTasks_15;
-                var taskFolder = FolderOps.CreateFolder (defaultAccountId, parentId: "1", serverId: "3", name: SubTaskFolderName, typeCode: type);
-                return taskFolder;
+                var folder = FolderOps.CreateFolder (defaultAccountId, parentId: "1", serverId: "3", name: SubTaskFolderName, typeCode: type);
+                if (withPath) {
+                    PathOps.CreatePath (defaultAccountId, folder.ServerId, folder.ParentId);
+                }
+                return folder;
             }
 
             public McFolder GetCreatedFolder (int accountId, TypeCode type, string parentId, string name)
@@ -669,7 +683,7 @@ namespace Test.iOS
             {
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
-                McItem cal = MakeSingleLayerPathForTest<McCalendar> (topFolder.Type);
+                McItem cal = MakeSingleLayerPath<McCalendar> (topFolder);
 
                 string token = null;
                 DoClientSideCmds (() => {
@@ -678,12 +692,58 @@ namespace Test.iOS
 
                 DoSyncAdd<McCalendar> (cal, token);
             }
+                
+            [Test]
+            public void TestSyncAddDomAllItems ()
+            {
+                TestSyncAddDom<McCalendar> (TypeCode.DefaultCal_8, 
+                    () => CreateSubCalFolder (withPath: true), 
+                    (itemId, folderId) => Context.ProtoControl.CreateCalCmd (itemId, folderId)
+                );
 
-            private McItem MakeSingleLayerPathForTest<T> (McFolder topFolder) where T : McItem, new()
+                TestSyncAddDom<McContact> (TypeCode.DefaultContacts_9,
+                    () => CreateSubContactFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.CreateContactCmd (itemId, folderId)
+                );
+
+                TestSyncAddDom<McTask> (TypeCode.DefaultTasks_7,
+                    () => CreateSubTaskFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.CreateTaskCmd (itemId, folderId)
+                );
+            }
+
+            public void TestSyncAddDom<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder, Func<int, int, string> makeItem) where T : McItem, new()
+            {
+                // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
+                McFolder subFolder = null;
+                McItem item = MakeDoubleLayerPath<T> (topFolderType, () => {
+                    subFolder = makeSubFolder ();
+                    return subFolder;
+                });
+
+                string token = null;
+                DoClientSideCmds (() => {
+                    token = makeItem (item.Id, subFolder.Id);
+                });
+
+                DoSyncAdd<T> (item, token);
+            }
+
+            private McItem MakeSingleLayerPath<T> (McFolder topFolder) where T : McItem, new()
             {
                 var item = FolderOps.CreateUniqueItem<T> ();
                 topFolder.Link (item);
                 PathOps.CreatePath (defaultAccountId, item.ServerId, topFolder.ServerId);
+                return item;
+            }
+
+            private McItem MakeDoubleLayerPath<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder) where T : McItem, new()
+            {
+                CreateTopFolder (withPath: true, type: topFolderType);
+                var subFolder = makeSubFolder ();
+                var item = FolderOps.CreateUniqueItem<T> ();
+                subFolder.Link (item);
+                PathOps.CreatePath (defaultAccountId, item.ServerId, subFolder.ServerId);
                 return item;
             }
 
@@ -703,23 +763,7 @@ namespace Test.iOS
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
             }
 
-            [Test]
-            public void TestSyncAddDom ()
-            {
-                // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
-                var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
-                var subCalFolder = CreateSubCalFolder (withPath: true);
-                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
-                subCalFolder.Link (cal);
-                PathOps.CreatePath (defaultAccountId, cal.ServerId, subCalFolder.ServerId);
 
-                string token = null;
-                DoClientSideCmds (() => {
-                    token = Context.ProtoControl.CreateCalCmd (cal.Id, subCalFolder.Id);
-                });
-
-                DoSyncAdd<McCalendar> (cal, token);
-            }
         }
 
         // State machine part of class
