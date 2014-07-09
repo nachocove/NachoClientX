@@ -119,10 +119,13 @@ namespace Test.iOS
             }
 
             // Parent & Server Id's correspond to response XML
-            public McFolder CreateSubCalFolder ()
+            public McFolder CreateSubCalFolder (bool withPath = false)
             {
                 var type = TypeCode.UserCreatedCal_13;
                 var calFolder = FolderOps.CreateFolder (defaultAccountId, parentId: "1", serverId: "2", name: SubCalFolderName, typeCode: type);
+                if (withPath) {
+                    PathOps.CreatePath (defaultAccountId, calFolder.ServerId, calFolder.ParentId);
+                }
                 return calFolder;
             }
 
@@ -653,31 +656,48 @@ namespace Test.iOS
         [TestFixture]
         public class TestSyncCmdAdd : BaseConfResTest
         {
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+            }
+
             // create cal, contact, and task
             [Test]
             public void TestSyncAddMatch ()
             {
-                BackEnd.Instance.EstablishService (defaultAccountId);
-
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
-                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
-                topFolder.Link (cal);
-                PathOps.CreatePath (defaultAccountId, cal.ServerId, topFolder.ServerId);
+                McItem cal = MakeSingleLayerPathForTest<McCalendar> (topFolder.Type);
 
                 string token = null;
                 DoClientSideCmds (() => {
                     token = Context.ProtoControl.CreateCalCmd (cal.Id, topFolder.Id);
                 });
 
+                DoSyncAdd<McCalendar> (cal, token);
+            }
+
+            private McItem MakeSingleLayerPathForTest<T> (McFolder topFolder) where T : McItem, new()
+            {
+                var item = FolderOps.CreateUniqueItem<T> ();
+                topFolder.Link (item);
+                PathOps.CreatePath (defaultAccountId, item.ServerId, topFolder.ServerId);
+                return item;
+            }
+
+            private void DoSyncAdd<T> (McItem item, string token) where T : McItem, new()
+            {
                 ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
-                var foundCal = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
-                Assert.NotNull (foundCal, "Item should not be deleted; only moved to L&F");
+                // QueryByServerId asserts if more than one item is found
+                var foundItem = McItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
+                Assert.NotNull (foundItem, "Item should not be deleted; only moved to L&F");
 
                 var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
                 var foundParent = McMapFolderFolderEntry.QueryByFolderId (defaultAccountId, laf.Id);
-                Assert.AreEqual (foundCal.Id, foundParent.FirstOrDefault ().FolderEntryId, "Cal should be moved into L&F");
+                Assert.AreEqual (foundItem.Id, foundParent.FirstOrDefault ().FolderEntryId, "Item should be moved into L&F");
 
                 var foundPend = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
@@ -687,6 +707,18 @@ namespace Test.iOS
             public void TestSyncAddDom ()
             {
                 // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
+                var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
+                var subCalFolder = CreateSubCalFolder (withPath: true);
+                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
+                subCalFolder.Link (cal);
+                PathOps.CreatePath (defaultAccountId, cal.ServerId, subCalFolder.ServerId);
+
+                string token = null;
+                DoClientSideCmds (() => {
+                    token = Context.ProtoControl.CreateCalCmd (cal.Id, subCalFolder.Id);
+                });
+
+                DoSyncAdd<McCalendar> (cal, token);
             }
         }
 
