@@ -935,6 +935,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcPausableTimer.cs">
       <Link>NachoCore\Utils\NcPausableTimer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcDistribution.cs">
+      <Link>NachoCore\Utils\NcDistribution.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

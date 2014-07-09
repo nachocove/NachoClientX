@@ -290,6 +290,7 @@
     <Compile Include="NachoCore\Utils\ITimer.cs" />
     <Compile Include="NachoCore\Utils\PlatformTimer.cs" />
     <Compile Include="NachoCore\Utils\NcPausableTimer.cs" />
+    <Compile Include="NachoCore\Utils\NcDistribution.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

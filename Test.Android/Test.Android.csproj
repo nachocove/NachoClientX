@@ -97,6 +97,7 @@
     <Compile Include="MockStopwatch.cs" />
     <Compile Include="MockTimer.cs" />
     <Compile Include="NcPausableTimerTest.cs" />
+    <Compile Include="NcDistributionTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
