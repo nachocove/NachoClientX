@@ -157,7 +157,7 @@ namespace NachoCore
             var service = new AsProtoControl (this, accountId);
             if (! Services.TryAdd (accountId, service)) {
                 // Concurrency. Another thread has jumped in and done the add.
-                return;
+                Log.Info (Log.LOG_AS, "Another thread has already called EstablishService");
             }
             // Create client owned objects as needed.
             McFolder freshMade;
