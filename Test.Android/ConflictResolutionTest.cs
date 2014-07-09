@@ -681,8 +681,6 @@ namespace Test.iOS
             [Test]
             public void TestSyncAddMatch ()
             {
-                BackEnd.Instance.EstablishService (defaultAccountId);
-
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
                 McItem cal = MakeSingleLayerPath<McCalendar> (topFolder);
@@ -764,8 +762,6 @@ namespace Test.iOS
                 var foundPend = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
             }
-
-
         }
 
         // State machine part of class
