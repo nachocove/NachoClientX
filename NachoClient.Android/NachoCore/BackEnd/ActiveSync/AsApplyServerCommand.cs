@@ -1,33 +1,26 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
-    public abstract class AsApplyServerDelta
+    public abstract class AsApplyServerCommand
     {
         protected int AccountId;
         protected List<McPending.ReWrite> ReWrites;
-        protected int PriorPendingId;
 
-        public AsApplyServerDelta (int accountId)
+        public AsApplyServerCommand (int accountId)
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();
-            PriorPendingId = 0;
         }
 
-        public void ProcessDelta ()
+        public void ProcessServerCommand ()
         {
-            // FIXME - process like in McPending - pull an array.
-            McPending pending;
-            for (pending = McPending.GetOldestYoungerThanId (AccountId, PriorPendingId);
-                null != pending;
-                pending = McPending.GetOldestYoungerThanId (AccountId, PriorPendingId)) {
-                PriorPendingId = pending.Id;
-
+            foreach (var pending in McPending.Query (AccountId).OrderBy (x => x.Id)) {
                 if (McPending.StateEnum.Dispatched == pending.State) {
                     // FIXME - what if there is an impact? will it cause this pending to fail?
                     continue;
@@ -49,7 +42,7 @@ namespace NachoCore.ActiveSync
                 // possibly generating new re-writes.
                 McPending.DbActionEnum action;
                 bool cancelDelta;
-                var newReWrites = ApplyDeltaToPending (pending, out action, out cancelDelta);
+                var newReWrites = ApplyCommandToPending (pending, out action, out cancelDelta);
                 if (null != newReWrites) {
                     ReWrites.AddRange (newReWrites);
                 }
@@ -69,20 +62,42 @@ namespace NachoCore.ActiveSync
                 }
             }
             ApplyReWritesToModel ();
-            ApplyDeltaToModel ();
+            ApplyCommandToModel ();
         }
 
-        protected abstract List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+        protected abstract List<McPending.ReWrite> ApplyCommandToPending (McPending pending, 
             out McPending.DbActionEnum action,
-            out bool cancelDelta
+            out bool cancelCommand
         );
 
         private void ApplyReWritesToModel ()
         {
-            // FIXME.
+            foreach (var rw in ReWrites) {
+                switch (rw.ObjAction) {
+                case McPending.ReWrite.ObjActionEnum.ReWriteServerParentIdString:
+                    var maybes = new List<McFolderEntry> ();
+                    maybes.Add (McFolderEntry.QueryByServerId<McFolder> (AccountId, rw.MatchString));
+                    maybes.Add (McFolderEntry.QueryByServerId<McEmailMessage> (AccountId, rw.MatchString));
+                    maybes.Add (McFolderEntry.QueryByServerId<McContact> (AccountId, rw.MatchString));
+                    maybes.Add (McFolderEntry.QueryByServerId<McCalendar> (AccountId, rw.MatchString));
+                    maybes.Add (McFolderEntry.QueryByServerId<McTask> (AccountId, rw.MatchString));
+                    foreach (var entry in maybes) {
+                        if (null != entry) {
+                            entry.ServerId = rw.ReplaceString;
+                            entry.Update ();
+                        }
+                    }
+                    var folders = McFolder.QueryByParentId (AccountId, rw.MatchString);
+                    foreach (var folder in folders) {
+                        folder.ParentId = rw.ReplaceString;
+                        folder.Update ();
+                    }
+                    break;
+                }
+            }
         }
 
-        protected abstract void ApplyDeltaToModel ();
+        protected abstract void ApplyCommandToModel ();
     }
 }
 

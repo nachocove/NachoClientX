@@ -90,7 +90,6 @@ namespace NachoCore.Model
             Db.CreateTable<McServer> ();
             Db.CreateTable<McPending> ();
             Db.CreateTable<McPendDep> ();
-            Db.CreateTable<McPendingPath> ();
             Db.CreateTable<McCalendar> ();
             Db.CreateTable<McException> ();
             Db.CreateTable<McAttendee> ();

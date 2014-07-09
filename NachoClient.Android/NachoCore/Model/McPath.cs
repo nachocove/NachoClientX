@@ -12,7 +12,7 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { get; set; }
 
-        [Unique]
+        [Indexed]
         public string ServerId { get; set; }
 
         public McPath ()
@@ -24,6 +24,21 @@ namespace NachoCore.Model
             AccountId = accountId;
         }
 
+        public static bool Dominates (int accountId, string topId, string bottomId)
+        {
+            var node = QueryByServerId (accountId, bottomId);
+            if (null == node) {
+                return false;
+            }
+            while (node != null && McFolder.AsRootServerId != node.ParentId) {
+                if (topId == node.ParentId) {
+                    return true;
+                }
+                node = QueryByServerId (accountId, node.ParentId);
+            }
+            return false;
+        }
+
         public override int Delete ()
         {
             var subs = QueryByParentId (AccountId, ServerId);
@@ -33,16 +48,16 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public static List<McPath> QueryByParentId (int accountId, string parentId)
+        public static IEnumerable<McPath> QueryByParentId (int accountId, string parentId)
         {
             return NcModel.Instance.Db.Table<McPath> ().Where (pe =>
-                pe.ParentId == parentId && pe.AccountId == accountId).ToList ();
+                pe.ParentId == parentId && pe.AccountId == accountId);
         }
 
         public static McPath QueryByServerId (int accountId, string serverId)
         {
             var path = NcModel.Instance.Db.Table<McPath> ().Where (pe => 
-                pe.ServerId == serverId && pe.AccountId == accountId).Single ();
+                pe.ServerId == serverId && pe.AccountId == accountId).SingleOrDefault ();
             return path;
         }
     }

@@ -61,7 +61,7 @@ namespace NachoCore.ActiveSync
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
                                 FolderType = (Xml.FolderHierarchy.TypeCode)uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
-                            applyAdd.ProcessDelta ();
+                            applyAdd.ProcessServerCommand ();
                             break;
                         case Xml.FolderHierarchy.Update:
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
@@ -75,16 +75,17 @@ namespace NachoCore.ActiveSync
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
                                 FolderType = uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
-                            applyUpdate.ProcessDelta ();
+                            applyUpdate.ProcessServerCommand ();
                             break;
                         case Xml.FolderHierarchy.Delete:
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
-                            pathElem.Delete ();
                             var applyDelete = new ApplyFolderDelete (BEContext.Account.Id) {
                                 ServerId = serverId,
                             };
-                            applyDelete.ProcessDelta ();
+                            applyDelete.ProcessServerCommand ();
+                            // The path information can't be deleted until *after* conflict analysis is complete.
+                            pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
+                            pathElem.Delete ();
                             break;
                         }
                     }

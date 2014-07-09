@@ -7,7 +7,9 @@ using NachoCore.Utils;
 using NachoCore.ActiveSync;
 using System.Linq;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
+using FolderOps = Test.iOS.CommonFolderOps;
 using ProtoOps = Test.iOS.CommonProtoControlOps;
+using PathOps = Test.iOS.CommonPathOps;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
 using Operations = NachoCore.Model.McPending.Operations;
@@ -29,7 +31,7 @@ namespace Test.iOS
             protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
         }
 
-        public McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
+        public static McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
             string token = "", string clientId = "", string parentId = "", string destId = "", McItem item = null)
         {
             McPending pending;
@@ -37,6 +39,7 @@ namespace Test.iOS
                 pending = new McPending (accountId, item);
             } else {
                 pending = new McPending (accountId);
+                pending.ServerId = serverId;
             }
             pending.ServerId = serverId;
             pending.Operation = operation;
@@ -48,18 +51,18 @@ namespace Test.iOS
             return pending;
         }
 
-        public McPending CreateDeferredPending (DeferredEnum reason, int accountId = defaultAccountId)
+        public static McPending CreateDeferredPending (AsProtoControl pctrl, DeferredEnum reason, int accountId = defaultAccountId)
         {
             var onFail = NcResult.Error ("There was an error");
 
             // create pending
             var pending = CreatePending (accountId: accountId);
             pending.MarkDispached ();
-            pending.ResolveAsDeferred (protoControl, reason, onFail);
+            pending.ResolveAsDeferred (pctrl, reason, onFail);
             return pending;
         }
 
-        public McPending CreateDeferredWithSeconds (double seconds, int accountId = defaultAccountId)
+        public static McPending CreateDeferredWithSeconds (AsProtoControl pctrl, double seconds, int accountId = defaultAccountId)
         {
             var onFail = NcResult.Error ("There was an error");
 
@@ -68,11 +71,11 @@ namespace Test.iOS
 
             // Resolve as deferred with UTC Now
             var eligibleAfter = DateTime.UtcNow.AddSeconds (seconds);
-            pending.ResolveAsDeferred (protoControl, eligibleAfter, onFail);
+            pending.ResolveAsDeferred (pctrl, eligibleAfter, onFail);
             return pending;
         }
 
-        public void PendingsAreEqual (McPending pend1, McPending pend2)
+        public static void PendingsAreEqual (McPending pend1, McPending pend2)
         {
             Assert.AreEqual (pend1.State, pend2.State, "Pending objects should have the same State");
             Assert.AreEqual (pend1.DeferredReason, pend2.DeferredReason, "Pending objects should have the same deferred reason");
@@ -83,7 +86,7 @@ namespace Test.iOS
 
     public class McPendingTest 
     {
-        public class TestDependencies :BaseMcPendingTest
+        public class TestDependencies : BaseMcPendingTest
         {
             [Test]
             public void BasicDependencyTest ()
@@ -574,11 +577,11 @@ namespace Test.iOS
                 double waitTime = 0.5;
 
                 // Create a 1nd Eligible state McPending and resolve deferred with reason UntilSync
-                var pending = CreateDeferredPending (reason);
+                var pending = CreateDeferredPending (protoControl, reason);
                 VerifyStateAndReason (pending.Id, StateEnum.Deferred, reason);
 
                 // Create a 2nd Eligible state McPending and resolve as deferred with UTC Now
-                var secPending = CreateDeferredWithSeconds (waitTime);
+                var secPending = CreateDeferredWithSeconds (protoControl, waitTime);
                 VerifyStateAndReason (secPending.Id, StateEnum.Deferred, DeferredEnum.UntilTime);
 
                 // Find only the 1st using QueryDeferredSync (int accountId).
@@ -671,17 +674,6 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestGetOldestYoungerThanId ()
-            {
-                var old = CreatePending ();
-                var mid = CreatePending ();
-                CreatePending (); // young
-                CreatePending (accountId: 5); // otherAccount
-                var retrieved = McPending.GetOldestYoungerThanId (defaultAccountId, old.Id);
-                PendingsAreEqual (mid, retrieved);
-            }
-
-            [Test]
             public void TestQueryEligible ()
             {
                 var pendElig = CreatePending ();
@@ -719,9 +711,9 @@ namespace Test.iOS
                 var fsyncReason = DeferredEnum.UntilFSync;
                 var fsyncsyncReason = DeferredEnum.UntilFSyncThenSync;
 
-                CreateDeferredPending (fsyncReason); // first
-                CreateDeferredPending (fsyncsyncReason); // second
-                var third = CreateDeferredPending (fsyncReason, accountId: 5);
+                CreateDeferredPending (protoControl, fsyncReason); // first
+                CreateDeferredPending (protoControl, fsyncsyncReason); // second
+                var third = CreateDeferredPending (protoControl, fsyncReason, accountId: 5);
 
                 var retrieved = McPending.QueryDeferredFSync (defaultAccountId);
                 Assert.AreEqual (2, retrieved.Count, "Should only retrieve folders with correct accountId");
@@ -733,8 +725,8 @@ namespace Test.iOS
             [Test]
             public void TestQueryDeferredSync ()
             {
-                var pending = CreateDeferredPending (DeferredEnum.UntilSync);
-                CreateDeferredPending (DeferredEnum.UntilSync, accountId: 5);
+                var pending = CreateDeferredPending (protoControl, DeferredEnum.UntilSync);
+                CreateDeferredPending (protoControl, DeferredEnum.UntilSync, accountId: 5);
                 var retrieved = McPending.QueryDeferredSync (defaultAccountId);
                 Assert.AreEqual (1, retrieved.Count, "Query should only return object in the specified account");
                 PendingsAreEqual (pending, retrieved.FirstOrDefault ());
@@ -745,9 +737,9 @@ namespace Test.iOS
             {
                 double waitSeconds = 0.5;
 
-                CreateDeferredWithSeconds (waitSeconds); // pendFuture
-                var pendPast = CreateDeferredWithSeconds (-waitSeconds);
-                CreateDeferredWithSeconds (waitSeconds, accountId: 5); // pendOtherAccount 
+                CreateDeferredWithSeconds (protoControl, waitSeconds); // pendFuture
+                var pendPast = CreateDeferredWithSeconds (protoControl, -waitSeconds);
+                CreateDeferredWithSeconds (protoControl, waitSeconds, accountId: 5); // pendOtherAccount 
 
                 var retrieved = McPending.QueryDeferredUntilNow (defaultAccountId);
                 Assert.AreEqual (1, retrieved.Count);
@@ -828,6 +820,34 @@ namespace Test.iOS
 
                 var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, Operations.CalUpdate);
                 PendingsAreEqual (firstPend, retrieved);
+            }
+
+            [Test]
+            public void TestQueryItemUsingServerId ()
+            {
+                string serverId = "3";
+
+                Action<McItem, Operations> testQuery = (item, op) => {
+                    var itemPend = CreatePending (serverId: serverId, operation: Operations.EmailMove, item: item);
+                    var foundItem = itemPend.QueryItemUsingServerId ();
+                    FolderOps.ItemsAreEqual (item, foundItem);
+                };
+
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: serverId);
+                testQuery (email, Operations.EmailMove);
+
+                var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: serverId);
+                testQuery (cal, Operations.CalMove);
+
+                var contact = FolderOps.CreateUniqueItem<McContact> (serverId: serverId);
+                testQuery (contact, Operations.ContactMove);
+
+                var task = FolderOps.CreateUniqueItem<McTask> (serverId: serverId);
+                testQuery (task, Operations.TaskMove);
+
+                var badPend = CreatePending (serverId: serverId, operation: Operations.AttachmentDownload);
+                var noItem = badPend.QueryItemUsingServerId ();
+                Assert.Null (noItem, "Should return null if a non-move operation is queried");
             }
         }
 
@@ -1036,7 +1056,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                commonFolder = CommonFolderOps.CreateFolder (accountId: defaultAccountId);
+                commonFolder = FolderOps.CreateFolder (accountId: defaultAccountId);
                 defaultServerId = "3";
             }
 
@@ -1109,7 +1129,7 @@ namespace Test.iOS
             [Test]
             public void TestNcAsserts ()
             {
-                var item = CommonFolderOps.CreateUniqueItem<McCalendar> (defaultAccountId);
+                var item = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId);
                 commonFolder.Link (item);
 
                 item.PendingRefCount = 100001;
@@ -1122,7 +1142,7 @@ namespace Test.iOS
 
             private McItem CreateAndLinkItem ()
             {
-                var item = CommonFolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, defaultServerId);
+                var item = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, defaultServerId);
                 commonFolder.Link (item);
                 return item;
             }
@@ -1135,6 +1155,102 @@ namespace Test.iOS
                 Assert.AreEqual (1, foundItems.Count, "Item should exist in and be the only item in the folder");
                 Assert.AreEqual (item.Id, foundItems.FirstOrDefault ().Id, "Item in folder should match expected");
                 return foundItem;
+            }
+        }
+
+        public class TestCommandDomination : BaseMcPendingTest
+        {
+            [Test]
+            public void TestDomination ()
+            {
+                int accountId = 1;
+
+                // make McPending with different ServerId, ParentId, and DestId vals
+                var pend = CreatePending (accountId: accountId, serverId: "4", parentId: "2", destId: "3");
+
+                var top = new PathOps.McPathNode (PathOps.CreatePath (accountId, "1", "0"));
+                var parent = new PathOps.McPathNode (PathOps.CreatePath (accountId, "2", "1"));
+                var dest = new PathOps.McPathNode (PathOps.CreatePath (accountId, "3", "1"));
+                var item = new PathOps.McPathNode (PathOps.CreatePath (accountId, "4", "2"));
+                var bottom = new PathOps.McPathNode (PathOps.CreatePath (accountId, "5", "4"));
+
+                // add nodes to their parents
+                top.Children.Add (parent);
+                top.Children.Add (dest);
+                parent.Children.Add (item);
+                item.Children.Add (bottom);
+
+                // CommandDominatesParentId
+                bool domParentId = pend.CommandDominatesParentId (top.Root.ServerId);
+                Assert.IsTrue (domParentId, "CommandDominatesParentId should return true if param is parent of parent");
+                domParentId = pend.CommandDominatesParentId (dest.Root.ServerId);
+                Assert.IsFalse (domParentId, "Sibling of parent should not dominate parent id");
+                domParentId = pend.CommandDominatesParentId (bottom.Root.ServerId);
+                Assert.IsFalse (domParentId, "Child of item should not dominate parent Id");
+
+                // CommandDominatesServerId
+                bool domServerId = pend.CommandDominatesServerId (top.Root.ServerId);
+                Assert.IsTrue (domServerId, "Parent of parent should dominate item");
+                domServerId = pend.CommandDominatesServerId (dest.Root.ServerId);
+                Assert.IsFalse (domServerId, "Sibling of parent should not dominate item");
+                domServerId = pend.CommandDominatesServerId (bottom.Root.ServerId);
+                Assert.IsFalse (domServerId, "Child of item does not dominate serverId");
+
+                // CommandDominatesDestParentId
+                bool domDestParentId = pend.CommandDominatesDestParentId (top.Root.ServerId);
+                Assert.IsTrue (domDestParentId, "Parent of destParent should dominate");
+                domDestParentId = pend.CommandDominatesDestParentId (parent.Root.ServerId);
+                Assert.IsFalse (domDestParentId, "Sibling of destParent should not dominate it");
+                domDestParentId = pend.CommandDominatesDestParentId (item.Root.ServerId);
+                Assert.IsFalse (domDestParentId, "Item should not dominate destParent");
+            }
+
+            [Test]
+            public void TestPendingItemNotDom ()
+            {
+                var parent = new PathOps.McPathNode (PathOps.CreatePath (defaultAccountId, "1", "0"));
+                var item = new PathOps.McPathNode (PathOps.CreatePath (defaultAccountId, "2", "1"));
+                var badItem = new PathOps.McPathNode (PathOps.CreatePath (defaultAccountId, "3", "1"));
+
+                var folder = FolderOps.CreateFolder (accountId: defaultAccountId, parentId: parent.Root.ParentId, serverId: parent.Root.ServerId);
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: item.Root.ServerId);
+                folder.Link (email);
+                var emailPend = CreatePending (accountId: defaultAccountId, parentId: item.Root.ParentId, serverId: item.Root.ServerId, operation: Operations.EmailSend, item: email);
+                var badEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: badItem.Root.ServerId);
+                folder.Link (badEmail);
+
+                var domItem = emailPend.CommandDominatesItem (badEmail.ServerId);
+                Assert.IsFalse (domItem, "CommandDominatesItem should return false when the argument does not match or dominate");
+            }
+
+            [Test]
+            public void TestPendingItemInSyncedFolder ()
+            {
+                // create McPath tree
+                int accountId = 1;
+
+                var parent = new PathOps.McPathNode (PathOps.CreatePath (accountId, "1", "0"));
+                var item = new PathOps.McPathNode (PathOps.CreatePath (accountId, "2", "1"));
+                var bottom = new PathOps.McPathNode (PathOps.CreatePath (accountId, "3", "2"));
+
+                // add nodes to their parents
+                parent.Children.Add (item);
+                item.Children.Add (bottom);
+
+                // create folder, item, and pending
+                var folder = FolderOps.CreateFolder (accountId: accountId, serverId: parent.Root.ServerId);
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: accountId, serverId: item.Root.ServerId);
+                folder.Link (email);
+                var emailPend = CreatePending (accountId: accountId, parentId: folder.ServerId, operation: Operations.EmailReply, serverId: email.ServerId, item: email);
+
+                var domItemServerId = emailPend.CommandDominatesItem (email.ServerId);
+                Assert.IsTrue (domItemServerId, "CommandDominatesItem should return true when the item ServerId matches the argument");
+
+                var domfolderServerId = emailPend.CommandDominatesItem (folder.ServerId);
+                Assert.IsTrue (domfolderServerId, "CommandDominatesItem should return true when the argument dominates the item ServerId");
+
+                var domNotDom = emailPend.CommandDominatesItem (bottom.Root.ServerId);
+                Assert.IsFalse (domNotDom, "CommandDominatesItem should not return true when the argument does not dominate the item");
             }
         }
     }

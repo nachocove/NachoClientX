@@ -433,9 +433,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\StatusIndEventArgs.cs">
       <Link>NachoCore\BackEnd\StatusIndEventArgs.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsApplyServerDelta.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsApplyServerDelta.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsConstants.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsConstants.cs</Link>
     </Compile>
@@ -937,6 +934,18 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcDistribution.cs">
       <Link>NachoCore\Utils\NcDistribution.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

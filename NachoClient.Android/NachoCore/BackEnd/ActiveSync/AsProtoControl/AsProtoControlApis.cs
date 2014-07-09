@@ -391,8 +391,13 @@ namespace NachoCore.ActiveSync
             if (att.IsDownloaded) {
                 return null;
             }
+            var emailMessage = McObject.QueryById<McEmailMessage> (att.EmailMessageId);
+            if (null == emailMessage) {
+                return null;
+            }
             var update = new McPending (Account.Id) {
                 Operation = McPending.Operations.AttachmentDownload,
+                ServerId = emailMessage.ServerId,
                 AttachmentId = attId,
             };
             update.Insert ();
@@ -763,7 +768,7 @@ namespace NachoCore.ActiveSync
                 ServerId = serverId,
                 ParentId = destFldServerId,
                 DisplayName = displayName,
-                FolderCreate_Type = folderType,
+                Folder_Type = folderType,
                 // Epoch intentionally not set.
             };
 
@@ -825,6 +830,7 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ParentId,
                 DestParentId = destFolder.ServerId,
                 DisplayName = folder.DisplayName,
+                Folder_Type = folder.Type,
             };
 
             upFolder.Insert ();
@@ -855,6 +861,7 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ParentId,
                 DestParentId = folder.ParentId, // Set only because Move & Rename map to the same EAS command.
                 DisplayName = displayName,
+                Folder_Type = folder.Type,
             };
 
             upFolder.Insert ();

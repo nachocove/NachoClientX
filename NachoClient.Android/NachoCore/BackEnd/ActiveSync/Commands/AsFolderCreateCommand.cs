@@ -25,7 +25,7 @@ namespace NachoCore.ActiveSync
                                    new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),
                                    new XElement (m_ns + Xml.FolderHierarchy.ParentId, PendingSingle.ParentId),
                                    new XElement (m_ns + Xml.FolderHierarchy.DisplayName, PendingSingle.DisplayName),
-                                   new XElement (m_ns + Xml.FolderHierarchy.Type, ((int)PendingSingle.FolderCreate_Type)));
+                                   new XElement (m_ns + Xml.FolderHierarchy.Type, ((int)PendingSingle.Folder_Type)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (folderCreate);
             return doc;		
@@ -50,7 +50,7 @@ namespace NachoCore.ActiveSync
                     PlaceholderId = PendingSingle.ServerId,
                     FinalServerId = serverId,
                 };
-                applyFolderCreate.ProcessDelta ();
+                applyFolderCreate.ProcessServerCommand ();
 
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
@@ -121,7 +121,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private class ApplyCreateFolder : AsApplyServerDelta
+        private class ApplyCreateFolder : AsApplyServerCommand
         {
             public string FinalServerId { set; get; }
 
@@ -132,11 +132,11 @@ namespace NachoCore.ActiveSync
             {
             }
 
-            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending, 
+            protected override List<McPending.ReWrite> ApplyCommandToPending (McPending pending, 
                 out McPending.DbActionEnum action,
                 out bool cancelDelta)
             {
-                // FIXME - need a McPending method that acts on ALL ServerId fields.
+                // TODO - need a McPending method that acts on ALL ServerId fields.
                 action = McPending.DbActionEnum.DoNothing;
                 cancelDelta = false;
                 if (null != pending.ServerId && pending.ServerId == PlaceholderId) {
@@ -154,7 +154,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            protected override void ApplyDeltaToModel ()
+            protected override void ApplyCommandToModel ()
             {
                 var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
                 if (null != target) {

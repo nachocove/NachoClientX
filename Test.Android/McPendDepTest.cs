@@ -22,7 +22,7 @@ namespace Test.Common
                 ServerId = "parent",
                 ParentId = "0",
                 DisplayName = "Folder",
-                FolderCreate_Type = Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14,
+                Folder_Type = Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14,
             };
             createFolder.Insert ();
             for (int iter = 0; iter < 10; ++iter) {

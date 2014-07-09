@@ -413,11 +413,11 @@ namespace NachoCore.ActiveSync
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                 switch (status) {
                 case Xml.AirSync.StatusCode.Success_1:
-                    var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
-                    ProcessCollectionCommands (folder, xmlCommands);
-
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
+
+                    var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
+                    ProcessCollectionCommands (folder, xmlCommands);
 
                     lock (PendingResolveLockObj) {
                         // Any pending not already resolved gets resolved as Success.
@@ -636,49 +636,62 @@ namespace NachoCore.ActiveSync
                 var classCode = GetClassCode (command, folder);
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
+                    var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    var pathElem = new McPath (BEContext.Account.Id);
+                    pathElem.ServerId = addServerId;
+                    pathElem.ParentId = folder.ServerId;
+                    pathElem.Insert ();
+                    var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
+                        ClassCode = classCode,
+                        ServerId = addServerId,
+                        XmlCommand = command,
+                        Folder = folder,
+                    };
+                    applyAdd.ProcessServerCommand ();
+                    var xmlApplicationData = command.ElementAnyNs ("ApplicationData");
                     switch (classCode) {
-                    case Xml.AirSync.ClassCode.Contacts:
-                        HadContactSetChanges = true;
-                        ServerSaysAddContact (command, folder);
-                        break;
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageSetChanges = true;
-                        var emailMessage = ServerSaysAddEmail (command, folder);
-                        if (null != emailMessage && Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
-                            false == emailMessage.IsRead) {
-                            HadNewUnreadEmailMessageInInbox = true;
+                        if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
+                            null != xmlApplicationData) {
+                            var xmlRead = xmlApplicationData.ElementAnyNs ("Read");
+                            if (null != xmlRead && "0" == xmlRead.Value) {
+                                HadNewUnreadEmailMessageInInbox = true;
+                            }
                         }
+                        break;
+                    case Xml.AirSync.ClassCode.Contacts:
+                        HadContactSetChanges = true;
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
                         HadCalendarSetChanges = true;
-                        ServerSaysAddCalendarItem (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
                         HadTaskSetChanges = true;
-                        ServerSaysAddTask (command, folder);
-                        break;
-                    default:
-                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
                     break;
                 case Xml.AirSync.Change:
+                    var chgServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    var applyChange = new ApplyItemChange (BEContext.Account.Id) {
+                        ClassCode = classCode,
+                        ServerId = chgServerId,
+                        XmlCommand = command,
+                        Folder = folder,
+                    };
+                    applyChange.ProcessServerCommand ();
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageChanges = true;
-                        ServerSaysChangeEmail (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
                         HadCalendarChanges = true;
-                        ServerSaysChangeCalendarItem (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
                         HadContactChanges = true;
-                        ServerSaysChangeContact (command, folder);
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
                         HadTaskChanges = true;
-                        ServerSaysChangeTask (command, folder);
                         break;
                     default:
                         Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
@@ -688,34 +701,25 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.Delete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
+                    pathElem.Delete ();
+                    var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
+                        ClassCode = classCode,
+                        ServerId = delServerId,
+                    };
+                    applyDelete.ProcessServerCommand ();
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageSetChanges = true;
-                        var emailMessage = McFolderEntry.QueryByServerId<McEmailMessage> (BEContext.Account.Id, delServerId);
-                        if (null != emailMessage) {
-                            emailMessage.Delete ();
-                        }
                         break;
                     case Xml.AirSync.ClassCode.Calendar:
                         HadCalendarSetChanges = true;
-                        var cal = McFolderEntry.QueryByServerId<McCalendar> (BEContext.Account.Id, delServerId);
-                        if (null != cal) {
-                            cal.Delete ();
-                        }
                         break;
                     case Xml.AirSync.ClassCode.Contacts:
                         HadContactSetChanges = true;
-                        var contact = McFolderEntry.QueryByServerId<McContact> (BEContext.Account.Id, delServerId);
-                        if (null != contact) {
-                            contact.Delete ();
-                        }
                         break;
                     case Xml.AirSync.ClassCode.Tasks:
                         HadTaskSetChanges = true;
-                        var task = McFolderEntry.QueryByServerId<McTask> (BEContext.Account.Id, delServerId);
-                        if (null != task) {
-                            task.Delete ();
-                        }
                         break;
                     default:
                         Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
@@ -789,26 +793,26 @@ namespace NachoCore.ActiveSync
             var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
             switch (status) {
             case Xml.AirSync.StatusCode.Success_1:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
                 break;
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
             case Xml.AirSync.StatusCode.ClientError_6:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsHardFail (BEContext.ProtoControl, 
                     NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
                 break;
 
             case Xml.AirSync.StatusCode.ServerWins_7:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                     NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
                 break;
 
             case Xml.AirSync.StatusCode.NoSpace_9:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                     McPending.BlockReasonEnum.UserRemediation,
                     NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
@@ -816,7 +820,7 @@ namespace NachoCore.ActiveSync
 
             case Xml.AirSync.StatusCode.LimitReWait_14:
                 Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
                 break;
@@ -826,7 +830,7 @@ namespace NachoCore.ActiveSync
                 if (null != Limit) {
                     protocolState.AsSyncLimit = (uint)Limit;
                 }
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 success = true;
                 break;
@@ -835,7 +839,7 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.NotFound_8:
                 // Note: we don't send partial Sync requests.
             case Xml.AirSync.StatusCode.ResendFull_13:
-                PendingList.Remove (pending);
+                PendingList.RemoveAll (x => x.Id == pending.Id);
                 pending.ResponsegXmlStatus = (uint)status; // FIXME move this up.
                 pending.ResolveAsHardFail (BEContext.ProtoControl,
                     NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
@@ -889,13 +893,13 @@ namespace NachoCore.ActiveSync
                     switch (status) {
                     case Xml.AirSync.StatusCode.ProtocolError_4:
                     case Xml.AirSync.StatusCode.ClientError_6:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsHardFail (BEContext.ProtoControl, 
                             NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
                         break;
 
                     case Xml.AirSync.StatusCode.ServerWins_7:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsHardFail (BEContext.ProtoControl,
                             NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
                         break;
@@ -903,14 +907,14 @@ namespace NachoCore.ActiveSync
                     case Xml.AirSync.StatusCode.NotFound_8:
                         folder.AsSyncMetaToClientExpected = true;
                         folder.Update ();
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsDeferred (BEContext.ProtoControl,
                             McPending.DeferredEnum.UntilSync,
                             NcResult.Error (NcResult.SubKindEnum.Error_ObjectNotFoundOnServer));
                         break;
 
                     case Xml.AirSync.StatusCode.NoSpace_9:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsUserBlocked (BEContext.ProtoControl,
                             McPending.BlockReasonEnum.UserRemediation,
                             NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
@@ -918,7 +922,7 @@ namespace NachoCore.ActiveSync
 
                     case Xml.AirSync.StatusCode.LimitReWait_14:
                         Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                         break;
 
@@ -928,14 +932,14 @@ namespace NachoCore.ActiveSync
                             protocolState.AsSyncLimit = (uint)Limit;
                             protocolState.Update ();
                         }
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResolveAsSuccess (BEContext.ProtoControl);
                         break;
 
                     default:
                         // Note: we don't send partial Sync requests.
                     case Xml.AirSync.StatusCode.ResendFull_13:
-                        PendingList.Remove (pending);
+                        PendingList.RemoveAll (x => x.Id == pending.Id);
                         pending.ResponsegXmlStatus = (uint)status;
                         pending.ResolveAsHardFail (BEContext.ProtoControl,
                             NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));

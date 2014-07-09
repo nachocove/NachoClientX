@@ -5,6 +5,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace Test.iOS
 {
@@ -51,13 +52,32 @@ namespace Test.iOS
     {
         public const string defaultServerId = "5";
 
-        public static T CreateUniqueItem<T> (int accountId, string serverId = defaultServerId) where T : McItem, new ()
+        public static T CreateUniqueItem<T> (int accountId = defaultAccountId, string serverId = defaultServerId) where T : McItem, new ()
         {
-            T newItem = new T ();
-            newItem.AccountId = accountId;
-            newItem.ServerId = serverId;
+            T newItem = new T {
+                AccountId = accountId,
+                ServerId = serverId,
+            };
             newItem.Insert ();
             return newItem;
+        }
+
+        public static McAttachment CreateAttachment (McItem item, int accountId = defaultAccountId, string displayName = "")
+        {
+            var att =  new McAttachment {
+                AccountId = accountId,
+                DisplayName = displayName,
+                EmailMessageId = item.Id,
+            };
+            att.Insert ();
+            return att;
+        }
+
+        public static void ItemsAreEqual (McItem item1, McItem item2)
+        {
+            Assert.AreEqual (item1.Id, item2.Id, "Equivalent items should have the same Id");
+            Assert.AreEqual (item1.AccountId, item2.AccountId, "Equivalent items should have the same AccountId");
+            Assert.AreEqual (item2.ServerId, item2.ServerId, "Equivalent items should have the same ServerId");
         }
 
         public static McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
@@ -79,6 +99,30 @@ namespace Test.iOS
 
             if (autoInsert) { folder.Insert (); }
             return folder;
+        }
+    }
+
+    public class CommonPathOps : CommonTestOps
+    {
+        public static McPath CreatePath (int accountId, string serverId = "", string parentId = "")
+        {
+            var path = new McPath (accountId);
+            path.ServerId = serverId;
+            path.ParentId = parentId;
+            path.Insert ();
+            return path;
+        }
+
+        public class McPathNode
+        {
+            public McPathNode (McPath root)
+            {
+                Root = root;
+                Children = new List<McPathNode> ();
+            }
+
+            public McPath Root;
+            public List<McPathNode> Children;
         }
     }
 

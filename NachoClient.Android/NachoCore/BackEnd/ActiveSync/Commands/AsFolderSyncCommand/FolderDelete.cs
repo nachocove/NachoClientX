@@ -10,71 +10,144 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsFolderSyncCommand : AsCommand
     {
-        private class ApplyFolderDelete : AsApplyServerDelta
+        private class ApplyFolderDelete : AsApplyServerCommand
         {
             public string ServerId { set; get; }
 
             public ApplyFolderDelete (int accountId)
-                    : base (accountId)
+                : base (accountId)
             {
             }
 
-            protected override List<McPending.ReWrite> ApplyDeltaToPending (McPending pending,
-                out McPending.DbActionEnum action,
-                out bool cancelDelta)
+            protected override List<McPending.ReWrite> ApplyCommandToPending (McPending pending,
+                                                                              out McPending.DbActionEnum action,
+                                                                              out bool cancelCommand)
             {
-                action = McPending.DbActionEnum.DoNothing;
-                cancelDelta = false;
                 switch (pending.Operation) {
                 case McPending.Operations.FolderCreate:
-                    if (pending.FolderCompletelyDominates (ServerId)) {
-                        // Perform the FolderCreate, but under lost+found.
-                        var folder = McFolder.Create (AccountId,
-                            true,
-                            false,
-                            McFolder.ClientOwned_LostAndFound,
-                            pending.ServerId,
-                            pending.DisplayName,
-                            pending.FolderCreate_Type);
-                        folder.Insert ();
-                        // Delete the FolderCreate.
-                        action = McPending.DbActionEnum.Delete;
-                        cancelDelta = false;
-                        // The re-write is to make everything dominated by the 
-                        // FolderCreate folder client-owned.
-                        return new List<McPending.ReWrite> () {
-                            new McPending.ReWrite () {
-                                IsMatch = (subject) => 
-                                    pending.FolderCompletelyDominates (ServerId),
-                                PerformReWrite = (subject) => {
-                                    // Add new re-write. CAN WE ADD A REWRITE IN A REWRITE?
-                                    // Move to LAF.
-                                    // Do the Op now.
-                                    return McPending.DbActionEnum.Delete;
-                                },
-                            }
-                        };
-                    }
-                    break;
+                    action = (pending.ParentId == ServerId || pending.CommandDominatesParentId (ServerId)) ? 
+                        McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
+                    cancelCommand = false;
+                    return null;
 
                 case McPending.Operations.FolderDelete:
-                    // If ServerID matches, then the pending is redundant, and the client has already
-                    // performed the delete in the DB as well, so we are done.
                     if (pending.ServerId == ServerId) {
                         action = McPending.DbActionEnum.Delete;
-                        cancelDelta = true;
-                        return null;
+                        cancelCommand = true;
+                    } else if (pending.CommandDominatesServerId (ServerId)) {
+                        action = McPending.DbActionEnum.Delete;
+                        cancelCommand = false;
+                    } else if (pending.ServerIdDominatesCommand (ServerId)) {
+                        action = McPending.DbActionEnum.DoNothing;
+                        cancelCommand = true;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                        cancelCommand = false;
                     }
-                    // FIXME - there is still a dominates case here.
-                    break;
+                    return null;
 
                 case McPending.Operations.FolderUpdate:
-                    break;
+                    if (pending.ParentId == pending.DestParentId) {
+                        // FolderUpdate:Rename.
+                        if (pending.CommandDominatesServerId (ServerId)) {
+                            action = McPending.DbActionEnum.Delete;
+                            cancelCommand = false;
+                            return null;
+                        }
+                    } else {
+                        // FolderUpdate:Move.
+                        if (pending.CommandDominatesDestParentId (ServerId)) {
+                            McFolder.ServerEndMoveToClientOwned (AccountId, pending.ServerId, McFolder.ClientOwned_LostAndFound);
+                            action = McPending.DbActionEnum.Delete;
+                            cancelCommand = false;
+                            return null;
+                        } else if (pending.CommandDominatesParentId (ServerId)) {
+                            // FIXME - convert into SyncAdds (in-place). This means injecting new McPendings.
+                            action = McPending.DbActionEnum.Delete;
+                            cancelCommand = false;
+                            return null;
+                        }
+                    }
+                    action = McPending.DbActionEnum.DoNothing;
+                    cancelCommand = false;
+                    return null;
+
+                case McPending.Operations.AttachmentDownload:
+                case McPending.Operations.CalRespond:
+                    action = (pending.CommandDominatesServerId (ServerId)) ? 
+                        McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
+                    cancelCommand = false;
+                    return null;
+
+                case McPending.Operations.EmailMove:
+                case McPending.Operations.CalMove:
+                case McPending.Operations.ContactMove:
+                case McPending.Operations.TaskMove:
+                    cancelCommand = false;
+                    var item = pending.QueryItemUsingServerId ();
+                    if (pending.CommandDominatesDestParentId (ServerId)) {
+                        McFolder.UnlinkAll (item);
+                        var laf = McFolder.GetLostAndFoundFolder (AccountId);
+                        laf.Link (item);
+                        action = McPending.DbActionEnum.Delete;
+                        return null;
+                    } else if (pending.CommandDominatesParentId (ServerId)) {
+                        // FIXME - convert into SyncAdds (in-place).
+                        action = McPending.DbActionEnum.Delete;
+                        return null;
+                    }
+                    action = McPending.DbActionEnum.DoNothing;
+                    return null;
+
+                case McPending.Operations.EmailForward:
+                case McPending.Operations.EmailReply:
+                    cancelCommand = false;
+                    if (pending.CommandDominatesItem (ServerId)) {
+                        pending.ConvertToEmailSend ();
+                        action = McPending.DbActionEnum.Update;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
+                case McPending.Operations.CalCreate:
+                case McPending.Operations.ContactCreate:
+                case McPending.Operations.TaskCreate:
+                case McPending.Operations.CalUpdate:
+                case McPending.Operations.ContactUpdate:
+                case McPending.Operations.TaskUpdate:
+                    cancelCommand = false;
+                    if (pending.CommandDominatesItem (ServerId)) {
+                        item = pending.QueryItemUsingServerId ();
+                        McFolder.UnlinkAll (item);
+                        var laf = McFolder.GetLostAndFoundFolder (AccountId);
+                        laf.Link (item);
+                        action = McPending.DbActionEnum.Delete;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
+                case McPending.Operations.EmailDelete:
+                case McPending.Operations.CalDelete:
+                case McPending.Operations.ContactDelete:
+                case McPending.Operations.TaskDelete:
+                    cancelCommand = false;
+                    if (pending.CommandDominatesItem (ServerId)) {
+                        action = McPending.DbActionEnum.Delete;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
+                default:
+                    action = McPending.DbActionEnum.DoNothing;
+                    cancelCommand = false;
+                    return null;
                 }
-                return null;
             }
 
-            protected override void ApplyDeltaToModel ()
+            protected override void ApplyCommandToModel ()
             {
                 // Remove the folder and anything subordinate.
                 var folder = McFolderEntry.QueryByServerId<McFolder> (AccountId, ServerId);
