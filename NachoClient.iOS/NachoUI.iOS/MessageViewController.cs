@@ -104,6 +104,12 @@ namespace NachoClient.iOS
             if ((NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) || (NcResult.SubKindEnum.Error_AttDownloadFailed == s.Status.SubKind)) {
                 FetchAttachments ();
                 ConfigureAttachments ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
+                ConfigureView ();
+                return;
             }
         }
 
@@ -487,7 +493,8 @@ namespace NachoClient.iOS
         protected void RenderBody (McEmailMessage message)
         {
             if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
-                // TODO: Start body download
+                Log.Info (Log.LOG_EMAIL, "Starting download of whole message body");
+                BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id);
                 RenderTextString (message.GetBodyPreviewOrEmpty ());
                 return;
             }
