@@ -922,6 +922,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
       <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcFetchAssist.cs">
+      <Link>NachoCore\Adapters\NcFetchAssist.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

@@ -287,6 +287,7 @@
     <Compile Include="NachoCore\Brain\NcScoreCombiner.cs" />
     <Compile Include="NachoCore\Utils\IStopwatch.cs" />
     <Compile Include="NachoCore\Utils\PlatformStopwatch.cs" />
+    <Compile Include="NachoCore\Adapters\NcFetchAssist.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
