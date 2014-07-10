@@ -18,6 +18,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using System.Net;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 
 namespace Test.iOS
@@ -223,5 +224,38 @@ namespace Test.iOS
 
         public void Reset (int serverId) {}
         public void Refresh () {}
+    }
+
+    public class MockStrategy : IAsStrategy
+    {
+        public McFolder Folder;
+        public List<McPending> PendList;
+
+        public MockStrategy ()
+        {
+            PendList = new List<McPending> ();
+        }
+
+        public MockStrategy (McFolder folder) : this ()
+        {
+            Folder = folder;
+        }
+
+        public void ReportSyncResult (System.Collections.Generic.List<McFolder> folders) {}
+
+        public Tuple<uint, System.Collections.Generic.List<Tuple<McFolder, System.Collections.Generic.List<McPending>>>> SyncKit ()
+        {
+            uint windowSize = 1; // TODO determine a good default window size
+            var retList = new List<Tuple<McFolder, List<McPending>>> ();
+            retList.Add (Tuple.Create (Folder, PendList));
+
+            return Tuple.Create (windowSize, retList);
+        }
+
+        public bool IsMoreSyncNeeded () { return false; }
+
+        public System.Collections.Generic.IEnumerable<McFolder> PingKit () { throw new NotImplementedException (); }
+
+        public bool RequestQuickFetch { get; set; }
     }
 }

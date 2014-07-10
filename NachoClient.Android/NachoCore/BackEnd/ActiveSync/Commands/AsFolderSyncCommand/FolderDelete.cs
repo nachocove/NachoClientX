@@ -117,8 +117,8 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.ContactUpdate:
                 case McPending.Operations.TaskUpdate:
                     cancelCommand = false;
-                    if (pending.CommandDominatesItem (ServerId)) {
-                        item = pending.QueryItemUsingServerId ();
+                    if (ServerId == pending.ParentId || pending.CommandDominatesParentId (ServerId)) {
+                        item = pending.GetItem ();
                         McFolder.UnlinkAll (item);
                         var laf = McFolder.GetLostAndFoundFolder (AccountId);
                         laf.Link (item);

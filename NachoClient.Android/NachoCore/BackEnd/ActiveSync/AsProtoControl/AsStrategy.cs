@@ -10,7 +10,7 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public class AsStrategy
+    public class AsStrategy : IAsStrategy
     {
         public const uint KBaseOverallWindowSize = 10;
         public const uint KBasePerFolderWindowSize = 7;
