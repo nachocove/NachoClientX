@@ -695,6 +695,30 @@ namespace Test.iOS
             }
 
             [Test]
+            public void TestSyncDeleteMatchAllItems ()
+            {
+                TestSyncMatch<McCalendar> (TypeCode.DefaultCal_8,
+                    (itemId, parentId) => Context.ProtoControl.DeleteCalCmd (itemId),
+                    isDelete: true
+                );
+
+                TestSyncMatch<McContact> (TypeCode.DefaultContacts_9,
+                    (itemId, parentId) => Context.ProtoControl.DeleteContactCmd (itemId),
+                    isDelete: true
+                );
+
+                TestSyncMatch<McTask> (TypeCode.DefaultTasks_7,
+                    (itemId, parentId) => Context.ProtoControl.DeleteTaskCmd (itemId),
+                    isDelete: true
+                );
+
+                TestSyncMatch<McEmailMessage> (TypeCode.DefaultInbox_2,
+                    (itemId, parentId) => Context.ProtoControl.DeleteEmailCmd (itemId),
+                    isDelete: true
+                );
+            }
+
+            [Test]
             public void TestSyncUpdateMatchAllItems ()
             {
                 TestSyncMatch <McCalendar> (TypeCode.DefaultCal_8,
@@ -710,7 +734,8 @@ namespace Test.iOS
                 );
             }
 
-            public void TestSyncMatch<T> (TypeCode topFolderType, Func<int, int, string> creationCmd) where T : McItem, new()
+            public void TestSyncMatch<T> (TypeCode topFolderType, Func<int, int, string> creationCmd,
+                bool isDelete = false) where T : McItem, new()
             {
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = CreateTopFolder (withPath: true, type: topFolderType);
@@ -721,7 +746,11 @@ namespace Test.iOS
                     token = creationCmd (item.Id, topFolder.Id);
                 });
 
-                DoSyncAdd<T> (item, token);
+                if (isDelete) {
+                    DoSyncDelete<T> (item, token);
+                } else {
+                    DoSyncAddOrUpdate<T> (item, token);
+                }
             }
                 
             [Test]
@@ -744,6 +773,34 @@ namespace Test.iOS
             }
 
             [Test]
+            public void TestSyncDeleteDomAllItems ()
+            {
+                TestSyncDom<McCalendar> (TypeCode.DefaultCal_8,
+                    () => CreateSubCalFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.DeleteCalCmd (itemId),
+                    isDelete: true
+                );
+
+                TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
+                    () => CreateSubContactFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.DeleteContactCmd (itemId),
+                    isDelete: true
+                );
+
+                TestSyncDom<McTask> (TypeCode.DefaultTasks_7,
+                    () => CreateSubTaskFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.DeleteTaskCmd (itemId),
+                    isDelete: true
+                );
+
+                TestSyncDom<McEmailMessage> (TypeCode.DefaultInbox_2,
+                    () => CreateSubTaskFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.DeleteEmailCmd (itemId),
+                    isDelete: true
+                );
+            }
+
+            [Test]
             public void TestSyncUpdateDomAllItems ()
             {
                 TestSyncDom<McCalendar> (TypeCode.DefaultCal_8,
@@ -762,7 +819,8 @@ namespace Test.iOS
                 );
             }
 
-            public void TestSyncDom<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder, Func<int, int, string> makeItem) where T : McItem, new()
+            public void TestSyncDom<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder, Func<int, int, string> makeItem,
+                bool isDelete = false) where T : McItem, new()
             {
                 // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
                 McFolder subFolder = null;
@@ -776,7 +834,11 @@ namespace Test.iOS
                     token = makeItem (item.Id, subFolder.Id);
                 });
 
-                DoSyncAdd<T> (item, token);
+                if (isDelete) {
+                    DoSyncDelete<T> (item, token);
+                } else {
+                    DoSyncAddOrUpdate<T> (item, token);
+                }
             }
 
             private McItem MakeSingleLayerPath<T> (McFolder topFolder) where T : McItem, new()
@@ -797,7 +859,7 @@ namespace Test.iOS
                 return item;
             }
 
-            private void DoSyncAdd<T> (McItem item, string token) where T : McItem, new()
+            private void DoSyncAddOrUpdate<T> (McItem item, string token) where T : McItem, new()
             {
                 ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
@@ -808,6 +870,18 @@ namespace Test.iOS
                 var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
                 var foundParent = McMapFolderFolderEntry.QueryByFolderId (defaultAccountId, laf.Id);
                 Assert.AreEqual (foundItem.Id, foundParent.FirstOrDefault ().FolderEntryId, "Item should be moved into L&F");
+
+                var foundPend = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
+            }
+
+            private void DoSyncDelete<T> (McItem item, string token) where T : McItem, new()
+            {
+                ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
+
+                // QueryByServerId asserts if more than one item is found
+                var foundItem = McItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
+                Assert.Null (foundItem, "Item should be deleted by server");
 
                 var foundPend = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");

@@ -133,7 +133,7 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.ContactDelete:
                 case McPending.Operations.TaskDelete:
                     cancelCommand = false;
-                    if (pending.CommandDominatesItem (ServerId)) {
+                    if (ServerId == pending.ParentId || pending.CommandDominatesParentId (ServerId)) {
                         action = McPending.DbActionEnum.Delete;
                     } else {
                         action = McPending.DbActionEnum.DoNothing;
