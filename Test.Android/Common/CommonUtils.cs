@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Test.iOS
 {
-    public class CommonProtoControlOps : CommonTestOps
+    public class ProtoOps : CommonTestOps
     {
         public static McAccount CreateAccount (int pcsId = 5)
         {
@@ -47,7 +47,7 @@ namespace Test.iOS
         }
     }
 
-    public class CommonFolderOps : CommonTestOps
+    public class FolderOps : CommonTestOps
     {
         public const string defaultServerId = "5";
 
@@ -101,7 +101,7 @@ namespace Test.iOS
         }
     }
 
-    public class CommonPathOps : CommonTestOps
+    public class PathOps : CommonTestOps
     {
         public static McPath CreatePath (int accountId, string serverId = "", string parentId = "")
         {

@@ -10,7 +10,6 @@ using System.Linq;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
-using FolderOps = Test.iOS.CommonFolderOps;
 
 namespace Test.iOS
 {

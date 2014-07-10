@@ -4,9 +4,6 @@ using System;
 using NUnit.Framework;
 using NachoCore.ActiveSync;
 using System.Linq;
-using ProtoOps = Test.iOS.CommonProtoControlOps;
-using FolderOps = Test.iOS.CommonFolderOps;
-using PathOps = Test.iOS.CommonPathOps;
 using Operations = NachoCore.Model.McPending.Operations;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.ActiveSync.Xml.AirSync.ClassCode;
@@ -23,24 +20,6 @@ using NachoCore;
 namespace Test.iOS
 {
     /* Response code document: http://msdn.microsoft.com/en-us/library/ff631512(v=exchg.80).aspx */
-    public class CreatedFolder
-    {
-        public CreatedFolder (McFolder folder, string token)
-        {
-            Folder = folder;
-            Token = token;
-        }
-
-        public CreatedFolder ()
-        {
-            Folder = new McFolder ();
-            Token = "";
-        }
-
-        public McFolder Folder;
-        public string Token;
-    }
-
     public class ConflictResolutionTest
     {
         public partial class BaseConfResTest : CommonTestOps
@@ -161,7 +140,7 @@ namespace Test.iOS
 
             public T DoCreateItemCmd<T> (McFolder folder, Func<int, int, string> createCmd) where T : McItem, new()
             {
-                var item = CommonFolderOps.CreateUniqueItem<T> (serverId: folder.ServerId);
+                var item = FolderOps.CreateUniqueItem<T> (serverId: folder.ServerId);
                 folder.Link (item);
                 createCmd (item.Id, folder.Id);
                 return item;
