@@ -6,11 +6,17 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NUnit.Framework;
 using System.Collections.Generic;
+using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using System.Threading;
+using System.Net.Http;
+using System.Text;
 
 namespace Test.iOS
 {
     public class ProtoOps : CommonTestOps
     {
+        public const string TopFolderName = "Top-Level-Folder";
+
         public static McAccount CreateAccount (int pcsId = 5)
         {
             var account = new McAccount () {
@@ -44,6 +50,113 @@ namespace Test.iOS
             AsProtoControl protoControl = new AsProtoControl (mockOwner, accountId);
 
             return protoControl;
+        }
+
+        // Parent & Server Id's correspond to response XML
+        public static McFolder CreateTopFolder (bool withPath = false, TypeCode type = TypeCode.UserCreatedGeneric_1)
+        {
+            var folder = FolderOps.CreateFolder (defaultAccountId, parentId: "0", serverId: "1", name: TopFolderName, typeCode: type);
+            if (withPath) {
+                // Set up path: This is the client's "best understanding" of the servers point of view the last time they talked
+                PathOps.CreatePath (defaultAccountId, folder.ServerId, folder.ParentId);
+            }
+            return folder;
+        }
+
+        /* Execute any commands that rely on the proto control state machine within the lambda of this function */
+        public static void DoClientSideCmds (MockContext context, Action doCmds)
+        {
+            var syncEvent = new AutoResetEvent(false);
+            context.ProtoControl.Sm = CreatePhonyProtoSm (() => {
+                // Gets set when CreateFolderCmd completes
+                syncEvent.Set ();
+            });
+
+            doCmds ();
+
+            bool didFinish = syncEvent.WaitOne (1000);
+            Assert.IsTrue (didFinish, "Folder creation did not finish");
+        }
+
+
+        public static NcStateMachine CreatePhonyProtoSm (Action action)
+        {
+            var sm = new NcStateMachine ("PHONY-PROTO") {
+                Name = "PhonyProtoControlSm",
+                LocalEventType = typeof(AsProtoControl.CtlEvt),
+                LocalStateType = typeof(AsProtoControl.Lst),
+                TransTable = new [] {
+                    new Node {State = (uint)St.Start,
+                        On = new [] {
+                            new Trans { 
+                                Event = (uint)AsProtoControl.CtlEvt.E.PendQ, 
+                                Act = delegate () {
+                                    // DoPick happens here in AsProtoControl
+                                    // Stop the operation here: We don't need to go any further (item has already been added to pending queue)
+                                    action ();
+                                },
+                                State = (uint)St.Start },
+                        }
+                    },
+                }
+            };
+            return sm;
+        }
+
+        public static void ExecuteConflictTest (AsCommand cmd, string responseXml)
+        {
+            var autoResetEvent = new AutoResetEvent(false);
+
+            NcStateMachine sm = CreatePhonySM (() => {
+                autoResetEvent.Set ();
+            });
+
+            MockHttpClient.ProvideHttpResponseMessage = (request) => {
+                var mockResponse = new HttpResponseMessage () {
+                    Content = new StringContent (responseXml, Encoding.UTF8, "text/xml"),
+                };
+
+                return mockResponse;
+            };
+
+            cmd.Execute (sm);
+
+            bool didFinish = autoResetEvent.WaitOne (2000);
+            Assert.IsTrue (didFinish, "FolderCmd operation did not finish");
+        }
+            
+        // state machine for http op
+        public static NcStateMachine CreatePhonySM (Action action)
+        {
+            var sm = new NcStateMachine ("PHONY") {
+                Name = "BasicPhonyPing",
+                LocalEventType = typeof(AsProtoControl.CtlEvt),
+                LocalStateType = typeof(AsProtoControl.Lst),
+                TransTable = new [] {
+                    new Node {State = (uint)St.Start,
+                        On = new [] {
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch,
+                                Act = delegate () {},
+                                State = (uint)St.Start },
+                            new Trans { 
+                                Event = (uint)SmEvt.E.Success, 
+                                Act = delegate () {
+                                    Log.Info (Log.LOG_TEST, "Success event was posted to Owner SM");
+                                    action();
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = delegate () {
+                                    Log.Info (Log.LOG_TEST, "Hard fail was posted to Owner SM");
+                                },
+                                State = (uint)St.Start },
+                        }
+                    },
+                }
+            };
+            return sm;
         }
     }
 
