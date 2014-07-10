@@ -66,6 +66,7 @@ namespace NachoCore.Utils
             Info_ViewScrollingStopped,
             // Warning.
             // Error.
+            Error_NetworkUnavailable,
             Error_InvalidParameter,
             Error_UnknownCommandFailure,
             Error_SettingsFailed,
