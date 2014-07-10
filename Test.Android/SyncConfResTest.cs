@@ -34,8 +34,6 @@ namespace Test.iOS
 
                 var server = McServer.Create (CommonMockData.MockUri);
                 Context = new MockContext (protoControl, server);
-
-                SyncCmd = CreateSyncCmd (Context);
             }
 
             public static AsSyncCommand CreateSyncCmd (MockContext context)
@@ -76,26 +74,26 @@ namespace Test.iOS
                 return tree.ToString ();
             }
 
-            // item-specific update code goes in operation lambda; must prefix with XNamespace of item
-            public static string SyncAddItemCmdXml (string serverId, string parentId, Func<XNamespace, XElement> operation)
+            // item-specific update code goes in uniqueData; must prefix with XNamespace of item
+            public static string SyncAddItemCmdXml (string serverId, string parentId, XElement uniqueData)
             {
                 return AirSyncCmdHierarchyRoot (parentId, (ns) => {
                     return new XElement (ns + "Add",
                         new XElement (ns + "ServerId", serverId),
                         new XElement (ns + "ApplicationData",
-                            operation (ns)));
+                            uniqueData));
                 });
             }
 
-            // item-specific update code goes in operation lambda; must prefix with XNamespace of item
-            public static string SyncUpdateCmdItemXml (string clientId, string serverId, string parentId, string classCode, Func <XDocument> operation)
+            // item-specific update code goes in uniqueData; must prefix with XNamespace of item
+            public static string SyncUpdateCmdItemXml (string serverId, string parentId, string classCode, XElement uniqueData)
             {
                 return AirSyncCmdHierarchyRoot (parentId, (ns) => {
                     return new XElement (ns + "Change",
                         new XElement (ns + "ServerId", serverId),
                         new XElement (ns + "Class", classCode),
                         new XElement (ns + "ApplicationData",
-                            operation ()));
+                            uniqueData));
                 });
             }
 
@@ -113,23 +111,24 @@ namespace Test.iOS
         [TestFixture]
         public class FolderDeleteTests : BaseSyncConfResTest
         {
-            // create cal, contact, and task
-            [Test]
-            public void SyncAdd ()
+            private void SyncGenericOp (TypeCode topFolderType, Func<string, string, string> makeItemOpXml)
             {
                 // If the pending's ServerId dominates the command's ServerId, then drop the command.
                 var itemServerId = "5";
-                var topFolder = ProtoOps.CreateTopFolder (withPath: true, type: TypeCode.DefaultInbox_2);
+                var topFolder = ProtoOps.CreateTopFolder (withPath: true, type: topFolderType);
 
-                string addItemXml = SyncAddItemCmdXml (itemServerId, topFolder.ServerId,
-                                        (ns) => new XElement (ns + "Subject", "(SERVER)"));
+                SetSyncStrategy (topFolder);
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
                     token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id);
                 });
 
-                ProtoOps.ExecuteConflictTest (SyncCmd, addItemXml);
+                SyncCmd = CreateSyncCmd (Context);
+
+                var itemOpXml = makeItemOpXml (itemServerId, topFolder.ServerId);
+
+                ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
                 var foundPending = McPending.QueryByToken (defaultAccountId, token);
                 Assert.NotNull (foundPending, "Pending should not be deleted by client");
@@ -141,16 +140,65 @@ namespace Test.iOS
                 Assert.Null (foundItem, "Command to create item should be dropped by the server");
             }
 
+            // create cal, contact, and task
+            [Test]
+            public void SyncAdd ()
+            {
+                XNamespace calNs = ClassCode.Calendar;
+                SyncGenericOp (TypeCode.DefaultCal_8,
+                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (calNs + "Subject", "(SERVER)"))
+                );
+
+                XNamespace contactNs = ClassCode.Contacts;
+                SyncGenericOp (TypeCode.DefaultContacts_9,
+                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (contactNs + "FirstName", "(SERVER)"))
+                );
+
+                XNamespace taskNs = ClassCode.Tasks;
+                SyncGenericOp (TypeCode.DefaultTasks_7,
+                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (taskNs + "Subject", "(SERVER)"))
+                );
+            }
+
             [Test]
             public void SyncChange ()
             {
+                var calCode = ClassCode.Calendar;
+                XNamespace calNs = calCode;
+                SyncGenericOp (TypeCode.DefaultCal_8,
+                    (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, calCode, new XElement (calNs + "Subject", "(SERVER)"))
+                );
 
+                var contactCode = ClassCode.Contacts;
+                XNamespace contactNs = contactCode;
+                SyncGenericOp (TypeCode.DefaultContacts_9,
+                    (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, contactCode, new XElement (contactNs + "FirstName", "(SERVER)"))
+                );
+
+                var taskCode = ClassCode.Tasks;
+                XNamespace taskNs = taskCode;
+                SyncGenericOp (TypeCode.DefaultTasks_7,
+                    (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, taskCode, new XElement (taskNs + "Subject", "(SERVER)"))
+                );
             }
 
             [Test]
             public void SyncDelete ()
             {
+                XNamespace calNs = ClassCode.Calendar;
+                SyncGenericOp (TypeCode.DefaultCal_8,
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, new XElement (calNs + "Subject", "(SERVER)"))
+                );
 
+                XNamespace contactNs = ClassCode.Contacts;
+                SyncGenericOp (TypeCode.DefaultContacts_9,
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, new XElement (contactNs + "FirstName", "(SERVER)"))
+                );
+
+                XNamespace taskNs = ClassCode.Tasks;
+                SyncGenericOp (TypeCode.DefaultTasks_7,
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, new XElement (taskNs + "Subject", "(SERVER)"))
+                );
             }
         }
     }
