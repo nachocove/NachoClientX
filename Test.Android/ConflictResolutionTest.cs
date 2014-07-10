@@ -679,40 +679,90 @@ namespace Test.iOS
 
             // create cal, contact, and task
             [Test]
-            public void TestSyncAddMatch ()
+            public void TestSyncAddMatchAllitems ()
+            {
+                TestSyncMatch<McCalendar> (TypeCode.DefaultCal_8,
+                    (itemId, parentId) => Context.ProtoControl.CreateCalCmd (itemId, parentId)
+                );
+
+                TestSyncMatch<McContact> (TypeCode.DefaultContacts_9,
+                    (itemId, parentId) => Context.ProtoControl.CreateContactCmd (itemId, parentId)
+                );
+
+                TestSyncMatch<McTask> (TypeCode.DefaultTasks_7,
+                    (itemId, parentId) => Context.ProtoControl.CreateTaskCmd (itemId, parentId)
+                );
+            }
+
+            [Test]
+            public void TestSyncUpdateMatchAllItems ()
+            {
+                TestSyncMatch <McCalendar> (TypeCode.DefaultCal_8,
+                    (itemId, parentId) => Context.ProtoControl.UpdateCalCmd (itemId)
+                );
+
+                TestSyncMatch <McContact> (TypeCode.DefaultContacts_9,
+                    (itemId, parentId) => Context.ProtoControl.UpdateContactCmd (itemId)
+                );
+
+                TestSyncMatch <McTask> (TypeCode.DefaultTasks_7,
+                    (itemId, parentId) => Context.ProtoControl.UpdateTaskCmd (itemId)
+                );
+            }
+
+            public void TestSyncMatch<T> (TypeCode topFolderType, Func<int, int, string> creationCmd) where T : McItem, new()
             {
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
-                var topFolder = CreateTopFolder (withPath: true, type: TypeCode.DefaultCal_8);
-                McItem cal = MakeSingleLayerPath<McCalendar> (topFolder);
+                var topFolder = CreateTopFolder (withPath: true, type: topFolderType);
+                McItem item = MakeSingleLayerPath<T> (topFolder);
 
                 string token = null;
                 DoClientSideCmds (() => {
-                    token = Context.ProtoControl.CreateCalCmd (cal.Id, topFolder.Id);
+                    token = creationCmd (item.Id, topFolder.Id);
                 });
 
-                DoSyncAdd<McCalendar> (cal, token);
+                DoSyncAdd<T> (item, token);
             }
                 
             [Test]
             public void TestSyncAddDomAllItems ()
             {
-                TestSyncAddDom<McCalendar> (TypeCode.DefaultCal_8, 
+                TestSyncDom<McCalendar> (TypeCode.DefaultCal_8, 
                     () => CreateSubCalFolder (withPath: true), 
                     (itemId, folderId) => Context.ProtoControl.CreateCalCmd (itemId, folderId)
                 );
 
-                TestSyncAddDom<McContact> (TypeCode.DefaultContacts_9,
+                TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
                     () => CreateSubContactFolder (withPath: true),
                     (itemId, folderId) => Context.ProtoControl.CreateContactCmd (itemId, folderId)
                 );
 
-                TestSyncAddDom<McTask> (TypeCode.DefaultTasks_7,
+                TestSyncDom<McTask> (TypeCode.DefaultTasks_7,
                     () => CreateSubTaskFolder (withPath: true),
                     (itemId, folderId) => Context.ProtoControl.CreateTaskCmd (itemId, folderId)
                 );
             }
 
-            public void TestSyncAddDom<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder, Func<int, int, string> makeItem) where T : McItem, new()
+            [Test]
+            public void TestSyncUpdateDomAllItems ()
+            {
+                TestSyncDom<McCalendar> (TypeCode.DefaultCal_8,
+                    () => CreateSubCalFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.UpdateCalCmd (itemId)
+                );
+
+                TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
+                    () => CreateSubContactFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.UpdateContactCmd (itemId)
+                );
+
+                TestSyncDom<McTask> (TypeCode.DefaultTasks_7,
+                    () => CreateSubTaskFolder (withPath: true),
+                    (itemId, folderId) => Context.ProtoControl.UpdateTaskCmd (itemId)
+                );
+            }
+
+            public void TestSyncDom<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder, Func<int, int, string> makeItem) where T : McItem, new()
             {
                 // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
                 McFolder subFolder = null;
