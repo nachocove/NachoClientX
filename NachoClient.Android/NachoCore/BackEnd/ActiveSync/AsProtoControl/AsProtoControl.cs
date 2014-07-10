@@ -797,7 +797,9 @@ namespace NachoCore.ActiveSync
 
         private void DoFetch ()
         {
-            NcAssert.True (false); // FIXME.
+            NcAssert.True (SyncStrategy.IsMoreFetchingNeeded ());
+            SetCmd (new AsItemOperationsCommand (this));
+            Cmd.Execute (Sm);
         }
 
         private void DoPing ()

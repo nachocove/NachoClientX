@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
     public class AsItemOperationsCommand : AsCommand
     {
         private List<McAttachment> Attachments;
-        private List<McItem> Prefetches;
+        private List<Tuple<McItem, string>> Prefetches;
         private static XNamespace AirSyncNs = Xml.AirSync.Ns;
 
         private void ApplyStrategy ()
@@ -31,10 +31,26 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private XElement ToFetch (string parentId, string serverId)
+        {
+            // TODO: Email only for now. Also, we should let strategy determine the BodyPref.
+            return new XElement (m_ns + Xml.ItemOperations.Fetch,
+                new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
+                new XElement (AirSyncNs + Xml.AirSync.CollectionId, parentId),
+                new XElement (AirSyncNs + Xml.AirSync.ServerId, serverId),
+                new XElement (m_ns + Xml.ItemOperations.Options,
+                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
+                    new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                        new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"),
+                        new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"))));
+        }
+
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns);
             XElement fetch = null;
+            // Add in the pendings, if any.
             foreach (var pending in PendingList) {
                 switch (pending.Operation) {
                 case McPending.Operations.AttachmentDownload:
@@ -46,16 +62,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.Operations.EmailBodyDownload:
-                    fetch = new XElement (m_ns + Xml.ItemOperations.Fetch,
-                        new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
-                        new XElement (AirSyncNs + Xml.AirSync.CollectionId, pending.ParentId),
-                        new XElement (AirSyncNs + Xml.AirSync.ServerId, pending.ServerId),
-                        new XElement (m_ns + Xml.ItemOperations.Options,
-                            new XElement (AirSyncNs + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
-                            new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"),
-                                new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"))));
+                    fetch = ToFetch (pending.ParentId, pending.ServerId);
                     break;
 
                 case McPending.Operations.CalBodyDownload:
@@ -95,7 +102,12 @@ namespace NachoCore.ActiveSync
                 }
                 itemOp.Add (fetch);
             }
+            // Add in the prefetches if any.
             foreach (var prefetch in Prefetches) {
+                var email = prefetch.Item1;
+                var parentId = prefetch.Item2;
+                var fetch2 = ToFetch (parentId, email.ServerId);
+                itemOp.Add (fetch2);
             }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
@@ -133,6 +145,7 @@ namespace NachoCore.ActiveSync
                         if (null != xmlFileReference) {
                             // This means we are processing an AttachmentDownload response.
                             var attachment = Attachments.Where (x => x.FileReference == xmlFileReference.Value).First ();
+                            // TODO: if we do predictive attachment fetching, there will not always be a pending.
                             var pending = FindPending (xmlFileReference, null);
                             attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                             var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
@@ -155,7 +168,14 @@ namespace NachoCore.ActiveSync
                             var pending = FindPending (null, xmlServerId);
                             McItem item = null;
                             NcResult.SubKindEnum successInd = NcResult.SubKindEnum.Error_UnknownCommandFailure;
-                            switch (pending.Operation) {
+                            McPending.Operations op;
+                            if (null == pending) {
+                                // If there is no pending, then we are doing an email prefetch.
+                                op = McPending.Operations.EmailBodyDownload;
+                            } else {
+                                op = pending.Operation;
+                            }
+                            switch (op) {
                             case McPending.Operations.EmailBodyDownload:
                                 item = McItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
@@ -179,16 +199,21 @@ namespace NachoCore.ActiveSync
                             // We are ignoring all the other crap that can come down (for now). We just want the Body.
                             item.ApplyAsXmlBody (xmlBody);
                             item.Update ();
-                            var result = NcResult.Info (successInd);
-                            result.Value = item;
-                            pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                            PendingList.Remove (pending);
+                            Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", item.ServerId, 
+                                (null == pending) ? "pre" : "");
+                            if (null != pending) {
+                                var result = NcResult.Info (successInd);
+                                result.Value = item;
+                                pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                                PendingList.Remove (pending);
+                            }
                         } else {
-                            // Can't figure out which pending to resolve here.
+                            // Can't figure out WTF here.
                             Log.Error (Log.LOG_AS, "ItemOperations: no ServerId and no FileReference.");
                         }
                         break;
                     default:
+                        Log.Error (Log.LOG_AS, "ItemOperations: Status {0}", xmlStatus.Value);
                         // TODO: we let the general fail case clean-up non-Success codes right now.
                         // We should attempt to find the associated pending (if we can) and give a more
                         // specific failure.

@@ -1051,7 +1051,7 @@ namespace SQLite
 		{
 			try {
 				var savePoint = SaveTransactionPoint ();
-                Log.Info (Log.LOG_SYS, "RunInTransaction with savepoint {0} {1}", savePoint, _transactionDepth);
+                // Log.Info (Log.LOG_SYS, "RunInTransaction with savepoint {0} {1}", savePoint, _transactionDepth);
 				action ();
 				Release (savePoint);
 			} catch (Exception) {
