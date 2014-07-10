@@ -14,7 +14,7 @@ namespace NachoCore.ActiveSync
     {
         public const int KBaseOverallWindowSize = 150;
         public const int KBasePerFolderWindowSize = 100;
-        public const int KBaseFetchLimit = 20;
+        public const int KBaseFetchSize = 10;
 
         public enum ECLst : uint
         {
@@ -569,18 +569,6 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public bool IsMoreFetchingNeeded ()
-        {
-            return false; // FIXME.
-            var folders = FolderListProvider (false);
-            foreach (var folder in folders) {
-                if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public IEnumerable<McFolder> PingKit ()
         {
             var folders = FolderListProvider (false);
@@ -603,18 +591,83 @@ namespace NachoCore.ActiveSync
             return fewer;
         }
 
-        public IEnumerable<McEmailMessage> FetchKit ()
+        public bool IsMoreFetchingNeeded ()
         {
-            List<McEmailMessage> toFetch = new List<McEmailMessage> ();
+            // If there are user-initiated fetches, then true.
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1)) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, 1)) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, 1)) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, 1)) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1)) {
+                return true;
+            }
+            // If there is behind-the-scenes fetching to do, then true.
             var folders = FolderListProvider (false);
             foreach (var folder in folders) {
-                var needs = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, KBaseFetchLimit);
-                toFetch.AddRange (needs);
-                if (KBaseFetchLimit <= toFetch.Count ()) {
-                    break;
+                if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
+                    return true;
                 }
             }
-            return toFetch;
+            return false;
+        }
+
+        public Tuple<IEnumerable<McPending>, IEnumerable<McItem>> FetchKit ()
+        {
+            // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
+            uint fetchSize = KBaseFetchSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast:
+                fetchSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi:
+                fetchSize *= 3;
+                break;
+            }
+            // Address user-driven fetching first.
+            var pendings = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, fetchSize).ToList ();
+            if (pendings.Count < fetchSize) {
+                var emails = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, fetchSize);
+                pendings.AddRange (emails);
+            }
+            if (pendings.Count < fetchSize) {
+                var contacts = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, fetchSize);
+                pendings.AddRange (contacts);
+            }
+            if (pendings.Count < fetchSize) {
+                var cals = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, fetchSize);
+                pendings.AddRange (cals);
+            }
+            if (pendings.Count < fetchSize) {
+                var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, fetchSize);
+                pendings.AddRange (tasks);
+            }
+            // Address background fetching if we have capacity.
+            var remaining = fetchSize - pendings.Count;
+            List<McItem> prefetches = new List<McItem> ();
+            if (0 < remaining) {
+                var folders = FolderListProvider (false);
+                foreach (var folder in folders) {
+                    var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
+                    prefetches.AddRange (emails);
+                    if (remaining <= prefetches.Count) {
+                        break;
+                    }
+                    // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
+                }
+            }
+            pendings = pendings.Take (fetchSize);
+            prefetches = prefetches.Take (remaining);
+            // Return a tuple: Item1 is the list of McPendings (user-initiated fetches),
+            // Item2 is the list of McItems (background fetching).
+            return Tuple.Create (pendings, prefetches);
         }
     }
 }

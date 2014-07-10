@@ -11,32 +11,21 @@ namespace NachoCore.ActiveSync
 {
     public class AsItemOperationsCommand : AsCommand
     {
-        private const int KConcurrentMax = 10; // TODO - use strategy/comm-status.
         private List<McAttachment> Attachments;
+        private List<McItem> Prefetches;
         private static XNamespace AirSyncNs = Xml.AirSync.Ns;
+
+        private void ApplyStrategy ()
+        {
+            var fetchKit = BEContext.ProtoControl.SyncStrategy.FetchKit ();
+            PendingList.AddRange (fetchKit.Item1);
+            Prefetches = fetchKit.Item2.ToList ();
+        }
 
         public AsItemOperationsCommand (IBEContext dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
         {
             Attachments = new List<McAttachment> ();
-            var atts = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, KConcurrentMax);
-            PendingList.AddRange (atts);
-            if (KConcurrentMax >= PendingList.Count) {
-                var emails = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, KConcurrentMax);
-                PendingList.AddRange (emails);
-            }
-            if (KConcurrentMax >= PendingList.Count) {
-                var contacts = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, KConcurrentMax);
-                PendingList.AddRange (contacts);
-            }
-            if (KConcurrentMax >= PendingList.Count) {
-                var cals = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, KConcurrentMax);
-                PendingList.AddRange (cals);
-            }
-            if (KConcurrentMax >= PendingList.Count) {
-                var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, KConcurrentMax);
-                PendingList.AddRange (tasks);
-            }
-            PendingList = PendingList.Take (KConcurrentMax).ToList ();
+            ApplyStrategy ();
             foreach (var pending in PendingList) {
                 pending.MarkDispached ();
             }
@@ -105,6 +94,8 @@ namespace NachoCore.ActiveSync
                     break;
                 }
                 itemOp.Add (fetch);
+            }
+            foreach (var prefetch in Prefetches) {
             }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
