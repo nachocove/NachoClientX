@@ -7,9 +7,6 @@ using NachoCore.Utils;
 namespace NachoCore
 {
     // Used to manage fetch of an on-server object on behalf of the UI for immediate use.
-    // If then network is down, fail w/out inserting the request.
-    // Watch for the success/fail status-ind and report back.
-    // If the UI doesn't need the result, cancel the pending.
     public class NcFetchAssist
     {
         private delegate string BEActionFunc (int accountId, int subjectId);
@@ -29,12 +26,12 @@ namespace NachoCore
             // TODO: implement other classes as we need them.
             if (Subject is McEmailMessage) {
                 BEAction = BackEnd.Instance.DnldEmailBodyCmd;
-                SubKindMatchS = NcResult.SubKindEnum.Info_AttDownloadUpdate;
-                SubKindMatchF = NcResult.SubKindEnum.Error_AttDownloadFailed;
-            } else if (Subject is McAttachment) {
-                BEAction = BackEnd.Instance.DnldAttCmd;
                 SubKindMatchS = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
                 SubKindMatchF = NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed;
+            } else if (Subject is McAttachment) {
+                BEAction = BackEnd.Instance.DnldAttCmd;
+                SubKindMatchS = NcResult.SubKindEnum.Info_AttDownloadUpdate;
+                SubKindMatchF = NcResult.SubKindEnum.Error_AttDownloadFailed;
             } else {
                 NcAssert.True (false, string.Format ("NcFetchAssist: {0} not yet implemented.", myObj.ClassName ()));
             }
@@ -51,7 +48,7 @@ namespace NachoCore
         }
 
 
-        NcResult Execute ()
+        public NcResult Execute ()
         {
             if (NcCommStatus.Instance.Status == NachoPlatform.NetStatusStatusEnum.Down) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NetworkUnavailable);
