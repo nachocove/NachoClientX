@@ -209,9 +209,14 @@ namespace NachoCore.ActiveSync
                     switch (classCodeEnum) {
                     case McFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
+                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
+                            new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"),
+                            new XElement (m_baseNs + Xml.AirSyncBase.Preview, "128")));
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                             new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
                             new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"),
                             new XElement (m_baseNs + Xml.AirSyncBase.Preview, "128")));
