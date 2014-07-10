@@ -267,7 +267,7 @@ namespace NachoCore.Model
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int folderId, int limit)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                "SELECT e.* FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +

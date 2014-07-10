@@ -39,6 +39,7 @@ namespace NachoCore.ActiveSync
 
         // Anyone can set to request that the next Sync command be a "quick fetch".
         public bool RequestQuickFetch { set; get; }
+
         private bool IsQuickFetch;
         private const uint CTLstLast = (uint)CTLst.All;
         private NcStateMachine EmailCalendarSm;
@@ -409,6 +410,7 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
+
         private void UpdateSavedCTState ()
         {
             var protocolState = BEContext.ProtocolState;
@@ -454,7 +456,7 @@ namespace NachoCore.ActiveSync
         {
             return AllSyncedFolders ().Where (f => 
                 Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Contact ||
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Tasks).ToList ();
+            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Tasks).ToList ();
         }
 
         public void ReportSyncResult (List<McFolder> folders)
@@ -529,8 +531,8 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // if initial-key || some pending || GetChanges, include folder in Sync.
-                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey || 
-                    folder.AsSyncMetaDoGetChanges || 
+                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey ||
+                    folder.AsSyncMetaDoGetChanges ||
                     0 < issuePendings.Count) {
                     retList.Add (Tuple.Create (folder, issuePendings));
                     includedFolders.Add (folder);
@@ -594,19 +596,19 @@ namespace NachoCore.ActiveSync
         public bool IsMoreFetchingNeeded ()
         {
             // If there are user-initiated fetches, then true.
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1)) {
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1).Count ()) {
                 return true;
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, 1)) {
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, 1).Count ()) {
                 return true;
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, 1)) {
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, 1).Count ()) {
                 return true;
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, 1)) {
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, 1).Count ()) {
                 return true;
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1)) {
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1).Count ()) {
                 return true;
             }
             // If there is behind-the-scenes fetching to do, then true.
@@ -619,10 +621,10 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public Tuple<IEnumerable<McPending>, IEnumerable<McItem>> FetchKit ()
+        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McItem, string>>> FetchKit ()
         {
             // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
-            uint fetchSize = KBaseFetchSize;
+            var fetchSize = KBaseFetchSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
                 fetchSize *= 2;
@@ -651,24 +653,26 @@ namespace NachoCore.ActiveSync
             }
             // Address background fetching if we have capacity.
             var remaining = fetchSize - pendings.Count;
-            List<McItem> prefetches = new List<McItem> ();
+            List<Tuple<McItem, string>> prefetches = new List<Tuple<McItem, string>> ();
             if (0 < remaining) {
                 var folders = FolderListProvider (false);
                 foreach (var folder in folders) {
                     var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
-                    prefetches.AddRange (emails);
+                    foreach (var email in emails) {
+                        prefetches.Add (Tuple.Create ((McItem)email, folder.ServerId));
+                        if (remaining <= prefetches.Count) {
+                            break;
+                        }
+                        // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
+                    }
                     if (remaining <= prefetches.Count) {
                         break;
                     }
-                    // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
                 }
             }
-            pendings = pendings.Take (fetchSize);
-            prefetches = prefetches.Take (remaining);
             // Return a tuple: Item1 is the list of McPendings (user-initiated fetches),
             // Item2 is the list of McItems (background fetching).
-            return Tuple.Create (pendings, prefetches);
+            return Tuple.Create (pendings.Take (fetchSize), prefetches.Take (remaining));
         }
     }
 }
-
