@@ -100,6 +100,7 @@
     <Compile Include="NcDistributionTest.cs" />
     <Compile Include="ConflictResolutionTest.cs" />
     <Compile Include="McPathTest.cs" />
+    <Compile Include="SyncConfResTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
