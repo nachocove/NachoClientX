@@ -233,7 +233,7 @@ namespace NachoCore.ActiveSync
                     case McFolderEntry.ClassCodeEnum.Contact:
                         if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
                             // Expressing BodyPreference for RIC gets Protocol Error.
-                            options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "25"));
+                            options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
                         } else {
                             options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
