@@ -555,6 +555,7 @@ namespace NachoClient.iOS
 
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
 
+            var soundExpressed = false;
             foreach (var message in unreadAndHot) {
                 if (message.HasBeenNotified) {
                     continue;
@@ -562,9 +563,12 @@ namespace NachoClient.iOS
                 var notif = new UILocalNotification () {
                     AlertAction = "Nacho Mail",
                     AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
-                    SoundName = UILocalNotification.DefaultSoundName,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), NoteKey),
                 };
+                if (!soundExpressed) {
+                    notif.SoundName = UILocalNotification.DefaultSoundName;
+                    soundExpressed = true;
+                }
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
                 message.HasBeenNotified = true;
                 message.Update ();
