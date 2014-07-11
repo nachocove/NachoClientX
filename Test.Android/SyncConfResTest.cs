@@ -149,10 +149,14 @@ namespace Test.iOS
                     (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (calNs + "Subject", "(SERVER)"))
                 );
 
+                SetUp ();
+
                 XNamespace contactNs = ClassCode.Contacts;
                 SyncGenericOp (TypeCode.DefaultContacts_9,
                     (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (contactNs + "FirstName", "(SERVER)"))
                 );
+
+                SetUp ();
 
                 XNamespace taskNs = ClassCode.Tasks;
                 SyncGenericOp (TypeCode.DefaultTasks_7,
@@ -169,11 +173,15 @@ namespace Test.iOS
                     (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, calCode, new XElement (calNs + "Subject", "(SERVER)"))
                 );
 
+                SetUp ();
+
                 var contactCode = ClassCode.Contacts;
                 XNamespace contactNs = contactCode;
                 SyncGenericOp (TypeCode.DefaultContacts_9,
                     (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, contactCode, new XElement (contactNs + "FirstName", "(SERVER)"))
                 );
+
+                SetUp ();
 
                 var taskCode = ClassCode.Tasks;
                 XNamespace taskNs = taskCode;
@@ -186,19 +194,41 @@ namespace Test.iOS
             public void SyncDelete ()
             {
                 SyncGenericOp (TypeCode.DefaultCal_8,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Calendar)
+                    (serverId, parentId) => {
+                        var cal = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, serverId: serverId);
+                        PathOps.CreatePath (defaultAccountId, serverId: cal.ServerId, parentId: parentId);
+                        return SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Calendar);
+                    }
                 );
+
+                SetUp ();
 
                 SyncGenericOp (TypeCode.DefaultContacts_9,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Contacts)
+                    (serverId, parentId) => {
+                        var cont = FolderOps.CreateUniqueItem<McContact> (defaultAccountId, serverId: serverId);
+                        PathOps.CreatePath (defaultAccountId, serverId: cont.ServerId, parentId: parentId);
+                        return SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Contacts);
+                    }
                 );
+
+                SetUp ();
 
                 SyncGenericOp (TypeCode.DefaultTasks_7,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Tasks)
+                    (serverId, parentId) => {
+                        var task = FolderOps.CreateUniqueItem<McTask> (defaultAccountId, serverId: serverId);
+                        PathOps.CreatePath (defaultAccountId, serverId: task.ServerId, parentId: parentId);
+                        return SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Tasks);
+                    }
                 );
 
+                SetUp ();
+
                 SyncGenericOp (TypeCode.DefaultInbox_2,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Email)
+                    (serverId, parentId) => {
+                        var email = FolderOps.CreateUniqueItem<McEmailMessage> (defaultAccountId, serverId: serverId);
+                        PathOps.CreatePath (defaultAccountId, serverId: email.ServerId, parentId: parentId);
+                        return SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Email);
+                    }
                 );
             }
         }

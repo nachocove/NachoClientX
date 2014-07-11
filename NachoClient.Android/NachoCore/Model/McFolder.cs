@@ -260,7 +260,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McFolder> ( "SELECT f.* FROM McFolder AS f WHERE " +
                     " f.Id = ? AND " +
-                    " f.IsAwaitingCreate = 0 ").SingleOrDefault ();
+                    " f.IsAwaitingCreate = 0 ", folderId).SingleOrDefault ();
         }
 
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
