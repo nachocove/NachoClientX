@@ -878,7 +878,8 @@ namespace NachoCore.ActiveSync
         public override string DeleteFolderCmd (int folderId)
         {
             var folder = McObject.QueryById<McFolder> (folderId);
-            NcAssert.True (folder.IsClientOwned == false, "Should not delete folders in client-owned folders");
+            NcAssert.True (folder.IsClientOwned == false, "Should not delete folders in client-owned folders.");
+            NcAssert.True (!folder.IsAwaitingDelete, "Should not try to delete folder that has been already deleted.");
 
             var delFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderDelete,
@@ -886,7 +887,8 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ParentId,
             };
 
-            folder.Delete ();
+            folder.IsAwaitingDelete = true;
+            folder.Update ();
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             delFolder.Insert ();
