@@ -639,25 +639,6 @@ namespace Test.iOS
                 Assert.AreEqual (2, foundSubFolders.Count, "Should move subFolders recursively to client-owned folder with matching destFolderId");
             }
 
-            [Test]
-            public void TestMovingSingleItemToClientOwned ()
-            {
-                // should move synced item with matching ServerId to client-owned folder with matching destFolderId
-                // Set up current folder and destination folder
-                string ownerServerId = "10";
-                string itemServerId = "11";
-                string destServerId = "12";
-
-                var ownerFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: ownerServerId, isClientOwned: false);
-                var destFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: destServerId, isClientOwned: true);
-
-                var item = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: itemServerId);
-                ownerFolder.Link (item);
-
-                McFolder.ServerEndMoveToClientOwned (defaultAccountId, itemServerId, destServerId);
-                TestMovedToClientOwned (item, destFolder);
-            }
-
             private void TestMovedToClientOwned (McFolderEntry item, McFolder folder)
             {
                 // Test that everything has been moved to the destination folder and retains it's correct structure

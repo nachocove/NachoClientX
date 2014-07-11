@@ -201,6 +201,16 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
+        public static List<McFolder> ServerEndQueryByParentId (int accountId, string parentId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          " f.AccountId = ? AND " +
+                          " f.IsAwaitingCreate = 0 AND " +
+                          " f.ParentId = ? ",
+                              accountId, parentId);
+            return folders.ToList ();
+        }
+
         public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McFolderEntry
         {
             var getClassCode = typeof(T).GetMethod ("GetClassCode");
@@ -246,35 +256,33 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        // move an item or folder from a sync'd folder to a client-owned folder
+        public static McFolder ServerEndQueryById (int folderId)
+        {
+            return NcModel.Instance.Db.Query<McFolder> ( "SELECT f.* FROM McFolder AS f WHERE " +
+                    " f.Id = ? AND " +
+                    " f.IsAwaitingCreate = 0 ").SingleOrDefault ();
+        }
+
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
         {
             var destFolder = GetClientOwnedFolder (accountId, destParentId);
             NcAssert.NotNull (destFolder, "Destination folder should exist");
 
             var potentialFolder = ServerEndQueryByServerId (accountId, serverId);
-            // FIXME - Aaron: need a server-end variant of McFolderEntry.QueryAllForServerId() here.
-            var potentialItem = McFolderEntry.QueryAllForServerId (accountId, serverId);
+            NcAssert.NotNull (potentialFolder, "Server to move should exist");
 
-            if (potentialFolder != null && potentialItem == null) {
-                NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
-                potentialFolder.IsClientOwned = true;
-                potentialFolder.ParentId = destParentId;
-                potentialFolder.Update ();
+            NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
+            potentialFolder.IsClientOwned = true;
+            potentialFolder.ParentId = destParentId;
+            potentialFolder.Update ();
 
-                RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
-            } else if (potentialItem != null && potentialFolder == null) {
-                McFolder.UnlinkAll ((McItem)potentialItem);
-                destFolder.Link ((McItem)potentialItem);
-            } else {
-                NcAssert.True (false, "Could not find item or folder, or found both with the same ServerId");
-            }
+            RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
         }
 
-        // change all isClientOwned flags in a directory to true;
+        // change all isClientOwned flags for folders in a directory to true;
         private static void RecursivelyChangeFlags (int accountId, string parentServerId)
         {
-            var children = McFolder.QueryByParentId (accountId, parentServerId);
+            var children = McFolder.ServerEndQueryByParentId (accountId, parentServerId);
             foreach (McFolder child in children) {
                 child.IsClientOwned = true;
                 child.Update ();
