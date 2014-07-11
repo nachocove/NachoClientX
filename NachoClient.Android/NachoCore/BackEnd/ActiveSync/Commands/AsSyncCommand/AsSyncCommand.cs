@@ -408,7 +408,7 @@ namespace NachoCore.ActiveSync
                 List<McPending> pendingInFolder;
                 // Note: CollectionId, Status and SyncKey are required to be present.
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
-                var folder = McFolderEntry.QueryByServerId<McFolder> (BEContext.Account.Id, serverId);
+                var folder = McFolder.ServerEndQueryByServerId (BEContext.Account.Id, serverId);
                 var oldSyncKey = folder.AsSyncKey;
                 var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
                 var xmlMoreAvailable = collection.Element (m_ns + Xml.AirSync.MoreAvailable);
@@ -518,6 +518,7 @@ namespace NachoCore.ActiveSync
             // Remember the loop above re-writes folders, so FoldersInRequest object will be stale!
             List<McFolder> reloadedFolders = new List<McFolder> ();
             foreach (var maybeStale in FoldersInRequest) {
+                // FIXME - Aaron - this query needs to avoid IsAwatingCreate and needs to find IsAwaitingDelete (it is server-end).
                 var folder = McFolder.QueryById<McFolder> (maybeStale.Id);
                 if (0 == processedFolders.Where (f => folder.Id == f.Id).Count ()) {
                     folder.AsSyncMetaToClientExpected = false;
