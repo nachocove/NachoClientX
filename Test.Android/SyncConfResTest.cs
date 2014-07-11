@@ -270,6 +270,43 @@ namespace Test.iOS
                 Assert.NotNull (foundFolder, "Folder should not be deleted by the server");
             }
         }
+
+        [TestFixture]
+        public class MeetingResponseTests : BaseSyncConfResTest
+        {
+            [Test]
+            public void TestSyncDelete ()
+            {
+                // If the pending's ServerId is dominated by the command's ServerId, then delete the pending MeetingResponse.
+                var topFolder = ProtoOps.CreateTopFolder (withPath: true);
+                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
+                topFolder.Link (cal);
+                PathOps.CreatePath (defaultAccountId, cal.ServerId, topFolder.ServerId);
+                var response = NcResponseType.Accepted;
+
+                SetSyncStrategy (topFolder);
+
+                string token = null;
+                ProtoOps.DoClientSideCmds (Context, () => {
+                    token = Context.ProtoControl.RespondCalCmd (cal.Id, response);
+                });
+
+                SyncCmd = CreateSyncCmd (Context);
+
+                var itemOpXml = SyncDeleteCmdItemXml (cal.ServerId, topFolder.ServerId, ClassCode.Calendar);
+                ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
+
+                var foundPending = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (foundPending, "Pending should be deleted by client");
+
+                var foundItem = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
+                Assert.Null (foundItem, "Item should be deleted by the server");
+
+                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
+                Assert.NotNull (foundFolder, "Folder should not be deleted by the server");
+            }
+
+        }
     }
 }
 
