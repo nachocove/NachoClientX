@@ -14,6 +14,8 @@ namespace NachoCore.ActiveSync
         Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ();
         bool IsMoreSyncNeeded ();
         IEnumerable<McFolder> PingKit ();
+        bool IsMoreFetchingNeeded ();
+        Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McItem, string>>> FetchKit ();
     }
 }
 

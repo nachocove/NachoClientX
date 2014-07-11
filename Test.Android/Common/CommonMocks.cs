@@ -257,5 +257,15 @@ namespace Test.iOS
         public System.Collections.Generic.IEnumerable<McFolder> PingKit () { throw new NotImplementedException (); }
 
         public bool RequestQuickFetch { get; set; }
+
+        public bool IsMoreFetchingNeeded ()
+        {
+            return false;
+        }
+
+        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McItem, string>>> FetchKit ()
+        {
+            return null;
+        }
     }
 }
