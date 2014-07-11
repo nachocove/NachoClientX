@@ -226,6 +226,16 @@ namespace NachoCore.Model
         // ONLY TO BE USED BY SERVER-END CODE.
         // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes
         // IsAwaitingCreate folders.
+
+        public static McFolder ServerEndQueryByServerId (int accountId, string serverId)
+        {
+            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            " f.AccountId = ? AND " +
+            " f.IsAwaitingCreate = 0 AND " +
+            " f.ServerId = ? ", 
+                accountId, serverId).SingleOrDefault ();
+        }
+
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -242,7 +252,8 @@ namespace NachoCore.Model
             var destFolder = GetClientOwnedFolder (accountId, destParentId);
             NcAssert.NotNull (destFolder, "Destination folder should exist");
 
-            var potentialFolder = McFolderEntry.QueryByServerId<McFolder> (accountId, serverId);
+            var potentialFolder = ServerEndQueryByServerId (accountId, serverId);
+            // FIXME - Aaron: need a server-end variant of McFolderEntry.QueryAllForServerId() here.
             var potentialItem = McFolderEntry.QueryAllForServerId (accountId, serverId);
 
             if (potentialFolder != null && potentialItem == null) {
@@ -367,8 +378,8 @@ namespace NachoCore.Model
         public static void AsSetExpected (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND f.IsClientOwned = 0",
-                accountId);
+                          " f.AccountId = ? AND f.IsClientOwned = 0",
+                              accountId);
             foreach (var folder in folders) {
                 folder.AsSyncMetaToClientExpected = true;
                 folder.Update ();
@@ -378,7 +389,7 @@ namespace NachoCore.Model
         public static void AsResetState (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? ",
+                          " f.AccountId = ? ",
                               accountId);
             foreach (var folder in folders) {
                 folder.AsSyncKey = AsSyncKey_Initial;
