@@ -854,6 +854,15 @@ namespace NachoCore.Model
             rec.State == StateEnum.Eligible).OrderBy (x => x.Id).Take (n);
         }
 
+        public static IEnumerable<McPending> QueryFirstNEligibleByOperation (int accountId, 
+            McPending.Operations operation, int n)
+        {
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
+                rec.AccountId == accountId &&
+                rec.Operation == operation &&
+            rec.State == StateEnum.Eligible).OrderBy (x => x.Id).Take (n);
+        }
+
         public static McPending QueryByClientId (int accountId, string clientId)
         {
             return NcModel.Instance.Db.Table<McPending> ()
