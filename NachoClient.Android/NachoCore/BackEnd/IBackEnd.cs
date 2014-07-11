@@ -63,6 +63,7 @@ namespace NachoCore
         // mark the flag as "done" for the server, and clear the values in the DB.
         string MarkEmailFlagDone (int accountId, int emailMessageId,
                             DateTime completeTime, DateTime dateCompleted);
+        string DnldEmailBodyCmd (int accountId, int emailMessageId);
         // download an attachment. returns token that can be used to possibly cancel.
         string DnldAttCmd (int accountId, int attId);
         string CreateCalCmd (int accountId, int calId, int folderId);
@@ -70,14 +71,17 @@ namespace NachoCore
         string DeleteCalCmd (int accountId, int calId);
         string MoveCalCmd (int accountId, int calId, int destFolderId);
         string RespondCalCmd (int accountId, int calId, NcResponseType response);
+        string DnldCalBodyCmd (int accountId, int calId);
         string CreateContactCmd (int accountId, int contactId, int folderId);
         string UpdateContactCmd (int accountId, int contactId);
         string DeleteContactCmd (int accountId, int contactId);
         string MoveContactCmd (int accountId, int contactId, int destFolderId);
+        string DnldContactBodyCmd (int accountId, int contactId);
         string CreateTaskCmd (int accountId, int taskId, int folderId);
         string UpdateTaskCmd (int accountId, int taskId);
         string DeleteTaskCmd (int accountId, int taskId);
         string MoveTaskCmd (int accountId, int taskId, int destFolderId);
+        string DnldTaskBodyCmd (int accountId, int taskId);
         // create a subordinate folder.
         string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
         // create a root folder.

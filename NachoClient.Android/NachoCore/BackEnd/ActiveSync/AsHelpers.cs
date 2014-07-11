@@ -13,6 +13,35 @@ namespace NachoCore.ActiveSync
 {
     public static class AsExtensions
     {
+        public static void ApplyAsXmlBody (this McItem item, XElement xmlBody)
+        {
+            var bodyType = xmlBody.ElementAnyNs (Xml.AirSyncBase.Type).Value.ToInt ();
+            var xmlData = xmlBody.ElementAnyNs (Xml.AirSyncBase.Data);
+            var xmlEstimatedDataSize = xmlBody.ElementAnyNs (Xml.AirSyncBase.EstimatedDataSize);
+            var xmlTruncated = xmlBody.ElementAnyNs (Xml.AirSyncBase.Truncated);
+            var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
+            if (null != xmlEstimatedDataSize) {
+                item.EstimatedBodySize = xmlEstimatedDataSize.Value.ToInt ();
+            }
+            if (null != xmlPreview) {
+                item.BodyPreview = xmlPreview.Value;
+            }
+            if (null != xmlData) {
+                var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
+                if (null != saveAttr) {
+                    item.BodyId = int.Parse (saveAttr.Value);
+                } else {
+                    var body = McBody.Save(xmlData.Value); 
+                    item.BodyId = body.Id;
+                }
+                item.BodyType = bodyType;
+                item.BodyState = (null == xmlTruncated) ? McItem.BodyStateEnum.Whole_0 : McItem.BodyStateEnum.Truncated_1;
+            } else {
+                item.BodyId = 0;
+                item.BodyState = McItem.BodyStateEnum.Missing_2;
+            }
+        }
+
         public static T ToEnum<T> (this string enumString)
         {
             return (T)Enum.Parse (typeof(T), enumString);
@@ -470,21 +499,7 @@ namespace NachoCore.ActiveSync
                         TrySetStringFromXml (e, child.Name.LocalName, child.Value);
                         break;
                     case Xml.AirSyncBase.Body:
-                        var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
-                        var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
-                        if (null != bodyElement) {
-                            var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
-                            if (null != saveAttr) {
-                                e.BodyId = int.Parse (saveAttr.Value);
-                            } else {
-                                var body = McBody.Save (bodyElement.Value); 
-                                e.BodyId = body.Id;
-                            }
-                            e.BodyType = bodyType;
-                        } else {
-                            e.BodyId = 0;
-                            Console.WriteLine ("Truncated message from server.");
-                        }
+                        e.ApplyAsXmlBody (child);
                         break;
                     case Xml.AirSyncBase.NativeBodyType:
                         NcAssert.CaseError (); // Docs claim this doesn't exist
@@ -554,21 +569,7 @@ namespace NachoCore.ActiveSync
                     c.recurrences.Add (recurrence);
                     break;
                 case Xml.AirSyncBase.Body:
-                    var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
-                    var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
-                    if (null != bodyElement) {
-                        var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
-                        if (null != saveAttr) {
-                            c.BodyId = int.Parse (saveAttr.Value);
-                        } else {
-                            var body = McBody.Save (bodyElement.Value); 
-                            c.BodyId = body.Id;
-                        }
-                        c.BodyType = bodyType;
-                    } else {
-                        c.BodyId = 0;
-                        Log.Info (Log.LOG_AS, "Truncated or zero-length message from server.");
-                    }
+                    c.ApplyAsXmlBody (child);
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
                     c.NativeBodyType = child.Value.ToInt ();
@@ -653,22 +654,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.cachedHasAttachments = true;
                     break;
                 case Xml.AirSyncBase.Body:
-                    var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
-                    var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
-                    // NOTE: We have seen EstimatedDataSize of 0 and no Truncate here.
-                    if (null != bodyElement) {
-                        var saveAttr = bodyElement.Attributes ().SingleOrDefault (x => x.Name == "nacho-body-id");
-                        if (null != saveAttr) {
-                            emailMessage.BodyId = int.Parse (saveAttr.Value);
-                        } else {
-                            var body = McBody.Save (bodyElement.Value); 
-                            emailMessage.BodyId = body.Id;
-                        }
-                        emailMessage.BodyType = bodyType;
-                    } else {
-                        emailMessage.BodyId = 0;
-                        Console.WriteLine ("Truncated message from server.");
-                    }
+                    emailMessage.ApplyAsXmlBody (child);
                     break;
 
                 case Xml.Email.Flag:

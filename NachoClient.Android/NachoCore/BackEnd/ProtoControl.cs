@@ -100,6 +100,8 @@ namespace NachoCore
         public abstract string MarkEmailFlagDone (int emailMessageId,
                                                   DateTime completeTime, DateTime dateCompleted);
 
+        public abstract string DnldEmailBodyCmd (int emailMessageId);
+
         public abstract string DnldAttCmd (int attId);
 
         public abstract string CreateCalCmd (int calId, int folderId);
@@ -112,6 +114,8 @@ namespace NachoCore
 
         public abstract string RespondCalCmd (int calId, NcResponseType response);
 
+        public abstract string DnldCalBodyCmd (int calId);
+
         public abstract string CreateContactCmd (int contactId, int folderId);
 
         public abstract string UpdateContactCmd (int contactId);
@@ -120,6 +124,8 @@ namespace NachoCore
 
         public abstract string MoveContactCmd (int contactId, int destFolderId);
 
+        public abstract string DnldContactBodyCmd (int contactId);
+
         public abstract string CreateTaskCmd (int taskId, int folderId);
 
         public abstract string UpdateTaskCmd (int taskId);
@@ -127,6 +133,8 @@ namespace NachoCore
         public abstract string DeleteTaskCmd (int taskId);
 
         public abstract string MoveTaskCmd (int taskId, int destFolderId);
+
+        public abstract string DnldTaskBodyCmd (int taskId);
 
         public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
 

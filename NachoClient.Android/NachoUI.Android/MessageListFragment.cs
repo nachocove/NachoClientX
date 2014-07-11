@@ -114,7 +114,9 @@ namespace NachoClient.AndroidClient
             var image = view.FindViewById<ImageView> (Resource.Id.status_image);
             var sender = view.FindViewById<TextView> (Resource.Id.sender);
             var subject = view.FindViewById<TextView> (Resource.Id.subject);
+            /* FIXME - rewrite based on BodyPreview.
             var summary = view.FindViewById<TextView> (Resource.Id.summary);
+            */
             var received = view.FindViewById<TextView> (Resource.Id.received);
 
             var thread = messages.GetEmailThread (position);
@@ -122,11 +124,13 @@ namespace NachoClient.AndroidClient
 
             sender.Text = message.From;
             subject.Text = Pretty.SubjectString (message.Subject);
+            /* FIXME - rewrite based on BodyPreview. 
             if (null == message.Summary) {
                 UpdateDbWithSummary (message);
             }
             NcAssert.True (null != message.Summary);
             summary.Text = message.Summary;
+            */
             received.Text = Pretty.FullDateString (message.DateReceived);
 
             if (message.IsRead) {
@@ -140,8 +144,10 @@ namespace NachoClient.AndroidClient
 
         void UpdateDbWithSummary (McEmailMessage message)
         {
+            /* FIXME rewrite based on BodyPreview
             message.Summary = MimeHelpers.ExtractSummary (message);
             message.Update ();
+            */
         }
     }
 }

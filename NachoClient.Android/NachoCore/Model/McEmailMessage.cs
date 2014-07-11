@@ -195,9 +195,6 @@ namespace NachoCore.Model
 
         /// Attachments are separate
 
-        /// Summary is extracted in gleaner
-        public string Summary { set; get; }
-
         //This is strictly used for testing purposes
         public List<McEmailMessageCategory> getInternalCategoriesList ()
         {
@@ -236,15 +233,6 @@ namespace NachoCore.Model
             }
         }
 
-        public void Summarize ()
-        {
-            Summary = MimeHelpers.ExtractSummary (this);
-            if (null == Summary) {
-                Summary = " ";
-            }
-            this.Update ();
-        }
-
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
@@ -274,6 +262,22 @@ namespace NachoCore.Model
                 " e.FlagUtcDeferUntil < ? " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+        }
+
+        public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int folderId, int limit)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                " e.BodyState != 0 " +
+                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
+                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, limit);
         }
 
         public static List<McEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)

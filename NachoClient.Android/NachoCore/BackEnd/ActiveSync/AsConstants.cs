@@ -193,7 +193,6 @@ namespace NachoCore.ActiveSync
             public const string Status = "Status";
             public const string Sync = "Sync";
             public const string SyncKey = "SyncKey";
-            public const string TruncationSize = "TruncationSize";
             public const string Type = "Type";
             public const string WindowSize = "WindowSize";
 
@@ -264,6 +263,7 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "AirSyncBase";
             // Alpha order.
+            public const string AllOrNone = "AllOrNone";
             public const string Attachment = "Attachment";
             public const string Attachments = "Attachments";
             public const string Body = "Body";
@@ -279,6 +279,7 @@ namespace NachoCore.ActiveSync
             public const string IsInline = "IsInline";
             public const string Method = "Method";
             public const string NativeBodyType = "NativeBodyType";
+            public const string Preview = "Preview";
             public const string Truncated = "Truncated";
             public const string TruncationSize = "TruncationSize";
             public const string Type = AirSync.Type;
@@ -775,6 +776,7 @@ namespace NachoCore.ActiveSync
             // Alpha order.
             public const string Data = AirSyncBase.Data;
             public const string Fetch = "Fetch";
+            public const string Options = AirSync.Options;
             public const string Properties = "Properties";
             public const string Status = AirSync.Status;
             public const string Store = "Store";

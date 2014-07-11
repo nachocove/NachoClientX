@@ -122,6 +122,9 @@ namespace NachoCore.Utils
                 return null;
             }
             if (McBody.MIME == message.GetBodyType()) {
+                if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+                    return null;
+                }
                 using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
                     var mimeParser = new MimeParser (fileStream, true);
                     var mimeMessage = mimeParser.ParseMessage ();
@@ -156,6 +159,24 @@ namespace NachoCore.Utils
 
         static public string ExtractTextPart (McEmailMessage message)
         {
+            if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+                return "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty();
+            }
+
+            if (McBody.PlainText == message.BodyType) {
+                return message.GetBody ();
+            }
+
+            if (McBody.HTML == message.BodyType) {
+                return "Nacho Mail has not converted the HTML to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+            }
+
+            if (McBody.RTF == message.BodyType) {
+                return "Nacho Mail has not converted the RTF to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+            }
+
+            NcAssert.True (McBody.MIME == message.BodyType);
+
             var path = message.GetBodyPath ();
             if (null == path) {
                 return null;

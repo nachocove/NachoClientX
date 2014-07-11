@@ -12,8 +12,9 @@ namespace NachoCore.ActiveSync
 {
     public class AsStrategy : IAsStrategy
     {
-        public const uint KBaseOverallWindowSize = 10;
-        public const uint KBasePerFolderWindowSize = 7;
+        public const int KBaseOverallWindowSize = 150;
+        public const int KBasePerFolderWindowSize = 100;
+        public const int KBaseFetchSize = 10;
 
         public enum ECLst : uint
         {
@@ -38,6 +39,7 @@ namespace NachoCore.ActiveSync
 
         // Anyone can set to request that the next Sync command be a "quick fetch".
         public bool RequestQuickFetch { set; get; }
+
         private bool IsQuickFetch;
         private const uint CTLstLast = (uint)CTLst.All;
         private NcStateMachine EmailCalendarSm;
@@ -408,6 +410,7 @@ namespace NachoCore.ActiveSync
                 }
             }
         }
+
         private void UpdateSavedCTState ()
         {
             var protocolState = BEContext.ProtocolState;
@@ -453,7 +456,7 @@ namespace NachoCore.ActiveSync
         {
             return AllSyncedFolders ().Where (f => 
                 Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Contact ||
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Tasks).ToList ();
+            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Tasks).ToList ();
         }
 
         public void ReportSyncResult (List<McFolder> folders)
@@ -528,8 +531,8 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // if initial-key || some pending || GetChanges, include folder in Sync.
-                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey || 
-                    folder.AsSyncMetaDoGetChanges || 
+                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey ||
+                    folder.AsSyncMetaDoGetChanges ||
                     0 < issuePendings.Count) {
                     retList.Add (Tuple.Create (folder, issuePendings));
                     includedFolders.Add (folder);
@@ -589,6 +592,87 @@ namespace NachoCore.ActiveSync
             fewer.AddRange (stalest);
             return fewer;
         }
+
+        public bool IsMoreFetchingNeeded ()
+        {
+            // If there are user-initiated fetches, then true.
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1).Count ()) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, 1).Count ()) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, 1).Count ()) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, 1).Count ()) {
+                return true;
+            }
+            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1).Count ()) {
+                return true;
+            }
+            // If there is behind-the-scenes fetching to do, then true.
+            var folders = FolderListProvider (false);
+            foreach (var folder in folders) {
+                if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McItem, string>>> FetchKit ()
+        {
+            // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
+            var fetchSize = KBaseFetchSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast:
+                fetchSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi:
+                fetchSize *= 3;
+                break;
+            }
+            // Address user-driven fetching first.
+            var pendings = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, fetchSize).ToList ();
+            if (pendings.Count < fetchSize) {
+                var emails = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, fetchSize);
+                pendings.AddRange (emails);
+            }
+            if (pendings.Count < fetchSize) {
+                var contacts = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, fetchSize);
+                pendings.AddRange (contacts);
+            }
+            if (pendings.Count < fetchSize) {
+                var cals = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, fetchSize);
+                pendings.AddRange (cals);
+            }
+            if (pendings.Count < fetchSize) {
+                var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, fetchSize);
+                pendings.AddRange (tasks);
+            }
+            // Address background fetching if we have capacity.
+            var remaining = fetchSize - pendings.Count;
+            List<Tuple<McItem, string>> prefetches = new List<Tuple<McItem, string>> ();
+            if (0 < remaining) {
+                var folders = FolderListProvider (false);
+                foreach (var folder in folders) {
+                    var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
+                    foreach (var email in emails) {
+                        prefetches.Add (Tuple.Create ((McItem)email, folder.ServerId));
+                        if (remaining <= prefetches.Count) {
+                            break;
+                        }
+                        // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
+                    }
+                    if (remaining <= prefetches.Count) {
+                        break;
+                    }
+                }
+            }
+            // Return a tuple: Item1 is the list of McPendings (user-initiated fetches),
+            // Item2 is the list of McItems (background fetching).
+            return Tuple.Create (pendings.Take (fetchSize), prefetches.Take (remaining));
+        }
     }
 }
-
