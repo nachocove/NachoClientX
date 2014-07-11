@@ -185,20 +185,59 @@ namespace Test.iOS
             [Test]
             public void SyncDelete ()
             {
-                XNamespace calNs = ClassCode.Calendar;
                 SyncGenericOp (TypeCode.DefaultCal_8,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, new XElement (calNs + "Subject", "(SERVER)"))
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Calendar)
                 );
 
-                XNamespace contactNs = ClassCode.Contacts;
                 SyncGenericOp (TypeCode.DefaultContacts_9,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, new XElement (contactNs + "FirstName", "(SERVER)"))
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Contacts)
                 );
 
-                XNamespace taskNs = ClassCode.Tasks;
                 SyncGenericOp (TypeCode.DefaultTasks_7,
-                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, new XElement (taskNs + "Subject", "(SERVER)"))
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Tasks)
                 );
+
+                SyncGenericOp (TypeCode.DefaultInbox_2,
+                    (serverId, parentId) => SyncDeleteCmdItemXml (serverId, parentId, ClassCode.Email)
+                );
+            }
+        }
+
+        [TestFixture]
+        public class FetchAttachmentTests : BaseSyncConfResTest
+        {
+            [Test]
+            public void SyncDelete ()
+            {
+                // If the pending's ServerId dominates the command's ServerId, then drop the command.
+                var itemServerId = "5";
+                var topFolder = ProtoOps.CreateTopFolder (withPath: true, type: TypeCode.DefaultInbox_2);
+                var email = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: itemServerId);
+                topFolder.Link (email);
+                PathOps.CreatePath (defaultAccountId, email.ServerId, topFolder.ServerId);
+                var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+
+                SetSyncStrategy (topFolder);
+
+                string token = null;
+                ProtoOps.DoClientSideCmds (Context, () => {
+                    // make pending download
+                    token = Context.ProtoControl.DnldAttCmd (att.Id);
+                });
+
+                SyncCmd = CreateSyncCmd (Context);
+
+                var itemOpXml = SyncDeleteCmdItemXml (itemServerId, topFolder.ServerId, ClassCode.Email);
+                ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
+
+                var foundPending = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (foundPending, "Pending should be deleted by client");
+
+                var foundItem = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, email.ServerId);
+                Assert.Null (foundItem, "Item should be deleted by the server");
+
+                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
+                Assert.NotNull (foundFolder, "Folder should not be deleted by the server");
             }
         }
     }
