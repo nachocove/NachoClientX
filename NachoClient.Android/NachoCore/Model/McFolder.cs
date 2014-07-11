@@ -391,6 +391,24 @@ namespace NachoCore.Model
         {
             return McFolderEntry.ClassCodeEnum.Folder;
         }
+
+        public static List<McFolder> SearchFolders(int accountId, string searchFor)
+        {
+            if (String.IsNullOrEmpty (searchFor)) {
+                return new List<McFolder> ();
+            } 
+
+            searchFor = "%" + searchFor + "%";
+
+            return NcModel.Instance.Db.Query<McFolder> (
+                "SELECT f.* FROM McFolder AS f" +
+                "WHERE " +
+                "f.AccountId = ? AND " +
+                "f.DisplayName LIKE ? " +
+                "ORDER BY f.DisplayName DESC",
+                accountId, searchFor);
+        }
+
     }
 }
 

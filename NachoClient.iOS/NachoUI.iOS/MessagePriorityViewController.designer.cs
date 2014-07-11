@@ -52,44 +52,9 @@ namespace NachoClient.iOS
 				currentDelayLabel = null;
 			}
 
-			if (meetingButton != null) {
-				meetingButton.Dispose ();
-				meetingButton = null;
-			}
-
-			if (taskButton != null) {
-				taskButton.Dispose ();
-				taskButton = null;
-			}
-
 			if (deadlineButton != null) {
 				deadlineButton.Dispose ();
 				deadlineButton = null;
-			}
-
-			if (laterButton != null) {
-				laterButton.Dispose ();
-				laterButton = null;
-			}
-
-			if (tonightButton != null) {
-				tonightButton.Dispose ();
-				tonightButton = null;
-			}
-
-			if (tomorrowButton != null) {
-				tomorrowButton.Dispose ();
-				tomorrowButton = null;
-			}
-
-			if (nextWeekButton != null) {
-				nextWeekButton.Dispose ();
-				nextWeekButton = null;
-			}
-
-			if (nextMonthButton != null) {
-				nextMonthButton.Dispose ();
-				nextMonthButton = null;
 			}
 
 			if (deferDatePicker != null) {
@@ -100,6 +65,41 @@ namespace NachoClient.iOS
 			if (dismissButton != null) {
 				dismissButton.Dispose ();
 				dismissButton = null;
+			}
+
+			if (laterButton != null) {
+				laterButton.Dispose ();
+				laterButton = null;
+			}
+
+			if (meetingButton != null) {
+				meetingButton.Dispose ();
+				meetingButton = null;
+			}
+
+			if (nextMonthButton != null) {
+				nextMonthButton.Dispose ();
+				nextMonthButton = null;
+			}
+
+			if (nextWeekButton != null) {
+				nextWeekButton.Dispose ();
+				nextWeekButton = null;
+			}
+
+			if (taskButton != null) {
+				taskButton.Dispose ();
+				taskButton = null;
+			}
+
+			if (tomorrowButton != null) {
+				tomorrowButton.Dispose ();
+				tomorrowButton = null;
+			}
+
+			if (tonightButton != null) {
+				tonightButton.Dispose ();
+				tonightButton = null;
 			}
 		}
 	}

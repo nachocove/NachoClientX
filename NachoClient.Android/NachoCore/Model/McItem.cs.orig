@@ -63,6 +63,25 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             NcAssert.True (100000 > PendingRefCount);
+<<<<<<< Updated upstream
+            var returnVal = -1;
+            try {
+                NcModel.Instance.RunInTransaction (() => {
+                    McFolder.UnlinkAll (this);
+                    if (0 == PendingRefCount) {
+                        var result = base.Delete ();
+                        DeleteAncillary ();
+                        returnVal = result;
+                    } else {
+                        IsAwaitingDelete = true;
+                        Update ();
+                        returnVal = 0;
+                    }
+                });
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_EMAIL, "Deleting the email failed: {0} No changes were made to the DB.", ex.Message);
+                return -1;
+=======
 
             //FIXME initialize to better defualt returnVal
             int returnVal = -1;
@@ -85,6 +104,7 @@ namespace NachoCore.Model
                 IsAwaitingDelete = true;
                 Update ();
                 return 0;
+>>>>>>> Stashed changes
             }
             return returnVal;
         }

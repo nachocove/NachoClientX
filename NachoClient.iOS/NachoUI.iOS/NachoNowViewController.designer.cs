@@ -114,16 +114,6 @@ namespace NachoClient.iOS
 				newMeetingButton = null;
 			}
 
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
-			if (saveButton != null) {
-				saveButton.Dispose ();
-				saveButton = null;
-			}
-
 			if (phonyView1 != null) {
 				phonyView1.Dispose ();
 				phonyView1 = null;
@@ -132,6 +122,16 @@ namespace NachoClient.iOS
 			if (phonyView2 != null) {
 				phonyView2.Dispose ();
 				phonyView2 = null;
+			}
+
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
+			}
+
+			if (saveButton != null) {
+				saveButton.Dispose ();
+				saveButton = null;
 			}
 		}
 	}

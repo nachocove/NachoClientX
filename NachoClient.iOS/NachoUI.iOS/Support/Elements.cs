@@ -40,9 +40,11 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var c = base.GetCell (tv);
-            c.ImageView.Image = UIImage.FromBundle (name).Scale (new SizeF (22.0f, 22.0f));
+            c.ImageView.Image = UIImage.FromBundle (name);
             c.TextLabel.TextColor = UIColor.Gray;
-            c.DetailTextLabel.TextColor = UIColor.Black;
+            c.DetailTextLabel.TextColor = UIColor.LightGray;
+            c.TextLabel.Font = A.Font_AvenirNextRegular14;
+            c.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
             return c;
         }
     }
@@ -54,7 +56,7 @@ namespace NachoClient.iOS
     {
         public ThinSection () : base ()
         {
-            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 15.0f));
+            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 30.0f));
             this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
         }
 
@@ -114,7 +116,7 @@ namespace NachoClient.iOS
             CreateCheckboxElementWithData (Pretty.ReminderString (24 * 60), 24 * 60);
             CreateCheckboxElementWithData (Pretty.ReminderString (0), 0);
 
-            custom = new NumericEntryElementWithCheckmark ("Custom", "", "", false);
+            custom = new NumericEntryElementWithCheckmark ("", "Custom", "", false);
             custom.ClearButtonMode = UITextFieldViewMode.WhileEditing;
             custom.KeyboardType = UIKeyboardType.Default;
             this.Add (custom);
@@ -224,15 +226,52 @@ namespace NachoClient.iOS
         {
             this.Data = data;
         }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+            tv.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.TintColor = A.Color_NachoBlue;
+            return cell;
+        }
     }
 
     public class EntryElementWithIcon : EntryElement
     {
         protected UIImage icon { get; private set; }
+        protected bool numericEntry { get; private set; }
 
-        public EntryElementWithIcon (UIImage icon, string placeholder, string value) : base ("", placeholder, value)
+        protected UITextField textField;
+
+        protected override UITextField CreateTextField (RectangleF frame)
+        {
+            textField = base.CreateTextField (new RectangleF (45, 12, 260, 24));
+            textField.Font = A.Font_AvenirNextRegular14;
+            textField.TintColor = A.Color_NachoBlue;
+
+
+            //            textField.ShouldChangeCharacters = (textField, range, replacementString) => {
+            //                var newLength = textField.Text.Length + replacementString.Length - range.Length;
+            //                return newLength <= 25;
+            //            };
+
+            if (numericEntry) {
+                if (textField.Text.Length == 3) {
+                    textField.Text = textField.Text + "-";
+                }
+                this.KeyboardType = UIKeyboardType.PhonePad;
+            } else {
+                this.KeyboardType = UIKeyboardType.Default;
+            }
+            return textField;
+        }
+
+
+        public EntryElementWithIcon (UIImage icon, string caption, string placeholder, string value, bool numericEntry) : base (caption, placeholder, value)
         {
             this.icon = icon;
+            this.numericEntry = numericEntry;
         }
 
         protected override NSString CellKey {
@@ -244,11 +283,44 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
-            var textField = cell.ContentView.ViewWithTag (1);
-            var textFieldframe = textField.Frame;
-            textFieldframe.Location = new PointF (50.0f, textFieldframe.Location.Y);
-            textField.Frame = textFieldframe;
             cell.ImageView.Image = icon;
+            return cell;
+        }
+    }
+
+    public class EntryElementWithSettings : EntryElement
+    {
+        protected UIImage settingsIcon { get; private set; }
+
+        protected UITextField textField;
+
+
+        public EntryElementWithSettings (UIImage settingsIcon, string placeholder, string value) : base ("", placeholder, value)
+        {
+            this.settingsIcon = settingsIcon;
+        }
+
+        protected override UITextField CreateTextField (RectangleF frame)
+        {
+            textField = base.CreateTextField (new RectangleF (18, 12, 260, 24));
+            textField.Font = A.Font_AvenirNextRegular14;
+            textField.TintColor = A.Color_NachoBlue;
+
+            return textField;
+        }
+
+        protected override NSString CellKey {
+            get {
+                return new NSString ("Nacho.EntryElementWithSettings");
+            }
+        }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            UIImageView accessoryImage = new UIImageView(new RectangleF(0, 0, 24, 24));
+            accessoryImage.Image = settingsIcon;
+            var cell = base.GetCell (tv);
+            cell.AccessoryView = accessoryImage;
             return cell;
         }
     }
@@ -322,6 +394,8 @@ namespace NachoClient.iOS
                 }
                 return true;
             };
+            tf.Font = A.Font_AvenirNextRegular14;
+            tf.TintColor = A.Color_NachoBlue;
             return tf;
         }
     }
@@ -332,7 +406,7 @@ namespace NachoClient.iOS
         {
             // TODO: use color associated with calendar
             this.Image = NachoClient.Util.DotWithColor (UIColor.Blue);
-            this.Font = UIFont.SystemFontOfSize (17.0f);
+            this.Font = A.Font_AvenirNextRegular14;
         }
     }
 
@@ -341,10 +415,81 @@ namespace NachoClient.iOS
         public PeopleEntryElement () : base ("People")
         {
             this.Accessory = UITableViewCellAccessory.DisclosureIndicator;
-            var image = UIImage.FromBundle ("ic_action_group");
-            this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-            this.Font = UIFont.SystemFontOfSize (17.0f);
+            var image = UIImage.FromBundle ("icn-peoples");
+            this.Image = image;
+            this.Font = A.Font_AvenirNextRegular14;
             this.TextColor = UIColor.Gray;
+        }
+    }
+
+    public class CustomEntryElement : StyledStringElement
+    {
+        public CustomEntryElement (UIImage image, string caption) : base (caption)
+        {
+            this.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+            this.Image = image;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Gray;
+           
+        }
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+
+            if (cell.ContentView.Subviews.Length > 0) {
+                UIView x = cell.ContentView.Subviews [0];
+                x.RemoveFromSuperview ();
+            }
+
+            return cell;
+        }
+    }
+
+    public class SwitchElement : StyledStringElement
+    {
+        public SwitchElement (string caption) : base (caption)
+        {
+            this.Accessory = UITableViewCellAccessory.None;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Gray;
+        }
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.TextLabel.TextColor = UIColor.Gray;
+            UIView slider = new UIView(new RectangleF (cell.Frame.Width - 65, 5, cell.Frame.Width / 2, cell.Frame.Height - 15));
+            //slider.BackgroundColor = UIColor.White;
+            UISwitch theSwitch = new UISwitch();
+            theSwitch.OnTintColor = A.Color_NachoBlue;
+            theSwitch.TintColor = new UIColor(.8f, .8f, .8f, .6f);
+            theSwitch.On = true;
+
+            slider.Add (theSwitch);
+            cell.ContentView.Add (slider);
+
+            return cell;
+        }
+    }
+
+    public class CustomEntryElementDetail : StyledStringElement
+    {
+        public CustomEntryElementDetail (UIImage image, string caption, string detail) : base (caption, detail)
+        {
+            this.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+            this.Image = image;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Gray;
+        }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.TextLabel.TextColor = UIColor.Gray;
+            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.DetailTextLabel.TextColor = UIColor.LightGray;
+            return cell;
         }
     }
 
@@ -381,7 +526,7 @@ namespace NachoClient.iOS
     {
         public StartTimeElement (string caption) : base (caption)
         {
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
         }
     }
 
@@ -391,7 +536,7 @@ namespace NachoClient.iOS
         {
             // Add (invisible) image to get the proper indentation
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
         }
     }
 
@@ -399,9 +544,9 @@ namespace NachoClient.iOS
     {
         public DurationElement (string caption) : base (caption)
         {
-            using (var image = UIImage.FromBundle ("ic_action_time")) {
-                this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-                this.Font = UIFont.SystemFontOfSize (15.0f);
+            using (var image = UIImage.FromBundle ("icn-mtng-time")) {
+                this.Image = image;
+                this.Font = A.Font_AvenirNextRegular14;
             }
         }
     }
@@ -411,14 +556,14 @@ namespace NachoClient.iOS
         public StyledStringElementWithIcon (string caption, string value, UIImage icon) : base (caption, value)
         {
             this.Image = icon;
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
             this.TextColor = UIColor.LightGray;
             this.DetailColor = UIColor.Black;
         }
 
         public StyledStringElementWithIcon (string caption, UIImage icon) : this (caption, "", icon)
         {
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
             this.TextColor = UIColor.Black;
         }
     }
@@ -427,9 +572,8 @@ namespace NachoClient.iOS
     {
         public LocationElement (string caption) : base (caption)
         {
-            var image = UIImage.FromBundle ("ic_action_place");
-            this.Image = image.Scale (new SizeF (22.0f, 22.0f));
-            this.Font = UIFont.SystemFontOfSize (17.0f);
+            this.Image = UIImage.FromBundle ("icn-mtng-location");
+            this.Font = A.Font_AvenirNextRegular14;
         }
     }
 
@@ -462,14 +606,14 @@ namespace NachoClient.iOS
         public StyledStringElementWithDot (string caption, string value, UIColor color) : base (caption, value)
         {
             this.Image = NachoClient.Util.DotWithColor (color);
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
             this.TextColor = UIColor.LightGray;
             this.DetailColor = UIColor.Black;
         }
 
         public StyledStringElementWithDot (string caption, UIColor color) : this (caption, "", color)
         {
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
             this.TextColor = UIColor.Black;
         }
     }
@@ -481,7 +625,7 @@ namespace NachoClient.iOS
             // Add (invisible) image to get the proper indentation
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
             this.TextColor = UIColor.Gray;
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
         }
     }
 
@@ -493,7 +637,7 @@ namespace NachoClient.iOS
             // Add (invisible) image to get the proper indentation
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
             this.TextColor = UIColor.Gray;
-            this.Font = UIFont.SystemFontOfSize (15.0f);
+            this.Font = A.Font_AvenirNextRegular14;
         }
     }
 
@@ -504,6 +648,7 @@ namespace NachoClient.iOS
         public RadioElementWithDot (string caption, UIColor color) : base (caption)
         {
             this.color = color;
+
         }
 
         protected override NSString CellKey {
@@ -515,14 +660,21 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
-            cell.ImageView.Image = NachoClient.Util.DotWithColor (color);
+            tv.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
+            //cell.ImageView.Image = NachoClient.Util.DrawCalDot (color);
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.TextLabel.TextColor = UIColor.Gray;
+            cell.TintColor = A.Color_NachoBlue;
+
             return cell;
         }
     }
 
+
+
     class CalendarRadioElementSection : Section
     {
-        public CalendarRadioElementSection (NachoFolders calendars) : base ("Calendars")
+        public CalendarRadioElementSection (NachoFolders calendars) : base ("")
         {
             // TODO: Arrange by account
             for (int i = 0; i < calendars.Count (); i++) {
@@ -531,7 +683,9 @@ namespace NachoClient.iOS
                 var e = new RadioElementWithDot (c.DisplayName, UIColor.Green);
                 this.Add (e);
             }
+
         }
+
     }
 
     class RadioElementWithData : RadioElement

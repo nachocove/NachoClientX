@@ -904,7 +904,7 @@
     <Compile Include="NachoUI.iOS\Support\PriorityView.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionView.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionTableView.cs" />
-    <Compile Include="NachoUI.iOS\Tables\FolderTableSourceTwo.cs" />
+<<<<<<< Updated upstream
     <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
@@ -954,6 +954,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcFetchAssist.cs">
       <Link>NachoCore\Adapters\NcFetchAssist.cs</Link>
     </Compile>
+=======
+    <Compile Include="NachoUI.iOS\Tables\FolderTableSourceTwo.cs" />
+>>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
@@ -1122,11 +1125,7 @@
     <BundleResource Include="Resources\icn-archive%402x.png" />
     <BundleResource Include="Resources\icn-attach-files.png" />
     <BundleResource Include="Resources\icn-attach-files%402x.png" />
-    <BundleResource Include="Resources\icn-folder.png" />
-    <BundleResource Include="Resources\icn-folder%402x.png" />
-    <BundleResource Include="Resources\icon-arrow-folder.png" />
-    <BundleResource Include="Resources\icn-arrow-folder.png" />
-    <BundleResource Include="Resources\icn-arrow-folder2.png" />
+<<<<<<< Updated upstream
     <BundleResource Include="Resources\icn-send.png" />
     <BundleResource Include="Resources\icn-send%402x.png" />
     <BundleResource Include="Resources\icn-calendar-top-pressed.png" />
@@ -1155,6 +1154,13 @@
     <BundleResource Include="Resources\menu-new-event%402x.png" />
     <BundleResource Include="Resources\menu-settings.png" />
     <BundleResource Include="Resources\menu-settings%402x.png" />
+=======
+    <BundleResource Include="Resources\icn-folder.png" />
+    <BundleResource Include="Resources\icn-folder%402x.png" />
+    <BundleResource Include="Resources\icon-arrow-folder.png" />
+    <BundleResource Include="Resources\icn-arrow-folder.png" />
+    <BundleResource Include="Resources\icn-arrow-folder2.png" />
+>>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
