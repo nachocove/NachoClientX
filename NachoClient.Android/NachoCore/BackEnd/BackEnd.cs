@@ -163,38 +163,40 @@ namespace NachoCore
 
         public void EstablishService (int accountId)
         {
-            // TODO: this is AS-specific.
-            var service = new AsProtoControl (this, accountId);
-            if (! Services.TryAdd (accountId, service)) {
-                // Concurrency. Another thread has jumped in and done the add.
-                Log.Info (Log.LOG_AS, "Another thread has already called EstablishService");
-            }
-            // Create client owned objects as needed.
-            McFolder freshMade;
-            if (null == McFolder.GetOutboxFolder (accountId)) {
-                freshMade = McFolder.Create (accountId, true, false, "0",
-                    McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
-                    Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                freshMade.Insert();
-            }
-            if (null == McFolder.GetGalCacheFolder (accountId)) {
-                freshMade = McFolder.Create (accountId, true, true, "0",
-                    McFolder.ClientOwned_GalCache, string.Empty,
-                    Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                freshMade.Insert();
-            }
-            if (null == McFolder.GetGleanedFolder (accountId)) {
-                freshMade = McFolder.Create (accountId, true, true, "0",
-                    McFolder.ClientOwned_Gleaned, string.Empty,
-                    Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                freshMade.Insert();
-            }
-            if (null == McFolder.GetLostAndFoundFolder (accountId)) {
-                freshMade = McFolder.Create (accountId, true, true, "0",
-                    McFolder.ClientOwned_LostAndFound, string.Empty,
-                    Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
-                freshMade.Insert();
-            }
+            NcModel.Instance.RunInTransaction (delegate {
+                // TODO: this is AS-specific.
+                var service = new AsProtoControl (this, accountId);
+                if (!Services.TryAdd (accountId, service)) {
+                    // Concurrency. Another thread has jumped in and done the add.
+                    Log.Info (Log.LOG_AS, "Another thread has already called EstablishService");
+                }
+                // Create client owned objects as needed.
+                McFolder freshMade;
+                if (null == McFolder.GetOutboxFolder (accountId)) {
+                    freshMade = McFolder.Create (accountId, true, false, "0",
+                        McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+                if (null == McFolder.GetGalCacheFolder (accountId)) {
+                    freshMade = McFolder.Create (accountId, true, true, "0",
+                        McFolder.ClientOwned_GalCache, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+                if (null == McFolder.GetGleanedFolder (accountId)) {
+                    freshMade = McFolder.Create (accountId, true, true, "0",
+                        McFolder.ClientOwned_Gleaned, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+                if (null == McFolder.GetLostAndFoundFolder (accountId)) {
+                    freshMade = McFolder.Create (accountId, true, true, "0",
+                        McFolder.ClientOwned_LostAndFound, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                    freshMade.Insert ();
+                }
+            });
         }
 
         public void Start (int accountId)
