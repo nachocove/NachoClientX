@@ -209,6 +209,9 @@
     <Compile Include="..\Test.Android\SyncConfResTest.cs">
       <Link>SyncConfResTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcTimeVarianceTest.cs">
+      <Link>NcTimeVarianceTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

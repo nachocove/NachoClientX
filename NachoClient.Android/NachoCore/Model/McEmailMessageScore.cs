@@ -27,9 +27,6 @@ namespace NachoCore.Model
         /// Time variance state machine current state
         public int TimeVarianceState { get; set; }
 
-        /// Time variance state machine object itself
-        private NcTimeVariance TimeVarianceSM { get; set; }
-
         public double Score { get; set; }
 
         public bool NeedUpdate { get; set; }
@@ -49,18 +46,15 @@ namespace NachoCore.Model
 
             // TODO - Combine with content score... once we have such value
             score = sender.GetScore ();
-            if (null != TimeVarianceSM) {
-                score = TimeVarianceSM.AdjustScore (score);
+            NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
+            if (0 < tvList.Count) {
+                DateTime now = DateTime.Now;
+                foreach (NcTimeVariance tv in tvList) {
+                    score *= tv.Adjustment (now);
+                }
             }
+            Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score);
             return score;
-        }
-
-        private void UpdateScore ()
-        {
-            Score = GetScore ();
-            Log.Debug (Log.LOG_BRAIN, "email message {0}: score=%f", Id, Score);
-            NeedUpdate = false;
-            Update ();
         }
 
         public void ScoreObject ()
@@ -153,7 +147,7 @@ namespace NachoCore.Model
 
         private string TimeVarianceDescription ()
         {
-            return String.Format ("<emailMessage: {0}>", Id);
+            return String.Format ("[McEmailMessage:{0}]", Id);
         }
 
         /// There is no nullable type in db. So, use DateTime.MinValue to indicate
@@ -178,75 +172,122 @@ namespace NachoCore.Model
             }
         }
 
-        private void InitializeTimeVariance (bool fromCallback = false)
+        /// <summary>
+        /// Evaluate the parameters in McEmailMessage and produce a list of 
+        /// NcTimeVariance that applies. These NcTimeVariance do not need to be 
+        /// running. They just need to exist at point given the email parameters.
+        /// </summary>
+        /// <returns>List of NcTimeVariance objects</returns>
+        private NcTimeVariance.TimeVarianceList EvaluateTimeVariance ()
         {
+            NcTimeVariance.TimeVarianceList tvList = new NcTimeVariance.TimeVarianceList ();
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
 
-            Log.Debug (Log.LOG_BRAIN, "Initialize time variance for email message id {0}", Id);
-
-            if (!fromCallback && (null != TimeVarianceSM)) {
-                // We are going to replace the current time variance state machine.
-                // Properly dispose the old one first to make sure its timer will
-                // not fire and interfere will the new one.
-                //
-                // Note that if called from callback, do not clean up because time
-                // variance state machine itself will clean up when it goes to
-                // the terminal state.
-                TimeVarianceSM.Cleanup ();
-            }
-
             ExtractDateTimeFromPair (FlagDeferUntil, FlagUtcDeferUntil, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
-            if (!IsValidDateTime (deadline) && !IsValidDateTime (deferredUntil)) {
-                // Default to aging unless we are already running that type of time variance
-                if (NcTimeVarianceType.AGING != (NcTimeVarianceType)TimeVarianceType) {
-                    TimeVarianceType = (int)NcTimeVarianceType.AGING;
-                    TimeVarianceState = 1;
-                    TimeVarianceSM = (NcTimeVariance)new NcAgingTimeVariance (TimeVarianceDescription (), DateReceived);
-                } else {
-                    TimeVarianceType = (int)NcTimeVarianceType.DONE;
-                    TimeVarianceState = 0;
-                    TimeVarianceSM = null;
-                }
-            } else {
-                if (!IsValidDateTime (deferredUntil)) {
-                    /// Deadline only
-                    TimeVarianceType = (int)NcTimeVarianceType.DEADLINE;
-                    TimeVarianceSM = (NcTimeVariance)new NcDeadlineTimeVariance (TimeVarianceDescription (), deadline);
-                } else if (!IsValidDateTime (deadline)) {
-                    /// Deference only
-                    TimeVarianceType = (int)NcTimeVarianceType.DEFERENCE;
-                    TimeVarianceSM = (NcTimeVariance)new NcDeadlineTimeVariance (TimeVarianceDescription (), deferredUntil);
-                } else if (deadline < deferredUntil) {
-                    /// Deadline first
-                    TimeVarianceType = (int)NcTimeVarianceType.DEADLINE;
-                    TimeVarianceSM = (NcTimeVariance)new NcDeadlineTimeVariance (TimeVarianceDescription (), deadline);
-                } else {
-                    /// Deference first
-                    TimeVarianceType = (int)NcTimeVarianceType.DEFERENCE;
-                    TimeVarianceSM = (NcTimeVariance)new NcDeferenceTimeVariance (TimeVarianceDescription (), deferredUntil);
-                }
-                TimeVarianceState = 1;
+
+            if (IsValidDateTime (deadline)) {
+                NcDeadlineTimeVariance tv =
+                    new NcDeadlineTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
+                tvList.Add (tv);
             }
-            if (null != TimeVarianceSM) {
+            if (IsValidDateTime (deferredUntil)) {
+                NcDeferenceTimeVariance tv =
+                    new NcDeferenceTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deferredUntil);
+                tvList.Add (tv);
+            }
+            {
+                NcAgingTimeVariance tv =
+                    new NcAgingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, DateReceived);
+                tvList.Add (tv);
+            }
+
+            return tvList;
+        }
+
+        /// Return a list of time variance state machines that are still running.
+        /// Used for starting state machines and for determine time variance state
+        private List<NcTimeVariance> FilterTimeVariance (List<NcTimeVariance> tvList, DateTime now)
+        {
+            List<NcTimeVariance> newTvList = new List<NcTimeVariance> ();
+            if ((null == tvList) || (0 < tvList.Count)) {
+                return newTvList;
+            }
+            foreach (NcTimeVariance tv in tvList) {
+                DateTime lastEvent = tv.LastEventTime ();
+                if (lastEvent <= now) {
+                    continue;
+                }
+                newTvList.Add (tv);
+            }
+            return newTvList;
+        }
+
+        private void UpdateTimeVariance (NcTimeVariance.TimeVarianceList tvList)
+        {
+            DateTime latestEvent = new DateTime (1, 1, 1, 0, 0, 0);
+            int latestType = (int)NcTimeVarianceType.NONE;
+            int latestState = 0;
+
+            foreach (NcTimeVariance tv in tvList) {
+                DateTime lastEvent = tv.LastEventTime ();
+                if (((int)NcTimeVariance.STATE_NONE == latestType) || (latestEvent < lastEvent)) {
+                    latestEvent = lastEvent;
+                    latestType = (int)tv.TimeVarianceType ();
+                    latestState = tv.State;
+                }
+            }
+
+            /// Update db state only if there is a change
+            bool updated = false;
+            if (latestType != TimeVarianceType) {
+                TimeVarianceType = latestType;
+                updated = true;
+            }
+            if (latestState != TimeVarianceState) {
+                TimeVarianceState = latestState;
+                updated = true;
+            }
+            if (updated) {
                 Update ();
-                TimeVarianceSM.CallBack = TimeVarianceCallBack;
-                TimeVarianceSM.Start ();
             }
         }
 
-        private void TimeVarianceCallBack (int state)
+        private void InitializeTimeVariance ()
         {
-            if (0 == state) {
-                /// Check if there is any other time variance state machine to run
-                InitializeTimeVariance (true);
-            } else {
-                /// Recompute a new score and update it in the cache
-                Score = GetScore ();
-                NeedUpdate = false;
-                Update ();
+            Log.Debug (Log.LOG_BRAIN, "Initialize time variance for email message id {0}", Id);
+
+            NcAssert.True (1 <= ScoreVersion);
+
+            DateTime now = DateTime.Now;
+            NcTimeVariance.TimeVarianceList tvList;
+            tvList = EvaluateTimeVariance ().FilterStillRunning (now);
+
+            /// Start all applicable state machines
+            foreach (NcTimeVariance tv in tvList) {
+                tv.Start ();
             }
+
+            UpdateTimeVariance (tvList);
+        }
+
+        private static void TimeVarianceCallBack (int state, Int64 objId)
+        {
+            McEmailMessage emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)objId);
+            if (null == emailMessage) {
+                return; // The object has been deleted
+            }
+
+            /// Update time variance state if necessary
+            NcTimeVariance.TimeVarianceList tvList =
+                emailMessage.EvaluateTimeVariance ().FilterStillRunning (DateTime.Now);
+            emailMessage.UpdateTimeVariance (tvList);
+
+            /// Recompute a new score and update it in the cache
+            emailMessage.Score = emailMessage.GetScore ();
+            emailMessage.NeedUpdate = false;
+            emailMessage.Update ();
         }
 
         public static void StartTimeVariance ()
