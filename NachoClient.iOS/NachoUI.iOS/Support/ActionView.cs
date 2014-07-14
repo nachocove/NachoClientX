@@ -10,7 +10,6 @@ namespace NachoClient.iOS
 {
     [Register ("ActionView")]
 
-
     public class ActionView: UIView 
     {
         UIViewController owner;

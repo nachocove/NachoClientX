@@ -40,7 +40,7 @@ namespace NachoClient.iOS
             //          "folderSegue" is the FolderViewController version, this is the view from the Folders option on the main menu where the user select a folder and it brings
             //          inside that directory so they can view the messages contained by it
             //          "folderAction" is the MessageActionViewController version, this is the view accessed when viewing a single message, and they have the ability to file the 
-            //          message in a specific directoryt
+            //          message in a specific directory
             this.whatType = whatType;
             foldersTable = theTable;
             convertFoldersToMcFolders ();

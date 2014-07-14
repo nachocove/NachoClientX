@@ -436,9 +436,11 @@ namespace NachoClient.iOS
         {
             var cell = base.GetCell (tv);
 
-            if (cell.ContentView.Subviews.Length > 0) {
-                UIView x = cell.ContentView.Subviews [0];
-                x.RemoveFromSuperview ();
+            if (cell.ContentView.Subviews.Length > 1) {
+                for (int i = 1; i < cell.ContentView.Subviews.Length; i++) {
+                    UIView x = cell.ContentView.Subviews [i];
+                    x.RemoveFromSuperview ();
+                }
             }
 
             return cell;

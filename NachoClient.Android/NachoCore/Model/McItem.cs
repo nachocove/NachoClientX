@@ -64,7 +64,7 @@ namespace NachoCore.Model
         {
             NcAssert.True (100000 > PendingRefCount);
 
-            //FIXME initialize to better defualt returnVal
+            //FIXME initialize to better default returnVal
             int returnVal = -1;
 
             if (0 == PendingRefCount) {
@@ -80,13 +80,11 @@ namespace NachoCore.Model
                     Log.Error(Log.LOG_DB,"Deletion Failed: {0} No changes were made to the DB.", ex.Message);
                     return returnVal;
                 }
-                    
             } else {
                 IsAwaitingDelete = true;
                 Update ();
                 return 0;
             }
-            return returnVal;
         }
 
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McItem, new()

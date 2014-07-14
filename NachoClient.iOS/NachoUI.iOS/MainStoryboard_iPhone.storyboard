@@ -1369,17 +1369,9 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="eK3-Wd-Zbv"/>
-        <segue reference="Pu5-w4-aps"/>
-        <segue reference="vRC-Oi-s8D"/>
-        <segue reference="p6V-c0-caL"/>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="i3N-5g-evG"/>
-        <segue reference="Oi3-nV-lAC"/>
         <segue reference="kLB-ow-NqN"/>
         <segue reference="WNy-bM-xGW"/>
         <segue reference="ebP-h4-BhC"/>
-        <segue reference="Afu-47-Kju"/>
         <segue reference="Oi3-nV-lAC"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
@@ -1387,11 +1379,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="PxE-UU-EfC"/>
         <segue reference="c79-xS-Npa"/>
         <segue reference="hxO-14-opZ"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="vah-yS-677"/>
-        <segue reference="nAp-rc-bND"/>
-        <segue reference="6LT-Zj-XeH"/>
         <segue reference="Afu-47-Kju"/>
         <segue reference="Zli-hF-qvP"/>
         <segue reference="EmX-Dp-jXs"/>
