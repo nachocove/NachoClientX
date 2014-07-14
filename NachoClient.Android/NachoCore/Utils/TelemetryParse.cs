@@ -39,7 +39,20 @@ namespace NachoCore.Utils
 
         private NSString SafeNSString (string key)
         {
-            return OneConstNSString.GetOrAdd (key, new NSString (key));
+            NcAssert.NotNull (key);
+            var reTries = 10;
+            while (0 < reTries--) {
+                try {
+                    return OneConstNSString.GetOrAdd (key, new NSString (key));
+                } catch (ArgumentNullException ex) {
+                    Log.Warn (Log.LOG_SYS, "Xamarin NSString bug caught: {0}.", ex);
+                    if (0 >= reTries) {
+                        Log.Error (Log.LOG_SYS, "Xamarin NSString bug caught 10 times in a row.");
+                        throw;
+                    }
+                }
+            }
+            return null;
         }
 
         public void AddString (string key, string value)
