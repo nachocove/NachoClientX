@@ -178,6 +178,12 @@ namespace NachoCore
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
+                if (null == McFolder.GetOutboxFolder (accountId)) {
+                    freshMade = McFolder.Create (accountId, true, false, "0",
+                        McFolder.ClientOwned_Drafts, "Device Drafts",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                    freshMade.Insert ();
+                }
                 if (null == McFolder.GetGalCacheFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, true, "0",
                         McFolder.ClientOwned_GalCache, string.Empty,
