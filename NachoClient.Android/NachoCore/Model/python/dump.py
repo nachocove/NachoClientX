@@ -2,6 +2,7 @@
 try:
     from sqlalchemy.orm import sessionmaker
 except ImportError:
+    sessionmaker = None  # to get rid of a PyCharm warning
     print 'ERROR: SQLAlchemy package is not found. Please install SQLAlchemy first by:'
     print 'sudo easy_install SQLAlchemy'
     exit(1)
@@ -9,6 +10,8 @@ import argparse
 import os
 import cgi
 import copy
+import datetime
+import string
 from model_db import ModelDb
 
 
@@ -59,6 +62,21 @@ class BooleanFormatter(Formatter):
                 return 'True'
             else:
                 return 'False'
+
+
+class DateTimeFormatter(Formatter):
+    def __init__(self):
+        Formatter.__init__(self)
+
+    def format(self, value):
+        milliseconds = value / 10000
+        (days, milliseconds) = divmod(milliseconds, 86400 * 1000)
+        date = datetime.date.fromordinal(days + 1)
+        (hours, milliseconds) = divmod(milliseconds, 3600 * 1000)
+        (minutes, milliseconds) = divmod(milliseconds, 60 * 1000)
+        (seconds, milliseconds) = divmod(milliseconds, 1000)
+        return '%d/%02d/%02d %02d:%02d:%02d.%03d' % (date.year, date.month, date.day,
+                                                     hours, minutes, seconds, milliseconds)
 
 
 class HtmlOutput:
@@ -165,7 +183,14 @@ class HtmlTable:
         for col in self.columns:
             header_attrs[col] = {'style': 'font-size: 12px'}
         # Create the header
-        self._add_row(output, 'th', self.columns, header_attrs)
+        def split_name(s):
+            out = ''
+            for c in s:
+                if c in string.uppercase:
+                    out += ' '
+                out += c
+            return out
+        self._add_row(output, 'th', [split_name(x) for x in self.columns], header_attrs)
         # Reset the header count. This affects row highlighting
         self.num_rows = 0
         # Output all rows (objects)
@@ -199,7 +224,8 @@ class McEmailMessageDumper(HtmlTable):
                    'Subject',
                    'TimesRead',
                    'SecondsRead']
-        column_formatters = {'Score': DoubleFormatter(7, 6)}
+        column_formatters = {'Score': DoubleFormatter(7, 6),
+                             'DateReceived': DateTimeFormatter()}
         align_right = {'align': 'right'}
         align_center = {'align': 'center'}
         column_attributes = {'Score': align_right,

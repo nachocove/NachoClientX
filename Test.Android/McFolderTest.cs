@@ -10,7 +10,6 @@ using System.Linq;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
-using FolderOps = Test.iOS.CommonFolderOps;
 
 namespace Test.iOS
 {
@@ -638,25 +637,6 @@ namespace Test.iOS
                 var found = TestFolderMovedCorrectly (destServerId, folder);
                 var foundSubFolders = McFolder.QueryByParentId (defaultAccountId, found.ServerId);
                 Assert.AreEqual (2, foundSubFolders.Count, "Should move subFolders recursively to client-owned folder with matching destFolderId");
-            }
-
-            [Test]
-            public void TestMovingSingleItemToClientOwned ()
-            {
-                // should move synced item with matching ServerId to client-owned folder with matching destFolderId
-                // Set up current folder and destination folder
-                string ownerServerId = "10";
-                string itemServerId = "11";
-                string destServerId = "12";
-
-                var ownerFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: ownerServerId, isClientOwned: false);
-                var destFolder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: destServerId, isClientOwned: true);
-
-                var item = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: itemServerId);
-                ownerFolder.Link (item);
-
-                McFolder.ServerEndMoveToClientOwned (defaultAccountId, itemServerId, destServerId);
-                TestMovedToClientOwned (item, destFolder);
             }
 
             private void TestMovedToClientOwned (McFolderEntry item, McFolder folder)

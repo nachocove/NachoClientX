@@ -434,6 +434,18 @@ namespace NachoCore.Brain
             return Adjustment (MaxState);
         }
 
+        protected DateTime SafeAddDateTime (DateTime time, TimeSpan duration)
+        {
+            DateTime retval;
+            try {
+                retval = time + duration;
+            }
+            catch (ArgumentOutOfRangeException) {
+                retval = time;
+            }
+            return retval;
+        }
+
         public static void PauseAll ()
         {
             foreach (NcTimeVariance tv in ActiveList) {
@@ -498,10 +510,10 @@ namespace NachoCore.Brain
                 retval = Deadline;
                 break;
             case 2:
-                retval = Deadline + new TimeSpan (1, 0, 0, 0);
+                retval = SafeAddDateTime (Deadline, new TimeSpan (1, 0, 0, 0));
                 break;
             case 3:
-                retval = Deadline + new TimeSpan (2, 0, 0, 0);
+                retval = SafeAddDateTime (Deadline, new TimeSpan (2, 0, 0, 0));
                 break;
             default: 
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown deadline state {0}", State));
@@ -623,28 +635,28 @@ namespace NachoCore.Brain
                 retval = new DateTime (0, 0, 0, 0, 0, 0);
                 break;
             case 1:
-                retval = StartTime + new TimeSpan (7, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (7, 0, 0, 0));
                 break;
             case 2:
-                retval = StartTime + new TimeSpan (8, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (8, 0, 0, 0));
                 break;
             case 3:
-                retval = StartTime + new TimeSpan (9, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (9, 0, 0, 0));
                 break;
             case 4:
-                retval = StartTime + new TimeSpan (10, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (10, 0, 0, 0));
                 break;
             case 5:
-                retval = StartTime + new TimeSpan (11, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (11, 0, 0, 0));
                 break;
             case 6:
-                retval = StartTime + new TimeSpan (12, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (12, 0, 0, 0));
                 break;
             case 7:
-                retval = StartTime + new TimeSpan (13, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (13, 0, 0, 0));
                 break;
             case 8:
-                retval = StartTime + new TimeSpan (14, 0, 0, 0);
+                retval = SafeAddDateTime (StartTime, new TimeSpan (14, 0, 0, 0));
                 break;
             default:
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown aging state {0}", State));

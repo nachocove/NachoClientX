@@ -27,7 +27,7 @@
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
     <MtouchI18n>
     </MtouchI18n>
-    <MtouchArch>ARMv7</MtouchArch>
+    <MtouchArch>i386</MtouchArch>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
@@ -85,7 +85,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>A5DDC8B9-8C91-450E-AA60-390062F9658D</CodesignProvision>
+    <CodesignProvision>8DEC71A1-4FF8-4BC3-B1D7-895A8CE952B7</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>

@@ -9,7 +9,7 @@ using NachoCore.Model;
 
 namespace Test.iOS
 {
-    public class BaseMcPathTest : CommonPathOps
+    public class BaseMcPathTest : PathOps
     {
         [SetUp]
         public new void SetUp ()
