@@ -6,8 +6,6 @@ using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
-using ProtoOps = Test.iOS.CommonProtoControlOps;
-using FolderOps = Test.iOS.CommonFolderOps;
 
 
 namespace Test.iOS
