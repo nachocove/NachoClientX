@@ -887,6 +887,7 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ParentId,
             };
 
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
             MarkFoldersAwaitingDelete (folder);
 
             delFolder.Insert ();
@@ -899,12 +900,11 @@ namespace NachoCore.ActiveSync
         }
 
         // recursively mark param and its children with isAwaitingDelete == true
-        public void MarkFoldersAwaitingDelete (McFolder parent)
+        public void MarkFoldersAwaitingDelete (McFolder folder)
         {
-            parent.IsAwaitingDelete = true;
-            parent.Update ();
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
-            var children = McFolder.QueryByParentId (parent.AccountId, parent.ServerId);
+            folder.IsAwaitingDelete = true;
+            folder.Update ();
+            var children = McFolder.QueryByParentId (folder.AccountId, folder.ServerId);
             foreach (McFolder child in children) {
                 MarkFoldersAwaitingDelete (child);
             }
