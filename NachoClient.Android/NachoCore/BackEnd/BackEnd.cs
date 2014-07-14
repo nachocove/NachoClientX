@@ -174,7 +174,7 @@ namespace NachoCore
                 McFolder freshMade;
                 if (null == McFolder.GetOutboxFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, false, "0",
-                        McFolder.ClientOwned_Outbox, McFolder.ClientOwned_Outbox,
+                        McFolder.ClientOwned_Outbox, "Device Outbox",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
