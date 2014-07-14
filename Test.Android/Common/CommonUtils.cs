@@ -63,6 +63,16 @@ namespace Test.iOS
             return folder;
         }
 
+        public static McFolder CreateDestFolder (bool withPath = false, TypeCode type = TypeCode.UserCreatedGeneric_1)
+        {
+            var folder = FolderOps.CreateFolder (defaultAccountId, parentId: "0", serverId: "101", name: "DestFolder", typeCode: type);
+            if (withPath) {
+                // Set up path: This is the client's "best understanding" of the servers point of view the last time they talked
+                PathOps.CreatePath (defaultAccountId, folder.ServerId, folder.ParentId);
+            }
+            return folder;
+        }
+
         /* Execute any commands that rely on the proto control state machine within the lambda of this function */
         public static void DoClientSideCmds (MockContext context, Action doCmds)
         {

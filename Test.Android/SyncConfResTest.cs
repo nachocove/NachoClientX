@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Xml.Linq;
 using System.Collections.Generic;
+using NachoCore;
 
 
 namespace Test.iOS
@@ -277,7 +278,7 @@ namespace Test.iOS
             [Test]
             public void TestSyncDelete ()
             {
-                // If the pending's ServerId is dominated by the command's ServerId, then delete the pending MeetingResponse.
+                // If the pending's ServerId matches the command's ServerId, then delete the pending MeetingResponse.
                 var topFolder = ProtoOps.CreateTopFolder (withPath: true);
                 var cal = FolderOps.CreateUniqueItem<McCalendar> ();
                 topFolder.Link (cal);
@@ -305,7 +306,49 @@ namespace Test.iOS
                 var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
                 Assert.NotNull (foundFolder, "Folder should not be deleted by the server");
             }
+        }
 
+        [TestFixture]
+        public class MoveItemsTests : BaseSyncConfResTest
+        {
+            // have to make the L&F folder
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+            }
+
+            [Test]
+            public void TestSyncDelete ()
+            {
+                // If the pending's ServerId matches the command's ServerId, then delete the pending MeetingResponse.
+                var topFolder = ProtoOps.CreateTopFolder (withPath: true);
+                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
+                topFolder.Link (cal);
+                PathOps.CreatePath (defaultAccountId, cal.ServerId, topFolder.ServerId);
+
+                var destFolder = ProtoOps.CreateDestFolder (withPath: true);
+
+                SetSyncStrategy (topFolder);
+
+                string token = null;
+                ProtoOps.DoClientSideCmds (Context, () => {
+                    token = Context.ProtoControl.MoveCalCmd (cal.Id, destFolder.Id);
+                });
+
+                SyncCmd = CreateSyncCmd (Context);
+
+                var itemOpXml = SyncDeleteCmdItemXml (cal.ServerId, topFolder.ServerId, ClassCode.Calendar);
+                ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
+
+                var foundPending = McPending.QueryByToken (defaultAccountId, token);
+                Assert.Null (foundPending, "Pending should be deleted by client");
+
+                var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
+                var foundParent = McMapFolderFolderEntry.QueryByFolderId (defaultAccountId, laf.Id);
+                Assert.AreEqual (cal.Id, foundParent.FirstOrDefault ().FolderEntryId, "Item should be moved into L&F");
+            }
         }
     }
 }
