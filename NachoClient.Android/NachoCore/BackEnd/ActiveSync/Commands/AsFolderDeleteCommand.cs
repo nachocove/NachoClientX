@@ -33,12 +33,14 @@ namespace NachoCore.ActiveSync
         {
             McProtocolState protocolState = BEContext.ProtocolState;
             var xmlFolderDelete = doc.Root;
+            var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
+            var folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
             switch ((Xml.FolderHierarchy.FolderDeleteStatusCode)Convert.ToUInt32 (xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
                 protocolState.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 protocolState.Update ();
-                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
                 pathElem.Delete ();
+                folder.Delete ();
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl,
                         NcResult.Info (NcResult.SubKindEnum.Info_FolderDeleteSucceeded));
@@ -54,6 +56,9 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPEC");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Missing_4:
+                // If it is missing on the server, then let's it be missing here too.
+                pathElem.Delete ();
+                folder.Delete ();
                 lock (PendingResolveLockObj) {
                     if (null == PendingSingle) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPECC");

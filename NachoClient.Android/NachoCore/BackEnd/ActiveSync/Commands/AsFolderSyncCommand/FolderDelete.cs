@@ -56,7 +56,7 @@ namespace NachoCore.ActiveSync
                         }
                     } else {
                         // FolderUpdate:Move.
-                        if (pending.CommandDominatesDestParentId (ServerId)) {
+                        if (pending.DestParentId == ServerId || pending.CommandDominatesDestParentId (ServerId)) {
                             McFolder.ServerEndMoveToClientOwned (AccountId, pending.ServerId, McFolder.ClientOwned_LostAndFound);
                             action = McPending.DbActionEnum.Delete;
                             cancelCommand = false;
@@ -133,7 +133,7 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.ContactDelete:
                 case McPending.Operations.TaskDelete:
                     cancelCommand = false;
-                    if (pending.CommandDominatesItem (ServerId)) {
+                    if (ServerId == pending.ParentId || pending.CommandDominatesParentId (ServerId)) {
                         action = McPending.DbActionEnum.Delete;
                     } else {
                         action = McPending.DbActionEnum.DoNothing;

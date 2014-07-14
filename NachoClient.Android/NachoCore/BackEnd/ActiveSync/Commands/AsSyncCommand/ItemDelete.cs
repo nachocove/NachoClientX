@@ -55,8 +55,10 @@ namespace NachoCore.ActiveSync
                         McFolder.UnlinkAll (item);
                         var laf = McFolder.GetLostAndFoundFolder (AccountId);
                         laf.Link (item);
+                        cancelCommand = true;
                         action = McPending.DbActionEnum.Delete;
                     } else {
+                        cancelCommand = false;
                         action = McPending.DbActionEnum.DoNothing;
                     }
                     return null;

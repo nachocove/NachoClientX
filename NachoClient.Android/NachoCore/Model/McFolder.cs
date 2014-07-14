@@ -47,6 +47,7 @@ namespace NachoCore.Model
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
+        public const string ClientOwned_Drafts = "Drafts2";
         public const string ClientOwned_GalCache = "GAL";
         public const string ClientOwned_Gleaned = "GLEANED";
         public const string ClientOwned_LostAndFound = "LAF";
@@ -201,6 +202,16 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
+        public static List<McFolder> ServerEndQueryByParentId (int accountId, string parentId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          " f.AccountId = ? AND " +
+                          " f.IsAwaitingCreate = 0 AND " +
+                          " f.ParentId = ? ",
+                              accountId, parentId);
+            return folders.ToList ();
+        }
+
         public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McFolderEntry
         {
             var getClassCode = typeof(T).GetMethod ("GetClassCode");
@@ -226,6 +237,16 @@ namespace NachoCore.Model
         // ONLY TO BE USED BY SERVER-END CODE.
         // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes
         // IsAwaitingCreate folders.
+
+        public static McFolder ServerEndQueryByServerId (int accountId, string serverId)
+        {
+            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            " f.AccountId = ? AND " +
+            " f.IsAwaitingCreate = 0 AND " +
+            " f.ServerId = ? ", 
+                accountId, serverId).SingleOrDefault ();
+        }
+
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -236,34 +257,33 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        // move an item or folder from a sync'd folder to a client-owned folder
+        public static McFolder ServerEndQueryById (int folderId)
+        {
+            return NcModel.Instance.Db.Query<McFolder> ( "SELECT f.* FROM McFolder AS f WHERE " +
+                    " f.Id = ? AND " +
+                    " f.IsAwaitingCreate = 0 ", folderId).SingleOrDefault ();
+        }
+
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
         {
             var destFolder = GetClientOwnedFolder (accountId, destParentId);
             NcAssert.NotNull (destFolder, "Destination folder should exist");
 
-            var potentialFolder = McFolderEntry.QueryByServerId<McFolder> (accountId, serverId);
-            var potentialItem = McFolderEntry.QueryAllForServerId (accountId, serverId);
+            var potentialFolder = ServerEndQueryByServerId (accountId, serverId);
+            NcAssert.NotNull (potentialFolder, "Server to move should exist");
 
-            if (potentialFolder != null && potentialItem == null) {
-                NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
-                potentialFolder.IsClientOwned = true;
-                potentialFolder.ParentId = destParentId;
-                potentialFolder.Update ();
+            NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
+            potentialFolder.IsClientOwned = true;
+            potentialFolder.ParentId = destParentId;
+            potentialFolder.Update ();
 
-                RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
-            } else if (potentialItem != null && potentialFolder == null) {
-                McFolder.UnlinkAll ((McItem)potentialItem);
-                destFolder.Link ((McItem)potentialItem);
-            } else {
-                NcAssert.True (false, "Could not find item or folder, or found both with the same ServerId");
-            }
+            RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
         }
 
-        // change all isClientOwned flags in a directory to true;
+        // change all isClientOwned flags for folders in a directory to true;
         private static void RecursivelyChangeFlags (int accountId, string parentServerId)
         {
-            var children = McFolder.QueryByParentId (accountId, parentServerId);
+            var children = McFolder.ServerEndQueryByParentId (accountId, parentServerId);
             foreach (McFolder child in children) {
                 child.IsClientOwned = true;
                 child.Update ();
@@ -367,8 +387,8 @@ namespace NachoCore.Model
         public static void AsSetExpected (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND f.IsClientOwned = 0",
-                accountId);
+                          " f.AccountId = ? AND f.IsClientOwned = 0",
+                              accountId);
             foreach (var folder in folders) {
                 folder.AsSyncMetaToClientExpected = true;
                 folder.Update ();
@@ -378,7 +398,7 @@ namespace NachoCore.Model
         public static void AsResetState (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? ",
+                          " f.AccountId = ? ",
                               accountId);
             foreach (var folder in folders) {
                 folder.AsSyncKey = AsSyncKey_Initial;

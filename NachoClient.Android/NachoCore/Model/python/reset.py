@@ -7,6 +7,8 @@ except ImportError:
 import sys
 import os
 import model_db
+
+
 path = sys.argv[1]
 if not os.path.exists(path):
     print 'ERROR: %s does not exist.' % path
@@ -16,8 +18,7 @@ from model import *
 
 
 def reset():
-    Session = sessionmaker(bind=model_db.ModelDb.engine)
-    session = Session()
+    session = sessionmaker(bind=model_db.ModelDb.engine)()
 
     # Reset all email messages
     for em in session.query(McEmailMessage).all():

@@ -107,8 +107,9 @@ namespace NachoCore.Brain
                 if (null == contact) {
                     return numUpdated;
                 }
-                Log.Info (Log.LOG_BRAIN, "update score of contact {0}", contact.Id);
                 contact.Score = contact.GetScore ();
+                Log.Debug (Log.LOG_BRAIN, "[McContact:{0}] update score -> {1:F6}",
+                    contact.Id, contact.Score);
                 contact.NeedUpdate = false;
                 contact.Update ();
 
@@ -129,8 +130,9 @@ namespace NachoCore.Brain
                 if (null == emailMessage) {
                     return numUpdated;
                 }
-                Log.Info (Log.LOG_BRAIN, "update score of email message {0}", emailMessage.Id);
                 emailMessage.Score = emailMessage.GetScore ();
+                Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
+                    emailMessage.Id, emailMessage.Score);
                 emailMessage.NeedUpdate = false;
                 emailMessage.Update ();
 

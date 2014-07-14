@@ -65,13 +65,13 @@ namespace Test.Common
 
             public void Clear ()
             {
-                foreach (HashSet<MockTimer> timeSlot in TimeSlots.Values) {
-                    if (0 == timeSlot.Count) {
-                        continue;
-                    }
+                while (0 < TimeSlots.Count) {
+                    HashSet<MockTimer> timeSlot;
+                    TimeSlots.TryGetValue (TimeSlots.Keys[0], out timeSlot);
+                    TimeSlots.RemoveAt (0);
+                    Log.Info (Log.LOG_TEST, "Removing {0} timers", timeSlot.Count);
                     timeSlot.Clear ();
                 }
-                TimeSlots.Clear ();
             }
         }
 
@@ -95,7 +95,6 @@ namespace Test.Common
             }
             set {
                 NcAssert.True (value > _CurrentTime);
-                Int64 nextSlot = ActiveList.NextTimeSlot ();
                 if (null == CurrentTimeLock) {
                     CurrentTimeLock = new object ();
                 }
@@ -110,6 +109,7 @@ namespace Test.Common
                 // and the test will be stuck. So, we lock current time when callbacks
                 // are made.
                 lock (CurrentTimeLock) {
+                    Int64 nextSlot = ActiveList.NextTimeSlot ();
                     if ((0 > nextSlot) || (nextSlot > value)) {
                         _CurrentTime = value;
                         MockStopwatch.CurrentMillisecond = value;
@@ -274,19 +274,32 @@ namespace Test.Common
                 }
 
                 // Find the set of timer at a particular time slot
-                HashSet<MockTimer> timerList = ActiveList.RemoveTimeSlot (CurrentTime);
-                if ((null == timerList) || (0 == timerList.Count)) {
-                    continue;
-                }
+                lock (CurrentTimeLock) {
+                    HashSet<MockTimer> timerList = ActiveList.RemoveTimeSlot (CurrentTime);
+                    if ((null == timerList) || (0 == timerList.Count)) {
+                        continue;
+                    }
 
-                // Make callbacks for all timers in the time slot and reschedule periodic timers
-                foreach (MockTimer timer in timerList) {
-                    NcAssert.True (null != timer.Callback);
-                    lock (CurrentTimeLock) {
+                    // Make callbacks for all timers in the time slot and reschedule periodic timers
+                    foreach (MockTimer timer in timerList) {
+                        NcAssert.True (null != timer.Callback);
                         timer.ChangePeriodic ();
                         timer.Callback (timer.Object_);
                     }
                 }
+            }
+        }
+
+        /// This function guarantees that any ongoing timer callbacks are 
+        /// finished upon returning from this call. Note that you need to
+        /// make sure that there is an ongoing callback. This can be done
+        /// by signalling 
+        public static int WaitForCallBack ()
+        {
+            lock (CurrentTimeLock) {
+                /// Do some useless work to make sure the optimizer cannot 
+                /// get rid of this code.
+                return new Random ().Next ();
             }
         }
     }
