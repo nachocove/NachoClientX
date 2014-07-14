@@ -8,6 +8,7 @@ except ImportError:
 import argparse
 import os
 import cgi
+import copy
 from model_db import ModelDb
 
 
@@ -37,6 +38,27 @@ class DoubleFormatter(Formatter):
 
     def format(self, value):
         return self._format % value
+
+
+class BooleanFormatter(Formatter):
+    """
+    Boolean formatter converts 1 / 0 to either True / False or T / F.
+    """
+    def __init__(self, short_form=False):
+        Formatter.__init__(self)
+        self.short_form = short_form
+
+    def format(self, value):
+        if self.short_form:
+            if value:
+                return 'T'
+            else:
+                return 'F'
+        else:
+            if value:
+                return 'True'
+            else:
+                return 'False'
 
 
 class HtmlOutput:
@@ -112,9 +134,18 @@ class HtmlTable:
         self.table_attrs = {'style': 'border-collapse: collapse',
                             'border': 1,
                             'cellpadding': 2}
+        self.num_rows = 0
 
     def _add_row(self, output, tag, columns, attrs=None):
-        output.add_open_tag('tr')
+        if attrs is None:
+            attrs = dict()
+        else:
+            attrs = copy.copy(attrs)
+        # determine background color
+        num_rows_per_block = 1
+        if 1 == ((self.num_rows / num_rows_per_block) % 2):
+            attrs['bgcolor'] = 'lightcyan'
+        output.add_open_tag('tr', **attrs)
         assert len(columns) == len(self.columns)
         for n in range(len(self.columns)):
             col_name = self.columns[n]
@@ -123,12 +154,21 @@ class HtmlTable:
             else:
                 output.add_content(tag, columns[n])
         output.add_close_tag('tr')
+        self.num_rows += 1
 
     def __str__(self):
         output = HtmlOutput()
         output.add_open_tag('html')
         output.add_open_tag('table', **self.table_attrs)
-        self._add_row(output, 'th', self.columns)
+        # Make the header font size smaller so some columns can be narrower
+        header_attrs = dict()
+        for col in self.columns:
+            header_attrs[col] = {'style': 'font-size: 12px'}
+        # Create the header
+        self._add_row(output, 'th', self.columns, header_attrs)
+        # Reset the header count. This affects row highlighting
+        self.num_rows = 0
+        # Output all rows (objects)
         for row in self.rows:
             columns = []
             for col in self.columns:
@@ -137,7 +177,10 @@ class HtmlTable:
                     formatter = self.column_formatters[col]
                     columns.append(formatter.format(value))
                 else:
-                    columns.append(unicode(value))
+                    if value is not None:
+                        columns.append(unicode(value))
+                    else:
+                        columns.append('')
             self._add_row(output, 'td', columns, self.column_attributes)
         output.add_close_tag('table')
         output.add_close_tag('html')
@@ -148,16 +191,23 @@ class McEmailMessageDumper(HtmlTable):
     def __init__(self, objects):
         columns = ['Id',
                    'Score',
+                   'ScoreVersion',
                    'TimeVarianceType',
                    'TimeVarianceState',
                    'DateReceived',
                    'From',
-                   'Subject']
+                   'Subject',
+                   'TimesRead',
+                   'SecondsRead']
         column_formatters = {'Score': DoubleFormatter(7, 6)}
         align_right = {'align': 'right'}
+        align_center = {'align': 'center'}
         column_attributes = {'Score': align_right,
+                             'ScoreVersion': align_center,
                              'TimeVarianceType': align_right,
-                             'TimeVarianceState': align_right}
+                             'TimeVarianceState': align_right,
+                             'TimesRead': align_right,
+                             'SecondsRead': align_right}
         HtmlTable.__init__(self, columns, rows=objects,
                            column_attributes=column_attributes,
                            column_formatters=column_formatters)
@@ -169,10 +219,31 @@ class McContactDumper(HtmlTable):
                    'Score',
                    'FirstName',
                    'MiddleName',
-                   'LastName']
-        column_formatters = {'Score': DoubleFormatter(7, 6)}
+                   'LastName',
+                   'ScoreVersion',
+                   'NeedUpdate',
+                   'EmailsReceived',
+                   'EmailsRead',
+                   'EmailsReplied',
+                   'EmailsArchived',
+                   'EmailsSent',
+                   'EmailsDeleted',
+                   'IsVip']
+        column_formatters = {'Score': DoubleFormatter(7, 6),
+                             'NeedUpdate': BooleanFormatter(True),
+                             'IsVip': BooleanFormatter(True)}
         align_right = {'align': 'right'}
-        column_attributes = {'Score': align_right}
+        align_center = {'align': 'center'}
+        column_attributes = {'Score': align_right,
+                             'EmailsReceived': align_right,
+                             'EmailsRead': align_right,
+                             'EmailsReplied': align_right,
+                             'EmailsArchived': align_right,
+                             'EmailsSent': align_right,
+                             'EmailsDeleted': align_right,
+                             'ScoreVersion': align_center,
+                             'NeedUpdate': align_center,
+                             'IsVip': align_center}
         HtmlTable.__init__(self, columns, rows=objects,
                            column_attributes=column_attributes,
                            column_formatters=column_formatters)
