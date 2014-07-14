@@ -73,5 +73,10 @@ namespace NachoPlatform
     {
         void Invoke (Action action);
     }
-}
 
+    public interface IPlatformNotif
+    {
+        void ScheduleNotif (int handle, DateTime when, string message);
+        void CancelNotif (int handle);
+    }
+}

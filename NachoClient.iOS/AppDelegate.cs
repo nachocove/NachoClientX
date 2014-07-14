@@ -389,8 +389,11 @@ namespace NachoClient.iOS
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
             Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification called.");
-            var emailMessageId = ((NSNumber)notification.UserInfo.ObjectForKey (NoteKey)).IntValue;
-            Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+            var value = (NSNumber)notification.UserInfo.ObjectForKey (NoteKey);
+            if (null != value) {
+                var emailMessageId = value.IntValue;
+                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+            }
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
