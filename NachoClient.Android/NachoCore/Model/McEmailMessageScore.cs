@@ -225,10 +225,10 @@ namespace NachoCore.Model
             return newTvList;
         }
 
-        private void UpdateTimeVariance (NcTimeVariance.TimeVarianceList tvList)
+        private void UpdateTimeVariance (NcTimeVariance.TimeVarianceList tvList, DateTime now)
         {
             DateTime latestEvent = new DateTime (1, 1, 1, 0, 0, 0);
-            int latestType = (int)NcTimeVarianceType.NONE;
+            int latestType = (int)NcTimeVarianceType.DONE;
             int latestState = 0;
 
             foreach (NcTimeVariance tv in tvList) {
@@ -236,7 +236,10 @@ namespace NachoCore.Model
                 if (((int)NcTimeVariance.STATE_NONE == latestType) || (latestEvent < lastEvent)) {
                     latestEvent = lastEvent;
                     latestType = (int)tv.TimeVarianceType ();
-                    latestState = tv.State;
+                    /// Note that we cannot just use tv.State because tv is not
+                    /// running if this function is called from TimerCallBack().
+                    /// So, we have to find the appropriate state.
+                    latestState = tv.FindNextState (now, -1);
                 }
             }
 
@@ -266,11 +269,15 @@ namespace NachoCore.Model
             tvList = EvaluateTimeVariance ().FilterStillRunning (now);
 
             /// Start all applicable state machines
-            foreach (NcTimeVariance tv in tvList) {
-                tv.Start ();
+            if (0 < tvList.Count) {
+                foreach (NcTimeVariance tv in tvList) {
+                    tv.Start ();
+                }
+            } else {
+                Score = GetScore ();
             }
 
-            UpdateTimeVariance (tvList);
+            UpdateTimeVariance (tvList, now);
         }
 
         private static void TimeVarianceCallBack (int state, Int64 objId)
@@ -281,9 +288,10 @@ namespace NachoCore.Model
             }
 
             /// Update time variance state if necessary
+            DateTime now = DateTime.Now;
             NcTimeVariance.TimeVarianceList tvList =
-                emailMessage.EvaluateTimeVariance ().FilterStillRunning (DateTime.Now);
-            emailMessage.UpdateTimeVariance (tvList);
+                emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
+            emailMessage.UpdateTimeVariance (tvList, now);
 
             /// Recompute a new score and update it in the cache
             emailMessage.Score = emailMessage.GetScore ();

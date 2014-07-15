@@ -383,7 +383,7 @@ namespace NachoCore.Brain
         /// Find the next state given the current time
         /// </summary>
         /// <returns><c>true</c>, if state is advanced <c>false</c> otherwise.</returns>
-        private int FindNextState (DateTime now, int state)
+        public int FindNextState (DateTime now, int state)
         {
             if (STATE_TERMINATED == state) {
                 return state;
