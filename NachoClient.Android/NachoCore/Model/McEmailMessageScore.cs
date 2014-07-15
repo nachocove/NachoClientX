@@ -71,6 +71,7 @@ namespace NachoCore.Model
                         }
                         // TODO - How to determine if the email has been replied?
                         sender.ForceReadAncillaryData ();
+                        sender.Score = sender.GetScore ();
                         sender.Update ();
                     }
                     // Add Sender dependency

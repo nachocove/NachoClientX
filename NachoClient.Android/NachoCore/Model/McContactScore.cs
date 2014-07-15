@@ -73,6 +73,7 @@ namespace NachoCore.Model
                 if (!DownloadScore ()) {
                     // Version 1 statistics are updated by emails. Nothing to do here
                 }
+                Score = GetScore ();
                 ScoreVersion++;
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
