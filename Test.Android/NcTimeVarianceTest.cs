@@ -115,6 +115,20 @@ namespace Test.Common
         }
 
         [TestCase]
+        public void DeadlineTimeVarianceMaxDateTime ()
+        {
+            DateTime deadline = DateTime.MaxValue;
+            TimeVariance [ID_DEADLINE] =
+                (NcTimeVariance)new NcDeadlineTimeVariance ("deadline", Callback, ID_DEADLINE, deadline);
+
+            TimeVariance [ID_DEADLINE].Start ();
+            // Check that the state machine advances at the capped event time.
+            AdvanceAndCheckState (ID_DEADLINE, 1, 1.0, 9998 * 365 + 2424);
+            /// Due to out-of-range rounding, state 2 and 3 are skipped
+            CheckFinalState (ID_DEADLINE, 0.1);
+        }
+
+        [TestCase]
         public void DeferenceTimeVariance ()
         {
             DateTime deferredUntil = MockGetCurrentDateTime () + new TimeSpan (3, 0, 0, 0);

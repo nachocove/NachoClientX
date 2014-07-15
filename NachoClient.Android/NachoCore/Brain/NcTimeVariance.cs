@@ -413,6 +413,25 @@ namespace NachoCore.Brain
             return NextEventTime (State);
         }
 
+        protected DateTime LimitEventTime (DateTime time)
+        {
+            /// Limit the event time to 9999/1/1 12:00:00AM. The reason for this
+            /// is to avoid a potential overflow exception. 'now' was timestamped
+            /// some time ago. So, the duration from 'now' to eventTime starting
+            /// at the current time may actually beyond DateTime.MaxValue.
+            ///
+            /// The solution is to cap event time to 9999/1/1 12:00:00AM. This gives
+            /// one year of slack between 'now' and the real current time. It is
+            /// okay to give a false event time since the timer will not fire
+            /// with or without adjustment for 7,000+ years. And we don't care
+            /// what happens 7 millennium later.
+            DateTime maxDueTime = new DateTime (9999, 1, 1, 0, 0, 0);
+            if (time > maxDueTime) {
+                return maxDueTime;
+            }
+            return time;
+        }
+
         public double Adjustment (DateTime now)
         {
             int state = FindNextState (now, -1);
@@ -518,7 +537,7 @@ namespace NachoCore.Brain
             default: 
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown deadline state {0}", State));
             }
-            return retval;
+            return LimitEventTime (retval);
         }
     }
 
@@ -569,7 +588,7 @@ namespace NachoCore.Brain
                 string mesg = String.Format ("unknown deference state {0}", State);
                 throw new NcAssert.NachoDefaultCaseFailure (mesg);
             }
-            return retval;
+            return LimitEventTime (retval);
         }  
     }
 
