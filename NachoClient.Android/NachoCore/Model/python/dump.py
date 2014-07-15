@@ -13,6 +13,7 @@ import copy
 import datetime
 import string
 from model_db import ModelDb
+import sqlalchemy
 
 
 class Formatter:
@@ -182,6 +183,7 @@ class HtmlTable:
         header_attrs = dict()
         for col in self.columns:
             header_attrs[col] = {'style': 'font-size: 12px'}
+
         # Create the header
         def split_name(s):
             out = ''
@@ -276,10 +278,25 @@ class McContactDumper(HtmlTable):
 
 
 def main():
+    # Parse options
     parser = argparse.ArgumentParser()
     parser.add_argument('--db-file', '-f', help='SQLite database file')
+    order_group = parser.add_argument_group(title='Ordering Options').add_mutually_exclusive_group()
+    order_group.add_argument('--date-received', action='store_true',
+                             help='Sorted by DateReceived in ascending order [McEmailMessage only]')
+    order_group.add_argument('--emails-received', action='store_true',
+                             help='Sorted by EmailsReceived in descending order [McContact only]')
+    order_group.add_argument('--score', action='store_true',
+                             help='Sorted by Score in descending order')
+    order_group.add_argument('--score-version', action='store_true',
+                             help='Sorted by ScoreVersion in descending order')
+    order_group.add_argument('--time-variance', action='store_true',
+                             help='Sorted by TimeVarianceType, TimeVarianceState in descending order')
+
     parser.add_argument('tables', nargs='*', help='Choices are: McEmailMessage')
     options = parser.parse_args()
+
+    # Initialize SQLAlchemy
     if not os.path.exists(options.db_file):
         print 'ERROR: %s does not exist.' % options.db_file
         exit(1)
@@ -287,16 +304,36 @@ def main():
     import model
     session = sessionmaker(bind=ModelDb.engine)()
 
+    # Process tables
     for table in options.tables:
         table = table.lower()
         if table == 'mcemailmessage':
             dumper_class = McEmailMessageDumper
-            objects = session.query(model.McEmailMessage).all()
+            model_class = model.McEmailMessage
+            # if options.score:
+            #     objects = query.order_by(sqlalchemy.desc(model.McEmailMessage.Score))
+            # else:
+            #     objects = query.all()
         elif table == 'mccontact':
             dumper_class = McContactDumper
-            objects = session.query(model.McContact).all()
+            model_class = model.McContact
+            # if options.score:
+            #     objects = session.query(model.McEmailMessage).order_by(model.McContact.Score)
+            # else:
+            #     objects = session.query(model.McContact).all()
         else:
             raise ValueError('Unknown table %s' % table)
+        query = session.query(model_class)
+        if options.date_received and table == 'mcemailmessage':
+            objects = query.order_by(model_class.DateReceived)
+        elif options.emails_received:
+            objects = query.order_by(sqlalchemy.desc(model_class.EmailsReceived))
+        elif options.score:
+            objects = query.order_by(sqlalchemy.desc(model_class.Score))
+        elif options.score_version:
+            objects = query.order_by(model_class.ScoreVersion)
+        else:
+            objects = query.all()
         filename = table + '.html'
         print 'Writing %s...' % filename
         with open(filename, 'w') as f:
