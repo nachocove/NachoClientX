@@ -11,11 +11,31 @@ class McContact(Base):
                       autoload=True,
                       autoload_with=model_db.ModelDb.engine)
 
+    def reset_time_variance(self):
+        self.TimeVarianceType = 0
+        self.TimeVarianceState = 0
+
+    def reset_statistics(self):
+        self.EmailsReceived = 0
+        self.EmailsRead = 0
+        self.EmailsReplied = 0
+        self.EmailsArchived = 0
+        self.EmailsDeleted = 0
+
+    def reset_score_states(self):
+        # Scorable states
+        self.ScoreVersion = 0
+        self.Score = 0.0
+        self.NeedUpdate = 0
+        self.reset_time_variance()
+        self.reset_statistics()
+
 
 class McContactScoreSyncInfo(Base):
     __table__ = Table('McContactScoreSyncInfo', model_db.ModelDb.metadata,
                       autoload=True,
                       autoload_with=model_db.ModelDb.engine)
+
 
 class McContactStringAttribute(Base):
     __table__ = Table('McContactStringAttribute', model_db.ModelDb.metadata,
@@ -28,17 +48,23 @@ class McEmailMessage(Base):
                       autoload=True,
                       autoload_with=model_db.ModelDb.engine)
 
+    def reset_time_variance(self):
+        self.TimeVarianceType = 0
+        self.TimeVarianceState = 0
+
+    def reset_statistics(self):
+        self.TimesRead = 0
+        self.SecondsRead = 0
+
     def reset_score_states(self):
         # Scorable states
         self.ScoreVersion = 0
-        self.TimeVarianceType = 0
-        self.TimeVarianceState = 0
         self.Score = 0.0
         self.NeedUpdate = 0
-        # Statistics
-        self.TimesRead = 0
-        self.SecondsRead = 0
-        # Contact glean state
+        self.reset_time_variance()
+        self.reset_statistics()
+
+    def reset_glean_state(self):
         self.HasBeenGleaned = 0
 
 
