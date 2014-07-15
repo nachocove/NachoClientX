@@ -100,7 +100,7 @@ namespace NachoClient.iOS
             while (i < numRows) {
                 while (j < numCols) {
                     var buttonLabelView = new UILabel (new RectangleF (7 + horizontalSpacing, 130 + VerticalSpacing, 80, 16));
-                    buttonLabelView.TextColor = A.Color_999999;
+                    buttonLabelView.TextColor = UIColor.Black;
                     buttonLabelView.Text = buttonManager [k].buttonLabel;
                     buttonLabelView.Font = (A.Font_AvenirNextMedium14);
                     buttonLabelView.TextAlignment = UITextAlignment.Center;
@@ -132,8 +132,8 @@ namespace NachoClient.iOS
                     buttonRect.Tag = k;
                     buttonRect.Layer.CornerRadius = 35;
                     buttonRect.Layer.MasksToBounds = true;
-                    buttonRect.Layer.BorderColor = A.Color_999999.CGColor;
-                    buttonRect.Layer.BorderWidth = .5f;
+                    buttonRect.Layer.BorderColor = UIColor.Black.CGColor; //Testing new button colors
+                    buttonRect.Layer.BorderWidth = 1.0f;                  
                     buttonRect.Frame = new RectangleF (12 + horizontalSpacing, 50 + verticalSpacing, 70, 70);
                     buttonRect.SetImage (UIImage.FromBundle (buttonManager [k].buttonIcon), UIControlState.Normal);
                     buttonRect.TouchUpInside += (object sender, EventArgs e) => {
