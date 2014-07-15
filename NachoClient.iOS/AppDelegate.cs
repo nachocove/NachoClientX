@@ -163,6 +163,7 @@ namespace NachoClient.iOS
                 Telemetry.SharedInstance.Start<TelemetryBEParse> ();
                 Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                     BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
+                Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
                 if (0 < BuildInfo.Source.Length) {
                     Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
                 }
@@ -595,8 +596,8 @@ namespace NachoClient.iOS
         public override string ApplicationLogForCrashManager (BITCrashManager crashManager)
         {
             string launchTime = String.Format ("{0:O}", DateTime.UtcNow);
-            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\n",
-                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime);
+            string log = String.Format ("Version: {0}\nBuild Number: {1}\nLaunch Time: {2}\nDevice ID: {3}",
+                             BuildInfo.Version, BuildInfo.BuildNumber, launchTime, Device.Instance.Identity ());
             if (IsDevelopmentBuild) {
                 log += String.Format ("Build Time: {0}\nBuild User: {1}\n" +
                 "Source: {2}\n", BuildInfo.Time, BuildInfo.User, BuildInfo.Source);
