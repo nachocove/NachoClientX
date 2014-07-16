@@ -13,14 +13,32 @@ import model_db
 
 
 def reset_emails():
+    # Select either all objects or the ones related to a given email id
+    sync_info_query = session.query(model.McEmailMessageScoreSyncInfo)
+    email_query = session.query(model.McEmailMessage)
+    dep_query = session.query(model.McEmailMessageDependency)
+    if options.email_id is None:
+        si_objects = sync_info_query.all()
+        em_objects = email_query.all()
+        d_objects = dep_query.all()
+    else:
+        email_id = int(options.email_id)
+        si_objects = sync_info_query.filter(model.McEmailMessageScoreSyncInfo.EmailMessageId == email_id)
+        em_objects = email_query.filter(model.McEmailMessage.Id == email_id)
+        d_objects = dep_query.filter(model.McEmailMessageDependency.EmailMessageId == email_id)
+
+    # Reset McEmailMessageScoreSyncInfo
     if options.email_sync_info:
-        # Clear all sync info if scoring states are
-        for si in session.query(model.McEmailMessageScoreSyncInfo).all():
+        for si in si_objects:
             print '[DELETE] email message score sync info %d' % si.Id
             session.delete(si)
         session.commit()
 
-    for em in session.query(model.McEmailMessage).all():
+    # Reset McEmailMessage
+    for em in em_objects:
+        if options.email_update:
+            print '[SET] email message %d update' % em.Id
+            em.set_needupdate()
         if options.email_gleaned:
             print '[RESET] email message %d glean state' % em.Id
             em.reset_glean_state()
@@ -38,32 +56,51 @@ def reset_emails():
                 em.NeedUpdate = True
     session.commit()
 
+    # Reset McEmailMessageDependency
     if options.email_states:
-        for d in session.query(model.McEmailMessageDependency).all():
+        for d in d_objects:
             print '[DELETE] email message dependency %d' % d.Id
             session.delete(d)
         session.commit()
 
 
 def reset_contacts():
-    # Clear all sync info
+    # Select either all objects or the ones related to a given contact id
+    sync_info_query = session.query(model.McContactScoreSyncInfo)
+    contact_query = session.query(model.McContact)
+    contact_string_query = session.query(model.McContactStringAttribute)
+    if options.contact_id is None:
+        si_objects = sync_info_query.all()
+        c_objects = contact_query.all()
+        cs_objects = contact_string_query.all()
+    else:
+        contact_id = int(options.contact_id)
+        si_objects = sync_info_query.filter(model.McContactScoreSyncInfo.EmailMessageId == contact_id)
+        c_objects = sync_info_query.filter(model.McContact.Id == contact_id)
+        cs_objects = contact_string_query.filter(model.McContactStringAttribute.ContactId == contact_id)
+
+    # Reset McContactScoreSyncInfo
     if options.contact_sync_info:
-        for si in session.query(model.McContactScoreSyncInfo).all():
+        for si in si_objects:
             print '[DELETE] contact score sync info %d' % si.Id
             session.delete(si)
         session.commit()
 
+    # Reset McContact
     if options.contact:
         # Delete all contacts. Let gleaner to glean them
-        for c in session.query(model.McContact).all():
+        for c in c_objects:
             print '[DELETE] contact %d' % c.Id
             session.delete(c)
-        for cs in session.query(model.McContactStringAttribute).all():
+        for cs in cs_objects:
             print '[DELETE] contact string %d' % cs.Id
             session.delete(cs)
         session.commit()
     else:
-        for c in session.query(model.McContact).all():
+        for c in c_objects:
+            if options.contact_update:
+                print '[SET] contact %d update' % c.Id
+                c.set_needupdate()
             if options.contact_states:
                 print '[RESET] contact %d scoring states' % c.Id
                 c.reset_score_states()
@@ -97,6 +134,9 @@ def parse_arguments():
                              help='Clear email sync info')
     email_group.add_argument('--email-time-variance', action='store_true',
                              help='Reset time variance states')
+    email_group.add_argument('--email-update', action='store_true',
+                             help='Set McEmailMessage.NeedUpdate (to 1).'
+                                  ' Use this option to force a re-scoring of emails')
 
     contact_group = parser.add_argument_group(title='McContact Options')
     contact_group.add_argument('--contact', action='store_true',
@@ -109,6 +149,9 @@ def parse_arguments():
                                help='Reset all McContact statistics. (Dangerous! Use with caution.)')
     contact_group.add_argument('--contact-sync-info', action='store_true',
                                help='Clear contact sync info')
+    contact_group.add_argument('--contact-update', action='store_true',
+                               help='Set McContact.NeedUpdate (to 1).'
+                                    ' Use this option to force a re-scoring of contacts')
 
     options_ = parser.parse_args()
 

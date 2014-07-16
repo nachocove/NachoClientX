@@ -303,6 +303,7 @@ namespace NachoCore.Brain
         {
             DateTime eventTime = NextEventTime ();
             long dueTime = (long)(eventTime - now).TotalMilliseconds;
+            Log.Info (Log.LOG_BRAIN, "{0}: start timer {1} {2}", ToString(), now, eventTime);
             EventTimer = new NcTimer (TimerDescription (), AdvanceCallback, this,
                 dueTime, Timeout.Infinite);
         }
@@ -681,11 +682,6 @@ namespace NachoCore.Brain
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown aging state {0}", State));
             }
             return retval;
-        }
-
-        public static DateTime LastEventTime (DateTime dateReceived)
-        {
-            return dateReceived + new TimeSpan (14, 0, 0, 0);
         }
     }
 }
