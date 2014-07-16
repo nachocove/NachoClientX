@@ -303,7 +303,7 @@ namespace NachoCore.Brain
         {
             DateTime eventTime = NextEventTime ();
             long dueTime = (long)(eventTime - now).TotalMilliseconds;
-            Log.Info (Log.LOG_BRAIN, "{0}: start timer {1} {2}", ToString(), now, eventTime);
+            Log.Debug (Log.LOG_BRAIN, "{0}: start timer {1} {2}", ToString(), now, eventTime);
             EventTimer = new NcTimer (TimerDescription (), AdvanceCallback, this,
                 dueTime, Timeout.Infinite);
         }

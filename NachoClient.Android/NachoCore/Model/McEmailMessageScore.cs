@@ -3,6 +3,7 @@
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using NachoCore.Utils;
 using NachoCore.Brain;
 
@@ -308,9 +309,18 @@ namespace NachoCore.Model
             List<McEmailMessage> emailMessageList =
                 NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage AS m " +
                 "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ?", NcTimeVarianceType.DONE);
+            int n = 0;
+            Log.Info (Log.LOG_BRAIN, "Starting all time variances");
             foreach (McEmailMessage emailMessage in emailMessageList) {
                 emailMessage.InitializeTimeVariance ();
+
+                /// Throttle
+                n = (n + 1) % 8;
+                if (0 == n) {
+                    Thread.Sleep (new TimeSpan (0, 0, 0, 0, 500));
+                }
             }
+            Log.Info (Log.LOG_BRAIN, "All time variances started");
         }
 
         public static void MarkAll ()

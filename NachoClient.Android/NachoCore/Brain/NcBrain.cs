@@ -158,20 +158,25 @@ namespace NachoCore.Brain
 
             switch (brainEvent.Type) {
             case NcBrainEventType.PERIODIC_GLEAN:
-                const int NUM_ENTRIES = 100;
-                if (NUM_ENTRIES == GleanContacts (NUM_ENTRIES)) {
+                int num_entries = 30;
+                num_entries -= GleanContacts (num_entries);
+                if (0 >= num_entries) {
                     break;
                 }
-                if (NUM_ENTRIES == AnalyzeContacts (NUM_ENTRIES)) {
+                num_entries -= AnalyzeContacts (num_entries);
+                if (0 >= num_entries) {
                     break;
                 }
-                if (NUM_ENTRIES == AnalyzeEmails (NUM_ENTRIES)) {
+                num_entries -= AnalyzeEmails (num_entries);
+                if (0 >= num_entries) {
                     break;
                 }
-                if (NUM_ENTRIES == UpdateContactScores (NUM_ENTRIES)) {
+                num_entries -= UpdateContactScores (num_entries);
+                if (0 >= num_entries) {
                     break;
                 }
-                if (NUM_ENTRIES == UpdateEmailMessageScores (NUM_ENTRIES)) {
+                num_entries -= UpdateEmailMessageScores (num_entries);
+                if (0 >= num_entries) {
                     break;
                 }
                 break;

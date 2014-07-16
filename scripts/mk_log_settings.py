@@ -22,7 +22,7 @@ def create_log_options():
         print >>f, '        public const bool CALLERINFO = false;'
         print >>f, ''
         print >>f, '        #if (DEBUG)'
-        print >>f, '        public const ulong DEBUG_CONSOLE_SETTINGS = CONSOLE_SETTINGS;'
+        print >>f, '        public const ulong DEBUG_CONSOLE_SETTINGS = CONSOLE_SETTINGS & ~Log.LOG_BRAIN;'
         print >>f, '        #else'
         print >>f, '        // Release builds do not send debug logs to console.'
         print >>f, '        public const ulong DEBUG_CONSOLE_SETTINGS = 0;'
