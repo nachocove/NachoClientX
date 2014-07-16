@@ -140,6 +140,30 @@ namespace NachoCore.Model
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
+        public int BusyProtect (Func<int> action)
+        {
+            int rc = 0;
+            var whoa = DateTime.UtcNow.AddSeconds (5.0);
+            do {
+                try {
+                    rc = action ();
+                    return rc;
+                } catch (SQLiteException ex) {
+                    if (ex.Message.Contains ("Busy")) {
+                        if (DateTime.UtcNow > whoa) {
+                            Log.Error (Log.LOG_SYS, "Caught a Busy");
+                            throw;
+                        } else {
+                            Log.Warn (Log.LOG_SYS, "Caught a Busy");
+                        }
+                    } else {
+                        Log.Error (Log.LOG_SYS, "Caught a non-Busy: {0}", ex);
+                        throw;
+                    }
+                }
+            } while (true);
+        }
+
         public void RunInTransaction (Action action)
         {
             // DO NOT ADD LOGGING IN THE TRANSACTION, BECAUSE WE DON'T WANT LOGGING WRITES TO GET LUMPED IN.

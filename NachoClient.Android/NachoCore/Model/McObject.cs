@@ -111,7 +111,9 @@ namespace NachoCore.Model
             LastModified = DateTime.UtcNow;
             NcCapture capture = InsertCaptures.Find (ClassName ());
             capture.Start ();
-            int rc =  NcModel.Instance.Db.Insert (this);
+            int rc = NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Insert (this);
+            });
             capture.Stop ();
             capture.Reset ();
             return rc;
@@ -120,9 +122,14 @@ namespace NachoCore.Model
         public virtual int Delete ()
         {
             NcAssert.True (0 < Id);
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
+            }
             NcCapture capture = DeleteCaptures.Find (ClassName ());
             capture.Start ();
-            int rc = NcModel.Instance.Db.Delete (this);
+            int rc = NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Delete (this);
+            });
             capture.Stop ();
             capture.Reset ();
             return rc;
@@ -137,7 +144,9 @@ namespace NachoCore.Model
             LastModified = DateTime.UtcNow;
             NcCapture capture = UpdateCaptures.Find (ClassName ());
             capture.Start ();
-            int rc = NcModel.Instance.Db.Update (this);
+            int rc = NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Update (this);
+            });
             capture.Stop ();
             capture.Reset ();
             return rc;
