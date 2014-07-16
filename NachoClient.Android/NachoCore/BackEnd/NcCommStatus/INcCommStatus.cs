@@ -13,7 +13,11 @@ namespace NachoCore.Utils
 
         void ReportCommResult (int serverId, bool didFailGenerally);
 
+        void ReportCommResult (int serverId, DateTime delayUntil);
+
         void ReportCommResult (string host, bool didFailGenerally);
+
+        void ReportCommResult (string host, DateTime delayUntil);
 
         void Reset (int serverId);
 

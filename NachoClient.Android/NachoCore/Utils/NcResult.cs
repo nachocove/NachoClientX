@@ -64,6 +64,7 @@ namespace NachoCore.Utils
             Info_SearchCommandSucceeded,
             Info_ViewScrollingStarted,
             Info_ViewScrollingStopped,
+            Info_ServiceUnavailable,
             // Warning.
             // Error.
             Error_NetworkUnavailable,

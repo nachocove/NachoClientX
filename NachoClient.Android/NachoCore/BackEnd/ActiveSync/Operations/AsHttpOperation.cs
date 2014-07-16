@@ -69,6 +69,7 @@ namespace NachoCore.ActiveSync
         private const string KRequest = "request";
         private const string KResponse = "response";
         private const string KDefaultDelaySeconds = "10";
+        private const string KMaxDelaySeconds = "30";
         private const string KDefaultTimeoutSeconds = "20";
         private const string KDefaultTimeoutExpander = "1.2";
         private const string KDefaultRetries = "8";
@@ -217,6 +218,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDelay ()
         {
+            CancelTimeoutTimer ();
             var secs = Convert.ToInt32 (HttpOpSm.Arg);
             Log.Info (Log.LOG_HTTP, "AsHttpOperation:Delay {0} seconds.", secs);
             DelayTimer = new NcTimer ("AsHttpOperation:Delay", DelayTimerCallback, null, secs * 1000, System.Threading.Timeout.Infinite);
@@ -696,17 +698,17 @@ namespace NachoCore.ActiveSync
                     } catch {
                         try {
                             var when = DateTime.Parse (value);
-                            var maybe_secs = when.Subtract(DateTime.UtcNow).Seconds;
+                            var maybe_secs = when.Subtract (DateTime.UtcNow).Seconds;
                             bestSecs = ((maybe_secs > 0) ? (uint)maybe_secs : configuredSecs);
                         } catch (Exception ex) {
                             Log.Info (Log.LOG_HTTP, "Rejected DateTime string: {0}", value);
                             Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
-                            return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503A", bestSecs, "Could not parse Retry-After value.");
+                            return DelayOrFinalHardFail (bestSecs, "HTTPOP503A", "Could not parse Retry-After value.");
                         }
                     }
-                    return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503B", bestSecs, HeaderRetryAfter);
+                    return DelayOrFinalHardFail (bestSecs, "HTTPOP503B", HeaderRetryAfter);
                 }
-                return Event.Create ((uint)HttpOpEvt.E.Delay, "HTTPOP503C", bestSecs, "HttpStatusCode.ServiceUnavailable");
+                return DelayOrFinalHardFail (bestSecs, "HTTPOP503C", "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)505:
                 // This has been seen to be caused by a mis-typed MS-XX header name.
@@ -730,6 +732,19 @@ namespace NachoCore.ActiveSync
                 return Final ((uint)SmEvt.E.HardFail, "HTTPOPHARD0", null, 
                     string.Format ("Unknown HttpStatusCode {0}", response.StatusCode));
             }
+        }
+
+        private Event DelayOrFinalHardFail (uint secs, string mnemonic, string message)
+        {
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServiceUnavailable);
+            result.Value = secs;
+            Owner.StatusInd (result);
+            if (KMaxDelaySeconds.ToInt () >= secs) {
+                return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
+            }
+            Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
+            NcCommStatus.Instance.ReportCommResult (ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
+            return Final ((uint)SmEvt.E.HardFail, mnemonic, null, message);
         }
     }
 }

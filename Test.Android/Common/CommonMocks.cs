@@ -212,6 +212,12 @@ namespace Test.iOS
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
         public event NetStatusEventHandler CommStatusNetEvent;
 
+        public void ReportCommResult (int serverId, DateTime delayUntil)
+        {
+        }
+        public void ReportCommResult (string host, DateTime delayUntil)
+        {
+        }
         public void ReportCommResult (int serverId, bool didFailGenerally) {}
         public void ReportCommResult (string host, bool didFailGenerally)
         {

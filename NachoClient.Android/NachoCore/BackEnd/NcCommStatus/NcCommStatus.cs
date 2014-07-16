@@ -102,10 +102,27 @@ namespace NachoCore.Utils
             }
         }
 
+        public void ReportCommResult (int serverId, DateTime delayUntil)
+        {
+            lock (syncRoot) {
+                var tracker = GetTracker (serverId);
+                var oldQ = tracker.Quality;
+                tracker.UpdateQuality (delayUntil);
+                MaybeEvent (oldQ, tracker);
+            }
+        }
+
         public void ReportCommResult (string host, bool didFailGenerally)
         {
             lock (syncRoot) {
                 ReportCommResult (GetServerId (host), didFailGenerally);
+            }
+        }
+
+        public void ReportCommResult (string host, DateTime delayUntil)
+        {
+            lock (syncRoot) {
+                ReportCommResult (GetServerId (host), delayUntil);
             }
         }
 

@@ -28,15 +28,22 @@ namespace NachoCore.Utils
 
         public List<ServerAccess> Accesses { get; set; }
 
+        public DateTime DelayUntil { get; set; }
+
         public ServerTracker (int serverId)
         {
             Accesses = new List<ServerAccess> ();
+            DelayUntil = DateTime.MinValue;
             ServerId = serverId;
             Reset ();
         }
 
         public void UpdateQuality ()
         {
+            // Forced delay eclipses the rest of the logic.
+            if (DateTime.UtcNow < DelayUntil) {
+                return;
+            }
             // Remove stale entries.
             var trailing = DateTime.UtcNow;
             trailing = trailing.AddMinutes (KSunsetMinutes);
@@ -60,6 +67,12 @@ namespace NachoCore.Utils
                 Quality = NcCommStatus.CommQualityEnum.OK;
             }
             // FIXME - too noisy. Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
+        }
+
+        public void UpdateQuality (DateTime delayUntil)
+        {
+            DelayUntil = delayUntil;
+            Quality = NcCommStatus.CommQualityEnum.Unusable;
         }
 
         public void UpdateQuality (bool didFailGenerally)
