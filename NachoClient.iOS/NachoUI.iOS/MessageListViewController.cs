@@ -44,6 +44,12 @@ namespace NachoClient.iOS
             messageSource = new MessageTableViewSource ();
         }
 
+        public MessageListViewController ()
+        {
+            MultiSelect = new HashSet<int> ();
+            messageSource = new MessageTableViewSource ();
+        }
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -52,7 +58,8 @@ namespace NachoClient.iOS
             NcCapture.AddKind (ReloadCaptureName);
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
-            // Navigation
+            //Navigation
+            //revealButton = new UIBarButtonItem ();
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 

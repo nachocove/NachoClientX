@@ -28,14 +28,14 @@ namespace NachoClient.iOS
 				actionButton = null;
 			}
 
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
 			if (nachoButton != null) {
 				nachoButton.Dispose ();
 				nachoButton = null;
+			}
+
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
 			}
 		}
 	}

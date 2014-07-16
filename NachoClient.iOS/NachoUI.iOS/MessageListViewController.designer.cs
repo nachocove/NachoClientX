@@ -35,9 +35,19 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (cancelButton != null) {
+				cancelButton.Dispose ();
+				cancelButton = null;
+			}
+
 			if (composeButton != null) {
 				composeButton.Dispose ();
 				composeButton = null;
+			}
+
+			if (deleteButton != null) {
+				deleteButton.Dispose ();
+				deleteButton = null;
 			}
 
 			if (nachoButton != null) {
@@ -50,24 +60,14 @@ namespace NachoClient.iOS
 				revealButton = null;
 			}
 
-			if (searchButton != null) {
-				searchButton.Dispose ();
-				searchButton = null;
-			}
-
-			if (deleteButton != null) {
-				deleteButton.Dispose ();
-				deleteButton = null;
-			}
-
 			if (saveButton != null) {
 				saveButton.Dispose ();
 				saveButton = null;
 			}
 
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
+			if (searchButton != null) {
+				searchButton.Dispose ();
+				searchButton = null;
 			}
 		}
 	}

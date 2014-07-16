@@ -50,8 +50,10 @@ namespace NachoClient.iOS
 
             float frameHeight = 420;
             float frameWidth = 280;
+            float windowX = 20;
+            float windowY = (UIScreen.MainScreen.Bounds.Height - frameHeight) / 2;
 
-            PriorityView priorityView = new PriorityView (new RectangleF (20, 70, frameWidth, frameHeight));
+            PriorityView priorityView = new PriorityView (new RectangleF (windowX, windowY, frameWidth, frameHeight));
             priorityView.SetOwner (this);
             priorityView.initButtonManager ();
             priorityView.MakeButtonLabels ();

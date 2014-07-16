@@ -62,6 +62,11 @@ namespace NachoClient.iOS
 				deleteButton = null;
 			}
 
+			if (fixedSpaceButton != null) {
+				fixedSpaceButton.Dispose ();
+				fixedSpaceButton = null;
+			}
+
 			if (flexibleSpaceButton != null) {
 				flexibleSpaceButton.Dispose ();
 				flexibleSpaceButton = null;
@@ -95,11 +100,6 @@ namespace NachoClient.iOS
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
-			}
-
-			if (fixedSpaceButton != null) {
-				fixedSpaceButton.Dispose ();
-				fixedSpaceButton = null;
 			}
 		}
 	}

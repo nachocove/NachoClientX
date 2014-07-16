@@ -20,14 +20,14 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
 			if (nachoButton != null) {
 				nachoButton.Dispose ();
 				nachoButton = null;
+			}
+
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
 			}
 		}
 	}

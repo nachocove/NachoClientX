@@ -83,5 +83,17 @@ namespace NachoCore
         {
             return list.ElementAt (i);
         }
+
+        public McFolder GetFolderByFolderID(int id)
+        {
+            foreach (var x in list) {
+                if (x.Id == id) {
+                    return x;
+                }
+            }
+
+            //FIXME
+            return null;
+        }
     }
 }

@@ -135,7 +135,7 @@ namespace NachoClient.iOS
                 button.Layer.CornerRadius = (BUTTON_SIZE / 2);
                 button.Layer.MasksToBounds = true;
                 button.Layer.BorderColor = UIColor.White.CGColor;
-                button.Layer.BorderWidth = 1;
+                button.Layer.BorderWidth = 1.5f;
                 button.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
                 button.Center = new PointF (xOffset, yOffset);
                 button.SetImage (UIImage.FromBundle (buttonInfo.imageName), UIControlState.Normal);

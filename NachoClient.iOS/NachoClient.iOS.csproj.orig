@@ -27,7 +27,7 @@
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
     <MtouchI18n>
     </MtouchI18n>
-    <MtouchArch>i386</MtouchArch>
+    <MtouchArch>ARMv7</MtouchArch>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
@@ -85,7 +85,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>A5A410CF-93E6-4AC9-979B-27C42C717007</CodesignProvision>
+    <CodesignProvision>A5DDC8B9-8C91-450E-AA60-390062F9658D</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
@@ -904,7 +904,7 @@
     <Compile Include="NachoUI.iOS\Support\PriorityView.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionView.cs" />
     <Compile Include="NachoUI.iOS\Support\ActionTableView.cs" />
-    <Compile Include="NachoUI.iOS\Tables\FolderTableSourceTwo.cs" />
+<<<<<<< Updated upstream
     <Compile Include="NachoUI.iOS\Support\UcAddressBlock.cs" />
     <Compile Include="NachoUI.iOS\Support\UcAddressField.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\IUcAddressBlock.cs" />
@@ -954,7 +954,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcFetchAssist.cs">
       <Link>NachoCore\Adapters\NcFetchAssist.cs</Link>
     </Compile>
-    <Compile Include="NachoPlatform.iOS\NotifiOS.cs" />
+=======
+    <Compile Include="NachoUI.iOS\Tables\FolderTableSourceTwo.cs" />
+>>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
@@ -1123,11 +1125,7 @@
     <BundleResource Include="Resources\icn-archive%402x.png" />
     <BundleResource Include="Resources\icn-attach-files.png" />
     <BundleResource Include="Resources\icn-attach-files%402x.png" />
-    <BundleResource Include="Resources\icn-folder.png" />
-    <BundleResource Include="Resources\icn-folder%402x.png" />
-    <BundleResource Include="Resources\icon-arrow-folder.png" />
-    <BundleResource Include="Resources\icn-arrow-folder.png" />
-    <BundleResource Include="Resources\icn-arrow-folder2.png" />
+<<<<<<< Updated upstream
     <BundleResource Include="Resources\icn-send.png" />
     <BundleResource Include="Resources\icn-send%402x.png" />
     <BundleResource Include="Resources\icn-calendar-top-pressed.png" />
@@ -1156,6 +1154,13 @@
     <BundleResource Include="Resources\menu-new-event%402x.png" />
     <BundleResource Include="Resources\menu-settings.png" />
     <BundleResource Include="Resources\menu-settings%402x.png" />
+=======
+    <BundleResource Include="Resources\icn-folder.png" />
+    <BundleResource Include="Resources\icn-folder%402x.png" />
+    <BundleResource Include="Resources\icon-arrow-folder.png" />
+    <BundleResource Include="Resources\icn-arrow-folder.png" />
+    <BundleResource Include="Resources\icn-arrow-folder2.png" />
+>>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

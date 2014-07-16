@@ -344,11 +344,11 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = cancelButton;
             NavigationItem.RightBarButtonItem = doneButton;
 
-            subjectEntryElement = new EntryElementWithIcon (NachoClient.Util.DotWithColor (UIColor.Blue), "Title", c.Subject);
-            using (var icon = UIImage.FromBundle ("ic_action_place")) {
-                var scaledIcon = icon.Scale (new SizeF (22.0f, 22.0f));
-                locationEntryElement = new EntryElementWithIcon (scaledIcon, "Location", c.Location);
-            }
+//            subjectEntryElement = new EntryElementWithIcon (NachoClient.Util.DotWithColor (UIColor.Blue), "Title", c.Subject);
+//            using (var icon = UIImage.FromBundle ("ic_action_place")) {
+//                var scaledIcon = icon.Scale (new SizeF (22.0f, 22.0f));
+//                locationEntryElement = new EntryElementWithIcon (scaledIcon, "Location", c.Location);
+//            }
             appointmentEntryElement = new AppointmentEntryElement (c.StartTime, c.EndTime, c.AllDayEvent);
             peopleEntryElement = new PeopleEntryElement ();
 
@@ -397,6 +397,7 @@ namespace NachoClient.iOS
             section.Add (calendarEntryElement);
             section.Add (reminderEntryElement);
             root.Add (section);
+
 
             return root;
         }

@@ -26,14 +26,14 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (ContactsButton != null) {
-				ContactsButton.Dispose ();
-				ContactsButton = null;
-			}
-
 			if (AutocompleteTextField != null) {
 				AutocompleteTextField.Dispose ();
 				AutocompleteTextField = null;
+			}
+
+			if (ContactsButton != null) {
+				ContactsButton.Dispose ();
+				ContactsButton = null;
 			}
 
 			if (TableView != null) {

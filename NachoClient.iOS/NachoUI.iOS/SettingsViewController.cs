@@ -36,6 +36,9 @@ namespace NachoClient.iOS
             //var e = new PasswordElement (name, "", value ?? "");
 
             var root = new RootElement ("Settings");
+            root.Add (AddMailSettings());
+            root.Add (AddContactsSettings ());
+            root.Add (AddCalendarSettings ());
 
             var PasswordSection = new Section ("Exchange Accounts");
             var Password = new StringElement ("Edit Account Password", delegate {
@@ -54,6 +57,7 @@ namespace NachoClient.iOS
             });
             ResetSection.Add (ResetButton);
 
+
             root.Add (ResetSection);
 
             Root = root;
@@ -67,6 +71,71 @@ namespace NachoClient.iOS
             }
         }
 
+        public Section AddMailSettings()
+        {
+            var TestSection = new Section ("MAIL");
+            var FetchNewData = new CustomEntryElementDetail (UIImage.FromBundle(""), "Fetch New Data", "Push");
+            TestSection.Add (FetchNewData);
+
+            var Preview = new CustomEntryElementDetail (UIImage.FromBundle(""), "Preview", "2 Lines");
+            TestSection.Add (Preview);
+
+            var ShowLabel = new SwitchElement ("Show To/CC Label");
+            TestSection.Add (ShowLabel);
+
+            var AskBeforeDelete = new SwitchElement ("Ask Before Deleting");
+            TestSection.Add (AskBeforeDelete);
+
+            var Signature = new CustomEntryElementDetail (UIImage.FromBundle (""), "Signature", "Sent from NachoMail");
+            TestSection.Add (Signature);
+
+            var DefaultAccount = new CustomEntryElementDetail (UIImage.FromBundle (""), "Default Account", "NachoCove");
+            TestSection.Add (DefaultAccount);
+
+            return TestSection;
+        }
+
+        public Section AddContactsSettings()
+        {
+            var TestSection = new Section ("CONTACTS");
+
+            var SortOrder = new CustomEntryElementDetail (UIImage.FromBundle(""), "Sort Order", "First, Last");
+            TestSection.Add (SortOrder);
+
+            var DisplayOrder = new CustomEntryElementDetail (UIImage.FromBundle(""), "Display Order", "First, Last");
+            TestSection.Add (DisplayOrder);
+
+            var MyInfo = new CustomEntryElementDetail (UIImage.FromBundle(""), "My Info", "Mark Zuckerberg");
+            TestSection.Add (MyInfo);
+
+            return TestSection;
+        }
+
+        public Section AddCalendarSettings()
+        {
+            var TestSection = new Section ("CALENDAR");
+
+            var NewInvitationAlerts = new SwitchElement ("New Invitation Alerts");
+            TestSection.Add (NewInvitationAlerts);
+
+            var TimeZoneSupport = new CustomEntryElementDetail (UIImage.FromBundle(""), "Time Zone Support", "Off");
+            TestSection.Add (TimeZoneSupport);
+
+            var Sync = new CustomEntryElementDetail (UIImage.FromBundle(""), "Sync", "Events 1 Month Back");
+            TestSection.Add (Sync);
+
+            var DefaultAlertTime = new CustomEntryElement (UIImage.FromBundle (""), "Default Alert Time");
+            TestSection.Add (DefaultAlertTime);
+
+            var StartWeekOn = new CustomEntryElement (UIImage.FromBundle (""), "Start Week ON");
+            TestSection.Add (StartWeekOn);
+
+            var DefaultCalendar = new CustomEntryElementDetail (UIImage.FromBundle(""), "Default Calendar", "Work");
+            TestSection.Add (DefaultCalendar);
+
+            return TestSection;
+
+        }
         void EditAccount ()
         {
             Log.Info (Log.LOG_UI, "Edit account");

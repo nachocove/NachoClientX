@@ -23,14 +23,14 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (datePicker != null) {
-				datePicker.Dispose ();
-				datePicker = null;
-			}
-
 			if (cancelButton != null) {
 				cancelButton.Dispose ();
 				cancelButton = null;
+			}
+
+			if (datePicker != null) {
+				datePicker.Dispose ();
+				datePicker = null;
 			}
 
 			if (OKButton != null) {
