@@ -230,12 +230,14 @@ class McEmailMessageDumper(HtmlTable):
                    'ScoreVersion',
                    'TimeVarianceType',
                    'TimeVarianceState',
+                   'NeedUpdate',
                    'DateReceived',
                    'From',
                    'Subject',
                    'TimesRead',
                    'SecondsRead']
         column_formatters = {'Score': DoubleFormatter(7, 6),
+                             'NeedUpdate': BooleanFormatter(short_form=True),
                              'DateReceived': DateTimeFormatter()}
         align_right = {'align': 'right'}
         align_center = {'align': 'center'}
@@ -243,6 +245,7 @@ class McEmailMessageDumper(HtmlTable):
                              'ScoreVersion': align_center,
                              'TimeVarianceType': align_right,
                              'TimeVarianceState': align_right,
+                             'NeedUpdate': align_center,
                              'TimesRead': align_right,
                              'SecondsRead': align_right}
         HtmlTable.__init__(self, columns, rows=objects,
