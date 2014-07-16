@@ -7,12 +7,12 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
     public partial class FolderViewController : NcUITableViewController, IUITableViewDelegate
     {
-
         McAccount currentAccount { get; set; }
 
         public void SetAccount (McAccount ncaccount)
@@ -20,7 +20,7 @@ namespace NachoClient.iOS
             currentAccount = ncaccount;
         }
 
-        FolderTableSource folders;
+        HierarchicalFolderTableSource folders;
             
         public override void ViewDidLoad ()
         {
@@ -39,9 +39,16 @@ namespace NachoClient.iOS
                 PerformSegue("FoldersToNachoNow", this);
             };
 
-            // Setup the current list of folders
-            folders = new FolderTableSource ();
+            // Stylize TableView
+            folders = new HierarchicalFolderTableSource(TableView);
             TableView.DataSource = folders;
+            UISearchBar sb = new UISearchBar(new RectangleF (0, 45, TableView.Frame.Width, 45));
+            sb.BarTintColor = new UIColor (.8f, .8f, .8f, .6f);
+            sb.Placeholder = "Search";
+            NSString x = new NSString ("_searchField");
+            UITextField txtField = (UITextField)sb.ValueForKey (x);
+            txtField.BackgroundColor = UIColor.White;;
+            TableView.TableHeaderView = sb;
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -67,7 +74,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "FolderToMessageList") {
                 var msgview = (MessageListViewController)segue.DestinationViewController; //our destination
-                var source = TableView.DataSource as FolderTableSource;
+                var source = TableView.DataSource as HierarchicalFolderTableSource;
                 var rowPath = TableView.IndexPathForSelectedRow;
                 var folder = source.getFolder (rowPath);
                 var messageList = new NachoEmailMessages (folder);
