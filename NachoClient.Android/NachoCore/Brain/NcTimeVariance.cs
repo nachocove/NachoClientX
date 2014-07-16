@@ -682,10 +682,5 @@ namespace NachoCore.Brain
             }
             return retval;
         }
-
-        public static DateTime LastEventTime (DateTime dateReceived)
-        {
-            return dateReceived + new TimeSpan (14, 0, 0, 0);
-        }
     }
 }
