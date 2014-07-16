@@ -611,6 +611,8 @@ namespace NachoCore.ActiveSync
             if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1).Count ()) {
                 return true;
             }
+            // FIXME - don't prefetch until we are happy w/priority.
+            return false;
             // If there is behind-the-scenes fetching to do, then true.
             var folders = FolderListProvider (false);
             foreach (var folder in folders) {
@@ -651,22 +653,25 @@ namespace NachoCore.ActiveSync
                 var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, fetchSize);
                 pendings.AddRange (tasks);
             }
-            // Address background fetching if we have capacity.
-            var remaining = fetchSize - pendings.Count;
             List<Tuple<McItem, string>> prefetches = new List<Tuple<McItem, string>> ();
-            if (0 < remaining) {
-                var folders = FolderListProvider (false);
-                foreach (var folder in folders) {
-                    var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
-                    foreach (var email in emails) {
-                        prefetches.Add (Tuple.Create ((McItem)email, folder.ServerId));
+            var remaining = fetchSize - pendings.Count;
+
+            // Address background fetching if no immediate user need. TODO: we need to measure performance before we let BG fetching degrade latency.
+            if (0 == pendings.Count) {
+                if (0 < remaining) {
+                    var folders = FolderListProvider (false);
+                    foreach (var folder in folders) {
+                        var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
+                        foreach (var email in emails) {
+                            prefetches.Add (Tuple.Create ((McItem)email, folder.ServerId));
+                            if (remaining <= prefetches.Count) {
+                                break;
+                            }
+                            // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
+                        }
                         if (remaining <= prefetches.Count) {
                             break;
                         }
-                        // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
-                    }
-                    if (remaining <= prefetches.Count) {
-                        break;
                     }
                 }
             }

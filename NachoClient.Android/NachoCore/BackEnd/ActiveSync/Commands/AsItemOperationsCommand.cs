@@ -128,6 +128,14 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
+        private void MaybeResolveAsHardFail (McPending pending, NcResult.WhyEnum why)
+        {
+            if (null != pending) {
+                pending.ResolveAsHardFail (BEContext.ProtoControl, why);
+            }
+            PendingList.Remove (pending);
+        }
+
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.ItemOperations.Status);
@@ -140,6 +148,7 @@ namespace NachoCore.ActiveSync
                     var xmlServerId = xmlFetch.Element (AirSyncNs + Xml.AirSync.ServerId);
                     var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                     xmlStatus = xmlFetch.ElementAnyNs (Xml.ItemOperations.Status);
+                    NcResult.WhyEnum why;
                     switch ((Xml.ItemOperations.StatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
                     case Xml.ItemOperations.StatusCode.Success_1:
                         if (null != xmlFileReference) {
@@ -212,11 +221,44 @@ namespace NachoCore.ActiveSync
                             Log.Error (Log.LOG_AS, "ItemOperations: no ServerId and no FileReference.");
                         }
                         break;
+
+                    case Xml.ItemOperations.StatusCode.ProtocolError_2:
+                    case Xml.ItemOperations.StatusCode.ByteRangeInvalidOrTooLarge_8:
+                    case Xml.ItemOperations.StatusCode.StoreUnknownOrNotSupported_9:
+                    case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
+                    case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
+                        MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.ProtocolError);
+                        break;
+
+                    case Xml.ItemOperations.StatusCode.ServerError_3:
+                    case Xml.ItemOperations.StatusCode.IoFailure_12:
+                    case Xml.ItemOperations.StatusCode.ConversionFailure_14:
+                        MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.ServerError);
+                        break;
+
+                    case Xml.ItemOperations.StatusCode.DocLibBadUri_4:
+                    case Xml.ItemOperations.StatusCode.DocLibAccessDenied_5:
+                    case Xml.ItemOperations.StatusCode.DocLibFailedServerConn_7:
+                    case Xml.ItemOperations.StatusCode.PartialFailure_17:
+                    case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
+                        MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.Unknown);
+                        break;
+
+                    case Xml.ItemOperations.StatusCode.DocLibAccessDeniedOrMissing_6:
+                    case Xml.ItemOperations.StatusCode.FileEmpty_10:
+                        MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.MissingOnServer);
+                        break;
+
+                    case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
+                        MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.TooBig);
+                        break;
+
+                    case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
+                        MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.AccessDeniedOrBlocked);
+                        break;
+
                     default:
                         Log.Error (Log.LOG_AS, "ItemOperations: Status {0}", xmlStatus.Value);
-                        // TODO: we let the general fail case clean-up non-Success codes right now.
-                        // We should attempt to find the associated pending (if we can) and give a more
-                        // specific failure.
                         break;
                     }
                 }
@@ -228,9 +270,7 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
             case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.ProtocolError));
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.ProtocolError);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD0");
 
@@ -238,46 +278,36 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.IoFailure_12:
             case Xml.ItemOperations.StatusCode.ConversionFailure_14:
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.ServerError));
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.ServerError);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD1");
 
             case Xml.ItemOperations.StatusCode.DocLibBadUri_4:
             case Xml.ItemOperations.StatusCode.DocLibAccessDenied_5:
-            case Xml.ItemOperations.StatusCode.DocLibAccessDeniedOrMissing_6:
             case Xml.ItemOperations.StatusCode.DocLibFailedServerConn_7:
             case Xml.ItemOperations.StatusCode.PartialFailure_17:
             case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.Unknown));
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD2");
 
+            case Xml.ItemOperations.StatusCode.DocLibAccessDeniedOrMissing_6:
             case Xml.ItemOperations.StatusCode.FileEmpty_10:
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.MissingOnServer));
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.MissingOnServer);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.TooBig));
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.TooBig);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.AccessDeniedOrBlocked));
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.AccessDeniedOrBlocked);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD4");
 
@@ -287,9 +317,7 @@ namespace NachoCore.ActiveSync
              */
             default:
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed,
-                            NcResult.WhyEnum.Unknown));
+                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IOFAIL");
             }
