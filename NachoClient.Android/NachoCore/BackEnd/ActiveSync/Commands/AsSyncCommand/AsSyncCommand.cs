@@ -714,6 +714,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.AirSync.Delete:
+                case Xml.AirSync.SoftDelete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
                     pathElem.Delete ();
@@ -739,11 +740,6 @@ namespace NachoCore.ActiveSync
                         Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + classCode);
                         break;
                     }
-                    break;
-
-                case Xml.AirSync.SoftDelete:
-                    // TODO: Implement SoftDelete if we want to constrain storage. Need to be careful 
-                    // ignore SoftDelete for in-window items when doing quick-fetch.
                     break;
 
                 default:
