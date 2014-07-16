@@ -954,6 +954,7 @@
       <Link>NachoCore\Adapters\NcFetchAssist.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\NotifiOS.cs" />
+    <Compile Include="NachoUI.iOS\Tables\HierarchicalFolderTableSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
@@ -1150,6 +1151,10 @@
     <BundleResource Include="Resources\menu-new-event%402x.png" />
     <BundleResource Include="Resources\menu-settings.png" />
     <BundleResource Include="Resources\menu-settings%402x.png" />
+    <BundleResource Include="Resources\icn-arrow-folder.png" />
+    <BundleResource Include="Resources\icn-arrow-folder2.png" />
+    <BundleResource Include="Resources\icn-folder.png" />
+    <BundleResource Include="Resources\icn-folder%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

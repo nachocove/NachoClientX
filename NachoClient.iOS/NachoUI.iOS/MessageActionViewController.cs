@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
 using NachoCore.Model;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
@@ -48,9 +49,23 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            var folderSource = new FolderTableSource ();
-            folderSource.cellTextColor = UIColor.White;
-            folderTableView.DataSource = folderSource;
+            float frameHeight = View.Frame.Height - 80; //40 px indent top/bottom
+            float frameWidth = View.Frame.Width - 50;   //25 px indent l/r sides
+            float windowX = (View.Frame.Width - frameWidth) / 2;
+            float windowY = (View.Frame.Height - frameHeight) / 2;
+
+            dismissButton.SetTitle ("", UIControlState.Normal);
+
+            ActionView actionView = new ActionView (new RectangleF (windowX, windowY, frameWidth, frameHeight));
+            actionView.SetOwner (this);
+            actionView.setTableViewDelegate(new FolderTableDelegate(this));
+            actionView.BackgroundColor = UIColor.White;
+            actionView.Layer.CornerRadius = 6.0f;
+            actionView.AddMoveMessageLabel (80, 15);
+            actionView.AddLine (44, frameWidth);
+            actionView.AddEscapeButton (10);
+            actionView.AddFolderTableView ();
+            View.AddSubview (actionView);
         }
 
         public void FolderSelected (McFolder folder)
@@ -69,7 +84,7 @@ namespace NachoClient.iOS
 
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
-                var folderSource = (FolderTableSource)tableView.DataSource;
+                var folderSource = (HierarchicalFolderTableSource)tableView.DataSource;
                 var folder = folderSource.getFolder (indexPath);
                 owner.FolderSelected (folder);
             }
