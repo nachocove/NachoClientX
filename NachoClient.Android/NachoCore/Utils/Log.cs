@@ -196,11 +196,11 @@ namespace NachoCore.Utils
         {
             if (settings.ToConsole (subsystem)) {
                 // Get the caller information
-                StackTrace st = new StackTrace (true);
-                StackFrame sf = st.GetFrame (3);
-                MethodBase mb = sf.GetMethod ();
                 string callInfo = "";
                 if (settings.CallerInfo) {
+                    StackTrace st = new StackTrace (true);
+                    StackFrame sf = st.GetFrame (3);
+                    MethodBase mb = sf.GetMethod ();
                     if (0 == sf.GetFileLineNumber ()) {
                         // No line # info. Must be a release build
                         callInfo = String.Format (" [{0}.{1}()]", mb.DeclaringType.Name, mb.Name);
