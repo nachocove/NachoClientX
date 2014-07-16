@@ -241,6 +241,14 @@ class McEmailMessageDumper(HtmlTable):
                            column_formatters=column_formatters)
 
 
+class McEmailMessageDependencyDumper(HtmlTable):
+    def __init__(self, objects):
+        columns = ['ContactId',
+                   'ContactType',
+                   'EmailMessageId']
+        HtmlTable.__init__(self, columns, rows=objects)
+
+
 class McContactDumper(HtmlTable):
     def __init__(self, objects):
         columns = ['Id',
@@ -310,17 +318,12 @@ def main():
         if table == 'mcemailmessage':
             dumper_class = McEmailMessageDumper
             model_class = model.McEmailMessage
-            # if options.score:
-            #     objects = query.order_by(sqlalchemy.desc(model.McEmailMessage.Score))
-            # else:
-            #     objects = query.all()
         elif table == 'mccontact':
             dumper_class = McContactDumper
             model_class = model.McContact
-            # if options.score:
-            #     objects = session.query(model.McEmailMessage).order_by(model.McContact.Score)
-            # else:
-            #     objects = session.query(model.McContact).all()
+        elif table == 'mcemailmessagedependency':
+            dumper_class = McEmailMessageDependencyDumper
+            model_class = model.McEmailMessageDependency
         else:
             raise ValueError('Unknown table %s' % table)
         query = session.query(model_class)
