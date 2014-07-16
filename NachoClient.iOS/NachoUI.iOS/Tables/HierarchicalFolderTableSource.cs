@@ -23,9 +23,8 @@ namespace NachoClient.iOS
         public List<FlattenedFolderStruct> flattenedFolderList = new List<FlattenedFolderStruct> ();
         public List<UITableViewCell> FolderCells = new List<UITableViewCell> ();
         public UITableView foldersTable;
-        public string whatType;
 
-        public HierarchicalFolderTableSource(string whatType, UITableView theTable)
+        public HierarchicalFolderTableSource(UITableView theTable)
         {
             folders = new NachoFolders (NachoFolders.FilterForEmail);
 
@@ -35,7 +34,6 @@ namespace NachoClient.iOS
             //          inside that directory so they can view the messages contained by it
             //          "folderAction" is the MessageActionViewController version, this is the view accessed when viewing a single message, and they have the ability to file the 
             //          message in a specific directory
-            this.whatType = whatType;
             foldersTable = theTable;
             convertFoldersToMcFolders ();
             createNestedFolderList ();
@@ -137,27 +135,18 @@ namespace NachoClient.iOS
         public void CreateCell(FlattenedFolderStruct theFolder)
         {
             UITableViewCell theCell;
-            bool isArchiveEmail;
             string initialSpacing = "";
             UIView cellIconSpace = new UIView ();
             bool isRootFolder = theFolder.indentLevel == 0 ? true : false;
 
-            if (string.Equals (whatType, "folderSegue", StringComparison.Ordinal)) {
-                isArchiveEmail = false;
-            } else {
-                isArchiveEmail = true;
+            theCell = foldersTable.DequeueReusableCell ("mailview");
+
+            if (null == theCell) {
+                theCell = new UITableViewCell (UITableViewCellStyle.Default, "mailview");
+                theCell.Frame = new RectangleF (foldersTable.Frame.X - 20.0f, foldersTable.Frame.Y, foldersTable.Frame.Width, foldersTable.Frame.Height);
             }
 
-            RectangleF cellFrame = new RectangleF (foldersTable.Frame.X - 20.0f, foldersTable.Frame.Y, foldersTable.Frame.Width, foldersTable.Frame.Height);
-
-            if (isArchiveEmail) {
-                theCell = new UITableViewCell (cellFrame);
-                theCell.SeparatorInset = new UIEdgeInsets (0, 0, 0, 0);
-            } else {
-                theCell = foldersTable.DequeueReusableCell ("mailview");
-                theCell.SeparatorInset = new UIEdgeInsets (0, 15, 0, 0);
-            }
-
+            theCell.SeparatorInset = new UIEdgeInsets (0, 15, 0, 0);
             theCell.TextLabel.Font = A.Font_AvenirNextRegular14;
             theCell.TextLabel.TextColor = A.Color_999999;
             theCell.BackgroundColor = UIColor.White;

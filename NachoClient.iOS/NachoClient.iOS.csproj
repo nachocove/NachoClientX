@@ -25,6 +25,8 @@
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a ${ProjectDir}/libFacebook.a"</MtouchExtraArgs>
+    <MtouchI18n>
+    </MtouchI18n>
     <MtouchArch>i386</MtouchArch>
     <CustomCommands>
       <CustomCommands>
@@ -83,7 +85,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>A5DDC8B9-8C91-450E-AA60-390062F9658D</CodesignProvision>
+    <CodesignProvision>A5A410CF-93E6-4AC9-979B-27C42C717007</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>

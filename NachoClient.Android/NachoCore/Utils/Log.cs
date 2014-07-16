@@ -298,8 +298,6 @@ namespace NachoCore.Utils
         public const ulong LOG_TEST = (1 << 17);
         public const ulong LOG_DNS = (1 << 18);
         public const ulong LOG_ASSERT = (1 << 19);
-        public const ulong LOG_DB = (1 << 20);
-
 
         private static Logger DefaultLogger;
         public static Logger SharedInstance {

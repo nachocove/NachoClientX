@@ -49,8 +49,8 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            float frameHeight = View.Frame.Height - 70; //35 px indent top/bottom
-            float frameWidth = View.Frame.Width - 40;   //20 px indent l/r sides
+            float frameHeight = View.Frame.Height - 80; //40 px indent top/bottom
+            float frameWidth = View.Frame.Width - 50;   //25 px indent l/r sides
             float windowX = (View.Frame.Width - frameWidth) / 2;
             float windowY = (View.Frame.Height - frameHeight) / 2;
 
@@ -62,7 +62,7 @@ namespace NachoClient.iOS
             actionView.BackgroundColor = UIColor.White;
             actionView.Layer.CornerRadius = 6.0f;
             actionView.AddMoveMessageLabel (80, 15);
-            actionView.AddLine (44);
+            actionView.AddLine (44, frameWidth);
             actionView.AddEscapeButton (10);
             actionView.AddFolderTableView ();
             View.AddSubview (actionView);

@@ -65,7 +65,7 @@ namespace NachoClient.iOS
             UITableView tv = new UITableView (new RectangleF(0, 45, this.Frame.Width, (this.Frame.Height - 35.0f)));
             tv.Layer.CornerRadius = 6.0f;
             tv.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
-            var folderSource = new HierarchicalFolderTableSource ("folderAction", tv);
+            var folderSource = new HierarchicalFolderTableSource (tv);
             tv.Delegate = this.del;
             tv.DataSource = folderSource;
             tv.SetContentOffset (new PointF (0, 0), false);
@@ -103,9 +103,9 @@ namespace NachoClient.iOS
             this.Add (buttonLabelView); 
         }  
 
-        public void AddLine(int yVal)
+        public void AddLine(int yVal, float width)
         {
-            var lineUIView = new UIView (new RectangleF (0, yVal, 280, .5f));
+            var lineUIView = new UIView (new RectangleF (0, yVal, width, .5f));
             lineUIView.BackgroundColor = new UIColor (.8f, .8f, .8f, .6f);;
             this.Add (lineUIView);
         }

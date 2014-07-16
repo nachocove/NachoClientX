@@ -39,10 +39,8 @@ namespace NachoClient.iOS
                 PerformSegue("FoldersToNachoNow", this);
             };
 
-
-
-            // Stylize TablieView
-            folders = new HierarchicalFolderTableSource("folderSegue", TableView);
+            // Stylize TableView
+            folders = new HierarchicalFolderTableSource(TableView);
             TableView.DataSource = folders;
             UISearchBar sb = new UISearchBar(new RectangleF (0, 45, TableView.Frame.Width, 45));
             sb.BarTintColor = new UIColor (.8f, .8f, .8f, .6f);
@@ -51,7 +49,6 @@ namespace NachoClient.iOS
             UITextField txtField = (UITextField)sb.ValueForKey (x);
             txtField.BackgroundColor = UIColor.White;;
             TableView.TableHeaderView = sb;
-
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {

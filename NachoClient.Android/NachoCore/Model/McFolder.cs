@@ -423,6 +423,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McFolder> (
                 "SELECT f.* FROM McFolder AS f" +
                 "WHERE " +
+                "f.IsAwaitingDelete = 0 AND " +
                 "f.AccountId = ? AND " +
                 "f.DisplayName LIKE ? " +
                 "ORDER BY f.DisplayName DESC",
