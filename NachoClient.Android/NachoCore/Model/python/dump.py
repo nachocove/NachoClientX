@@ -253,7 +253,8 @@ class McEmailMessageDumper(HtmlTable):
 
 class McEmailMessageDependencyDumper(HtmlTable):
     def __init__(self, objects, comment=None):
-        columns = ['ContactId',
+        columns = ['Id',
+                   'ContactId',
                    'ContactType',
                    'EmailMessageId']
         HtmlTable.__init__(self, columns, rows=objects, comment=comment)

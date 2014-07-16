@@ -30,6 +30,9 @@ class McContact(Base):
         self.reset_time_variance()
         self.reset_statistics()
 
+    def set_needupdate(self):
+        self.NeedUpdate = 1
+
 
 class McContactScoreSyncInfo(Base):
     __table__ = Table('McContactScoreSyncInfo', model_db.ModelDb.metadata,
@@ -66,6 +69,9 @@ class McEmailMessage(Base):
 
     def reset_glean_state(self):
         self.HasBeenGleaned = 0
+
+    def set_needupdate(self):
+        self.NeedUpdate = 1
 
 
 class McEmailMessageDependency(Base):
