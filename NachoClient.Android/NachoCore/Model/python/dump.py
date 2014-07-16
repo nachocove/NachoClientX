@@ -8,6 +8,7 @@ except ImportError:
     exit(1)
 import argparse
 import os
+import sys
 import cgi
 import copy
 import datetime
@@ -119,6 +120,11 @@ class HtmlOutput:
         self.output += cgi.escape(content.encode('utf8'))
         self.output += self._close_tag(tag) + '\n'
 
+    def add_comment(self, comment):
+        self.output += '<!--\n'
+        self.output += cgi.escape(comment.encode('utf8'))
+        self.output += '\n-->\n'
+
 
 class HtmlTable:
     """
@@ -128,7 +134,7 @@ class HtmlTable:
     floating-point values). Customized HTML attributes can also be applied
     per column.
     """
-    def __init__(self, columns, rows=None, column_attributes=None, column_formatters=None):
+    def __init__(self, columns, rows=None, column_attributes=None, column_formatters=None, comment=None):
         """
         Constructor.
         :param columns: A list of attributes of the objects
@@ -150,6 +156,7 @@ class HtmlTable:
             self.column_formatters = dict()
         else:
             self.column_formatters = column_formatters
+        self.comment = comment
         self.table_attrs = {'style': 'border-collapse: collapse',
                             'border': 1,
                             'cellpadding': 2}
@@ -178,6 +185,8 @@ class HtmlTable:
     def __str__(self):
         output = HtmlOutput()
         output.add_open_tag('html')
+        if self.comment is not None:
+            output.add_comment(self.comment)
         output.add_open_tag('table', **self.table_attrs)
         # Make the header font size smaller so some columns can be narrower
         header_attrs = dict()
@@ -215,7 +224,7 @@ class HtmlTable:
 
 
 class McEmailMessageDumper(HtmlTable):
-    def __init__(self, objects):
+    def __init__(self, objects, comment=None):
         columns = ['Id',
                    'Score',
                    'ScoreVersion',
@@ -238,19 +247,20 @@ class McEmailMessageDumper(HtmlTable):
                              'SecondsRead': align_right}
         HtmlTable.__init__(self, columns, rows=objects,
                            column_attributes=column_attributes,
-                           column_formatters=column_formatters)
+                           column_formatters=column_formatters,
+                           comment=comment)
 
 
 class McEmailMessageDependencyDumper(HtmlTable):
-    def __init__(self, objects):
+    def __init__(self, objects, comment=None):
         columns = ['ContactId',
                    'ContactType',
                    'EmailMessageId']
-        HtmlTable.__init__(self, columns, rows=objects)
+        HtmlTable.__init__(self, columns, rows=objects, comment=comment)
 
 
 class McContactDumper(HtmlTable):
-    def __init__(self, objects):
+    def __init__(self, objects, comment=None):
         columns = ['Id',
                    'Score',
                    'FirstName',
@@ -282,7 +292,8 @@ class McContactDumper(HtmlTable):
                              'IsVip': align_center}
         HtmlTable.__init__(self, columns, rows=objects,
                            column_attributes=column_attributes,
-                           column_formatters=column_formatters)
+                           column_formatters=column_formatters,
+                           comment=comment)
 
 
 def main():
@@ -312,6 +323,11 @@ def main():
     import model
     session = sessionmaker(bind=ModelDb.engine)()
 
+    # Generate a comment describing the command that creates these .html files
+    now = datetime.datetime.now()
+    comment = 'Command: %s\nCurrent working directory: %s\nDb file: %s\nTime: %s' % \
+              (' '.join(sys.argv), os.getcwd(), options.db_file, now.strftime('%D %H:%M:%S'))
+
     # Process tables
     for table in options.tables:
         table = table.lower()
@@ -340,7 +356,7 @@ def main():
         filename = table + '.html'
         print 'Writing %s...' % filename
         with open(filename, 'w') as f:
-            f.write(str(dumper_class(objects)))
+            f.write(str(dumper_class(objects, comment)))
 
 if __name__ == '__main__':
     main()
