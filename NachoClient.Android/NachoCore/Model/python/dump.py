@@ -300,6 +300,19 @@ class McContactDumper(HtmlTable):
                            comment=comment)
 
 
+class McContactStringAttributeDumper(HtmlTable):
+    def __init__(self, objects, comment=None):
+        columns = ['Id',
+                   'ContactId',
+                   'Order',
+                   'Name',
+                   'Label',
+                   'Type',
+                   'Value']
+        HtmlTable.__init__(self, columns, rows=objects,
+                           comment=comment)
+
+
 def main():
     # Parse options
     parser = argparse.ArgumentParser()
@@ -335,17 +348,16 @@ def main():
     # Process tables
     for table in options.tables:
         table = table.lower()
-        if table == 'mcemailmessage':
-            dumper_class = McEmailMessageDumper
-            model_class = model.McEmailMessage
-        elif table == 'mccontact':
-            dumper_class = McContactDumper
-            model_class = model.McContact
-        elif table == 'mcemailmessagedependency':
-            dumper_class = McEmailMessageDependencyDumper
-            model_class = model.McEmailMessageDependency
-        else:
+
+        table_to_classes = {
+            'mcemailmessage': (McEmailMessageDumper, model.McEmailMessage),
+            'mccontact': (McContactDumper, model.McContact),
+            'mcemailmessagedependency': (McEmailMessageDependencyDumper, model.McEmailMessageDependency),
+            'mccontactstringattribute': (McContactStringAttributeDumper, model.McContactStringAttribute)
+        }
+        if table not in table_to_classes:
             raise ValueError('Unknown table %s' % table)
+        (dumper_class, model_class) = table_to_classes[table]
         query = session.query(model_class)
         if options.date_received and table == 'mcemailmessage':
             objects = query.order_by(model_class.DateReceived)
