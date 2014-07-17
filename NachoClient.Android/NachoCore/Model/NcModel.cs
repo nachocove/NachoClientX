@@ -35,6 +35,7 @@ namespace NachoCore.Model
                         SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                         storeDateTimeAsTicks: true);
                     db.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                    db.TraceThreshold = 100;
                     DbConns.TryAdd (threadId, db);
                 }
                 return db;
@@ -184,13 +185,22 @@ namespace NachoCore.Model
                 exitValue = oldValue;
                 return oldValue + 1;
             });
+            System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch ();
             try {
                 var whoa = DateTime.UtcNow.AddSeconds (5.0);
                 do {
                     try {
+                        watch.Start ();
                         Db.RunInTransaction (action);
+                        watch.Stop ();
+                        var span = watch.ElapsedMilliseconds;
+                        if (1000 < span) {
+                            Log.Error (Log.LOG_SYS, "RunInTransaction: {0}ms for {1}", span, 
+                                new System.Diagnostics.StackTrace (true));
+                        }
                         break;
                     } catch (SQLiteException ex) {
+                        watch.Reset ();
                         if (ex.Message.Contains ("Busy")) {
                             Log.Warn (Log.LOG_SYS, "Caught a Busy");
                         } else {

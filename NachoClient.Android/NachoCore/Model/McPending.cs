@@ -650,7 +650,7 @@ namespace NachoCore.Model
         {
             var predIds = new List<int> ();
             try {
-                NcModel.Instance.Db.RunInTransaction (() => {
+                NcModel.Instance.RunInTransaction (() => {
                     if (CanDepend ()) {
                         // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
                         // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
@@ -708,7 +708,7 @@ namespace NachoCore.Model
         {
             McItem item = null;
             try {
-                NcModel.Instance.Db.RunInTransaction (() => {
+                NcModel.Instance.RunInTransaction (() => {
                     if (0 != ItemId) {
                         switch (Operation) {
                         case Operations.EmailSend:

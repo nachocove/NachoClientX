@@ -55,6 +55,7 @@ using Sqlite3 = SQLitePCL.raw;
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
+using NachoCore.Utils;
 
 namespace SQLite
 {
@@ -140,7 +141,7 @@ namespace SQLite
 		private TimeSpan _busyTimeout;
 		private Dictionary<string, TableMapping> _mappings = null;
 		private Dictionary<string, TableMapping> _tables = null;
-		private System.Diagnostics.Stopwatch _sw;
+		public System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
 
 		private int _transactionDepth = 0;
@@ -154,6 +155,8 @@ namespace SQLite
 		public bool TimeExecution { get; set; }
 
 		public bool Trace { get; set; }
+
+        public int TraceThreshold { get; set; }
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
@@ -616,7 +619,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			
-			if (TimeExecution) {
+			if (TimeExecution || 0 < TraceThreshold) {
 				if (_sw == null) {
 					_sw = new Stopwatch ();
 				}
@@ -631,6 +634,13 @@ namespace SQLite
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
 				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
+            if (0 < TraceThreshold) {
+                _sw.Stop ();
+                var span = _sw.ElapsedMilliseconds;
+                if (span > TraceThreshold) {
+                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                }
+            }
 			
 			return r;
 		}
@@ -639,7 +649,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			
-			if (TimeExecution) {
+            if (TimeExecution || 0 < TraceThreshold) {
 				if (_sw == null) {
 					_sw = new Stopwatch ();
 				}
@@ -654,7 +664,13 @@ namespace SQLite
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
 				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
-			
+            if (0 < TraceThreshold) {
+                _sw.Stop ();
+                var span = _sw.ElapsedMilliseconds;
+                if (span > TraceThreshold) {
+                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                }
+            }
 			return r;
 		}
 
@@ -676,7 +692,30 @@ namespace SQLite
 		public List<T> Query<T> (string query, params object[] args) where T : new()
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExecuteQuery<T> ();
+
+            if (TimeExecution || 0 < TraceThreshold) {
+                if (_sw == null) {
+                    _sw = new Stopwatch ();
+                }
+                _sw.Reset ();
+                _sw.Start ();
+            }
+
+            var retval = cmd.ExecuteQuery<T> ();
+
+            if (TimeExecution) {
+                _sw.Stop ();
+                _elapsedMilliseconds += _sw.ElapsedMilliseconds;
+                Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+            }
+            if (0 < TraceThreshold) {
+                _sw.Stop ();
+                var span = _sw.ElapsedMilliseconds;
+                if (span > TraceThreshold) {
+                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                }
+            }
+            return retval;
 		}
 
 		/// <summary>
@@ -725,7 +764,29 @@ namespace SQLite
 		public List<object> Query (TableMapping map, string query, params object[] args)
 		{
 			var cmd = CreateCommand (query, args);
-			return cmd.ExecuteQuery<object> (map);
+
+            if (TimeExecution || 0 < TraceThreshold) {
+                if (_sw == null) {
+                    _sw = new Stopwatch ();
+                }
+                _sw.Reset ();
+                _sw.Start ();
+            }
+            var retval = cmd.ExecuteQuery<object> (map);
+
+            if (TimeExecution) {
+                _sw.Stop ();
+                _elapsedMilliseconds += _sw.ElapsedMilliseconds;
+                Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+            }
+            if (0 < TraceThreshold) {
+                _sw.Stop ();
+                var span = _sw.ElapsedMilliseconds;
+                if (span > TraceThreshold) {
+                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                }
+            }
+            return retval;
 		}
 
 		/// <summary>
@@ -2042,7 +2103,6 @@ namespace SQLite
 			if (_conn.Trace) {
 				Debug.WriteLine ("Executing: " + this);
 			}
-			
 			var r = SQLite3.Result.OK;
 			var stmt = Prepare ();
 			r = SQLite3.Step (stmt);
@@ -2851,7 +2911,26 @@ namespace SQLite
 		
 		public int Count ()
 		{
-			return GenerateCommand("count(*)").ExecuteScalar<int> ();			
+            var cmd = GenerateCommand ("count(*)");
+
+            if (0 < Connection.TraceThreshold) {
+                if (Connection._sw == null) {
+                    Connection._sw = new Stopwatch ();
+                }
+                Connection._sw.Reset ();
+                Connection._sw.Start ();
+            }
+
+            var retval = cmd.ExecuteScalar<int> ();	
+
+            if (0 < Connection.TraceThreshold) {
+                Connection._sw.Stop ();
+                var span = Connection._sw.ElapsedMilliseconds;
+                if (span > Connection.TraceThreshold) {
+                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                }
+            }
+            return retval;
 		}
 
 		public int Count (Expression<Func<T, bool>> predExpr)
@@ -2861,10 +2940,32 @@ namespace SQLite
 
 		public IEnumerator<T> GetEnumerator ()
 		{
-			if (!_deferred)
-				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+            var cmd = GenerateCommand ("*");
 
-			return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
+            if (0 < Connection.TraceThreshold) {
+                if (Connection._sw == null) {
+                    Connection._sw = new Stopwatch ();
+                }
+                Connection._sw.Reset ();
+                Connection._sw.Start ();
+            }
+
+            IEnumerator<T> retval;
+            if (!_deferred) {
+                retval = cmd.ExecuteQuery<T> ().GetEnumerator ();
+            } else {
+                retval = cmd.ExecuteDeferredQuery<T> ().GetEnumerator ();
+                Log.Error (Log.LOG_SYS, "SQLite: WE ARE ACTUALLY USING DEFERRED QUERIES");
+            }
+
+            if (0 < Connection.TraceThreshold) {
+                Connection._sw.Stop ();
+                var span = Connection._sw.ElapsedMilliseconds;
+                if (span > Connection.TraceThreshold) {
+                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                }
+            }
+            return retval;
 		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()

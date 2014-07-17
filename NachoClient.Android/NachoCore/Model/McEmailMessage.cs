@@ -547,7 +547,7 @@ namespace NachoCore.Model
 
             try 
             {
-                NcModel.Instance.Db.RunInTransaction (() => {
+                NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Insert ();
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
@@ -570,7 +570,7 @@ namespace NachoCore.Model
 
             try 
             {
-                NcModel.Instance.Db.RunInTransaction (() => {
+                NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Update ();
                     if(!isAncillaryInMemory){
                         ForceReadAncillaryData();
