@@ -12,6 +12,7 @@ using NachoCore.Utils;
 using MimeKit;
 using System.Xml.Linq;
 using NachoCore.Model;
+using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
@@ -550,6 +551,7 @@ namespace NachoCore.Model
                     returnVal = base.Insert ();
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
+                NcBrain.SharedInstance.McEmailMessageCounters.Insert.Click();
             }
             catch (SQLiteException ex) 
             {
@@ -576,6 +578,7 @@ namespace NachoCore.Model
                     DeleteAncillaryData (NcModel.Instance.Db);
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
+                NcBrain.SharedInstance.McEmailMessageCounters.Update.Click ();
             }
             catch (SQLiteException ex) 
             {
@@ -608,6 +611,7 @@ namespace NachoCore.Model
             if (0 != returnVal || -1 != returnVal) {
                 isDeleted = true;
             }
+            NcBrain.SharedInstance.McEmailMessageCounters.Delete.Click ();
             return returnVal;
         }
     }

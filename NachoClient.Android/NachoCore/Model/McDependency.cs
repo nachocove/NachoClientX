@@ -4,6 +4,7 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
@@ -76,13 +77,24 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             NcAssert.True (ValidType ());
-            return base.Insert ();
+            int retval = base.Insert ();
+            NcBrain.SharedInstance.McEmailMessageDependencyCounters.Insert.Click ();
+            return retval;
         }
 
         public override int Update ()
         {
             NcAssert.True (ValidType ());
-            return base.Update ();
+            int retval = base.Update ();
+            NcBrain.SharedInstance.McEmailMessageDependencyCounters.Update.Click ();
+            return retval;
+        }
+
+        public override int Delete ()
+        {
+            int retval = base.Delete ();
+            NcBrain.SharedInstance.McEmailMessageDependencyCounters.Delete.Click ();
+            return retval;
         }
     }
 

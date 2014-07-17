@@ -22,10 +22,35 @@ namespace NachoCore.Brain
             }
         }
 
+        public class OperationCounters {
+            private NcCounter Root;
+            public NcCounter Insert;
+            public NcCounter Delete;
+            public NcCounter Update;
+
+            public OperationCounters (string name, NcCounter Parent)
+            {
+                Root = Parent.AddChild (name);
+                Insert = Root.AddChild ("Insert");
+                Delete = Root.AddChild ("Delete");
+                Update = Root.AddChild ("Update");
+            }
+        }
+
         private NcQueue<NcBrainEvent> EventQueue;
+
+        public NcCounter RootCounter;
+        public OperationCounters McEmailMessageCounters;
+        public OperationCounters McEmailMessageDependencyCounters;
+        public OperationCounters McEmailMessageScoreSyncInfoCounters;
 
         public NcBrain ()
         {
+            RootCounter = new NcCounter ("Brain", true);
+            McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
+            McEmailMessageDependencyCounters = new OperationCounters ("McEmailMessageDependency", RootCounter);
+            McEmailMessageScoreSyncInfoCounters = new OperationCounters ("McEmailMessageScoreSyncInfo", RootCounter);
+
             EventQueue = new NcQueue<NcBrainEvent> ();
             NcTask.Run (() => {
                 EventQueue.Token = NcTask.Cts.Token;
