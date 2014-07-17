@@ -172,6 +172,9 @@ namespace NachoCore.Model
             List<McEmailMessage> emailMesageList = McEmailMessageDependency.QueryDependenciesByContactId (Id);
             if (null != emailMesageList) {
                 foreach (McEmailMessage m in emailMesageList) {
+                    if (m.NeedUpdate) {
+                        continue; // already marked for update. save one update
+                    }
                     m.NeedUpdate = true;
                     m.Update ();
                 }

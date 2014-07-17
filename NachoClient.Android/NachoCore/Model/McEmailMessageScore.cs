@@ -226,7 +226,14 @@ namespace NachoCore.Model
             return newTvList;
         }
 
-        private void UpdateTimeVariance (NcTimeVariance.TimeVarianceList tvList, DateTime now)
+        /// <summary>
+        /// Update the time variance state in memory. Note that the caller is responsible
+        /// for calling Update() if this method returns true.
+        /// </summary>
+        /// <returns><c>true</c>, if time variance was updated, <c>false</c> otherwise.</returns>
+        /// <param name="tvList">A list of active time variance.</param>
+        /// <param name="now">A timestamp to be used for finding next state for all tv.</param>
+        private bool UpdateTimeVariance (NcTimeVariance.TimeVarianceList tvList, DateTime now)
         {
             DateTime latestEvent = new DateTime (1, 1, 1, 0, 0, 0);
             int latestType = (int)NcTimeVarianceType.DONE;
@@ -254,9 +261,7 @@ namespace NachoCore.Model
                 TimeVarianceState = latestState;
                 updated = true;
             }
-            if (updated) {
-                Update ();
-            }
+            return updated;
         }
 
         private void InitializeTimeVariance ()
@@ -278,7 +283,9 @@ namespace NachoCore.Model
                 Score = GetScore ();
             }
 
-            UpdateTimeVariance (tvList, now);
+            if (UpdateTimeVariance (tvList, now)) {
+                Update ();
+            }
         }
 
         private static void TimeVarianceCallBack (int state, Int64 objId)
@@ -292,12 +299,18 @@ namespace NachoCore.Model
             DateTime now = DateTime.Now;
             NcTimeVariance.TimeVarianceList tvList =
                 emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
-            emailMessage.UpdateTimeVariance (tvList, now);
+            bool updated = emailMessage.UpdateTimeVariance (tvList, now);
 
             /// Recompute a new score and update it in the cache
-            emailMessage.Score = emailMessage.GetScore ();
-            emailMessage.NeedUpdate = false;
-            emailMessage.Update ();
+            double newScore = emailMessage.GetScore ();
+            if (newScore != emailMessage.Score) {
+                emailMessage.Score = newScore;
+                updated = true;
+            }
+            if (updated) {
+                emailMessage.NeedUpdate = false;
+                emailMessage.Update ();
+            }
         }
 
         public static void StartTimeVariance ()
