@@ -117,7 +117,7 @@ namespace NachoCore.Model
             SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
                 Log.IndirectQ.Enqueue (new LogElement () {
                     Level = LogElement.LevelEnum.Error,
-                    Subsystem = Log.LOG_SYS,
+                    Subsystem = Log.LOG_DB,
                     Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
                     Occurred = DateTime.UtcNow,
                 });
@@ -163,13 +163,13 @@ namespace NachoCore.Model
                 } catch (SQLiteException ex) {
                     if (ex.Message.Contains ("Busy")) {
                         if (DateTime.UtcNow > whoa) {
-                            Log.Error (Log.LOG_SYS, "Caught a Busy");
+                            Log.Error (Log.LOG_DB, "Caught a Busy");
                             throw;
                         } else {
-                            Log.Warn (Log.LOG_SYS, "Caught a Busy");
+                            Log.Warn (Log.LOG_DB, "Caught a Busy");
                         }
                     } else {
-                        Log.Error (Log.LOG_SYS, "Caught a non-Busy: {0}", ex);
+                        Log.Error (Log.LOG_DB, "Caught a non-Busy: {0}", ex);
                         throw;
                     }
                 }
@@ -195,16 +195,16 @@ namespace NachoCore.Model
                         watch.Stop ();
                         var span = watch.ElapsedMilliseconds;
                         if (1000 < span) {
-                            Log.Error (Log.LOG_SYS, "RunInTransaction: {0}ms for {1}", span, 
+                            Log.Error (Log.LOG_DB, "RunInTransaction: {0}ms for {1}", span, 
                                 new System.Diagnostics.StackTrace (true));
                         }
                         break;
                     } catch (SQLiteException ex) {
                         watch.Reset ();
                         if (ex.Message.Contains ("Busy")) {
-                            Log.Warn (Log.LOG_SYS, "Caught a Busy");
+                            Log.Warn (Log.LOG_DB, "Caught a Busy");
                         } else {
-                            Log.Error (Log.LOG_SYS, "Caught a non-Busy: {0}", ex);
+                            Log.Error (Log.LOG_DB, "Caught a non-Busy: {0}", ex);
                             throw;
                         }
                     }
@@ -220,7 +220,7 @@ namespace NachoCore.Model
 
         public void Info ()
         {
-            Log.Info (Log.LOG_SYS, "SQLite version number {0}", SQLite3.LibVersionNumber ());
+            Log.Info (Log.LOG_DB, "SQLite version number {0}", SQLite3.LibVersionNumber ());
         }
 
         public void EngageRateLimiter ()
