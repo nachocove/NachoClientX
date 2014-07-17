@@ -955,6 +955,9 @@
     </Compile>
     <Compile Include="NachoPlatform.iOS\NotifiOS.cs" />
     <Compile Include="NachoUI.iOS\Tables\HierarchicalFolderTableSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

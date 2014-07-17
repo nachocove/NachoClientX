@@ -520,7 +520,7 @@ namespace NachoCore.ActiveSync
             // Success is the only way we finish - either by UI setting or autodiscovery.
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");
         }
-        // IAsDataSource proxying.
+        // IBEContext proxying.
         public IProtoControlOwner Owner {
             get { return BEContext.Owner; }
             set { BEContext.Owner = value; }

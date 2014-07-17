@@ -297,6 +297,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs" />
     <Compile Include="NachoCore\Adapters\NcFetchAssist.cs" />
     <Compile Include="NachoPlatform.Android\NotifAndroid.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

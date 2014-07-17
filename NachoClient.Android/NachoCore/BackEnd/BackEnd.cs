@@ -446,6 +446,15 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).RenameFolderCmd (folderId, displayName);
         }
             
+        public bool ValidateConfig (int accountId, McServer server, McCred cred)
+        {
+            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
+                return false;
+            }
+            ServiceFromAccountId (accountId).ValidateConfig (server, cred);
+            return true;
+        }
+
         //
         // For IProtoControlOwner.
         //

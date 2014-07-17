@@ -65,6 +65,7 @@ namespace NachoCore.Utils
             Info_ViewScrollingStarted,
             Info_ViewScrollingStopped,
             Info_ServiceUnavailable,
+            Info_ValidateConfigSucceeded,
             // Warning.
             // Error.
             Error_NetworkUnavailable,
@@ -119,6 +120,8 @@ namespace NachoCore.Utils
             Error_AutoDStatus2,
             Error_AutoDError600,
             Error_AutoDError601,
+            Error_ValidateConfigFailedAuth,
+            Error_ValidateConfigFailedComm,
         };
 
         public enum WhyEnum {

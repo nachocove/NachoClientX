@@ -15,6 +15,7 @@ namespace NachoCore.ActiveSync
     public partial class AsProtoControl : ProtoControl, IBEContext
     {
         private IAsCommand Cmd;
+        private AsValidateConfig Validator;
         #pragma warning disable 414
         private IAsCommand DisposedCmd;
         #pragma warning restore 414
@@ -968,6 +969,16 @@ namespace NachoCore.ActiveSync
             default:
                 throw new Exception (string.Format ("Unknown State {0}", pending.State));
             }
+        }
+
+        public override void ValidateConfig (McServer server, McCred cred)
+        {
+            if (null != Validator) {
+                Validator.Cancel ();
+                Validator = null;
+            }
+            Validator = new AsValidateConfig (this);
+            Validator.Execute (server, cred);
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)

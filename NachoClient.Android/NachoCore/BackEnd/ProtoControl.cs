@@ -145,6 +145,8 @@ namespace NachoCore
         public abstract string MoveFolderCmd (int folderId, int destFolderId);
 
         public abstract string RenameFolderCmd (int folderId, string displayName);
+
+        public abstract void ValidateConfig (McServer server, McCred cred);
         //
         // Interface to controllers.
         public abstract void StatusInd (NcResult status);
