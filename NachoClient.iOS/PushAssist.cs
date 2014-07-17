@@ -146,6 +146,7 @@ namespace NachoClient.iOS
 
         public void SetDeviceToken (byte[] deviceToken)
         {
+            return;
             NcTask.Run (delegate {
                 var existing = McMutables.Get (k_ios, k_devicetoken);
                 var b64tok = Convert.ToBase64String (deviceToken);
