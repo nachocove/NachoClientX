@@ -100,6 +100,7 @@ namespace NachoCore
 
         public void Start ()
         {
+            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start() called");
             if (null != QuickTimeoutTimer) {
                 QuickTimeoutTimer.Dispose ();
                 QuickTimeoutTimer = null;
@@ -207,6 +208,7 @@ namespace NachoCore
 
         public void Start (int accountId)
         {
+            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) called", accountId);
             NcTask.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
                 if (! HasServiceFromAccountId (accountId)) {
