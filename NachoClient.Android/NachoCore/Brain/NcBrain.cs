@@ -9,6 +9,8 @@ namespace NachoCore.Brain
 {
     public class NcBrain
     {
+        public const bool ENABLED = true;
+
         private static NcBrain _SharedInstance;
 
         public static NcBrain SharedInstance {
@@ -200,8 +202,9 @@ namespace NachoCore.Brain
                 if (NcBrainEventType.TERMINATE == brainEvent.Type) {
                     return;
                 }
-                ProcessEvent (brainEvent);
-                brainEvent = EventQueue.Dequeue ();
+                if (ENABLED) {
+                    ProcessEvent (brainEvent);
+                }
             }
         }
     }
