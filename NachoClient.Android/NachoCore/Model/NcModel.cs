@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.IO;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoCore.Model
 {
@@ -41,6 +42,7 @@ namespace NachoCore.Model
         }
 
         private SQLiteConnection _TeleDb = null;
+
         public SQLiteConnection TeleDb {
             get {
                 if (null == _TeleDb) {
@@ -111,6 +113,15 @@ namespace NachoCore.Model
         private NcModel ()
         {
             NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
+            SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
+                Log.IndirectQ.Enqueue (new LogElement () {
+                    Level = LogElement.LevelEnum.Error,
+                    Subsystem = Log.LOG_SYS,
+                    Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
+                    Occurred = DateTime.UtcNow,
+                });
+            }), 
+                (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             InitalizeDirs ();
             DbFileName = Path.Combine (Documents, "db");

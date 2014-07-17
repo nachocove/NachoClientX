@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using SQLite;
 
 namespace NachoPlatform
 {
@@ -33,6 +34,7 @@ namespace NachoPlatform
         string UserAgent ();
         bool IsSimulator ();
         bool Wipe (string username, string password, string url, string protoVersion);
+        SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action);
     }
 
     public delegate void NetStatusEventHandler (Object sender, NetStatusEventArgs e);

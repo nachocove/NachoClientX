@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Xml.Linq;
 using System.Xml;
@@ -216,6 +217,29 @@ namespace NachoCore.Utils
             if (settings.ToTelemetry (subsystem)) {
                 Telemetry.RecordLogEvent (teleType, fmt, list);
             }
+            LogElement elem;
+            int maxIndirect = 5;
+            while (0 < maxIndirect && Log.IndirectQ.TryDequeue (out elem)) {
+                var message = "@" + elem.Occurred.ToString () + ":" + elem.Message;
+                switch (elem.Level) {
+                case LogElement.LevelEnum.Debug:
+                    Log.Debug (elem.Subsystem, message);
+                    break;
+
+                case LogElement.LevelEnum.Info:
+                    Log.Info (elem.Subsystem, message);
+                    break;
+
+                case LogElement.LevelEnum.Warn:
+                    Log.Warn (elem.Subsystem, message);
+                    break;
+
+                case LogElement.LevelEnum.Error:
+                    Log.Error (elem.Subsystem, message);
+                    break;
+                }
+                --maxIndirect;
+            }
         }
 
         public void Error (ulong subsystem, string fmt, params object[] list)
@@ -338,6 +362,8 @@ namespace NachoCore.Utils
         {
             DefaultLogger = logger;
         }
+
+        public static ConcurrentQueue<LogElement> IndirectQ = new ConcurrentQueue<LogElement> ();
     }
 
     public static class LogHelpers
@@ -410,5 +436,15 @@ namespace NachoCore.Utils
 
             return output;
         }
+    }
+
+    public class LogElement
+    {
+        public enum LevelEnum { Debug, Info, Warn, Error };
+
+        public LevelEnum Level { get; set; }
+        public ulong Subsystem { get; set; }
+        public string Message { get; set; }
+        public DateTime Occurred { get; set; }
     }
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2012 Krueger Systems, Inc.
+// Copyright (c) 2009-2014 Krueger Systems, Inc.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,6 @@ using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
 
-using NachoCore.Utils;
 namespace SQLite
 {
 	public class SQLiteException : Exception
@@ -221,6 +220,7 @@ namespace SQLite
 			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 		
+#if __IOS__
 		static SQLiteConnection ()
 		{
 			if (_preserveDuringLinkMagic) {
@@ -228,6 +228,13 @@ namespace SQLite
 				ti.Name = "magic";
 			}
 		}
+
+   		/// <summary>
+		/// Used to list some code that we want the MonoTouch linker
+		/// to see, but that we never want to actually execute.
+		/// </summary>
+		static bool _preserveDuringLinkMagic;
+#endif
 
 #if !USE_SQLITEPCL_RAW
         public void EnableLoadExtension(int onoff)
@@ -249,14 +256,8 @@ namespace SQLite
 			return bytes;
 		}
 #endif
-		
-		/// <summary>
-		/// Used to list some code that we want the MonoTouch linker
-		/// to see, but that we never want to actually execute.
-		/// </summary>
-		static bool _preserveDuringLinkMagic;
 
-		/// <summary>
+        /// <summary>
 		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
 		/// The handler will sleep multiple times until a total time of <see cref="BusyTimeout"/> has accumulated.
 		/// </summary>
@@ -940,7 +941,7 @@ namespace SQLite
 				} else {
 					Interlocked.Decrement (ref _transactionDepth);
 				}
-                Log.Error (Log.LOG_SYS, "SaveTransactionPoint exploded with retVal {0}", retVal);
+
 				throw;
 			}
 
@@ -1022,7 +1023,7 @@ namespace SQLite
 					}
 				}
 			}
-            Log.Error (Log.LOG_SYS, "DoSavePointExecute exploded with savepoint {0} {1}", savepoint, _transactionDepth);
+
 			throw new ArgumentException ("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
 		}
 
@@ -1051,7 +1052,6 @@ namespace SQLite
 		{
 			try {
 				var savePoint = SaveTransactionPoint ();
-                // Log.Info (Log.LOG_SYS, "RunInTransaction with savepoint {0} {1}", savePoint, _transactionDepth);
 				action ();
 				Release (savePoint);
 			} catch (Exception) {
@@ -2976,8 +2976,11 @@ namespace SQLite
 		{
 			SingleThread = 1,
 			MultiThread = 2,
-			Serialized = 3
+			Serialized = 3,
+			Log = 16,
 		}
+
+		public delegate void ErrorLogCallback (IntPtr pArg, int iErrCode, string zMsg);
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW
 		[DllImport("sqlite3", EntryPoint = "sqlite3_threadsafe", CallingConvention=CallingConvention.Cdecl)]
@@ -3009,6 +3012,9 @@ namespace SQLite
 		
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option);
+
+		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
+		public static extern Result Config (ConfigOption option, ErrorLogCallback callback, IntPtr pArg);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);

@@ -1,4 +1,5 @@
 using System;
+using SQLite;
 using Android.App;
 using Android.Nfc;
 using Android.Content;
@@ -85,6 +86,19 @@ namespace NachoPlatform
         {
             // FIXME.
             return false;
+        }
+
+        public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
+        {
+            ReverseSQLite3ErrorCallback (iErrCode, zMsg);
+        }
+
+        private static Action<int, string> ReverseSQLite3ErrorCallback;
+
+        public SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action)
+        {
+            ReverseSQLite3ErrorCallback = action;
+            return SQLite3ErrorCallback;
         }
     }
 }

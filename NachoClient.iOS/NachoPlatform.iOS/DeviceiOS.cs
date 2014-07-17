@@ -7,6 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using SQLite;
 
 namespace NachoPlatform
 {
@@ -162,6 +163,21 @@ namespace NachoPlatform
             File.WriteAllLines (home + "/tmp/PARMS", lines);
             return nacho_set_handlers_and_boom (home);
         }
+
+        [MonoTouch.MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
+        public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
+        {
+            if (!zMsg.Contains ("cfurl_cache_response")) {
+                ReverseSQLite3ErrorCallback (iErrCode, zMsg);
+            }
+        }
+
+        private static Action<int, string> ReverseSQLite3ErrorCallback;
+
+        public SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action)
+        {
+            ReverseSQLite3ErrorCallback = action;
+            return SQLite3ErrorCallback;
+        }
     }
 }
-
