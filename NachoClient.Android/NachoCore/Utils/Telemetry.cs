@@ -454,6 +454,10 @@ namespace NachoCore.Utils
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
                         continue;
+                    } else {
+                        if (NcTask.Cts.Token.IsCancellationRequested) {
+                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                        }
                     }
                     tEvent = dbEvent.GetTelemetryEvent ();
                 }
