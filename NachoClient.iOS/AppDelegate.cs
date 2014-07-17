@@ -52,6 +52,8 @@ namespace NachoClient.iOS
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
         #pragma warning disable 414
         private Timer ShutdownTimer = null;
+        private int ShutdownCounter = 0;
+
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
         private bool StartCrashReportingHasHappened = false;
@@ -108,7 +110,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications :{0}", deviceToken.ToString ());
         }
 
-        public override void FailedToRegisterForRemoteNotifications (UIApplication application , NSError error)
+        public override void FailedToRegisterForRemoteNotifications (UIApplication application, NSError error)
         {
             PushAssist.Instance.ResetDeviceToken ();
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
@@ -153,13 +155,14 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                InvokeOnUIThread.Instance.Invoke (delegate {
-                    if (!StartCrashReportingHasHappened) {
+                if (!StartCrashReportingHasHappened) {
+                    StartCrashReportingHasHappened = true;
+                    InvokeOnUIThread.Instance.Invoke (delegate {
                         StartCrashReporting ();
                         Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
-                        StartCrashReportingHasHappened = true;
-                    }
-                });
+                    });
+                }
+                // Telemetry is in AppDelegate because the implementation is iOS-only right now.
                 Telemetry.SharedInstance.Start<TelemetryBEParse> ();
                 Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                     BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
@@ -248,9 +251,14 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Exit");
         }
 
-        private void FinalShutdown (object dontCare)
+        private void FinalShutdown (object opaque)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Called");
+            var referenceCounter = (int)opaque;
+            if (referenceCounter != ShutdownCounter) {
+                Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
+                return;
+            }
             NcApplication.Instance.StopClass2Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass2Services complete");
             NcApplication.Instance.StopClass1Services ();
@@ -284,7 +292,11 @@ namespace NachoClient.iOS
                 FinalShutdown (null);
             } else {
                 var secs = timeRemaining - 20.0;
-                ShutdownTimer = new Timer (FinalShutdown, null, (int)(secs * 1000), Timeout.Infinite);
+                ShutdownTimer = new Timer ((opaque) => {
+                    InvokeOnUIThread.Instance.Invoke (delegate {
+                        FinalShutdown (opaque);
+                    });
+                }, ShutdownCounter, (int)(secs * 1000), Timeout.Infinite);
                 Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: ShutdownTimer for {0}s", secs);
             }
             var imageView = new UIImageView (Window.Frame);
@@ -300,7 +312,10 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
             UnhookFetchStatusHandler ();
-            Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: UnhookFetchStatusHandler complete");
+            ++ShutdownCounter;
+            ShutdownTimer.Dispose ();
+            ShutdownTimer = null;
+            Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Cleanup complete");
 
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (653);
             if (null != imageView) {
