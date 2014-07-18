@@ -105,7 +105,8 @@ namespace NachoCore.Model
         public virtual int Insert ()
         {
             NcAssert.True (0 == Id);
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                !NcModel.Instance.IsInTransaction ()) {
                 NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
             }
             LastModified = DateTime.UtcNow;
@@ -122,7 +123,8 @@ namespace NachoCore.Model
         public virtual int Delete ()
         {
             NcAssert.True (0 < Id);
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                !NcModel.Instance.IsInTransaction ()) {
                 NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
             }
             NcCapture capture = DeleteCaptures.Find (ClassName ());
@@ -138,7 +140,8 @@ namespace NachoCore.Model
         public virtual int Update ()
         {
             NcAssert.True (0 < Id);
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                !NcModel.Instance.IsInTransaction ()) {
                 NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
             }
             LastModified = DateTime.UtcNow;

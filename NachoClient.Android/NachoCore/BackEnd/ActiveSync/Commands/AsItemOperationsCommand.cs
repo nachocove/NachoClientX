@@ -148,7 +148,6 @@ namespace NachoCore.ActiveSync
                     var xmlServerId = xmlFetch.Element (AirSyncNs + Xml.AirSync.ServerId);
                     var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                     xmlStatus = xmlFetch.ElementAnyNs (Xml.ItemOperations.Status);
-                    NcResult.WhyEnum why;
                     switch ((Xml.ItemOperations.StatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
                     case Xml.ItemOperations.StatusCode.Success_1:
                         if (null != xmlFileReference) {
