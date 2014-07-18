@@ -554,7 +554,7 @@ namespace NachoClient
         {
             NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority");
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                 Account = ConstMcAccount.NotAccountSpecific,
             });
         }
@@ -563,7 +563,7 @@ namespace NachoClient
         {
             NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority");
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                 Account = ConstMcAccount.NotAccountSpecific,
             });
         }

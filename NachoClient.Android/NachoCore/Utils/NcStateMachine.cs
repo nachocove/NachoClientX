@@ -250,14 +250,21 @@ namespace NachoCore.Utils
                     var oldState = State;
                     State = NextState;
                     if (oldState != State && null != StateChangeIndication) {
-                        StateChangeIndication ();
+                        try {
+                            StateChangeIndication ();
+                        } catch (Exception ex) {
+                            Log.Error (Log.LOG_STATE, "Exception in StateMachine.StateChangeIndication: {0}, stack: {1}", ex.ToString (),
+                                new System.Diagnostics.StackTrace (true));
+                            throw;
+                        }
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_STATE, "Exception in StateMachine.FireLoop: {0}", ex.ToString ());
+                    Log.Error (Log.LOG_STATE, "Exception in StateMachine.FireLoop: {0}, stack: {1}", ex.ToString (),
+                        new System.Diagnostics.StackTrace (true));
                     lock (LockObj) {
                         InProcess = false;
                     }
-                    throw ex;
+                    throw;
                 }
                 PossiblyLeave:
                 lock (LockObj) {

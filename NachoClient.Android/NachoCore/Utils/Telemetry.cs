@@ -439,9 +439,6 @@ namespace NachoCore.Utils
                 // idea to upload a lot of data. The exact algorithm is TBD.
                 // But for now, let's not run when we're scrolling.
                 NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                    NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-                }
                 TelemetryEvent tEvent = null;
                 McTelemetryEvent dbEvent = null;
                 if (!PERSISTED) {

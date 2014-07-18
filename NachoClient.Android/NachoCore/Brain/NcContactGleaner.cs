@@ -71,9 +71,6 @@ namespace NachoCore.Brain
         private static void GleanContact (MailboxAddress mbAddr, int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
         {
             // Don't glean when scrolling
-            if (NcModel.Instance.RateLimiter.Enabled) {
-                return;
-            }
             var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
             if (0 == contacts.Count && !DoNotGlean (mbAddr.Address)) {
                 // Create a new gleaned contact.
@@ -168,6 +165,9 @@ namespace NachoCore.Brain
             }
             foreach (var addrsList in addrsLists) {
                 foreach (var addr in addrsList) {
+                    if (NcApplication.Instance.IsBackgroundAbateRequired) {
+                        return;
+                    }
                     if (addr is MailboxAddress) {
                         GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
                     }
@@ -225,6 +225,9 @@ namespace NachoCore.Brain
                 }
                 foreach (var addrsList in addrsLists) {
                     foreach (var addr in addrsList) {
+                        if (NcApplication.Instance.IsBackgroundAbateRequired) {
+                            return;
+                        }
                         if (addr is MailboxAddress) {
                             GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
                         }
