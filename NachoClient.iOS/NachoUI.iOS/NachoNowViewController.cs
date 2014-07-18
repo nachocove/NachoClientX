@@ -558,7 +558,7 @@ namespace NachoClient.iOS
                 case 0:
                     var message = messageThread.SingleMessageSpecialCase ();
                     message.UserAction = 1;
-                    message.Update();
+                    message.Update ();
                     break;
                 case 1:
                     PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
@@ -689,17 +689,21 @@ namespace NachoClient.iOS
         public void carouselSwipe (UISwipeGestureRecognizer obj)
         {
             if (UISwipeGestureRecognizerDirection.Up == obj.Direction) {
-                var i = carouselView.CurrentItemIndex;
-                var messageThread = priorityInbox.GetEmailThread (i);
-                PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                if (0 < priorityInbox.Count()) {
+                    var i = carouselView.CurrentItemIndex;
+                    var messageThread = priorityInbox.GetEmailThread (i);
+                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                }
                 return;
             }
             if (UISwipeGestureRecognizerDirection.Down == obj.Direction) {
-                var i = carouselView.CurrentItemIndex;
-                var messageThread = priorityInbox.GetEmailThread (i);
-                var message = messageThread.SingleMessageSpecialCase ();
-                message.UserAction = -1;
-                message.Update ();
+                if (0 < priorityInbox.Count()) {
+                    var i = carouselView.CurrentItemIndex;
+                    var messageThread = priorityInbox.GetEmailThread (i);
+                    var message = messageThread.SingleMessageSpecialCase ();
+                    message.UserAction = -1;
+                    message.Update ();
+                }
                 return;
             }
             NcAssert.CaseError ();
@@ -1012,7 +1016,7 @@ namespace NachoClient.iOS
 
                 // Summary label view
                 var summaryLabelView = view.ViewWithTag (SUMMARY_TAG) as UILabel;
-                summaryLabelView.Text = message.GetBodyPreviewOrEmpty();
+                summaryLabelView.Text = message.GetBodyPreviewOrEmpty ();
 
 //                // Reminder image view and label
 //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
