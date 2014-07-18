@@ -11,6 +11,7 @@ namespace NachoCore.Model
 {
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
+        [Indexed]
         public int ScoreVersion { get; set; }
 
         /// Did the user take explicit action?
@@ -22,14 +23,16 @@ namespace NachoCore.Model
         /// How long the user read the email
         public int SecondsRead { get; set; }
 
-        /// Time variance state machine type
+        [Indexed] /// Time variance state machine type
         public int TimeVarianceType { get; set; }
 
         /// Time variance state machine current state
         public int TimeVarianceState { get; set; }
 
+        [Indexed]
         public double Score { get; set; }
 
+        [Indexed]
         public bool NeedUpdate { get; set; }
 
         /// If there is update that is not uploaded to the synchronization server,
