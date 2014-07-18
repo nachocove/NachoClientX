@@ -958,6 +958,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress.cs">
+      <Link>NachoCore\Model\McEmailAddress.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapContactEmail.cs">
+      <Link>NachoCore\Model\McMapContactEmail.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
