@@ -69,7 +69,8 @@ namespace NachoCore.Brain
             int numGleaned = 0;
             while (numGleaned < count) {
                 // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                    !NcModel.Instance.IsInTransaction ()) {
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
@@ -89,7 +90,8 @@ namespace NachoCore.Brain
             int numAnalyzed = 0;
             while (numAnalyzed < count) {
                 // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                    !NcModel.Instance.IsInTransaction ()) {
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
                 McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
@@ -108,7 +110,8 @@ namespace NachoCore.Brain
             int numAnalyzed = 0;
             while (numAnalyzed < count) {
                 // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                    !NcModel.Instance.IsInTransaction ()) {
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
@@ -127,7 +130,8 @@ namespace NachoCore.Brain
             int numUpdated = 0;
             while (numUpdated < count) {
                 // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                    !NcModel.Instance.IsInTransaction ()) {
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
                 McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.NeedUpdate).FirstOrDefault ();
@@ -150,7 +154,8 @@ namespace NachoCore.Brain
             int numUpdated = 0;
             while (numUpdated < count) {
                 // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
+                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                    !NcModel.Instance.IsInTransaction ()) {
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.NeedUpdate).FirstOrDefault ();
