@@ -717,7 +717,11 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.SoftDelete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
-                    pathElem.Delete ();
+                    if (null != pathElem) {
+                        pathElem.Delete ();
+                    } else {
+                        Log.Error (Log.LOG_AS, "AsSyncCommand:{0}: McPath for ServerId {1} not in DB.", command.Name.LocalName, delServerId);
+                    }
                     var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
                         ClassCode = classCode,
                         ServerId = delServerId,
