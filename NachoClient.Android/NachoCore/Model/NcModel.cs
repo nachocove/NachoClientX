@@ -14,6 +14,7 @@ namespace NachoCore.Model
     {
         private string Documents;
 
+        // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
         public string FilesDir { set; get; }
@@ -176,6 +177,14 @@ namespace NachoCore.Model
             } while (true);
         }
 
+        public void TakeTokenOrSleep ()
+        {
+            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId &&
+                !IsInTransaction ()) {
+                RateLimiter.TakeTokenOrSleep ();
+            }
+        }
+
         public void RunInTransaction (Action action)
         {
             // DO NOT ADD LOGGING IN THE TRANSACTION, BECAUSE WE DON'T WANT LOGGING WRITES TO GET LUMPED IN.
@@ -230,9 +239,9 @@ namespace NachoCore.Model
         {
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
-                if (siea.Status.SubKind == NcResult.SubKindEnum.Info_ViewScrollingStarted) {
+                if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
                     RateLimiter.Enabled = true;
-                } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_ViewScrollingStopped) {
+                } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
                     RateLimiter.Enabled = false;
                 }
             };
