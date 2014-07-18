@@ -34,7 +34,7 @@ namespace NachoCore.Model
                     db = new SQLiteConnection (DbFileName, 
                         SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                         storeDateTimeAsTicks: true);
-                    db.BusyTimeout = TimeSpan.FromSeconds (0.0);
+                    db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                     db.TraceThreshold = 100;
                     DbConns.TryAdd (threadId, db);
                 }
@@ -50,7 +50,7 @@ namespace NachoCore.Model
                     _TeleDb = new SQLiteConnection (TeleDbFileName,
                         SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
                         storeDateTimeAsTicks: true);
-                    _TeleDb.BusyTimeout = TimeSpan.FromSeconds (0.0);
+                    _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
                 }
                 return _TeleDb;
             }
