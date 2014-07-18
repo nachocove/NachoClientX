@@ -494,7 +494,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "DraggingStarted");
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                 Account = ConstMcAccount.NotAccountSpecific,
             });
         }
@@ -503,7 +503,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "DecelerationEnded");
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                 Account = ConstMcAccount.NotAccountSpecific,
             });
         }
@@ -513,7 +513,7 @@ namespace NachoClient.iOS
             if (!willDecelerate) {
                 Log.Info (Log.LOG_UI, "DraggingEnded");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             }

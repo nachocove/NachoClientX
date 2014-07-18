@@ -105,9 +105,7 @@ namespace NachoCore.Model
         public virtual int Insert ()
         {
             NcAssert.True (0 == Id);
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-            }
+            NcModel.Instance.TakeTokenOrSleep ();
             LastModified = DateTime.UtcNow;
             NcCapture capture = InsertCaptures.Find (ClassName ());
             capture.Start ();
@@ -122,9 +120,7 @@ namespace NachoCore.Model
         public virtual int Delete ()
         {
             NcAssert.True (0 < Id);
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-            }
+            NcModel.Instance.TakeTokenOrSleep ();
             NcCapture capture = DeleteCaptures.Find (ClassName ());
             capture.Start ();
             int rc = NcModel.Instance.BusyProtect (() => {
@@ -138,9 +134,7 @@ namespace NachoCore.Model
         public virtual int Update ()
         {
             NcAssert.True (0 < Id);
-            if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-            }
+            NcModel.Instance.TakeTokenOrSleep ();
             LastModified = DateTime.UtcNow;
             NcCapture capture = UpdateCaptures.Find (ClassName ());
             capture.Start ();
