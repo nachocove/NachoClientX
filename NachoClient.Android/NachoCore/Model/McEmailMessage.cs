@@ -594,7 +594,7 @@ namespace NachoCore.Model
                 if (null != sender) {
                     sender.IncrementEmailsDeleted ();
                     sender.ForceReadAncillaryData ();
-                    sender.Update ();
+                    sender.UpdateByBrain ();
                 }
             }
             DeleteBody ();

@@ -87,6 +87,30 @@ namespace NachoCore.Model
             int retval = base.Update ();
             return retval;
         }
+
+        public void InsertByBrain ()
+        {
+            int rc = Insert ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageDependencyCounters.Insert.Click ();
+            }
+        }
+
+        public void UpdateByBrain ()
+        {
+            int rc = Update ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageDependencyCounters.Update.Click ();
+            }
+        }
+
+        public void DeleteByBrain ()
+        {
+            int rc = Delete ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageDependencyCounters.Delete.Click ();
+            }
+        }
     }
 
     // TOOD - Add McMeetingDependency

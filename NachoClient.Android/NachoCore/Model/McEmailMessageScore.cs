@@ -73,14 +73,14 @@ namespace NachoCore.Model
                         // TODO - How to determine if the email has been replied?
                         sender.ForceReadAncillaryData ();
                         sender.Score = sender.GetScore ();
-                        sender.Update ();
+                        sender.UpdateByBrain ();
                     }
                     // Add Sender dependency
                     McEmailMessageDependency dep = new McEmailMessageDependency ();
                     dep.EmailMessageId = Id;
                     dep.ContactId = sender.Id;
                     dep.ContactType = "Sender";
-                    dep.Insert ();
+                    dep.InsertByBrain ();
                 }
 
                 ScoreVersion++;
@@ -92,7 +92,7 @@ namespace NachoCore.Model
             InitializeTimeVariance ();
             Score = GetScore ();
             NeedUpdate = false;
-            Update ();
+            UpdateByBrain ();
         }
 
         private void GetScoreSyncInfo ()
@@ -106,7 +106,7 @@ namespace NachoCore.Model
             }
             SyncInfo = new McEmailMessageScoreSyncInfo ();
             SyncInfo.EmailMessageId = Id;
-            SyncInfo.Insert ();
+            SyncInfo.InsertByBrain ();
         }
 
         private void ClearScoreSyncInfo ()
@@ -114,7 +114,7 @@ namespace NachoCore.Model
             if (null == SyncInfo) {
                 return;
             }
-            SyncInfo.Delete ();
+            SyncInfo.DeleteByBrain ();
             SyncInfo = null;
         }
 
@@ -284,7 +284,31 @@ namespace NachoCore.Model
             }
 
             if (UpdateTimeVariance (tvList, now)) {
-                Update ();
+                UpdateByBrain ();
+            }
+        }
+
+        public void InsertByBrain ()
+        {
+            int rc = Insert ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageCounters.Insert.Click ();
+            }
+        }
+
+        public void UpdateByBrain ()
+        {
+            int rc = Update ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageCounters.Update.Click ();
+            }
+        }
+
+        public void DeleteByBrain ()
+        {
+            int rc = Delete ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageCounters.Delete.Click ();
             }
         }
 
@@ -309,7 +333,7 @@ namespace NachoCore.Model
             }
             if (updated) {
                 emailMessage.NeedUpdate = false;
-                emailMessage.Update ();
+                emailMessage.UpdateByBrain ();
             }
         }
 
@@ -359,6 +383,30 @@ namespace NachoCore.Model
             EmailMessageId = 0;
             TimesRead = 0;
             SecondsRead = 0;
+        }
+
+        public void InsertByBrain ()
+        {
+            int rc = Insert ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Insert.Click ();
+            }
+        }
+
+        public void UpdateByBrain ()
+        {
+            int rc = Update ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Update.Click ();
+            }
+        }
+
+        public void DeleteByBrain ()
+        {
+            int rc = Delete ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Delete.Click ();
+            }
         }
     }
 }

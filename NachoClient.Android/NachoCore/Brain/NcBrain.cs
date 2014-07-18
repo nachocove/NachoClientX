@@ -43,6 +43,8 @@ namespace NachoCore.Brain
         public OperationCounters McEmailMessageCounters;
         public OperationCounters McEmailMessageDependencyCounters;
         public OperationCounters McEmailMessageScoreSyncInfoCounters;
+        public OperationCounters McContactCounters;
+        public OperationCounters McContactScoreSyncInfo;
 
         public NcBrain ()
         {
@@ -50,6 +52,10 @@ namespace NachoCore.Brain
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
             McEmailMessageDependencyCounters = new OperationCounters ("McEmailMessageDependency", RootCounter);
             McEmailMessageScoreSyncInfoCounters = new OperationCounters ("McEmailMessageScoreSyncInfo", RootCounter);
+            McContactCounters = new OperationCounters ("McContact", RootCounter);
+            McContactScoreSyncInfo = new OperationCounters ("McContactScoreSyncInfo", RootCounter);
+            RootCounter.AutoReset = true;
+            RootCounter.ReportPeriod = 60 * 60; // report once per hour
 
             EventQueue = new NcQueue<NcBrainEvent> ();
             NcTask.Run (() => {

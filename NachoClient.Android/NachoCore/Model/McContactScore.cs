@@ -6,6 +6,7 @@ using System.Xml.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
@@ -78,7 +79,7 @@ namespace NachoCore.Model
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
             ForceReadAncillaryData ();
-            Update ();
+            UpdateByBrain ();
         }
 
         private void GetScoreSyncInfo ()
@@ -92,7 +93,7 @@ namespace NachoCore.Model
             }
             SyncInfo = new McContactScoreSyncInfo ();
             SyncInfo.ContactId = Id;
-            SyncInfo.Insert ();
+            SyncInfo.InsertByBrain ();
         }
 
         private void ClearScoreSyncInfo ()
@@ -100,7 +101,7 @@ namespace NachoCore.Model
             if (null == SyncInfo) {
                 return;
             }
-            SyncInfo.Delete ();
+            SyncInfo.DeleteByBrain ();
             SyncInfo = null;
         }
 
@@ -176,8 +177,32 @@ namespace NachoCore.Model
                         continue; // already marked for update. save one update
                     }
                     m.NeedUpdate = true;
-                    m.Update ();
+                    m.UpdateByBrain ();
                 }
+            }
+        }
+
+        public void InsertByBrain ()
+        {
+            int rc = Insert ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McContactCounters.Insert.Click ();
+            }
+        }
+
+        public void UpdateByBrain ()
+        {
+            int rc = Update ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McContactCounters.Update.Click ();
+            }
+        }
+
+        public void DeleteByBrain ()
+        {
+            int rc = Delete ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McContactCounters.Delete.Click ();
             }
         }
     }
@@ -219,6 +244,30 @@ namespace NachoCore.Model
             EmailsSent = 0;
             EmailsDeleted = 0;
             IsVip = false;
+        }
+
+        public void InsertByBrain ()
+        {
+            int rc = Insert ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McContactScoreSyncInfo.Insert.Click ();
+            }
+        }
+
+        public void UpdateByBrain ()
+        {
+            int rc = Update ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McContactScoreSyncInfo.Update.Click ();
+            }
+        }
+
+        public void DeleteByBrain ()
+        {
+            int rc = Delete ();
+            if (0 < rc) {
+                NcBrain.SharedInstance.McContactScoreSyncInfo.Delete.Click ();
+            }
         }
     }
 }
