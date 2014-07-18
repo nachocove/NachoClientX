@@ -102,6 +102,7 @@
     <Compile Include="McPathTest.cs" />
     <Compile Include="SyncConfResTest.cs" />
     <Compile Include="NcTimeVarianceTest.cs" />
+    <Compile Include="NcTimerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

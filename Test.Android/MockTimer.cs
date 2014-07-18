@@ -182,6 +182,12 @@ namespace Test.Common
 
         private bool ChangeInternal (Int64 due, Int64 period)
         {
+            /// Mimick real System.Threading.Timer's limited range
+            if ((-1 > due) || ((long)UInt32.MaxValue <= due) ||
+                (-1 > period) || ((long)UInt32.MaxValue <= period)) {
+                throw new ArgumentOutOfRangeException ();
+            }
+
             if (!IsDifferent (due, period)) {
                 return false;
             }
