@@ -9,7 +9,7 @@ using NachoCore.Utils;
 namespace NachoCore.Model
 {
     // If SQLite.Net would tolerate an abstract class, we'd be one.
-    public class McFolderEntry : McObjectPerAccount
+    public class McAbstrFolderEntry : McAbstrObjectPerAcc
     {
         public enum ClassCodeEnum
         {
@@ -33,7 +33,7 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwaitingDelete { get; set; }
 
-        public static T QueryByServerId<T> (int accountId, string serverId) where T : McFolderEntry, new()
+        public static T QueryByServerId<T> (int accountId, string serverId) where T : McAbstrFolderEntry, new()
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
@@ -44,9 +44,9 @@ namespace NachoCore.Model
                 accountId, serverId).SingleOrDefault ();
         }
 
-        public static McFolderEntry QueryAllForServerId (int accountId, string serverId)
+        public static McAbstrFolderEntry QueryAllForServerId (int accountId, string serverId)
         {
-            List<McFolderEntry> folderEntries = new List<McFolderEntry>();
+            List<McAbstrFolderEntry> folderEntries = new List<McAbstrFolderEntry>();
             CondAddToList (QueryByServerId<McEmailMessage> (accountId, serverId), ref folderEntries);
             CondAddToList (QueryByServerId<McCalendar> (accountId, serverId), ref folderEntries);
             CondAddToList (QueryByServerId<McContact> (accountId, serverId), ref folderEntries);
@@ -55,7 +55,7 @@ namespace NachoCore.Model
             return folderEntries.SingleOrDefault ();
         }
 
-        private static void CondAddToList (McFolderEntry item, ref List<McFolderEntry> folderEntries)
+        private static void CondAddToList (McAbstrFolderEntry item, ref List<McAbstrFolderEntry> folderEntries)
         {
             if (item != null) {
                 folderEntries.Add (item);

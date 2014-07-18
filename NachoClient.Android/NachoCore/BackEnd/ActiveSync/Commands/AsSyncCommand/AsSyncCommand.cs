@@ -109,7 +109,7 @@ namespace NachoCore.ActiveSync
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
-                McFolderEntry.ClassCodeEnum.Calendar) {
+                McAbstrFolderEntry.ClassCodeEnum.Calendar) {
                 add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar));
             }
             add.Add (AsHelpers.ToXmlApplicationData (cal));
@@ -132,11 +132,11 @@ namespace NachoCore.ActiveSync
 
         private XElement ToContactCreate (McPending pending, McFolder folder)
         {
-            var contact = McObject.QueryById<McContact> (pending.ItemId);
+            var contact = McAbstrObject.QueryById<McContact> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
-                McFolderEntry.ClassCodeEnum.Contact) {
+                McAbstrFolderEntry.ClassCodeEnum.Contact) {
                 add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Contacts));
             }
             add.Add (contact.ToXmlApplicationData ());
@@ -145,7 +145,7 @@ namespace NachoCore.ActiveSync
 
         private XElement ToContactUpdate (McPending pending, McFolder folder)
         {
-            var contact = McObject.QueryById<McContact> (pending.ItemId);
+            var contact = McAbstrObject.QueryById<McContact> (pending.ItemId);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 contact.ToXmlApplicationData ());
@@ -159,11 +159,11 @@ namespace NachoCore.ActiveSync
 
         private XElement ToTaskCreate (McPending pending, McFolder folder)
         {
-            var task = McObject.QueryById<McTask> (pending.ItemId);
+            var task = McAbstrObject.QueryById<McTask> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
-                McFolderEntry.ClassCodeEnum.Tasks) {
+                McAbstrFolderEntry.ClassCodeEnum.Tasks) {
                 add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Tasks));
             }
             add.Add (task.ToXmlApplicationData ());
@@ -172,7 +172,7 @@ namespace NachoCore.ActiveSync
 
         private XElement ToTaskUpdate (McPending pending, McFolder folder)
         {
-            var task = McObject.QueryById<McTask> (pending.ItemId);
+            var task = McAbstrObject.QueryById<McTask> (pending.ItemId);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
                 task.ToXmlApplicationData ());
@@ -207,7 +207,7 @@ namespace NachoCore.ActiveSync
                     var classCodeEnum = Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type);
                     var options = new XElement (m_ns + Xml.AirSync.Options);
                     switch (classCodeEnum) {
-                    case McFolderEntry.ClassCodeEnum.Email:
+                    case McAbstrFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
@@ -222,7 +222,7 @@ namespace NachoCore.ActiveSync
                             new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
                         break;
 
-                    case McFolderEntry.ClassCodeEnum.Calendar:
+                    case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
@@ -230,7 +230,7 @@ namespace NachoCore.ActiveSync
                             new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
                         break;
 
-                    case McFolderEntry.ClassCodeEnum.Contact:
+                    case McAbstrFolderEntry.ClassCodeEnum.Contact:
                         if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
                             // Expressing BodyPreference for RIC gets Protocol Error.
                             options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
@@ -241,7 +241,7 @@ namespace NachoCore.ActiveSync
                         }
                         break;
 
-                    case McFolderEntry.ClassCodeEnum.Tasks:
+                    case McAbstrFolderEntry.ClassCodeEnum.Tasks:
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                             new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
@@ -791,7 +791,7 @@ namespace NachoCore.ActiveSync
         private void ProcessCollectionAddResponse (McFolder folder, XElement xmlAdd, string classCode)
         {
             McPending pending;
-            McItem item;
+            McAbstrItem item;
             bool success = false;
 
             // Status and ClientId are required to be present.
@@ -862,16 +862,16 @@ namespace NachoCore.ActiveSync
 
             switch (classCode) {
             case Xml.AirSync.ClassCode.Email:
-                item = McItem.QueryByClientId<McEmailMessage> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McEmailMessage> (BEContext.Account.Id, clientId);
                 break;
             case Xml.AirSync.ClassCode.Contacts:
-                item = McItem.QueryByClientId<McContact> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McContact> (BEContext.Account.Id, clientId);
                 break;
             case Xml.AirSync.ClassCode.Calendar:
-                item = McItem.QueryByClientId<McCalendar> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McCalendar> (BEContext.Account.Id, clientId);
                 break;
             case Xml.AirSync.ClassCode.Tasks:
-                item = McItem.QueryByClientId<McTask> (BEContext.Account.Id, clientId);
+                item = McAbstrItem.QueryByClientId<McTask> (BEContext.Account.Id, clientId);
                 break;
             default:
                 Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);

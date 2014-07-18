@@ -92,13 +92,8 @@
     <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
     <Compile Include="NachoCore\Model\McAccount.cs" />
     <Compile Include="NachoCore\Model\McAttachment.cs" />
-    <Compile Include="NachoCore\Model\McCalendar.cs" />
-    <Compile Include="NachoCore\Model\McContact.cs" />
     <Compile Include="NachoCore\Model\McCred.cs" />
-    <Compile Include="NachoCore\Model\McEmailMessage.cs" />
     <Compile Include="NachoCore\Model\McFolder.cs" />
-    <Compile Include="NachoCore\Model\McItem.cs" />
-    <Compile Include="NachoCore\Model\McObject.cs" />
     <Compile Include="NachoCore\Model\McPolicy.cs" />
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
     <Compile Include="NachoCore\Model\McServer.cs" />
@@ -108,7 +103,6 @@
     <Compile Include="NachoCore\Utils\NcStateMachine.cs" />
     <Compile Include="NachoCore\Utils\Log.cs" />
     <Compile Include="NachoCore\Utils\MimeHelpers.cs" />
-    <Compile Include="NachoCore\Model\McObjectPerAccount.cs" />
     <Compile Include="NachoCore\Brain\NcMessageThreads.cs" />
     <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="NachoCore\Model\McPending.cs" />
@@ -187,7 +181,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs" />
     <Compile Include="NachoCore\Utils\Pretty.cs" />
-    <Compile Include="NachoCore\Model\McFolderEntry.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
@@ -277,11 +270,8 @@
     <Compile Include="NachoCore\Model\IScorable.cs" />
     <Compile Include="NachoCore\Brain\NcBrain.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEvent.cs" />
-    <Compile Include="NachoCore\Model\McContactScore.cs" />
-    <Compile Include="NachoCore\Model\McEmailMessageScore.cs" />
     <Compile Include="NachoCore\Utils\Scoring.cs" />
     <Compile Include="NachoCore\Brain\NcEmailAnalyzer.cs" />
-    <Compile Include="NachoCore\Model\McDependency.cs" />
     <Compile Include="NachoCore\Brain\NcTimeVariance.cs" />
     <Compile Include="NachoCore\Brain\NcScoreCombiner.cs" />
     <Compile Include="NachoCore\Utils\IStopwatch.cs" />
@@ -300,6 +290,26 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress.cs" />
     <Compile Include="NachoCore\Model\McMapContactEmail.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessageCategory.cs" />
+    <Compile Include="NachoCore\Model\McAbstrObject.cs" />
+    <Compile Include="NachoCore\Model\McAbstrObjectPerAcc.cs" />
+    <Compile Include="NachoCore\Model\McAbstrFolderEntry.cs" />
+    <Compile Include="NachoCore\Model\McAbstrItem.cs" />
+    <Compile Include="NachoCore\Model\McAbstrCalendarRoot.cs" />
+    <Compile Include="NachoCore\Model\McCalendar.cs" />
+    <Compile Include="NachoCore\Model\McException.cs" />
+    <Compile Include="NachoCore\Model\McAttendee.cs" />
+    <Compile Include="NachoCore\Model\McCalendarCategory.cs" />
+    <Compile Include="NachoCore\Model\McTimeZone.cs" />
+    <Compile Include="NachoCore\Model\McAbstrContactAttribute.cs" />
+    <Compile Include="NachoCore\Model\McContactDateAttribute.cs" />
+    <Compile Include="NachoCore\Model\McContactStringAttribute.cs" />
+    <Compile Include="NachoCore\Model\McContactAddressAttribute.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessageDependency.cs" />
+    <Compile Include="NachoCore\Model\McContact\McContact.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessage.cs" />
+    <Compile Include="NachoCore\Model\McContact\ContactScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\EmailMessageScore.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -314,6 +324,7 @@
     <None Include="..\native.Android\libs\x86\libnachoplatform.so">
       <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
     </None>
+    <None Include="NachoCore\Model\README.md" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\Main.axml" />
@@ -459,6 +470,8 @@
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="NachoCore\Mockables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
+    <Folder Include="NachoCore\Model\McContact\" />
+    <Folder Include="NachoCore\Model\McEmailMessage\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

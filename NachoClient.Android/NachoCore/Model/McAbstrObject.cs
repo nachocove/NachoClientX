@@ -9,7 +9,7 @@ using NachoCore.Utils;
 namespace NachoCore.Model
 {
     // If SQLite.Net would tolerate an abstract class, we'd be one.
-    public class McObject
+    public class McAbstrObject
     {
         /// OperationCaptures holds a set of NcCapture for one type of operations 
         /// (Insert, Delete, or Update) for all tables. There is one NcCapture
@@ -77,7 +77,7 @@ namespace NachoCore.Model
         // Optimistic concurrency control
         public DateTime LastModified { get; set; }
 
-        public McObject ()
+        public McAbstrObject ()
         {
             Id = 0;
             LastModified = DateTime.MinValue;
@@ -152,7 +152,7 @@ namespace NachoCore.Model
             return rc;
         }
 
-        public static T QueryById<T> (int id) where T : McObject, new()
+        public static T QueryById<T> (int id) where T : McAbstrObject, new()
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +

@@ -7,7 +7,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class McFolder : McFolderEntry
+    public class McFolder : McAbstrFolderEntry
     {
         [Indexed]
         public bool IsClientOwned { get; set; }
@@ -212,7 +212,7 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McFolderEntry
+        public static List<McFolder> QueryByFolderEntryId<T> (int accountId, int folderEntryId) where T : McAbstrFolderEntry
         {
             var getClassCode = typeof(T).GetMethod ("GetClassCode");
             NcAssert.True (null != getClassCode);
@@ -298,27 +298,27 @@ namespace NachoCore.Model
             foreach (var map in contentMaps) {
                 map.Delete ();
                 switch (map.ClassCode) {
-                case McItem.ClassCodeEnum.Email:
-                    var emailMessage = McFolderEntry.QueryById<McEmailMessage> (map.FolderEntryId);
+                case McAbstrItem.ClassCodeEnum.Email:
+                    var emailMessage = McAbstrFolderEntry.QueryById<McEmailMessage> (map.FolderEntryId);
                     emailMessage.Delete ();
                     break;
 
-                case McItem.ClassCodeEnum.Calendar:
-                    var cal = McFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
+                case McAbstrItem.ClassCodeEnum.Calendar:
+                    var cal = McAbstrFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
                     cal.Delete ();
                     break;
 
-                case McItem.ClassCodeEnum.Contact:
-                    var contact = McFolderEntry.QueryById<McContact> (map.FolderEntryId);
+                case McAbstrItem.ClassCodeEnum.Contact:
+                    var contact = McAbstrFolderEntry.QueryById<McContact> (map.FolderEntryId);
                     contact.Delete ();
                     break;
 
-                case McItem.ClassCodeEnum.Tasks:
-                    var task = McFolderEntry.QueryById<McTask> (map.FolderEntryId);
+                case McAbstrItem.ClassCodeEnum.Tasks:
+                    var task = McAbstrFolderEntry.QueryById<McTask> (map.FolderEntryId);
                     task.Delete ();
                     break;
 
-                case McItem.ClassCodeEnum.Folder:
+                case McAbstrItem.ClassCodeEnum.Folder:
                     NcAssert.True (false);
                     break;
 
@@ -336,14 +336,14 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        private static ClassCodeEnum ClassCodeEnumFromObj (McFolderEntry obj)
+        private static ClassCodeEnum ClassCodeEnumFromObj (McAbstrFolderEntry obj)
         {
             var getClassCode = obj.GetType ().GetMethod ("GetClassCode");
             NcAssert.True (null != getClassCode);
             return (ClassCodeEnum)getClassCode.Invoke (null, new object[]{ });
         }
 
-        public NcResult Link (McItem obj)
+        public NcResult Link (McAbstrItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
             NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
@@ -362,7 +362,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public static NcResult UnlinkAll (McItem obj)
+        public static NcResult UnlinkAll (McAbstrItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
             var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (obj.AccountId, obj.Id, classCode);
@@ -372,7 +372,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult Unlink (McItem obj)
+        public NcResult Unlink (McAbstrItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
@@ -409,7 +409,7 @@ namespace NachoCore.Model
 
         public static ClassCodeEnum GetClassCode ()
         {
-            return McFolderEntry.ClassCodeEnum.Folder;
+            return McAbstrFolderEntry.ClassCodeEnum.Folder;
         }
 
         public static List<McFolder> SearchFolders(int accountId, string searchFor)

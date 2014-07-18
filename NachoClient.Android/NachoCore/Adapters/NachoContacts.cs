@@ -10,9 +10,9 @@ namespace NachoCore
 {
     public class NachoContacts : INachoContacts
     {
-        List<McContactIndex> list;
+        List<NcContactIndex> list;
 
-        public NachoContacts (List<McContactIndex> list)
+        public NachoContacts (List<NcContactIndex> list)
         {
             this.list = list;
         }
@@ -22,7 +22,7 @@ namespace NachoCore
             return list.Count;
         }
 
-        public McContactIndex GetContactIndex(int i)
+        public NcContactIndex GetContactIndex(int i)
         {
             return list.ElementAt (i);
         }
@@ -36,7 +36,7 @@ namespace NachoCore
             return 0;
         }
 
-        public McContactIndex GetSearchResult(int searchIndex)
+        public NcContactIndex GetSearchResult(int searchIndex)
         {
             return null;
         }

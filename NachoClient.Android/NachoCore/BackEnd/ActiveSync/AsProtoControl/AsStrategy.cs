@@ -448,15 +448,15 @@ namespace NachoCore.ActiveSync
         private List<McFolder> AllSyncedEmailAndCalendarFolders ()
         {
             return AllSyncedFolders ().Where (f => 
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Email ||
-            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Calendar).ToList ();
+                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Email ||
+            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Calendar).ToList ();
         }
 
         private List<McFolder> AllSyncedContactsTasksFolders ()
         {
             return AllSyncedFolders ().Where (f => 
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Contact ||
-            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McFolderEntry.ClassCodeEnum.Tasks).ToList ();
+                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Contact ||
+            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Tasks).ToList ();
         }
 
         public void ReportSyncResult (List<McFolder> folders)
@@ -623,7 +623,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McItem, string>>> FetchKit ()
+        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
         {
             // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
             var fetchSize = KBaseFetchSize;
@@ -653,7 +653,7 @@ namespace NachoCore.ActiveSync
                 var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, fetchSize);
                 pendings.AddRange (tasks);
             }
-            List<Tuple<McItem, string>> prefetches = new List<Tuple<McItem, string>> ();
+            List<Tuple<McAbstrItem, string>> prefetches = new List<Tuple<McAbstrItem, string>> ();
             var remaining = fetchSize - pendings.Count;
 
             // Address background fetching if no immediate user need. TODO: we need to measure performance before we let BG fetching degrade latency.
@@ -663,7 +663,7 @@ namespace NachoCore.ActiveSync
                     foreach (var folder in folders) {
                         var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
                         foreach (var email in emails) {
-                            prefetches.Add (Tuple.Create ((McItem)email, folder.ServerId));
+                            prefetches.Add (Tuple.Create ((McAbstrItem)email, folder.ServerId));
                             if (remaining <= prefetches.Count) {
                                 break;
                             }

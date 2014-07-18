@@ -10,7 +10,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public partial class McContact : McItem, IScorable
+    public partial class McContact : McAbstrItem, IScorable
     {   
         // Score version of this object
         public int ScoreVersion { get; set; }
@@ -207,7 +207,7 @@ namespace NachoCore.Model
         }
     }
 
-    public class McContactScoreSyncInfo : McObject 
+    public class McContactScoreSyncInfo : McAbstrObject 
     {
         // Id of the corresponding McContact
         [Indexed]

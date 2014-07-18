@@ -38,7 +38,7 @@ namespace NachoCore.ActiveSync
 
             mcContact.AccountId = folder.AccountId;
 
-            var existingContact = McFolderEntry.QueryByServerId<McContact> (folder.AccountId, mcContact.ServerId);
+            var existingContact = McAbstrFolderEntry.QueryByServerId<McContact> (folder.AccountId, mcContact.ServerId);
 
             if (null == existingContact) {
                 var ur = mcContact.Insert ();

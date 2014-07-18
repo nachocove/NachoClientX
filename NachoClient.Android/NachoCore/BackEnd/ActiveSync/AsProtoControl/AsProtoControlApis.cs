@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
     {
         public override void UnblockPendingCmd (int pendingId)
         {
-            var pending = McObject.QueryById<McPending> (pendingId);
+            var pending = McAbstrObject.QueryById<McPending> (pendingId);
             if (null != pending) {
                 NcAssert.True (Account.Id == pending.AccountId);
                 NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
@@ -30,7 +30,7 @@ namespace NachoCore.ActiveSync
 
         public override void DeletePendingCmd (int pendingId)
         {
-            var pending = McObject.QueryById<McPending> (pendingId);
+            var pending = McAbstrObject.QueryById<McPending> (pendingId);
             if (null != pending) {
                 NcAssert.True (Account.Id == pending.AccountId);
                 pending.ResolveAsCancelled ();
@@ -62,7 +62,7 @@ namespace NachoCore.ActiveSync
         public override string SendEmailCmd (int emailMessageId)
         {
             Log.Info (Log.LOG_AS, "SendEmailCmd({0})", emailMessageId);
-            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
                 return null;
             }
@@ -81,8 +81,8 @@ namespace NachoCore.ActiveSync
 
         public override string SendEmailCmd (int emailMessageId, int calId)
         {
-            var cal = McObject.QueryById<McCalendar> (calId);
-            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            var cal = McAbstrObject.QueryById<McCalendar> (calId);
+            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == cal || null == emailMessage) {
                 return null;
             }
@@ -135,9 +135,9 @@ namespace NachoCore.ActiveSync
             }
             McFolder folder;
 
-            var refdEmailMessage = McObject.QueryById<McEmailMessage> (refdEmailMessageId);
-            var newEmailMessage = McObject.QueryById<McEmailMessage> (newEmailMessageId);
-            folder = McObject.QueryById<McFolder> (folderId);
+            var refdEmailMessage = McAbstrObject.QueryById<McEmailMessage> (refdEmailMessageId);
+            var newEmailMessage = McAbstrObject.QueryById<McEmailMessage> (newEmailMessageId);
+            folder = McAbstrObject.QueryById<McFolder> (folderId);
             if (null == refdEmailMessage || null == newEmailMessage || null == folder) {
                 return null;
             }
@@ -172,7 +172,7 @@ namespace NachoCore.ActiveSync
 
         public override string DeleteEmailCmd (int emailMessageId)
         {
-            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
                 return null;
             }
@@ -204,7 +204,7 @@ namespace NachoCore.ActiveSync
         }
 
         private string MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
-                                    McItem item, McFolder srcFolder, int destFolderId)
+                                    McAbstrItem item, McFolder srcFolder, int destFolderId)
         {
             if (null == srcFolder) {
                 return null;
@@ -212,7 +212,7 @@ namespace NachoCore.ActiveSync
 
             NcAssert.True (srcFolder.IsClientOwned != true, "Back end should not modify client-owned folders");
 
-            var destFolder = McObject.QueryById<McFolder> (destFolderId);
+            var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
             if (null == destFolder) {
                 return null;
             }
@@ -240,7 +240,7 @@ namespace NachoCore.ActiveSync
 
         public override string MoveEmailCmd (int emailMessageId, int destFolderId)
         {
-            var emailMessage = McObject.QueryById<McEmailMessage> (emailMessageId);
+            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
                 return null;
             }
@@ -253,10 +253,10 @@ namespace NachoCore.ActiveSync
         private bool GetItemAndFolder<T> (int itemId, 
                                           out T item,
                                           int folderId,
-                                          out McFolder folder) where T : McItem, new()
+                                          out McFolder folder) where T : McAbstrItem, new()
         {
             folder = null;
-            item = McObject.QueryById<T> (itemId);
+            item = McAbstrObject.QueryById<T> (itemId);
             if (null == item) {
                 return false;
             }
@@ -389,7 +389,7 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
                 return null;
             }
-            if (McItem.BodyStateEnum.Whole_0 == emailMessage.BodyState) {
+            if (McAbstrItem.BodyStateEnum.Whole_0 == emailMessage.BodyState) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -407,14 +407,14 @@ namespace NachoCore.ActiveSync
 
         public override string DnldAttCmd (int attId)
         {
-            var att = McObject.QueryById<McAttachment> (attId);
+            var att = McAbstrObject.QueryById<McAttachment> (attId);
             if (null == att) {
                 return null;
             }
             if (att.IsDownloaded) {
                 return null;
             }
-            var emailMessage = McObject.QueryById<McEmailMessage> (att.EmailMessageId);
+            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (att.EmailMessageId);
             if (null == emailMessage) {
                 return null;
             }
@@ -456,7 +456,7 @@ namespace NachoCore.ActiveSync
 
         public override string UpdateCalCmd (int calId)
         {
-            var cal = McObject.QueryById<McCalendar> (calId);
+            var cal = McAbstrObject.QueryById<McCalendar> (calId);
             if (null == cal) {
                 return null;
             }
@@ -485,7 +485,7 @@ namespace NachoCore.ActiveSync
 
         public override string DeleteCalCmd (int calId)
         {
-            var cal = McObject.QueryById<McCalendar> (calId);
+            var cal = McAbstrObject.QueryById<McCalendar> (calId);
             if (null == cal) {
                 return null;
             }
@@ -517,7 +517,7 @@ namespace NachoCore.ActiveSync
 
         public override string MoveCalCmd (int calId, int destFolderId)
         {
-            var cal = McObject.QueryById<McCalendar> (calId);
+            var cal = McAbstrObject.QueryById<McCalendar> (calId);
             if (null == cal) {
                 return null;
             }
@@ -534,7 +534,7 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
                 return null;
             }
-            if (McItem.BodyStateEnum.Whole_0 == cal.BodyState) {
+            if (McAbstrItem.BodyStateEnum.Whole_0 == cal.BodyState) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -573,7 +573,7 @@ namespace NachoCore.ActiveSync
 
         public override string UpdateContactCmd (int contactId)
         {
-            var contact = McObject.QueryById<McContact> (contactId);
+            var contact = McAbstrObject.QueryById<McContact> (contactId);
             if (null == contact) {
                 return null;
             }
@@ -601,7 +601,7 @@ namespace NachoCore.ActiveSync
 
         public override string DeleteContactCmd (int contactId)
         {
-            var contact = McObject.QueryById<McContact> (contactId);
+            var contact = McAbstrObject.QueryById<McContact> (contactId);
             if (null == contact) {
                 return null;
             }
@@ -633,7 +633,7 @@ namespace NachoCore.ActiveSync
 
         public override string MoveContactCmd (int contactId, int destFolderId)
         {
-            var contact = McObject.QueryById<McContact> (contactId);
+            var contact = McAbstrObject.QueryById<McContact> (contactId);
             if (null == contact) {
                 return null;
             }
@@ -650,7 +650,7 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder)) {
                 return null;
             }
-            if (McItem.BodyStateEnum.Whole_0 == contact.BodyState) {
+            if (McAbstrItem.BodyStateEnum.Whole_0 == contact.BodyState) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -689,7 +689,7 @@ namespace NachoCore.ActiveSync
 
         public override string UpdateTaskCmd (int taskId)
         {
-            var task = McObject.QueryById<McTask> (taskId);
+            var task = McAbstrObject.QueryById<McTask> (taskId);
             if (null == task) {
                 return null;
             }
@@ -717,7 +717,7 @@ namespace NachoCore.ActiveSync
 
         public override string DeleteTaskCmd (int taskId)
         {
-            var task = McObject.QueryById<McTask> (taskId);
+            var task = McAbstrObject.QueryById<McTask> (taskId);
             if (null == task) {
                 return null;
             }
@@ -749,7 +749,7 @@ namespace NachoCore.ActiveSync
 
         public override string MoveTaskCmd (int taskId, int destFolderId)
         {
-            var task = McObject.QueryById<McTask> (taskId);
+            var task = McAbstrObject.QueryById<McTask> (taskId);
             if (null == task) {
                 return null;
             }
@@ -766,7 +766,7 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder)) {
                 return null;
             }
-            if (McItem.BodyStateEnum.Whole_0 == task.BodyState) {
+            if (McAbstrItem.BodyStateEnum.Whole_0 == task.BodyState) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -833,7 +833,7 @@ namespace NachoCore.ActiveSync
                 destFldServerId = "0";
             } else {
                 // Sub-folder case.
-                var destFld = McObject.QueryById<McFolder> (destFolderId);
+                var destFld = McAbstrObject.QueryById<McFolder> (destFolderId);
                 if (null == destFld) {
                     return null;
                 }
@@ -877,7 +877,7 @@ namespace NachoCore.ActiveSync
 
         public override string DeleteFolderCmd (int folderId)
         {
-            var folder = McObject.QueryById<McFolder> (folderId);
+            var folder = McAbstrObject.QueryById<McFolder> (folderId);
             NcAssert.True (folder.IsClientOwned == false, "Should not delete folders in client-owned folders.");
             NcAssert.True (!folder.IsAwaitingDelete, "Should not try to delete folder that has been already deleted.");
 
@@ -912,8 +912,8 @@ namespace NachoCore.ActiveSync
 
         public override string MoveFolderCmd (int folderId, int destFolderId)
         {
-            var folder = McObject.QueryById<McFolder> (folderId);
-            var destFolder = McObject.QueryById<McFolder> (destFolderId);
+            var folder = McAbstrObject.QueryById<McFolder> (folderId);
+            var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
             NcAssert.True (folder.IsClientOwned == false, "BackEnd should not move client-owned folders");
             NcAssert.True (destFolder.IsClientOwned == false, "BackEnd should not modify client-owned folders");
 
@@ -945,7 +945,7 @@ namespace NachoCore.ActiveSync
 
         public override string RenameFolderCmd (int folderId, string displayName)
         {
-            var folder = McObject.QueryById<McFolder> (folderId);
+            var folder = McAbstrObject.QueryById<McFolder> (folderId);
             NcAssert.True (folder.IsClientOwned == false, "BackEnd cannot modify client-owned folders");
 
             folder.DisplayName = displayName;

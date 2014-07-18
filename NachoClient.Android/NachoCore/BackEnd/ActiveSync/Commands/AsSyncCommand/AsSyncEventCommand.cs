@@ -59,9 +59,9 @@ namespace NachoCore.ActiveSync
             McCalendar oldItem = null;
 
             if (isAdd) {
-                oldItem = McItem.QueryByClientId<McCalendar> (folder.AccountId, newItem.ClientId);
+                oldItem = McAbstrItem.QueryByClientId<McCalendar> (folder.AccountId, newItem.ClientId);
             } else {
-                oldItem = McFolderEntry.QueryByServerId<McCalendar> (folder.AccountId, newItem.ServerId);
+                oldItem = McAbstrFolderEntry.QueryByServerId<McCalendar> (folder.AccountId, newItem.ServerId);
             }
 
             // If there is no match, insert the new item.
@@ -97,7 +97,7 @@ namespace NachoCore.ActiveSync
         /// <param name="parentType">CALENDAR or EXCEPTION</param>
         /// <param name="parentId">Id field from McCalendar or NcException</param>
         /// FIXME - move to McAttendee.
-        public static List<McAttendee> GetAttendees (McCalendarRoot r)
+        public static List<McAttendee> GetAttendees (McAbstrCalendarRoot r)
         {
             NcAssert.True (r.Id > 0, "r.Id > 0");
             string query = "select * from McAttendee where parentType = ? and parentId = ?";
@@ -108,7 +108,7 @@ namespace NachoCore.ActiveSync
 
         /// <param name="parentType">CALENDAR or EXCEPTION</param>
         /// <param name="parentId">Id field from McCalendar or NcException</param>
-        public static List<McCalendarCategory> GetCategories (McCalendarRoot r)
+        public static List<McCalendarCategory> GetCategories (McAbstrCalendarRoot r)
         {
             NcAssert.True (r.Id > 0, "r.Id > 0");
             string query = "select * from McCalendarCategory where parentType = ? and parentId = ?";
@@ -149,7 +149,7 @@ namespace NachoCore.ActiveSync
         /// of deleting the old and inserting the new.
         /// </summary>
         // TODO: Handle errors
-        public static void MergeAttendees (McCalendarRoot c)
+        public static void MergeAttendees (McAbstrCalendarRoot c)
         {
             // Get the old list
             NcAssert.NotNull (c, "McCalendarRoot c");
@@ -182,7 +182,7 @@ namespace NachoCore.ActiveSync
         /// </summary>
         /// <param name="c">C.</param>
         // TODO: Handle errors
-        public static void MergeCategories (McCalendarRoot c)
+        public static void MergeCategories (McAbstrCalendarRoot c)
         {
             // Get the old list
             NcAssert.NotNull (c, "McCalendarRoot c");

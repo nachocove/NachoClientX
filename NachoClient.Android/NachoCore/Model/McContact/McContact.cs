@@ -8,7 +8,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class McContactIndex
+    public class NcContactIndex
     {
         public int Id { set; get; }
 
@@ -18,7 +18,7 @@ namespace NachoCore.Model
         }
     }
 
-    public class McContactStringIndex
+    public class NcContactStringIndex
     {
         public int Id { set; get; }
 
@@ -32,7 +32,7 @@ namespace NachoCore.Model
         }
     }
 
-    public partial class McContact : McItem
+    public partial class McContact : McAbstrItem
     {
         /// <summary>
         /// Contacts schema
@@ -44,7 +44,7 @@ namespace NachoCore.Model
         public const int minVipScore = 1000000;
 
         /// ActiveSync or Device
-        public McItem.ItemSource Source { get; set; }
+        public McAbstrItem.ItemSource Source { get; set; }
 
         /// The collection of important dates associated with the contact
         private List<McContactDateAttribute> DbDates;
@@ -144,98 +144,9 @@ namespace NachoCore.Model
 
         public static ClassCodeEnum GetClassCode ()
         {
-            return McFolderEntry.ClassCodeEnum.Contact;
+            return McAbstrFolderEntry.ClassCodeEnum.Contact;
         }
-    }
 
-    /// Addresses associated with the contact
-    public class McContactAddress : McObject
-    {
-        [Indexed]
-        public Int64 ContactId { get; set; }
-
-        /// iOS and Android allow custom fields
-        public bool UserDefined { get; set; }
-    }
-
-    /// Used to create lists of name/value pairs
-    public class McContactAttribute : McObject
-    {
-        [Indexed]
-        public Int64 ContactId { get; set; }
-
-        /// Values are created & displayed in a certain order
-        public int Order { get; set; }
-
-        /// Field name
-        public string Name { get; set; }
-
-        /// User-defined label if one exists
-        public string Label { get; set; }
-
-        public McContact GetContact ()
-        {
-            return NcModel.Instance.Db.Get<McContact> (ContactId);
-        }
-    }
-
-    /// <summary>
-    /// Date attributes such as birthdays and anniversaries
-    /// </summary>
-    public class McContactDateAttribute : McContactAttribute
-    {
-        public DateTime Value { get; set; }
-    }
-
-    /// <summary>
-    /// Data types stored in the string table.
-    /// </summary>
-    public enum McContactStringType
-    {
-        Relationship,
-        EmailAddress,
-        PhoneNumber,
-        IMAddress,
-        Category,
-        Address,
-        Date,
-    }
-
-    /// <summary>
-    /// String attributes, such as email, phone numbers, im addresses
-    /// </summary>
-    public class McContactStringAttribute : McContactAttribute
-    {
-        [Indexed]
-        public McContactStringType Type { get; set; }
-
-        [Indexed]
-        public string Value { get; set; }
-    }
-
-    /// <summary>
-    /// Address attributes, like business or home address
-    /// </summary>
-    public class McContactAddressAttribute : McContactAttribute
-    {
-        /// Street address of the contact's alternate address
-        public string Street { get; set; }
-
-        /// City for the contact's alternate address
-        public string City { get; set; }
-
-        /// State of the contact's alternate address
-        public string State { get; set; }
-
-        /// Country/region of the contact's alternate address
-        public string Country { get; set; }
-
-        /// Postal code of the contact's alternate address
-        public string PostalCode { get; set; }
-    }
-
-    public partial class McContact
-    {
         /// <summary>
         /// Initializes a new instance of the <see cref="NachoCore.Model.McContact"/> class.
         /// By convention, the lists are always initialized because C# is stupid about nulls.
@@ -252,7 +163,7 @@ namespace NachoCore.Model
             DbCategories = new List<McContactStringAttribute> ();
         }
 
-        public McContact (McItem.ItemSource source) : this ()
+        public McContact (McAbstrItem.ItemSource source) : this ()
         {
             Source = source;
         }
@@ -562,10 +473,7 @@ namespace NachoCore.Model
                 list.Add (newbie);
             }
         }
-    }
 
-    partial class McContact
-    {
         /// <summary>
         ///        Db.CreateTable<McContact> ();
         ///        Db.CreateTable<McContactDateAttribute> ();
@@ -994,7 +902,7 @@ namespace NachoCore.Model
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
                                               " m.FolderId = ? ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress, McFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
+                                              accountId, McContactStringType.EmailAddress, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
             return contactList;
         }
 
@@ -1014,13 +922,13 @@ namespace NachoCore.Model
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
                                               " f.IsClientOwned = false ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress, McFolderEntry.ClassCodeEnum.Contact).ToList ();
+                                              accountId, McContactStringType.EmailAddress, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
             return contactList;
         }
 
-        public static List<McContactIndex> QueryAllContactItems (int accountId)
+        public static List<NcContactIndex> QueryAllContactItems (int accountId)
         {
-            return NcModel.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1029,12 +937,12 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ?  " +
                 " ORDER BY c.FirstName",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Contact);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
-        public static List<McContactIndex> QueryContactItems (int accountId, int folderId)
+        public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1044,12 +952,12 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? " +
                 " ORDER BY c.FirstName",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, folderId);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
         }
 
-        public static List<McContactIndex> QueryAllHotContactItems (int accountId)
+        public static List<NcContactIndex> QueryAllHotContactItems (int accountId)
         {
-            return NcModel.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1059,7 +967,7 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " c.Score > ? " +
                 " ORDER BY c.Score DESC, c.FirstName",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Contact, minHotScore);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, minHotScore);
         }
 
         public static List<McContactStringAttribute> SearchAllContactItems (int accountId, string searchFor)
@@ -1089,7 +997,7 @@ namespace NachoCore.Model
                     "     s.Value LIKE ? OR s.Value LIKE ? " +
                     " ) " +
                     " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                    McFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, email1, email2);
+                    McAbstrFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, email1, email2);
             } else {
                 return NcModel.Instance.Db.Query<McContactStringAttribute> (
                     "Select s.* FROM MCContactStringAttribute AS s  " +
@@ -1103,7 +1011,7 @@ namespace NachoCore.Model
                     " c.AccountId=m.AccountId AND " +
                     " ( c.FirstName LIKE ? AND c.LastName LIKE ? ) " +
                     " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                    McFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, firstName);
+                    McAbstrFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, firstName);
             }
         }
 

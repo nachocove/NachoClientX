@@ -11,7 +11,7 @@ namespace NachoClient.iOS
 {
     public class TaskTableSource : UITableViewDataSource
     {
-        List<McTaskIndex> tasks;
+        List<NcTaskIndex> tasks;
         public UIColor cellTextColor = UIColor.Black;
 
         public TaskTableSource ()

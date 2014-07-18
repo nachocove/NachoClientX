@@ -9,7 +9,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public partial class McEmailMessage : McItem, IScorable
+    public partial class McEmailMessage : McAbstrItem, IScorable
     {
         public int ScoreVersion { get; set; }
 
@@ -366,7 +366,7 @@ namespace NachoCore.Model
         }
     }
 
-    public class McEmailMessageScoreSyncInfo : McObject
+    public class McEmailMessageScoreSyncInfo : McAbstrObject
     {
         // Id of the corresponding McEmailMessage
         [Indexed]

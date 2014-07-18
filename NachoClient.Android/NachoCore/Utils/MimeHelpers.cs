@@ -122,7 +122,7 @@ namespace NachoCore.Utils
                 return null;
             }
             if (McBody.MIME == message.GetBodyType()) {
-                if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+                if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
                     return null;
                 }
                 using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
@@ -159,7 +159,7 @@ namespace NachoCore.Utils
 
         static public string ExtractTextPart (McEmailMessage message)
         {
-            if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+            if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
                 return "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty();
             }
 

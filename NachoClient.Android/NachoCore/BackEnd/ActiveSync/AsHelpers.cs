@@ -13,7 +13,7 @@ namespace NachoCore.ActiveSync
 {
     public static class AsExtensions
     {
-        public static void ApplyAsXmlBody (this McItem item, XElement xmlBody)
+        public static void ApplyAsXmlBody (this McAbstrItem item, XElement xmlBody)
         {
             var bodyType = xmlBody.ElementAnyNs (Xml.AirSyncBase.Type).Value.ToInt ();
             var xmlData = xmlBody.ElementAnyNs (Xml.AirSyncBase.Data);
@@ -35,10 +35,10 @@ namespace NachoCore.ActiveSync
                     item.BodyId = body.Id;
                 }
                 item.BodyType = bodyType;
-                item.BodyState = (null == xmlTruncated) ? McItem.BodyStateEnum.Whole_0 : McItem.BodyStateEnum.Truncated_1;
+                item.BodyState = (null == xmlTruncated) ? McAbstrItem.BodyStateEnum.Whole_0 : McAbstrItem.BodyStateEnum.Truncated_1;
             } else {
                 item.BodyId = 0;
-                item.BodyState = McItem.BodyStateEnum.Missing_2;
+                item.BodyState = McAbstrItem.BodyStateEnum.Missing_2;
             }
         }
 

@@ -13,7 +13,7 @@ namespace NachoCore.Model
     /// updated, this table can quickly list all objects (of a certain type)
     /// that needs to be updated. 
     /// 
-    public class McEmailMessageDependency : McObject
+    public class McEmailMessageDependency : McAbstrObject
     {
         [Indexed]
         public Int64 ContactId { get; set; }

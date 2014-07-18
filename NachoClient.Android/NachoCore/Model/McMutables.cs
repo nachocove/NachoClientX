@@ -7,7 +7,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McMutables : McObject
+    public class McMutables : McAbstrObject
     {
         /* These are key-value mutable settings to be used by any module/class.
          * For some settings, there will be distinct objects in the db (e.g. McServer).

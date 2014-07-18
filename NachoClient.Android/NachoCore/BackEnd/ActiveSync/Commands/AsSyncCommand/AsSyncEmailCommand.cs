@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
             McEmailMessage emailMessage = r.GetValue<McEmailMessage> ();
             bool justCreated = false;
 
-            var eMsg = McFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, emailMessage.ServerId);
+            var eMsg = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, emailMessage.ServerId);
             if (null == eMsg) {
                 justCreated = true;
                 emailMessage.AccountId = folder.AccountId;

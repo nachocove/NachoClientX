@@ -174,7 +174,7 @@ namespace Test.iOS
     {
         public const string defaultServerId = "5";
 
-        public static T CreateUniqueItem<T> (int accountId = defaultAccountId, string serverId = defaultServerId) where T : McItem, new ()
+        public static T CreateUniqueItem<T> (int accountId = defaultAccountId, string serverId = defaultServerId) where T : McAbstrItem, new ()
         {
             T newItem = new T {
                 AccountId = accountId,
@@ -184,7 +184,7 @@ namespace Test.iOS
             return newItem;
         }
 
-        public static McAttachment CreateAttachment (McItem item, int accountId = defaultAccountId, string displayName = "")
+        public static McAttachment CreateAttachment (McAbstrItem item, int accountId = defaultAccountId, string displayName = "")
         {
             var att =  new McAttachment {
                 AccountId = accountId,
@@ -195,7 +195,7 @@ namespace Test.iOS
             return att;
         }
 
-        public static void ItemsAreEqual (McItem item1, McItem item2)
+        public static void ItemsAreEqual (McAbstrItem item1, McAbstrItem item2)
         {
             Assert.AreEqual (item1.Id, item2.Id, "Equivalent items should have the same Id");
             Assert.AreEqual (item1.AccountId, item2.AccountId, "Equivalent items should have the same AccountId");

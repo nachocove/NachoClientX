@@ -4,7 +4,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McAccount : McObject
+    public class McAccount : McAbstrObject
     {
         [Unique]
         public string EmailAddr { get; set; }

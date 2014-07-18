@@ -14,13 +14,13 @@ namespace NachoCore
         private BEActionFunc BEAction;
         private NcResult.SubKindEnum SubKindMatchS, SubKindMatchF;
         private string Token;
-        private McObjectPerAccount Subject;
-        private Action<McObjectPerAccount, NcResult> OnSuccess;
-        private Action<McObjectPerAccount, NcResult> OnFailure;
+        private McAbstrObjectPerAcc Subject;
+        private Action<McAbstrObjectPerAcc, NcResult> OnSuccess;
+        private Action<McAbstrObjectPerAcc, NcResult> OnFailure;
 
-        public NcFetchAssist (McObjectPerAccount myObj, 
-                              Action<McObjectPerAccount, NcResult> onSuccess,
-                              Action<McObjectPerAccount, NcResult> onFailure)
+        public NcFetchAssist (McAbstrObjectPerAcc myObj, 
+                              Action<McAbstrObjectPerAcc, NcResult> onSuccess,
+                              Action<McAbstrObjectPerAcc, NcResult> onFailure)
         {
             Subject = myObj;
             // TODO: implement other classes as we need them.
