@@ -34,6 +34,7 @@ namespace Test.Common
         {
             CurrentDateTime = new DateTime (1, 1, 1, 0, 0, 0);
             NcTimer.TimerClass = typeof(MockTimer);
+            NcTimer.GetCurrentTime = MockGetCurrentDateTime;
             NcTimeVariance.GetCurrentDateTime = MockGetCurrentDateTime;
             CallbackState = 0;
             Adjustment = 0.0;
@@ -47,6 +48,7 @@ namespace Test.Common
         {
             MockTimer.Stop ();
             NcTimer.TimerClass = typeof(PlatformTimer);
+            NcTimer.GetCurrentTime = NcTimer.DefaultGetCurrentTime;
             NcTimeVariance.GetCurrentDateTime = NcTimeVariance.PlatformGetCurrentDateTime;
         }
 
