@@ -15,7 +15,7 @@ namespace NachoClient.iOS
 
     public interface INachoFileChooserParent
     {
-        void SelectFile (INachoFileChooser vc, McObject file);
+        void SelectFile (INachoFileChooser vc, McAbstrObject file);
 
         void DismissChildFileChooser (INachoFileChooser vc);
     }

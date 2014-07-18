@@ -3,7 +3,7 @@ using System.IO;
 
 namespace NachoCore.Model
 {
-    public class McBody : McObject
+    public class McBody : McAbstrObject
     {
         public bool IsValid { get; set; }
 

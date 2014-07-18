@@ -92,13 +92,10 @@
     <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
     <Compile Include="NachoCore\Model\McAccount.cs" />
     <Compile Include="NachoCore\Model\McAttachment.cs" />
-    <Compile Include="NachoCore\Model\McCalendar.cs" />
     <Compile Include="NachoCore\Model\McContact.cs" />
     <Compile Include="NachoCore\Model\McCred.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage.cs" />
     <Compile Include="NachoCore\Model\McFolder.cs" />
-    <Compile Include="NachoCore\Model\McItem.cs" />
-    <Compile Include="NachoCore\Model\McObject.cs" />
     <Compile Include="NachoCore\Model\McPolicy.cs" />
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
     <Compile Include="NachoCore\Model\McServer.cs" />
@@ -108,7 +105,6 @@
     <Compile Include="NachoCore\Utils\NcStateMachine.cs" />
     <Compile Include="NachoCore\Utils\Log.cs" />
     <Compile Include="NachoCore\Utils\MimeHelpers.cs" />
-    <Compile Include="NachoCore\Model\McObjectPerAccount.cs" />
     <Compile Include="NachoCore\Brain\NcMessageThreads.cs" />
     <Compile Include="NachoCore\Brain\NcMessageDeferral.cs" />
     <Compile Include="NachoCore\Model\McPending.cs" />
@@ -187,7 +183,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderDeleteCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs" />
     <Compile Include="NachoCore\Utils\Pretty.cs" />
-    <Compile Include="NachoCore\Model\McFolderEntry.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
@@ -300,6 +295,17 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress.cs" />
     <Compile Include="NachoCore\Model\McMapContactEmail.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessageCategory.cs" />
+    <Compile Include="NachoCore\Model\McAbstrObject.cs" />
+    <Compile Include="NachoCore\Model\McAbstrObjectPerAcc.cs" />
+    <Compile Include="NachoCore\Model\McAbstrFolderEntry.cs" />
+    <Compile Include="NachoCore\Model\McAbstrItem.cs" />
+    <Compile Include="NachoCore\Model\McAbstrCalendarRoot.cs" />
+    <Compile Include="NachoCore\Model\McCalendar.cs" />
+    <Compile Include="NachoCore\Model\McException.cs" />
+    <Compile Include="NachoCore\Model\McAttendee.cs" />
+    <Compile Include="NachoCore\Model\McCalendarCategory.cs" />
+    <Compile Include="NachoCore\Model\McTimeZone.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

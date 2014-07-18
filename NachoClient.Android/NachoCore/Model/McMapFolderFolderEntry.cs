@@ -7,7 +7,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class McMapFolderFolderEntry : McObjectPerAccount
+    public class McMapFolderFolderEntry : McAbstrObjectPerAcc
     {
         [Indexed]
         public int FolderId { get; set; }
@@ -16,7 +16,7 @@ namespace NachoCore.Model
         public int FolderEntryId { get; set; }
 
         [Indexed]
-        public McFolderEntry.ClassCodeEnum ClassCode { get; set; }
+        public McAbstrFolderEntry.ClassCodeEnum ClassCode { get; set; }
 
         public McMapFolderFolderEntry ()
         {
@@ -37,7 +37,7 @@ namespace NachoCore.Model
         }
 
         public static McMapFolderFolderEntry QueryByFolderIdFolderEntryIdClassCode (int accountId, int folderId, int folderEntryId,
-                                                                                    McFolderEntry.ClassCodeEnum classCode)
+                                                                                    McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
                        " mm.AccountId = ? AND " +
@@ -49,7 +49,7 @@ namespace NachoCore.Model
         }
 
         public static List<McMapFolderFolderEntry> QueryByFolderEntryIdClassCode (int accountId, int folderEntryId, 
-            McFolderEntry.ClassCodeEnum classCode)
+            McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
                 " mm.AccountId = ? AND " +

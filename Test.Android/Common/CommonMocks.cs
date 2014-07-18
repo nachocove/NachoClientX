@@ -269,7 +269,7 @@ namespace Test.iOS
             return false;
         }
 
-        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McItem, string>>> FetchKit ()
+        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
         {
             return null;
         }

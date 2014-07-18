@@ -96,19 +96,19 @@ namespace NachoCore.ActiveSync
 
             protected override void ApplyCommandToModel ()
             {
-                McItem item = null;
+                McAbstrItem item = null;
                 switch (ClassCode) {
                 case Xml.AirSync.ClassCode.Email:
-                    item = McFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+                    item = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
                     break;
                 case Xml.AirSync.ClassCode.Calendar:
-                    item = McFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
+                    item = McAbstrFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
                     break;
                 case Xml.AirSync.ClassCode.Contacts:
-                    item = McFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
+                    item = McAbstrFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
                     break;
                 case Xml.AirSync.ClassCode.Tasks:
-                    item = McFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
+                    item = McAbstrFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
                     break;
                 default:
                     Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + ClassCode);

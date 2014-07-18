@@ -36,7 +36,7 @@ namespace NachoCore.Model
         High_2 = 2,
     };
 
-    public class McEmailMessageIndex
+    public class NcEmailMessageIndex
     {
         public int Id { set; get; }
 
@@ -46,18 +46,7 @@ namespace NachoCore.Model
         }
     }
 
-    public partial class McEmailMessageCategory : McObject
-    {
-        /// Parent Calendar or Exception item index.
-        [Indexed]
-        public Int64 ParentId { get; set; }
-
-        /// Name of category
-        [MaxLength (256)]
-        public string Name { get; set; }
-    }
-
-    public partial class McEmailMessage : McItem
+    public partial class McEmailMessage : McAbstrItem
     {
         private const string CrLf = "\r\n";
         private const string ColonSpace = ": ";
@@ -246,12 +235,12 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcDeferUntil < ?",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
-        public static List<McEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
+        public static List<NcEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageIndex> (
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -262,7 +251,7 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " e.FlagUtcDeferUntil < ? " +
                 " ORDER BY e.DateReceived DESC",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int folderId, int limit)
@@ -278,12 +267,12 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " e.BodyState != 0 " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, limit);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, limit);
         }
 
-        public static List<McEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
+        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageIndex> (
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -294,14 +283,14 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " e.FlagUtcDeferUntil < ? " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT 20",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
         /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
-        public static List<McEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
+        public static List<NcEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
         {
-            return NcModel.Instance.Db.Query<McEmailMessageIndex> (
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.IsAwaitingDelete = 0 AND " +
@@ -325,7 +314,7 @@ namespace NachoCore.Model
 
         public static ClassCodeEnum GetClassCode ()
         {
-            return McFolderEntry.ClassCodeEnum.Email;
+            return McAbstrFolderEntry.ClassCodeEnum.Email;
         }
 
         public McContact GetFromContact ()
@@ -429,14 +418,14 @@ namespace NachoCore.Model
 
     public class McEmailMessageThread
     {
-        List<McEmailMessageIndex> thread;
+        List<NcEmailMessageIndex> thread;
 
         public McEmailMessageThread ()
         {
-            thread = new List<McEmailMessageIndex> ();
+            thread = new List<NcEmailMessageIndex> ();
         }
 
-        public void Add (McEmailMessageIndex index)
+        public void Add (NcEmailMessageIndex index)
         {
             thread.Add (index);
         }
@@ -466,7 +455,7 @@ namespace NachoCore.Model
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
         {
-            using (IEnumerator<McEmailMessageIndex> ie = thread.GetEnumerator ()) {
+            using (IEnumerator<NcEmailMessageIndex> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
                     yield return ie.Current.GetMessage ();
                 }
@@ -610,32 +599,6 @@ namespace NachoCore.Model
                 isDeleted = true;
             }
             return returnVal;
-        }
-    }
-
-    public partial class McEmailMessageCategory
-    {
-        public McEmailMessageCategory ()
-        {
-            Id = 0;
-            ParentId = 0;
-            Name = null;
-        }
-
-        public McEmailMessageCategory (string name, int parentId)
-        {
-            Name = name;
-            ParentId = parentId;
-        }
-
-        public McEmailMessageCategory (string name) : this ()
-        {
-            Name = name;
-        }
-
-        public void SetParent (McEmailMessage r)
-        {
-            ParentId = r.Id;
         }
     }
 }

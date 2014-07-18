@@ -22,7 +22,7 @@ namespace NachoCore
         {
             var list = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
             if (null == list) {
-                list = new List<McEmailMessageIndex> ();
+                list = new List<NcEmailMessageIndex> ();
             }
             threadList = NcMessageThreads.ThreadByConversation (list);
         }

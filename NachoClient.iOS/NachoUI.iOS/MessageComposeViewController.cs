@@ -750,7 +750,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// INachoFileChooserParent delegate
         /// </summary>
-        public void SelectFile (INachoFileChooser vc, McObject obj)
+        public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
         {
             // Attachment
             var a = obj as McAttachment;

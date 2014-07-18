@@ -12,7 +12,7 @@ namespace NachoCore.ActiveSync
     public class AsItemOperationsCommand : AsCommand
     {
         private List<McAttachment> Attachments;
-        private List<Tuple<McItem, string>> Prefetches;
+        private List<Tuple<McAbstrItem, string>> Prefetches;
         private static XNamespace AirSyncNs = Xml.AirSync.Ns;
 
         private void ApplyStrategy ()
@@ -54,7 +54,7 @@ namespace NachoCore.ActiveSync
             foreach (var pending in PendingList) {
                 switch (pending.Operation) {
                 case McPending.Operations.AttachmentDownload:
-                    var attachment = McObject.QueryById<McAttachment> (pending.AttachmentId);
+                    var attachment = McAbstrObject.QueryById<McAttachment> (pending.AttachmentId);
                     Attachments.Add (attachment);
                     fetch = new XElement (m_ns + Xml.ItemOperations.Fetch,
                         new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
@@ -175,7 +175,7 @@ namespace NachoCore.ActiveSync
                             var xmlBody = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.Body);
                             var serverId = xmlServerId.Value;
                             var pending = FindPending (null, xmlServerId);
-                            McItem item = null;
+                            McAbstrItem item = null;
                             NcResult.SubKindEnum successInd = NcResult.SubKindEnum.Error_UnknownCommandFailure;
                             McPending.Operations op;
                             if (null == pending) {
@@ -186,19 +186,19 @@ namespace NachoCore.ActiveSync
                             }
                             switch (op) {
                             case McPending.Operations.EmailBodyDownload:
-                                item = McItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
+                                item = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.CalBodyDownload:
-                                item = McItem.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
+                                item = McAbstrItem.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_CalendarBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.ContactBodyDownload:
-                                item = McItem.QueryByServerId<McContact> (BEContext.Account.Id, serverId);
+                                item = McAbstrItem.QueryByServerId<McContact> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_ContactBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.TaskBodyDownload:
-                                item = McItem.QueryByServerId<McTask> (BEContext.Account.Id, serverId);
+                                item = McAbstrItem.QueryByServerId<McTask> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_TaskBodyDownloadSucceeded;
                                 break;
                             default:

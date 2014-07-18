@@ -5,7 +5,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class McMapContactEmail : McObjectPerAccount
+    public class McMapContactEmail : McAbstrObjectPerAcc
     {
         public McMapContactEmail ()
         {

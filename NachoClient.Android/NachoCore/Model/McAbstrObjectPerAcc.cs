@@ -7,7 +7,7 @@ using NachoCore.Utils;
 namespace NachoCore.Model
 {
     // If SQLite.Net would tolerate an abstract class, we'd be one.
-    public class McObjectPerAccount : McObject
+    public class McAbstrObjectPerAcc : McAbstrObject
     {
         [Indexed]
         public int AccountId { get; set; }

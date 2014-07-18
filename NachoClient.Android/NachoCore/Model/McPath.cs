@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
-    public class McPath : McObjectPerAccount
+    public class McPath : McAbstrObjectPerAcc
     {
         [Indexed]
         public string ParentId { get; set; }

@@ -24,7 +24,7 @@ namespace NachoCore
         {
             var list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id);
             if (null == list) {
-                list = new List<McEmailMessageIndex> ();
+                list = new List<NcEmailMessageIndex> ();
             }
             threadList = NcMessageThreads.ThreadByConversation (list);
         }

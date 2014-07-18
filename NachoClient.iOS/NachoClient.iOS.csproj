@@ -290,9 +290,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAttachment.cs">
       <Link>NachoCore\Model\McAttachment.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCalendar.cs">
-      <Link>NachoCore\Model\McCalendar.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McContact.cs">
       <Link>NachoCore\Model\McContact.cs</Link>
     </Compile>
@@ -304,12 +301,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolder.cs">
       <Link>NachoCore\Model\McFolder.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McItem.cs">
-      <Link>NachoCore\Model\McItem.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McObject.cs">
-      <Link>NachoCore\Model\McObject.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPolicy.cs">
       <Link>NachoCore\Model\McPolicy.cs</Link>
@@ -354,9 +345,6 @@
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.cs" />
     <Compile Include="NachoUI.iOS\MessagePriorityViewController.designer.cs">
       <DependentUpon>MessagePriorityViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McObjectPerAccount.cs">
-      <Link>NachoCore\Model\McObjectPerAccount.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPending.cs">
       <Link>NachoCore\Model\McPending.cs</Link>
@@ -582,9 +570,6 @@
       <Link>NachoCore\Utils\Pretty.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\Elements.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFolderEntry.cs">
-      <Link>NachoCore\Model\McFolderEntry.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs</Link>
     </Compile>
@@ -963,6 +948,39 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapContactEmail.cs">
       <Link>NachoCore\Model\McMapContactEmail.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessageCategory.cs">
+      <Link>NachoCore\Model\McEmailMessageCategory.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrObject.cs">
+      <Link>NachoCore\Model\McAbstrObject.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrObjectPerAcc.cs">
+      <Link>NachoCore\Model\McAbstrObjectPerAcc.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFolderEntry.cs">
+      <Link>NachoCore\Model\McAbstrFolderEntry.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrItem.cs">
+      <Link>NachoCore\Model\McAbstrItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrCalendarRoot.cs">
+      <Link>NachoCore\Model\McAbstrCalendarRoot.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAttendee.cs">
+      <Link>NachoCore\Model\McAttendee.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCalendar.cs">
+      <Link>NachoCore\Model\McCalendar.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McCalendarCategory.cs">
+      <Link>NachoCore\Model\McCalendarCategory.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McException.cs">
+      <Link>NachoCore\Model\McException.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McTimeZone.cs">
+      <Link>NachoCore\Model\McTimeZone.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

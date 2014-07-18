@@ -79,7 +79,7 @@ namespace NachoCore.Brain
                 // Create a new gleaned contact.
                 var contact = new McContact () {
                     AccountId = accountId,
-                    Source = McItem.ItemSource.Internal,
+                    Source = McAbstrItem.ItemSource.Internal,
                     RefCount = 1,
                 };
                 // Try to parse the display name into first / middle / last name
@@ -140,7 +140,7 @@ namespace NachoCore.Brain
                 MarkAsGleaned (emailMessage);
                 return;
             }
-            if ((McBody.MIME == emailMessage.BodyType) && (McItem.BodyStateEnum.Whole_0 == emailMessage.BodyState)) {
+            if ((McBody.MIME == emailMessage.BodyType) && (McAbstrItem.BodyStateEnum.Whole_0 == emailMessage.BodyState)) {
                 GleanContactsFromMime (accountId, gleanedFolder, emailMessage);
             } else {
                 GleanContactsFromMcEmailMessage (accountId, gleanedFolder, emailMessage);

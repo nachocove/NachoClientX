@@ -75,12 +75,12 @@ namespace NachoCore.ActiveSync
             foreach (var rw in ReWrites) {
                 switch (rw.ObjAction) {
                 case McPending.ReWrite.ObjActionEnum.ReWriteServerParentIdString:
-                    var maybes = new List<McFolderEntry> ();
-                    maybes.Add (McFolderEntry.QueryByServerId<McFolder> (AccountId, rw.MatchString));
-                    maybes.Add (McFolderEntry.QueryByServerId<McEmailMessage> (AccountId, rw.MatchString));
-                    maybes.Add (McFolderEntry.QueryByServerId<McContact> (AccountId, rw.MatchString));
-                    maybes.Add (McFolderEntry.QueryByServerId<McCalendar> (AccountId, rw.MatchString));
-                    maybes.Add (McFolderEntry.QueryByServerId<McTask> (AccountId, rw.MatchString));
+                    var maybes = new List<McAbstrFolderEntry> ();
+                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McFolder> (AccountId, rw.MatchString));
+                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McEmailMessage> (AccountId, rw.MatchString));
+                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McContact> (AccountId, rw.MatchString));
+                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McCalendar> (AccountId, rw.MatchString));
+                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McTask> (AccountId, rw.MatchString));
                     foreach (var entry in maybes) {
                         if (null != entry) {
                             entry.ServerId = rw.ReplaceString;

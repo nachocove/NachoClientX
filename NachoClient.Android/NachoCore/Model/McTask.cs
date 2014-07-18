@@ -20,7 +20,7 @@ namespace NachoCore.Model
         }
     }
 
-    public class McTask : McItem
+    public class McTask : McAbstrItem
     {
         // FIXME - add categories.
         public bool Complete { set; get; }
@@ -66,7 +66,7 @@ namespace NachoCore.Model
 
         public static ClassCodeEnum GetClassCode ()
         {
-            return McFolderEntry.ClassCodeEnum.Tasks;
+            return McAbstrFolderEntry.ClassCodeEnum.Tasks;
         }
 
         public XElement ToXmlApplicationData ()
@@ -209,7 +209,7 @@ namespace NachoCore.Model
             " m.AccountId = ? AND " +
             " m.ClassCode = ? " +
             " ORDER BY t.UtcDueDate",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Tasks);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Tasks);
         }
 
         public static List<McTaskIndex> QueryTaskItems (int accountId, int folderId)
@@ -222,7 +222,7 @@ namespace NachoCore.Model
             " m.FolderId = ? AND " +
             " m.ClassCode = ? " +
             " ORDER BY t.UtcDueDate",
-                accountId, accountId, folderId, McFolderEntry.ClassCodeEnum.Tasks);
+                accountId, accountId, folderId, McAbstrFolderEntry.ClassCodeEnum.Tasks);
         }
     }
 }
