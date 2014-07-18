@@ -269,7 +269,8 @@ namespace SQLite
 			set {
 				_busyTimeout = value;
 				if (Handle != NullHandle) {
-					SQLite3.BusyTimeout (Handle, (int)_busyTimeout.TotalMilliseconds);
+					int ms = (int) _busyTimeout.TotalMilliseconds;
+					SQLite3.BusyTimeout (Handle, ms);
 				}
 			}
 		}
