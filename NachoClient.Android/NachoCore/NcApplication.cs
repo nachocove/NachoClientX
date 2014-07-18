@@ -57,6 +57,8 @@ namespace NachoCore
         public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
+        // when true, everything in the background needs to chill.
+        public bool IsBackgroundAbateRequired { get; set; }
 
         private NcApplication ()
         {
@@ -91,6 +93,15 @@ namespace NachoCore
                 });
             };
             UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+
+            StatusIndEvent += (object sender, EventArgs ea) => {
+                var siea = (StatusIndEventArgs)ea;
+                if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
+                    IsBackgroundAbateRequired = true;
+                } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
+                    IsBackgroundAbateRequired = false;
+                }
+            };
         }
 
         private static volatile NcApplication instance;
@@ -277,6 +288,8 @@ namespace NachoCore
         {
             BackEnd.Instance.CertAskResp (accountId, isOkay);
         }
+
+
     }
 }
 

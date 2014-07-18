@@ -44,7 +44,7 @@ namespace Test.Common
             // Put us in scrolling mode.
             task = Task.Run (() => {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             });
@@ -78,7 +78,7 @@ namespace Test.Common
             // Take us out of scrolling mode.
             task = Task.Run (() => {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             });
