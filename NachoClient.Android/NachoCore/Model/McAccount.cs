@@ -17,6 +17,12 @@ namespace NachoCore.Model
 
         public int ServerId { get; set; }
 
+        public string DaysToSyncEmail { get; set; }
+
+        public string DaysToSyncCalendar { get; set; }
+
+        public string Signature { get; set; }
+
         [Unique]
         public int ProtocolStateId { get; set; }
 

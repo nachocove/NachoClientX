@@ -155,6 +155,10 @@ namespace NachoClient.iOS
             };
         }
 
+
+
+
+
         protected CheckboxElementWithData CreateCheckboxElementWithData (string caption, uint data)
         {
             var c = new CheckboxElementWithData (caption, data);
@@ -484,6 +488,96 @@ namespace NachoClient.iOS
             this.Font = UIFont.SystemFontOfSize (15.0f);
         }
     }
+
+    public class CustomPickerElement : StyledStringElement
+    {
+        string theDetail;
+        UIPickerView pickerView;
+
+        public CustomPickerElement (UIImage image, string caption, string detail, UIPickerView pickerView) : base (caption)
+        {
+            this.Accessory = UITableViewCellAccessory.None;
+            this.theDetail = detail;
+            this.pickerView = pickerView;
+            this.Image = image;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Black;
+        }
+
+//        public override UITableViewCell GetCell (UITableView tv)
+//        {
+//            var cell = base.GetCell (tv);
+//
+//
+//            if (cell.ContentView.Subviews.Length > 1) {
+//                for (int i = 1; i < cell.ContentView.Subviews.Length; i++) {
+//                    UIView x = cell.ContentView.Subviews [i];
+//                    x.RemoveFromSuperview ();
+//                }
+//            }
+//
+//
+////            pickerView.
+////            pickerView.Frame = new RectangleF (cell.Frame.Width / 2, 0, cell.Frame.Width, cell.Frame.Height);
+//            cell.ContentView.Add (pickerView);
+//        }
+    }
+
+    public class CustomTextInputElement : StyledStringElement
+    {
+        string theDetail;
+        UITextField inputText;
+
+        public CustomTextInputElement (UIImage image, string caption, string detail, UITextField inputText) : base (caption)
+        {
+            this.Accessory = UITableViewCellAccessory.None;
+            this.Image = image;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Black;
+            this.theDetail = detail;
+            this.inputText = inputText;
+
+        }
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+
+
+            if (cell.ContentView.Subviews.Length > 1) {
+                for (int i = 1; i < cell.ContentView.Subviews.Length; i++) {
+                    UIView x = cell.ContentView.Subviews [i];
+                    x.RemoveFromSuperview ();
+                }
+            }
+
+            //UIView cellView = new UIView(new RectangleF (cell.Frame.Width - 65, 5, cell.Frame.Width / 2, cell.Frame.Height - 5));
+            //UITextField inputText = new UITextField ();//new RectangleF(cell.Frame.Width / 3, 0, cell.Frame.Width * .6f, cell.Frame.Height));//new RectangleF (cellView.Frame.X, cellView.Frame.Y, cellView.Frame.Width, cellView.Frame.Height));
+            inputText.Font = A.Font_AvenirNextMedium14;
+            inputText.TextColor = UIColor.Gray;
+            inputText.Text = theDetail;
+            inputText.SizeToFit ();
+            inputText.Frame = new RectangleF (cell.Frame.Width - inputText.Frame.Width - 15, 0, cell.Frame.Width / 2, cell.Frame.Height); 
+            inputText.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
+            inputText.ReturnKeyType = UIReturnKeyType.Done;
+
+//            try{
+//                inputText.ShouldReturn += (textField) => {
+//                    textField.ResignFirstResponder();
+//                    return true;
+//                };
+//            }
+//            catch(Exception ex) {
+//                Console.WriteLine (ex);
+//            }
+
+
+            //cellView.Add (inputText);
+            cell.ContentView.Add (inputText);
+
+            return cell;
+        }
+    }    
+
 
 
     public class StyledMultilineElementWithIndent : StyledMultilineElement
