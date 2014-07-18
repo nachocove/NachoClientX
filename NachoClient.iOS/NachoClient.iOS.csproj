@@ -982,6 +982,18 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McTimeZone.cs">
       <Link>NachoCore\Model\McTimeZone.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrContactAttribute.cs">
+      <Link>NachoCore\Model\McAbstrContactAttribute.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactAddressAttribute.cs">
+      <Link>NachoCore\Model\McContactAddressAttribute.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactDateAttribute.cs">
+      <Link>NachoCore\Model\McContactDateAttribute.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactStringAttribute.cs">
+      <Link>NachoCore\Model\McContactStringAttribute.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />

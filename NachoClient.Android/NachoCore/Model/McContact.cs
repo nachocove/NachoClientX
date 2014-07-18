@@ -8,7 +8,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class McContactIndex
+    public class NcContactIndex
     {
         public int Id { set; get; }
 
@@ -18,7 +18,7 @@ namespace NachoCore.Model
         }
     }
 
-    public class McContactStringIndex
+    public class NcContactStringIndex
     {
         public int Id { set; get; }
 
@@ -146,96 +146,7 @@ namespace NachoCore.Model
         {
             return McAbstrFolderEntry.ClassCodeEnum.Contact;
         }
-    }
 
-    /// Addresses associated with the contact
-    public class McContactAddress : McAbstrObject
-    {
-        [Indexed]
-        public Int64 ContactId { get; set; }
-
-        /// iOS and Android allow custom fields
-        public bool UserDefined { get; set; }
-    }
-
-    /// Used to create lists of name/value pairs
-    public class McContactAttribute : McAbstrObject
-    {
-        [Indexed]
-        public Int64 ContactId { get; set; }
-
-        /// Values are created & displayed in a certain order
-        public int Order { get; set; }
-
-        /// Field name
-        public string Name { get; set; }
-
-        /// User-defined label if one exists
-        public string Label { get; set; }
-
-        public McContact GetContact ()
-        {
-            return NcModel.Instance.Db.Get<McContact> (ContactId);
-        }
-    }
-
-    /// <summary>
-    /// Date attributes such as birthdays and anniversaries
-    /// </summary>
-    public class McContactDateAttribute : McContactAttribute
-    {
-        public DateTime Value { get; set; }
-    }
-
-    /// <summary>
-    /// Data types stored in the string table.
-    /// </summary>
-    public enum McContactStringType
-    {
-        Relationship,
-        EmailAddress,
-        PhoneNumber,
-        IMAddress,
-        Category,
-        Address,
-        Date,
-    }
-
-    /// <summary>
-    /// String attributes, such as email, phone numbers, im addresses
-    /// </summary>
-    public class McContactStringAttribute : McContactAttribute
-    {
-        [Indexed]
-        public McContactStringType Type { get; set; }
-
-        [Indexed]
-        public string Value { get; set; }
-    }
-
-    /// <summary>
-    /// Address attributes, like business or home address
-    /// </summary>
-    public class McContactAddressAttribute : McContactAttribute
-    {
-        /// Street address of the contact's alternate address
-        public string Street { get; set; }
-
-        /// City for the contact's alternate address
-        public string City { get; set; }
-
-        /// State of the contact's alternate address
-        public string State { get; set; }
-
-        /// Country/region of the contact's alternate address
-        public string Country { get; set; }
-
-        /// Postal code of the contact's alternate address
-        public string PostalCode { get; set; }
-    }
-
-    public partial class McContact
-    {
         /// <summary>
         /// Initializes a new instance of the <see cref="NachoCore.Model.McContact"/> class.
         /// By convention, the lists are always initialized because C# is stupid about nulls.
@@ -562,10 +473,7 @@ namespace NachoCore.Model
                 list.Add (newbie);
             }
         }
-    }
 
-    partial class McContact
-    {
         /// <summary>
         ///        Db.CreateTable<McContact> ();
         ///        Db.CreateTable<McContactDateAttribute> ();
@@ -1018,9 +926,9 @@ namespace NachoCore.Model
             return contactList;
         }
 
-        public static List<McContactIndex> QueryAllContactItems (int accountId)
+        public static List<NcContactIndex> QueryAllContactItems (int accountId)
         {
-            return NcModel.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1032,9 +940,9 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
-        public static List<McContactIndex> QueryContactItems (int accountId, int folderId)
+        public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
@@ -1047,9 +955,9 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
         }
 
-        public static List<McContactIndex> QueryAllHotContactItems (int accountId)
+        public static List<NcContactIndex> QueryAllHotContactItems (int accountId)
         {
-            return NcModel.Instance.Db.Query<McContactIndex> (
+            return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
