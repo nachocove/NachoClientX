@@ -165,6 +165,9 @@ namespace NachoCore.Brain
             }
             foreach (var addrsList in addrsLists) {
                 foreach (var addr in addrsList) {
+                    if (NcApplication.Instance.IsBackgroundAbateRequired) {
+                        return;
+                    }
                     if (addr is MailboxAddress) {
                         GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
                     }
@@ -222,6 +225,9 @@ namespace NachoCore.Brain
                 }
                 foreach (var addrsList in addrsLists) {
                     foreach (var addr in addrsList) {
+                        if (NcApplication.Instance.IsBackgroundAbateRequired) {
+                            return;
+                        }
                         if (addr is MailboxAddress) {
                             GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
                         }
