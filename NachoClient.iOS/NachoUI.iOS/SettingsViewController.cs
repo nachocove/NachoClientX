@@ -36,6 +36,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.White);
 
             NavigationItem.RightBarButtonItem = doneButton;
 
@@ -546,6 +547,7 @@ namespace NachoClient.iOS
 
         protected void StopSpinner ()
         {
+
             theSpinner.StopAnimating ();
         }
 
