@@ -180,6 +180,9 @@ namespace NachoCore.Model
         {
             // DO NOT ADD LOGGING IN THE TRANSACTION, BECAUSE WE DON'T WANT LOGGING WRITES TO GET LUMPED IN.
             var threadId = Thread.CurrentThread.ManagedThreadId;
+            if (NcApplication.Instance.UiThreadId != threadId && !NcModel.Instance.IsInTransaction ()) {
+                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
+            }
             int exitValue = 0;
             TransDepth.AddOrUpdate (threadId, 1, (key, oldValue) => {
                 exitValue = oldValue;
