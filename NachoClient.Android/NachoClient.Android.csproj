@@ -92,9 +92,7 @@
     <Compile Include="NachoCore\Extensions\XElement+AnyNs.cs" />
     <Compile Include="NachoCore\Model\McAccount.cs" />
     <Compile Include="NachoCore\Model\McAttachment.cs" />
-    <Compile Include="NachoCore\Model\McContact.cs" />
     <Compile Include="NachoCore\Model\McCred.cs" />
-    <Compile Include="NachoCore\Model\McEmailMessage.cs" />
     <Compile Include="NachoCore\Model\McFolder.cs" />
     <Compile Include="NachoCore\Model\McPolicy.cs" />
     <Compile Include="NachoCore\Model\McProtocolState.cs" />
@@ -272,11 +270,8 @@
     <Compile Include="NachoCore\Model\IScorable.cs" />
     <Compile Include="NachoCore\Brain\NcBrain.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEvent.cs" />
-    <Compile Include="NachoCore\Model\McContactScore.cs" />
-    <Compile Include="NachoCore\Model\McEmailMessageScore.cs" />
     <Compile Include="NachoCore\Utils\Scoring.cs" />
     <Compile Include="NachoCore\Brain\NcEmailAnalyzer.cs" />
-    <Compile Include="NachoCore\Model\McDependency.cs" />
     <Compile Include="NachoCore\Brain\NcTimeVariance.cs" />
     <Compile Include="NachoCore\Brain\NcScoreCombiner.cs" />
     <Compile Include="NachoCore\Utils\IStopwatch.cs" />
@@ -310,6 +305,11 @@
     <Compile Include="NachoCore\Model\McContactDateAttribute.cs" />
     <Compile Include="NachoCore\Model\McContactStringAttribute.cs" />
     <Compile Include="NachoCore\Model\McContactAddressAttribute.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessageDependency.cs" />
+    <Compile Include="NachoCore\Model\McContact\McContact.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessage.cs" />
+    <Compile Include="NachoCore\Model\McContact\ContactScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\EmailMessageScore.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -324,6 +324,7 @@
     <None Include="..\native.Android\libs\x86\libnachoplatform.so">
       <Link>NachoPlatform.Android\libs\x86\libnachoplatform.so</Link>
     </None>
+    <None Include="NachoCore\Model\README.md" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\Main.axml" />
@@ -469,6 +470,8 @@
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\" />
     <Folder Include="NachoCore\Mockables\" />
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
+    <Folder Include="NachoCore\Model\McContact\" />
+    <Folder Include="NachoCore\Model\McEmailMessage\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
