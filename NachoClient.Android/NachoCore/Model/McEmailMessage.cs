@@ -551,7 +551,6 @@ namespace NachoCore.Model
                     returnVal = base.Insert ();
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
-                NcBrain.SharedInstance.McEmailMessageCounters.Insert.Click();
             }
             catch (SQLiteException ex) 
             {
@@ -578,7 +577,6 @@ namespace NachoCore.Model
                     DeleteAncillaryData (NcModel.Instance.Db);
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
-                NcBrain.SharedInstance.McEmailMessageCounters.Update.Click ();
             }
             catch (SQLiteException ex) 
             {
@@ -611,7 +609,6 @@ namespace NachoCore.Model
             if (0 != returnVal || -1 != returnVal) {
                 isDeleted = true;
             }
-            NcBrain.SharedInstance.McEmailMessageCounters.Delete.Click ();
             return returnVal;
         }
     }

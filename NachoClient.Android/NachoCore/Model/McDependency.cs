@@ -78,7 +78,6 @@ namespace NachoCore.Model
         {
             NcAssert.True (ValidType ());
             int retval = base.Insert ();
-            NcBrain.SharedInstance.McEmailMessageDependencyCounters.Insert.Click ();
             return retval;
         }
 
@@ -86,14 +85,6 @@ namespace NachoCore.Model
         {
             NcAssert.True (ValidType ());
             int retval = base.Update ();
-            NcBrain.SharedInstance.McEmailMessageDependencyCounters.Update.Click ();
-            return retval;
-        }
-
-        public override int Delete ()
-        {
-            int retval = base.Delete ();
-            NcBrain.SharedInstance.McEmailMessageDependencyCounters.Delete.Click ();
             return retval;
         }
     }
