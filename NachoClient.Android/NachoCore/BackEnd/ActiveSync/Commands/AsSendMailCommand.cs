@@ -17,7 +17,7 @@ namespace NachoCore.ActiveSync
         {
             PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailSend);
             PendingSingle.MarkDispached ();
-            EmailMessage = McObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
+            EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)

@@ -79,7 +79,7 @@ namespace NachoCore.Brain
                     NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
                 }
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                    x.HasBeenGleaned == false && McItem.BodyStateEnum.Whole_0 == x.BodyState).FirstOrDefault ();
+                    x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState).FirstOrDefault ();
                 if (null == emailMessage) {
                     return numGleaned;
                 }

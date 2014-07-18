@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McFile : McObject
+    public class McFile : McAbstrObject
     {
         [Indexed]
         public string DisplayName { get; set; }

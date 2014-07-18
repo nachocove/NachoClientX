@@ -38,9 +38,9 @@ namespace NachoCore
         protected NcContactManager ()
         {
             mustRefreshContacts = true;
-            list = new NachoContacts (new List<McContactIndex> ());
-            hotList = new NachoContacts (new List<McContactIndex> ());
-            recentList = new NachoContacts (new List<McContactIndex> ());
+            list = new NachoContacts (new List<NcContactIndex> ());
+            hotList = new NachoContacts (new List<NcContactIndex> ());
+            recentList = new NachoContacts (new List<NcContactIndex> ());
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;

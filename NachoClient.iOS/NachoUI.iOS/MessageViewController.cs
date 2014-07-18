@@ -517,7 +517,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (McItem.BodyStateEnum.Whole_0 != message.BodyState) {
+            if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
                 Log.Info (Log.LOG_EMAIL, "Starting download of whole message body");
                 StartSpinner ();
                 BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id);

@@ -8,6 +8,6 @@ namespace NachoCore
     public interface INachoTasks
     {
         int Count ();
-        McTaskIndex GetTaskIndex (int i);
+        NcTaskIndex GetTaskIndex (int i);
     }
 }

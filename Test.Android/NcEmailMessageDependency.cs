@@ -177,7 +177,7 @@ namespace Test.Common
             TestDeleteOneEmailMessage (14);
         }
 
-        public void VerifyListIds<T> (List<T> list, params int [] ids) where T: McObject, new()
+        public void VerifyListIds<T> (List<T> list, params int [] ids) where T: McAbstrObject, new()
         {
             Assert.NotNull (list);
             Assert.AreEqual (ids.Length, list.Count);

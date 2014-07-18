@@ -206,21 +206,21 @@ namespace NachoCore.ActiveSync
                 public const string Sms = "SMS";
             }
 
-            public McItem.ClassCodeEnum ClassCode2Enum (string classCode)
+            public McAbstrItem.ClassCodeEnum ClassCode2Enum (string classCode)
             {
                 switch (classCode) {
                 case ClassCode.Tasks:
-                    return McItem.ClassCodeEnum.Tasks;
+                    return McAbstrItem.ClassCodeEnum.Tasks;
                 case ClassCode.Email:
-                    return McItem.ClassCodeEnum.Email;
+                    return McAbstrItem.ClassCodeEnum.Email;
                 case ClassCode.Calendar:
-                    return McItem.ClassCodeEnum.Calendar;
+                    return McAbstrItem.ClassCodeEnum.Calendar;
                 case ClassCode.Contacts:
-                    return McItem.ClassCodeEnum.Contact;
+                    return McAbstrItem.ClassCodeEnum.Contact;
                 case ClassCode.Notes:
-                    return McItem.ClassCodeEnum.Notes;
+                    return McAbstrItem.ClassCodeEnum.Notes;
                 case ClassCode.Sms:
-                    return McItem.ClassCodeEnum.Sms;
+                    return McAbstrItem.ClassCodeEnum.Sms;
                 default:
                     throw new Exception (string.Format ("Unknown ClassCode {0}", classCode));
                 }
@@ -681,16 +681,16 @@ namespace NachoCore.ActiveSync
                 Ric_19 = 19,
             };
 
-            public static McFolderEntry.ClassCodeEnum TypeCodeToAirSyncClassCodeEnum (TypeCode code)
+            public static McAbstrFolderEntry.ClassCodeEnum TypeCodeToAirSyncClassCodeEnum (TypeCode code)
             {
                 switch (code) {
                 case TypeCode.DefaultJournal_11:
                 case TypeCode.UserCreatedJournal_16:
-                    return McFolderEntry.ClassCodeEnum.Journal;
+                    return McAbstrFolderEntry.ClassCodeEnum.Journal;
 
                 case TypeCode.Unknown_18:
                 case TypeCode.UserCreatedGeneric_1:
-                    return McFolderEntry.ClassCodeEnum.Generic;
+                    return McAbstrFolderEntry.ClassCodeEnum.Generic;
 
                 case TypeCode.DefaultInbox_2:
                 case TypeCode.DefaultDrafts_3:
@@ -698,24 +698,24 @@ namespace NachoCore.ActiveSync
                 case TypeCode.DefaultSent_5:
                 case TypeCode.DefaultOutbox_6:
                 case TypeCode.UserCreatedMail_12:
-                    return McFolderEntry.ClassCodeEnum.Email;
+                    return McAbstrFolderEntry.ClassCodeEnum.Email;
 
                 case TypeCode.DefaultTasks_7:
                 case TypeCode.UserCreatedTasks_15:
-                    return McFolderEntry.ClassCodeEnum.Tasks;
+                    return McAbstrFolderEntry.ClassCodeEnum.Tasks;
 
                 case TypeCode.DefaultCal_8:
                 case TypeCode.UserCreatedCal_13:
-                    return McFolderEntry.ClassCodeEnum.Calendar;
+                    return McAbstrFolderEntry.ClassCodeEnum.Calendar;
 
                 case TypeCode.DefaultContacts_9:
                 case TypeCode.UserCreatedContacts_14:
                 case TypeCode.Ric_19:
-                    return McFolderEntry.ClassCodeEnum.Contact;
+                    return McAbstrFolderEntry.ClassCodeEnum.Contact;
 
                 case TypeCode.DefaultNotes_10:
                 case TypeCode.UserCreatedNotes_17:
-                    return McFolderEntry.ClassCodeEnum.Notes;
+                    return McAbstrFolderEntry.ClassCodeEnum.Notes;
                 }
                 throw new Exception ();
             }
@@ -724,17 +724,17 @@ namespace NachoCore.ActiveSync
             {
                 var enumVal = TypeCodeToAirSyncClassCodeEnum (code);
                 switch (enumVal) {
-                case McFolderEntry.ClassCodeEnum.Calendar:
+                case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                     return AirSync.ClassCode.Calendar;
-                case McFolderEntry.ClassCodeEnum.Contact:
+                case McAbstrFolderEntry.ClassCodeEnum.Contact:
                     return AirSync.ClassCode.Contacts;
-                case McFolderEntry.ClassCodeEnum.Email:
+                case McAbstrFolderEntry.ClassCodeEnum.Email:
                     return AirSync.ClassCode.Email;
-                case McFolderEntry.ClassCodeEnum.Notes:
+                case McAbstrFolderEntry.ClassCodeEnum.Notes:
                     return AirSync.ClassCode.Notes;
-                case McFolderEntry.ClassCodeEnum.Sms:
+                case McAbstrFolderEntry.ClassCodeEnum.Sms:
                     return AirSync.ClassCode.Sms;
-                case McFolderEntry.ClassCodeEnum.Tasks:
+                case McAbstrFolderEntry.ClassCodeEnum.Tasks:
                     return AirSync.ClassCode.Tasks;
 
                 default:

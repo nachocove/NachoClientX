@@ -29,7 +29,7 @@ namespace Test.iOS
         }
 
         public static McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
-            string token = "", string clientId = "", string parentId = "", string destId = "", McItem item = null)
+            string token = "", string clientId = "", string parentId = "", string destId = "", McAbstrItem item = null)
         {
             McPending pending;
             if (item != null) {
@@ -157,7 +157,7 @@ namespace Test.iOS
                 // verify eligible state in DB
                 foreach (McPending[] group in new[] {groupA, groupB}) {
                     for (int i = 0; i < group.Length; ++i) {
-                        var item = McObject.QueryById<McPending> (group [i].Id);
+                        var item = McAbstrObject.QueryById<McPending> (group [i].Id);
                         Assert.AreEqual (StateEnum.Eligible, item.State, "Everything should be Eligible");
                     }
                 }
@@ -204,7 +204,7 @@ namespace Test.iOS
             {
                 var pending = CreatePending ();
                 pending.MarkDispached ();
-                var retrieved = McObject.QueryById<McPending> (pending.Id);
+                var retrieved = McAbstrObject.QueryById<McPending> (pending.Id);
                 Assert.AreEqual (StateEnum.Dispatched, retrieved.State, "MarkDispatched () should set state to Dispatched");
             }
         }
@@ -824,7 +824,7 @@ namespace Test.iOS
             {
                 string serverId = "3";
 
-                Action<McItem, Operations> testQuery = (item, op) => {
+                Action<McAbstrItem, Operations> testQuery = (item, op) => {
                     var itemPend = CreatePending (serverId: serverId, operation: Operations.EmailMove, item: item);
                     var foundItem = itemPend.QueryItemUsingServerId ();
                     FolderOps.ItemsAreEqual (item, foundItem);
@@ -1075,12 +1075,12 @@ namespace Test.iOS
 
                 firstPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
 
-                var retrievedItem = McObject.QueryById<McCalendar> (item.Id);
+                var retrievedItem = McAbstrObject.QueryById<McCalendar> (item.Id);
                 Assert.AreEqual (1, retrievedItem.PendingRefCount, "PendingRefCount should be 1 after 1 pending item is resolved successfully");
 
                 // Item should be deleted if McPending.Delete () is called when the refCount is 0 AND isAwaitingDelete == True
                 secPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));
-                retrievedItem = McObject.QueryById<McCalendar> (item.Id);
+                retrievedItem = McAbstrObject.QueryById<McCalendar> (item.Id);
                 Assert.IsNull (retrievedItem, "Item that isAwaitingDelete should be deleted when refCount reaches 0");
             }
 
@@ -1119,7 +1119,7 @@ namespace Test.iOS
                 retrieved.Delete ();
 
                 // Verify the item has been deleted
-                retrieved = McObject.QueryById<McCalendar> (item.Id);
+                retrieved = McAbstrObject.QueryById<McCalendar> (item.Id);
                 Assert.Null (retrieved, "Should be able to fully delete an item if its PendingRefCount == 0");
             }
 
@@ -1137,18 +1137,18 @@ namespace Test.iOS
                 }, "Should throw an exception when trying to delete McItem if PendingRefCount > 100000");
             }
 
-            private McItem CreateAndLinkItem ()
+            private McAbstrItem CreateAndLinkItem ()
             {
                 var item = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, defaultServerId);
                 commonFolder.Link (item);
                 return item;
             }
 
-            private McItem TestItemExistsWithQueries (McItem item)
+            private McAbstrItem TestItemExistsWithQueries (McAbstrItem item)
             {
-                var foundItem = McItem.QueryByClientId<McCalendar> (defaultAccountId, item.ClientId);
+                var foundItem = McAbstrItem.QueryByClientId<McCalendar> (defaultAccountId, item.ClientId);
                 Assert.NotNull (foundItem, "Item should not be null and should be able to be retrieved by ClientId");
-                var foundItems = McItem.QueryByFolderId<McCalendar> (defaultAccountId, commonFolder.Id);
+                var foundItems = McAbstrItem.QueryByFolderId<McCalendar> (defaultAccountId, commonFolder.Id);
                 Assert.AreEqual (1, foundItems.Count, "Item should exist in and be the only item in the folder");
                 Assert.AreEqual (item.Id, foundItems.FirstOrDefault ().Id, "Item in folder should match expected");
                 return foundItem;

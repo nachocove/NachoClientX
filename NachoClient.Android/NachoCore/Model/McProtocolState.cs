@@ -5,7 +5,7 @@ using NachoCore.Utils;
 namespace NachoCore.Model
 {
     // NOTE: eventually this will be a base class, with an active-sync sub-class.
-    public class McProtocolState : McObject
+    public class McProtocolState : McAbstrObject
     {
         public const string AsSyncKey_Initial = "0";
         public const string AsPolicyKey_Initial = "0";

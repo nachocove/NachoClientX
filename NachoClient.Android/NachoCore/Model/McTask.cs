@@ -10,7 +10,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class McTaskIndex
+    public class NcTaskIndex
     {
         public int Id { set; get; }
 
@@ -20,7 +20,7 @@ namespace NachoCore.Model
         }
     }
 
-    public class McTask : McItem
+    public class McTask : McAbstrItem
     {
         // FIXME - add categories.
         public bool Complete { set; get; }
@@ -66,7 +66,7 @@ namespace NachoCore.Model
 
         public static ClassCodeEnum GetClassCode ()
         {
-            return McFolderEntry.ClassCodeEnum.Tasks;
+            return McAbstrFolderEntry.ClassCodeEnum.Tasks;
         }
 
         public XElement ToXmlApplicationData ()
@@ -199,9 +199,9 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public static List<McTaskIndex> QueryAllTaskItems (int accountId)
+        public static List<NcTaskIndex> QueryAllTaskItems (int accountId)
         {
-            return NcModel.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
+            return NcModel.Instance.Db.Query<NcTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
             " ON t.Id = m.FolderEntryId " +
             " WHERE " +
             " t.AccountId = ? AND " +
@@ -209,12 +209,12 @@ namespace NachoCore.Model
             " m.AccountId = ? AND " +
             " m.ClassCode = ? " +
             " ORDER BY t.UtcDueDate",
-                accountId, accountId, McFolderEntry.ClassCodeEnum.Tasks);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Tasks);
         }
 
-        public static List<McTaskIndex> QueryTaskItems (int accountId, int folderId)
+        public static List<NcTaskIndex> QueryTaskItems (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<McTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
+            return NcModel.Instance.Db.Query<NcTaskIndex> ("SELECT t.Id as Id FROM McTask AS t JOIN McMapFolderFolderEntry AS m " +
             " ON t.Id = m.FolderEntryId " +
             " WHERE " +
             " t.AccountId = ? AND " +
@@ -222,7 +222,7 @@ namespace NachoCore.Model
             " m.FolderId = ? AND " +
             " m.ClassCode = ? " +
             " ORDER BY t.UtcDueDate",
-                accountId, accountId, folderId, McFolderEntry.ClassCodeEnum.Tasks);
+                accountId, accountId, folderId, McAbstrFolderEntry.ClassCodeEnum.Tasks);
         }
     }
 }

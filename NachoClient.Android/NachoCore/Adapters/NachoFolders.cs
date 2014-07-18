@@ -86,7 +86,7 @@ namespace NachoCore
 
         public McFolder GetFolderByFolderID(int id)
         {
-            return McObject.QueryById<McFolder>(id);
+            return McAbstrObject.QueryById<McFolder>(id);
         }
     }
 }

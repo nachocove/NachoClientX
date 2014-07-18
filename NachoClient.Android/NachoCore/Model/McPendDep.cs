@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McPendDep : McObject
+    public class McPendDep : McAbstrObject
     {
         public int PredId { get; set; }
         public int SuccId { get; set; }

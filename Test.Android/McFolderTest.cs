@@ -8,7 +8,7 @@ using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
-using ClassCode = NachoCore.Model.McFolderEntry.ClassCodeEnum;
+using ClassCode = NachoCore.Model.McAbstrFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
 
 namespace Test.iOS
@@ -329,7 +329,7 @@ namespace Test.iOS
                 QueryFolderOfGenericType<McTask> (ClassCode.Tasks, "Should be able to query all tasks by folderEntryId");
             }
 
-            private void QueryFolderOfGenericType<T> (ClassCode classCode, string message) where T : McItem, new()
+            private void QueryFolderOfGenericType<T> (ClassCode classCode, string message) where T : McAbstrItem, new()
             {
                 int accountId = 1;
 
@@ -604,8 +604,8 @@ namespace Test.iOS
             {
                 // should move folder with items and matching ServerId to client-owned folder
                 McFolder folder = new McFolder (); // must assign default value
-                McItem subItem1;
-                McItem subItem2;
+                McAbstrItem subItem1;
+                McAbstrItem subItem2;
 
                 var destServerId = TestServerEndMoveFolderToClientOwned ((itemServerId) => {
                     folder = FolderOps.CreateFolder (accountId: defaultAccountId, serverId: itemServerId, isClientOwned: false);
@@ -618,7 +618,7 @@ namespace Test.iOS
                 var foundFolder = TestFolderMovedCorrectly (destServerId, folder);
 
                 // Test that the folder's sub-items got moved correctly
-                var foundItems = McItem.QueryByFolderId<McEmailMessage> (defaultAccountId, foundFolder.Id);
+                var foundItems = McAbstrItem.QueryByFolderId<McEmailMessage> (defaultAccountId, foundFolder.Id);
                 Assert.AreEqual (2, foundItems.Count, "Should move subItems to client-owned folder with matching destFolderId");
             }
 
@@ -639,10 +639,10 @@ namespace Test.iOS
                 Assert.AreEqual (2, foundSubFolders.Count, "Should move subFolders recursively to client-owned folder with matching destFolderId");
             }
 
-            private void TestMovedToClientOwned (McFolderEntry item, McFolder folder)
+            private void TestMovedToClientOwned (McAbstrFolderEntry item, McFolder folder)
             {
                 // Test that everything has been moved to the destination folder and retains it's correct structure
-                var foundItems = McItem.QueryByFolderId<McEmailMessage> (defaultAccountId, folder.Id);
+                var foundItems = McAbstrItem.QueryByFolderId<McEmailMessage> (defaultAccountId, folder.Id);
                 Assert.AreEqual (1, foundItems.Count, "Should move item with matching ServerId to client-owned folder with matching destFolderId");
                 var foundItem = foundItems.FirstOrDefault ();
                 Assert.AreEqual (item.Id, foundItem.Id, "Should move correct item into client-owned folder");
@@ -705,7 +705,7 @@ namespace Test.iOS
                 TestDeletingItemOfType<McTask> ();
             }
 
-            private void TestDeletingItemOfType<T> () where T : McItem, new() {
+            private void TestDeletingItemOfType<T> () where T : McAbstrItem, new() {
                 int accountId = 1;
 
                 T item = FolderOps.CreateUniqueItem<T> (accountId);
@@ -714,14 +714,14 @@ namespace Test.iOS
                 folder1.Link (item);
 
                 // sanity checks
-                T foundItem = McFolderEntry.QueryByServerId<T> (accountId, FolderOps.defaultServerId);
+                T foundItem = McAbstrFolderEntry.QueryByServerId<T> (accountId, FolderOps.defaultServerId);
                 Assert.AreEqual (item.Id, foundItem.Id, "Email insertion and linking sanity check");
 
                 // deletion of folder should remove item too
                 folder1.Delete ();
                 McFolder retrieved2 = McFolder.GetClientOwnedFolder (accountId, FolderOps.defaultServerId);
                 Assert.AreEqual (null, retrieved2, "No user folder should be found if it is deleted");
-                T notFoundItem = McFolderEntry.QueryByServerId<T> (accountId, FolderOps.defaultServerId);
+                T notFoundItem = McAbstrFolderEntry.QueryByServerId<T> (accountId, FolderOps.defaultServerId);
                 Assert.AreEqual (null, notFoundItem, "Deleting a folder should remove any emails contained in that folder");
             }
 

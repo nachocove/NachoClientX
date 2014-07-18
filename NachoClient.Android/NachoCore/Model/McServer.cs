@@ -4,7 +4,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-	public class McServer : McObject
+	public class McServer : McAbstrObject
 	{
 		public McServer ()
 		{

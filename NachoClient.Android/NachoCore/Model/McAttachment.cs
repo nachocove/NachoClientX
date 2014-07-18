@@ -6,7 +6,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McAttachment : McObjectPerAccount
+    public class McAttachment : McAbstrObjectPerAcc
     {
         [Indexed]
         public int EmailMessageId { get; set; }

@@ -9,7 +9,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McPending : McObjectPerAccount
+    public class McPending : McAbstrObjectPerAcc
     {
         // Parameterless constructor only here for use w/LINQ. Please only use w/accountId.
         public McPending ()
@@ -24,7 +24,7 @@ namespace NachoCore.Model
             AccountId = accountId;
         }
 
-        public McPending (int accountId, McItem item) : this (accountId)
+        public McPending (int accountId, McAbstrItem item) : this (accountId)
         {
             Item = item;
         }
@@ -185,7 +185,7 @@ namespace NachoCore.Model
         public int ItemId { set; get; }
 
         // NOT a property. Used to increment refcount during Insert().
-        private McItem Item;
+        private McAbstrItem Item;
 
         // ****************************************************
         // PROPERTIES SPECIFIC TO OPERATIONS (effectively subclasses)
@@ -689,24 +689,24 @@ namespace NachoCore.Model
             return 1;
         }
 
-        public McItem QueryItemUsingServerId ()
+        public McAbstrItem QueryItemUsingServerId ()
         {
             switch (Operation) {
             case Operations.EmailMove:
-                return McFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+                return McAbstrFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
             case Operations.CalMove:
-                return McFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
+                return McAbstrFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
             case Operations.ContactMove:
-                return McFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
+                return McAbstrFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
             case Operations.TaskMove:
-                return McFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
+                return McAbstrFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
             }
             return null;
         }
 
         public override int Delete ()
         {
-            McItem item = null;
+            McAbstrItem item = null;
             try {
                 NcModel.Instance.RunInTransaction (() => {
                     if (0 != ItemId) {
@@ -714,22 +714,22 @@ namespace NachoCore.Model
                         case Operations.EmailSend:
                         case Operations.EmailForward:
                         case Operations.EmailReply:
-                            item = McObject.QueryById<McEmailMessage> (ItemId);
+                            item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
                             break;
 
                         case Operations.CalCreate:
                         case Operations.CalUpdate:
-                            item = McObject.QueryById<McCalendar> (ItemId);
+                            item = McAbstrObject.QueryById<McCalendar> (ItemId);
                             break;
 
                         case Operations.ContactCreate:
                         case Operations.ContactUpdate:
-                            item = McObject.QueryById<McContact> (ItemId);
+                            item = McAbstrObject.QueryById<McContact> (ItemId);
                             break;
 
                         case Operations.TaskCreate:
                         case Operations.TaskUpdate:
-                            item = McObject.QueryById<McTask> (ItemId);
+                            item = McAbstrObject.QueryById<McTask> (ItemId);
                             break;
 
                         default:
@@ -956,7 +956,7 @@ namespace NachoCore.Model
         }
 
         // returns item associated with pending
-        public McItem GetItem ()
+        public McAbstrItem GetItem ()
         {
             switch (Operation) {
             case Operations.CalCreate:

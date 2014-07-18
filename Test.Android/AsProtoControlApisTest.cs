@@ -44,7 +44,7 @@ namespace Test.iOS
                 }, String.Format ("Should throw exception if attempting to create folder (type: {0}) in client-owned folder", typeof(McFolder).ToString ()));
             }
 
-            private void TestCreatingItem<T> (Action <AsProtoControl, int, int> action) where T : McItem, new()
+            private void TestCreatingItem<T> (Action <AsProtoControl, int, int> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -78,7 +78,7 @@ namespace Test.iOS
                 });
             }
 
-            private void TestUpdatingItem<T> (Action <AsProtoControl, int> action) where T : McItem, new()
+            private void TestUpdatingItem<T> (Action <AsProtoControl, int> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -131,7 +131,7 @@ namespace Test.iOS
                 }, String.Format ("Should throw exception if attempting to delete folder (type: {0}) in client-owned folder", typeof(McFolder).ToString ()));
             }
 
-            private void TestDeletingItem<T> (Action <AsProtoControl, int> action) where T : McItem, new()
+            private void TestDeletingItem<T> (Action <AsProtoControl, int> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -192,7 +192,7 @@ namespace Test.iOS
                 }, "Should not be able to move non-client-owned folder to client-owned folder");
             }
 
-            private void TestMovingItem<T> (Action<AsProtoControl, T, McFolder> action) where T : McItem, new()
+            private void TestMovingItem<T> (Action<AsProtoControl, T, McFolder> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);

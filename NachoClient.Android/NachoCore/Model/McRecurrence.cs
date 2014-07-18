@@ -10,7 +10,7 @@ namespace NachoCore.Model
     /// A calendar entry can have one or more
     /// recurrence records associated with it.
     /// </summary>
-    public class McRecurrence : McObject
+    public class McRecurrence : McAbstrObject
     {
         // FIXME - replace XxxId with a join table.
 

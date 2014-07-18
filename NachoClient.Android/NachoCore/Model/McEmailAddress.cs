@@ -6,7 +6,7 @@ using MimeKit;
 
 namespace NachoCore.Model
 {
-    public class McEmailAddress : McObjectPerAccount
+    public class McEmailAddress : McAbstrObjectPerAcc
     {
         public McEmailAddress ()
         {

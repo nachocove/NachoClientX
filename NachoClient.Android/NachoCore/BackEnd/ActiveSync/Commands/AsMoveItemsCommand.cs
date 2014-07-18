@@ -14,29 +14,29 @@ namespace NachoCore.ActiveSync
     {
         private NcResult LocalFailureInd;
         private NcResult LocalSuccessInd;
-        private McItem.ClassCodeEnum ClassCode;
+        private McAbstrItem.ClassCodeEnum ClassCode;
 
         public AsMoveItemsCommand (IBEContext beContext) : base (Xml.Mov.MoveItems, Xml.Mov.Ns, beContext)
         {
             PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailMove);
             if (null != PendingSingle) {
-                ClassCode = McFolderEntry.ClassCodeEnum.Email;
+                ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email;
                 LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded);
                 LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMoveFailed);
             } else {
                 PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalMove);
                 if (null != PendingSingle) {
-                    ClassCode = McFolderEntry.ClassCodeEnum.Calendar;
+                    ClassCode = McAbstrFolderEntry.ClassCodeEnum.Calendar;
                     LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_CalendarMoveSucceeded);
                     LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_CalendarMoveFailed);
                 } else {
                     PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactMove);
                     if (null != PendingSingle) {
-                        ClassCode = McFolderEntry.ClassCodeEnum.Contact;
+                        ClassCode = McAbstrFolderEntry.ClassCodeEnum.Contact;
                         LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_ContactMoveSucceeded);
                         LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_ContactMoveFailed);
                     } else {
-                        ClassCode = McFolderEntry.ClassCodeEnum.Tasks;
+                        ClassCode = McAbstrFolderEntry.ClassCodeEnum.Tasks;
                         PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskMove);
                         LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_TaskMoveSucceeded);
                         LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_TaskMoveFailed);
@@ -97,22 +97,22 @@ namespace NachoCore.ActiveSync
                 if (null != xmlDstMsgId) {
                     // We need to re-write the ServerId.
                     newServerId = xmlDstMsgId.Value;
-                    McItem item = null;
+                    McAbstrItem item = null;
                     switch (ClassCode) {
-                    case McFolderEntry.ClassCodeEnum.Email:
-                        item = McItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
+                    case McAbstrFolderEntry.ClassCodeEnum.Email:
+                        item = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
                         break;
 
-                    case McFolderEntry.ClassCodeEnum.Calendar:
-                        item = McItem.QueryByServerId<McCalendar> (BEContext.Account.Id, PendingSingle.ServerId);
+                    case McAbstrFolderEntry.ClassCodeEnum.Calendar:
+                        item = McAbstrItem.QueryByServerId<McCalendar> (BEContext.Account.Id, PendingSingle.ServerId);
                         break;
 
-                    case McFolderEntry.ClassCodeEnum.Contact:
-                        item = McItem.QueryByServerId<McContact> (BEContext.Account.Id, PendingSingle.ServerId);
+                    case McAbstrFolderEntry.ClassCodeEnum.Contact:
+                        item = McAbstrItem.QueryByServerId<McContact> (BEContext.Account.Id, PendingSingle.ServerId);
                         break;
 
-                    case McFolderEntry.ClassCodeEnum.Tasks:
-                        item = McItem.QueryByServerId<McTask> (BEContext.Account.Id, PendingSingle.ServerId);
+                    case McAbstrFolderEntry.ClassCodeEnum.Tasks:
+                        item = McAbstrItem.QueryByServerId<McTask> (BEContext.Account.Id, PendingSingle.ServerId);
                         break;
 
                     default:

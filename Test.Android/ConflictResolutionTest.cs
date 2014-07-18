@@ -629,11 +629,11 @@ namespace Test.iOS
             }
 
             public void TestSyncMatch<T> (TypeCode topFolderType, Func<int, int, string> creationCmd,
-                bool isDelete = false) where T : McItem, new()
+                bool isDelete = false) where T : McAbstrItem, new()
             {
                 // If pending's ParentId matches the ServerId of the command, then move to lost+found and delete pending.
                 var topFolder = ProtoOps.CreateTopFolder (withPath: true, type: topFolderType);
-                McItem item = MakeSingleLayerPath<T> (topFolder);
+                McAbstrItem item = MakeSingleLayerPath<T> (topFolder);
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
@@ -714,11 +714,11 @@ namespace Test.iOS
             }
 
             public void TestSyncDom<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder, Func<int, int, string> makeItem,
-                bool isDelete = false) where T : McItem, new()
+                bool isDelete = false) where T : McAbstrItem, new()
             {
                 // If pending's ParentId is dominated by the ServerId of the command, then move to lost+found and delete pending.
                 McFolder subFolder = null;
-                McItem item = MakeDoubleLayerPath<T> (topFolderType, () => {
+                McAbstrItem item = MakeDoubleLayerPath<T> (topFolderType, () => {
                     subFolder = makeSubFolder ();
                     return subFolder;
                 });
@@ -735,7 +735,7 @@ namespace Test.iOS
                 }
             }
 
-            private McItem MakeSingleLayerPath<T> (McFolder topFolder) where T : McItem, new()
+            private McAbstrItem MakeSingleLayerPath<T> (McFolder topFolder) where T : McAbstrItem, new()
             {
                 var item = FolderOps.CreateUniqueItem<T> ();
                 topFolder.Link (item);
@@ -743,7 +743,7 @@ namespace Test.iOS
                 return item;
             }
 
-            private McItem MakeDoubleLayerPath<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder) where T : McItem, new()
+            private McAbstrItem MakeDoubleLayerPath<T> (TypeCode topFolderType, Func<McFolder> makeSubFolder) where T : McAbstrItem, new()
             {
                 ProtoOps.CreateTopFolder (withPath: true, type: topFolderType);
                 var subFolder = makeSubFolder ();
@@ -753,12 +753,12 @@ namespace Test.iOS
                 return item;
             }
 
-            private void DoSyncAddOrUpdate<T> (McItem item, string token) where T : McItem, new()
+            private void DoSyncAddOrUpdate<T> (McAbstrItem item, string token) where T : McAbstrItem, new()
             {
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 // QueryByServerId asserts if more than one item is found
-                var foundItem = McItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
+                var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
                 Assert.NotNull (foundItem, "Item should not be deleted; only moved to L&F");
 
                 var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
@@ -769,12 +769,12 @@ namespace Test.iOS
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
             }
 
-            private void DoSyncDelete<T> (McItem item, string token) where T : McItem, new()
+            private void DoSyncDelete<T> (McAbstrItem item, string token) where T : McAbstrItem, new()
             {
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
                 // QueryByServerId asserts if more than one item is found
-                var foundItem = McItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
+                var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
                 Assert.Null (foundItem, "Item should be deleted by server");
 
                 var foundPend = McPending.QueryByToken (defaultAccountId, token);
