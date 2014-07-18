@@ -34,6 +34,7 @@ namespace NachoCore.Model
 
         public bool IsBlacklisted { get; set; }
 
+        public int ColorIndex { get; set; }
 
     }
 }
