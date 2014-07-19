@@ -91,22 +91,28 @@ namespace NachoCore.Wbxml
 
         public string DequeueString (CancellationToken cToken)
         {
-            StringBuilder strReturn = new StringBuilder ();
-            byte currentByte = 0x00;
+            bool terminated = false;
+            const int blockSize = 256;
+            int extraBlocks = 0;
+            int i;
+            byte[] buff = new byte[blockSize];
             do {
-                if (cToken.IsCancellationRequested) {
-                    throw new OperationCanceledException ();
+                for (i = 0; i < blockSize; ++i) {
+                    byte head = this.Dequeue ();
+                    if (0 == head) {
+                        terminated = true;
+                        break;
+                    }
+                    buff [extraBlocks * blockSize + i] = head;
                 }
-                // TODO: Improve this handling. We are technically UTF-8, meaning
-                // that characters could be more than one byte long. This will fail if we have
-                // characters outside of the US-ASCII range
-                currentByte = this.Dequeue ();
-                if (currentByte != 0x00) {
-                    strReturn.Append ((char)currentByte);
+                if (!terminated) {
+                    ++extraBlocks;
+                    Array.Resize (ref buff, (extraBlocks + 1) * blockSize);
                 }
-            } while (currentByte != 0x00);
-
-            return strReturn.ToString ();
+            } while (!terminated);
+            Array.Resize (ref buff, extraBlocks * blockSize + i);
+            var retval = Encoding.UTF8.GetString (buff);
+            return retval;
         }
 
         public byte[] DequeueOpaque (int length, CancellationToken cToken)

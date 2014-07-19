@@ -489,7 +489,9 @@ namespace NachoClient.iOS
             summaryLabelView.Hidden = compactMode;
             if (!compactMode) {
                 summaryLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
-                summaryLabelView.Text = message.GetBodyPreviewOrEmpty();
+                var preview = message.GetBodyPreviewOrEmpty ();
+                var parts = preview.Split (new [] { '\u200b' }, 2);
+                summaryLabelView.Text = (2 == parts.Length) ? parts [1] : parts [0];
                 summaryLabelView.SizeToFit ();
             }
 
