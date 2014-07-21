@@ -336,26 +336,36 @@ namespace NachoClient
 
         #region NachoCove
 
-        //Colors for users' CircleColor. These colors arent great.  NEED TO BE CHANGED
-        public static UIColor greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
-        public static UIColor redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-        public static UIColor yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
-        public static UIColor brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
-        public static UIColor fiveColor = new UIColor (120.0f / 255.0f, 111.0f / 255.0f, 79.0f / 255.0f, 1.0f);
-        public static UIColor sixColor = new UIColor (50.0f / 255.0f, 10.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-        public static UIColor sevenColor = new UIColor (10.0f / 255.0f, 217.0f / 255.0f, 150.0f / 255.0f, 1.0f);
-        public static UIColor eightColor = new UIColor (34.0f / 255.0f, 20.0f / 255.0f, 98.0f / 255.0f, 1.0f);
         public static List<UIColor> colors = new List<UIColor> () {
             UIColor.Clear,
             UIColor.LightGray,
-            greenColor,
-            redColor,
-            yellowColor,
-            brownColor,
-            fiveColor,
-            sixColor,
-            sevenColor,
-            eightColor
+            UIColor.FromRGB(0x05, 0x0e, 0x66),
+            UIColor.FromRGB(0x91, 0xa8, 0x10),
+            UIColor.FromRGB(0xbe, 0x15, 0xf2),
+            UIColor.FromRGB(0x09, 0x8e, 0x0e),
+            UIColor.FromRGB(0xb6, 0x07, 0xc6),
+            UIColor.FromRGB(0xe2, 0x67, 0x14),
+            UIColor.FromRGB(0xbe, 0x09, 0xe2),
+            UIColor.FromRGB(0x00, 0x1c, 0x6b),
+            UIColor.FromRGB(0x00, 0x42, 0x72),
+            UIColor.FromRGB(0x8c, 0x0c, 0x21),
+            UIColor.FromRGB(0x02, 0x69, 0x6b),
+            UIColor.FromRGB(0x39, 0x77, 0x03),
+            UIColor.FromRGB(0xd1, 0x0e, 0xa0),
+            UIColor.FromRGB(0xc6, 0x00, 0xaf),
+            UIColor.FromRGB(0x2f, 0x01, 0x91),
+            UIColor.FromRGB(0x45, 0x0a, 0x70),
+            UIColor.FromRGB(0x15, 0xad, 0x0d),
+            UIColor.FromRGB(0x3f, 0xaa, 0x0d),
+            UIColor.FromRGB(0x03, 0x9e, 0x2f),
+            UIColor.FromRGB(0x00, 0x7f, 0x7f),
+            UIColor.FromRGB(0x10, 0x9b, 0x09),
+            UIColor.FromRGB(0x00, 0x0d, 0x87),
+            UIColor.FromRGB(0x29, 0x82, 0x06),
+            UIColor.FromRGB(0x0b, 0x89, 0x28),
+            UIColor.FromRGB(0x55, 0x93, 0x02),
+            UIColor.FromRGB(0x48, 0x09, 0xa0),
+            UIColor.FromRGB(0xb2, 0x0e, 0x55),
         };
 
         public static UIImage DotWithColor (UIColor color)
@@ -537,7 +547,7 @@ namespace NachoClient
                 }
             }
             var random = new Random ();
-            int randomNumber = random.Next (2, 10);
+            int randomNumber = random.Next (2, colors.Count);
             foreach (var contact in contacts) {
                 contact.CircleColor = randomNumber;
                 contact.Update ();
