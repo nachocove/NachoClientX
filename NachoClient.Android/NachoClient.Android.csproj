@@ -290,6 +290,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress.cs" />
     <Compile Include="NachoCore\Model\McMapContactEmail.cs" />
+    <Compile Include="NachoCore\Model\McConference.cs" />
     <Compile Include="NachoCore\Model\McEmailMessageCategory.cs" />
     <Compile Include="NachoCore\Model\McAbstrObject.cs" />
     <Compile Include="NachoCore\Model\McAbstrObjectPerAcc.cs" />
