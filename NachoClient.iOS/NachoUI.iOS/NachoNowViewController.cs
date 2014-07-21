@@ -689,7 +689,7 @@ namespace NachoClient.iOS
         public void carouselSwipe (UISwipeGestureRecognizer obj)
         {
             if (UISwipeGestureRecognizerDirection.Up == obj.Direction) {
-                if (0 < priorityInbox.Count()) {
+                if (0 < priorityInbox.Count ()) {
                     var i = carouselView.CurrentItemIndex;
                     var messageThread = priorityInbox.GetEmailThread (i);
                     PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
@@ -697,7 +697,7 @@ namespace NachoClient.iOS
                 return;
             }
             if (UISwipeGestureRecognizerDirection.Down == obj.Direction) {
-                if (0 < priorityInbox.Count()) {
+                if (0 < priorityInbox.Count ()) {
                     var i = carouselView.CurrentItemIndex;
                     var messageThread = priorityInbox.GetEmailThread (i);
                     var message = messageThread.SingleMessageSpecialCase ();
@@ -793,6 +793,7 @@ namespace NachoClient.iOS
         public class CarouselDataSource : iCarouselDataSource
         {
             protected const int USER_IMAGE_TAG = 101;
+            protected const int USER_LABEL_TAG = 109;
             protected const int FROM_TAG = 102;
             protected const int SUBJECT_TAG = 103;
             protected const int PREVIEW_TAG = 104;
@@ -857,6 +858,17 @@ namespace NachoClient.iOS
                 userImageView.Layer.MasksToBounds = true;
                 userImageView.Tag = USER_IMAGE_TAG;
                 view.AddSubview (userImageView);
+
+                // User userLabelView view, if no image
+                var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+                userLabelView.Font = A.Font_AvenirNextRegular24;
+                userLabelView.TextColor = UIColor.White;
+                userLabelView.TextAlignment = UITextAlignment.Center;
+                userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                userLabelView.Layer.CornerRadius = 20;
+                userLabelView.Layer.MasksToBounds = true;
+                userLabelView.Tag = USER_LABEL_TAG;
+                view.AddSubview (userLabelView);
 
                 // From label view
                 // Font will vary bold or regular, depending on isRead.
@@ -1001,14 +1013,24 @@ namespace NachoClient.iOS
                 var viewWidth = view.Frame.Width;
 
                 // User image view
-                // TODO: user images
                 var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-                var emailOfSender = Pretty.EmailString (message.From);
-                string sender = Pretty.SenderString (message.From);
+                var userLabelView = view.ViewWithTag (USER_LABEL_TAG) as UILabel;
+                userImageView.Hidden = true;
+                userLabelView.Hidden = true;
 
-                int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
-                UIColor circleColor = Util.IntToUIColor (circleColorNum);
-                userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
+                var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+
+                if (null != userImage) {
+                    userImageView.Hidden = false;
+                    userImageView.Image = userImage;
+                } else {
+                    userLabelView.Hidden = false;
+                    if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 <= message.cachedFromColor)) {
+                        Util.CacheUserMessageFields (message);
+                    }
+                    userLabelView.Text = message.cachedFromLetters;
+                    userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
+                }
 
                 // Subject label view
                 var subjectLabelView = view.ViewWithTag (SUBJECT_TAG) as UILabel;
@@ -1017,8 +1039,8 @@ namespace NachoClient.iOS
                 // Preview label view
                 var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
                 var rawPreview = message.GetBodyPreviewOrEmpty ();
-                var cookedPreview = System.Text.RegularExpressions.Regex.Replace(rawPreview, @"\s+", " ");
-                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);;
+                var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
 
 //                // Reminder image view and label
 //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
