@@ -773,7 +773,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }
             Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
-            NcCommStatus.Instance.ReportCommResult (ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
+            NcCommStatusSingleton.ReportCommResult (ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
             return Final ((uint)SmEvt.E.HardFail, mnemonic, null, message);
         }
     }
