@@ -999,6 +999,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\EmailMessageScore.cs">
       <Link>NachoCore\Model\McEmailMessage\EmailMessageScore.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimerPool.cs">
+      <Link>NachoCore\Utils\NcTimerPool.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
