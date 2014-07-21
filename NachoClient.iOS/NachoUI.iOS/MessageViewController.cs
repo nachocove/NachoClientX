@@ -655,11 +655,12 @@ namespace NachoClient.iOS
 
         void RenderTextString (string text)
         {
+            var attributedString = new NSAttributedString (text);
             var label = new UILabel (new RectangleF (0.0f, 0.0f, 320.0f, 1.0f));
             label.Lines = 0;
             label.Font = UIFont.SystemFontOfSize (17.0f);
             label.LineBreakMode = UILineBreakMode.WordWrap;
-            label.Text = text;
+            label.AttributedText = attributedString;
             label.SizeToFit ();
             label.Tag = MESSAGE_PART_TAG;
             view.AddSubview (label);
