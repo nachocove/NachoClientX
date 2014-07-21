@@ -350,6 +350,128 @@ namespace Test.iOS
                 Assert.AreEqual (cal.Id, foundParent.FirstOrDefault ().FolderEntryId, "Item should be moved into L&F");
             }
         }
+
+        [TestFixture]
+        public class DeleteItemsTests : BaseSyncConfResTest
+        {
+            private class Inbox
+            {
+                public McFolder folder;
+                public McAbstrItem item;
+                public string token;
+
+                public Inbox (Func<McAbstrItem> makeItem)
+                {
+                    folder = ProtoOps.CreateTopFolder (withPath: true);
+                    item = makeItem ();
+                    folder.Link (item);
+                    PathOps.CreatePath (defaultAccountId, item.ServerId, folder.ServerId);
+
+                    token = null;
+                }
+            }
+
+            private Inbox SetState<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
+            {
+                Inbox inbox = new Inbox (() => {
+                    return FolderOps.CreateUniqueItem<T> ();
+                });
+
+                SetSyncStrategy (inbox.folder);
+
+                ProtoOps.DoClientSideCmds (Context, () => {
+                    inbox.token = clientOp (inbox.item.Id); 
+                });
+
+                SyncCmd = CreateSyncCmd (Context);
+
+                return inbox;
+            }
+
+            [Test]
+            public void TestSyncChangeForAllItems ()
+            {
+                TestSyncChange<McCalendar> (ClassCode.Calendar, (itemId) => {
+                    return Context.ProtoControl.DeleteCalCmd (itemId);
+                });
+
+                SetUp ();
+
+                TestSyncChange<McContact> (ClassCode.Contacts, (itemId) => {
+                    return Context.ProtoControl.DeleteContactCmd (itemId);
+                });
+
+                SetUp ();
+
+                TestSyncChange<McTask> (ClassCode.Tasks, (itemId) => {
+                    return Context.ProtoControl.DeleteTaskCmd (itemId);
+                });
+
+                SetUp ();
+
+                TestSyncChange<McEmailMessage> (ClassCode.Email, (itemId) => {
+                    return Context.ProtoControl.DeleteEmailCmd (itemId);
+                });
+            }
+
+            private void TestSyncChange<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
+            {
+                // If the ServerIds match, then delete the command.
+                var inbox = SetState<T> (code, clientOp);
+
+                var itemOpXml = SyncUpdateCmdItemXml (inbox.item.ServerId, inbox.folder.ServerId, code,
+                    new XElement (code + "Subject", "(SERVER)")
+                );
+                ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
+
+                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.token);
+                Assert.NotNull (foundPending, "Should not delete pending operation");
+
+                var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, inbox.item.ServerId);
+                Assert.Null (foundItem, "Item should have already been deleted by the client");
+            }
+
+            [Test]
+            public void TestSyncDeleteForAllItems ()
+            {
+                TestSyncDelete<McCalendar> (ClassCode.Calendar, (itemId) => {
+                    return Context.ProtoControl.DeleteCalCmd (itemId);
+                });
+
+                SetUp ();
+
+                TestSyncDelete<McContact> (ClassCode.Contacts, (itemId) => {
+                    return Context.ProtoControl.DeleteContactCmd (itemId);
+                });
+
+                SetUp ();
+
+                TestSyncDelete<McTask> (ClassCode.Tasks, (itemId) => {
+                    return Context.ProtoControl.DeleteTaskCmd (itemId);
+                });
+
+                SetUp ();
+
+                TestSyncDelete<McEmailMessage> (ClassCode.Email, (itemId) => {
+                    return Context.ProtoControl.DeleteEmailCmd (itemId);
+                });
+            }
+
+            private void TestSyncDelete<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
+            {
+                // If ServerIds match, then the delete has already been done by the client. delete both the command and the pending.
+                var inbox = SetState<T> (code, clientOp);
+
+                var itemOpXml = SyncDeleteCmdItemXml (inbox.item.ServerId, inbox.folder.ServerId, code);
+                ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
+
+                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.token);
+                Assert.Null (foundPending, "Pending should be deleted because delete has been done by the client");
+
+                var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, inbox.item.ServerId);
+                Assert.Null (foundItem, "Item should have already been deleted by the client");
+            }
+        }
     }
 }
 
