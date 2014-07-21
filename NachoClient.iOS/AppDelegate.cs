@@ -254,8 +254,7 @@ namespace NachoClient.iOS
         private void FinalShutdown (object opaque)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Called");
-            var referenceCounter = (int)opaque;
-            if (referenceCounter != ShutdownCounter) {
+            if (null != opaque && (int)opaque != ShutdownCounter) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
                 return;
             }
