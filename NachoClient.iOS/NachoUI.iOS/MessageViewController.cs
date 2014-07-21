@@ -280,6 +280,7 @@ namespace NachoClient.iOS
         }
 
         const int USER_IMAGE_TAG = 101;
+        const int USER_LABEL_TAG = 110;
         const int FROM_TAG = 102;
         const int SUBJECT_TAG = 103;
         const int REMINDER_TEXT_TAG = 104;
@@ -321,6 +322,17 @@ namespace NachoClient.iOS
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = USER_IMAGE_TAG;
             view.AddSubview (userImageView);
+
+            // User userLabelView view, if no image
+            var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+            userLabelView.Font = A.Font_AvenirNextRegular24;
+            userLabelView.TextColor = UIColor.White;
+            userLabelView.TextAlignment = UITextAlignment.Center;
+            userLabelView.LineBreakMode = UILineBreakMode.Clip;
+            userLabelView.Layer.CornerRadius = 20;
+            userLabelView.Layer.MasksToBounds = true;
+            userLabelView.Tag = USER_LABEL_TAG;
+            view.AddSubview (userLabelView);
 
             // From label view
             // Font will vary bold or regular, depending on isRead.
@@ -431,13 +443,25 @@ namespace NachoClient.iOS
             var message = thread.SingleMessageSpecialCase ();
             attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
 
-            var userImageView = View.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var emailOfSender = Pretty.EmailString (message.From);
-            string sender = Pretty.SenderString (message.From);
+            // User image view
+            var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+            var userLabelView = view.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            userImageView.Hidden = true;
+            userLabelView.Hidden = true;
 
-            int circleColorNum = Util.SenderToCircle (message.AccountId, emailOfSender);
-            UIColor circleColor = Util.IntToUIColor (circleColorNum);
-            userImageView.Image = Util.LettersWithColor (sender, circleColor, A.Font_AvenirNextUltraLight24);
+            var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+
+            if (null != userImage) {
+                userImageView.Hidden = false;
+                userImageView.Image = userImage;
+            } else {
+                userLabelView.Hidden = false;
+                if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 <= message.cachedFromColor)) {
+                    Util.CacheUserMessageFields (message);
+                }
+                userLabelView.Text = message.cachedFromLetters;
+                userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
+            }
 
             // Subject label view
             var subjectLabelView = View.ViewWithTag (SUBJECT_TAG) as UILabel;

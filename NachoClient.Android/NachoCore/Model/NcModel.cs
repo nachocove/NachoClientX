@@ -79,6 +79,7 @@ namespace NachoCore.Model
             Db.CreateTable<McCred> ();
             Db.CreateTable<McMapFolderFolderEntry> ();
             Db.CreateTable<McFolder> ();
+            Db.CreateTable<McEmailAddress> ();
             Db.CreateTable<McEmailMessage> ();
             Db.CreateTable<McEmailMessageCategory> ();
             Db.CreateTable<McEmailMessageScoreSyncInfo> ();

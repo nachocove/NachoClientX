@@ -55,7 +55,7 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
-        public McEmailMessageThread GetFirstThread()
+        public McEmailMessageThread GetFirstThread ()
         {
             if (null == this.messageThreads) {
                 return null;
@@ -465,13 +465,11 @@ namespace NachoClient.iOS
                 userImageView.Image = userImage;
             } else {
                 userLabelView.Hidden = false;
-                if ((null == message.cachedFromLetters) || (0 == message.cachedFromColor)) {
-                    message.cachedFromLetters = Util.NameToLetters (Pretty.SenderString (message.From));
-                    message.cachedFromColor = Util.ColorIndexOfSender (message.AccountId, Pretty.EmailString (message.From));
-                    message.Update ();
+                if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 > message.cachedFromColor)) {
+                    Util.CacheUserMessageFields (message);
                 }
                 userLabelView.Text = message.cachedFromLetters;
-                userLabelView.BackgroundColor = Util.ColorOfSenderMap (message.cachedFromColor);
+                userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
             // User chili view
@@ -491,8 +489,9 @@ namespace NachoClient.iOS
             if (!compactMode) {
                 previewLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
                 var rawPreview = message.GetBodyPreviewOrEmpty ();
-                var cookedPreview = System.Text.RegularExpressions.Regex.Replace(rawPreview, @"\s+", " ");
-                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);;
+                var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
+                ;
             }
 
             // Reminder image view and label
