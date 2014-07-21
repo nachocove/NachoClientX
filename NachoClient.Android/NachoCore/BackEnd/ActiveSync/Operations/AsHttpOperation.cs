@@ -696,15 +696,26 @@ namespace NachoCore.ActiveSync
 
             case HttpStatusCode.ServiceUnavailable:
                 ReportCommResult (ServerUri.Host, true);
-                uint configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "DelaySeconds", KDefaultDelaySeconds));
-                uint bestSecs = configuredSecs;
+                uint bestSecs, configuredSecs;
+                string value = null;
                 if (response.Headers.Contains (HeaderXMsThrottle)) {
                     IsBeingThrottled = true;
                     Log.Info (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
+                    try {
+                        var protocolState = BEContext.ProtocolState;
+                        value = response.Headers.GetValues (HeaderXMsThrottle).First ();
+                        protocolState.SetAsThrottleReason (value);
+                        protocolState.Update ();
+                    } catch {
+                        Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsThrottle, value);
+                    }
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
+                    configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds));
+                } else {
+                    configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "DelaySeconds", KDefaultDelaySeconds));
                 }
+                bestSecs = configuredSecs;
                 if (response.Headers.Contains (HeaderRetryAfter)) {
-                    string value = null;
                     try {
                         value = response.Headers.GetValues (HeaderRetryAfter).First ();
                         bestSecs = (uint)double.Parse (value);
@@ -721,9 +732,6 @@ namespace NachoCore.ActiveSync
                     }
                     return DelayOrFinalHardFail (bestSecs, "HTTPOP503B", HeaderRetryAfter);
                 } else {
-                    if (IsBeingThrottled) {
-                        bestSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds));
-                    }
                     if (0 != ConsecThrottlePriorDelaySecs) {
                         bestSecs = 2 * ConsecThrottlePriorDelaySecs;
                     }
@@ -760,7 +768,8 @@ namespace NachoCore.ActiveSync
             var result = NcResult.Info (NcResult.SubKindEnum.Info_ServiceUnavailable);
             result.Value = secs;
             Owner.StatusInd (result);
-            if (KMaxDelaySeconds.ToInt () >= secs) {
+            uint maxSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "MaxDelaySeconds", KMaxDelaySeconds));
+            if (maxSecs >= secs) {
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }
             Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
