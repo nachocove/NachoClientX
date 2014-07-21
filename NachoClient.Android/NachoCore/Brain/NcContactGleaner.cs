@@ -35,8 +35,10 @@ namespace NachoCore.Brain
         public static void Stop ()
         {
             if (NcBrain.ENABLED) {
-                Invoker.Dispose ();
-                Invoker = null;
+                if (null != Invoker) {
+                    Invoker.Dispose ();
+                    Invoker = null;
+                }
             }
         }
 
