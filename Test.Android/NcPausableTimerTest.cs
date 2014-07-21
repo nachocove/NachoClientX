@@ -31,7 +31,6 @@ namespace Test.Common
         [SetUp]
         public void SetUp ()
         {
-            NcTimer.TimerClass = typeof(MockTimer);
             NcPausableTimer.StopWatchClass = typeof(MockStopwatch);
 
             CallbackTime = Timeout.Infinite;
@@ -57,7 +56,6 @@ namespace Test.Common
         {
             MockTimer.Stop ();
 
-            NcTimer.TimerClass = typeof(PlatformTimer);
             NcPausableTimer.StopWatchClass = typeof(PlatformStopwatch);
         }
 

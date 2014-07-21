@@ -14,13 +14,6 @@ namespace Test.Common
         private const int ID_DEFERENCE = 1;
         private const int ID_AGING = 2;
 
-        private static DateTime CurrentDateTime;
-
-        public static DateTime MockGetCurrentDateTime ()
-        {
-            return CurrentDateTime;
-        }
-
         private int CallbackState;
 
         private double Adjustment;
@@ -32,10 +25,7 @@ namespace Test.Common
         [SetUp]
         public void SetUp ()
         {
-            CurrentDateTime = new DateTime (1, 1, 1, 0, 0, 0);
-            NcTimer.TimerClass = typeof(MockTimer);
-            NcTimer.GetCurrentTime = MockGetCurrentDateTime;
-            NcTimeVariance.GetCurrentDateTime = MockGetCurrentDateTime;
+            NcTimeVariance.GetCurrentDateTime = MockTimer.GetCurrentDateTime;
             CallbackState = 0;
             Adjustment = 0.0;
             Signal = new AutoResetEvent (false);
@@ -47,8 +37,6 @@ namespace Test.Common
         public void TearDown ()
         {
             MockTimer.Stop ();
-            NcTimer.TimerClass = typeof(PlatformTimer);
-            NcTimer.GetCurrentTime = NcTimer.DefaultGetCurrentTime;
             NcTimeVariance.GetCurrentDateTime = NcTimeVariance.PlatformGetCurrentDateTime;
         }
 
@@ -56,14 +44,14 @@ namespace Test.Common
         {
             NcAssert.True ((0 <= objId) && (2 >= objId));
             CallbackState = state;
-            Adjustment = TimeVariance [objId].Adjustment (MockGetCurrentDateTime ());
+            Adjustment = TimeVariance [objId].Adjustment (MockTimer.GetCurrentDateTime ());
             Signal.Set ();
         }
 
         private void AdvanceTime (int days, int hours, int minutes, int seconds)
         {
             TimeSpan timeInterval = new TimeSpan (days, hours, minutes, seconds);
-            CurrentDateTime += timeInterval;
+            MockTimer.CurrentDateTime += timeInterval;
             MockTimer.CurrentTime += (Int64)timeInterval.TotalMilliseconds;
         }
 
@@ -105,7 +93,7 @@ namespace Test.Common
         [TestCase]
         public void DeadlineTimeVariance ()
         {
-            DateTime deadline = MockGetCurrentDateTime () + new TimeSpan (5, 0, 0, 0);
+            DateTime deadline = MockTimer.GetCurrentDateTime () + new TimeSpan (5, 0, 0, 0);
             TimeVariance [ID_DEADLINE] =
                 (NcTimeVariance)new NcDeadlineTimeVariance ("deadline", Callback, ID_DEADLINE, deadline);
 
@@ -133,7 +121,7 @@ namespace Test.Common
         [TestCase]
         public void DeferenceTimeVariance ()
         {
-            DateTime deferredUntil = MockGetCurrentDateTime () + new TimeSpan (3, 0, 0, 0);
+            DateTime deferredUntil = MockTimer.GetCurrentDateTime () + new TimeSpan (3, 0, 0, 0);
             TimeVariance [ID_DEFERENCE] =
                 (NcTimeVariance)new NcDeferenceTimeVariance ("deference", Callback, ID_DEFERENCE, deferredUntil);
 
@@ -145,7 +133,7 @@ namespace Test.Common
         [TestCase]
         public void AgingTimeVariance ()
         {
-            DateTime dateReceived = MockGetCurrentDateTime ();
+            DateTime dateReceived = MockTimer.GetCurrentDateTime ();
             TimeVariance [ID_AGING] =
                 (NcTimeVariance)new NcAgingTimeVariance ("aging", Callback, ID_AGING, dateReceived);
 
@@ -164,7 +152,7 @@ namespace Test.Common
         [TestCase]
         public void PauseResume ()
         {
-            DateTime dateReceived = MockGetCurrentDateTime ();
+            DateTime dateReceived = MockTimer.GetCurrentDateTime ();
             TimeVariance [ID_AGING] =
                 (NcTimeVariance)new NcAgingTimeVariance ("pause-n-resume", Callback, ID_AGING, dateReceived);
             NcTimeVariance tv = TimeVariance [ID_AGING];

@@ -123,6 +123,8 @@ namespace Test.Common
             }
         }
 
+        public static DateTime CurrentDateTime;
+
         static Thread CallbackThread;
         static CancellationTokenSource Cancellation;
         static AutoResetEvent Signal;
@@ -254,6 +256,10 @@ namespace Test.Common
 
         public static void Start ()
         {
+            CurrentDateTime = new DateTime (1, 1, 1, 0, 0, 0);
+            NcTimer.TimerClass = typeof(MockTimer);
+            NcTimer.GetCurrentTime = GetCurrentDateTime;
+
             CallbackThread = new Thread (CallbackLoop);
             Cancellation = new CancellationTokenSource ();
             Signal = new AutoResetEvent (false);
@@ -267,6 +273,9 @@ namespace Test.Common
             Cancellation.Cancel ();
             Signal.Set ();
             ActiveList.Clear ();
+
+            NcTimer.TimerClass = typeof(PlatformTimer);
+            NcTimer.GetCurrentTime = NcTimer.DefaultGetCurrentTime;
         }
 
         public static void CallbackLoop (object obj)
@@ -307,6 +316,11 @@ namespace Test.Common
                 /// get rid of this code.
                 return new Random ().Next ();
             }
+        }
+
+        public static DateTime GetCurrentDateTime ()
+        {
+            return CurrentDateTime;
         }
     }
 }
