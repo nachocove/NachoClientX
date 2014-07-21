@@ -312,8 +312,13 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
             UnhookFetchStatusHandler ();
             ++ShutdownCounter;
-            ShutdownTimer.Dispose ();
-            ShutdownTimer = null;
+            if (null != ShutdownTimer) {
+                ShutdownTimer.Dispose ();
+                ShutdownTimer = null;
+            }
+            if (FinalShutdownHasHappened) {
+                ReverseFinalShutdown ();
+            }
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Cleanup complete");
 
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (653);
