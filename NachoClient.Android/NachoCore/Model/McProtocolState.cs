@@ -68,12 +68,14 @@ namespace NachoCore.Model
             fromServer = fromServer.Trim ();
             if ("CommandFrequency" == fromServer) {
                 AsThrottleReason = AsThrottleReasons.CommandFrequency;
-            }
-            if ("RecentCommands" == fromServer) {
+            } else if ("RecentCommands" == fromServer) {
                 AsThrottleReason = AsThrottleReasons.RecentCommands;
+            } else {
+                Log.Error (Log.LOG_AS, "Unknown X-MS-ASThrottle value: {0}", fromServer);
+                AsThrottleReason = AsThrottleReasons.Unknown;
+                return;
             }
-            Log.Error (Log.LOG_AS, "Unknown X-MS-ASThrottle value: {0}", fromServer);
-            AsThrottleReason = AsThrottleReasons.Unknown;
+            Log.Info (Log.LOG_AS, "X-MS-ASThrottle value: {0}", AsThrottleReason);
         }
     }
 }
