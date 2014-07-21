@@ -558,7 +558,7 @@ namespace NachoClient.iOS
                 case 0:
                     var message = messageThread.SingleMessageSpecialCase ();
                     message.UserAction = 1;
-                    message.Update();
+                    message.Update ();
                     break;
                 case 1:
                     PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
@@ -689,17 +689,21 @@ namespace NachoClient.iOS
         public void carouselSwipe (UISwipeGestureRecognizer obj)
         {
             if (UISwipeGestureRecognizerDirection.Up == obj.Direction) {
-                var i = carouselView.CurrentItemIndex;
-                var messageThread = priorityInbox.GetEmailThread (i);
-                PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                if (0 < priorityInbox.Count()) {
+                    var i = carouselView.CurrentItemIndex;
+                    var messageThread = priorityInbox.GetEmailThread (i);
+                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+                }
                 return;
             }
             if (UISwipeGestureRecognizerDirection.Down == obj.Direction) {
-                var i = carouselView.CurrentItemIndex;
-                var messageThread = priorityInbox.GetEmailThread (i);
-                var message = messageThread.SingleMessageSpecialCase ();
-                message.UserAction = -1;
-                message.Update ();
+                if (0 < priorityInbox.Count()) {
+                    var i = carouselView.CurrentItemIndex;
+                    var messageThread = priorityInbox.GetEmailThread (i);
+                    var message = messageThread.SingleMessageSpecialCase ();
+                    message.UserAction = -1;
+                    message.Update ();
+                }
                 return;
             }
             NcAssert.CaseError ();
@@ -791,7 +795,7 @@ namespace NachoClient.iOS
             protected const int USER_IMAGE_TAG = 101;
             protected const int FROM_TAG = 102;
             protected const int SUBJECT_TAG = 103;
-            protected const int SUMMARY_TAG = 104;
+            protected const int PREVIEW_TAG = 104;
             protected const int REMINDER_ICON_TAG = 105;
             protected const int REMINDER_TEXT_TAG = 106;
             protected const int ATTACHMENT_TAG = 107;
@@ -873,14 +877,14 @@ namespace NachoClient.iOS
                 subjectLabelView.Tag = SUBJECT_TAG;
                 view.AddSubview (subjectLabelView);
 
-                // Summary label view
+                // Preview label view
                 // Size fields will be recalculated after text is known
-                var summaryLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 120));
-                summaryLabelView.Font = A.Font_AvenirNextRegular14;
-                summaryLabelView.TextColor = A.Color_999999;
-                summaryLabelView.Lines = 0;
-                summaryLabelView.Tag = SUMMARY_TAG;
-                view.AddSubview (summaryLabelView);
+                var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 120));
+                previewLabelView.Font = A.Font_AvenirNextRegular14;
+                previewLabelView.TextColor = A.Color_999999;
+                previewLabelView.Lines = 0;
+                previewLabelView.Tag = PREVIEW_TAG;
+                view.AddSubview (previewLabelView);
 
 //                // Reminder image view
 //                var reminderImageView = new UIImageView (new RectangleF (65, 119, 12, 12));
@@ -1010,9 +1014,11 @@ namespace NachoClient.iOS
                 var subjectLabelView = view.ViewWithTag (SUBJECT_TAG) as UILabel;
                 subjectLabelView.Text = Pretty.SubjectString (message.Subject);
 
-                // Summary label view
-                var summaryLabelView = view.ViewWithTag (SUMMARY_TAG) as UILabel;
-                summaryLabelView.Text = message.GetBodyPreviewOrEmpty();
+                // Preview label view
+                var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
+                var rawPreview = message.GetBodyPreviewOrEmpty ();
+                var cookedPreview = System.Text.RegularExpressions.Regex.Replace(rawPreview, @"\s+", " ");
+                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);;
 
 //                // Reminder image view and label
 //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -1139,7 +1145,7 @@ namespace NachoClient.iOS
             {
                 Log.Info (Log.LOG_UI, "DraggingStarted");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStarted),
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             }
@@ -1148,7 +1154,7 @@ namespace NachoClient.iOS
             {
                 Log.Info (Log.LOG_UI, "DraggingEnded");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ViewScrollingStopped),
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             }

@@ -62,8 +62,8 @@ namespace NachoCore.Utils
             Info_FolderSyncSucceeded,
             Info_MeetingResponseSucceeded,
             Info_SearchCommandSucceeded,
-            Info_ViewScrollingStarted,
-            Info_ViewScrollingStopped,
+            Info_BackgroundAbateStarted,
+            Info_BackgroundAbateStopped,
             Info_ServiceUnavailable,
             Info_ValidateConfigSucceeded,
             // Warning.

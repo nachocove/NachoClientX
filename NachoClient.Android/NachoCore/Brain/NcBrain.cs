@@ -73,11 +73,7 @@ namespace NachoCore.Brain
         {
             // Look for a list of emails
             int numGleaned = 0;
-            while (numGleaned < count) {
-                // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                    NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-                }
+            while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
                     x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState).FirstOrDefault ();
                 if (null == emailMessage) {
@@ -93,11 +89,7 @@ namespace NachoCore.Brain
         private int AnalyzeContacts (int count)
         {
             int numAnalyzed = 0;
-            while (numAnalyzed < count) {
-                // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                    NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-                }
+            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
                 if (null == contact) {
                     return numAnalyzed;
@@ -112,11 +104,7 @@ namespace NachoCore.Brain
         private int AnalyzeEmails (int count)
         {
             int numAnalyzed = 0;
-            while (numAnalyzed < count) {
-                // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                    NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-                }
+            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
                 if (null == emailMessage) {
                     return numAnalyzed;
@@ -131,11 +119,7 @@ namespace NachoCore.Brain
         private int UpdateContactScores (int count)
         {
             int numUpdated = 0;
-            while (numUpdated < count) {
-                // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                    NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-                }
+            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.NeedUpdate).FirstOrDefault ();
                 if (null == contact) {
                     return numUpdated;
@@ -154,11 +138,7 @@ namespace NachoCore.Brain
         private int UpdateEmailMessageScores (int count)
         {
             int numUpdated = 0;
-            while (numUpdated < count) {
-                // Slow down when the UI is busy
-                if (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId) {
-                    NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
-                }
+            while (numUpdated < count  && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.NeedUpdate).FirstOrDefault ();
                 if (null == emailMessage) {
                     return numUpdated;

@@ -145,7 +145,7 @@ namespace NachoClient.iOS
         protected const int USER_CHECKMARK_TAG = 99104;
         protected const int FROM_TAG = 99105;
         protected const int SUBJECT_TAG = 99106;
-        protected const int SUMMARY_TAG = 99107;
+        protected const int PREVIEW_TAG = 99107;
         protected const int REMINDER_ICON_TAG = 99108;
         protected const int REMINDER_TEXT_TAG = 99109;
         protected const int ATTACHMENT_TAG = 99110;
@@ -348,12 +348,13 @@ namespace NachoClient.iOS
 
                 // Summary label view
                 // Size fields will be recalculated after text is known
-                var summaryLabelView = new UILabel (new RectangleF (65, 60, cellWidth - 15 - 65, 60));
-                summaryLabelView.Font = A.Font_AvenirNextRegular14;
-                summaryLabelView.TextColor = A.Color_999999;
-                summaryLabelView.Lines = 2;
-                summaryLabelView.Tag = SUMMARY_TAG;
-                cell.ContentView.AddSubview (summaryLabelView);
+                var previewLabelView = new UILabel (new RectangleF (65, 60, cellWidth - 15 - 65, 60));
+                previewLabelView.ContentMode = UIViewContentMode.TopLeft;
+                previewLabelView.Font = A.Font_AvenirNextRegular14;
+                previewLabelView.TextColor = A.Color_999999;
+                previewLabelView.Lines = 2;
+                previewLabelView.Tag = PREVIEW_TAG;
+                cell.ContentView.AddSubview (previewLabelView);
 
                 // Reminder image view
                 var reminderImageView = new UIImageView (new RectangleF (65, 119, 12, 12));
@@ -484,13 +485,14 @@ namespace NachoClient.iOS
             var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
 
-            // Summary label view
-            var summaryLabelView = cell.ContentView.ViewWithTag (SUMMARY_TAG) as UILabel;
-            summaryLabelView.Hidden = compactMode;
+            // Preview label view
+            var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
+            previewLabelView.Hidden = compactMode;
             if (!compactMode) {
-                summaryLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
-                summaryLabelView.Text = message.GetBodyPreviewOrEmpty();
-                summaryLabelView.SizeToFit ();
+                previewLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
+                var rawPreview = message.GetBodyPreviewOrEmpty ();
+                var cookedPreview = System.Text.RegularExpressions.Regex.Replace(rawPreview, @"\s+", " ");
+                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);;
             }
 
             // Reminder image view and label
