@@ -34,7 +34,6 @@ namespace NachoClient.iOS
             Success
         };
 
-
         public SettingsViewController (IntPtr handle) : base (handle)
         {
             doneButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
@@ -69,9 +68,13 @@ namespace NachoClient.iOS
             root.Add (AddAccountSettings ());
             Root = root;
 
+            configureDoneButton ();
+        }
+
+        public void configureDoneButton()
+        {
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
-
                 McAccount theAccount = McAccount.QueryById<McAccount> (Account.AccountId);
                 McCred theCred = McCred.QueryById<McCred> (Account.McCredId);
                 McServer theServer = McServer.QueryById<McServer> (Account.ServerId);
@@ -82,7 +85,7 @@ namespace NachoClient.iOS
                 theAccount.DisplayName = Account.AccountName;
                 theAccount.Signature = Account.EmailSignature;
                 theAccount.Update();
-               
+
                 theCred.Username = Account.UserName;
                 theCred.Password = Account.Password;
                 theAccount.EmailAddr = Account.EmailAddress;
@@ -95,18 +98,15 @@ namespace NachoClient.iOS
                 McServer s = new McServer();
                 s.Host = Account.MailServer;
 
-                configureStatusViewForValidating();
-
                 var didStart = BackEnd.Instance.ValidateConfig(theAccount.Id, s, c);
 
                 if(!didStart)
                 {
-//                    UIAlertView x = new UIAlertView("Hello", "world", null, "Cancel", null);
-//                    UIActivityIndicatorView spin = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.White);
-//                    spin.Frame = new System.Drawing.RectangleF(100, View.Frame.Height / 2 - 10, 20,20);
-//                    spin.StartAnimating();
-//                    x.AddSubview(spin);
-//                    x.Show();
+                    Console.WriteLine("NETWORK FAILURE");
+                }
+                else
+                {
+                    configureStatusViewForValidating();
                 }
             };
         }
@@ -138,20 +138,6 @@ namespace NachoClient.iOS
             View.AddSubview(statusView);
         }
 
-        public void configureStatusViewForSuccess()
-        {
-            if (statusView.Subviews.Length > 0) {
-
-                while (statusView.Subviews.Length != 0) {
-                    UIView x = statusView.Subviews [0];
-                    x.RemoveFromSuperview ();
-                }
-            }
-               
-
-        }
-
-
         public void saveSettings()
         {
             McAccount theAccount = McAccount.QueryById<McAccount> (Account.AccountId);
@@ -174,6 +160,11 @@ namespace NachoClient.iOS
             string message;
             bool isSuccess;
 
+            float statusViewWidth = 213.0f;
+            float statusViewHeight = 139.0f;
+            float statusViewX = 58.0f;
+            float statusViewY = 3.0f;
+
             switch (whatType) {
             case statusType.ErrorAuth:
                 header = "Invalid Credentials";
@@ -193,15 +184,14 @@ namespace NachoClient.iOS
 
             if (statusView.Subviews.Length > 0) {
 
-                while (statusView.Subviews.Length != 0) {
-                    UIView x = statusView.Subviews [0];
-                    x.RemoveFromSuperview ();
+            while (statusView.Subviews.Length != 0) {
+                UIView x = statusView.Subviews [0];
+                x.RemoveFromSuperview ();
                 }
             }
 
             if (isSuccess) {
-                float viewwidth = View.Frame.Width / 2.5f;
-                statusView.Frame = new System.Drawing.RectangleF (viewwidth / 1.3f, 3.5f, viewwidth, View.Frame.Height / 9.5f);
+                statusView.Frame = new System.Drawing.RectangleF (105 , statusViewY, 110, 40);
                 statusView.Layer.CornerRadius = 15.0f;
                 statusView.BackgroundColor = UIColor.DarkGray;
                 statusView.Alpha = .8f;
@@ -215,9 +205,14 @@ namespace NachoClient.iOS
                 statusMessage.TextAlignment = UITextAlignment.Center;
                 statusView.AddSubview (statusMessage);
 
+                saveSettings();
+                //dismissStatusView();
+
             } else {
-                float viewwidth = View.Frame.Width / 1.5f;
-                statusView.Frame = new System.Drawing.RectangleF(viewwidth/3.7f, 3.5f, viewwidth, View.Frame.Height / 3);
+
+
+
+                statusView.Frame = new System.Drawing.RectangleF(statusViewX, statusViewY + TableView.ContentOffset.Y, statusViewWidth, statusViewHeight);
                 statusView.Layer.CornerRadius = 15.0f;
                 statusView.BackgroundColor = UIColor.DarkGray;
                 statusView.Alpha = .8f;
@@ -231,7 +226,7 @@ namespace NachoClient.iOS
                 statusMessage.TextAlignment = UITextAlignment.Center;
                 statusView.AddSubview(statusMessage);
 
-                failedConfigWarning = new UITextView(new System.Drawing.RectangleF(8, 28, statusView.Frame.Width - 16, statusView.Frame.Height- 70));
+                failedConfigWarning = new UITextView(new System.Drawing.RectangleF(8, 28.0f, statusView.Frame.Width - 16, statusView.Frame.Height- 70));
                 failedConfigWarning.BackgroundColor = UIColor.DarkGray;
                 failedConfigWarning.Alpha = .8f;
                 failedConfigWarning.Font = A.Font_AvenirNextRegular12;
@@ -259,7 +254,7 @@ namespace NachoClient.iOS
                 horizontalLine.BackgroundColor = UIColor.White;
                 statusView.Add (horizontalLine);
 
-                UIView verticalLine = new UIView (new System.Drawing.RectangleF (statusView.Frame.Width/2, 99, 1.0f, 39));
+                UIView verticalLine = new UIView (new System.Drawing.RectangleF (statusView.Frame.Width/2, 99, 1.0f, 40));
                 verticalLine.Alpha = .8f;
                 verticalLine.BackgroundColor = UIColor.White;
                 statusView.Add (verticalLine);
@@ -277,9 +272,7 @@ namespace NachoClient.iOS
                     dismissStatusView();
                 }), UIControlEvent.TouchUpInside);
                 statusView.AddSubview(saveButton);
-
             }
-
         }
 
         public void dismissStatusView()
@@ -455,16 +448,9 @@ namespace NachoClient.iOS
             McCred userCredentials = McCred.QueryById<McCred> (whatAccount.CredId);
             McServer userMailServer = McServer.QueryById<McServer> (whatAccount.ServerId);
             McConference userConference = McConference.QueryById<McConference> (whatAccount.ConferenceId);
-            //McConference userConferenceInfo = McConference.QueryById<McConference> (whatAccount.ConferenceId);
             Account.AccountId = whatAccount.Id;
             Account.McCredId = userCredentials.Id;
             Account.ServerId = userMailServer.Id;
-
-
-
-
-
-
 
             if (null != userConference) {
                 Account.ConferenceId = userConference.Id;
