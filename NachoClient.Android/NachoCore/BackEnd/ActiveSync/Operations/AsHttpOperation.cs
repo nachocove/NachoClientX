@@ -64,11 +64,13 @@ namespace NachoCore.ActiveSync
         private const string HeaderRetryAfter = "Retry-After";
         private const string HeaderXMsRp = "X-MS-RP";
         private const string HeaderXMsLocation = "X-MS-Location";
+        private const string HeaderXMsThrottle = "X-MS-ASThrottle";
         private const string KXsd = "xsd";
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
-        private const string KDefaultDelaySeconds = "10";
+        private const string KDefaultDelaySeconds = "5";
+        private const string KDefaultThrottleDelaySeconds = "60";
         private const string KMaxDelaySeconds = "30";
         private const string KDefaultTimeoutSeconds = "20";
         private const string KDefaultTimeoutExpander = "1.2";
@@ -92,6 +94,8 @@ namespace NachoCore.ActiveSync
         private bool ServerUriBeingTested;
         private Stream ContentData;
         private string ContentType;
+        private bool IsBeingThrottled;
+        private uint ConsecThrottlePriorDelaySecs;
         // Properties.
         // Used for mocking.
         public Type HttpClientType { set; get; }
@@ -496,6 +500,10 @@ namespace NachoCore.ActiveSync
                 return Final (preProcessEvent);
             }
             XDocument responseDoc;
+            if (HttpStatusCode.ServiceUnavailable != response.StatusCode) {
+                IsBeingThrottled = false;
+                ConsecThrottlePriorDelaySecs = 0;
+            }
             switch (response.StatusCode) {
             case HttpStatusCode.OK:
                 ReportCommResult (ServerUri.Host, false);
@@ -690,6 +698,11 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, true);
                 uint configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "DelaySeconds", KDefaultDelaySeconds));
                 uint bestSecs = configuredSecs;
+                if (response.Headers.Contains (HeaderXMsThrottle)) {
+                    IsBeingThrottled = true;
+                    Log.Info (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
+                    Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
+                }
                 if (response.Headers.Contains (HeaderRetryAfter)) {
                     string value = null;
                     try {
@@ -707,8 +720,16 @@ namespace NachoCore.ActiveSync
                         }
                     }
                     return DelayOrFinalHardFail (bestSecs, "HTTPOP503B", HeaderRetryAfter);
+                } else {
+                    if (IsBeingThrottled) {
+                        bestSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds));
+                    }
+                    if (0 != ConsecThrottlePriorDelaySecs) {
+                        bestSecs = 2 * ConsecThrottlePriorDelaySecs;
+                    }
+                    ConsecThrottlePriorDelaySecs = bestSecs;
+                    return DelayOrFinalHardFail (bestSecs, "HTTPOP503C", "HttpStatusCode.ServiceUnavailable");
                 }
-                return DelayOrFinalHardFail (bestSecs, "HTTPOP503C", "HttpStatusCode.ServiceUnavailable");
 
             case (HttpStatusCode)505:
                 // This has been seen to be caused by a mis-typed MS-XX header name.
