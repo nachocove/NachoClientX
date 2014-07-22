@@ -104,7 +104,7 @@
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" id="Q8y-4K-BAb"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItemEdit" id="wNy-ed-w10"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="NachoNowToCompose" id="Zli-hF-qvP"/>
-                        <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventViewAdd" id="73P-Mz-0ur"/>
+                        <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="73P-Mz-0ur"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="tgm-1S-bYq"/>
                     </connections>
                 </viewController>
@@ -187,7 +187,7 @@
                         <outlet property="todayButton" destination="RPJ-Y3-1md" id="OfS-q9-XPJ"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="eK3-Wd-Zbv"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="vah-yS-677"/>
-                        <segue destination="em2-Kh-10O" kind="push" identifier="CalendarToEventViewAdd" id="CoK-I1-8hz"/>
+                        <segue destination="em2-Kh-10O" kind="push" identifier="CalendarToEventView" id="CoK-I1-8hz"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1687,22 +1687,22 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="eK3-Wd-Zbv"/>
-        <segue reference="DSB-SJ-fIa"/>
         <segue reference="Oi3-nV-lAC"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="7f1-U8-A7w"/>
         <segue reference="ebP-h4-BhC"/>
+        <segue reference="4Sl-0E-160"/>
+        <segue reference="s9j-Ih-SWz"/>
+        <segue reference="tgm-1S-bYq"/>
+        <segue reference="Rd3-YY-NMX"/>
         <segue reference="RaB-9o-azo"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="73P-Mz-0ur"/>
         <segue reference="ja3-Zu-g6R"/>
-        <segue reference="tgm-1S-bYq"/>
         <segue reference="Zli-hF-qvP"/>
+        <segue reference="Q8y-4K-BAb"/>
         <segue reference="PxE-UU-EfC"/>
-        <segue reference="4Sl-0E-160"/>
+        <segue reference="xrp-ey-B0j"/>
         <segue reference="TmW-KY-ab0"/>
         <segue reference="1ti-Nl-FYh"/>
-        <segue reference="xrp-ey-B0j"/>
     </inferredMetricsTieBreakers>
 </document>

@@ -63,7 +63,7 @@ namespace NachoClient.iOS
         UILabel startDateLabel;
         UILabel endDateLabel;
 
-        UIColor separatorColor = new UIColor (.8f, .8f, .8f, .6f);
+        UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
@@ -142,7 +142,31 @@ namespace NachoClient.iOS
             c = CalendarHelper.DefaultMeeting ();
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
-            CreateEventView ();
+
+            switch (action) {
+            case CalendarItemEditorAction.create:
+                c = CalendarHelper.DefaultMeeting ();
+                CreateEventView ();
+                break;
+            case CalendarItemEditorAction.edit:
+                c = item;
+
+                break;
+            case CalendarItemEditorAction.view:
+                c = item;
+                CreateEventView ();
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+
+        }
+
+        public void SetCalendarItem (McCalendar item, CalendarItemEditorAction action)
+        {
+            this.item = item;
+            this.action = action;
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -184,17 +208,6 @@ namespace NachoClient.iOS
         public void SetOwner (INachoCalendarItemEditorParent owner)
         {
             this.owner = owner;
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="item">Item.</param>
-        /// <param name="action">Action.</param>
-        public void SetCalendarItem (McCalendar item, CalendarItemEditorAction action)
-        {
-            this.item = item;
-            this.action = action;
         }
 
         /// <summary>
@@ -267,6 +280,7 @@ namespace NachoClient.iOS
                     c.attendees = dc.GetAttendeeList ();
                     ConfigureEventView();
                 };
+                return;
             }
 
             if (segue.Identifier.Equals ("EventToAlert")) {
@@ -276,6 +290,7 @@ namespace NachoClient.iOS
                     c.Reminder = dc.GetReminder ();
                     ConfigureEventView();
                 };
+                return;
             }
 
             if (segue.Identifier.Equals ("EventToPhone")) {
@@ -285,6 +300,7 @@ namespace NachoClient.iOS
                     TempPhone = dc.GetPhone ();
                     ConfigureEventView();
                 };
+                return;
             }
 
             if (segue.Identifier.Equals ("EventToCal")) {
@@ -294,7 +310,10 @@ namespace NachoClient.iOS
                     calendarIndex = dc.GetCalIndex ();
                     ConfigureEventView();
                 };
+                return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
 
@@ -901,7 +920,7 @@ namespace NachoClient.iOS
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
-            return (lineUIView);
+            return lineUIView;
         }
 
         protected void SelectionChanged (UITextView textView)

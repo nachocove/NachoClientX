@@ -177,7 +177,7 @@ namespace NachoClient.iOS
             }
 
             TableView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
-            TableView.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
+            TableView.SeparatorColor = A.Color_NachoSeparator;
 
         }
 
@@ -245,16 +245,6 @@ namespace NachoClient.iOS
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         public float IMAGE_HEIGHT = SCREEN_WIDTH/2 - 45;
 
-        protected static List<string> Attendees = new List<string> (new string[] {
-            "Cole Britton",
-            "Zach Quiring",
-            "Kevin Quiring",
-            "Paul Quiring",
-            "Jenna Britton",
-            "Joe Britton",
-            "Kanye West"
-
-        });
         RootElementWithIcon alertsElement;
         CustomEntryElementDetail attachmentsElement;
         CustomEntryElement notesElement;
@@ -367,8 +357,8 @@ namespace NachoClient.iOS
 
             int counter = 0;
             int SPACING = 0;
-            if (5 >= Attendees.Count) {
-                foreach (var attendee in Attendees) {
+            if (5 >= c.attendees.Count) {
+                foreach (var attendee in c.attendees) {
                     //var name = attendee.DisplayName;
                     UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
                     attendeeButton.Layer.CornerRadius = (45 / 2);
@@ -399,7 +389,7 @@ namespace NachoClient.iOS
                     SPACING = SPACING + 55;
                 }
             } else {
-                foreach (var attendee in Attendees) {
+                foreach (var attendee in c.attendees) {
                     //var name = attendee.DisplayName;
                     UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
                     attendeeButton.Layer.CornerRadius = (45 / 2);
@@ -599,8 +589,7 @@ namespace NachoClient.iOS
                     attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt(i).DisplayName), UIControlState.Normal);
 
                     var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                    string[] name = Attendees [i].Split(' ');
-                        attendeeLabelView.Text = c.attendees.ElementAt(i).DisplayName;
+                    attendeeLabelView.Text = c.attendees.ElementAt(i).DisplayName;
                     i++;
                 }
             }

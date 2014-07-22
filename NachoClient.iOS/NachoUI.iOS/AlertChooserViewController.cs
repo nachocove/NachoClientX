@@ -19,8 +19,9 @@ namespace NachoClient.iOS
         }
 
         public uint Reminder;
+        List<uint> minValues = new List<uint>(new uint[] { 0, 1, 5, 15, 30, 60, 120, 1440, 2880, 20160 });
 
-        UIColor separatorColor = new UIColor (.8f, .8f, .8f, .6f);
+        UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
@@ -202,78 +203,13 @@ namespace NachoClient.iOS
 
         public void SetReminderValue (int tag)
         {
-            var min = IndexToUInt (tag - 101);
+            var min = minValues [tag - 101];
             Reminder = min;
         }
 
         public int UIntToIndex (uint min)
         {
-            if (0 == min) {
-                return 0;
-            }
-            if (1 == min) {
-                return 1;
-            }
-            if (5 == min) {
-                return 2;
-            }
-            if (15 == min) {
-                return 3;
-            }
-            if (30 == min) {
-                return 4;
-            }
-            if (60 == min) {
-                return 5;
-            }
-            if (120 == min) {
-                return 6;
-            }
-            if (1440 == min) {
-                return 7;
-            }
-            if (2880 == min) {
-                return 8;
-            }
-            if (20160 == min) {
-                return 9;
-            }
-            return 0;
-        }
-
-        public uint IndexToUInt (int index)
-        {
-            if (0 == index) {
-                return 0;
-            }
-            if (1 == index) {
-                return 1;
-            }
-            if (2 == index) {
-                return 5;
-            }
-            if (3 == index) {
-                return 15;
-            }
-            if (4 == index) {
-                return 30;
-            }
-            if (5 == index) {
-                return 60;
-            }
-            if (6 == index) {
-                return 120;
-            }
-            if (7 == index) {
-                return 1440;
-            }
-            if (8 == index) {
-                return 2880;
-            }
-            if (9 == index) {
-                return 20160;
-            }
-            return 0;
+            return minValues.IndexOf (min);
         }
     }
 }

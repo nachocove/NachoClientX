@@ -219,7 +219,7 @@ namespace NachoClient.iOS
             case SidebarToEventSegueId:
                 {
                     var vc = (EventViewController)destViewController;
-                    //vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                     vc.showMenu = true;
                 }
                 break;

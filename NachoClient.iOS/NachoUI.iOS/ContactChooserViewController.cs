@@ -100,7 +100,7 @@ namespace NachoClient.iOS
             SetToButtonLabel (address.kind);
 
             AutocompleteTextField.BecomeFirstResponder ();
-            TableView.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
+            TableView.SeparatorColor = A.Color_NachoSeparator;
         }
 
         public override void ViewWillAppear (bool animated)

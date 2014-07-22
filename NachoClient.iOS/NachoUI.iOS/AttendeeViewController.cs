@@ -41,7 +41,7 @@ namespace NachoClient.iOS
             this.Pushing = true;
             this.Style = UITableViewStyle.Plain;
             TableView.SeparatorInset = new UIEdgeInsets (0, 0, 0, 0);
-            TableView.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
+            TableView.SeparatorColor = A.Color_NachoSeparator;
         }
 
         public override void ViewWillAppear (bool animated)

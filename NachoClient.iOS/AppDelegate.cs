@@ -579,6 +579,7 @@ namespace NachoClient.iOS
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
 
             var soundExpressed = false;
+            int remainingVisibleSlots = 10;
             foreach (var message in unreadAndHot) {
                 if (message.HasBeenNotified) {
                     continue;
@@ -596,6 +597,10 @@ namespace NachoClient.iOS
                 message.HasBeenNotified = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                --remainingVisibleSlots;
+                if (0 >= remainingVisibleSlots) {
+                    break;
+                }
             }
         }
     }
