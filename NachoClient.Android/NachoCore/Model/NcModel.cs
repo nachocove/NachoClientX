@@ -36,7 +36,7 @@ namespace NachoCore.Model
                         SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                         storeDateTimeAsTicks: true);
                     db.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                    db.TraceThreshold = 100;
+                    db.TraceThreshold = 300;
                     DbConns.TryAdd (threadId, db);
                 }
                 return db;
@@ -252,6 +252,11 @@ namespace NachoCore.Model
         {
             DbFileName = dbFileName;
             InitializeDb ();
+        }
+
+        public void SetDetailMode (bool enable)
+        {
+            SQLiteConnection.DetailMode = enable;
         }
     }
 }

@@ -137,6 +137,7 @@ namespace SQLite
 	/// </summary>
 	public partial class SQLiteConnection : IDisposable
 	{
+        public static bool DetailMode { set; get; }
 		private bool _open;
 		private TimeSpan _busyTimeout;
 		private Dictionary<string, TableMapping> _mappings = null;
@@ -620,7 +621,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			
-			if (TimeExecution || 0 < TraceThreshold) {
+			if (TimeExecution || 0 < TraceThreshold || SQLiteConnection.DetailMode) {
 				if (_sw == null) {
 					_sw = new Stopwatch ();
 				}
@@ -635,11 +636,11 @@ namespace SQLite
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
 				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
-            if (0 < TraceThreshold) {
+            if (0 < TraceThreshold || SQLiteConnection.DetailMode) {
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
-                if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                if (span > TraceThreshold || SQLiteConnection.DetailMode) {
+                    Log.Info (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
                 }
             }
 			
@@ -650,7 +651,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 			
-            if (TimeExecution || 0 < TraceThreshold) {
+            if (TimeExecution || 0 < TraceThreshold || SQLiteConnection.DetailMode) {
 				if (_sw == null) {
 					_sw = new Stopwatch ();
 				}
@@ -665,11 +666,11 @@ namespace SQLite
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
 				Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
 			}
-            if (0 < TraceThreshold) {
+            if (0 < TraceThreshold || SQLiteConnection.DetailMode) {
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
-                if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                if (span > TraceThreshold || SQLiteConnection.DetailMode) {
+                    Log.Info (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
                 }
             }
 			return r;
@@ -694,7 +695,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 
-            if (TimeExecution || 0 < TraceThreshold) {
+            if (TimeExecution || 0 < TraceThreshold || SQLiteConnection.DetailMode) {
                 if (_sw == null) {
                     _sw = new Stopwatch ();
                 }
@@ -709,11 +710,11 @@ namespace SQLite
                 _elapsedMilliseconds += _sw.ElapsedMilliseconds;
                 Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
             }
-            if (0 < TraceThreshold) {
+            if (0 < TraceThreshold || SQLiteConnection.DetailMode) {
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
-                if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                if (span > TraceThreshold || SQLiteConnection.DetailMode) {
+                    Log.Info (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
                 }
             }
             return retval;
@@ -766,7 +767,7 @@ namespace SQLite
 		{
 			var cmd = CreateCommand (query, args);
 
-            if (TimeExecution || 0 < TraceThreshold) {
+            if (TimeExecution || 0 < TraceThreshold || SQLiteConnection.DetailMode) {
                 if (_sw == null) {
                     _sw = new Stopwatch ();
                 }
@@ -780,11 +781,11 @@ namespace SQLite
                 _elapsedMilliseconds += _sw.ElapsedMilliseconds;
                 Debug.WriteLine (string.Format ("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
             }
-            if (0 < TraceThreshold) {
+            if (0 < TraceThreshold || SQLiteConnection.DetailMode) {
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
-                if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                if (span > TraceThreshold || SQLiteConnection.DetailMode) {
+                    Log.Info (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
                 }
             }
             return retval;
@@ -1114,8 +1115,10 @@ namespace SQLite
 		{
 			try {
 				var savePoint = SaveTransactionPoint ();
+                Log.Info(Log.LOG_DB, "SAVEPOINT {0}", savePoint);
 				action ();
 				Release (savePoint);
+                Log.Info(Log.LOG_DB, "RELEASE {0}", savePoint);
 			} catch (Exception) {
 				Rollback ();
 				throw;
@@ -1356,7 +1359,13 @@ namespace SQLite
 			var insertCmd = map.GetInsertCommand (this, extra);
 			int count;
 
+            var watch = new Stopwatch ();
+            watch.Start ();
 			lock (insertCmd) {
+                watch.Stop ();
+                if (1000 < watch.ElapsedMilliseconds) {
+                    Log.Info (Log.LOG_DB, "Took too long to get lock: {0}ms.", watch.ElapsedMilliseconds);
+                }
 				// We lock here to protect the prepared statement returned via GetInsertCommand.
 				// A SQLite prepared statement can be bound for only one operation at a time.
 				try {
@@ -1795,7 +1804,7 @@ namespace SQLite
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format ("select * from \"{0}\" limit 1", TableName);
 			}
-			_insertCommandMap = new ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> ();
+            _insertCommandMap = new ConcurrentDictionary<SQLiteConnection, ConcurrentDictionary<string, PreparedSqlLiteInsertCommand>> ();
 		}
 
 		public bool HasAutoIncPK { get; private set; }
@@ -1837,17 +1846,25 @@ namespace SQLite
 			return exact;
 		}
 		
-		ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> _insertCommandMap;
+        ConcurrentDictionary<SQLiteConnection, ConcurrentDictionary<string, PreparedSqlLiteInsertCommand>> _insertCommandMap;
 
 		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
 		{
+            ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> connLocal;
 			PreparedSqlLiteInsertCommand prepCmd;
-			if (!_insertCommandMap.TryGetValue (extra, out prepCmd)) {
+            if (!_insertCommandMap.TryGetValue (conn, out connLocal)) {
+                connLocal = new ConcurrentDictionary<string, PreparedSqlLiteInsertCommand> ();
+                if (!_insertCommandMap.TryAdd (conn, connLocal)) {
+                    // It is okay if another thread beats us.
+                    _insertCommandMap.TryGetValue (conn, out connLocal);
+                }
+            }
+			if (!connLocal.TryGetValue (extra, out prepCmd)) {
 				prepCmd = CreateInsertCommand (conn, extra);
-				if (!_insertCommandMap.TryAdd (extra, prepCmd)) {
+				if (!connLocal.TryAdd (extra, prepCmd)) {
 					// Concurrent add attempt beat us.
 					prepCmd.Dispose ();
-					_insertCommandMap.TryGetValue (extra, out prepCmd);
+					connLocal.TryGetValue (extra, out prepCmd);
 				}
 			}
 			return prepCmd;
@@ -1884,8 +1901,10 @@ namespace SQLite
 		
 		protected internal void Dispose()
 		{
-			foreach (var pair in _insertCommandMap) {
-				pair.Value.Dispose ();
+            foreach (var connLocal in _insertCommandMap) {
+                foreach (var prepPair in connLocal.Value) {
+                    prepPair.Value.Dispose ();
+                }
 			}
 			_insertCommandMap = null;
 		}
@@ -2240,11 +2259,11 @@ namespace SQLite
 		{
 			var parts = new string[1 + _bindings.Count];
 			parts [0] = CommandText;
-			var i = 1;
+			var i = 1;/*
 			foreach (var b in _bindings) {
 				parts [i] = string.Format ("  {0}: {1}", i - 1, b.Value);
 				i++;
-			}
+			}*/
 			return string.Join (Environment.NewLine, parts);
 		}
 
@@ -2914,7 +2933,7 @@ namespace SQLite
 		{
             var cmd = GenerateCommand ("count(*)");
 
-            if (0 < Connection.TraceThreshold) {
+            if (0 < Connection.TraceThreshold || SQLiteConnection.DetailMode) {
                 if (Connection._sw == null) {
                     Connection._sw = new Stopwatch ();
                 }
@@ -2924,11 +2943,11 @@ namespace SQLite
 
             var retval = cmd.ExecuteScalar<int> ();	
 
-            if (0 < Connection.TraceThreshold) {
+            if (0 < Connection.TraceThreshold || SQLiteConnection.DetailMode) {
                 Connection._sw.Stop ();
                 var span = Connection._sw.ElapsedMilliseconds;
-                if (span > Connection.TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                if (span > Connection.TraceThreshold || SQLiteConnection.DetailMode) {
+                    Log.Info (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
                 }
             }
             return retval;
@@ -2943,7 +2962,7 @@ namespace SQLite
 		{
             var cmd = GenerateCommand ("*");
 
-            if (0 < Connection.TraceThreshold) {
+            if (0 < Connection.TraceThreshold || SQLiteConnection.DetailMode) {
                 if (Connection._sw == null) {
                     Connection._sw = new Stopwatch ();
                 }
@@ -2956,14 +2975,14 @@ namespace SQLite
                 retval = cmd.ExecuteQuery<T> ().GetEnumerator ();
             } else {
                 retval = cmd.ExecuteDeferredQuery<T> ().GetEnumerator ();
-                Log.Error (Log.LOG_SYS, "SQLite: WE ARE ACTUALLY USING DEFERRED QUERIES");
+                Log.Info (Log.LOG_SYS, "SQLite: WE ARE ACTUALLY USING DEFERRED QUERIES");
             }
 
-            if (0 < Connection.TraceThreshold) {
+            if (0 < Connection.TraceThreshold || SQLiteConnection.DetailMode) {
                 Connection._sw.Stop ();
                 var span = Connection._sw.ElapsedMilliseconds;
-                if (span > Connection.TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                if (span > Connection.TraceThreshold || SQLiteConnection.DetailMode) {
+                    Log.Info (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
                 }
             }
             return retval;

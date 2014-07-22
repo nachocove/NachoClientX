@@ -172,6 +172,7 @@ namespace NachoCore.ActiveSync
 
         public override string DeleteEmailCmd (int emailMessageId)
         {
+            NcModel.Instance.SetDetailMode (true);
             var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
                 return null;
@@ -199,6 +200,7 @@ namespace NachoCore.ActiveSync
             Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
+                NcModel.Instance.SetDetailMode (false);
             }, "DeleteEmailCmd");
             return pending.Token;
         }
