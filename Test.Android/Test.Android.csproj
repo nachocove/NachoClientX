@@ -103,6 +103,7 @@
     <Compile Include="SyncConfResTest.cs" />
     <Compile Include="NcTimeVarianceTest.cs" />
     <Compile Include="NcTimerTest.cs" />
+    <Compile Include="NcTimerPoolTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

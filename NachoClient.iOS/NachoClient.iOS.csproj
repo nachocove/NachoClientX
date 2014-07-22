@@ -1003,6 +1003,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\EmailMessageScore.cs">
       <Link>NachoCore\Model\McEmailMessage\EmailMessageScore.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimerPool.cs">
+      <Link>NachoCore\Utils\NcTimerPool.cs</Link>
+    </Compile>
     <Compile Include="NachoPlatform.iOS\PlatformUserColorIndex.cs" />
     <Compile Include="NachoUI.iOS\EventViewController.cs" />
     <Compile Include="NachoUI.iOS\EventViewController.designer.cs">
