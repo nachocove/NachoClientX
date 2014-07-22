@@ -150,9 +150,9 @@ namespace NachoClient.iOS
 
         public void configureStatusViewFor (statusType whatType)
         {
-            string header;
-            string message;
-            bool isSuccess;
+            string header = "";
+            string message = "";
+            bool isSuccess = false;
 
             float statusViewWidth = 213.0f;
             float statusViewHeight = 139.0f;
@@ -160,20 +160,22 @@ namespace NachoClient.iOS
             float statusViewY = 3.0f;
 
             switch (whatType) {
-                case statusType.ErrorAuth:
-                    header = "Invalid Credentials";
-                    message = "Password or Username is incorrect. No emails can be sent or recieved. Still Continue?";
-                    isSuccess = false;
-                    break;
-                case statusType.ErrorComm:
-                    header = "Validation Failed";
-                    message = "This account may not be able to send or receive emails. Are you sure you want to continue?";
-                    isSuccess = false;
-                    break;
-                case statusType.Success:
-                    isSuccess = true;
-                default:
-                    break;
+            case statusType.ErrorAuth:
+                header = "Invalid Credentials";
+                message = "Password or Username is incorrect. No emails can be sent or recieved. Still Continue?";
+                isSuccess = false;
+                break;
+            case statusType.ErrorComm:
+                header = "Validation Failed";
+                message = "This account may not be able to send or receive emails. Are you sure you want to continue?";
+                isSuccess = false;
+                break;
+            case statusType.Success:
+                isSuccess = true;
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
             }
 
             if (statusView.Subviews.Length > 0) {
