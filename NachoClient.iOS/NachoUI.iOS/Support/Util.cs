@@ -36,6 +36,7 @@ using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using MonoTouch.CoreGraphics;
 
 
 namespace NachoClient
@@ -336,27 +337,50 @@ namespace NachoClient
 
         #region NachoCove
 
-        //Colors for users' CircleColor. These colors arent great.  NEED TO BE CHANGED
-        public static UIColor greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
-        public static UIColor redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-        public static UIColor yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
-        public static UIColor brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
-        public static UIColor fiveColor = new UIColor (120.0f / 255.0f, 111.0f / 255.0f, 79.0f / 255.0f, 1.0f);
-        public static UIColor sixColor = new UIColor (50.0f / 255.0f, 10.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-        public static UIColor sevenColor = new UIColor (10.0f / 255.0f, 217.0f / 255.0f, 150.0f / 255.0f, 1.0f);
-        public static UIColor eightColor = new UIColor (34.0f / 255.0f, 20.0f / 255.0f, 98.0f / 255.0f, 1.0f);
         public static List<UIColor> colors = new List<UIColor> () {
             UIColor.Clear,
             UIColor.LightGray,
-            greenColor,
-            redColor,
-            yellowColor,
-            brownColor,
-            fiveColor,
-            sixColor,
-            sevenColor,
-            eightColor
+            UIColor.FromRGB (0x05, 0x0e, 0x66),
+            UIColor.FromRGB (0x91, 0xa8, 0x10),
+            UIColor.FromRGB (0xbe, 0x15, 0xf2),
+            UIColor.FromRGB (0x09, 0x8e, 0x0e),
+            UIColor.FromRGB (0xb6, 0x07, 0xc6),
+            UIColor.FromRGB (0xe2, 0x67, 0x14),
+            UIColor.FromRGB (0xbe, 0x09, 0xe2),
+            UIColor.FromRGB (0x00, 0x1c, 0x6b),
+            UIColor.FromRGB (0x00, 0x42, 0x72),
+            UIColor.FromRGB (0x8c, 0x0c, 0x21),
+            UIColor.FromRGB (0x02, 0x69, 0x6b),
+            UIColor.FromRGB (0x39, 0x77, 0x03),
+            UIColor.FromRGB (0xd1, 0x0e, 0xa0),
+            UIColor.FromRGB (0xc6, 0x00, 0xaf),
+            UIColor.FromRGB (0x2f, 0x01, 0x91),
+            UIColor.FromRGB (0x45, 0x0a, 0x70),
+            UIColor.FromRGB (0x15, 0xad, 0x0d),
+            UIColor.FromRGB (0x3f, 0xaa, 0x0d),
+            UIColor.FromRGB (0x03, 0x9e, 0x2f),
+            UIColor.FromRGB (0x00, 0x7f, 0x7f),
+            UIColor.FromRGB (0x10, 0x9b, 0x09),
+            UIColor.FromRGB (0x00, 0x0d, 0x87),
+            UIColor.FromRGB (0x29, 0x82, 0x06),
+            UIColor.FromRGB (0x0b, 0x89, 0x28),
+            UIColor.FromRGB (0x55, 0x93, 0x02),
+            UIColor.FromRGB (0x48, 0x09, 0xa0),
+            UIColor.FromRGB (0xb2, 0x0e, 0x55),
         };
+
+        static Random random = new Random ();
+        public static int PickRandomColorForUser ()
+        {
+            int randomNumber = random.Next (2, colors.Count);
+            return randomNumber;
+        }
+
+        public static UIColor ColorForUser (int index)
+        {
+            NcAssert.True (0 < index);
+            return colors [index];
+        }
 
         public static UIImage DotWithColor (UIColor color)
         {
@@ -365,58 +389,6 @@ namespace NachoClient
 
             ctx.SetFillColor (color.CGColor);
             ctx.FillEllipseInRect (new RectangleF (5, 5, 12, 12));
-
-            var image = UIGraphics.GetImageFromCurrentImageContext ();
-            UIGraphics.EndImageContext ();
-            return image;
-        }
-
-        /// <summary>
-        /// builds the circle containing the sender's initials
-        /// </summary>
-        public static UIImage LettersWithColor (string from, UIColor circleColor, UIFont font)
-        {
-            var size = new SizeF (40, 40);
-            var origin = new PointF (0, 0);
-            var content = NameToLetters (from);
-
-            UIGraphics.BeginImageContextWithOptions (size, false, 0);
-            var ctx = UIGraphics.GetCurrentContext ();
-
-            var contentString = new NSString (content);
-            var contentSize = contentString.StringSize (font);
-            ctx.SetFillColor (circleColor.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (origin, size));
-            var rect = new RectangleF (0, ((40 - contentSize.Height) / 2) + 0, 40, contentSize.Height);
-
-            ctx.SetFillColorWithColor (UIColor.White.CGColor);
-            new NSString (content).DrawString (rect, font, UILineBreakMode.WordWrap, UITextAlignment.Center);
-
-            var image = UIGraphics.GetImageFromCurrentImageContext ();
-            UIGraphics.EndImageContext ();
-            return image;
-        }
-
-        /// <summary>
-        /// builds the circle containing the sender's initials
-        /// </summary>
-        public static UIImage NumbersWithColor (string number, UIColor circleColor, UIColor fontColor, UIFont font)
-        {
-            var size = new SizeF (40, 40);
-            var origin = new PointF (0, 0);
-            var content = number;
-
-            UIGraphics.BeginImageContextWithOptions (size, false, 0);
-            var ctx = UIGraphics.GetCurrentContext ();
-
-            var contentString = new NSString (content);
-            var contentSize = contentString.StringSize (font);
-            ctx.SetFillColor (circleColor.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (origin, size));
-            var rect = new RectangleF (0, ((40 - contentSize.Height) / 2) + 0, 40, contentSize.Height);
-
-            ctx.SetFillColorWithColor (fontColor.CGColor);
-            new NSString (content).DrawString (rect, font, UILineBreakMode.WordWrap, UITextAlignment.Center);
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
@@ -440,8 +412,71 @@ namespace NachoClient
         }
 
         /// <summary>
-        /// Converts a users name into capitalized initials
+        /// Takes a screenshot of the view passed in and returns an image
         /// </summary>
+        public static UIImage captureView (UIView view)
+        {
+            UIGraphics.BeginImageContextWithOptions (view.Bounds.Size, false, 0.0f);
+            view.Layer.RenderInContext (UIGraphics.GetCurrentContext ());
+            var capturedImage = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return capturedImage;
+        }
+
+        public static void CacheUserMessageFields (McEmailMessage emailMessage)
+        {
+            McEmailAddress emailAddress;
+            if (!McEmailAddress.AddOrUpdate (emailMessage.AccountId, emailMessage.From, out emailAddress)) {
+                emailMessage.cachedFromColor = 1;
+                emailMessage.cachedFromLetters = "";
+                emailMessage.Update ();
+                return;
+            }
+            emailMessage.cachedFromColor = emailAddress.ColorIndex;
+            string initials = "";
+            if (!String.IsNullOrEmpty (emailAddress.DisplayFirstName)) {
+                initials += Char.ToUpper(emailAddress.DisplayFirstName [0]);
+            }
+            if (!String.IsNullOrEmpty (emailAddress.DisplayLastName)) {
+                initials += Char.ToUpper(emailAddress.DisplayLastName [0]);
+            }
+            if (String.IsNullOrEmpty (initials)) {
+                if (!String.IsNullOrEmpty (emailAddress.DisplayEmailAddress)) {
+                    foreach (char c in emailAddress.DisplayEmailAddress) {
+                        if (Char.IsLetterOrDigit (c)) {
+                            initials += c;
+                            break;
+                        }
+                    }
+                }
+            }
+            emailMessage.cachedFromLetters = initials.ToCapitalized ();
+            emailMessage.Update ();
+        }
+
+        public static UIImage ImageOfSender (int accountId, string emailAddress)
+        {
+            return null;
+        }
+
+        public static void HighPriority ()
+        {
+            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority");
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
+
+        public static void RegularPriority ()
+        {
+            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority");
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
+
         public static string NameToLetters (string name)
         {
             var Initials = "";
@@ -474,100 +509,40 @@ namespace NachoClient
             return Initials;
         }
 
-        /// <summary>
-        /// Takes a screenshot of the view passed in and returns an image
-        /// </summary>
-        public static UIImage captureView (UIView view)
+        public static UIImage MakeCheckmark (UIColor checkColor)
         {
-            UIGraphics.BeginImageContextWithOptions (view.Bounds.Size, false, 0.0f);
-            view.Layer.RenderInContext (UIGraphics.GetCurrentContext ());
-            var capturedImage = UIGraphics.GetImageFromCurrentImageContext ();
+            var size = new SizeF (15, 15);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var g = UIGraphics.GetCurrentContext ();
+
+
+            //set up drawing attributes
+            g.SetLineWidth (1);
+
+            checkColor.SetStroke ();
+
+            //create geometry
+            var checkmark = new CGPath ();
+
+            checkmark.AddLines (new PointF[] {
+                new PointF (0, 10),
+                new PointF (5, 15), 
+                new PointF (15, 0)
+            });
+
+            //checkmark.CloseSubpath ();
+
+            //add geometry to graphics context and draw it
+            g.AddPath (checkmark);
+            g.DrawPath (CGPathDrawingMode.Stroke);
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
-            return capturedImage;
+            return image;
+
         }
 
-        /// <summary>
-        /// Takes an int and returns a UIColor.  This is nessary because the db
-        /// can't store UIColors
-        /// </summary>
-        public static UIColor IntToUIColor (int colorNum)
-        {
-            return colors [colorNum];
-        }
-
-        /// <summary>
-        /// Sets the user image. Three cases: user has a picture, user has a CircleColor, 
-        /// user has niether and gets a random CircleColor gets assigned and stored in the db.
-        /// </summary>
-        public static int SenderToCircle (int accountId, string emailAddress)
-        {
-            var query = McContact.QueryByEmailAddress (accountId, emailAddress);
-            int circleColor = 0;
-            Random random = new Random ();
-            int randomNumber = random.Next (2, 10);
-            foreach (var person in query) {
-                var colorNum = person.CircleColor;
-                if (person.Picture != null) {
-                    //Todo
-                } else if (colorNum > 0) {
-                    circleColor = colorNum;  
-                } else if (colorNum == 0) {
-                    circleColor = randomNumber;
-                    McContact.UpdateUserCircleColor (randomNumber, person.DisplayEmailAddress);
-                }
-            }
-            return circleColor;
-        }
-
-        public static UIColor ColorOfSenderMap (int colorIndex)
-        {
-            return colors [colorIndex];
-        }
-
-        // FIXME: Store the color, no the index, in the db
-        public static int ColorIndexOfSender (int accountId, string emailAddress)
-        {
-            var contacts = McContact.QueryLikeEmailAddress (accountId, emailAddress);
-            if (0 == contacts.Count) {
-                return 1; // no matches; return default color
-            }
-            foreach (var contact in contacts) {
-                if (0 < contact.CircleColor) {
-                    return contact.CircleColor;
-                }
-            }
-            var random = new Random ();
-            int randomNumber = random.Next (2, 10);
-            foreach (var contact in contacts) {
-                contact.CircleColor = randomNumber;
-                contact.Update ();
-            }
-            return randomNumber;
-        }
-
-        public static UIImage ImageOfSender (int accountId, string emailAddress)
-        {
-            return null;
-        }
-
-        public static void HighPriority ()
-        {
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
-        }
-
-        public static void RegularPriority ()
-        {
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
-        }
-            
         #endregion
     }
 }

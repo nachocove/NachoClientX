@@ -1015,15 +1015,6 @@ namespace NachoCore.Model
             }
         }
 
-        // FIXME: Should make sure s.Type is email address
-        public static void UpdateUserCircleColor (int circleColor, string userAddress)
-        {
-            NcModel.Instance.Db.Query<McContact> (
-                "UPDATE McContact SET CircleColor = ? WHERE Id IN" +
-                " (SELECT ContactId FROM McContactStringAttribute WHERE Value = ?)",
-                circleColor, userAddress);
-        }
-
         /// TODO: VIPness should be in its own member
         public bool isHot ()
         {

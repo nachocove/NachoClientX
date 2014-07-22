@@ -34,7 +34,7 @@ namespace NachoClient.iOS
             hl.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
             hl.Layer.BorderWidth = 1; 
 
-            var icon = new UIImageView (new RectangleF (LEFT_INDENT, 7, 16, 16));
+            var icon = new UIImageView (new RectangleF (LEFT_INDENT, 7, 15, 15));
             using (var image = UIImage.FromBundle ("icn-attach-files")) {
                 icon.Image = image;
             }
@@ -133,9 +133,9 @@ namespace NachoClient.iOS
             ConfigureView ();
         }
 
-        public void PromptForAttachment ()
+        public void PromptForAttachment (string compositionType)
         {
-            AttachFileActionSheet ();
+            AttachFileActionSheet (compositionType);
 
         }
 
@@ -188,37 +188,68 @@ namespace NachoClient.iOS
             this.Frame = new RectangleF (this.Frame.Location, contentView.Frame.Size);
         }
 
-        protected void AttachFileActionSheet ()
+        protected void AttachFileActionSheet (string compositionType)
         {
-            var actionSheet = new UIActionSheet ("Attachment Manager");
-            actionSheet.Add ("Cancel");
+            var actionSheet = new UIActionSheet ();
+
             actionSheet.Add ("Add Photo");
             actionSheet.Add ("Add Shared File");
             actionSheet.Add ("Add Existing Attachment");
-            actionSheet.CancelButtonIndex = 0;
+            actionSheet.Add ("Cancel");
+            actionSheet.CancelButtonIndex = 3;
 
-            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    break; // Cancel
-                case 1:
-                    SetupPhotoPicker ();
-                    break;
-                case 2:
-                    if (null != owner) {
-                        owner.PerformSegueForAttachmentBlock ("ComposeToFiles", new SegueHolder (null));
+            if ("message" == compositionType) {
+                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                    switch (b.ButtonIndex) {
+                    case 0:
+                        SetupPhotoPicker ();
+                        break; 
+                    case 1:
+                        if (null != owner) {
+                            owner.PerformSegueForAttachmentBlock ("ComposeToFiles", new SegueHolder (null));
+                        }
+                        break;
+                    case 2:
+                        if (null != owner) {
+                            owner.PerformSegueForAttachmentBlock ("ComposeToAttachments", new SegueHolder (null));
+                        }
+                        break;
+                    case 3:
+
+                        break;// Cancel
+                    default:
+                        NcAssert.CaseError ();
+                        break;
                     }
-                    break;
-                case 3:
-                    if (null != owner) {
-                        owner.PerformSegueForAttachmentBlock ("ComposeToAttachments", new SegueHolder (null));
+                };
+            }
+            if ("event" == compositionType) {
+                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                    switch (b.ButtonIndex) {
+                    case 0:
+                        SetupPhotoPicker ();
+                        break; 
+                    case 1:
+                        if (null != owner) {
+                            owner.PerformSegueForAttachmentBlock ("AddAttachmentToFiles", new SegueHolder (null));
+                        }
+                        break;
+                    case 2:
+                        if (null != owner) {
+                            owner.PerformSegueForAttachmentBlock ("AddAttachmentToAttachment", new SegueHolder (null));
+                        }
+                        break;
+                    case 3:
+
+                        break;// Cancel
+                    default:
+                        NcAssert.CaseError ();
+                        break;
                     }
-                    break;
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
+                };
+
+            }
+
 
             actionSheet.ShowInView (this);
         }
@@ -289,23 +320,25 @@ namespace NachoClient.iOS
 
         protected void AttachmentActionSheet (UcAttachmentCell c)
         {
-            var actionSheet = new UIActionSheet ("Attachment Manager");
-            actionSheet.Add ("Cancel");
+            var actionSheet = new UIActionSheet ();
+
             actionSheet.Add ("Remove Attachment");
             actionSheet.Add ("Preview Attachment");
+            actionSheet.Add ("Cancel");
+            actionSheet.CancelButtonIndex = 2;
 
             actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                 switch (b.ButtonIndex) {
                 case 0:
-                    break; // Cancel
-                case 1:
                     Remove (c);
-                    break;
-                case 2:
+                    break; 
+                case 1:
                     if (null != owner) {
                         owner.DisplayAttachmentForAttachmentBlock (c.attachment);
                     }
                     break;
+                case 2:
+                    break;// Cancel
 
                 }
             };

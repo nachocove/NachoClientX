@@ -16,6 +16,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
 using SWRevealViewControllerBinding;
+using MonoTouch.MapKit;
 
 namespace NachoClient.iOS
 {
@@ -29,6 +30,11 @@ namespace NachoClient.iOS
         protected McAccount account;
         protected NachoFolders calendars;
         public bool showMenu;
+        //protected UIToolbar ActionToolbar;
+        protected UIView EventInfoView;
+        protected UIView EventActionView;
+        protected UIImageView MapImage;
+        protected MKMapView map; 
 
         public CalendarItemViewController (IntPtr handle) : base (handle)
         {
@@ -69,6 +75,12 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            //ActionToolbar = new UIToolbar (new RectangleF(0, 568, SCREEN_WIDTH, 65));
+            EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, IMAGE_HEIGHT + 245));
+            //MapImage = new UIImageView (new RectangleF (0, 44, SCREEN_WIDTH, IMAGE_HEIGHT));
+            map = new MKMapView (new RectangleF (0, 0, SCREEN_WIDTH, IMAGE_HEIGHT));
+            EventActionView = new UIView (new RectangleF (0, IMAGE_HEIGHT + 245 + IMAGE_HEIGHT + (45 * 3), SCREEN_WIDTH, 65));
+
             if (showMenu) {
                 // Navigation
                 revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -79,7 +91,7 @@ namespace NachoClient.iOS
                 };
                 NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
             }
-
+            doneButton.TintColor = A.Color_NachoBlue;
             // When user clicks done, check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
                 // TODO: Check for changes before asking the user
@@ -93,14 +105,23 @@ namespace NachoClient.iOS
                         ExtractDialogValues ();
                         SyncMeetingRequest ();
                         SendInvites ();
-                        ReloadRoot (ShowDetail ());
+                        ConfigureShowDetail();
+                        ReloadRoot (ShowLowerDetail ());
+                        EventInfoView.Hidden = false;
+                        //ActionToolbar.Hidden = false;
+                        map.Hidden = false;
                     }
                 };
                 alert.Show ();
             };
 
+            editButton.Enabled = false;
+
             editButton.Clicked += (object sender, EventArgs e) => {
                 ReloadRoot (EditDetail ());
+                EventInfoView.Hidden = true;
+                //ActionToolbar.Hidden = true;
+                map.Hidden = true;
             };
 
             cancelButton.Clicked += (object sender, EventArgs e) => {
@@ -110,7 +131,11 @@ namespace NachoClient.iOS
                 }
                 if (CalendarItemEditorAction.edit == action || CalendarItemEditorAction.view == action) {
                     c = item;
-                    ReloadRoot (ShowDetail ());
+                    EventInfoView.Hidden = false;
+                    //ActionToolbar.Hidden = false;
+                    map.Hidden = false;
+                    ConfigureShowDetail ();
+                    ReloadRoot (ShowLowerDetail ());
                     return;
                 }
                 NcAssert.CaseError ();
@@ -124,26 +149,36 @@ namespace NachoClient.iOS
             // Set up view
             Pushing = true;
 
+
+
             switch (action) {
             case CalendarItemEditorAction.create:
                 c = CalendarHelper.DefaultMeeting ();
                 Root = EditDetail ();
+                //ActionToolbar.Hidden = true;
                 break;
             case CalendarItemEditorAction.edit:
                 c = item;
                 Root = EditDetail ();
+                EventInfoView.Hidden = true;
+                //ActionToolbar.Hidden = true;
                 break;
             case CalendarItemEditorAction.view:
                 c = item;
-                Root = ShowDetail ();
+                EventInfoView.Hidden = false;
+                Root = ShowLowerDetail ();
+                CreateShowDetail ();
+
+                //ActionToolbar.Hidden = true;
                 break;
             default:
                 NcAssert.CaseError ();
                 break;
             }
 
+            TableView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+            TableView.SeparatorColor = A.Color_NachoSeparator;
 
-            TableView.SeparatorColor = UIColor.Clear;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -152,6 +187,31 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            doneButton.TintColor = A.Color_NachoBlue;
+            switch (action) {
+            case CalendarItemEditorAction.create:
+                c = CalendarHelper.DefaultMeeting ();
+                //Root = EditDetail ();
+                break;
+            case CalendarItemEditorAction.edit:
+                c = item;
+                Root = EditDetail ();
+                EventInfoView.Hidden = true;
+                //ActionToolbar.Hidden = true;
+                break;
+            case CalendarItemEditorAction.view:
+                c = item;
+                Root = ShowLowerDetail ();
+                ConfigureShowDetail ();
+
+                EventInfoView.Hidden = false;
+                //ActionToolbar.Hidden = false;
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+
         }
 
         protected void ReloadRoot (RootElement root)
@@ -174,6 +234,412 @@ namespace NachoClient.iOS
             }
         }
 
+        const int EVENT_TITLE_LABEL_TAG = 101;
+        const int EVENT_DESCRIPTION_LABEL_TAG = 102;
+        const int EVENT_LOCATION_DETAIL_LABEL_TAG = 103;
+        const int EVENT_WHEN_DETAIL_LABEL_TAG = 104;
+        const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
+        const int EVENT_ATTENDEE_TAG = 106;
+        const int EVENT_ATTENDEE_DETAIL_TAG = 110;
+        const int EVENT_ATTENDEE_LABEL_TAG = 120;
+        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        public float IMAGE_HEIGHT = SCREEN_WIDTH/2 - 45;
+
+        RootElementWithIcon alertsElement;
+        CustomEntryElementDetail attachmentsElement;
+        CustomEntryElement notesElement;
+
+        protected void CreateShowDetail () {
+            NavigationItem.LeftBarButtonItem = null;
+            NavigationItem.RightBarButtonItem = editButton;
+
+            TableView.BackgroundColor = UIColor.White;
+
+            //Map/location header image
+
+            map = new MKMapView (new RectangleF (0, 0, SCREEN_WIDTH, IMAGE_HEIGHT));
+            map.ZoomEnabled = false;
+            map.ScrollEnabled = false;
+
+            if (map != null) {
+                View.AddSubview (map);
+            } else {
+                IMAGE_HEIGHT = 0;
+            }
+
+            //event view
+
+            EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, IMAGE_HEIGHT + 245));
+            EventInfoView.BackgroundColor = UIColor.White;
+
+            //title label
+            UILabel eventTitleLabel = new UILabel (new RectangleF (25, 19, SCREEN_WIDTH - 50, 18));
+            eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            eventTitleLabel.TextColor = A.Color_NachoBlack;
+            eventTitleLabel.Tag = EVENT_TITLE_LABEL_TAG;
+            EventInfoView.Add (eventTitleLabel);
+
+            //desciption label
+            UILabel eventDescriptionLabel = new UILabel (new RectangleF (25, 43, SCREEN_WIDTH - 50, 15));
+            eventDescriptionLabel.Font = A.Font_AvenirNextRegular14;
+            eventDescriptionLabel.TextColor = UIColor.LightGray;
+            eventDescriptionLabel.Tag = EVENT_DESCRIPTION_LABEL_TAG;
+            EventInfoView.Add (eventDescriptionLabel);
+
+            //location label, image and detail
+            UILabel eventLocationLabel = new UILabel (new RectangleF (45, 78, SCREEN_WIDTH - 50, 15));
+            eventLocationLabel.Font = A.Font_AvenirNextRegular14;
+            eventLocationLabel.TextColor = A.Color_NachoBlack;
+            eventLocationLabel.Text = "Location";
+            EventInfoView.Add (eventLocationLabel);
+
+            UIImageView locationImage = new UIImageView (new RectangleF (23, 77, 15, 15));
+            locationImage.Image = UIImage.FromBundle ("icn-mtng-location");
+            EventInfoView.Add (locationImage);
+
+            UILabel eventLocationDetailLabel = new UILabel (new RectangleF (25, 103, SCREEN_WIDTH - 50, 15));
+            eventLocationDetailLabel.Font = A.Font_AvenirNextRegular14;
+            eventLocationDetailLabel.TextColor = UIColor.LightGray;
+            eventLocationDetailLabel.Tag = EVENT_LOCATION_DETAIL_LABEL_TAG;
+            EventInfoView.Add (eventLocationDetailLabel);
+
+            //when label, image and detail
+            UILabel eventWhenLabel = new UILabel (new RectangleF (45, 135, SCREEN_WIDTH - 50, 15));
+            eventWhenLabel.Font = A.Font_AvenirNextRegular14;
+            eventWhenLabel.TextColor = A.Color_NachoBlack;
+            eventWhenLabel.Text = "When";
+            EventInfoView.Add (eventWhenLabel);
+
+            UIImageView whenImage = new UIImageView (new RectangleF (23, 134, 15, 15));
+            whenImage.Image = UIImage.FromBundle ("icn-mtng-time");
+            EventInfoView.Add (whenImage);
+
+            UILabel eventWhenDetailLabel = new UILabel (new RectangleF (25, 160, SCREEN_WIDTH - 50, 15));
+            eventWhenDetailLabel.Font = A.Font_AvenirNextRegular14;
+            eventWhenDetailLabel.TextColor = UIColor.LightGray;
+            eventWhenDetailLabel.Tag = EVENT_WHEN_DETAIL_LABEL_TAG;
+            EventInfoView.Add (eventWhenDetailLabel);
+
+            //phone label, image and detail
+            UILabel eventPhoneLabel = new UILabel (new RectangleF (45, 135 + 57, SCREEN_WIDTH - 50, 15));
+            eventPhoneLabel.Font = A.Font_AvenirNextRegular14;
+            eventPhoneLabel.TextColor = A.Color_NachoBlack;
+            eventPhoneLabel.Text = "Phone";
+            EventInfoView.Add (eventPhoneLabel);
+
+            UIImageView phoneImage = new UIImageView (new RectangleF (23, 134 + 57, 15, 15));
+            phoneImage.Image = UIImage.FromBundle ("icn-mtng-phone");
+            EventInfoView.Add (phoneImage);
+
+            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, 160 + 57, SCREEN_WIDTH - 50, 15));
+            eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
+            eventPhoneDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Normal);
+            eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
+            eventPhoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            eventPhoneDetailButton.TouchUpInside += (object sender, EventArgs e) => {
+                var urlToSend = new NSUrl ("tel:" + "5036861654"); 
+                UIApplication.SharedApplication.OpenUrl(urlToSend);
+            };
+            EventInfoView.Add (eventPhoneDetailButton);  
+
+
+
+            //attendees label, image and detail
+            UILabel eventAttendeesLabel = new UILabel (new RectangleF (45, 135 + 57 + 57, SCREEN_WIDTH - 50, 15));
+            eventAttendeesLabel.Font = A.Font_AvenirNextRegular14;
+            eventAttendeesLabel.TextColor = A.Color_NachoBlack;
+            eventAttendeesLabel.Text = "Attendees";
+            EventInfoView.Add (eventAttendeesLabel);
+
+            UIImageView AttendeesImage = new UIImageView (new RectangleF (23, 134 + 57 + 57, 15, 15));
+            AttendeesImage.Image = UIImage.FromBundle ("icn-mtng-people");
+            EventInfoView.Add (AttendeesImage);
+
+            int counter = 0;
+            int SPACING = 0;
+            if (5 >= c.attendees.Count) {
+                foreach (var attendee in c.attendees) {
+                    //var name = attendee.DisplayName;
+                    UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+                    attendeeButton.Layer.CornerRadius = (45 / 2);
+                    attendeeButton.Layer.MasksToBounds = true;
+                    //attendeeButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
+                    attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
+                    attendeeButton.Frame = new RectangleF (23 + SPACING, 160 + 57 + 57, 45, 45);
+                    attendeeButton.Font = A.Font_AvenirNextRegular24;
+                    attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                    attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                    attendeeButton.Tag = EVENT_ATTENDEE_TAG + counter;
+                    //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                    attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
+                        //                var identifer = buttonInfo.segueIdentifier;
+                        //                PerformSegue (identifer, new SegueHolder (null));
+                        Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
+                    };
+                    EventInfoView.Add (attendeeButton);
+
+                    UILabel eventAttendeesNameLabel = new UILabel (new RectangleF (23 + SPACING, 325, 45, 15));
+                    eventAttendeesNameLabel.Font = A.Font_AvenirNextRegular14;
+                    eventAttendeesNameLabel.TextColor = A.Color_NachoBlack;
+                    eventAttendeesNameLabel.TextAlignment = UITextAlignment.Center;
+                    eventAttendeesNameLabel.Tag = EVENT_ATTENDEE_LABEL_TAG + counter;;
+                    EventInfoView.Add (eventAttendeesNameLabel);
+
+                    counter++;
+                    SPACING = SPACING + 55;
+                }
+            } else {
+                foreach (var attendee in c.attendees) {
+                    //var name = attendee.DisplayName;
+                    UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+                    attendeeButton.Layer.CornerRadius = (45 / 2);
+                    attendeeButton.Layer.MasksToBounds = true;
+                    attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
+                    attendeeButton.Frame = new RectangleF (23 + SPACING, 160 + 57 + 57, 45, 45);
+                    attendeeButton.Font = A.Font_AvenirNextRegular24;
+                    attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                    attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                    attendeeButton.Tag = EVENT_ATTENDEE_TAG + counter;
+                    //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                    attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
+                        //                var identifer = buttonInfo.segueIdentifier;
+                        //                PerformSegue (identifer, new SegueHolder (null));
+                        Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
+                    };
+                    EventInfoView.Add (attendeeButton);
+
+                    UILabel eventAttendeesNameLabel = new UILabel (new RectangleF (23 + SPACING, 325, 45, 15));
+                    eventAttendeesNameLabel.Font = A.Font_AvenirNextRegular14;
+                    eventAttendeesNameLabel.TextColor = A.Color_NachoBlack;
+                    eventAttendeesNameLabel.TextAlignment = UITextAlignment.Center;
+                    eventAttendeesNameLabel.Tag = EVENT_ATTENDEE_LABEL_TAG + counter;
+                    EventInfoView.Add (eventAttendeesNameLabel);
+
+                    counter++;
+                    if (4 == counter) {
+                        break;
+                    }
+                    SPACING = SPACING + 55;
+                }
+                UIButton eventAttendeeDetailButton = UIButton.FromType (UIButtonType.RoundedRect);
+                eventAttendeeDetailButton.Layer.CornerRadius = (45 / 2);
+                eventAttendeeDetailButton.Layer.MasksToBounds = true;
+                eventAttendeeDetailButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
+                eventAttendeeDetailButton.Layer.BorderWidth = 1;
+                eventAttendeeDetailButton.Frame = new RectangleF (243, 160 + 57 + 57, 45, 45);
+                eventAttendeeDetailButton.Font = A.Font_AvenirNextRegular14;
+                eventAttendeeDetailButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+                eventAttendeeDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                eventAttendeeDetailButton.Tag = EVENT_ATTENDEE_DETAIL_TAG;
+                //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                eventAttendeeDetailButton.TouchUpInside += (object sender, EventArgs e) => {
+                    //                var identifer = buttonInfo.segueIdentifier;
+                    //                PerformSegue (identifer, new SegueHolder (null));
+                    Console.WriteLine ("This button pressed: " + eventAttendeeDetailButton.Tag);
+
+                };
+                EventInfoView.Add (eventAttendeeDetailButton);
+            }
+
+//            UIButton testButton = new UIButton (new RectangleF (243, 160 + 57, 45, 45));
+//            testButton.SetTitle ("tester", UIControlState.Normal);
+//            testButton.Tag = 250;
+//            //testButton.Frame = ;
+//            testButton.Font = A.Font_AvenirNextRegular14;
+//            testButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+//            testButton.TouchUpInside += (sender, e) => {
+//                //                var identifer = buttonInfo.segueIdentifier;
+//                //                PerformSegue (identifer, new SegueHolder (null));
+//                Console.WriteLine ("This button pressed: " + testButton.Tag);
+//
+//            };
+//            EventInfoView.Add(testButton);
+
+            UIImage acceptButtonImage = UIImage.FromBundle ("btn-mtng-accept");
+            acceptButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            UIImage acceptButtonImageSelected = UIImage.FromBundle ("btn-mtng-accept-pressed");
+            acceptButtonImageSelected.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+
+            acceptButton.SetImage(acceptButtonImage, UIControlState.Normal);
+            acceptButton.SetTitle("", UIControlState.Normal);
+            acceptButton.SetImage(acceptButtonImageSelected, UIControlState.Selected);
+            acceptButton.Frame = new RectangleF (25, 10, 45, 45);
+            //acceptButton.SizeToFit ();
+            //acceptButton.TintColor = UIColor.Clear;
+            acceptButton.TouchUpInside += (object sender, EventArgs e) => {
+                ToggleButtons();
+                acceptButton.Selected = true;
+            };
+
+            UIImage declineButtonImage = UIImage.FromBundle ("btn-mtng-decline");
+            declineButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            UIImage declineButtonImageSelected = UIImage.FromBundle ("btn-mtng-decline-pressed");
+            declineButtonImageSelected.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+
+            declineButton.SetImage(declineButtonImage, UIControlState.Normal);
+            declineButton.SetTitle("", UIControlState.Normal);
+            declineButton.SetImage(declineButtonImageSelected, UIControlState.Selected);
+            declineButton.Frame = new RectangleF ((float)137.5, 10, 45, 45);
+            //declineButton.SizeToFit ();
+            //declineButton.TintColor = UIColor.Clear;
+            declineButton.TouchUpInside += (object sender, EventArgs e) => {
+                ToggleButtons();
+                declineButton.Selected = true;
+            };
+
+            UIImage tenativeButtonImage = UIImage.FromBundle ("btn-mtng-tenative");
+            tenativeButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            UIImage tenativeButtonImageSelected = UIImage.FromBundle ("btn-mtng-tenative-pressed");
+            tenativeButtonImageSelected.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+
+            tenativeButton.SetImage(tenativeButtonImage, UIControlState.Normal);
+            tenativeButton.SetTitle("", UIControlState.Normal);
+            tenativeButton.SetImage(tenativeButtonImageSelected, UIControlState.Selected);
+            tenativeButton.Frame = new RectangleF (325, 10, 45, 45);
+            //tenativeButton.SizeToFit ();
+            //tenativeButton.TintColor = UIColor.Clear;
+            tenativeButton.TouchUpInside += (object sender, EventArgs e) => {
+                ToggleButtons();
+                tenativeButton.Selected = true;
+            };
+
+//            var b1 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            var b2 = new UIBarButtonItem (acceptButton);
+//            var b3 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            var b4 = new UIBarButtonItem (declineButton);
+//            var b5 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            var b6 = new UIBarButtonItem (tenativeButton);
+//            var b7 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            //ActionToolbar.SetItems (new UIBarButtonItem[] { b1, b2, b3, b4, b5, b6, b7 }, false);
+//            //ActionToolbar.BackgroundColor = A.Color_NachoBlack;
+//            //ActionToolbar.BarTintColor = A.Color_NachoBlack;
+
+            EventActionView.Add (acceptButton);
+            EventActionView.Add (declineButton);
+            EventActionView.Add (tenativeButton);
+
+            //TableView.AddSubview (EventActionView);
+
+            View.AddSubview (EventInfoView);
+
+            //this.View.AddSubview (ActionToolbar);
+        }
+
+
+        protected void ToggleButtons () {
+            acceptButton.Selected = false;
+            declineButton.Selected = false;
+            tenativeButton.Selected = false;
+        }
+
+        protected void ConfigureShowDetail () {
+
+            TableView.BackgroundColor = UIColor.White;
+
+            //title view
+            var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+            //titleLabelView.Text = "Meeting with Kevin";
+            titleLabelView.Text = c.Subject;
+
+            //description view
+            var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
+            descriptionLabelView.Text = "Description";
+            //descriptionLabelView.Text = c.Description;
+
+            //location view
+            var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
+            //locationLabelView.Text = "Starbucks 2135 Queen Anne Ave N.";
+            if ("" != c.Location) {
+                locationLabelView.Text = c.Location;
+            } else {
+                locationLabelView.Text = "Not Specified";
+            }
+
+            //when view
+            var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
+            whenLabelView.Text = "3pm to 4pm PDT - Duration: 1 Hour";
+            //whenLabelView.Text = TODO;
+
+            //phone view
+            var phoneButtonView = View.ViewWithTag (EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
+            //phoneButtonView.SetTitle (c.Phone, UIControlState.Normal);
+            phoneButtonView.SetTitle ("5036861654", UIControlState.Normal);
+            //phoneLabelView.Text = c.Phone;
+
+
+
+            // Attendee image view
+            if (5 < c.attendees.Count()) {
+                int i = 0;
+                while (i < 4) {
+                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt(i).DisplayName), UIControlState.Normal);
+
+                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                    //string[] name = Attendees [i].Split(' ');
+                    attendeeLabelView.Text = c.attendees.ElementAt(i).DisplayName;
+                    i++;
+                }
+                var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
+                attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count() - 4), UIControlState.Normal);
+            } else {
+                int i = 0;
+                while (i < c.attendees.Count()) {
+                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt(i).DisplayName), UIControlState.Normal);
+
+                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                    attendeeLabelView.Text = c.attendees.ElementAt(i).DisplayName;
+                    i++;
+                }
+            }
+
+
+            //            var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+            //            var userLabelView = cell.ContentView.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            //            userImageView.Hidden = true;
+            //            userLabelView.Hidden = true;
+            //
+            //            var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+            //
+            //            if (null != userImage) {
+            //                userImageView.Hidden = false;
+            //                userImageView.Image = userImage;
+            //            } else {
+            //                userLabelView.Hidden = false;
+            //                if ((null == message.cachedFromLetters) || (0 == message.cachedFromColor)) {
+            //                    message.cachedFromLetters = Util.NameToLetters (Pretty.SenderString (message.From));
+            //                    message.cachedFromColor = Util.ColorIndexOfSender (message.AccountId, Pretty.EmailString (message.From));
+            //                    message.Update ();
+            //                }
+            //                userLabelView.Text = message.cachedFromLetters;
+            //                userLabelView.BackgroundColor = Util.ColorOfSenderMap (message.cachedFromColor);
+            //            }
+
+
+        }
+
+        protected RootElement ShowLowerDetail ()
+        {
+            NavigationItem.LeftBarButtonItem = null;
+            NavigationItem.RightBarButtonItem = editButton;
+            var root = new RootElement ("Event Details");
+            float lowerOffset = IMAGE_HEIGHT + 360;
+            var section = new LowerSection (lowerOffset.ToString());
+            alertsElement = new RootElementWithIcon ("", "Alerts");
+            //alertsElement.Add (new ReminderSection (c.Reminder));
+
+            attachmentsElement = new CustomEntryElementDetail (UIImage.FromBundle ("icn-mtng-attachment"), "Attachments", "2");
+            notesElement = new CustomEntryElement (UIImage.FromBundle ("icn-mtng-notes"), "Add Notes");
+            section.Add (alertsElement);
+            section.Add (attachmentsElement);
+            section.Add (notesElement);
+
+            root.Add (section);
+
+            return root;
+        }
+
         /// <summary>
         /// Shows the calendar, read-only.
         /// </summary>
@@ -185,71 +651,70 @@ namespace NachoClient.iOS
             var root = new RootElement (c.Subject);
             root.UnevenRows = true;
 
-            Section section = null;
+            //            section = new ThinSection ();
+            //            section.Add (new SubjectElement (Pretty.SubjectString (c.Subject)));
+            //            section.Add (new StartTimeElementWithIconIndent (Pretty.FullDateString (c.StartTime)));
+            //            if (c.AllDayEvent) {
+            //                section.Add (new DurationElement (Pretty.AllDayStartToEnd (c.StartTime, c.EndTime)));
+            //            } else {
+            //                section.Add (new DurationElement (Pretty.EventStartToEnd (c.StartTime, c.EndTime)));
+            //            }
+            //            root.Add (section);
+            //
+            //            if (c.ResponseRequested) {
+            //                section = new ThinSection ();
+            //                var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
+            //                button1.Tapped += () => {
+            //                    UpdateStatus (NcResponseType.Accepted);
+            //                };
+            //                var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
+            //                button2.Tapped += () => {
+            //                    UpdateStatus (NcResponseType.Tentative);
+            //                };
+            //                var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
+            //                button3.Tapped += () => {
+            //                    UpdateStatus (NcResponseType.Declined);
+            //                };
+            //                section.Add (button1);
+            //                section.Add (button2);
+            //                section.Add (button3);
+            //                root.Add (section);
+            //            }
 
-            section = new ThinSection ();
-            section.Add (new SubjectElement (Pretty.SubjectString (c.Subject)));
-            section.Add (new StartTimeElementWithIconIndent (Pretty.FullDateString (c.StartTime)));
-            if (c.AllDayEvent) {
-                section.Add (new DurationElement (Pretty.AllDayStartToEnd (c.StartTime, c.EndTime)));
-            } else {
-                section.Add (new DurationElement (Pretty.EventStartToEnd (c.StartTime, c.EndTime)));
-            }
-            root.Add (section);
+            //            // TODO: Give section an icon
+            //            RenderBodyIfAvailable (root);
+            //
+            //            if (null != c.Location) {
+            //                section = new ThinSection ();
+            //                section.Add (new LocationElement (c.Location));
+            //                root.Add (section);
+            //            }
+            //
+            //            section = new ThinSection ();
+            //            {
+            //                var e = new StyledStringElement ("People");
+            //                var image = UIImage.FromBundle ("icn-peoples");
+            //                e.Image = image.Scale(new SizeF (15.0f, 15.0f));;
+            //                e.Font = UIFont.SystemFontOfSize (17.0f);
+            //                e.Tapped += () => {
+            //                    PushAttendeeView ();
+            //                };
+            //                e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+            //                section.Add (e);
+            //            }
+            //            root.Add (section);
+            //
+            //            section = new ThinSection ();
+            //            using (var image = UIImage.FromBundle ("ic_action_event")) {
+            //                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
+            //                section.Add (new StyledStringElementWithIcon ("Calendar", MyCalendarName (c), scaledImage));
+            //            }
+            //            using (var image = UIImage.FromBundle ("ic_action_alarms")) {
+            //                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
+            //                section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (c.Reminder), scaledImage));
+            //            }
+            //            root.Add (section);
 
-            if (c.ResponseRequested) {
-                section = new ThinSection ();
-                var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
-                button1.Tapped += () => {
-                    UpdateStatus (NcResponseType.Accepted);
-                };
-                var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
-                button2.Tapped += () => {
-                    UpdateStatus (NcResponseType.Tentative);
-                };
-                var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
-                button3.Tapped += () => {
-                    UpdateStatus (NcResponseType.Declined);
-                };
-                section.Add (button1);
-                section.Add (button2);
-                section.Add (button3);
-                root.Add (section);
-            }
-                
-            // TODO: Give section an icon
-            RenderBodyIfAvailable (root);
-
-            if (null != c.Location) {
-                section = new ThinSection ();
-                section.Add (new LocationElement (c.Location));
-                root.Add (section);
-            }
-
-            section = new ThinSection ();
-            {
-                var e = new StyledStringElement ("People");
-                var image = UIImage.FromBundle ("ic_action_group");
-                e.Image = image.Scale (new SizeF (22.0f, 22.0f));
-                e.Font = UIFont.SystemFontOfSize (17.0f);
-                e.Tapped += () => {
-                    PushAttendeeView ();
-                };
-                e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
-                section.Add (e);
-            }
-            root.Add (section);
-
-            section = new ThinSection ();
-            using (var image = UIImage.FromBundle ("ic_action_event")) {
-                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
-                section.Add (new StyledStringElementWithIcon ("Calendar", MyCalendarName (c), scaledImage));
-            }
-            using (var image = UIImage.FromBundle ("ic_action_alarms")) {
-                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
-                section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (c.Reminder), scaledImage));
-            }
-            root.Add (section);
 
             return root;
         }
@@ -278,7 +743,7 @@ namespace NachoClient.iOS
                 }
             } catch (Exception e) {
                 // TODO: Find root cause
-                NachoCore.Utils.Log.Error (Log.LOG_UI, "CalendarItemView exception ignored:\n{0}", e);
+                NachoCore.Utils.Log.Error (Log.LOG_UI, "CalendarItemView exception ignored: ", e);
                 return;
             }
         }
@@ -289,19 +754,19 @@ namespace NachoClient.iOS
                 var entity = list [i];
                 var part = (MimePart)entity;
                 if (part.ContentType.Matches ("text", "html")) {
-//                    RenderHtml (part);
+                    //                    RenderHtml (part);
                     continue;
                 }
                 if (part.ContentType.Matches ("text", "calendar")) {
-//                    RenderCalendar (part);
+                    //                    RenderCalendar (part);
                     continue;
                 }
                 if (part.ContentType.Matches ("text", "*")) {
-//                    RenderText (part);
+                    //                    RenderText (part);
                     continue;
                 }
                 if (part.ContentType.Matches ("image", "*")) {
-//                    RenderImage (part);
+                    //                    RenderImage (part);
                     continue;
                 }
                 if (part.ContentType.Matches ("application", "ms-tnef")) {
@@ -328,38 +793,65 @@ namespace NachoClient.iOS
             }
         }
 
-        EntryElementWithIcon subjectEntryElement;
+        //EntryElementWithIcon subjectEntryElement;
+        EntryElementWithSettings titleEntryElement;
+        EntryElementWithSettings descriptionEntryElement;
         AppointmentEntryElement appointmentEntryElement;
         RootElementWithIcon reminderEntryElement;
         PeopleEntryElement peopleEntryElement;
         EntryElementWithIcon locationEntryElement;
+        //EntryElementWithIcon phoneNumberEntryElement;
+        CustomEntryElementDetail phoneEntryElement;
+        CustomEntryElement attachmentEntryElement;
         RootElementWithIcon calendarEntryElement;
         RootElementWithIcon timezoneEntryElement;
+        //        DateTimeEntryElement startDateTimeElement;
+        //        DateTimeEntryElement endDateTimeElement;
+        CustomEntryElementDetail startDateTimeElement;
+        CustomEntryElementDetail endDateTimeElement;
+        //        DurationElement startDateTimeElement;
+        //        DurationElement endDateTimeElement;
 
         /// <summary>
         /// Edit the (possibly empty) calendar entry
         /// </summary>
         protected RootElement EditDetail ()
         {
+            TableView.BackgroundColor = A.Color_NachoNowBackground;
             NavigationItem.LeftBarButtonItem = cancelButton;
             NavigationItem.RightBarButtonItem = doneButton;
 
-            subjectEntryElement = new EntryElementWithIcon (NachoClient.Util.DotWithColor (UIColor.Blue), "Title", c.Subject);
-            using (var icon = UIImage.FromBundle ("ic_action_place")) {
-                var scaledIcon = icon.Scale (new SizeF (22.0f, 22.0f));
-                locationEntryElement = new EntryElementWithIcon (scaledIcon, "Location", c.Location);
-            }
+            titleEntryElement = new EntryElementWithSettings (UIImage.FromBundle ("icn-add"), "Title", c.Subject);
+            //descriptionEntryElement = new EntryElementWithSettings (UIImage.FromBundle ("nothing"), "Description", c.Description);
+            descriptionEntryElement = new EntryElementWithSettings (UIImage.FromBundle ("nothing"), "Description", "Description");
+            //            using (var icon = UIImage.FromBundle ("ic_action_place")) {
+            //                var scaledIcon = icon.Scale (new SizeF (22.0f, 22.0f));
+            //                locationEntryElement = new EntryElementWithIcon (scaledIcon, "Location", c.Location);
+            //            }
+            locationEntryElement = new EntryElementWithIcon (UIImage.FromBundle ("icn-mtng-location"), "",  "Location", c.Location, false);
+            //phoneEntryElement = new CustomEntryElementDetail (UIImage.FromBundle ("icn-mtng-phone"), "Phone", c.Phone);
+            phoneEntryElement = new CustomEntryElementDetail (UIImage.FromBundle ("icn-mtng-phone"), "Phone", "5036861654");
+            attachmentEntryElement = new CustomEntryElement (UIImage.FromBundle ("icn-mtng-attachment"), "Attachments");
             appointmentEntryElement = new AppointmentEntryElement (c.StartTime, c.EndTime, c.AllDayEvent);
+            startDateTimeElement = new CustomEntryElementDetail  (UIImage.FromBundle ("icn-mtng-time"), "Start", c.StartTime.ToString());
+            endDateTimeElement = new CustomEntryElementDetail (UIImage.FromBundle ("icn-mtng-time"), "End", c.EndTime.ToString());
+
+            //            startDateTimeElement = new DurationElement ("Start");
+            //            endDateTimeElement = new DurationElement ("End");
+
+            //            startDateTimeElement.DateValue = c.StartTime;
+            //            endDateTimeElement.DateValue = c.EndTime;
             peopleEntryElement = new PeopleEntryElement ();
 
             // TODO: Get the calendar folder that holds the event
-            calendarEntryElement = new RootElementWithIcon ("ic_action_event", "Calendar", new RadioGroup (0)) {
+            calendarEntryElement = new RootElementWithIcon ("icn-calendars", "Calendar", new RadioGroup (0)) {
                 new CalendarRadioElementSection (calendars)
             };
 
-            reminderEntryElement = new RootElementWithIcon ("ic_action_alarms", "Reminder");
+            reminderEntryElement = new RootElementWithIcon ("", "Alert");
             reminderEntryElement.Add (new ReminderSection (c.Reminder));
             reminderEntryElement.UnevenRows = true;
+
 
             appointmentEntryElement.Tapped += (DialogViewController arg1, UITableView arg2, NSIndexPath arg3) => {
                 arg2.DeselectRow (arg3, true);
@@ -369,35 +861,47 @@ namespace NachoClient.iOS
             peopleEntryElement.Tapped += () => {
                 AttendeeEntryPopup ();
             };
-                
+
+            phoneEntryElement.Tapped += () => {
+                PushPhoneView ();
+            };
+
             var root = new RootElement (c.Subject);
             root.UnevenRows = true;
 
             Section section = null;
 
             section = new ThinSection ();
-            section.Add (subjectEntryElement);
+            section.Add (titleEntryElement);
+            section.Add (descriptionEntryElement);
             root.Add (section);
 
             section = new ThinSection ();
-            section.Add (appointmentEntryElement);
-            root.Add (section);
-
-            section = new ThinSection ();
-            section.Add (peopleEntryElement);
+            //section.Add (appointmentEntryElement);
+            section.Add (startDateTimeElement);
+            section.Add (endDateTimeElement);
             root.Add (section);
 
             section = new ThinSection ();
             section.Add (locationEntryElement);
+            section.Add (phoneEntryElement);
+            section.Add (attachmentEntryElement);
+            section.Add (peopleEntryElement);
+            root.Add (section);
+
+            section = new ThinSection ();
+
             timezoneEntryElement = TimeZonePopup ();
+            section.Add (reminderEntryElement);
             section.Add (timezoneEntryElement);
             root.Add (section);
 
             section = new ThinSection ();
             section.Add (calendarEntryElement);
-            section.Add (reminderEntryElement);
-            root.Add (section);
 
+            root.Add (section);
+            section = new ThinSection ();
+            root.Add (section);
             return root;
         }
 
@@ -437,7 +941,7 @@ namespace NachoClient.iOS
             section.Add (endDateTimeElement);
             section.Add (allDayEvent);
             root.Add (section);
-                  
+
             var dvc = new DialogViewController (root, true);
 
             dvc.ViewDisappearing += (object sender, EventArgs e) => {
@@ -472,16 +976,49 @@ namespace NachoClient.iOS
             NavigationController.PushViewController (dynamic, true);
         }
 
+        protected static List<string> Phones = new List<string> (new string[] {
+            "555-557-0123",
+            "559-534-1212",
+            "776-243-9439"
+        });
+
+        public void PushPhoneView ()
+        {
+            Console.WriteLine ("PushPhoneView");
+//            var root = new RootElement (c.Phone);
+//            var section = new ThinSection ();
+//            if (c.Phone != null) {
+//                phoneNumberEntryElement = new EntryElementWithIcon (UIImage.FromBundle ("icn-mtng-phone"), c.Phone, "Phone Number", c.Phone, true);
+//            } else {
+//                phoneNumberEntryElement = new EntryElementWithIcon (UIImage.FromBundle ("icn-mtng-phone"), "", "Phone Number", c.Phone, true);
+//            }
+//            section.Add (phoneNumberEntryElement);
+//            root.Add (section);
+//
+//            var dvc = new DialogViewController (root, true);
+//            dvc.ViewDisappearing += (object sender, EventArgs e) => {
+//                phoneEntryElement.Value = phoneNumberEntryElement.Value;
+//
+//                Root.Reload (phoneEntryElement, UITableViewRowAnimation.Fade);
+//            };
+//
+//
+//            var dynamic = new DialogViewController (root, true);
+//            NavigationController.PushViewController (dynamic, true);
+        }
+
         /// <summary>
         /// Extract values from dialog.root into 'c'.
         /// </summary>
         protected void ExtractDialogValues ()
         {
-            c.Subject = subjectEntryElement.Value;
+            c.Subject = titleEntryElement.Value;
+            //c.Description = descriptionEntryElement.Value;
             c.AllDayEvent = appointmentEntryElement.allDayEvent;
             c.StartTime = appointmentEntryElement.startDateTime.ToUniversalTime ();
             c.EndTime = appointmentEntryElement.endDateTime.ToUniversalTime ();
             // c.attendees is already set via PullAttendees
+            //c.Phone = phoneEntryElement.Value;
             c.Location = locationEntryElement.Value;
             var reminderSection = reminderEntryElement [0] as ReminderSection;
             var hiddenElement = reminderSection [0] as HiddenElement;
@@ -553,3 +1090,4 @@ namespace NachoClient.iOS
         }
     }
 }
+

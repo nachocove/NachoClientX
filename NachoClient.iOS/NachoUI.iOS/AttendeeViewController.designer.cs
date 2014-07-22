@@ -12,15 +12,9 @@ namespace NachoClient.iOS
 	[Register ("AttendeeViewController")]
 	partial class AttendeeViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem doneButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (doneButton != null) {
-				doneButton.Dispose ();
-				doneButton = null;
-			}
 		}
 	}
 }

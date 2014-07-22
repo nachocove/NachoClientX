@@ -78,6 +78,7 @@
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -105,6 +106,7 @@
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -130,6 +132,7 @@
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -153,6 +156,7 @@
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -1002,10 +1006,31 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcTimerPool.cs">
       <Link>NachoCore\Utils\NcTimerPool.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\PlatformUserColorIndex.cs" />
+    <Compile Include="NachoUI.iOS\EventViewController.cs" />
+    <Compile Include="NachoUI.iOS\EventViewController.designer.cs">
+      <DependentUpon>EventViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\PhoneViewController.cs" />
+    <Compile Include="NachoUI.iOS\PhoneViewController.designer.cs">
+      <DependentUpon>PhoneViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ChooseCalendarViewController.cs" />
+    <Compile Include="NachoUI.iOS\ChooseCalendarViewController.designer.cs">
+      <DependentUpon>ChooseCalendarViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
+    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
+      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AlertChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\AlertChooserViewController.designer.cs">
+      <DependentUpon>AlertChooserViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
+    <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Xamarin.ObjcBinding.CSharp.targets" />
@@ -1084,7 +1109,6 @@
     <BundleResource Include="Resources\ic_action_add_alarm.png" />
     <BundleResource Include="Resources\ic_action_alarms.png" />
     <BundleResource Include="Resources\ic_action_event.png" />
-    <BundleResource Include="Resources\ic_action_group.png" />
     <BundleResource Include="Resources\ic_action_map.png" />
     <BundleResource Include="Resources\ic_action_place.png" />
     <BundleResource Include="Resources\ic_action_time.png" />
@@ -1202,6 +1226,37 @@
     <BundleResource Include="Resources\icn-arrow-folder2.png" />
     <BundleResource Include="Resources\icn-folder.png" />
     <BundleResource Include="Resources\icn-folder%402x.png" />
+    <BundleResource Include="Resources\icn-mtng-attachment.png" />
+    <BundleResource Include="Resources\icn-mtng-attachment%402x.png" />
+    <BundleResource Include="Resources\icn-mtng-location.png" />
+    <BundleResource Include="Resources\icn-mtng-location%402x.png" />
+    <BundleResource Include="Resources\icn-mtng-notes.png" />
+    <BundleResource Include="Resources\icn-mtng-notes%402x.png" />
+    <BundleResource Include="Resources\icn-mtng-people.png" />
+    <BundleResource Include="Resources\icn-mtng-people%402x.png" />
+    <BundleResource Include="Resources\icn-mtng-phone.png" />
+    <BundleResource Include="Resources\icn-mtng-phone%402x.png" />
+    <BundleResource Include="Resources\icn-mtng-time.png" />
+    <BundleResource Include="Resources\icn-mtng-time%402x.png" />
+    <BundleResource Include="Resources\icn-peoples.png" />
+    <BundleResource Include="Resources\icn-peoples%402x.png" />
+    <BundleResource Include="Resources\icn-add.png" />
+    <BundleResource Include="Resources\icn-add%402x.png" />
+    <BundleResource Include="Resources\icn-calendars.png" />
+    <BundleResource Include="Resources\icn-calendars%402x.png" />
+    <BundleResource Include="Resources\btn-mtng-accept-pressed.png" />
+    <BundleResource Include="Resources\btn-mtng-accept-pressed%402x.png" />
+    <BundleResource Include="Resources\btn-mtng-accept.png" />
+    <BundleResource Include="Resources\btn-mtng-accept%402x.png" />
+    <BundleResource Include="Resources\btn-mtng-decline-pressed.png" />
+    <BundleResource Include="Resources\btn-mtng-decline-pressed%402x.png" />
+    <BundleResource Include="Resources\btn-mtng-decline.png" />
+    <BundleResource Include="Resources\btn-mtng-decline%402x.png" />
+    <BundleResource Include="Resources\btn-mtng-tenative-pressed.png" />
+    <BundleResource Include="Resources\btn-mtng-tenative-pressed%402x.png" />
+    <BundleResource Include="Resources\btn-mtng-tenative.png" />
+    <BundleResource Include="Resources\btn-mtng-tenative%402x.png" />
+    <BundleResource Include="Resources\acc-arrow.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
