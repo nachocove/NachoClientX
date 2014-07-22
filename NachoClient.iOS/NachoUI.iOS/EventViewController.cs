@@ -124,6 +124,7 @@ namespace NachoClient.iOS
             if (showMenu) {
                 // Navigation
                 cancelButton.Clicked += (object sender, EventArgs e) => {
+                    View.EndEditing(true);
                     this.RevealViewController ().RevealToggle (this);
                 };
                     
@@ -138,6 +139,9 @@ namespace NachoClient.iOS
                 SendInvites ();
                 this.RevealViewController ().RevealToggle (this);
             };
+
+            var g = new UITapGestureRecognizer(() => View.EndEditing(true));
+            contentView.AddGestureRecognizer(g);
 
             c = CalendarHelper.DefaultMeeting ();
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
@@ -443,7 +447,7 @@ namespace NachoClient.iOS
 
             var startTap = new UITapGestureRecognizer ();
             startTap.AddTarget (() => {
-
+                View.EndEditing(true);
                 if (startDateOpen) {
                     ConfigureDateView ("startClose");
                     startDate = startDatePicker.Date;

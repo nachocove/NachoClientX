@@ -26,7 +26,7 @@ namespace NachoClient.iOS
         UcAttachmentBlock attachmentView;
         protected McAccount account;
 
-        UIColor separatorColor = A.Color_NachoSeparator;
+        //UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
