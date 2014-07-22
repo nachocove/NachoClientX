@@ -496,7 +496,7 @@ namespace NachoClient.iOS
                 Account.PreferredConferenceId = userConference.Id;
             } else {
                 McConference x = new McConference ();
-                x.DefaultPhoneNumber = "(503) 345-6789";
+                x.DefaultPhoneNumber = "";
                 x.Insert ();
                 whatAccount.PreferredConferenceId = x.Id;
                 whatAccount.Update ();
@@ -511,7 +511,7 @@ namespace NachoClient.iOS
             Account.EmailAddress = whatAccount.EmailAddr;
             Account.MailServer = userMailServer.Host;
             Account.EmailSignature = whatAccount.Signature == null ? "Sent from NachoMail" : whatAccount.Signature;
-            Account.ConferenceCallNumber = userConference.DefaultPhoneNumber == null ? "(562) 488-3229" : userConference.DefaultPhoneNumber;
+            Account.ConferenceCallNumber = userConference.DefaultPhoneNumber == null ? "" : userConference.DefaultPhoneNumber;
         }
 
         public class AccountSettings
