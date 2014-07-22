@@ -39,6 +39,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoRed = null;
         protected static UIColor _Color_NachoYellow = null;
         protected static UIColor _Color_NachoBlue = null;
+        protected static UIColor _Color_NachoSeparator = null;
 
 
         public A ()
@@ -313,6 +314,15 @@ namespace NachoClient.iOS
                     _Color_CalDotBlue = UIColor.FromRGB (0x29, 0x76, 0xcc);
                 }
                 return _Color_CalDotBlue;
+            }
+        }
+
+        public static UIColor Color_NachoSeparator {
+            get {
+                if (null == _Color_NachoSeparator) {
+                    _Color_NachoSeparator = new UIColor (.8f, .8f, .8f, .7f);
+                }
+                return _Color_NachoSeparator;
             }
         }
     }

@@ -78,7 +78,7 @@ namespace NachoClient.iOS
             };
 
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("NachoNowToCalendarItem", new SegueHolder (null));
+                PerformSegue ("NachoNowToEventView", new SegueHolder (null));
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
@@ -220,6 +220,18 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "NachoNowToCalendar") {
                 return; // Nothing to do
+            }
+            if (segue.Identifier == "NachoNowToEventView") {
+                var vc = (EventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                }
+                vc.SetOwner (this);
+                return;
             }
             if (segue.Identifier == "NachoNowToCompose") {
                 var vc = (MessageComposeViewController)segue.DestinationViewController;

@@ -60,7 +60,7 @@ namespace NachoClient.iOS
                 ReturnToToday ();
             };
             newCalEventButton.Clicked += (object sender, EventArgs e) => {
-
+                PerformSegue ("CalendarToEventView", new SegueHolder (null));
             };
 
             calendarSource = new CalendarTableViewSource ();
@@ -197,6 +197,11 @@ namespace NachoClient.iOS
 //            }
             if (segue.Identifier.Equals ("CalendarToNachoNow")) {
                 // Nothing to do
+                return;
+            }
+            if (segue.Identifier == "CalendarToEventView") {
+                var vc = (EventViewController)segue.DestinationViewController;
+                vc.SetOwner (this);
                 return;
             }
             NcAssert.CaseError ();

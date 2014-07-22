@@ -43,6 +43,7 @@ namespace NachoClient.iOS
         const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
         const string SidebarToNewEventSegueId = "SidebarToNewEvent";
+        const string SidebarToEventSegueId = "SidebarToEvent";
 
         protected class ButtonInfo
         {
@@ -103,7 +104,8 @@ namespace NachoClient.iOS
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Hot List", "menu-chili", SidebarToNachoNowSegueId),
                 new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
-                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
+//                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
+                new ButtonInfo ("New Event", "menu-new-event", SidebarToEventSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
                 new ButtonInfo ("Attachments", "menu-attachments", SidebarToAttachmentsSegueId),
@@ -210,6 +212,13 @@ namespace NachoClient.iOS
             case SidebarToNewEventSegueId:
                 {
                     var vc = (CalendarItemViewController)destViewController;
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                    vc.showMenu = true;
+                }
+                break;
+            case SidebarToEventSegueId:
+                {
+                    var vc = (EventViewController)destViewController;
                     vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                     vc.showMenu = true;
                 }

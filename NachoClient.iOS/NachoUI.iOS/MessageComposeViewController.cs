@@ -75,6 +75,7 @@ namespace NachoClient.iOS
                 revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
                 revealButton.Target = this.RevealViewController ();
 
+
                 nachoButton.Clicked += (object sender, EventArgs e) => {
                     PerformSegue ("ComposeToNachoNow", this);
                 };
@@ -107,7 +108,7 @@ namespace NachoClient.iOS
                 attachmentViewHR.Hidden = false;
                 attachmentView.SetCompact(false);
                 attachmentView.ConfigureView ();
-                attachmentView.PromptForAttachment();
+                attachmentView.PromptForAttachment("message");
             };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
@@ -351,6 +352,7 @@ namespace NachoClient.iOS
         protected void ConfigureBodyEditView ()
         {
             // this might be the place that we set up our initializaiton text
+            toView.SetCompact (true, -1);
 
             toView.Hidden = false;
             ccView.Hidden = true;
@@ -362,7 +364,7 @@ namespace NachoClient.iOS
             bccViewHR.Hidden = true;
             attachmentViewHR.Hidden = true;
 
-            toView.SetCompact (true, -1);
+
 
             suppressLayout = true;
             toView.ConfigureView ();
@@ -520,6 +522,7 @@ namespace NachoClient.iOS
                 return;
             }
             keyboardHeight = newHeight;
+
             LayoutView ();
         }
 
