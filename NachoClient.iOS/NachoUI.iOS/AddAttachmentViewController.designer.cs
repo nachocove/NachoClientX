@@ -9,12 +9,18 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AttendeeViewController")]
-	partial class AttendeeViewController
+	[Register ("AddAttachmentViewController")]
+	partial class AddAttachmentViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIButton addAttachmentButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (addAttachmentButton != null) {
+				addAttachmentButton.Dispose ();
+				addAttachmentButton = null;
+			}
 		}
 	}
 }

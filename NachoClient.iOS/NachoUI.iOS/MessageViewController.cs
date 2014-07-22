@@ -830,7 +830,7 @@ namespace NachoClient.iOS
             if (null != evt.Summary) {
                 section.Add (new SubjectElement (evt.Summary));
             }
-            section.Add (new StartTimeElement (Pretty.FullDateString (evt.Start.Value)));
+            section.Add (new StartTimeElement (Pretty.FullDateTimeString (evt.Start.Value)));
             if (evt.IsAllDay) {
                 section.Add (new DurationElement (Pretty.AllDayStartToEnd (evt.Start.Value, evt.End.Value)));
             } else {

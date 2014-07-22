@@ -12,6 +12,7 @@ namespace NachoClient.iOS
         private string AppearingName;
         private string InUseName;
         private string DisappearingName;
+        public event EventHandler ViewDisappearing;
 
         NcCapture Appearing;
         NcCapture InUse;
@@ -53,6 +54,8 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             NachoClient.Util.HighPriority ();
         }
+            
+
 
         public override void ViewWillAppear (bool animated)
         {
@@ -74,9 +77,13 @@ namespace NachoClient.iOS
         {
             InUse.Stop ();
             base.ViewWillDisappear (animated);
+            if (null != ViewDisappearing) {
+                ViewDisappearing (this, EventArgs.Empty);
+            }
             Disappearing.Reset ();
             Disappearing.Start ();
             NachoClient.Util.RegularPriority ();
+
         }
 
         public override void ViewDidDisappear (bool animated)

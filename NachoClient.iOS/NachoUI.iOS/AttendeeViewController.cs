@@ -38,13 +38,10 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            doneButton.Clicked += (object sender, EventArgs e) => {
-                NavigationController.PopViewControllerAnimated (true);
-            };
-
             this.Pushing = true;
             this.Style = UITableViewStyle.Plain;
             TableView.SeparatorInset = new UIEdgeInsets (0, 0, 0, 0);
+            TableView.SeparatorColor = new UIColor (.8f, .8f, .8f, .6f);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -125,14 +122,15 @@ namespace NachoClient.iOS
         public Section CustomSection (NcEmailAddress.Kind kind)
         {
             var e = new StyledStringElement (NcEmailAddress.ToPrefix (kind));
-            e.Image = UIImage.FromBundle ("ic_action_add_person");
+            e.Image = UIImage.FromBundle ("icn-mtng-people");
             e.TextColor = UIColor.LightGray;
             e.BackgroundColor = UIColor.LightTextColor;
+            e.Font = A.Font_AvenirNextRegular14;
             e.Tapped += () => {
                 SectionTapped (kind);
             };
             var s = new Section ();
-            s.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
+            s.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 30.0f));
             s.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
             s.Add (e);
             return s;

@@ -37,7 +37,7 @@ namespace NachoCore.Utils
             } else {
                 c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Utc);
             }
-            c.EndTime = c.StartTime.AddMinutes (30.0);
+            c.EndTime = c.StartTime.AddMinutes (60.0);
 
             return c;
         }
