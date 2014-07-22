@@ -62,6 +62,8 @@ def create_buildinfo(options):
         print >>f, '        public const string User = "%s";' % get_username()
         if source is not None:
             print >>f, '        public const string Source = "%s";' % source
+        else:
+            print >>f, '        public const string Source = "";'
         print >>f, '        public const string ParseAppId = "%s";' % parse_app_id
         print >>f, '        public const string ParseApiKey = "%s";' % parse_api_key
         print >>f, '        public const string HockeyAppAppId = "%s";' % hockeyapp_app_id
