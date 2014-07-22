@@ -254,8 +254,7 @@ namespace NachoClient.iOS
         private void FinalShutdown (object opaque)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Called");
-            var referenceCounter = (int)opaque;
-            if (referenceCounter != ShutdownCounter) {
+            if (null != opaque && (int)opaque != ShutdownCounter) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
                 return;
             }
@@ -313,8 +312,13 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
             UnhookFetchStatusHandler ();
             ++ShutdownCounter;
-            ShutdownTimer.Dispose ();
-            ShutdownTimer = null;
+            if (null != ShutdownTimer) {
+                ShutdownTimer.Dispose ();
+                ShutdownTimer = null;
+            }
+            if (FinalShutdownHasHappened) {
+                ReverseFinalShutdown ();
+            }
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Cleanup complete");
 
             var imageView = UIApplication.SharedApplication.KeyWindow.ViewWithTag (653);
@@ -575,6 +579,7 @@ namespace NachoClient.iOS
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
 
             var soundExpressed = false;
+            int remainingVisibleSlots = 10;
             foreach (var message in unreadAndHot) {
                 if (message.HasBeenNotified) {
                     continue;
@@ -592,6 +597,10 @@ namespace NachoClient.iOS
                 message.HasBeenNotified = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                --remainingVisibleSlots;
+                if (0 >= remainingVisibleSlots) {
+                    break;
+                }
             }
         }
     }
