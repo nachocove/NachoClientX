@@ -43,7 +43,7 @@ namespace NachoClient.iOS
             folders = new HierarchicalFolderTableSource(TableView);
             TableView.DataSource = folders;
             UISearchBar sb = new UISearchBar(new RectangleF (0, 45, TableView.Frame.Width, 45));
-            sb.BarTintColor = new UIColor (.8f, .8f, .8f, .6f);
+            sb.BarTintColor = A.Color_NachoSeparator;
             sb.Placeholder = "Search";
             NSString x = new NSString ("_searchField");
             UITextField txtField = (UITextField)sb.ValueForKey (x);

@@ -118,17 +118,29 @@ namespace NachoCore.Utils
             if (startTime.Date == endTime.Date) {
                 return String.Format ("{0} - {1} ({2})", startString, localEndTime.ToString ("t"), durationString);
             } else {
-                return String.Format ("{0} -\n{1} ({2})", startString, FullDateString (endTime), durationString);
+                return String.Format ("{0} -\n{1} ({2})", startString, FullDateTimeString (endTime), durationString);
             }
         }
 
         /// <summary>
         /// Full the date string: Saturday, March 1, 2014
         /// </summary>
+        static public string FullDateTimeString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return LocalT (d).ToString ("ddd, MMM d - h:mm tt");
+        }
+
         static public string FullDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("D");
+            return LocalT (d).ToString ("ddd, MMM d");
+        }
+
+        static public string FullTimeString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return LocalT (d).ToString ("t");
         }
 
         /// <summary>

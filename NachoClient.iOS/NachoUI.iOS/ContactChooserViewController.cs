@@ -100,6 +100,7 @@ namespace NachoClient.iOS
             SetToButtonLabel (address.kind);
 
             AutocompleteTextField.BecomeFirstResponder ();
+            TableView.SeparatorColor = A.Color_NachoSeparator;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -165,7 +166,7 @@ namespace NachoClient.iOS
                 ToButton.SetTitle ("Bcc:", UIControlState.Normal);
                 break;
             case NcEmailAddress.Kind.Required:
-                ToButton.SetTitle ("Req", UIControlState.Normal);
+                ToButton.SetTitle ("Req:", UIControlState.Normal);
                 break;
             case NcEmailAddress.Kind.Optional:
                 ToButton.SetTitle ("Opt:", UIControlState.Normal);
@@ -335,6 +336,7 @@ namespace NachoClient.iOS
                     NcAssert.True (null != cell);
                     cell.TextLabel.Text = "No name or email address";
                     cell.TextLabel.TextColor = UIColor.LightGray;
+                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                     return cell;
                 }
 
@@ -342,7 +344,8 @@ namespace NachoClient.iOS
                     cell = tableView.DequeueReusableCell ("Basic");
                     NcAssert.True (null != cell);
                     cell.TextLabel.Text = displayName;
-                    cell.TextLabel.TextColor = UIColor.Black;
+                    cell.TextLabel.TextColor = A.Color_NachoBlack;
+                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                     return cell;
                 }
 
@@ -350,8 +353,10 @@ namespace NachoClient.iOS
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = displayName;
                 cell.DetailTextLabel.Text = displayEmailAddress;
-                cell.TextLabel.TextColor = UIColor.Black;
-                cell.DetailTextLabel.TextColor = UIColor.Black;
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 return cell;  
             }
         }

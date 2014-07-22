@@ -120,22 +120,23 @@ namespace NachoClient.iOS
             }
 
             // We're in "chooser' mode & the attachment is downloaded
-            var actionSheet = new UIActionSheet ("Attachment Selection");
-            actionSheet.Add ("Cancel");
+            var actionSheet = new UIActionSheet ();
+            actionSheet.TintColor = A.Color_NachoBlue;
             actionSheet.Add ("Preview");
             actionSheet.Add ("Select Attachment");
-            actionSheet.CancelButtonIndex = 0;
+            actionSheet.Add ("Cancel");
+            actionSheet.CancelButtonIndex = 2;
 
             actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
                 switch (b.ButtonIndex) {
                 case 0:
-                    break; // Cancel
-                case 1:
                     PlatformHelpers.DisplayAttachment (this, a);
-                    break;
-                case 2:
+                    break; 
+                case 1:
                     owner.SelectFile (this, a);
                     break;
+                case 2:
+                    break; // Cancel
                 default:
                     NcAssert.CaseError ();
                     break;

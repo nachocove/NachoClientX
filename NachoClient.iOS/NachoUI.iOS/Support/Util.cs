@@ -36,6 +36,7 @@ using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using MonoTouch.CoreGraphics;
 
 
 namespace NachoClient
@@ -474,6 +475,72 @@ namespace NachoClient
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                 Account = ConstMcAccount.NotAccountSpecific,
             });
+        }
+
+        public static string NameToLetters (string name)
+        {
+            var Initials = "";
+            string[] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (1 == names.Length) {
+                Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+            }
+            if (2 == names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                } else {
+                    // First name, Last name
+                    Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                }
+            }
+            if (2 < names.Length) {
+                if (0 < name.IndexOf (',')) {
+                    // Last name, First name
+                    Initials = (names [1].Substring (0, 1)).ToCapitalized () + (names [0].Substring (0, 1)).ToCapitalized ();
+                } else if (-1 == name.IndexOf (',')) {
+                    if ((names [1].Substring (0, 1)).ToLower () != (names [1].Substring (0, 1))) {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized () + (names [1].Substring (0, 1)).ToCapitalized ();
+                    } else {
+                        Initials = (names [0].Substring (0, 1)).ToCapitalized ();
+                    }
+                }
+            }
+
+            return Initials;
+        }
+
+        public static UIImage MakeCheckmark (UIColor checkColor)
+        {
+            var size = new SizeF (15, 15);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var g = UIGraphics.GetCurrentContext ();
+
+
+            //set up drawing attributes
+            g.SetLineWidth (1);
+
+            checkColor.SetStroke ();
+
+            //create geometry
+            var checkmark = new CGPath ();
+
+            checkmark.AddLines (new PointF[] {
+                new PointF (0, 10),
+                new PointF (5, 15), 
+                new PointF (15, 0)
+            });
+
+            //checkmark.CloseSubpath ();
+
+            //add geometry to graphics context and draw it
+            g.AddPath (checkmark);
+            g.DrawPath (CGPathDrawingMode.Stroke);
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+
         }
 
         #endregion

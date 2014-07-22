@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13D65" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
     </dependencies>
@@ -9,7 +9,7 @@
             <objects>
                 <viewController storyboardIdentifier="MainViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="DIz-1F-Wd9" customClass="MainViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="mLC-dy-Yj7">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -21,33 +21,33 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="MoL-v9-szX" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3096" y="-431"/>
+            <point key="canvasLocation" x="-4196" y="-2321"/>
         </scene>
         <!--Nacho Now View Controller - Now!-->
         <scene sceneID="w1N-3O-jJd">
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <view contentMode="scaleToFill" id="Z7x-qk-TR0" userLabel="PhonyView1">
-                                <rect key="frame" x="28" y="300" width="265" height="116"/>
+                                <rect key="frame" x="28" y="388" width="265" height="116"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <view contentMode="scaleToFill" id="YUG-dS-1xg" userLabel="PhonyView2">
-                                <rect key="frame" x="38" y="295" width="245" height="111"/>
+                                <rect key="frame" x="38" y="383" width="245" height="111"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
-                                <rect key="frame" x="0.0" y="160" width="320" height="127"/>
+                                <rect key="frame" x="0.0" y="160" width="320" height="215"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <view contentMode="scaleToFill" id="LK2-5y-My2" customClass="UITableView">
-                                <rect key="frame" x="21" y="305" width="285" height="111"/>
+                                <rect key="frame" x="21" y="393" width="285" height="111"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
@@ -100,11 +100,12 @@
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="jTc-Vg-SXZ" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
-                        <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="ciI-Ve-Wsq"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" id="Q8y-4K-BAb"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItemEdit" id="wNy-ed-w10"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="NachoNowToCompose" id="Zli-hF-qvP"/>
+                        <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="73P-Mz-0ur"/>
+                        <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="tgm-1S-bYq"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -116,14 +117,14 @@
                 <barButtonItem image="navbar-icn-newevent.png" id="7Rc-PF-jdp" userLabel="Bar Button Item - New Event"/>
                 <barButtonItem image="navbar-icn-newEmail.png" id="FUI-0Y-Rul" userLabel="Bar Button Item - Compose"/>
             </objects>
-            <point key="canvasLocation" x="-2205" y="-1910"/>
+            <point key="canvasLocation" x="-2681" y="-242"/>
         </scene>
         <!--Sidebar View Controller-->
         <scene sceneID="XdS-E0-snZ">
             <objects>
                 <viewController storyboardIdentifier="SidebarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="FKU-f3-o4b" customClass="SidebarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ae4-ht-cwe">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -146,18 +147,19 @@
                         <segue destination="d8n-da-LP7" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="g6P-mU-XFC"/>
                         <segue destination="HgO-45-h9V" kind="custom" identifier="SidebarToNewEvent" customClass="SWRevealViewControllerSegue" id="WNy-bM-xGW"/>
                         <segue destination="tAw-fh-hJX" kind="custom" identifier="SidebarToNewEmail" customClass="SWRevealViewControllerSegue" id="HKc-NA-tOt"/>
+                        <segue destination="em2-Kh-10O" kind="custom" identifier="SidebarToEvent" customClass="SWRevealViewControllerSegue" id="7f1-U8-A7w"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2205" y="-1169"/>
+            <point key="canvasLocation" x="-3205" y="-3051"/>
         </scene>
         <!--Calendar View Controller - Calendar-->
         <scene sceneID="lp3-oi-9fg">
             <objects>
                 <viewController storyboardIdentifier="CalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="d8n-da-LP7" customClass="CalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="T2Q-uC-Zpf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" id="OaC-4H-Y1h">
@@ -166,7 +168,7 @@
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NDf-lZ-rUS">
-                                <rect key="frame" x="0.0" y="78" width="320" height="339"/>
+                                <rect key="frame" x="0.0" y="78" width="320" height="427"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                             </tableView>
@@ -185,6 +187,7 @@
                         <outlet property="todayButton" destination="RPJ-Y3-1md" id="OfS-q9-XPJ"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="eK3-Wd-Zbv"/>
                         <segue destination="HgO-45-h9V" kind="push" identifier="NachoNowToCalendarItem" id="vah-yS-677"/>
+                        <segue destination="em2-Kh-10O" kind="push" identifier="CalendarToEventView" id="CoK-I1-8hz"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -193,44 +196,73 @@
                 <barButtonItem image="navbar-icn-inbox.png" id="TQm-zA-PCB" userLabel="Bar Button Item - nachoButton"/>
                 <barButtonItem image="icn-calendar-top.png" id="RPJ-Y3-1md" userLabel="Bar Button Item - todayButton"/>
             </objects>
-            <point key="canvasLocation" x="-1011" y="-1627"/>
+            <point key="canvasLocation" x="-3205" y="-955"/>
         </scene>
-        <!--Calendar Item View Controller - Calendar Item-->
+        <!--Calendar Item View Controller - Add Event-->
         <scene sceneID="RpJ-bl-dQ1">
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Calendar Item" id="fZY-MQ-nPh"/>
+                    <navigationItem key="navigationItem" title="Add Event" id="fZY-MQ-nPh"/>
                     <connections>
+                        <outlet property="acceptButton" destination="930-fw-0br" id="izN-yZ-0CF"/>
                         <outlet property="cancelButton" destination="sFR-r8-TDe" id="wgg-bq-bR2"/>
+                        <outlet property="declineButton" destination="IPl-13-OdW" id="h6J-QL-S6C"/>
                         <outlet property="doneButton" destination="1VR-x3-yGz" id="ADN-jO-YUj"/>
                         <outlet property="editButton" destination="mEu-xP-156" id="72K-Lt-yXg"/>
                         <outlet property="nachoButton" destination="RXs-aw-aVw" id="BFD-bs-a9e"/>
                         <outlet property="revealButton" destination="ZwA-Qy-mcx" id="koW-1e-d6l"/>
+                        <outlet property="tenativeButton" destination="OcB-kN-73M" id="WAK-dp-Rcr"/>
                         <segue destination="PUz-nc-h33" kind="push" identifier="CalendarItemToAttendeeView" id="mSu-Hi-cds"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarItemToNachoNow" id="kLB-ow-NqN"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bme-2E-4YV" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="edit" id="mEu-xP-156" userLabel="Bar Button Item - Edit"/>
-                <barButtonItem systemItem="done" id="1VR-x3-yGz" userLabel="Bar Button Item - Done"/>
-                <barButtonItem systemItem="cancel" id="sFR-r8-TDe" userLabel="Bar Button Item - Cancel"/>
+                <barButtonItem systemItem="done" id="1VR-x3-yGz" userLabel="Bar Button Item - Done">
+                    <color key="tintColor" red="0.20784313730000001" green="0.81568627449999997" blue="0.74509803919999995" alpha="1" colorSpace="deviceRGB"/>
+                </barButtonItem>
+                <barButtonItem image="navbar-icn-close.png" id="sFR-r8-TDe" userLabel="Bar Button Item - Cancel"/>
                 <barButtonItem image="navbar-icn-inbox.png" id="RXs-aw-aVw" userLabel="Bar Button Item - nachoButton"/>
                 <barButtonItem image="navbar-icn-menu.png" id="ZwA-Qy-mcx" userLabel="Bar Button Item - revealButton"/>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="OcB-kN-73M" userLabel="Button - Tenative">
+                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="IPl-13-OdW" userLabel="Button - Decline">
+                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="930-fw-0br" userLabel="Button - Accept">
+                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
             </objects>
-            <point key="canvasLocation" x="-383" y="-1627"/>
+            <point key="canvasLocation" x="-1049" y="-955"/>
         </scene>
         <!--Attachment View Controller - Attachments-->
         <scene sceneID="KYr-4w-GFq">
             <objects>
                 <tableViewController storyboardIdentifier="AttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="AttachmentViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -257,17 +289,17 @@
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wOG-Ry-VAW" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="list.png" id="NU1-k7-pji"/>
+                <barButtonItem image="navbar-icn-menu.png" id="NU1-k7-pji"/>
                 <barButtonItem image="Nacho-Cove-Icon.png" id="LXM-cO-kAi"/>
             </objects>
-            <point key="canvasLocation" x="99" y="-2269"/>
+            <point key="canvasLocation" x="-3882" y="445"/>
         </scene>
         <!--Task List View Controller - Tasks-->
         <scene sceneID="eS4-pd-cWT">
             <objects>
                 <tableViewController storyboardIdentifier="TaskListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="sao-Pd-u1t" customClass="TaskListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="lNg-w0-kcv">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -315,14 +347,14 @@
                 <barButtonItem image="Nacho-Cove-Icon.png" id="JzF-aF-FAL" userLabel="Bar Button Item - Nacho"/>
                 <barButtonItem systemItem="add" id="0te-5F-isn"/>
             </objects>
-            <point key="canvasLocation" x="578" y="-2260"/>
+            <point key="canvasLocation" x="-3882" y="-242"/>
         </scene>
         <!--File List View Controller - Files-->
         <scene sceneID="CQm-rZ-DFP">
             <objects>
                 <tableViewController storyboardIdentifier="FileListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="pKz-1u-PCL" customClass="FileListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="hJB-ay-mSN">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="436"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -374,14 +406,14 @@
                 <barButtonItem image="Nacho-Cove-Icon.png" id="HaN-m6-0EP" userLabel="Bar Button Item - Nacho"/>
                 <barButtonItem systemItem="edit" id="Suf-Fg-P7M" userLabel="Bar Button Item - Edit"/>
             </objects>
-            <point key="canvasLocation" x="1127" y="-2256"/>
+            <point key="canvasLocation" x="-2141" y="-1627"/>
         </scene>
         <!--Attendee View Controller-->
         <scene sceneID="Qdn-rb-w8l">
             <objects>
                 <tableViewController storyboardIdentifier="AttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="PUz-nc-h33" customClass="AttendeeViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="CVB-up-ERg">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -400,25 +432,22 @@
                         </connections>
                     </tableView>
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" id="aU2-wW-1ge">
-                        <barButtonItem key="rightBarButtonItem" systemItem="done" id="3zJ-k8-O1U"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" id="aU2-wW-1ge"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="doneButton" destination="3zJ-k8-O1U" id="kMI-oY-1fA"/>
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="AttendeeViewToContactChooser" id="nAp-rc-bND"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="var-bn-Y7r" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="99" y="-1627"/>
+            <point key="canvasLocation" x="-589" y="-955"/>
         </scene>
         <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
             <objects>
                 <tableViewController storyboardIdentifier="ContactsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="jTc-Vg-SXZ" customClass="ContactsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="MBn-W2-0u6">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="f7d-Bz-vIg">
@@ -497,14 +526,14 @@
                 </searchDisplayController>
                 <barButtonItem title="Item" id="DbK-yy-Alh" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-909" y="-983"/>
+            <point key="canvasLocation" x="-2141" y="-955"/>
         </scene>
         <!--Contact View Controller - Contact-->
         <scene sceneID="FRe-Er-G10">
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -518,14 +547,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-376" y="-983"/>
+            <point key="canvasLocation" x="-1536" y="-955"/>
         </scene>
         <!--Settings View Controller - Settings-->
         <scene sceneID="Jbb-0l-SOs">
             <objects>
                 <tableViewController restorationIdentifier="SettingsViewController" storyboardIdentifier="SettingsViewController" id="n4d-09-jTS" customClass="SettingsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NSF-cU-4FU">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -567,14 +596,14 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YtI-ix-b1g" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem title="Item" id="MBQ-pK-OUo" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-1435" y="397"/>
+            <point key="canvasLocation" x="-2205" y="-3051"/>
         </scene>
         <!--Accounts View Controller - Accounts-->
         <scene sceneID="Axk-hT-xAZ">
             <objects>
                 <tableViewController storyboardIdentifier="AccountsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="KvB-j8-wfn" customClass="AccountsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="aZb-Ef-WnL">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -617,7 +646,7 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="DfX-V3-vYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem title="Item" id="Dvq-sT-DNT" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-1435" y="-2263"/>
+            <point key="canvasLocation" x="-2681" y="-1627"/>
         </scene>
         <!--Home View Controller - Home-->
         <scene sceneID="HqZ-cG-lfO">
@@ -637,14 +666,14 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1uw-1F-jlg" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem title="Item" id="nOm-08-vvV" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-1945" y="397"/>
+            <point key="canvasLocation" x="-2681" y="-3051"/>
         </scene>
         <!--Launch View Controller-->
         <scene sceneID="dIN-Oe-u79">
             <objects>
                 <viewController storyboardIdentifier="LaunchViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="6rF-Ad-StO" customClass="LaunchViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="RIJ-2d-dqb">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="436"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="Welcome to Nacho Mail!" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="3GF-CP-chd">
@@ -697,14 +726,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="B4U-5i-lJV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2589" y="397"/>
+            <point key="canvasLocation" x="-3205" y="-1627"/>
         </scene>
         <!--Folder View Controller - Folder View-->
         <scene sceneID="jpU-Xb-jWm">
             <objects>
                 <tableViewController storyboardIdentifier="FoldersView_Storyboard" title="Folder View" id="UKd-1I-ARy" customClass="FolderViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="FgN-WS-Sie">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -743,14 +772,14 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="61c-Dw-Qpc" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem title="Item" id="KaA-7V-JQm" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-1435" y="-283"/>
+            <point key="canvasLocation" x="-3205" y="-242"/>
         </scene>
         <!--Contact Search View Controller - Contacts-->
         <scene sceneID="qZb-fd-BvT">
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -827,14 +856,14 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="1127" y="-1627"/>
+            <point key="canvasLocation" x="487" y="73"/>
         </scene>
         <!--Contact Chooser View Controller - Chooser-->
         <scene sceneID="Ora-ag-cc2">
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -844,7 +873,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="334"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="422"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -919,14 +948,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="608" y="-1627"/>
+            <point key="canvasLocation" x="-48" y="73"/>
         </scene>
         <!--Message List View Controller - Messages-->
         <scene sceneID="piL-bm-yTE">
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="Cy0-Nd-oMQ">
@@ -988,18 +1017,18 @@
                 <barButtonItem systemItem="save" id="vFg-TU-IRT"/>
                 <barButtonItem systemItem="cancel" id="JBa-CL-cDv" userLabel="Bar Button Item - Cancel"/>
             </objects>
-            <point key="canvasLocation" x="-477" y="397"/>
+            <point key="canvasLocation" x="-2681" y="445"/>
         </scene>
         <!--Message View Controller-->
         <scene sceneID="eKj-ii-dif">
             <objects>
                 <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="372"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <gestureRecognizers/>
                             </scrollView>
@@ -1047,18 +1076,18 @@
                 <barButtonItem image="navbar-icn-quickreply.png" id="AWp-LH-tHp" userLabel="Bar Button Item - Quick Reply"/>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-185" y="1044"/>
+            <point key="canvasLocation" x="-2141" y="84"/>
         </scene>
         <!--Message Action View Controller-->
         <scene sceneID="xTb-xg-MEn">
             <objects>
                 <viewController storyboardIdentifier="MessageActionViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="wY7-Wf-QPv" customClass="MessageActionViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="PmR-Of-Fau">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="LN7-gk-jcs">
-                                <rect key="frame" x="115" y="430" width="90" height="30"/>
+                                <rect key="frame" x="115" y="518" width="90" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <state key="normal" title="Dismiss">
@@ -1067,7 +1096,7 @@
                                 </state>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="x6D-oO-m9F">
-                                <rect key="frame" x="20" y="28" width="280" height="380"/>
+                                <rect key="frame" x="20" y="28" width="280" height="468"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <color key="sectionIndexColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -1097,22 +1126,266 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bUG-fK-MwM" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="596" y="-203"/>
+            <point key="canvasLocation" x="-1536" y="73"/>
+        </scene>
+        <!--Event View Controller-->
+        <scene sceneID="m1F-Fe-LQp">
+            <objects>
+                <viewController storyboardIdentifier="EventViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="em2-Kh-10O" userLabel="Event View Controller" customClass="EventViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="7sU-e0-LE8">
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="9Cj-t4-I4R">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="TgG-lg-u6k" userLabel="Content View">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Add Event" id="9H9-AD-hMB" userLabel="Navigation Item - Add Event"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
+                    <connections>
+                        <outlet property="cancelButton" destination="oR4-zY-1Lz" id="YEu-fr-5X7"/>
+                        <outlet property="contentView" destination="TgG-lg-u6k" id="NK7-Bc-Mlx"/>
+                        <outlet property="doneButton" destination="Tyn-US-6Na" id="8ef-XS-Ujk"/>
+                        <outlet property="endDatePicker" destination="q3F-d5-e0A" id="eVH-So-RPY"/>
+                        <outlet property="nachoNowButton" destination="Vun-h8-uHa" id="O8l-aZ-BFE"/>
+                        <outlet property="scrollView" destination="9Cj-t4-I4R" id="o2J-Z7-Dyw"/>
+                        <outlet property="startDatePicker" destination="AyJ-GR-EP6" id="Aoa-Pn-SYG"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="EventToNachoNow" id="s9j-Ih-SWz"/>
+                        <segue destination="PUz-nc-h33" kind="push" identifier="EventToAttendee" id="4Sl-0E-160"/>
+                        <segue destination="h6r-hi-wYu" kind="push" identifier="EventToPhone" id="Qo9-HW-pyp"/>
+                        <segue destination="l1I-ye-74x" kind="push" identifier="EventToAttachment" id="ayP-Tt-jLR"/>
+                        <segue destination="p7r-P8-BKK" kind="push" identifier="EventToAlert" id="tdu-G2-PEp"/>
+                        <segue destination="cXD-rq-iSl" kind="push" identifier="EventToCal" id="Tfk-Mt-BlS"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="jJS-cc-DzZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem style="done" systemItem="done" id="Tyn-US-6Na" userLabel="Bar Button Item - doneButton">
+                    <color key="tintColor" red="0.20784313730000001" green="0.81568627449999997" blue="0.74509803919999995" alpha="1" colorSpace="deviceRGB"/>
+                </barButtonItem>
+                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="5" id="AyJ-GR-EP6" userLabel="startDatePicker">
+                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                    <date key="date" timeIntervalSinceReferenceDate="427225341.11892498">
+                        <!--2014-07-16 17:42:21 +0000-->
+                    </date>
+                    <date key="minimumDate" timeIntervalSinceReferenceDate="-31582800">
+                        <!--2000-01-01 11:00:00 +0000-->
+                    </date>
+                    <timeZone key="timeZone" name="America/Los_Angeles">
+                        <data key="data">
+VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
+y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
+5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
+8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
+AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
+DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
+HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
+KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
+OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
+Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
+VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
+Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
+cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
+f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
+AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
+AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
+AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
+</data>
+                    </timeZone>
+                </datePicker>
+                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="5" id="q3F-d5-e0A" userLabel="endDatePicker">
+                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                    <date key="date" timeIntervalSinceReferenceDate="427225337.83408397">
+                        <!--2014-07-16 17:42:17 +0000-->
+                    </date>
+                    <date key="minimumDate" timeIntervalSinceReferenceDate="-31582800">
+                        <!--2000-01-01 11:00:00 +0000-->
+                    </date>
+                    <timeZone key="timeZone" name="America/Los_Angeles">
+                        <data key="data">
+VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
+y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
+5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
+8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
+AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
+DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
+HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
+KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
+OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
+Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
+VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
+Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
+cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
+f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
+AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
+AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
+AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
+</data>
+                    </timeZone>
+                </datePicker>
+                <barButtonItem image="navbar-icn-close.png" id="oR4-zY-1Lz" userLabel="Bar Button Item - cancelButton"/>
+                <barButtonItem image="navbar-icn-inbox.png" id="Vun-h8-uHa" userLabel="Bar Button Item - nachoNowButton"/>
+            </objects>
+            <point key="canvasLocation" x="-1049" y="-1730"/>
+        </scene>
+        <!--Phone View Controller-->
+        <scene sceneID="WJn-nf-jaa">
+            <objects>
+                <viewController storyboardIdentifier="PhoneViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="h6r-hi-wYu" customClass="PhoneViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="72U-9J-8TO">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="0lh-SH-GHD">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="aLR-ed-Nzc" userLabel="Content View">
+                                        <rect key="frame" x="0.0" y="64" width="320" height="524"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="g7N-Sl-7ZZ">
+                        <barButtonItem key="backBarButtonItem" title=" " id="DhN-b4-bA8"/>
+                    </navigationItem>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                    <connections>
+                        <outlet property="contentView" destination="aLR-ed-Nzc" id="atF-Wu-Naa"/>
+                        <outlet property="doneButton" destination="KYv-YQ-aiB" id="NAU-Py-rCF"/>
+                        <outlet property="scrollView" destination="0lh-SH-GHD" id="c6B-qa-hPB"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="ort-DR-5vS" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem style="done" systemItem="done" id="KYv-YQ-aiB" userLabel="Bar Button Item - doneButton">
+                    <color key="tintColor" red="0.20784313730000001" green="0.81568627449999997" blue="0.74509803919999995" alpha="1" colorSpace="deviceRGB"/>
+                </barButtonItem>
+            </objects>
+            <point key="canvasLocation" x="-589" y="-1730"/>
+        </scene>
+        <!--Choose Calendar View Controller-->
+        <scene sceneID="w8I-bN-nC2">
+            <objects>
+                <viewController storyboardIdentifier="ChooseCalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="cXD-rq-iSl" userLabel="Choose Calendar View Controller" customClass="ChooseCalendarViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="eJB-Pb-Y39">
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="2Bb-OE-BsP">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="ucq-Ja-oju" userLabel="Content View">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="RII-1f-JJJ"/>
+                    <connections>
+                        <outlet property="contentView" destination="ucq-Ja-oju" id="xHL-Uo-kIB"/>
+                        <outlet property="scrollView" destination="2Bb-OE-BsP" id="o5F-7m-lj6"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="QU2-pC-E3Z" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-145" y="-2106"/>
+        </scene>
+        <!--Add Attachment View Controller-->
+        <scene sceneID="PAi-Jw-piS">
+            <objects>
+                <viewController storyboardIdentifier="AddAttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="l1I-ye-74x" userLabel="Add Attachment View Controller" customClass="AddAttachmentViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="7Dq-G9-cDk">
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="9vD-Z1-mvY"/>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" barStyle="black" translucent="NO"/>
+                    <connections>
+                        <outlet property="addAttachmentButton" destination="nui-rQ-WLt" id="0lN-o4-lo5"/>
+                        <segue destination="bBy-CW-6ix" kind="push" identifier="AddAttachmentToAttachment" id="1ti-Nl-FYh"/>
+                        <segue destination="pKz-1u-PCL" kind="push" identifier="AddAttachmentToFiles" id="TmW-KY-ab0"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="EbA-pQ-jV6" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="nui-rQ-WLt" userLabel="Button - Add Attachment Button">
+                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                    <state key="normal" title="Button">
+                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                    </state>
+                </button>
+            </objects>
+            <point key="canvasLocation" x="-1049" y="-2498"/>
+        </scene>
+        <!--Alert Chooser View Controller-->
+        <scene sceneID="DXi-EB-bSZ">
+            <objects>
+                <viewController storyboardIdentifier="AlertChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p7r-P8-BKK" customClass="AlertChooserViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="87C-EB-0MK">
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Utd-6b-paG">
+                                <rect key="frame" x="-1" y="0.0" width="320" height="460"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="Qls-U5-Qsb" userLabel="Content View">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="0jt-O8-ipB"/>
+                    <connections>
+                        <outlet property="contentView" destination="Qls-U5-Qsb" id="NXU-AE-oWR"/>
+                        <outlet property="scrollView" destination="Utd-6b-paG" id="tV0-bu-HIw"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Sw8-hu-my8" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-589" y="-2498"/>
         </scene>
         <!--Message Compose View Controller - Compose-->
         <scene sceneID="8Ab-xz-sT2">
             <objects>
                 <viewController storyboardIdentifier="MessageComposeViewController" title="Compose" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tAw-fh-hJX" customClass="MessageComposeViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="SAP-Km-eLj">
-                        <rect key="frame" x="0.0" y="64" width="320" height="372"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Ad7-zj-0RZ" userLabel="Scroll View - scrollView">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="372"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Za1-Fi-gqx" userLabel="View - contentView">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="372"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1166,14 +1439,14 @@
                 <barButtonItem image="navbar-icn-menu.png" id="GJM-bv-Pbt" userLabel="Bar Button Item - revealButton"/>
                 <barButtonItem image="navbar-icn-inbox.png" id="DhQ-FE-t8N" userLabel="Bar Button Item - nachoButton"/>
             </objects>
-            <point key="canvasLocation" x="591" y="409"/>
+            <point key="canvasLocation" x="-1049" y="73"/>
         </scene>
         <!--Calendar Settings View Controller-->
         <scene sceneID="4Ji-RJ-mnY">
             <objects>
                 <tableViewController storyboardIdentifier="CalendarSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="T5y-Ms-wQ4" customClass="CalendarSettingsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="XlL-fj-rkO">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
@@ -1187,14 +1460,14 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Fx1-ms-9ya" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-579" y="-2269"/>
+            <point key="canvasLocation" x="-1707" y="-3051"/>
         </scene>
         <!--Message Priority View Controller-->
         <scene sceneID="qaB-g2-0kE">
             <objects>
                 <viewController storyboardIdentifier="MessagePriorityViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MCC-ND-pIu" customClass="MessagePriorityViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ojE-Gm-ggk">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -1205,18 +1478,18 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="nk4-3A-FSs" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="619" y="1044"/>
+            <point key="canvasLocation" x="-1536" y="924"/>
         </scene>
         <!--Date Picker View Controller-->
         <scene sceneID="Ud2-sL-Gha">
             <objects>
                 <viewController storyboardIdentifier="DatePickerViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="zX3-wE-NUY" customClass="DatePickerViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="tkg-MN-gBS">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" id="Mdd-Ng-xH1">
-                                <rect key="frame" x="0.0" y="99" width="320" height="162"/>
+                                <rect key="frame" x="0.0" y="101" width="320" height="162"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
                                 <date key="date" timeIntervalSinceReferenceDate="413187510.73113">
@@ -1270,7 +1543,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ouG-uP-eY3" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1053" y="1046"/>
+            <point key="canvasLocation" x="-1049" y="924"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="qtI-DM-OKG">
@@ -1290,14 +1563,14 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bo4-Q4-hrA" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2661" y="-431"/>
+            <point key="canvasLocation" x="-3661" y="-2321"/>
         </scene>
         <!--Startup View Controller - Startup-->
         <scene sceneID="Zmz-eo-l65">
             <objects>
                 <viewController storyboardIdentifier="StartupViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="WSh-aW-ysu" customClass="StartupViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="mRF-eE-vkG">
-                        <rect key="frame" x="0.0" y="64" width="320" height="416"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -1317,7 +1590,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0IS-Oz-vYd" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem title="Item" id="UkI-mn-IKV" userLabel="Bar Button Item - Nacho"/>
             </objects>
-            <point key="canvasLocation" x="-2203" y="-422"/>
+            <point key="canvasLocation" x="-3205" y="-2321"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="jfg-Bp-uoy">
@@ -1337,7 +1610,51 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="uVi-Fp-v8F" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2661" y="-1169"/>
+            <point key="canvasLocation" x="-3661" y="-3051"/>
+        </scene>
+        <!--Table View Controller - Root View Controller-->
+        <scene sceneID="tuN-DN-Xsa">
+            <objects>
+                <tableViewController id="YAg-TW-cSx" sceneMemberID="viewController">
+                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="7rb-q9-m55">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <prototypes>
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="f3I-yx-BKZ">
+                                <rect key="frame" x="0.0" y="86" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="f3I-yx-BKZ" id="kor-ZG-OCx">
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="YAg-TW-cSx" id="OUJ-sg-eIz"/>
+                            <outlet property="delegate" destination="YAg-TW-cSx" id="IXn-HX-C6w"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" title="Root View Controller" id="FTJ-KN-DSI"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="1hO-fB-YFd" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="487" y="-955"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="gDa-f1-whh">
+            <objects>
+                <navigationController definesPresentationContext="YES" id="mJp-vP-Jdx" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="S89-Xf-CVI">
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="YAg-TW-cSx" kind="relationship" relationship="rootViewController" id="fTb-35-2A4"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="sxX-aT-beH" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-48" y="-955"/>
         </scene>
     </scenes>
     <resources>
@@ -1349,6 +1666,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="icn-calendar-top.png" width="24" height="24"/>
         <image name="icn-send.png" width="24" height="24"/>
         <image name="list.png" width="20" height="18"/>
+        <image name="navbar-icn-close.png" width="17" height="17"/>
         <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
         <image name="navbar-icn-menu-active.png" width="24" height="24"/>
@@ -1366,23 +1684,25 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>
-        <simulatedScreenMetrics key="destination"/>
+        <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="kLB-ow-NqN"/>
-        <segue reference="WNy-bM-xGW"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="Oi3-nV-lAC"/>
-        <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="vRC-Oi-s8D"/>
-        <segue reference="PxE-UU-EfC"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="Afu-47-Kju"/>
+        <segue reference="7f1-U8-A7w"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="4Sl-0E-160"/>
+        <segue reference="s9j-Ih-SWz"/>
+        <segue reference="tgm-1S-bYq"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="Zli-hF-qvP"/>
-        <segue reference="EmX-Dp-jXs"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="PxE-UU-EfC"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="Jfi-iv-ZLD"/>
+        <segue reference="TmW-KY-ab0"/>
+        <segue reference="1ti-Nl-FYh"/>
     </inferredMetricsTieBreakers>
 </document>
