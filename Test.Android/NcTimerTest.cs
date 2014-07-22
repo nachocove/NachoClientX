@@ -12,24 +12,14 @@ namespace Test.Common
         const long ONE_HOUR = 3600L * 1000L;
         const long ONE_DAY = 86400L * 1000L;
 
-        private static DateTime CurrentDateTime;
-
         private static int CallbackCount;
 
         private AutoResetEvent Signal;
-
-        public static DateTime MockGetCurrentDateTime ()
-        {
-            return CurrentDateTime;
-        }
 
         [SetUp]
         public void SetUp ()
         {
             CallbackCount = 0;
-            CurrentDateTime = new DateTime (1, 1, 1, 0, 0, 0);
-            NcTimer.GetCurrentTime = MockGetCurrentDateTime;
-            NcTimer.TimerClass = typeof(MockTimer);
             Signal = new AutoResetEvent (false);
             MockTimer.Start ();
         }
@@ -38,13 +28,11 @@ namespace Test.Common
         public void TearDown ()
         {
             MockTimer.Stop ();
-            NcTimer.GetCurrentTime = NcTimer.DefaultGetCurrentTime;
-            NcTimer.TimerClass = typeof(PlatformTimer);
         }
 
         private void Callback (object obj)
         {
-            Log.Info (Log.LOG_TIMER, "NcTimerTest callback {0}", MockGetCurrentDateTime ());
+            Log.Info (Log.LOG_TIMER, "NcTimerTest callback {0}", MockTimer.GetCurrentDateTime ());
             CallbackCount++;
             Signal.Set ();
         }
@@ -52,7 +40,7 @@ namespace Test.Common
         private void AdvanceTime (int days, int hours, int minutes, int seconds)
         {
             TimeSpan timeInterval = new TimeSpan (days, hours, minutes, seconds);
-            CurrentDateTime += timeInterval;
+            MockTimer.CurrentDateTime += timeInterval;
             MockTimer.CurrentTime += (Int64)timeInterval.TotalMilliseconds;
         }
 
@@ -148,6 +136,8 @@ namespace Test.Common
 
             AdvanceTime (20, 0, 0, 0);
             CheckFired (3);
+
+            timer.Dispose ();
         }
     }
 }

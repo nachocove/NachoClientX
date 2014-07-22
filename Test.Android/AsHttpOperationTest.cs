@@ -23,17 +23,23 @@ namespace Test.iOS
 {
     class BaseMockOwner : IAsHttpOperationOwner 
     {
+        public static NcResult Status { get; set; } // for checking StatusInd posts work
+
         public delegate Event ProcessResponseStandinDelegate (AsHttpOperation sender, HttpResponseMessage response, XDocument doc);
         public ProcessResponseStandinDelegate ProcessResponseStandin { set; get; }
 
         public delegate XDocument ProvideXDocumentDelegate ();
         public ProvideXDocumentDelegate ProvideXDocument { set; get; }
+       
+        public delegate void ViewStatusIndMessageDelegate (NcResult result);
+        public static event ViewStatusIndMessageDelegate StatusIndCallback;
 
         public Uri ProvidedUri { set; get; }
         public AsHttpOperationTest Tester { set; get; }
 
         public BaseMockOwner (Uri providedUri)
         {
+            Status = null;
             ProvidedUri = providedUri;
         }
 
@@ -116,7 +122,10 @@ namespace Test.iOS
 
         public virtual void StatusInd (NcResult result)
         {
-            // Dummy.
+            if (StatusIndCallback != null) {
+                StatusIndCallback (result);
+            }
+            Status = result;
         }
 
         public virtual void StatusInd (bool didSucceed)
@@ -144,6 +153,17 @@ namespace Test.iOS
     [TestFixture]
     public class AsHttpOperationTest
     {
+        private MockContext Context;
+
+        [SetUp]
+        public void SetUp ()
+        {
+            Context = null;
+
+            // reset the comm status singleton before each test
+            MockNcCommStatus.Instance = null;
+        }
+
         private class HttpOpEvt : SmEvt
         {
             new public enum E : uint
@@ -423,6 +443,106 @@ namespace Test.iOS
             DoReportCommResultWithNonGeneralFailure ();
         }
 
+
+        private uint AssertRetry (uint retryCount)
+        {
+            if (retryCount > 0) {
+                Assert.NotNull (BaseMockOwner.Status);
+                Assert.AreEqual (NcResult.SubKindEnum.Info_ServiceUnavailable, BaseMockOwner.Status.SubKind, "Should set post StatusInd after 503");
+            }
+            Assert.False (retryCount > 2, "Retry count should not exceed required number of retries");
+            return retryCount++;
+        }
+
+        [Test]
+        public void StatusCode503 ()
+        {
+            // A 503 with no retry-after and no X-MS-ASThrottle.
+            McMutables.Set ("HTTP", "DelaySeconds", (1).ToString ());
+            McMutables.Set ("HTTP", "MaxDelaySeconds", (3).ToString ());
+
+            uint retryCount = 0;
+            PerformHttpOperationWithSettings (response => {
+                retryCount = AssertRetry (retryCount);
+                response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
+            }, request => {});
+
+            DoReportCommResultWithDateTime ();
+        }
+
+        [Test]
+        public void StatusCode503RetryAfter ()
+        {
+            // A 503 with retry-after.
+            McMutables.Set ("HTTP", "ThrottleDelaySeconds", (1).ToString ());
+            McMutables.Set ("HTTP", "MaxDelaySeconds", (3).ToString ());
+            string retryAfterSecs = (1).ToString ();
+
+            string HeaderRetryAfter = "Retry-After";
+            string HeaderXMsThrottle = "X-MS-ASThrottle";
+
+            bool isThrottlingSet = false;
+            BaseMockOwner.StatusIndCallback += (result) => {
+                if (result.SubKind == NcResult.SubKindEnum.Info_ExplicitThrottling) {
+                    isThrottlingSet = true;
+                }
+            };
+
+            bool hasBeenThrottled = false;
+            uint retryCount = 0;
+            var stopwatch = new System.Diagnostics.Stopwatch ();
+            PerformHttpOperationWithSettings (response => {
+                if (!hasBeenThrottled) {
+                    response.Headers.Add (HeaderRetryAfter, retryAfterSecs);
+                    response.Headers.Add (HeaderXMsThrottle, "Throttle reason");
+                    hasBeenThrottled = true;
+                    stopwatch.Start ();
+                } else {
+                    stopwatch.Stop ();
+                    Assert.True (stopwatch.ElapsedMilliseconds >= 1000, "Should not retry until at least retry after time");
+                    Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");
+                    Assert.True (isThrottlingSet, "Should send throttling message to StatusInd");
+                    retryCount = AssertRetry (retryCount);
+                }
+                response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
+            }, request => {});
+
+            DoReportCommResultWithDateTime ();
+        }
+            
+        [Test]
+        public void StatusCode503Throttle ()
+        {
+            // A 503 with no retry-after and X-MS-ASThrottle.
+            McMutables.Set ("HTTP", "ThrottleDelaySeconds", (1).ToString ());
+            McMutables.Set ("HTTP", "MaxDelaySeconds", (3).ToString ());
+
+            string HeaderXMsThrottle = "X-MS-ASThrottle";
+
+            bool isThrottlingSet = false;
+            BaseMockOwner.StatusIndCallback += (result) => {
+                if (result.SubKind == NcResult.SubKindEnum.Info_ExplicitThrottling) {
+                    isThrottlingSet = true;
+                }
+            };
+
+            uint retryCount = 0;
+            bool hasBeenThrottled = false;
+            PerformHttpOperationWithSettings (response => {
+                if (!hasBeenThrottled) {
+                    response.Headers.Add (HeaderXMsThrottle, "Throttle reason");
+                    hasBeenThrottled = true;
+                } else {
+                    Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");
+                    Assert.True (isThrottlingSet, "Should send throttling message to StatusInd");
+                    retryCount = AssertRetry (retryCount);
+                }
+                response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
+            }, request => {});
+
+            DoReportCommResultWithDateTime ();
+        }
+
         [Test]
         public void StatusCode507 ()
         {
@@ -456,6 +576,12 @@ namespace Test.iOS
             });
         }
 
+        private void DoReportCommResultWithDateTime ()
+        {
+            var mockCommStatus = MockNcCommStatus.Instance;
+            Assert.True (mockCommStatus.DelayUntil > DateTime.Now, "Should delay until a time later than the present");
+        }
+
         // Test that comm status' are reported correctly by each status code method
         // Allow the type of failure (general/non-general) to be set by the caller
         private void DoReportCommResultWithFailureType (Func <bool> failureAction)
@@ -466,10 +592,6 @@ namespace Test.iOS
 
             Assert.AreEqual (didFailGenerally, mockCommStatus.DidFailGenerally, "Should set MockNcCommStatus Correctly");
             Assert.AreEqual (CommonMockData.Host, mockCommStatus.Host);
-
-            // teardown -- reset the comm status singleton before each test
-            // TODO move this into a teardown method
-            MockNcCommStatus.Instance = null;
         }
 
         private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
@@ -481,12 +603,6 @@ namespace Test.iOS
                 autoResetEvent.Set ();
             });
 
-            // create the response, then allow caller to set headers,
-            // then return response and assign to mockResponse
-            var mockResponse = CreateMockResponse (CommonMockData.Wbxml, response => {
-                provideResponse (response);   
-            });
-
             // do some common assertions
             ExamineRequestMessageOnMockClient (CommonMockData.MockUri, request => {
                 provideRequest (request);
@@ -494,28 +610,31 @@ namespace Test.iOS
 
             // provides the mock response
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
-                return mockResponse;
+                // create the response, then allow caller to set headers,
+                // then return response and assign to mockResponse
+                return CreateMockResponse (CommonMockData.Wbxml, response => {
+                    provideResponse (response);   
+                });
             };
 
-            var context = new MockContext ();
+            Context = new MockContext ();
 
             // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);
 
-            var op = new AsHttpOperation ("Ping", owner, context);
+            var op = new AsHttpOperation ("Ping", owner, Context);
 
             var mockCommStatusInstance = MockNcCommStatus.Instance;
             op.NcCommStatusSingleton = mockCommStatusInstance;
             op.HttpClientType = typeof (MockHttpClient);
             owner.ProcessResponseStandin = (sender, response, doc) => {
                 Assert.AreSame (op, sender, "Owner's sender and AsHttpOperation should match when response is processed");
-                Assert.AreSame (mockResponse, response, "Response should match mock response");
                 return Event.Create ((uint)SmEvt.E.Success, "BasicPhonyPingSuccess");
             };
 
             op.Execute (sm);
 
-            bool didFinish = autoResetEvent.WaitOne (2000);
+            bool didFinish = autoResetEvent.WaitOne (6000);
             Assert.IsTrue (didFinish, "Operation did not finish");
         }
 

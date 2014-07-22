@@ -311,6 +311,7 @@
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessage.cs" />
     <Compile Include="NachoCore\Model\McContact\ContactScore.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage\EmailMessageScore.cs" />
+    <Compile Include="NachoCore\Utils\NcTimerPool.cs" />
     <Compile Include="NachoPlatform.Android\PlatformUserColorIndex.cs" />
   </ItemGroup>
   <ItemGroup>

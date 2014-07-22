@@ -102,8 +102,7 @@ namespace NachoCore.Utils
 
         public TelemetryBEParse ()  : base()
         {
-            Parse.Initialize ("krLhpUrvcoKXTNx8LWG8ESR1zQGRzei6vttCmwFm",
-                              "224PvsNa7ABberuxpthahr0YIp4742VZqRgw6zT1");
+            Parse.Initialize (BuildInfo.ParseAppId, BuildInfo.ParseApiKey);
 
             PFUser.EnableAutomaticUser ();
             CurrentUser = PFUser.CurrentUser ();

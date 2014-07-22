@@ -190,6 +190,16 @@ namespace NachoCore.Brain
             }
         }
 
+        protected static NcTimerPool _TimerPool;
+        public static NcTimerPool TimerPool {
+            get {
+                if (null == _TimerPool) {
+                    _TimerPool = new NcTimerPool ("NcTimeVariance");
+                }
+                return _TimerPool;
+            }
+        }
+
         private object _LockObj;
         private object LockObj {
             get {
@@ -218,7 +228,7 @@ namespace NachoCore.Brain
         // The timer for keeping track of when the next event occurs.
         // In order to conserve memory, we only create the timer if
         // needed. Otherwise, we'll need a timer for every 
-        private NcTimer EventTimer;
+        private NcTimerPoolTimer EventTimer;
         public bool IsRunning {
             get {
                 return (null != EventTimer);
@@ -304,7 +314,7 @@ namespace NachoCore.Brain
             DateTime eventTime = NextEventTime ();
             long dueTime = (long)(eventTime - now).TotalMilliseconds;
             Log.Debug (Log.LOG_BRAIN, "{0}: start timer {1} {2}", ToString(), now, eventTime);
-            EventTimer = new NcTimer (TimerDescription (), AdvanceCallback, this,
+            EventTimer = new NcTimerPoolTimer (TimerPool, TimerDescription (), AdvanceCallback, this,
                 dueTime, Timeout.Infinite);
         }
 
@@ -468,16 +478,12 @@ namespace NachoCore.Brain
 
         public static void PauseAll ()
         {
-            foreach (NcTimeVariance tv in ActiveList) {
-                tv.Pause ();
-            }
+            TimerPool.Pause ();
         }
 
         public static void ResumeAll ()
         {
-            foreach (NcTimeVariance tv in ActiveList) {
-                tv.Resume ();
-            }
+            TimerPool.Resume ();
         }
     }
 
