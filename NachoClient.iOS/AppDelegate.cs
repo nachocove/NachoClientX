@@ -78,7 +78,7 @@ namespace NachoClient.iOS
                 var manager = BITHockeyManager.SharedHockeyManager;
 
                 //Configure it to use our APP_ID
-                manager.Configure ("b22a505d784d64901ab1abde0728df67");
+                manager.Configure (BuildInfo.HockeyAppAppId);
 
                 // Enable automatic reporting
                 manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
