@@ -76,6 +76,7 @@ namespace NachoCore.Model
             DbConns = new ConcurrentDictionary<int, SQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
             Db.CreateTable<McAccount> ();
+            Db.CreateTable<McConference> ();
             Db.CreateTable<McCred> ();
             Db.CreateTable<McMapFolderFolderEntry> ();
             Db.CreateTable<McFolder> ();

@@ -943,6 +943,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapContactEmail.cs">
       <Link>NachoCore\Model\McMapContactEmail.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McConference.cs">
+      <Link>NachoCore\Model\McConference.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessageCategory.cs">
       <Link>NachoCore\Model\McEmailMessageCategory.cs</Link>
     </Compile>

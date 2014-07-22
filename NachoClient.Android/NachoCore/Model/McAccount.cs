@@ -1,6 +1,7 @@
 using System;
 using SQLite;
 using NachoCore.Utils;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
@@ -16,6 +17,14 @@ namespace NachoCore.Model
         public int CredId { get; set; }
 
         public int ServerId { get; set; }
+
+        public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncEmail { get; set; }
+
+        public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncCalendar { get; set; }
+
+        public int PreferredConferenceId { get; set; }
+
+        public string Signature { get; set; }
 
         [Unique]
         public int ProtocolStateId { get; set; }

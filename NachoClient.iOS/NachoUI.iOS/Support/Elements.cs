@@ -168,6 +168,10 @@ namespace NachoClient.iOS
             };
         }
 
+
+
+
+
         protected CheckboxElementWithData CreateCheckboxElementWithData (string caption, uint data)
         {
             var c = new CheckboxElementWithData (caption, data);
@@ -601,6 +605,77 @@ namespace NachoClient.iOS
         }
     }
 
+    public class CustomTextInputElement : StyledStringElement
+    {
+        string theDetail;
+        UITextField inputText;
+
+        public CustomTextInputElement (UIImage image, string caption, string detail, UITextField inputText) : base (caption)
+        {
+            this.Accessory = UITableViewCellAccessory.None;
+            this.Image = image;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Black;
+            this.theDetail = detail;
+            this.inputText = inputText;
+
+        }
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+
+            if (cell.ContentView.Subviews.Length > 1) {
+                for (int i = 1; i < cell.ContentView.Subviews.Length; i++) {
+                    UIView x = cell.ContentView.Subviews [i];
+                    x.RemoveFromSuperview ();
+                }
+            }
+
+            inputText.Font = A.Font_AvenirNextMedium14;
+            inputText.TextColor = UIColor.Gray;
+            inputText.Text = theDetail;
+            inputText.Frame = new RectangleF (150, 0, cell.Frame.Width - 150, cell.Frame.Height);
+            inputText.TextAlignment = UITextAlignment.Left;
+            inputText.ReturnKeyType = UIReturnKeyType.Done;
+            cell.ContentView.Add (inputText);
+
+            return cell;
+        }
+    }    
+
+    public class SignatureEntryElement : StyledStringElement
+    {
+        UILabel signatureText;
+
+        public SignatureEntryElement (string caption, UILabel signatureText) : base (caption)
+        {
+            this.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+            this.Font = A.Font_AvenirNextRegular14;
+            this.TextColor = UIColor.Black;
+            this.signatureText = signatureText;
+        }
+
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+
+            if (cell.ContentView.Subviews.Length > 1) {
+                for (int i = 1; i < cell.ContentView.Subviews.Length; i++) {
+                    UIView x = cell.ContentView.Subviews [i];
+                    x.RemoveFromSuperview ();
+                }
+            }
+
+            signatureText.Frame = new RectangleF (150, 0, cell.Frame.Width - 170, cell.Frame.Height);
+            signatureText.Font = A.Font_AvenirNextMedium14;
+            signatureText.TextColor = UIColor.Gray;
+            signatureText.TextAlignment = UITextAlignment.Left;
+            cell.ContentView.Add (signatureText);
+
+            return cell;
+        }
+    }  
 
     public class StyledMultilineElementWithIndent : StyledMultilineElement
     {
@@ -610,6 +685,44 @@ namespace NachoClient.iOS
             this.Image = NachoClient.Util.DotWithColor (UIColor.Clear);
             this.TextColor = UIColor.Gray;
             this.Font = A.Font_AvenirNextRegular14;
+        }
+    }
+
+    public class StyledMultiLineTextInput : MultilineEntryElement
+    {
+        string theDetail;
+        UITextView inputText;
+
+        public StyledMultiLineTextInput (string caption, string detail, UITextView inputText) : base(caption, detail, inputText.Frame.Height, false)
+        {
+
+            this.theDetail = detail;
+            this.inputText = inputText;
+            this.inputText.Editable = true;
+        }
+
+        public override UITableViewCell GetCell (UITableView tv)
+        {
+            var cell = base.GetCell (tv);
+
+            if (cell.ContentView.Subviews.Length > 1) {
+                for (int i = 1; i < cell.ContentView.Subviews.Length; i++) {
+                    UIView x = cell.ContentView.Subviews [i];
+                    x.RemoveFromSuperview ();
+                }
+            }
+
+            cell.Frame = new RectangleF (0,0,320,inputText.Frame.Height);
+            tv.SeparatorColor = UIColor.White;
+            inputText.Editable = true;
+            inputText.Font = A.Font_AvenirNextMedium14;
+            inputText.TextColor = UIColor.Gray;
+            inputText.Text = theDetail;
+            inputText.TextAlignment = UITextAlignment.Left;
+            inputText.ReturnKeyType = UIReturnKeyType.Default;
+            cell.ContentView.Add (inputText);
+
+            return cell;
         }
     }
 
