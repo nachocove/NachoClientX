@@ -27,6 +27,8 @@ namespace NachoClient.iOS
         UIButton cancelButton;
         UIButton saveButton;
 
+        UILabel signatureText;
+
         public enum statusType
         {
             ErrorAuth,
@@ -71,9 +73,10 @@ namespace NachoClient.iOS
             configureDoneButton ();
         }
 
+
         public void configureDoneButton()
         {
-            // When user clicks done, check, confirm, and save
+            // When user clicks done: check, confirm, and save
             doneButton.Clicked += (object sender, EventArgs e) => {
                 McAccount theAccount = McAccount.QueryById<McAccount> (Account.AccountId);
                 McCred theCred = McCred.QueryById<McCred> (Account.McCredId);
@@ -102,6 +105,7 @@ namespace NachoClient.iOS
 
                 if(!didStart)
                 {
+                    //TODO what happens when there's a network failure?
                     Console.WriteLine("NETWORK FAILURE");
                 }
                 else
@@ -191,7 +195,7 @@ namespace NachoClient.iOS
             }
 
             if (isSuccess) {
-                statusView.Frame = new System.Drawing.RectangleF (105 , statusViewY, 110, 40);
+                statusView.Frame = new System.Drawing.RectangleF (105 , statusViewY, 110, 45);
                 statusView.Layer.CornerRadius = 15.0f;
                 statusView.BackgroundColor = UIColor.DarkGray;
                 statusView.Alpha = .8f;
@@ -209,8 +213,6 @@ namespace NachoClient.iOS
                 //dismissStatusView();
 
             } else {
-
-
 
                 statusView.Frame = new System.Drawing.RectangleF(statusViewX, statusViewY + TableView.ContentOffset.Y, statusViewWidth, statusViewHeight);
                 statusView.Layer.CornerRadius = 15.0f;
@@ -373,7 +375,6 @@ namespace NachoClient.iOS
             };
             AccountSection.Add (AccountName);
 
-
             UITextField userNameText = new UITextField ();
             var UserName = new CustomTextInputElement (UIImage.FromBundle(""), "User Name", Account.UserName, userNameText);
             userNameText.ShouldReturn += (textField) => {
@@ -384,13 +385,22 @@ namespace NachoClient.iOS
             AccountSection.Add (UserName);
 
             UITextField passwordText = new UITextField ();
-            passwordText.SecureTextEntry = true;
-            var Password = new CustomTextInputElement (UIImage.FromBundle(""), "Password", Account.Password, passwordText);
+            var Password = new CustomTextInputElement (UIImage.FromBundle(""), "Password", Account.PasswordDisplay, passwordText);
             passwordText.ShouldReturn += (textField) => {
                 Account.Password = textField.Text;
+                textField.Text = String.Concat(Enumerable.Repeat("\u2022", Account.Password.Length));
                 textField.ResignFirstResponder();
                 return true;
             };
+
+            passwordText.EditingDidBegin += (object sender, EventArgs e) => {
+                passwordText.SecureTextEntry = true;
+            };
+
+            passwordText.EditingDidEnd += (object sender, EventArgs e) => {
+                passwordText.SecureTextEntry = false;
+            };
+                
             AccountSection.Add (Password);
 
             UITextField emailText = new UITextField ();
@@ -411,14 +421,6 @@ namespace NachoClient.iOS
             };
             AccountSection.Add (MailServer);
 
-            UITextField emailSignatureText = new UITextField ();
-            var EmailSignature = new CustomTextInputElement (UIImage.FromBundle(""), "Email Signature", Account.EmailSignature, emailSignatureText);
-            emailSignatureText.ShouldReturn += (textField) => { 
-                Account.EmailSignature = textField.Text;
-                textField.ResignFirstResponder();
-                return true;
-            };
-            AccountSection.Add (EmailSignature);
 
             UITextField conferenceCallText = new UITextField ();
             var ConferenceCall = new CustomTextInputElement (UIImage.FromBundle(""), "Conference Call #", Account.ConferenceCallNumber, conferenceCallText);
@@ -428,8 +430,54 @@ namespace NachoClient.iOS
                 return true;
             };
             AccountSection.Add (ConferenceCall);
+               
+            signatureText = new UILabel ();
+            signatureText.Text = Account.EmailSignature;
+            var SignatureText = new SignatureEntryElement ("Email Signature", signatureText);
+            SignatureText.Tapped += () => {
+                PushSignatureView();
+            };
 
+            AccountSection.Add (SignatureText);
             return AccountSection;
+        }
+
+
+        public void PushSignatureView ()
+        {
+            var root = new RootElement ("Signature");
+            var thinSec = new ThinSection ();
+            UITextView signatureEditSection = new UITextView (new System.Drawing.RectangleF(0, 0, 320, 100));
+
+            signatureEditSection.Editable = true;
+
+            signatureEditSection.ShouldEndEditing += (test) => {
+                Account.EmailSignature = test.Text;
+                signatureText.Text = test.Text;
+                return true;
+            };
+
+
+            signatureEditSection.Changed += (object sender, EventArgs e) => {
+                SelectionChanged(signatureEditSection);
+            };
+
+            var textSection = new StyledMultiLineTextInput("", Account.EmailSignature, signatureEditSection);
+            thinSec.Add (textSection);
+            root.Add (thinSec);
+
+            var signatureEditingViewController = new DialogViewController (root, true);
+            NavigationController.PushViewController (signatureEditingViewController, true);
+        }
+
+        public void SelectionChanged (UITextView textView)
+        {
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.end);
+            caretRect.Size = new System.Drawing.SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
+            var frame = textView.Frame;
+            frame.Size = new System.Drawing.SizeF (textView.ContentSize.Width, textView.ContentSize.Height + 40);
+            textView.Frame = frame;
+            caretRect.Y += textView.Frame.Y;
         }
 
         void EditAccount ()
@@ -466,7 +514,8 @@ namespace NachoClient.iOS
 
             Account.AccountName = whatAccount.DisplayName == null ? "Exchange" : whatAccount.DisplayName;
             Account.UserName = userCredentials.Username;
-            Account.Password = userCredentials.Password; //String.Concat (Enumerable.Repeat ("*", userCredentials.Password.Length));
+            Account.Password = userCredentials.Password;
+            Account.PasswordDisplay = String.Concat (Enumerable.Repeat ("\u2022", userCredentials.Password.Length));
             Account.EmailAddress = whatAccount.EmailAddr;
             Account.MailServer = userMailServer.Host;
             Account.EmailSignature = whatAccount.Signature == null ? "Sent from NachoMail" : whatAccount.Signature;
@@ -478,6 +527,7 @@ namespace NachoClient.iOS
             public string AccountName { get; set; } 
             public string UserName { get; set; }
             public string Password { get; set; }
+            public string PasswordDisplay {get ;set; }
             public string EmailAddress { get; set; }
             public string MailServer { get; set; }
             public string DaysToSyncMail { get; set; }
