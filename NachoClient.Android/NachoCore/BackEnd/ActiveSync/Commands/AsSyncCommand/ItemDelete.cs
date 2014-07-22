@@ -49,7 +49,6 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.CalUpdate:
                 case McPending.Operations.ContactUpdate:
                 case McPending.Operations.TaskUpdate:
-                    cancelCommand = false;
                     if (pending.ServerId == ServerId) {
                         var item = pending.QueryItemUsingServerId ();
                         McFolder.UnlinkAll (item);
