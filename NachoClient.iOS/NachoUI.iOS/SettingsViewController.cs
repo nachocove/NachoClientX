@@ -27,7 +27,7 @@ namespace NachoClient.iOS
         UIButton cancelButton;
         UIButton saveButton;
 
-        UILabel signatureText;
+        UILabel signatureLabel;
 
         public enum statusType
         {
@@ -81,7 +81,7 @@ namespace NachoClient.iOS
                 McAccount theAccount = McAccount.QueryById<McAccount> (Account.AccountId);
                 McCred theCred = McCred.QueryById<McCred> (Account.McCredId);
                 McServer theServer = McServer.QueryById<McServer> (Account.ServerId);
-                McConference theConference = McConference.QueryById<McConference> (Account.ConferenceId);
+                McConference theConference = McConference.QueryById<McConference> (Account.PreferredConferenceId);
 
                 theConference.DefaultPhoneNumber = Account.ConferenceCallNumber;
                 theConference.Update();
@@ -195,7 +195,7 @@ namespace NachoClient.iOS
             }
 
             if (isSuccess) {
-                statusView.Frame = new System.Drawing.RectangleF (105 , statusViewY, 110, 45);
+                statusView.Frame = new System.Drawing.RectangleF (105, statusViewY + TableView.ContentOffset.Y, 110, 45);
                 statusView.Layer.CornerRadius = 15.0f;
                 statusView.BackgroundColor = UIColor.DarkGray;
                 statusView.Alpha = .8f;
@@ -431,39 +431,36 @@ namespace NachoClient.iOS
             };
             AccountSection.Add (ConferenceCall);
                
-            signatureText = new UILabel ();
-            signatureText.Text = Account.EmailSignature;
-            var SignatureText = new SignatureEntryElement ("Email Signature", signatureText);
-            SignatureText.Tapped += () => {
+            signatureLabel = new UILabel ();
+            signatureLabel.Text = Account.EmailSignature;
+            var SettingsSignatureElement = new SignatureEntryElement ("Email Signature", signatureLabel);
+            SettingsSignatureElement.Tapped += () => {
                 PushSignatureView();
             };
-
-            AccountSection.Add (SignatureText);
+            AccountSection.Add (SettingsSignatureElement);
             return AccountSection;
         }
-
 
         public void PushSignatureView ()
         {
             var root = new RootElement ("Signature");
-            var thinSec = new ThinSection ();
-            UITextView signatureEditSection = new UITextView (new System.Drawing.RectangleF(0, 0, 320, 100));
 
-            signatureEditSection.Editable = true;
+            UITextView signatureEditTextView = new UITextView (new System.Drawing.RectangleF(0, 0, 320, 100));
+            signatureEditTextView.Editable = true;
 
-            signatureEditSection.ShouldEndEditing += (test) => {
+            signatureEditTextView.ShouldEndEditing += (test) => {
                 Account.EmailSignature = test.Text;
-                signatureText.Text = test.Text;
+                signatureLabel.Text = test.Text;
                 return true;
             };
 
-
-            signatureEditSection.Changed += (object sender, EventArgs e) => {
-                SelectionChanged(signatureEditSection);
+            signatureEditTextView.Changed += (object sender, EventArgs e) => {
+                SelectionChanged(signatureEditTextView);
             };
 
-            var textSection = new StyledMultiLineTextInput("", Account.EmailSignature, signatureEditSection);
-            thinSec.Add (textSection);
+            var thinSec = new ThinSection ();
+            var signatureEditingElement = new StyledMultiLineTextInput("", Account.EmailSignature, signatureEditTextView);
+            thinSec.Add (signatureEditingElement);
             root.Add (thinSec);
 
             var signatureEditingViewController = new DialogViewController (root, true);
@@ -495,20 +492,20 @@ namespace NachoClient.iOS
 
             McCred userCredentials = McCred.QueryById<McCred> (whatAccount.CredId);
             McServer userMailServer = McServer.QueryById<McServer> (whatAccount.ServerId);
-            McConference userConference = McConference.QueryById<McConference> (whatAccount.ConferenceId);
+            McConference userConference = McConference.QueryById<McConference> (whatAccount.PreferredConferenceId);
             Account.AccountId = whatAccount.Id;
             Account.McCredId = userCredentials.Id;
             Account.ServerId = userMailServer.Id;
 
             if (null != userConference) {
-                Account.ConferenceId = userConference.Id;
+                Account.PreferredConferenceId = userConference.Id;
             } else {
                 McConference x = new McConference ();
                 x.DefaultPhoneNumber = "(503) 345-6789";
                 x.Insert ();
-                whatAccount.ConferenceId = x.Id;
+                whatAccount.PreferredConferenceId = x.Id;
                 whatAccount.Update ();
-                Account.ConferenceId = x.Id;
+                Account.PreferredConferenceId = x.Id;
                 userConference = x;
             }
 
@@ -537,7 +534,7 @@ namespace NachoClient.iOS
             public int AccountId { get; set; }
             public int McCredId { get; set; }
             public int ServerId { get; set; }
-            public int ConferenceId { get; set;}
+            public int PreferredConferenceId { get; set;}
             public AccountSettings()
             {
 

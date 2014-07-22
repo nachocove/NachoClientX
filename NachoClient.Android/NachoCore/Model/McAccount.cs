@@ -22,7 +22,7 @@ namespace NachoCore.Model
 
         public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncCalendar { get; set; }
 
-        public int ConferenceId { get; set; }
+        public int PreferredConferenceId { get; set; }
 
         public string Signature { get; set; }
 
