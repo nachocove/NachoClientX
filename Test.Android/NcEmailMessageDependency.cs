@@ -17,18 +17,20 @@ namespace Test.Common
             const string sender = "Sender";
             Deps = new McEmailMessageDependency[5];
 
-            for (int n = 0; n < 2; n++) {
+            for (int n = 1; n <= 2; n++) {
                 McContact contact = new McContact ();
                 contact.AccountId = 1;
+                contact.NeedUpdate = (0 == (n % 2)); // even id already marked for update
                 contact.Insert ();
-                NcAssert.True (contact.Id == (n+1));
+                NcAssert.True (contact.Id == n);
             }
 
-            for (int n = 0; n < 15; n++) {
+            for (int n = 1; n <= 15; n++) {
                 McEmailMessage emailMessage = new McEmailMessage ();
                 emailMessage.AccountId = 1;
+                emailMessage.NeedUpdate = (0 == (n % 2)); // even id already marked for update
                 emailMessage.Insert ();
-                NcAssert.True (emailMessage.Id == (n+1));
+                NcAssert.True (emailMessage.Id == n);
             }
 
             Deps [0] = new McEmailMessageDependency ();
@@ -193,31 +195,31 @@ namespace Test.Common
 
             List<McEmailMessage> emailMessageList;
 
-            emailMessageList = McEmailMessageDependency.QueryDependenciesByContactId (1);
-            VerifyListIds<McEmailMessage> (emailMessageList, 11, 12);
+            emailMessageList = McEmailMessageDependency.QueryNonUpdatedDependenciesByContactId (1);
+            VerifyListIds<McEmailMessage> (emailMessageList, 11);
 
-            emailMessageList = McEmailMessageDependency.QueryDependenciesByContactId (2);
-            VerifyListIds<McEmailMessage> (emailMessageList, 11, 13, 14);
+            emailMessageList = McEmailMessageDependency.QueryNonUpdatedDependenciesByContactId (2);
+            VerifyListIds<McEmailMessage> (emailMessageList, 11, 13);
         }
 
         [Test]
-        public void TestQueryDependenciesByEmaiMessage ()
+        public void TestQueryDependenciesByEmailMessage ()
         {
             SetupEntries ();
 
             List<McContact> contactList;
 
-            contactList = McEmailMessageDependency.QueryDependenciesByEmailMessageId (11);
-            VerifyListIds<McContact> (contactList, 1, 2);
-
-            contactList = McEmailMessageDependency.QueryDependenciesByEmailMessageId (12);
+            contactList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (11);
             VerifyListIds<McContact> (contactList, 1);
 
-            contactList = McEmailMessageDependency.QueryDependenciesByEmailMessageId (13);
-            VerifyListIds<McContact> (contactList, 2);
+            contactList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (12);
+            VerifyListIds<McContact> (contactList, 1);
 
-            contactList = McEmailMessageDependency.QueryDependenciesByEmailMessageId (14);
-            VerifyListIds<McContact> (contactList, 2);
+            contactList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (13);
+            VerifyListIds<McContact> (contactList);
+
+            contactList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailMessageId (14);
+            VerifyListIds<McContact> (contactList);
         }
     }
 }
