@@ -32,21 +32,21 @@ namespace NachoCore.Model
         }
 
         // Get all McEmailMessage given a contact id
-        public static List<McEmailMessage> QueryDependenciesByContactId (Int64 contactId)
+        public static List<McEmailMessage> QueryNonUpdatedDependenciesByContactId (Int64 contactId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT m.* FROM McEmailMessage AS m " +
             "INNER JOIN McEmailMessageDependency AS d " +
             "ON m.Id = d.EmailMessageId " +
-            "WHERE d.ContactId == ?", contactId);
+            "WHERE d.ContactId = ? AND m.NeedUpdate = 0", contactId);
         }
 
         // Get all McContact given an email message id
-        public static List<McContact> QueryDependenciesByEmailMessageId (Int64 emailMessageId)
+        public static List<McContact> QueryNonUpdatedDependenciesByEmailMessageId (Int64 emailMessageId)
         {
             return NcModel.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
             "INNER JOIN McEmailMessageDependency AS d " +
             "ON c.Id = d.ContactId " +
-            "WHERE d.EmailMessageId == ?", emailMessageId);
+            "WHERE d.EmailMessageId = ? AND c.NeedUpdate = 0", emailMessageId);
         }
 
         private bool ValidType ()
