@@ -24,13 +24,8 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
-                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            }
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("SettingsToNachoNow", this);
-            };
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
+
 
             // Test
             //var e = new PasswordElement (name, "", value ?? "");

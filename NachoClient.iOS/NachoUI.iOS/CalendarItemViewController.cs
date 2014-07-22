@@ -503,16 +503,16 @@ namespace NachoClient.iOS
                 tenativeButton.Selected = true;
             };
 
-            var b1 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b2 = new UIBarButtonItem (acceptButton);
-            var b3 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b4 = new UIBarButtonItem (declineButton);
-            var b5 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b6 = new UIBarButtonItem (tenativeButton);
-            var b7 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            //ActionToolbar.SetItems (new UIBarButtonItem[] { b1, b2, b3, b4, b5, b6, b7 }, false);
-            //ActionToolbar.BackgroundColor = A.Color_NachoBlack;
-            //ActionToolbar.BarTintColor = A.Color_NachoBlack;
+//            var b1 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            var b2 = new UIBarButtonItem (acceptButton);
+//            var b3 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            var b4 = new UIBarButtonItem (declineButton);
+//            var b5 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            var b6 = new UIBarButtonItem (tenativeButton);
+//            var b7 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+//            //ActionToolbar.SetItems (new UIBarButtonItem[] { b1, b2, b3, b4, b5, b6, b7 }, false);
+//            //ActionToolbar.BackgroundColor = A.Color_NachoBlack;
+//            //ActionToolbar.BarTintColor = A.Color_NachoBlack;
 
             EventActionView.Add (acceptButton);
             EventActionView.Add (declineButton);
@@ -800,7 +800,7 @@ namespace NachoClient.iOS
         RootElementWithIcon reminderEntryElement;
         PeopleEntryElement peopleEntryElement;
         EntryElementWithIcon locationEntryElement;
-        EntryElementWithIcon phoneNumberEntryElement;
+        //EntryElementWithIcon phoneNumberEntryElement;
         CustomEntryElementDetail phoneEntryElement;
         CustomEntryElement attachmentEntryElement;
         RootElementWithIcon calendarEntryElement;
