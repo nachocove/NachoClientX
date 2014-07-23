@@ -106,7 +106,7 @@ namespace NachoClient.AndroidClient
 
             var contact = contacts.GetContactIndex (position).GetContact ();
             name.Text = contact.DisplayName;
-            email.Text = contact.DisplayEmailAddress;
+            email.Text = contact.GetDisplayName();
 
             return view;
         }
