@@ -186,8 +186,7 @@ namespace NachoClient.iOS
             switch (segue.Identifier) {
             case SidebarToContactsSegueId:
                 {
-                    ContactsViewController vc = (ContactsViewController)destViewController;
-                    vc.UseDeviceContacts = false;
+                    // ContactsViewController vc = (ContactsViewController)destViewController;
                 }
                 break;
             case SidebarToCalendarSegueId:
