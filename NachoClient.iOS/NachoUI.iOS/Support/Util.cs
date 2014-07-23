@@ -435,7 +435,7 @@ namespace NachoClient
             }
             // And get a McEmailAddress
             McEmailAddress emailAddress;
-            if (!McEmailAddress.AddOrUpdate (emailMessage.AccountId, mailboxAddress, out emailAddress)) {
+            if (!McEmailAddress.Get (emailMessage.AccountId, mailboxAddress, out emailAddress)) {
                 emailMessage.cachedFromColor = 1;
                 emailMessage.cachedFromLetters = "";
                 emailMessage.Update ();
