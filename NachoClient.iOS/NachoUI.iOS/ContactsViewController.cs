@@ -18,22 +18,11 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    /// <summary>
-    /// Contacts view controller.
-    /// Fetches data from an INachoContacts object.
-    /// TODO: Extend INachoContacts with filtering.
-    /// Handles search in an INachoContacts.
-    /// Handles async search too.
-    /// </summary>
+
     public partial class ContactsViewController : NcUITableViewController
     {
-        public bool UseDeviceContacts;
         INachoContacts contacts;
         List<McContactEmailAddressAttribute> searchResults = null;
-        /// <summary>
-        ///  Must match the id in the prototype cell.
-        /// </summary>
-        static readonly NSString CellSegueID = new NSString ("ContactsToContact");
 
         public ContactsViewController (IntPtr handle) : base (handle)
         {
@@ -49,8 +38,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
-            TableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+//            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
+//            TableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
 
             // Manages the search bar & auto-complete table.
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
@@ -58,15 +47,6 @@ namespace NachoClient.iOS
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
-
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
-                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            }
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("ContactsToNachoNow", this);
-            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -92,28 +72,17 @@ namespace NachoClient.iOS
             TableView.ReloadData ();
         }
 
-        /// <summary>
-        /// Prepares for segue.
-        /// </summary>
-        /// <param name="segue">Segue in charge</param>
-        /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            // The "+" button segues with ContactsToNewContact
-            // Cells segue with CellSegueID, ContactsToContact
-            if (segue.Identifier.Equals (CellSegueID)) {
-                McContact contact;
-                UITableViewCell cell = (UITableViewCell)sender;
-                NSIndexPath indexPath = SearchDisplayController.SearchResultsTableView.IndexPathForCell (cell);
-                if (null != indexPath) {
-                    contact = searchResults.ElementAt (indexPath.Row).GetContact ();
-                } else {
-                    indexPath = TableView.IndexPathForCell (cell);
-                    contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
-                }
+            if (segue.Identifier.Equals ("ContactsToContact")) {
+                var h = sender as SegueHolder;
+                var c = (McContact) h.value;
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
-                destinationController.contact = contact;
+                destinationController.contact = c;
+                return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         public override int NumberOfSections (UITableView tableView)
@@ -131,14 +100,6 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            // Hey!  This next bit is different from the normal implementation
-            // of GetCell. This doesn't use the tableView parameter to get the
-            // cell.  Instead, the main table is always used.  This provides a
-            // cell that's hooked up to the segue and has matching attributes.
-            UITableViewCell cell = TableView.DequeueReusableCell (CellSegueID);
-            // Should always get a prototype cell
-            NcAssert.True (null != cell);
-
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 contact = searchResults.ElementAt (indexPath.Row).GetContact ();
@@ -146,17 +107,67 @@ namespace NachoClient.iOS
                 contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
 
-            cell.TextLabel.Text = contact.GetDisplayName();
-            cell.DetailTextLabel.Text = contact.GetEmailAddress();
-            if (contact.isVip ()) {
-                cell.ImageView.Image = UIImage.FromBundle ("beer");
-            } else if (contact.isHot ()) {
-                cell.ImageView.Image = UIImage.FromBundle ("icon_chili");
-            } else {
-                cell.ImageView.Image = null;
+            UITableViewCell cell = null;
+            var displayName = contact.GetDisplayName();
+            var displayEmailAddress = contact.GetEmailAddress();
+
+            // Both empty
+            if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
+                cell = TableView.DequeueReusableCell ("Basic");
+                NcAssert.True (null != cell);
+                cell.TextLabel.Text = "Contact has no name or email address";
+                cell.TextLabel.TextColor = UIColor.LightGray;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                return cell;
             }
 
-            return cell;
+            // Name empty
+            if (String.IsNullOrEmpty (displayName)) {
+                cell = TableView.DequeueReusableCell ("Basic");
+                NcAssert.True (null != cell);
+                cell.TextLabel.Text = displayEmailAddress;
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                return cell;
+            }
+
+            // Email empty
+            if (String.IsNullOrEmpty (displayEmailAddress)) {
+                cell = TableView.DequeueReusableCell ("Subtitle");
+                NcAssert.True (null != cell);
+                cell.TextLabel.Text = displayName;
+                cell.DetailTextLabel.Text = "Contact has no email address";
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                return cell;
+            }
+
+            // Everything
+            cell = TableView.DequeueReusableCell ("Subtitle");
+            NcAssert.True (null != cell);
+            cell.TextLabel.Text = displayName;
+            cell.DetailTextLabel.Text = displayEmailAddress;
+            cell.TextLabel.TextColor = A.Color_NachoBlack;
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.DetailTextLabel.TextColor = UIColor.Gray;
+            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+            return cell;  
+
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            McContact contact;
+
+            if (SearchDisplayController.SearchResultsTableView == tableView) {
+                var contactEmailAttribute = searchResults [indexPath.Row];
+                contact = McContact.QueryById<McContact> ((int)contactEmailAttribute.ContactId);
+            } else {
+                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
+            }
+            PerformSegue ("ContactsToContact", new SegueHolder (contact));
         }
 
         /// <summary>

@@ -38,6 +38,7 @@ namespace NachoClient.iOS
         const string SidebarToHomeSegueId = "SidebarToHome";
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
+        const string SidebarToSupportSegueId = "SidebarToSupport";
         const string SidebarToAttachmentsSegueId = "SidebarToAttachments";
         const string SidebarToTasksSegueId = "SidebarToTasks";
         const string SidebarToFilesSegueId = "SidebarToFiles";
@@ -113,7 +114,7 @@ namespace NachoClient.iOS
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Settings", "menu-settings", SidebarToSettingsSegueId),
                 null,
-                new ButtonInfo ("Support", "menu-help", SidebarToHomeSegueId),
+                new ButtonInfo ("Support", "menu-help", SidebarToSupportSegueId),
             });
 
             var center = contentView.Center;
@@ -185,8 +186,7 @@ namespace NachoClient.iOS
             switch (segue.Identifier) {
             case SidebarToContactsSegueId:
                 {
-                    ContactsViewController vc = (ContactsViewController)destViewController;
-                    vc.UseDeviceContacts = false;
+                    // ContactsViewController vc = (ContactsViewController)destViewController;
                 }
                 break;
             case SidebarToCalendarSegueId:
