@@ -694,10 +694,13 @@ namespace NachoCore.Model
             switch (Operation) {
             case Operations.EmailMove:
                 return McAbstrFolderEntry.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+            case Operations.CalUpdate:
             case Operations.CalMove:
                 return McAbstrFolderEntry.QueryByServerId<McCalendar> (AccountId, ServerId);
+            case Operations.ContactUpdate:
             case Operations.ContactMove:
                 return McAbstrFolderEntry.QueryByServerId<McContact> (AccountId, ServerId);
+            case Operations.TaskUpdate:
             case Operations.TaskMove:
                 return McAbstrFolderEntry.QueryByServerId<McTask> (AccountId, ServerId);
             }
