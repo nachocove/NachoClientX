@@ -468,12 +468,13 @@ namespace NachoCore.ActiveSync
         /// Convert an AsContact to an McContact
         /// </summary>
         /// <returns>An NcResult with an embeded AsContact object.</returns>
-        public NcResult ToMcContact ()
+        public NcResult ToMcContact (int AccountId)
         {
             var c = new McContact ();
 
             c.Source = McAbstrItem.ItemSource.ActiveSync;
             c.ServerId = ServerId;
+            c.AccountId = AccountId;
 
             c.BodyId = BodyId;
             c.NativeBodyType = NativeBodyType;

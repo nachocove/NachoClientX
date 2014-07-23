@@ -1030,6 +1030,9 @@
     <Compile Include="NachoUI.iOS\AlertChooserViewController.designer.cs">
       <DependentUpon>AlertChooserViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactEmailAddressAttribute.cs">
+      <Link>NachoCore\Model\McContactEmailAddressAttribute.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

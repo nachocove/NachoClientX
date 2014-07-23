@@ -53,7 +53,7 @@ namespace NachoCore.Model
         /// The collection of phone numbers associated with the contact
         private List<McContactStringAttribute> DbPhoneNumbers;
         /// The collection of email addresses associated with the contact
-        private List<McContactStringAttribute> DbEmailAddresses;
+        private List<McContactEmailAddressAttribute> DbEmailAddresses;
         /// The collection of instant messaging addresses associated with the contact
         private List<McContactStringAttribute> DbIMAddresses;
         /// The collection of relationsihps assigned to the contact.
@@ -160,7 +160,7 @@ namespace NachoCore.Model
             DbDates = new List<McContactDateAttribute> ();
             DbAddresses = new List<McContactAddressAttribute> ();
             DbPhoneNumbers = new List<McContactStringAttribute> ();
-            DbEmailAddresses = new List<McContactStringAttribute> ();
+            DbEmailAddresses = new List<McContactEmailAddressAttribute> ();
             DbIMAddresses = new List<McContactStringAttribute> ();
             DbRelationships = new List<McContactStringAttribute> ();
             DbCategories = new List<McContactStringAttribute> ();
@@ -170,7 +170,7 @@ namespace NachoCore.Model
         {
             Source = source;
         }
-            
+
         [Ignore]
         public List<McContactDateAttribute> Dates {
             get {
@@ -208,7 +208,7 @@ namespace NachoCore.Model
         }
 
         [Ignore]
-        public List<McContactStringAttribute> EmailAddresses {
+        public List<McContactEmailAddressAttribute> EmailAddresses {
             get {
                 ReadAncillaryData ();
                 return DbEmailAddresses;
@@ -262,7 +262,7 @@ namespace NachoCore.Model
 
         public static bool IsNull (int i)
         {
-            return (int.MinValue == 1);
+            return (int.MinValue == i);
         }
 
         /// <summary>
@@ -291,6 +291,16 @@ namespace NachoCore.Model
             return null;       
         }
 
+        public string GetEmailAddressAttribute (string name)
+        {
+            foreach (var l in EmailAddresses) {
+                if (l.Name.Equals (name)) {
+                    return l.Value;
+                }
+            }
+            return null; 
+        }
+
         public string GetStringAttribute (List<McContactStringAttribute> list, McContactStringType type, string name)
         {
             foreach (var l in list) {
@@ -304,11 +314,6 @@ namespace NachoCore.Model
         public string GetPhoneNumberAttribute (string name)
         {
             return GetStringAttribute (PhoneNumbers, McContactStringType.PhoneNumber, name);
-        }
-
-        public string GetEmailAddressAttribute (string name)
-        {
-            return GetStringAttribute (EmailAddresses, McContactStringType.EmailAddress, name);
         }
 
         public string GetIMAddressAttribute (string name)
@@ -365,6 +370,20 @@ namespace NachoCore.Model
             Addresses.Add (f);
         }
 
+        public void AddEmailAddressAttribute (string name, string label, string value)
+        {
+            var f = new McContactEmailAddressAttribute ();
+            f.Name = name;
+            f.Label = label;
+            f.Value = value;
+            f.ContactId = this.Id;
+            McEmailAddress emailAddress;
+            if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
+                f.EmailAddress = emailAddress.Id;
+            }
+            EmailAddresses.Add (f);
+        }
+
         protected void AddStringAttribute (ref List<McContactStringAttribute> list, McContactStringType type, string name, string label, string value)
         {
             var f = new McContactStringAttribute ();
@@ -386,18 +405,6 @@ namespace NachoCore.Model
         {
             ReadAncillaryData ();
             AddOrUpdateStringAttribute (ref DbPhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
-        }
-
-        public void AddEmailAddressAttribute (string name, string label, string value)
-        {
-            ReadAncillaryData ();
-            AddStringAttribute (ref DbEmailAddresses, McContactStringType.EmailAddress, name, label, value);
-        }
-
-        public void AddOrUpdateEmailAddressAttribute (string name, string label, string value)
-        {
-            ReadAncillaryData ();
-            AddOrUpdateStringAttribute (ref DbEmailAddresses, McContactStringType.EmailAddress, name, label, value);
         }
 
         public void AddIMAddressAttribute (string name, string label, string value)
@@ -435,11 +442,33 @@ namespace NachoCore.Model
             }
         }
 
+        public void AddOrUpdateEmailAddressAttribute (string name, string label, string value)
+        {
+            ReadAncillaryData ();
+            var f = EmailAddresses.Where (attr => attr.Name.Equals (name)).SingleOrDefault ();
+            if (null != f) {
+                f.Label = label;
+                f.Value = value;
+            } else {
+                f = new McContactEmailAddressAttribute ();
+                f.Name = name;
+                f.Label = label;
+                f.Value = value;
+                f.ContactId = this.Id;
+                EmailAddresses.Add (f);
+            }
+            McEmailAddress emailAddress;
+            if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
+                f.EmailAddress = emailAddress.Id;
+            }
+        }
+
         /// <summary>
         ///        Db.CreateTable<McContact> ();
         ///        Db.CreateTable<McContactDateAttribute> ();
         ///        Db.CreateTable<McContactStringAttribute> ();
         ///        Db.CreateTable<McContactAddressAttribute> ();
+        ///        Db.CreateTable<McContactEmailAddressAttribute> ();
         /// </summary>
         /// 
       
@@ -463,8 +492,8 @@ namespace NachoCore.Model
             NcAssert.True (0 < Id);
             DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            DbEmailAddresses = db.Table<McContactEmailAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
             DbRelationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
-            DbEmailAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.EmailAddress).ToList ();
             DbPhoneNumbers = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
             DbIMAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
             DbCategories = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
@@ -545,6 +574,7 @@ namespace NachoCore.Model
             db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
             db.Query<McContactStringAttribute> ("DELETE FROM McContactStringAttribute WHERE ContactId=?", Id);
             db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
+            db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
             return NcResult.OK ();
         }
 
@@ -824,13 +854,12 @@ namespace NachoCore.Model
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
                                               "SELECT c.* FROM McContact AS c " +
-                                              " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
                                               " WHERE " +
                                               "s.Value = ? AND " +
-                                              "s.Type = ? AND " +
                                               " c.AccountId = ? AND " +
                                               " c.IsAwaitingDelete = 0 ",
-                                              emailAddress, McContactStringType.EmailAddress, accountId).ToList ();
+                                              emailAddress, accountId).ToList ();
             return contactList;
         }
 
@@ -838,14 +867,13 @@ namespace NachoCore.Model
         {
             var emailWildcard = "%" + emailAddress + "%";
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                "SELECT c.* FROM McContact AS c " +
-                " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
-                " WHERE " +
-                "s.Value LIKE ? AND " +
-                "s.Type = ? AND " +
-                " c.AccountId = ? AND " +
-                " c.IsAwaitingDelete = 0 ",
-                emailWildcard, McContactStringType.EmailAddress, accountId).ToList ();
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              " WHERE " +
+                                              "s.Value LIKE ? AND " +
+                                              " c.AccountId = ? AND " +
+                                              " c.IsAwaitingDelete = 0 ",
+                                              emailWildcard, accountId).ToList ();
             return contactList;
         }
 
@@ -853,17 +881,16 @@ namespace NachoCore.Model
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
                                               "SELECT c.* FROM McContact AS c " +
-                                              " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
                                               " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                                               " WHERE " +
                                               " c.AccountId = m.AccountId AND " +
                                               " c.AccountId = ? AND " +
                                               " c.IsAwaitingDelete = 0 AND " +
-                                              " s.Type = ? AND " +
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
                                               " m.FolderId = ? ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
+                                              accountId, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
             return contactList;
         }
 
@@ -871,7 +898,7 @@ namespace NachoCore.Model
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
                                               "SELECT c.* FROM McContact AS c " +
-                                              " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
                                               " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                                               " JOIN McFolder AS f ON f.Id = m.FolderId " +
                                               " WHERE " +
@@ -879,11 +906,10 @@ namespace NachoCore.Model
                                               " c.AccountId = f.AccountId AND " +
                                               " c.AccountId = ? AND " +
                                               " c.IsAwaitingDelete = 0 AND " +
-                                              " s.Type = ? AND " +
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
                                               " f.IsClientOwned = false ",
-                                              accountId, McContactStringType.EmailAddress, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                                              accountId, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
             return contactList;
         }
 
@@ -931,11 +957,11 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, minHotScore);
         }
 
-        public static List<McContactStringAttribute> SearchAllContactItems (int accountId, string searchFor)
+        public static List<McContactEmailAddressAttribute> SearchAllContactItems (int accountId, string searchFor)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
-                return new List<McContactStringAttribute> ();
+                return new List<McContactEmailAddressAttribute> ();
             }
             var target = searchFor.Split (new char[] { ' ' });
             var firstName = target.First () + "%";
@@ -943,13 +969,12 @@ namespace NachoCore.Model
             var email1 = firstName;
             var email2 = "'" + firstName;
             if (1 == target.Count ()) {
-                return NcModel.Instance.Db.Query<McContactStringAttribute> (
-                    "Select s.* FROM MCContactStringAttribute AS s  " +
+                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                    "Select s.* FROM McContactEmailAddressAttribute AS s  " +
                     " JOIN McContact AS c ON s.ContactId = c.Id   " +
                     " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
                     " WHERE " +
                     " m.ClassCode=? AND  " +
-                    " s.Type=? AND  " +
                     " c.AccountId = ? AND " +
                     " c.IsAwaitingDelete = 0 AND " +
                     " c.AccountId=m.AccountId AND " +
@@ -958,21 +983,20 @@ namespace NachoCore.Model
                     "     s.Value LIKE ? OR s.Value LIKE ? " +
                     " ) " +
                     " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                    McAbstrFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, email1, email2);
+                    McAbstrFolderEntry.ClassCodeEnum.Contact, accountId, firstName, lastName, email1, email2);
             } else {
-                return NcModel.Instance.Db.Query<McContactStringAttribute> (
-                    "Select s.* FROM MCContactStringAttribute AS s  " +
+                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                    "Select s.* FROM McContactEmailAddressAttribute AS s  " +
                     " JOIN McContact AS c ON s.ContactId = c.Id   " +
                     " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
                     " WHERE " +
                     " m.ClassCode=? AND  " +
-                    " s.Type=? AND  " +
                     " c.AccountId = ? AND " +
                     " c.IsAwaitingDelete = 0 AND " +
                     " c.AccountId=m.AccountId AND " +
                     " ( c.FirstName LIKE ? AND c.LastName LIKE ? ) " +
                     " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                    McAbstrFolderEntry.ClassCodeEnum.Contact, McContactStringType.EmailAddress, accountId, firstName, lastName, firstName);
+                    McAbstrFolderEntry.ClassCodeEnum.Contact, accountId, firstName, lastName, firstName);
             }
         }
 
@@ -992,34 +1016,44 @@ namespace NachoCore.Model
             return (Score >= minVipScore);
         }
 
-        public string GetDisplayName()
+        public string GetDisplayName ()
         {
-            if (null != DisplayName) {
+            if (!String.IsNullOrEmpty(DisplayName)) {
                 return DisplayName;
             }
             List<string> value = new List<string> ();
-            if(!String.IsNullOrEmpty(FirstName)) {
-                value.Add(FirstName);
+            if (!String.IsNullOrEmpty (FirstName)) {
+                value.Add (FirstName);
             }
-            if(!String.IsNullOrEmpty(MiddleName)) {
-                value.Add(MiddleName);
+            if (!String.IsNullOrEmpty (MiddleName)) {
+                value.Add (MiddleName);
             }           
-            if(!String.IsNullOrEmpty(LastName)) {
-                value.Add(LastName);
+            if (!String.IsNullOrEmpty (LastName)) {
+                value.Add (LastName);
             }
             return String.Join (" ", value);
         }
 
-        public string GetEmailAddress()
+        public string GetEmailAddress ()
         {
 
-                if (null == EmailAddresses) {
-                    return "";
-                }
-                if (0 == EmailAddresses.Count ()) {
-                    return "";
-                }
-                return EmailAddresses.First ().Value;
+            if (null == EmailAddresses) {
+                return "";
+            }
+            if (0 == EmailAddresses.Count ()) {
+                return "";
+            }
+            return EmailAddresses.First ().Value;
+        }
+
+        public string GetDisplayNameOrEmailAddress()
+        {
+            var displayName = GetDisplayName ();
+            if (String.IsNullOrEmpty (displayName)) {
+                return GetEmailAddress ();
+            } else {
+                return displayName;
+            }
         }
     }
 }

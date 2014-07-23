@@ -86,11 +86,14 @@ namespace NachoCore.Brain
                 NcModel.Instance.Db.Insert (contact);
                 gleanedFolder.Link (contact);
 
-                var strattr = new McContactStringAttribute () {
+                McEmailAddress emailAddress;
+                McEmailAddress.Get (accountId, mbAddr, out emailAddress);
+
+                var strattr = new McContactEmailAddressAttribute () {
                     Name = "Email1Address",
                     Value = mbAddr.Address,
-                    Type = McContactStringType.EmailAddress,
                     ContactId = contact.Id,
+                    EmailAddress = emailAddress.Id,
                 };
 
                 // Update statistics

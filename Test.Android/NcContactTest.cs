@@ -114,7 +114,7 @@ namespace Test.Common
             Assert.True (cr05.isOK ());
             Assert.NotNull (c05);
 
-            var mr05 = c05.ToMcContact ();
+            var mr05 = c05.ToMcContact (1);
             var m05 = mr05.GetValue<McContact> ();
             Assert.True (mr05.isOK ());
             Assert.IsNotNull (m05);

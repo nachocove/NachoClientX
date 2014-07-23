@@ -29,7 +29,7 @@ namespace NachoClient.iOS
     {
         public bool UseDeviceContacts;
         INachoContacts contacts;
-        List<McContactStringAttribute> searchResults = null;
+        List<McContactEmailAddressAttribute> searchResults = null;
         /// <summary>
         ///  Must match the id in the prototype cell.
         /// </summary>

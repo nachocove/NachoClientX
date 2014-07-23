@@ -87,7 +87,7 @@ namespace NachoClient.iOS
             if (null == address.contact) {
                 AppendInternal (address.address, address, UcAddressField.TEXT_FIELD);
             } else {
-                AppendInternal (address.contact.GetDisplayName(), address, UcAddressField.TEXT_FIELD);
+                AppendInternal (address.contact.GetDisplayNameOrEmailAddress(), address, UcAddressField.TEXT_FIELD);
             }
 
             // Calling layout now will make the animation look

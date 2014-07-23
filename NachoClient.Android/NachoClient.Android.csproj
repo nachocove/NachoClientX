@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -313,6 +313,7 @@
     <Compile Include="NachoCore\Model\McEmailMessage\EmailMessageScore.cs" />
     <Compile Include="NachoCore\Utils\NcTimerPool.cs" />
     <Compile Include="NachoPlatform.Android\PlatformUserColorIndex.cs" />
+    <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

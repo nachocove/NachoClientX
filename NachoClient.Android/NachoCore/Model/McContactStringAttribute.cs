@@ -16,7 +16,6 @@ namespace NachoCore.Model
     public enum McContactStringType
     {
         Relationship,
-        EmailAddress,
         PhoneNumber,
         IMAddress,
         Category,
@@ -25,7 +24,7 @@ namespace NachoCore.Model
     }
 
     /// <summary>
-    /// String attributes, such as email, phone numbers, im addresses
+    /// String attributes, such as phone numbers, im addresses
     /// </summary>
     public class McContactStringAttribute : McAbstrContactAttribute
     {

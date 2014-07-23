@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
         // Internal state
-        List<McContactStringAttribute> searchResults;
+        List<McContactEmailAddressAttribute> searchResults;
         INachoContacts firstList;
         INachoContacts secondList;
 
@@ -331,31 +331,47 @@ namespace NachoClient.iOS
                 var displayName = contact.GetDisplayName();
                 var displayEmailAddress = contact.GetEmailAddress();
 
-                if (String.IsNullOrEmpty(displayName)) {
+                // Both empty
+                if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
                     cell = tableView.DequeueReusableCell ("Basic");
                     NcAssert.True (null != cell);
-                    cell.TextLabel.Text = "No name or email address";
+                    cell.TextLabel.Text = "Contact has no name or email address";
                     cell.TextLabel.TextColor = UIColor.LightGray;
                     cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                     return cell;
                 }
 
-                if (displayName.Equals (displayEmailAddress)) {
+                // Name empty
+                if (String.IsNullOrEmpty (displayName)) {
                     cell = tableView.DequeueReusableCell ("Basic");
                     NcAssert.True (null != cell);
-                    cell.TextLabel.Text = displayName;
+                    cell.TextLabel.Text = displayEmailAddress;
                     cell.TextLabel.TextColor = A.Color_NachoBlack;
                     cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                     return cell;
                 }
 
+                // Email empty
+                if (String.IsNullOrEmpty (displayEmailAddress)) {
+                    cell = tableView.DequeueReusableCell ("Subtitle");
+                    NcAssert.True (null != cell);
+                    cell.TextLabel.Text = displayName;
+                    cell.DetailTextLabel.Text = "Contact has no email address";
+                    cell.TextLabel.TextColor = A.Color_NachoBlack;
+                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                    cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                    cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                    return cell;
+                }
+
+                // Everything
                 cell = tableView.DequeueReusableCell ("Subtitle");
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = displayName;
                 cell.DetailTextLabel.Text = displayEmailAddress;
                 cell.TextLabel.TextColor = A.Color_NachoBlack;
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                cell.DetailTextLabel.TextColor = UIColor.Gray;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 return cell;  
             }

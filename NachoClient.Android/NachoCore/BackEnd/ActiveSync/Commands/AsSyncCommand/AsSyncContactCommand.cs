@@ -31,12 +31,10 @@ namespace NachoCore.ActiveSync
             NcAssert.NotNull (asContact, "asContact");
 
             // Convert the AsContact to an McContact
-            var mcResult = asContact.ToMcContact ();
+            var mcResult = asContact.ToMcContact (folder.AccountId);
             var mcContact = mcResult.GetValue<McContact> ();
             NcAssert.True (mcResult.isOK ());
             NcAssert.NotNull (mcContact, "mcContact");
-
-            mcContact.AccountId = folder.AccountId;
 
             var existingContact = McAbstrFolderEntry.QueryByServerId<McContact> (folder.AccountId, mcContact.ServerId);
 
