@@ -27,7 +27,7 @@ class PlistFile:
         self.lines[n+1] = re.sub(match.group('value'), value, self.lines[n+1])
 
     def write(self):
-        with open(self.path + '.new', 'w') as f:
+        with open(self.path, 'w') as f:
             f.writelines(self.lines)
 
 
@@ -38,9 +38,14 @@ def main():
         build = os.environ['BUILD']
         app_id = 'com.nachocove.nachomail.beta'
     else:
+        print 'Development build'
         version = '0.1'
         build = '0'
         app_id = 'com.nachocove.nachomail'
+
+    print 'CFBundlerIdentifier = %s' % app_id
+    print 'CFBundleShortVersionString = %s' % version
+    print 'CFBundleVersion = %s' % build
 
     info_plist = PlistFile(sys.argv[1])
     info_plist.replace('CFBundleIdentifier', app_id)
