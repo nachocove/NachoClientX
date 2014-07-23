@@ -58,7 +58,8 @@ namespace Test.Common
         private void CheckState (int id, bool waitForSignal, int state, double adjustment)
         {
             if (waitForSignal) {
-                Signal.WaitOne ();
+                bool signaled = Signal.WaitOne (2000);
+                Assert.True (signaled);
             }
             Assert.AreEqual (state, CallbackState);
             Assert.AreEqual (adjustment, Adjustment);
