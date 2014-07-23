@@ -24,16 +24,6 @@ namespace NachoCore.Model
         [Indexed]
         public string CanonicalEmailAddress { get; set; }
 
-        public string DisplayEmailAddress { get; set; }
-
-        [Indexed] // pre-computed for fast search
-        public string DisplayFirstName { get; set; }
-
-        [Indexed] // pre-computed for fast search
-        public string DisplayLastName { get; set; }
-
-        public string DisplayName { get; set; }
-
         [Indexed]
         public int Score { get; set; }
 
@@ -77,42 +67,6 @@ namespace NachoCore.Model
             if (0 == emailAddress.ColorIndex) {
                 needsUpdate = true;
                 emailAddress.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
-            }
-
-            if (String.IsNullOrEmpty (emailAddress.DisplayEmailAddress)) {
-                needsUpdate = true;
-                emailAddress.DisplayEmailAddress = mailboxAddress.ToString ();
-            }
-
-            if (String.IsNullOrEmpty (emailAddress.DisplayName)) {
-                needsUpdate = true;
-                emailAddress.DisplayName = mailboxAddress.Name;
-            }
-
-            if (String.IsNullOrEmpty (emailAddress.DisplayFirstName) && String.IsNullOrEmpty (emailAddress.DisplayLastName)) {
-                string[] items = emailAddress.DisplayName.Split (new char [] { ',', ' ' });
-                switch (items.Length) {
-                case 2:
-                    if (0 < emailAddress.DisplayName.IndexOf (',')) {
-                        // Last name, First name
-                        needsUpdate = true;
-                        emailAddress.DisplayLastName = items [0];
-                        emailAddress.DisplayFirstName = items [1];
-                    } else {
-                        // First name, Last name
-                        needsUpdate = true;
-                        emailAddress.DisplayFirstName = items [0];
-                        emailAddress.DisplayLastName = items [1];
-                    }
-                    break;
-                case 3:
-                    if (-1 == emailAddress.DisplayName.IndexOf (',')) {
-                        needsUpdate = true;
-                        emailAddress.DisplayFirstName = items [0];
-                        emailAddress.DisplayLastName = items [2];
-                    }
-                    break;
-                }
             }
 
             if (needsInsert) {

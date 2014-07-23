@@ -425,32 +425,48 @@ namespace NachoClient
 
         public static void CacheUserMessageFields (McEmailMessage emailMessage)
         {
-            McEmailAddress emailAddress;
-            if (!McEmailAddress.AddOrUpdate (emailMessage.AccountId, emailMessage.From, out emailAddress)) {
+            // Parse the from address
+            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (emailMessage.From);
+            if(null == mailboxAddress) {
                 emailMessage.cachedFromColor = 1;
                 emailMessage.cachedFromLetters = "";
                 emailMessage.Update ();
                 return;
             }
+            // And get a McEmailAddress
+            McEmailAddress emailAddress;
+            if (!McEmailAddress.AddOrUpdate (emailMessage.AccountId, mailboxAddress, out emailAddress)) {
+                emailMessage.cachedFromColor = 1;
+                emailMessage.cachedFromLetters = "";
+                emailMessage.Update ();
+                return;
+            }
+            // Cache the color
             emailMessage.cachedFromColor = emailAddress.ColorIndex;
+            // Let create the initials
+            McContact contact = new McContact ();
+            NcEmailAddress.SplitName (mailboxAddress, ref contact);
+            // Using the name
             string initials = "";
-            if (!String.IsNullOrEmpty (emailAddress.DisplayFirstName)) {
-                initials += Char.ToUpper(emailAddress.DisplayFirstName [0]);
+            if (!String.IsNullOrEmpty (contact.FirstName)) {
+                initials += Char.ToUpper (contact.FirstName [0]);
             }
-            if (!String.IsNullOrEmpty (emailAddress.DisplayLastName)) {
-                initials += Char.ToUpper(emailAddress.DisplayLastName [0]);
+            if (!String.IsNullOrEmpty (contact.LastName)) {
+                initials += Char.ToUpper (contact.LastName [0]);
             }
+            // Or, failing that, the first char
             if (String.IsNullOrEmpty (initials)) {
-                if (!String.IsNullOrEmpty (emailAddress.DisplayEmailAddress)) {
-                    foreach (char c in emailAddress.DisplayEmailAddress) {
+                if (!String.IsNullOrEmpty (emailMessage.From)) {
+                    foreach (char c in emailMessage.From) {
                         if (Char.IsLetterOrDigit (c)) {
-                            initials += c;
+                            initials += Char.ToUpper(c);
                             break;
                         }
                     }
                 }
             }
-            emailMessage.cachedFromLetters = initials.ToCapitalized ();
+            // Save it to the db
+            emailMessage.cachedFromLetters = initials;
             emailMessage.Update ();
         }
 

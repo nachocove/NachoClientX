@@ -81,28 +81,7 @@ namespace NachoCore.Brain
                     Source = McAbstrItem.ItemSource.Internal,
                     RefCount = 1,
                 };
-                // Try to parse the display name into first / middle / last name
-                string[] items = mbAddr.Name.Split (new char [] { ',', ' ' });
-                switch (items.Length) {
-                case 2:
-                    if (0 < mbAddr.Name.IndexOf (',')) {
-                        // Last name, First name
-                        contact.LastName = items [0];
-                        contact.FirstName = items [1];
-                    } else {
-                        // First name, Last name
-                        contact.FirstName = items [0];
-                        contact.LastName = items [1];
-                    }
-                    break;
-                case 3:
-                    if (-1 == mbAddr.Name.IndexOf (',')) {
-                        contact.FirstName = items [0];
-                        contact.MiddleName = items [1];
-                        contact.LastName = items [2];
-                    }
-                    break;
-                }
+                NcEmailAddress.SplitName (mbAddr, ref contact);
 
                 NcModel.Instance.Db.Insert (contact);
                 gleanedFolder.Link (contact);
@@ -151,19 +130,19 @@ namespace NachoCore.Brain
         {
             List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
             if (null != emailMessage.To) {
-                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.To));
+                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.To));
             }
             if (null != emailMessage.From) {
-                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.From));
+                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.From));
             }
             if (null != emailMessage.Cc) {
-                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.Cc));
+                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.Cc));
             }
             if (null != emailMessage.ReplyTo) {
-                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.ReplyTo));
+                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.ReplyTo));
             }
             if (null != emailMessage.Sender) {
-                addrsLists.Add (NcEmailAddress.ParseString (emailMessage.Sender));
+                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.Sender));
             }
             foreach (var addrsList in addrsLists) {
                 foreach (var addr in addrsList) {

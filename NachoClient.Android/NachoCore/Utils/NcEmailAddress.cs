@@ -192,7 +192,12 @@ namespace NachoCore.Utils
             return mailbox;
         }
 
-        public static InternetAddressList ParseString (string emailAddressString)
+        /// <summary>
+        /// Parses the address list string.
+        /// </summary>
+        /// <returns>A list of InternetAddresses</returns>
+        /// <param name="emailAddressString">Email address string.</param>
+        public static InternetAddressList ParseAddressListString (string emailAddressString)
         {
             if (null == emailAddressString) {
                 return new InternetAddressList ();
@@ -202,6 +207,49 @@ namespace NachoCore.Utils
                 return addresses;
             } else {
                 return new InternetAddressList ();
+            }
+        }
+
+        /// <summary>
+        /// Parses the mailbox address string.
+        /// </summary>
+        /// <returns>Null or a single MailboxAddress</returns>
+        public static MailboxAddress ParseMailboxAddressString (string emailAddressString)
+        {
+            var addresses = ParseAddressListString (emailAddressString);
+            if (null == addresses) {
+                return null;
+            }
+            if (1 == addresses.Count) {
+                return addresses [0] as MailboxAddress;
+            } else {
+                return null;
+            }
+        }
+
+        public static void SplitName (MailboxAddress address, ref McContact contact)
+        {
+            // Try to parse the display name into first / middle / last name
+            string[] items = address.Name.Split (new char [] { ',', ' ' });
+            switch (items.Length) {
+            case 2:
+                if (0 < address.Name.IndexOf (',')) {
+                    // Last name, First name
+                    contact.LastName = items [0];
+                    contact.FirstName = items [1];
+                } else {
+                    // First name, Last name
+                    contact.FirstName = items [0];
+                    contact.LastName = items [1];
+                }
+                break;
+            case 3:
+                if (-1 == address.Name.IndexOf (',')) {
+                    contact.FirstName = items [0];
+                    contact.MiddleName = items [1];
+                    contact.LastName = items [2];
+                }
+                break;
             }
         }
     }

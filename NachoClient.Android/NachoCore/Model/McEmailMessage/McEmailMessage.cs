@@ -331,7 +331,7 @@ namespace NachoCore.Model
         public List<McContact> GetContactsFromEmailAddressString (string emailAddressString)
         {
             //TODO: Test this
-            var addresses = NcEmailAddress.ParseString (emailAddressString);
+            var addresses = NcEmailAddress.ParseAddressListString (emailAddressString);
 
             // Use a set to eliminate duplicates
             HashSet<McContact> contactSet = new HashSet<McContact> ();

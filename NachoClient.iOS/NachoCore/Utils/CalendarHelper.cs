@@ -269,7 +269,7 @@ namespace NachoCore.Utils
 
         protected static List<McAttendee> CreateAttendeeList(string addressLine, NcAttendeeType attendeeType)
         {
-            var addressList = NcEmailAddress.ParseString (addressLine);
+            var addressList = NcEmailAddress.ParseAddressListString (addressLine);
             var attendeeList = new List<McAttendee> ();
             foreach (var address in addressList) {
                 var addendee = CreateAttendee (address, attendeeType);
