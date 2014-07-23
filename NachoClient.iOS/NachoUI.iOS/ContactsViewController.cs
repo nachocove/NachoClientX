@@ -146,8 +146,8 @@ namespace NachoClient.iOS
                 contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
 
-            cell.TextLabel.Text = contact.DisplayName;
-            cell.DetailTextLabel.Text = contact.DisplayEmailAddress;
+            cell.TextLabel.Text = contact.GetDisplayName();
+            cell.DetailTextLabel.Text = contact.GetEmailAddress();
             if (contact.isVip ()) {
                 cell.ImageView.Image = UIImage.FromBundle ("beer");
             } else if (contact.isHot ()) {

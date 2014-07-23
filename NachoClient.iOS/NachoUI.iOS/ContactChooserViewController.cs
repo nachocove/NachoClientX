@@ -205,13 +205,13 @@ namespace NachoClient.iOS
             NcAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
 
             if (NachoContactType.EmailRequired == (contactType & NachoContactType.EmailRequired)) {
-                if (String.IsNullOrEmpty(contact.DisplayEmailAddress)) {
+                if (String.IsNullOrEmpty(contact.GetEmailAddress())) {
                     ComplainAboutMissingEmailAddress (contact);
                     return;
                 }
             }
 
-            UpdateEmailAddress (contact, contact.DisplayEmailAddress);
+            UpdateEmailAddress (contact, contact.GetEmailAddress());
 
             owner = null;
             NavigationController.PopViewControllerAnimated (true);
@@ -269,7 +269,7 @@ namespace NachoClient.iOS
 
         public void DoublePop (ContactSearchViewController vc, McContact contact)
         {
-            UpdateEmailAddress (contact, contact.DisplayEmailAddress);
+            UpdateEmailAddress (contact, contact.GetEmailAddress());
             vc.owner = null;
             vc.NavigationController.PopViewControllerAnimated (false);
             NavigationController.PopViewControllerAnimated (true);
@@ -328,8 +328,8 @@ namespace NachoClient.iOS
                 }
 
                 UITableViewCell cell = null;
-                var displayName = contact.DisplayName;
-                var displayEmailAddress = contact.DisplayEmailAddress;
+                var displayName = contact.GetDisplayName();
+                var displayEmailAddress = contact.GetEmailAddress();
 
                 if (String.IsNullOrEmpty(displayName)) {
                     cell = tableView.DequeueReusableCell ("Basic");

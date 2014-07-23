@@ -117,13 +117,13 @@ namespace NachoClient.iOS
             var c = r.GetValue<AsContact> ();
 
             if (contact.Score <= 1) {
-                section.Add (new StyledStringElementWithIndent (contact.DisplayName));
+                section.Add (new StyledStringElementWithIndent (contact.GetDisplayName()));
             } else if (contact.Score < 10) {
                 var chili = UIImage.FromBundle ("icon_chili").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
-                section.Add (new StyledStringElementWithIcon (contact.DisplayName, chili));
+                section.Add (new StyledStringElementWithIcon (contact.GetDisplayName(), chili));
             } else {
                 var beer = UIImage.FromBundle ("beer").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
-                section.Add (new StyledStringElementWithIcon (contact.DisplayName, beer));
+                section.Add (new StyledStringElementWithIcon (contact.GetDisplayName(), beer));
             }
 
             // Person

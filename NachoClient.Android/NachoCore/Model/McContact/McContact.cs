@@ -78,6 +78,9 @@ namespace NachoCore.Model
         [Indexed]
         public string LastName { get; set; }
 
+        /// Contact's display name, from the GAL
+        public string DisplayName { get; set; }
+
         /// Suffix for the contact's name
         public string Suffix { get; set; }
 
@@ -167,9 +170,7 @@ namespace NachoCore.Model
         {
             Source = source;
         }
-
-        private string displayName;
-
+            
         [Ignore]
         public List<McContactDateAttribute> Dates {
             get {
@@ -251,46 +252,6 @@ namespace NachoCore.Model
             set {
                 ReadAncillaryData ();
                 DbCategories = value;
-            }
-        }
-
-        [Ignore]
-        /// <summary>
-        /// Gets the display name.
-        /// </summary>
-        /// <value>The display name is calculated unless set non-null.</value>
-        public string DisplayName {
-            get {
-                if (null != displayName) {
-                    return displayName;
-                }
-                if ((null != FirstName) && (null != LastName)) {
-                    return FirstName + " " + LastName;
-                } else if ((null != FirstName) || (null != LastName)) {
-                    return (FirstName ?? "") + (LastName ?? "");
-                } else {
-                    return DisplayEmailAddress;
-                }
-            }
-            protected set {
-                displayName = value;
-            }
-        }
-
-        [Ignore]
-        /// <summary>
-        /// Gets the display email address.
-        /// </summary>
-        /// <value>The display email address.</value>
-        public string DisplayEmailAddress {
-            get {
-                if (null == EmailAddresses) {
-                    return "";
-                }
-                if (0 == EmailAddresses.Count ()) {
-                    return "";
-                }
-                return EmailAddresses.First ().Value;
             }
         }
 
@@ -1029,6 +990,36 @@ namespace NachoCore.Model
         public bool isVip ()
         {
             return (Score >= minVipScore);
+        }
+
+        public string GetDisplayName()
+        {
+            if (null != DisplayName) {
+                return DisplayName;
+            }
+            List<string> value = new List<string> ();
+            if(!String.IsNullOrEmpty(FirstName)) {
+                value.Add(FirstName);
+            }
+            if(!String.IsNullOrEmpty(MiddleName)) {
+                value.Add(MiddleName);
+            }           
+            if(!String.IsNullOrEmpty(LastName)) {
+                value.Add(LastName);
+            }
+            return String.Join (" ", value);
+        }
+
+        public string GetEmailAddress()
+        {
+
+                if (null == EmailAddresses) {
+                    return "";
+                }
+                if (0 == EmailAddresses.Count ()) {
+                    return "";
+                }
+                return EmailAddresses.First ().Value;
         }
     }
 }

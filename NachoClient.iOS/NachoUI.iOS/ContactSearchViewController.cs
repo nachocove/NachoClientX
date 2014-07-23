@@ -99,7 +99,7 @@ namespace NachoClient.iOS
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
-                destinationController.Title = contact.DisplayName;
+                destinationController.Title = contact.GetDisplayName();
             }
         }
 
@@ -133,8 +133,8 @@ namespace NachoClient.iOS
                 contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
 
-            cell.TextLabel.Text = contact.DisplayName;
-            cell.DetailTextLabel.Text = contact.DisplayEmailAddress;
+            cell.TextLabel.Text = contact.GetDisplayName();
+            cell.DetailTextLabel.Text = contact.GetEmailAddress();
 
             return cell;
         }

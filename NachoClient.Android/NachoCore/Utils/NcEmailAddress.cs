@@ -170,7 +170,7 @@ namespace NachoCore.Utils
             MailboxAddress mailbox;
 
             if (null != this.contact) {
-                candidate = this.contact.DisplayEmailAddress;
+                candidate = this.contact.GetEmailAddress();
             } else {
                 candidate = this.address;
             }
@@ -186,7 +186,7 @@ namespace NachoCore.Utils
             }
 
             if (null == mailbox.Name) {
-                mailbox.Name = this.contact.DisplayName;
+                mailbox.Name = this.contact.GetDisplayName();
             }
 
             return mailbox;
