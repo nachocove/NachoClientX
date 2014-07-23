@@ -11,6 +11,12 @@ namespace NachoClient.iOS
 {
 	public partial class SupportViewController : NcUITableViewController
 	{
+        const string SubmitLogText = "Submit a log";
+        const string ContactByEmailText = "Contact us via email";
+        const string SupportEmail = "support@nachocove.com";
+        const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
+        const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
+
 		public SupportViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -37,29 +43,72 @@ namespace NachoClient.iOS
                 UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell ("BasicCell");
                 NcAssert.True (null != cell);
-                cell.TextLabel.Text = "Submit a log";
-                cell.TextLabel.TextColor = UIColor.LightGray;
+                cell.TextLabel.Text = SubmitLogText;
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                 return cell;
             } else if (indexPath.Row == 1) {
                 UITableViewCell cell = null;
-                cell = tableView.DequeueReusableCell ("BasicCell");
+                cell = tableView.DequeueReusableCell ("SubtitleCell");
                 NcAssert.True (null != cell);
-                cell.TextLabel.Text = "Contact us via email";
-                cell.TextLabel.TextColor = UIColor.LightGray;
+                cell.TextLabel.Text = ContactByEmailText;
+                cell.DetailTextLabel.Text = SupportEmail;
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                cell.DetailTextLabel.Lines = 0;
                 return cell;
             } else if (indexPath.Row == 2) {
                 UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell ("SubtitleCell");
                 NcAssert.True (null != cell);
-                cell.TextLabel.Text = "Support Number: +1 (404) 436-2246";
-                cell.TextLabel.TextColor = UIColor.LightGray;
+                cell.TextLabel.Text = ContactByPhoneText;
+                cell.DetailTextLabel.Text = ContactByPhoneDetailText;
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                cell.DetailTextLabel.Lines = 0;
                 return cell;
             }
 
             return null;
+        }
+
+        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            float height = 0;
+
+            var textAttributesDict = new NSDictionary (UIStringAttributeKey.Font, A.Font_AvenirNextRegular14);
+            var detailTextAttributesDict = new NSDictionary (UIStringAttributeKey.Font, A.Font_AvenirNextRegular12);
+            UIStringAttributes textAttrib = new UIStringAttributes(textAttributesDict);
+            UIStringAttributes detailTextAttrib = new UIStringAttributes(detailTextAttributesDict);
+
+            NSString text = null;
+            NSString detailText = null;
+            if (indexPath.Row == 0) {
+                text = new NSString (SubmitLogText);
+            } else if (indexPath.Row == 1) {
+                text = new NSString (ContactByEmailText);
+                detailText = new NSString (SupportEmail);
+            } else if (indexPath.Row == 2) {
+                text = new NSString (ContactByPhoneText);
+                detailText = new NSString (ContactByPhoneDetailText);
+            }
+
+            if (detailText != null) {
+                var detailTextSize = detailText.GetSizeUsingAttributes (detailTextAttrib);
+                var detailRect = text.GetBoundingRect (new System.Drawing.SizeF (detailTextSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, detailTextAttrib, null);
+                height += detailRect.Height;
+            }
+
+            var textSize = text.GetSizeUsingAttributes (textAttrib);
+            var rect = text.GetBoundingRect (new System.Drawing.SizeF (textSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, textAttrib, null);
+
+            return height + rect.Height + 40.0F;
         }
 	}
 }
