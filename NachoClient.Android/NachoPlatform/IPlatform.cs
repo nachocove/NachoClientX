@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using SQLite;
+using NachoCore.Model;
 
 namespace NachoPlatform
 {
@@ -80,5 +82,10 @@ namespace NachoPlatform
     {
         void ScheduleNotif (int handle, DateTime when, string message);
         void CancelNotif (int handle);
+    }
+
+    public interface IPlatformContacts
+    {
+        IEnumerable<McContact> GetContacts ();
     }
 }

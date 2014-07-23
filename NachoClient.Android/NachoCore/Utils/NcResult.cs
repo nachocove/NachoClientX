@@ -67,6 +67,7 @@ namespace NachoCore.Utils
             Info_ServiceUnavailable,
             Info_ValidateConfigSucceeded,
             Info_ExplicitThrottling,
+            Info_NeedContactsPermission,
             // Warning.
             // Error.
             Error_NetworkUnavailable,

@@ -314,6 +314,7 @@
     <Compile Include="NachoCore\Utils\NcTimerPool.cs" />
     <Compile Include="NachoPlatform.Android\PlatformUserColorIndex.cs" />
     <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
+    <Compile Include="NachoPlatform.Android\ContactsAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

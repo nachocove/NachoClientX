@@ -1033,6 +1033,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McContactEmailAddressAttribute.cs">
       <Link>NachoCore\Model\McContactEmailAddressAttribute.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\ContactsiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
