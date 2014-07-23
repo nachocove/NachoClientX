@@ -92,6 +92,7 @@ def main():
     platform = parser.add_mutually_exclusive_group()
     platform.add_argument('--ios', action='store_true', help='upload iOS dSYM file')
     platform.add_argument('--android', action='store_true', help='upload Android mapping file [not implemented yet]')
+    parser.add_argument('--no-skip', action='store_true', help='Ignore .skip_hockeyapp_upload.')
     parser.add_argument('target_dir', nargs='?', help='Xamarin target directory')
 
     options = parser.parse_args()
@@ -100,8 +101,10 @@ def main():
         parser.print_help()
         exit(0)
 
-    # if .skip_hockeyapp_upload exists, early exit
-    if os.path.exists('.skip_hockeyapp_upload'):
+    # if .skip_hockeyapp_upload exists, early exit unless --no-skip is used
+    # This option is to make sure that we don't forget to upload dsym
+    # for official (beta / app store) builds.
+    if not options.no_skip and os.path.exists('.skip_hockeyapp_upload'):
         print 'Skipping HockeyApp upload.'
         exit(0)
 
