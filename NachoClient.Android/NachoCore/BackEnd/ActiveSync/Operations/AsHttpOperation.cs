@@ -616,7 +616,7 @@ namespace NachoCore.ActiveSync
                     return Event.Create ((uint)HttpOpEvt.E.Rephrase, "HTTPOP404R");
                 } else {
                     Owner.ResolveAllFailed (NcResult.WhyEnum.MissingOnServer);
-                    return Final ((uint)SmEvt.E.HardFail, "HTTPOP404F", null, "HttpStatusCode.NotFound");
+                    return Final ((uint)SmEvt.E.HardFail, "HTTPOP404F", (int?)HttpStatusCode.NotFound, "HttpStatusCode.NotFound");
                 }
 
             case (HttpStatusCode)449:

@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Net;
 using NachoCore.Utils;
 using NachoCore.Model;
 
@@ -39,7 +40,7 @@ namespace NachoCore.ActiveSync
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoYes, State = (uint)St.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoNoComm, State = (uint)St.Stop },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNoComm, State = (uint)St.Stop },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNoUOrC, State = (uint)St.Stop },
                             new Trans { Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoYes, State = (uint)St.Stop },
                             new Trans { Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoYes, State = (uint)St.Stop },
                             new Trans { Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoYes, State = (uint)St.Stop },
@@ -71,6 +72,15 @@ namespace NachoCore.ActiveSync
         private void DoNoAuth ()
         {
             BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth));
+        }
+
+        private void DoNoUOrC ()
+        {
+            if (((int?)HttpStatusCode.NotFound) == Sm.Arg as int?) {
+                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedUser));
+            } else {
+                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth));
+            }
         }
 
         public void Execute (McServer server, McCred cred)

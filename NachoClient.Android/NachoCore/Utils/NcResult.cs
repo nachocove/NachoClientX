@@ -124,6 +124,7 @@ namespace NachoCore.Utils
             Error_AutoDError601,
             Error_ValidateConfigFailedAuth,
             Error_ValidateConfigFailedComm,
+            Error_ValidateConfigFailedUser,
         };
 
         public enum WhyEnum {
