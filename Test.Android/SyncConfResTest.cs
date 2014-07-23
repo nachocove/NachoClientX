@@ -60,7 +60,7 @@ namespace Test.iOS
                 }
             }
 
-            public Inbox SetState<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
+            public Inbox SetState<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, string> clientOp) where T : McAbstrItem, new()
             {
                 Inbox inbox = new Inbox (() => {
                     return FolderOps.CreateUniqueItem<T> ();
@@ -68,9 +68,20 @@ namespace Test.iOS
 
                 SetSyncStrategy (inbox.Folder);
 
+                bool[] statusIndsPosted = {false};
+                MockOwner.StatusIndCallback += (result) => {
+                    if (result.SubKind == opSubKind) {
+                        statusIndsPosted[0] = true;
+                    }
+                };
+
                 ProtoOps.DoClientSideCmds (Context, () => {
                     inbox.Token = clientOp (inbox.Item.Id); 
                 });
+
+                if (opSubKind != NcResult.SubKindEnum.NotSpecified) {
+                    foreach (bool item in statusIndsPosted) { Assert.True (item, "A StatusInd was not set correctly"); }
+                }
 
                 SyncCmd = CreateSyncCmd (Context);
 
@@ -152,13 +163,25 @@ namespace Test.iOS
         [TestFixture]
         public class FolderDeleteTests : BaseSyncConfResTest
         {
-            private void SyncGenericOp (TypeCode topFolderType, Func<string, string, string> makeItemOpXml)
+            public void SyncGenericOp (TypeCode topFolderType, NcResult.SubKindEnum opSubKind, Func<string, string, string> makeItemOpXml)
             {
+
                 // If the pending's ServerId dominates the command's ServerId, then drop the command.
                 var itemServerId = "5";
                 var topFolder = ProtoOps.CreateTopFolder (withPath: true, type: topFolderType);
 
+                bool[] statusIndsPosted = {false, false};
+
                 SetSyncStrategy (topFolder);
+
+                MockOwner.StatusIndCallback += (result) => {
+                    if (result.SubKind == NcResult.SubKindEnum.Info_FolderSetChanged) {
+                        statusIndsPosted[0] = true;
+                    }
+                    if (result.SubKind == opSubKind) {
+                        statusIndsPosted[1] = true;
+                    }
+                };
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
@@ -179,6 +202,9 @@ namespace Test.iOS
 
                 var foundItem = foundPending.GetItem ();
                 Assert.Null (foundItem, "Command to create item should be dropped by the server");
+
+                // make sure all StatusInd calls were made correctly
+                foreach (bool item in statusIndsPosted) { Assert.True (item, "A StatusInd was not set correctly"); }
             }
 
             // create cal, contact, and task
@@ -186,22 +212,25 @@ namespace Test.iOS
             public void SyncAdd ()
             {
                 XNamespace calNs = ClassCode.Calendar;
-                SyncGenericOp (TypeCode.DefaultCal_8,
-                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (calNs + "Subject", "(SERVER)"))
+                SyncGenericOp (TypeCode.DefaultCal_8, NcResult.SubKindEnum.Info_CalendarSetChanged,
+                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, 
+                        new XElement (calNs + "Subject", "(SERVER)"))
                 );
 
                 SetUp ();
 
                 XNamespace contactNs = ClassCode.Contacts;
-                SyncGenericOp (TypeCode.DefaultContacts_9,
-                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (contactNs + "FirstName", "(SERVER)"))
+                SyncGenericOp (TypeCode.DefaultContacts_9, NcResult.SubKindEnum.Info_ContactSetChanged, 
+                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, 
+                        new XElement (contactNs + "FirstName", "(SERVER)"))
                 );
 
                 SetUp ();
 
                 XNamespace taskNs = ClassCode.Tasks;
-                SyncGenericOp (TypeCode.DefaultTasks_7,
-                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, new XElement (taskNs + "Subject", "(SERVER)"))
+                SyncGenericOp (TypeCode.DefaultTasks_7, NcResult.SubKindEnum.Info_TaskSetChanged, 
+                    (serverId, parentId) => SyncAddItemCmdXml (serverId, parentId, 
+                        new XElement (taskNs + "Subject", "(SERVER)"))
                 );
             }
 
@@ -210,7 +239,7 @@ namespace Test.iOS
             {
                 var calCode = ClassCode.Calendar;
                 XNamespace calNs = calCode;
-                SyncGenericOp (TypeCode.DefaultCal_8,
+                SyncGenericOp (TypeCode.DefaultCal_8, NcResult.SubKindEnum.Info_CalendarChanged,
                     (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, calCode, new XElement (calNs + "Subject", "(SERVER)"))
                 );
 
@@ -218,7 +247,7 @@ namespace Test.iOS
 
                 var contactCode = ClassCode.Contacts;
                 XNamespace contactNs = contactCode;
-                SyncGenericOp (TypeCode.DefaultContacts_9,
+                SyncGenericOp (TypeCode.DefaultContacts_9, NcResult.SubKindEnum.Info_ContactChanged,
                     (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, contactCode, new XElement (contactNs + "FirstName", "(SERVER)"))
                 );
 
@@ -226,7 +255,7 @@ namespace Test.iOS
 
                 var taskCode = ClassCode.Tasks;
                 XNamespace taskNs = taskCode;
-                SyncGenericOp (TypeCode.DefaultTasks_7,
+                SyncGenericOp (TypeCode.DefaultTasks_7, NcResult.SubKindEnum.Info_TaskChanged,
                     (serverId, parentId) => SyncUpdateCmdItemXml (serverId, parentId, taskCode, new XElement (taskNs + "Subject", "(SERVER)"))
                 );
             }
@@ -234,7 +263,7 @@ namespace Test.iOS
             [Test]
             public void SyncDelete ()
             {
-                SyncGenericOp (TypeCode.DefaultCal_8,
+                SyncGenericOp (TypeCode.DefaultCal_8, NcResult.SubKindEnum.Info_CalendarSetChanged,
                     (serverId, parentId) => {
                         var cal = FolderOps.CreateUniqueItem<McCalendar> (defaultAccountId, serverId: serverId);
                         PathOps.CreatePath (defaultAccountId, serverId: cal.ServerId, parentId: parentId);
@@ -244,7 +273,7 @@ namespace Test.iOS
 
                 SetUp ();
 
-                SyncGenericOp (TypeCode.DefaultContacts_9,
+                SyncGenericOp (TypeCode.DefaultContacts_9, NcResult.SubKindEnum.Info_ContactSetChanged,
                     (serverId, parentId) => {
                         var cont = FolderOps.CreateUniqueItem<McContact> (defaultAccountId, serverId: serverId);
                         PathOps.CreatePath (defaultAccountId, serverId: cont.ServerId, parentId: parentId);
@@ -254,7 +283,7 @@ namespace Test.iOS
 
                 SetUp ();
 
-                SyncGenericOp (TypeCode.DefaultTasks_7,
+                SyncGenericOp (TypeCode.DefaultTasks_7, NcResult.SubKindEnum.Info_TaskSetChanged,
                     (serverId, parentId) => {
                         var task = FolderOps.CreateUniqueItem<McTask> (defaultAccountId, serverId: serverId);
                         PathOps.CreatePath (defaultAccountId, serverId: task.ServerId, parentId: parentId);
@@ -264,7 +293,7 @@ namespace Test.iOS
 
                 SetUp ();
 
-                SyncGenericOp (TypeCode.DefaultInbox_2,
+                SyncGenericOp (TypeCode.DefaultInbox_2, NcResult.SubKindEnum.Info_EmailMessageSetChanged,
                     (serverId, parentId) => {
                         var email = FolderOps.CreateUniqueItem<McEmailMessage> (defaultAccountId, serverId: serverId);
                         PathOps.CreatePath (defaultAccountId, serverId: email.ServerId, parentId: parentId);
@@ -281,14 +310,17 @@ namespace Test.iOS
             public void SyncDelete ()
             {
                 // If the pending's ServerId dominates the command's ServerId, then drop the command.
-                var itemServerId = "5";
-                var topFolder = ProtoOps.CreateTopFolder (withPath: true, type: TypeCode.DefaultInbox_2);
-                var email = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: itemServerId);
-                topFolder.Link (email);
-                PathOps.CreatePath (defaultAccountId, email.ServerId, topFolder.ServerId);
-                var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+                var inbox = new Inbox (() => FolderOps.CreateUniqueItem<McEmailMessage> ());
+                var att = FolderOps.CreateAttachment (item: inbox.Item, displayName: "My-Attachment");
 
-                SetSyncStrategy (topFolder);
+                bool[] statusIndsPosted = {false};
+                MockOwner.StatusIndCallback += (result) => {
+                    if (result.SubKind == NcResult.SubKindEnum.Info_EmailMessageSetChanged) {
+                        statusIndsPosted[0] = true;
+                    }
+                };
+
+                SetSyncStrategy (inbox.Folder);
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
@@ -298,17 +330,19 @@ namespace Test.iOS
 
                 SyncCmd = CreateSyncCmd (Context);
 
-                var itemOpXml = SyncDeleteCmdItemXml (itemServerId, topFolder.ServerId, ClassCode.Email);
+                var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Email);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
                 var foundPending = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (foundPending, "Pending should be deleted by client");
 
-                var foundItem = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, email.ServerId);
+                var foundItem = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, inbox.Item.ServerId);
                 Assert.Null (foundItem, "Item should be deleted by the server");
 
-                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
+                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, inbox.Folder.ServerId);
                 Assert.NotNull (foundFolder, "Folder should not be deleted by the server");
+
+                foreach (bool item in statusIndsPosted) { Assert.True (item, "A StatusInd was not set correctly"); }
             }
         }
 
@@ -319,32 +353,38 @@ namespace Test.iOS
             public void TestSyncDelete ()
             {
                 // If the pending's ServerId matches the command's ServerId, then delete the pending MeetingResponse.
-                var topFolder = ProtoOps.CreateTopFolder (withPath: true);
-                var cal = FolderOps.CreateUniqueItem<McCalendar> ();
-                topFolder.Link (cal);
-                PathOps.CreatePath (defaultAccountId, cal.ServerId, topFolder.ServerId);
+                var inbox = new Inbox (() => FolderOps.CreateUniqueItem<McCalendar> ());
                 var response = NcResponseType.Accepted;
 
-                SetSyncStrategy (topFolder);
+                bool[] statusIndsPosted = {false};
+                MockOwner.StatusIndCallback += (result) => {
+                    if (result.SubKind == NcResult.SubKindEnum.Info_CalendarSetChanged) {
+                        statusIndsPosted[0] = true;
+                    }
+                };
+
+                SetSyncStrategy (inbox.Folder);
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.RespondCalCmd (cal.Id, response);
+                    token = Context.ProtoControl.RespondCalCmd (inbox.Item.Id, response);
                 });
 
                 SyncCmd = CreateSyncCmd (Context);
 
-                var itemOpXml = SyncDeleteCmdItemXml (cal.ServerId, topFolder.ServerId, ClassCode.Calendar);
+                var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Calendar);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
                 var foundPending = McPending.QueryByToken (defaultAccountId, token);
                 Assert.Null (foundPending, "Pending should be deleted by client");
 
-                var foundItem = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
+                var foundItem = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, inbox.Item.ServerId);
                 Assert.Null (foundItem, "Item should be deleted by the server");
 
-                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
+                var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, inbox.Folder.ServerId);
                 Assert.NotNull (foundFolder, "Folder should not be deleted by the server");
+
+                foreach (bool item in statusIndsPosted) { Assert.True (item, "A StatusInd was not set correctly"); }
             }
         }
 
@@ -359,7 +399,7 @@ namespace Test.iOS
                 BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
             }
 
-            private Inbox SetStateWithDestFolder<T> (string code, Func<int, int, string> clientOp) where T : McAbstrItem, new()
+            private Inbox SetStateWithDestFolder<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, int, string> clientOp) where T : McAbstrItem, new()
             {
                 Inbox inbox = new Inbox (() => {
                     return FolderOps.CreateUniqueItem<T> ();
@@ -369,9 +409,18 @@ namespace Test.iOS
 
                 SetSyncStrategy (inbox.Folder);
 
+                bool[] statusIndsPosted = {false};
+                MockOwner.StatusIndCallback += (result) => {
+                    if (result.SubKind == opSubKind) {
+                        statusIndsPosted[0] = true;
+                    }
+                };
+
                 ProtoOps.DoClientSideCmds (Context, () => {
                     inbox.Token = clientOp (inbox.Item.Id, inbox.DestFolder.Id); 
                 });
+
+                foreach (bool item in statusIndsPosted) { Assert.True (item, "A StatusInd was not set correctly"); }
 
                 SyncCmd = CreateSyncCmd (Context);
 
@@ -381,14 +430,32 @@ namespace Test.iOS
             [Test]
             public void TestSyncDeleteForAllItems ()
             {
-                TestSyncDelete<McCalendar> (ClassCode.Calendar, (itemId, folderServerId) => {
+                TestSyncDelete<McCalendar> (ClassCode.Calendar, NcResult.SubKindEnum.Info_CalendarSetChanged, (itemId, folderServerId) => {
                     return Context.ProtoControl.MoveCalCmd (itemId, folderServerId);
+                });
+
+                SetUp ();
+
+                TestSyncDelete<McContact> (ClassCode.Contacts, NcResult.SubKindEnum.Info_ContactSetChanged, (itemId, folderServerId) => {
+                    return Context.ProtoControl.MoveContactCmd (itemId, folderServerId);
+                });
+
+                SetUp ();
+
+                TestSyncDelete<McTask> (ClassCode.Tasks, NcResult.SubKindEnum.Info_TaskSetChanged, (itemId, folderServerId) => {
+                    return Context.ProtoControl.MoveTaskCmd (itemId, folderServerId);
+                });
+
+                SetUp ();
+
+                TestSyncDelete<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId, folderServerId) => {
+                    return Context.ProtoControl.MoveEmailCmd (itemId, folderServerId);
                 });
             }
 
-            public void TestSyncDelete<T> (string code, Func<int, int, string> clientOp) where T : McAbstrItem, new()
+            public void TestSyncDelete<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, int, string> clientOp) where T : McAbstrItem, new()
             {
-                var inbox = SetStateWithDestFolder<T> (code, clientOp);
+                var inbox = SetStateWithDestFolder<T> (code, opSubKind, clientOp);
 
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Calendar);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
@@ -408,33 +475,33 @@ namespace Test.iOS
             [Test]
             public void TestSyncChangeForAllItems ()
             {
-                TestSyncChange<McCalendar> (ClassCode.Calendar, (itemId) => {
+                TestSyncChange<McCalendar> (ClassCode.Calendar, NcResult.SubKindEnum.Info_CalendarSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteCalCmd (itemId);
                 });
 
                 SetUp ();
 
-                TestSyncChange<McContact> (ClassCode.Contacts, (itemId) => {
+                TestSyncChange<McContact> (ClassCode.Contacts, NcResult.SubKindEnum.Info_ContactSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteContactCmd (itemId);
                 });
 
                 SetUp ();
 
-                TestSyncChange<McTask> (ClassCode.Tasks, (itemId) => {
+                TestSyncChange<McTask> (ClassCode.Tasks, NcResult.SubKindEnum.Info_TaskSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteTaskCmd (itemId);
                 });
 
                 SetUp ();
 
-                TestSyncChange<McEmailMessage> (ClassCode.Email, (itemId) => {
+                TestSyncChange<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteEmailCmd (itemId);
                 });
             }
 
-            private void TestSyncChange<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
+            private void TestSyncChange<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, string> clientOp) where T : McAbstrItem, new()
             {
                 // If the ServerIds match, then delete the command.
-                var inbox = SetState<T> (code, clientOp);
+                var inbox = SetState<T> (code, opSubKind, clientOp);
 
                 var itemOpXml = SyncUpdateCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, code,
                     new XElement (code + "Subject", "(SERVER)")
@@ -451,33 +518,33 @@ namespace Test.iOS
             [Test]
             public void TestSyncDeleteForAllItems ()
             {
-                TestSyncDelete<McCalendar> (ClassCode.Calendar, (itemId) => {
+                TestSyncDelete<McCalendar> (ClassCode.Calendar, NcResult.SubKindEnum.Info_CalendarSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteCalCmd (itemId);
                 });
 
                 SetUp ();
 
-                TestSyncDelete<McContact> (ClassCode.Contacts, (itemId) => {
+                TestSyncDelete<McContact> (ClassCode.Contacts, NcResult.SubKindEnum.Info_ContactSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteContactCmd (itemId);
                 });
 
                 SetUp ();
 
-                TestSyncDelete<McTask> (ClassCode.Tasks, (itemId) => {
+                TestSyncDelete<McTask> (ClassCode.Tasks, NcResult.SubKindEnum.Info_TaskSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteTaskCmd (itemId);
                 });
 
                 SetUp ();
 
-                TestSyncDelete<McEmailMessage> (ClassCode.Email, (itemId) => {
+                TestSyncDelete<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteEmailCmd (itemId);
                 });
             }
 
-            private void TestSyncDelete<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
+            private void TestSyncDelete<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, string> clientOp) where T : McAbstrItem, new()
             {
                 // If ServerIds match, then the delete has already been done by the client. delete both the command and the pending.
-                var inbox = SetState<T> (code, clientOp);
+                var inbox = SetState<T> (code, opSubKind, clientOp);
 
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, code);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
@@ -524,7 +591,9 @@ namespace Test.iOS
             public void TestSyncDelete<T> (string code, Func<int, string> clientOp) where T : McAbstrItem, new()
             {
                 // If the ServerIds match, then move the item to lost+found and delete the pending.
-                var inbox = SetState<T> (code, clientOp);
+
+                // testing StatusInd does not apply in this case
+                var inbox = SetState<T> (code, NcResult.SubKindEnum.NotSpecified, clientOp);
 
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Calendar);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);

@@ -164,16 +164,27 @@ namespace Test.iOS
 
     public class MockOwner : IProtoControlOwner
     {
+        // register a callback in order to track StatusInd notifications
+        public delegate void ViewStatusIndMessageDelegate (NcResult result);
+        public static event ViewStatusIndMessageDelegate StatusIndCallback;
+
         // Helper property added for test purposes only
         public static NcResult Status { get; set; }
 
         // Use these to check which error code was posted
         public void StatusInd (ProtoControl sender, NcResult status)
         {
+            if (StatusIndCallback != null) {
+                StatusIndCallback (status);
+            }
             Status = status;
         }
+
         public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
         {
+            if (StatusIndCallback != null) {
+                StatusIndCallback (status);
+            }
             Status = status;
         }
 
