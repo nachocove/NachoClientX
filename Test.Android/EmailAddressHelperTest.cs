@@ -41,35 +41,35 @@ namespace Test.Android
             };
 
             // Single email address, no display name
-            InternetAddressList got1 = NcEmailAddress.ParseString ("henryk@nachocove.com");
+            InternetAddressList got1 = NcEmailAddress.ParseAddressListString ("henryk@nachocove.com");
             Compare (expected1, got1);
 
             // Multiple email addresses, no display name
-            InternetAddressList got2a = NcEmailAddress.ParseString ("henryk@nachocove.com,jeffe@nachocove.com");
+            InternetAddressList got2a = NcEmailAddress.ParseAddressListString ("henryk@nachocove.com,jeffe@nachocove.com");
             Compare (expected2, got2a);
 
-            InternetAddressList got2b = NcEmailAddress.ParseString ("henryk@nachocove.com, jeffe@nachocove.com");
+            InternetAddressList got2b = NcEmailAddress.ParseAddressListString ("henryk@nachocove.com, jeffe@nachocove.com");
             Compare (expected2, got2b);
 
             // Multiple email addresses, with display name
-            InternetAddressList got3a = NcEmailAddress.ParseString ("Henry Kwok <henryk@nachocove.com>,Jeff Enderwick <jeffe@nachocove.com>");
+            InternetAddressList got3a = NcEmailAddress.ParseAddressListString ("Henry Kwok <henryk@nachocove.com>,Jeff Enderwick <jeffe@nachocove.com>");
             Compare (expected3, got3a);
 
-            InternetAddressList got3b = NcEmailAddress.ParseString ("Henry Kwok <henryk@nachocove.com>, Jeff Enderwick <jeffe@nachocove.com>");
+            InternetAddressList got3b = NcEmailAddress.ParseAddressListString ("Henry Kwok <henryk@nachocove.com>, Jeff Enderwick <jeffe@nachocove.com>");
             Compare (expected3, got3b);
 
-            InternetAddressList got4 = NcEmailAddress.ParseString ("\"Henry Kwok\" <henryk@nachocove.com>, \"Jeff Enderwick\" <jeffe@nachocove.com>, Steve Scalpone <steves@nachocove.com>");
+            InternetAddressList got4 = NcEmailAddress.ParseAddressListString ("\"Henry Kwok\" <henryk@nachocove.com>, \"Jeff Enderwick\" <jeffe@nachocove.com>, Steve Scalpone <steves@nachocove.com>");
             Compare (expected4, got4);
 
             // We think this address is illegal
-            InternetAddressList got5 = NcEmailAddress.ParseString(@"""Amazon Web Services, Inc."" <no-reply-aws@amazon.com<mailto:no-reply-aws@amazon.com>>");
+            InternetAddressList got5 = NcEmailAddress.ParseAddressListString(@"""Amazon Web Services, Inc."" <no-reply-aws@amazon.com<mailto:no-reply-aws@amazon.com>>");
             Assert.AreEqual (0, got5.Count);
 
             // We think this address is illegal
-            InternetAddressList got6 = NcEmailAddress.ParseString(@"""Jeff Enderwick"" <jeffe@nachocove.com<mailto:jeffe@nachocove.com>>");
+            InternetAddressList got6 = NcEmailAddress.ParseAddressListString(@"""Jeff Enderwick"" <jeffe@nachocove.com<mailto:jeffe@nachocove.com>>");
             Assert.AreEqual (0, got6.Count);
 
-            InternetAddressList got7 = NcEmailAddress.ParseString ("\"Henry Kwok\" <henryk@nachocove.com>");
+            InternetAddressList got7 = NcEmailAddress.ParseAddressListString ("\"Henry Kwok\" <henryk@nachocove.com>");
             Compare (expected7, got7);
         }
 
