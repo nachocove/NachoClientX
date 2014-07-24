@@ -618,7 +618,8 @@ namespace NachoClient.iOS
             this.TextColor = UIColor.Black;
             this.theDetail = detail;
             this.inputText = inputText;
-
+            inputText.TextColor = UIColor.Gray;
+            inputText.Text = theDetail;
         }
         public override UITableViewCell GetCell (UITableView tv)
         {
@@ -632,11 +633,9 @@ namespace NachoClient.iOS
             }
 
             inputText.Font = A.Font_AvenirNextMedium14;
-            inputText.TextColor = UIColor.Gray;
-            inputText.Text = theDetail;
             inputText.Frame = new RectangleF (150, 0, cell.Frame.Width - 150, cell.Frame.Height);
             inputText.TextAlignment = UITextAlignment.Left;
-            inputText.ReturnKeyType = UIReturnKeyType.Done;
+            inputText.ReturnKeyType = UIReturnKeyType.Default;
             cell.ContentView.Add (inputText);
 
             return cell;
