@@ -51,6 +51,10 @@ namespace NachoClient.iOS
 
         UIToolbar keyboardToolbar;
 
+        NcEmailAddress PresetToAddress;
+        string PresetSubject;
+        string EmailTemplate;
+
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
@@ -62,6 +66,14 @@ namespace NachoClient.iOS
         public void SetOwner (INachoMessageEditorParent o)
         {
             owner = o;
+        }
+
+        // Can be called by owner to set a pre-existing To: address, subject, and email template
+        public void SetEmailAddressAndTemplate (NcEmailAddress toAddress, string subject = null, string emailTemplate = null)
+        {
+            PresetToAddress = toAddress;
+            PresetSubject = subject;
+            EmailTemplate = emailTemplate;
         }
 
         public override void ViewDidLoad ()
@@ -252,6 +264,9 @@ namespace NachoClient.iOS
             subjectField.Font = A.Font_AvenirNextRegular14;
             subjectField.TextColor = A.Color_808080;
             subjectField.Placeholder = "No subject";
+            if (PresetSubject != null) {
+                subjectField.Text += PresetSubject;
+            }
             subjectField.SizeToFit ();
 
             priorityButton = UIButton.FromType (UIButtonType.ContactAdd);
@@ -262,6 +277,9 @@ namespace NachoClient.iOS
             bodyTextView.Font = A.Font_AvenirNextRegular14;
             bodyTextView.TextColor = A.Color_808080;
             bodyTextView.ContentInset = new UIEdgeInsets (0, 15, 0, -15);
+            if (EmailTemplate != null) {
+                bodyTextView.InsertText (EmailTemplate);
+            }
             bodyTextView.InsertText ("\n"+ "\n" +"This email sent by NachoMail");
             var beginningRange = new NSRange (0, 0);
             bodyTextView.SelectedRange = beginningRange;
@@ -299,6 +317,10 @@ namespace NachoClient.iOS
             bodyTextView.Changed += (object sender, EventArgs e) => {
                 SelectionChanged (bodyTextView);
             };
+
+            if (PresetToAddress != null) {
+                UpdateEmailAddress (PresetToAddress);
+            }
 
 //            attachmentView.BackgroundColor = UIColor.Yellow;
 //            bodyTextView.BackgroundColor = UIColor.Gray;

@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
 using NachoCore.Utils;
+using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
@@ -64,12 +65,38 @@ namespace NachoClient.iOS
 
         public void SubmitALog ()
         {
-            PerformSegue (SupportToComposeSegueId, this);
+            var messageContent = new Dictionary<string, string>()
+            {
+                { "subject", "Additional log information" },
+            };
+            PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
         }
 
         public void ContactViaEmail ()
         {
-            PerformSegue (SupportToComposeSegueId, this);
+            PerformSegue (SupportToComposeSegueId, new SegueHolder (null));
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals (SupportToComposeSegueId)) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                NcEmailAddress address = new NcEmailAddress (NcEmailAddress.Kind.To, SupportEmail);
+
+                var holder = sender as SegueHolder;
+                var contents = (Dictionary<string, string>)holder.value;
+
+                string subject = null;
+                if (contents != null) {
+                    contents.TryGetValue ("subject", out subject);
+                }
+
+                dc.SetEmailAddressAndTemplate (address, subject);
+                return;
+            }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifier {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -101,6 +128,7 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 break;
             }
 
