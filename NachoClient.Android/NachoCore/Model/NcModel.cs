@@ -37,7 +37,7 @@ namespace NachoCore.Model
                         storeDateTimeAsTicks: true);
                     db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                     db.TraceThreshold = 100;
-                    DbConns.TryAdd (threadId, db);
+                    NcAssert.True (DbConns.TryAdd (threadId, db));
                 }
                 return db;
             } 

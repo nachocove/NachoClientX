@@ -16,25 +16,27 @@ namespace NachoClient.iOS
         AppDelegate appDelegate;
 
         private void EnterFullConfiguration () {
-            // You will always need to supply user credentials (until certs, for sure).
-            var cred = new McCred () { Username = txtUserName.Text, Password = txtPassword.Text };
-            cred.Insert ();
-            // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
-            var server = new McServer () { Host = txtServerName.Text };
-            server.Insert ();
-            // In the near future, you won't need to create this protocol state object.
-            var protocolState = new McProtocolState ();
-            protocolState.Insert ();
-            var policy = new McPolicy ();
-            policy.Insert ();
-            // You will always need to supply the user's email address.
-            appDelegate.Account = new McAccount () { EmailAddr = txtUserName.Text };
-            // The account object is the "top", pointing to credential, server, and opaque protocol state.
-            appDelegate.Account.CredId = cred.Id;
-            appDelegate.Account.ServerId = server.Id;
-            appDelegate.Account.ProtocolStateId = protocolState.Id;
-            appDelegate.Account.PolicyId = policy.Id;
-            appDelegate.Account.Insert ();
+            NcModel.Instance.RunInTransaction (() => {
+                // You will always need to supply user credentials (until certs, for sure).
+                var cred = new McCred () { Username = txtUserName.Text, Password = txtPassword.Text };
+                cred.Insert ();
+                // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
+                var server = new McServer () { Host = txtServerName.Text };
+                server.Insert ();
+                // In the near future, you won't need to create this protocol state object.
+                var protocolState = new McProtocolState ();
+                protocolState.Insert ();
+                var policy = new McPolicy ();
+                policy.Insert ();
+                // You will always need to supply the user's email address.
+                appDelegate.Account = new McAccount () { EmailAddr = txtUserName.Text };
+                // The account object is the "top", pointing to credential, server, and opaque protocol state.
+                appDelegate.Account.CredId = cred.Id;
+                appDelegate.Account.ServerId = server.Id;
+                appDelegate.Account.ProtocolStateId = protocolState.Id;
+                appDelegate.Account.PolicyId = policy.Id;
+                appDelegate.Account.Insert ();
+            });
             BackEnd.Instance.Start (appDelegate.Account.Id);
         }
 
@@ -64,7 +66,6 @@ namespace NachoClient.iOS
         }
         partial void btnLaunchAcct (MonoTouch.Foundation.NSObject sender){
             EnterFullConfiguration();
-            BackEnd.Instance.Start ();
         
             //[self dismissViewControllerAnimated:TRUE completion:nil];
             DismissViewController(true, null);

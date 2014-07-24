@@ -113,7 +113,7 @@ namespace NachoCore
         }
 
         // DON'T PUT Stop in a Task.Run. We want to execute as much as possible immediately.
-        // Under iOS, there is a deadline. The ProtoControl's ForceStop must stop everything and 
+        // Under iOS, there is a deadline. The ProtoControl's ForceStop must stop everything and
         // return without waiting.
         public void Stop ()
         {
@@ -164,39 +164,47 @@ namespace NachoCore
 
         public void EstablishService (int accountId)
         {
-            NcModel.Instance.RunInTransaction (delegate {
-                // TODO: this is AS-specific.
-                var service = new AsProtoControl (this, accountId);
-                if (!Services.TryAdd (accountId, service)) {
-                    // Concurrency. Another thread has jumped in and done the add.
-                    Log.Info (Log.LOG_AS, "Another thread has already called EstablishService");
-                }
-                // Create client owned objects as needed.
-                McFolder freshMade;
+            // TODO: this is AS-specific.
+            var service = new AsProtoControl (this, accountId);
+            if (!Services.TryAdd (accountId, service)) {
+                // Concurrency. Another thread has jumped in and done the add.
+                Log.Info (Log.LOG_AS, "Another thread has already called EstablishService");
+            }
+            // Create client owned objects as needed.
+            McFolder freshMade;
+            NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, false, "0",
                         McFolder.ClientOwned_Outbox, "Device Outbox",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
+            });
+            NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, false, "0",
                         McFolder.ClientOwned_Drafts, "Device Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
                     freshMade.Insert ();
                 }
+            });
+            NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetGalCacheFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, true, "0",
                         McFolder.ClientOwned_GalCache, string.Empty,
                         Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
                 }
+            });
+            NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetGleanedFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, true, "0",
                         McFolder.ClientOwned_Gleaned, string.Empty,
                         Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
                 }
+            });
+            NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetLostAndFoundFolder (accountId)) {
                     freshMade = McFolder.Create (accountId, true, true, "0",
                         McFolder.ClientOwned_LostAndFound, string.Empty,
@@ -211,7 +219,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) called", accountId);
             NcTask.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
-                if (! HasServiceFromAccountId (accountId)) {
+                if (!HasServiceFromAccountId (accountId)) {
                     EstablishService (accountId);
                 }
                 ServiceFromAccountId (accountId).Execute ();
@@ -257,6 +265,7 @@ namespace NachoCore
         {
             ServiceFromAccountId (accountId).UnblockPendingCmd (pendingId);
         }
+
         public void DeletePendingCmd (int accountId, int pendingId)
         {
             ServiceFromAccountId (accountId).DeletePendingCmd (pendingId);
@@ -284,14 +293,14 @@ namespace NachoCore
         }
 
         public string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
-                                 int folderId, bool originalEmailIsEmbedded)
+                                       int folderId, bool originalEmailIsEmbedded)
         {
             return ServiceFromAccountId (accountId).ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
                 folderId, originalEmailIsEmbedded);
         }
 
         public string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
-                               int folderId, bool originalEmailIsEmbedded)
+                                     int folderId, bool originalEmailIsEmbedded)
         {
             return ServiceFromAccountId (accountId).ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
                 folderId, originalEmailIsEmbedded);
@@ -341,7 +350,7 @@ namespace NachoCore
         {
             return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
         }
-            
+
         public string DnldCalBodyCmd (int accountId, int calId)
         {
             return ServiceFromAccountId (accountId).DnldCalBodyCmd (calId);
@@ -353,7 +362,7 @@ namespace NachoCore
         }
 
         public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
-                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
+                                       DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return ServiceFromAccountId (accountId).SetEmailFlagCmd (emailMessageId, flagType, 
                 start, utcStart, due, utcDue);
@@ -365,7 +374,7 @@ namespace NachoCore
         }
 
         public string MarkEmailFlagDone (int accountId, int emailMessageId,
-                                   DateTime completeTime, DateTime dateCompleted)
+                                         DateTime completeTime, DateTime dateCompleted)
         {
             return ServiceFromAccountId (accountId).MarkEmailFlagDone (emailMessageId,
                 completeTime, dateCompleted);
@@ -445,7 +454,7 @@ namespace NachoCore
         {
             return ServiceFromAccountId (accountId).RenameFolderCmd (folderId, displayName);
         }
-            
+
         public bool ValidateConfig (int accountId, McServer server, McCred cred)
         {
             if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
