@@ -1103,7 +1103,7 @@ namespace NachoClient.iOS
 
                 var notesTap = new UITapGestureRecognizer ();
                 notesTap.AddTarget (() => {
-                    PerformSegue ("EventToNotes", this);
+                    //PerformSegue ("EventToNotes", this);
                 });
                 eventNotesView.AddGestureRecognizer (notesTap);
                 EventInfoView.Add (eventNotesView);
