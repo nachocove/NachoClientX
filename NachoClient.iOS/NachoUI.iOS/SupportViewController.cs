@@ -53,12 +53,12 @@ namespace NachoClient.iOS
 
         public void SubmitALog ()
         {
-
+            PerformSegue ("SupportToEmailCompose", this);
         }
 
         public void ContactViaEmail ()
         {
-
+            PerformSegue ("SupportToEmailCompose", this);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
