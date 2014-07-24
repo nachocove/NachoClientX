@@ -39,43 +39,37 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
+            UITableViewCell cell = null;
+
             if (indexPath.Row == 0) {
-                UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell ("BasicCell");
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = SubmitLogText;
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                return cell;
             } else if (indexPath.Row == 1) {
-                UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell ("SubtitleCell");
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByEmailText;
                 cell.DetailTextLabel.Text = SupportEmail;
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
                 cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
-                return cell;
             } else if (indexPath.Row == 2) {
-                UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell ("SubtitleCell");
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByPhoneText;
                 cell.DetailTextLabel.Text = ContactByPhoneDetailText;
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
                 cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
                 return cell;
             }
 
-            return null;
+            cell.TextLabel.TextColor = A.Color_NachoBlack;
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+
+            return cell;
         }
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
