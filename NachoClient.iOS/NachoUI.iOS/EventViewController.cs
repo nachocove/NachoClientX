@@ -1103,7 +1103,7 @@ namespace NachoClient.iOS
 
                 var notesTap = new UITapGestureRecognizer ();
                 notesTap.AddTarget (() => {
-                    //PerformSegue ("EventToNotes", this);
+                    PerformSegue ("EventToNotes", this);
                 });
                 eventNotesView.AddGestureRecognizer (notesTap);
                 EventInfoView.Add (eventNotesView);
@@ -1196,33 +1196,35 @@ namespace NachoClient.iOS
                 alertDetailLabelView.Text = UIntToString (c.Reminder);
                 alertDetailLabelView.SizeToFit ();
                 alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+
+                // Attendee image view
+                if (5 < c.attendees.Count ()) {
+                    int i = 0;
+                    while (i < 4) {
+                        var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                        attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
+
+                        var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                        attendeeLabelView.Text = Util.GetFirstName(c.attendees.ElementAt (i).DisplayName);
+                        i++;
+                    }
+                    var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
+                    attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count () - 4), UIControlState.Normal);
+                } else {
+                    int i = 0;
+                    while (i < c.attendees.Count ()) {
+                        var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                        attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
+
+                        var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                        attendeeLabelView.Text = Util.GetFirstName(c.attendees.ElementAt (i).DisplayName);
+                        i++;
+                    }
+                }
             }
 
 
-            // Attendee image view
-            if (5 < c.attendees.Count ()) {
-                int i = 0;
-                while (i < 4) {
-                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
-                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
 
-                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                    attendeeLabelView.Text = c.attendees.ElementAt (i).DisplayName;
-                    i++;
-                }
-                var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
-                attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count () - 4), UIControlState.Normal);
-            } else {
-                int i = 0;
-                while (i < c.attendees.Count ()) {
-                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
-                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
-
-                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                    attendeeLabelView.Text = c.attendees.ElementAt (i).DisplayName;
-                    i++;
-                }
-            }
 
 
         }
@@ -1332,6 +1334,7 @@ namespace NachoClient.iOS
         {
             UILabel DetailTextLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
             DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+
             DetailTextLabel.TextColor = UIColor.LightGray;
             DetailTextLabel.Tag = tag;
             parentView.Add (DetailTextLabel);
@@ -1343,6 +1346,7 @@ namespace NachoClient.iOS
             NameLabel.Font = A.Font_AvenirNextRegular14;
             NameLabel.TextColor = UIColor.LightGray;
             NameLabel.Tag = tag;
+            NameLabel.TextAlignment = UITextAlignment.Center;
             parentView.Add (NameLabel);
         }
 

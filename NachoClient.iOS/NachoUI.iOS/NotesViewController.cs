@@ -9,6 +9,8 @@ using System.IO;
 using System.Drawing;
 using System.Collections.Generic;
 
+using NachoCore.Utils;
+
 namespace NachoClient.iOS
 {
     public partial class NotesViewController : NcUIViewController
@@ -27,6 +29,8 @@ namespace NachoClient.iOS
         protected float KEYBOARD_HEIGHT = 216f;
         UIColor solidTextColor = A.Color_NachoBlack;
 
+        protected int DATE_DETAIL_TAG = 100;
+
         protected UIView notesView;
         protected UITextView notesTextView;
 
@@ -37,7 +41,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             CreateNotesView ();
-            //NotesLayoutView ();
             notesTextView.BecomeFirstResponder ();
         }
 
@@ -48,7 +51,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
 
-            //ConfigureNotesView ();
+            ConfigureNotesView ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -56,75 +59,38 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, float height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
-            //NotesLayoutView ();
-        }
-
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
-        }
-
-        private void OnKeyboardNotification (NSNotification notification)
-        {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
-
 
         protected void CreateNotesView ()
         {
             //notes
-            notesTextView = new UITextView (new RectangleF (0, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+            notesTextView = new UITextView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, View.Frame.Height));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.TextColor = solidTextColor;
             notesTextView.BackgroundColor = A.Color_NachoYellow;
+            //notesTextView.ContentInset = new UIEdgeInsets (0, 35, 0, 15);
             var beginningRange = new NSRange (0, 0);
             notesTextView.SelectedRange = beginningRange;
-            notesTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
+
 
             notesTextView.Changed += (object sender, EventArgs e) => {
                 //NotesSelectionChanged (notesTextView);
             };
-            line1 = AddLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
-            line2 = AddLine (0, LINE_OFFSET + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line1 = AddLine (0, LINE_OFFSET + 10, SCREEN_WIDTH, separatorColor);
 
             //Content View
 
             //contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT);
 
             contentView.BackgroundColor = A.Color_NachoBlue;
-            contentView.BackgroundColor = UIColor.Clear;
+            contentView.BackgroundColor = A.Color_NachoNowBackground;
 //            contentView.AddSubviews (new UIView[] {
 //                notesTextView,
 //                line1,
 //                line2
 //            });
+            MakeDateLabel (0, LINE_OFFSET - 10, SCREEN_WIDTH, 15, DATE_DETAIL_TAG, contentView);
+            contentView.Add (notesTextView);
+            contentView.Add (line1);
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 184);
 
             //Scroll View
@@ -188,6 +154,21 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView () {
             //NotesLayoutView();
+
+            //date
+            var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;
+            dateDetailLabel.Text = Pretty.ExtendedDateString(DateTime.UtcNow);
+
+        }
+
+        public void MakeDateLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
+        {
+            UILabel DateLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            DateLabel.Font = A.Font_AvenirNextRegular12;
+            DateLabel.TextColor = UIColor.LightGray;
+            DateLabel.Tag = tag;
+            DateLabel.TextAlignment = UITextAlignment.Center;
+            parentView.Add (DateLabel);
         }
 
 
