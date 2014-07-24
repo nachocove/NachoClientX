@@ -370,6 +370,7 @@ namespace NachoClient
         };
 
         static Random random = new Random ();
+
         public static int PickRandomColorForUser ()
         {
             int randomNumber = random.Next (2, colors.Count);
@@ -427,7 +428,7 @@ namespace NachoClient
         {
             // Parse the from address
             var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (emailMessage.From);
-            if(null == mailboxAddress) {
+            if (null == mailboxAddress) {
                 emailMessage.cachedFromColor = 1;
                 emailMessage.cachedFromLetters = "";
                 emailMessage.Update ();
@@ -459,7 +460,7 @@ namespace NachoClient
                 if (!String.IsNullOrEmpty (emailMessage.From)) {
                     foreach (char c in emailMessage.From) {
                         if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper(c);
+                            initials += Char.ToUpper (c);
                             break;
                         }
                     }
@@ -523,6 +524,18 @@ namespace NachoClient
             }
 
             return Initials;
+        }
+
+        public static string GetFirstName (string displayName)
+        {
+            string[] names = displayName.Split (new char [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (names [0] == null) {
+                return "";
+            }
+            if (names [0].Length > 1) {
+                return char.ToUpper (names [0] [0]) + names [0].Substring (1);
+            }
+            return names [0].ToUpper ();
         }
 
         public static UIImage MakeCheckmark (UIColor checkColor)
