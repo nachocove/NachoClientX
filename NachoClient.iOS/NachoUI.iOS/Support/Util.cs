@@ -559,6 +559,31 @@ namespace NachoClient
 
         }
 
+        public static UIImage MakeArrow (UIColor arrowColor)
+        {
+            var size = new SizeF (15, 15);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var g = UIGraphics.GetCurrentContext ();
+            g.SetLineWidth (1);
+
+            arrowColor.SetStroke ();
+            var arrow = new CGPath ();
+
+            arrow.AddLines (new PointF[] {
+                new PointF (6, 2),
+                new PointF (15, 8), 
+                new PointF (6, 13)
+            });
+            g.AddPath (arrow);
+            g.DrawPath (CGPathDrawingMode.Stroke);
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+
+        }
+
         #endregion
     }
 }

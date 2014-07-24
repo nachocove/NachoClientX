@@ -137,11 +137,18 @@ namespace NachoCore.Utils
             return LocalT (d).ToString ("ddd, MMM d");
         }
 
+        static public string ExtendedDateString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return LocalT (d).ToString ("dddd, MMMM d");
+        }
+
         static public string FullTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
             return LocalT (d).ToString ("t");
         }
+            
 
         /// <summary>
         /// Compact version of event duration
