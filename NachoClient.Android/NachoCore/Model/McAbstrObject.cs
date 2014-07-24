@@ -154,6 +154,15 @@ namespace NachoCore.Model
                     typeof(T).Name), 
                 id).SingleOrDefault ();
         }
+
+        public static T DeleteById<T> (int id) where T : McAbstrObject, new()
+        {
+            return NcModel.Instance.Db.Query<T> (
+                string.Format ("DELETE FROM {0} AS f WHERE " +
+                    " f.Id = ? ", 
+                    typeof(T).Name), 
+                id).SingleOrDefault ();
+        }
     }
 }
 
