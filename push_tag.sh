@@ -1,26 +1,25 @@
-# Tag all repos with a tag and a message.
+# Push a tag in all repos to remote server
 #
-# USAGE: sh tag.sh [tag] [message]
+# USAGE: sh push_tag.sh [tag]
 #
 # NOTE: If you add a new repo that is part of NachoClientX, you 
 # MUST add that repo to repos.sh.
 
 tag=$1
-message=$2
 
 source repos.sh
 
-function gitTag()
+function gitPushTag ()
 {
     pushd "../$1" 1> /dev/null
-	echo "Tagging `pwd` as $tag..."
-	git tag -a $tag -m $message
+	echo "Pushing tag $tag in `pwd`..."
+	git push origin $tags
 	popd 1> /dev/null
 }
 
 for repo in $repos
 do
-  gitTag $repo
+  gitPushTag $repo
 done
 # repos.sh does not cover NachoClientX
-gitTag NachoClientX
+gitPushTag NachoClientX
