@@ -455,6 +455,11 @@ namespace NachoCore
             return true;
         }
 
+        public void CancelValidateConfig (int accountId)
+        {
+            ServiceFromAccountId (accountId).CancelValidateConfig ();
+        }
+
         //
         // For IProtoControlOwner.
         //

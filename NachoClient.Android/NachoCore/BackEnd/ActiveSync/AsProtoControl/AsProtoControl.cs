@@ -973,12 +973,17 @@ namespace NachoCore.ActiveSync
 
         public override void ValidateConfig (McServer server, McCred cred)
         {
+            CancelValidateConfig ();
+            Validator = new AsValidateConfig (this);
+            Validator.Execute (server, cred);
+        }
+
+        public override void CancelValidateConfig ()
+        {
             if (null != Validator) {
                 Validator.Cancel ();
                 Validator = null;
             }
-            Validator = new AsValidateConfig (this);
-            Validator.Execute (server, cred);
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
