@@ -24,7 +24,7 @@ using MonoTouch.MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : UIViewController, INachoCalendarItemEditor
+    public partial class EventViewController : NcUIViewController, INachoCalendarItemEditor
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
@@ -35,6 +35,10 @@ namespace NachoClient.iOS
         protected NachoFolders calendars;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
+
+        protected UIView EventInfoView;
+        protected UIImageView MapImage;
+        protected MKMapView map;
 
         UITextField titleField;
         UITextView descriptionTextView;
@@ -63,6 +67,10 @@ namespace NachoClient.iOS
         UILabel startDateLabel;
         UILabel endDateLabel;
 
+        UIView eventAlertsView;
+        UIView eventAttachmentsView;
+        UIView eventNotesView;
+
         UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
@@ -71,6 +79,8 @@ namespace NachoClient.iOS
         protected int END_PICKER_HEIGHT = 0;
         protected float TEXT_LINE_HEIGHT = 19.124f;
         protected float DESCRIPTION_OFFSET = 0f;
+        public float IMAGE_HEIGHT = SCREEN_WIDTH / 2 - 45;
+        protected float TOOL_BAR_HEIGHT = 65f;
         protected float keyboardHeight;
         protected bool suppressLayout = false;
         protected bool suppressLowerLayout = false;
@@ -80,6 +90,11 @@ namespace NachoClient.iOS
         protected bool endIsOpening = false;
         protected bool endChanged = false;
         protected bool allDayEvent = false;
+        protected bool eventEditStarted = false;
+
+        protected bool createEvent = false;
+        protected bool displayEvent = false;
+        protected bool editEvent = false;
 
         public bool showMenu;
         protected UIView line1;
@@ -113,6 +128,16 @@ namespace NachoClient.iOS
         const int ALERT_DETAIL_TAG = 207;
         const int CAL_DETAIL_TAG = 210;
 
+        const int EVENT_TITLE_LABEL_TAG = 101;
+        const int EVENT_DESCRIPTION_LABEL_TAG = 102;
+        const int EVENT_LOCATION_DETAIL_LABEL_TAG = 103;
+        const int EVENT_WHEN_DETAIL_LABEL_TAG = 104;
+        const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
+        const int EVENT_ATTENDEE_TAG = 106;
+        const int EVENT_ATTENDEE_DETAIL_TAG = 110;
+        const int EVENT_ATTENDEE_LABEL_TAG = 120;
+        const int EVENT_ATTACHMENT_DETAIL_TAG = 121;
+
 
         public EventViewController (IntPtr handle) : base (handle)
         {
@@ -124,24 +149,38 @@ namespace NachoClient.iOS
             if (showMenu) {
                 // Navigation
                 cancelButton.Clicked += (object sender, EventArgs e) => {
-                    View.EndEditing(true);
-                    this.RevealViewController ().RevealToggle (this);
+                    View.EndEditing (true);
+                    if (eventEditStarted) {
+                        UIAlertView alert = new UIAlertView ();
+                        alert.Title = "Are you sure?";
+                        alert.Message = "This event will not be saved";
+                        alert.AddButton ("Yes");
+                        alert.AddButton ("No");
+                        alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                            if (0 == alertEvent.ButtonIndex) {
+                                this.RevealViewController ().RevealToggle (this);
+                            }
+                        };
+                        alert.Show ();
+                    } else {
+                        this.RevealViewController ().RevealToggle (this);
+                    }
                 };
                     
-                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton};
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
 
             }
 
             NavigationItem.RightBarButtonItem = doneButton;
             doneButton.Clicked += (object sender, EventArgs e) => {
-                ExtractValues();
+                ExtractValues ();
                 SyncMeetingRequest ();
                 SendInvites ();
                 this.RevealViewController ().RevealToggle (this);
             };
 
-            var g = new UITapGestureRecognizer(() => View.EndEditing(true));
-            contentView.AddGestureRecognizer(g);
+            var g = new UITapGestureRecognizer (() => View.EndEditing (true));
+            contentView.AddGestureRecognizer (g);
 
             c = CalendarHelper.DefaultMeeting ();
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
@@ -150,14 +189,19 @@ namespace NachoClient.iOS
             switch (action) {
             case CalendarItemEditorAction.create:
                 c = CalendarHelper.DefaultMeeting ();
+                ToggleActions ();
+                createEvent = true;
                 CreateEventView ();
                 break;
             case CalendarItemEditorAction.edit:
                 c = item;
-
+                ToggleActions ();
+                editEvent = true;
                 break;
             case CalendarItemEditorAction.view:
                 c = item;
+                ToggleActions ();
+                displayEvent = true;
                 CreateEventView ();
                 break;
             default:
@@ -191,9 +235,23 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-
-            ConfigureEventView ();
-
+            switch (action) {
+            case CalendarItemEditorAction.create:
+                c = CalendarHelper.DefaultMeeting ();
+                ConfigureEventView ();
+                break;
+            case CalendarItemEditorAction.edit:
+                c = item;
+                //ConfigureEventView ();
+                break;
+            case CalendarItemEditorAction.view:
+                c = item;
+                ConfigureEventView ();
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -275,6 +333,13 @@ namespace NachoClient.iOS
             LayoutView ();
         }
 
+        protected void ToggleActions ()
+        {
+            createEvent = false;
+            editEvent = false;
+            displayEvent = false;
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("EventToAttendee")) {
@@ -282,7 +347,7 @@ namespace NachoClient.iOS
                 dc.SetAttendeeList (c.attendees);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.attendees = dc.GetAttendeeList ();
-                    ConfigureEventView();
+                    ConfigureEventView ();
                 };
                 return;
             }
@@ -292,7 +357,7 @@ namespace NachoClient.iOS
                 dc.SetReminder (c.Reminder);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
-                    ConfigureEventView();
+                    ConfigureEventView ();
                 };
                 return;
             }
@@ -302,7 +367,7 @@ namespace NachoClient.iOS
                 dc.SetPhone (TempPhone);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     TempPhone = dc.GetPhone ();
-                    ConfigureEventView();
+                    ConfigureEventView ();
                 };
                 return;
             }
@@ -312,8 +377,18 @@ namespace NachoClient.iOS
                 dc.SetCalendars (calendars);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     calendarIndex = dc.GetCalIndex ();
-                    ConfigureEventView();
+                    ConfigureEventView ();
                 };
+                return;
+            }
+
+            if (segue.Identifier.Equals ("EventToAttachment")) {
+                var dc = (AddAttachmentViewController)segue.DestinationViewController;
+                return;
+            }
+
+            if (segue.Identifier.Equals ("EventToNotes")) {
+                var dc = (NotesViewController)segue.DestinationViewController;
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -323,205 +398,119 @@ namespace NachoClient.iOS
 
         protected void CreateEventView ()
         {
+            if (createEvent) {
+                //Title
+                titleView = new UIView (new RectangleF (0, 30, SCREEN_WIDTH, CELL_HEIGHT));
+                titleView.BackgroundColor = UIColor.White;
 
-            //Title
-            titleView = new UIView (new RectangleF (0, 30, SCREEN_WIDTH, CELL_HEIGHT));
-            titleView.BackgroundColor = UIColor.White;
+                titleField = new UITextField (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+                titleField.Font = A.Font_AvenirNextRegular14;
+                titleField.TextColor = solidTextColor;
+                titleField.Placeholder = "Title";
+                titleField.ClearButtonMode = UITextFieldViewMode.Always;
+                titleView.AddSubview (titleField);
 
-            titleField = new UITextField (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
-            titleField.Font = A.Font_AvenirNextRegular14;
-            titleField.TextColor = solidTextColor;
-            titleField.Placeholder = "Title";
-            titleField.ClearButtonMode = UITextFieldViewMode.Always;
-            titleView.AddSubview (titleField);
+                titleField.ShouldReturn += (textField) => {
+                    textField.ResignFirstResponder ();
+                    return true;
+                };
 
-            titleField.ShouldReturn += (textField) => {
-                textField.ResignFirstResponder ();
-                return true;
-            };
+                titleField.EditingDidBegin += (object sender, EventArgs e) => {
+                    eventEditStarted = true;
+                };
 
+                //Description
+                descriptionView = new UIView (new RectangleF (0, 74, SCREEN_WIDTH, CELL_HEIGHT + TEXT_LINE_HEIGHT));
+                descriptionView.BackgroundColor = UIColor.White;
 
-            //Description
-            descriptionView = new UIView (new RectangleF (0, 74, SCREEN_WIDTH, CELL_HEIGHT + TEXT_LINE_HEIGHT));
-            descriptionView.BackgroundColor = UIColor.White;
+                UILabel descriptionPlaceHolder = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+                descriptionPlaceHolder.Text = "Description";
+                descriptionPlaceHolder.Font = A.Font_AvenirNextRegular14;
+                descriptionPlaceHolder.TextColor = new UIColor (.8f, .8f, .8f, 1f);
 
-            UILabel descriptionPlaceHolder = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
-            descriptionPlaceHolder.Text = "Description";
-            descriptionPlaceHolder.Font = A.Font_AvenirNextRegular14;
-            descriptionPlaceHolder.TextColor = new UIColor (.8f, .8f, .8f, 1f);
+                descriptionTextView = new UITextView (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+                descriptionTextView.Font = A.Font_AvenirNextRegular14;
+                descriptionTextView.TextColor = solidTextColor;
+                descriptionTextView.BackgroundColor = UIColor.Clear;
+                var beginningRange = new NSRange (0, 0);
+                descriptionTextView.SelectedRange = beginningRange;
+                descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
 
-            descriptionTextView = new UITextView (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
-            descriptionTextView.Font = A.Font_AvenirNextRegular14;
-            descriptionTextView.TextColor = solidTextColor;
-            descriptionTextView.BackgroundColor = UIColor.Clear;
-            var beginningRange = new NSRange (0, 0);
-            descriptionTextView.SelectedRange = beginningRange;
-            descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
-
-            descriptionTextView.Changed += (object sender, EventArgs e) => {
-                descriptionPlaceHolder.Hidden = true;
-                SelectionChanged (descriptionTextView);
-            };
-            descriptionTextView.Ended += (object sender, EventArgs e) => {
-                if (!descriptionTextView.HasText) {
-                    descriptionPlaceHolder.Hidden = false;
-                }
-            };
-            //descriptionView.AddSubview (descriptionTextView);
-            descriptionView.AddSubview (descriptionPlaceHolder);
-
-
-            //All Day Event
-            allDayView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            allDayView.BackgroundColor = UIColor.White;
-            UILabel allDayLabel = new UILabel (new RectangleF (15, 12.438f, 50, TEXT_LINE_HEIGHT));
-            allDayLabel.Text = "All Day";
-            allDayLabel.Font = A.Font_AvenirNextRegular14;
-            allDayLabel.TextColor = solidTextColor;
-            allDayView.AddSubview (allDayLabel);
-
-            UISwitch allDaySwitch = new UISwitch ();
-            allDaySwitch.Tag = ALL_DAY_SWITCH_TAG;
-            allDaySwitch.SizeToFit ();
-            allDaySwitch.OnTintColor = A.Color_NachoBlue;
-            allDaySwitch.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
-            allDaySwitch.Frame = new RectangleF (SCREEN_WIDTH - allDaySwitch.Frame.Width - 15, 6.5f, allDaySwitch.Frame.Width, TEXT_LINE_HEIGHT);
-            allDayView.AddSubview (allDaySwitch);
-
-
-            //Start Time
-            startView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            startView.BackgroundColor = UIColor.White;
-            UILabel startLabel = new UILabel (new RectangleF (15, 12.438f, 40, TEXT_LINE_HEIGHT));
-            startLabel.Text = "Starts";
-            startLabel.Font = A.Font_AvenirNextRegular14;
-            startLabel.TextColor = solidTextColor;
-            startView.AddSubview (startLabel);
-
-            startDateLabel = new UILabel ();
-            startDate = c.StartTime;
-            startDateLabel.Text = Pretty.FullDateTimeString (startDate);
-            startDateLabel.Tag = START_DATE_TAG;
-            startDateLabel.SizeToFit ();
-            startDateLabel.TextAlignment = UITextAlignment.Right;
-            startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            startDateLabel.Font = A.Font_AvenirNextRegular14;
-            startDateLabel.TextColor = A.Color_808080;
-            startView.AddSubview (startDateLabel);
-
-            startDatePicker.Frame = new RectangleF (0, 44, SCREEN_WIDTH, START_PICKER_HEIGHT);
-            startDatePicker.Hidden = true;
-            startView.AddSubview (startDatePicker);
-
-            startDatePicker.ValueChanged += (object sender, EventArgs e) => {
-                DateTime date = startDatePicker.Date;
-                if (allDaySwitch.On) { 
-                    startDateLabel.Text = Pretty.FullDateString (date);
-                } else {
-                    startDateLabel.Text = Pretty.FullDateTimeString (date);
-                }
-                startDate = date;
-                if (!endChanged) {
-                    endDate = date.AddHours (1);
-                    endDateLabel.Text = Pretty.FullTimeString (endDate);
-                    endDateLabel.SizeToFit ();
-                    endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                    endDateLabel.TextColor = A.Color_NachoBlue;
-                }
-                startDateLabel.SizeToFit ();
-                startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                startDateLabel.TextColor = A.Color_NachoBlue;
-                if (0 > endDate.CompareTo (startDate)) {
-                    strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-                    strikethrough.Hidden = false;
-                    endDateLabel.TextColor = A.Color_NachoRed;
-                } else { 
-                    strikethrough.Hidden = true;
-                    endDateLabel.TextColor = A.Color_808080;
-                }
-            };
-
-            startDivider = AddLine (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
-            startDivider.Hidden = true;
-            startView.AddSubview (startDivider);
-
-            var startTap = new UITapGestureRecognizer ();
-            startTap.AddTarget (() => {
-                View.EndEditing(true);
-                if (startDateOpen) {
-                    ConfigureDateView ("startClose");
-                    startDate = startDatePicker.Date;
-                } else {
-                    if (endDateOpen) {
-                        suppressLowerLayout = true;
-                        ConfigureDateView ("endClose");
+                descriptionTextView.Changed += (object sender, EventArgs e) => {
+                    eventEditStarted = true;
+                    descriptionPlaceHolder.Hidden = true;
+                    SelectionChanged (descriptionTextView);
+                };
+                descriptionTextView.Ended += (object sender, EventArgs e) => {
+                    if (!descriptionTextView.HasText) {
+                        descriptionPlaceHolder.Hidden = false;
                     }
-                    ConfigureDateView ("startOpen");
-
-                    startDatePicker.Date = startDate;
-                    suppressLowerLayout = false;
-                }
-
-            });
-            startView.AddGestureRecognizer (startTap);
+                };
+                //descriptionView.AddSubview (descriptionTextView);
+                descriptionView.AddSubview (descriptionPlaceHolder);
 
 
-            //End Time
-            endView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            endView.BackgroundColor = UIColor.White;
-            UILabel endLabel = new UILabel (new RectangleF (15, 12.438f, 30, TEXT_LINE_HEIGHT));
-            endLabel.Text = "Until";
-            endLabel.Font = A.Font_AvenirNextRegular14;
-            endLabel.TextColor = solidTextColor;
-            endView.AddSubview (endLabel);
+                //All Day Event
+                allDayView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                allDayView.BackgroundColor = UIColor.White;
+                UILabel allDayLabel = new UILabel (new RectangleF (15, 12.438f, 50, TEXT_LINE_HEIGHT));
+                allDayLabel.Text = "All Day";
+                allDayLabel.Font = A.Font_AvenirNextRegular14;
+                allDayLabel.TextColor = solidTextColor;
+                allDayView.AddSubview (allDayLabel);
 
-            endDateLabel = new UILabel ();
-            endDate = c.EndTime;
-            endDateLabel.Text = Pretty.FullTimeString (endDate);
-            endDateLabel.Tag = END_DATE_TAG;
-            endDateLabel.SizeToFit ();
-            endDateLabel.TextAlignment = UITextAlignment.Right;
-            endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            endDateLabel.Font = A.Font_AvenirNextRegular14;
-            endDateLabel.TextColor = A.Color_808080;
-            endView.AddSubview (endDateLabel);
+                UISwitch allDaySwitch = new UISwitch ();
+                allDaySwitch.Tag = ALL_DAY_SWITCH_TAG;
+                allDaySwitch.SizeToFit ();
+                allDaySwitch.OnTintColor = A.Color_NachoBlue;
+                allDaySwitch.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
+                allDaySwitch.Frame = new RectangleF (SCREEN_WIDTH - allDaySwitch.Frame.Width - 15, 6.5f, allDaySwitch.Frame.Width, TEXT_LINE_HEIGHT);
+                allDayView.AddSubview (allDaySwitch);
 
-            endDatePicker.Frame = new RectangleF (0, CELL_HEIGHT, SCREEN_WIDTH, END_PICKER_HEIGHT);
-            endDatePicker.Hidden = true;
-            endView.AddSubview (endDatePicker);
 
-            endDatePicker.ValueChanged += (object sender, EventArgs e) => {
-                endChanged = true;
-                DateTime date = endDatePicker.Date;
-                if (allDaySwitch.On) { 
-                    endDateLabel.Text = Pretty.FullDateString (date);
-                } else {
-                    endDateLabel.Text = Pretty.FullDateTimeString (date);
-                }
-                endDate = date;
-                endDateLabel.SizeToFit ();
-                endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                if (0 > endDate.CompareTo (startDate)) {
-                    strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-                    strikethrough.Hidden = false;
-                    endDateLabel.TextColor = A.Color_NachoRed;
-                } else { 
-                    strikethrough.Hidden = true;
-                    endDateLabel.TextColor = A.Color_NachoBlue;
-                }
+                //Start Time
+                startView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                startView.BackgroundColor = UIColor.White;
+                UILabel startLabel = new UILabel (new RectangleF (15, 12.438f, 40, TEXT_LINE_HEIGHT));
+                startLabel.Text = "Starts";
+                startLabel.Font = A.Font_AvenirNextRegular14;
+                startLabel.TextColor = solidTextColor;
+                startView.AddSubview (startLabel);
 
- 
-            };
+                startDateLabel = new UILabel ();
+                startDate = c.StartTime;
+                startDateLabel.Text = Pretty.FullDateTimeString (startDate);
+                startDateLabel.Tag = START_DATE_TAG;
+                startDateLabel.SizeToFit ();
+                startDateLabel.TextAlignment = UITextAlignment.Right;
+                startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                startDateLabel.Font = A.Font_AvenirNextRegular14;
+                startDateLabel.TextColor = A.Color_808080;
+                startView.AddSubview (startDateLabel);
 
-            endDivider = AddLine (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
-            startDivider.Hidden = true;
-            endView.AddSubview (endDivider);
+                startDatePicker.Frame = new RectangleF (0, 44, SCREEN_WIDTH, START_PICKER_HEIGHT);
+                startDatePicker.Hidden = true;
+                startView.AddSubview (startDatePicker);
 
-            var endTap = new UITapGestureRecognizer ();
-            endTap.AddTarget (() => {
-                if (endDateOpen) {
-                    ConfigureDateView ("endClose");
-                    endDate = endDatePicker.Date;
+                startDatePicker.ValueChanged += (object sender, EventArgs e) => {
+                    eventEditStarted = true;
+                    DateTime date = startDatePicker.Date;
+                    if (allDaySwitch.On) { 
+                        startDateLabel.Text = Pretty.FullDateString (date);
+                    } else {
+                        startDateLabel.Text = Pretty.FullDateTimeString (date);
+                    }
+                    startDate = date;
+                    if (!endChanged) {
+                        endDate = date.AddHours (1);
+                        endDateLabel.Text = Pretty.FullTimeString (endDate);
+                        endDateLabel.SizeToFit ();
+                        endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                        endDateLabel.TextColor = A.Color_NachoBlue;
+                    }
+                    startDateLabel.SizeToFit ();
+                    startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                    startDateLabel.TextColor = A.Color_NachoBlue;
                     if (0 > endDate.CompareTo (startDate)) {
                         strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                         strikethrough.Hidden = false;
@@ -530,328 +519,757 @@ namespace NachoClient.iOS
                         strikethrough.Hidden = true;
                         endDateLabel.TextColor = A.Color_808080;
                     }
-                } else {
+                };
+
+                startDivider = AddLineView (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
+                startDivider.Hidden = true;
+                startView.AddSubview (startDivider);
+
+                var startTap = new UITapGestureRecognizer ();
+                startTap.AddTarget (() => {
+                    View.EndEditing (true);
                     if (startDateOpen) {
-                        suppressLowerLayout = true;
                         ConfigureDateView ("startClose");
+                        startDate = startDatePicker.Date;
+                    } else {
+                        if (endDateOpen) {
+                            suppressLowerLayout = true;
+                            ConfigureDateView ("endClose");
+                        }
+                        ConfigureDateView ("startOpen");
+
+                        startDatePicker.Date = startDate;
+                        suppressLowerLayout = false;
                     }
-                    ConfigureDateView ("endOpen");
-                    endDatePicker.Date = endDate;
-                    suppressLowerLayout = false;
-                }
 
-            });
-            endView.AddGestureRecognizer (endTap);
+                });
+                startView.AddGestureRecognizer (startTap);
 
-            allDaySwitch.ValueChanged += (object sender, EventArgs e) => {
-                if (allDaySwitch.On) { 
-                    startDateLabel.Text = Pretty.FullDateString (startDate);
-                    startDateLabel.SizeToFit ();
-                    startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                    endDateLabel.Text = Pretty.FullDateString (endDate);
+
+                //End Time
+                endView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                endView.BackgroundColor = UIColor.White;
+                UILabel endLabel = new UILabel (new RectangleF (15, 12.438f, 30, TEXT_LINE_HEIGHT));
+                endLabel.Text = "Until";
+                endLabel.Font = A.Font_AvenirNextRegular14;
+                endLabel.TextColor = solidTextColor;
+                endView.AddSubview (endLabel);
+
+                endDateLabel = new UILabel ();
+                endDate = c.EndTime;
+                endDateLabel.Text = Pretty.FullTimeString (endDate);
+                endDateLabel.Tag = END_DATE_TAG;
+                endDateLabel.SizeToFit ();
+                endDateLabel.TextAlignment = UITextAlignment.Right;
+                endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                endDateLabel.Font = A.Font_AvenirNextRegular14;
+                endDateLabel.TextColor = A.Color_808080;
+                endView.AddSubview (endDateLabel);
+
+                endDatePicker.Frame = new RectangleF (0, CELL_HEIGHT, SCREEN_WIDTH, END_PICKER_HEIGHT);
+                endDatePicker.Hidden = true;
+                endView.AddSubview (endDatePicker);
+
+                endDatePicker.ValueChanged += (object sender, EventArgs e) => {
+                    eventEditStarted = true;
+                    endChanged = true;
+                    DateTime date = endDatePicker.Date;
+                    if (allDaySwitch.On) { 
+                        endDateLabel.Text = Pretty.FullDateString (date);
+                    } else {
+                        endDateLabel.Text = Pretty.FullDateTimeString (date);
+                    }
+                    endDate = date;
                     endDateLabel.SizeToFit ();
                     endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                    strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-                    startDatePicker.Mode = UIDatePickerMode.Date;
-                    endDatePicker.Mode = UIDatePickerMode.Date;
-                    allDayEvent = true;
+                    if (0 > endDate.CompareTo (startDate)) {
+                        strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
+                        strikethrough.Hidden = false;
+                        endDateLabel.TextColor = A.Color_NachoRed;
+                    } else { 
+                        strikethrough.Hidden = true;
+                        endDateLabel.TextColor = A.Color_NachoBlue;
+                    }
+
+ 
+                };
+
+                endDivider = AddLineView (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
+                startDivider.Hidden = true;
+                endView.AddSubview (endDivider);
+
+                var endTap = new UITapGestureRecognizer ();
+                endTap.AddTarget (() => {
+                    View.EndEditing (true);
+                    if (endDateOpen) {
+                        ConfigureDateView ("endClose");
+                        endDate = endDatePicker.Date;
+                        if (0 > endDate.CompareTo (startDate)) {
+                            strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
+                            strikethrough.Hidden = false;
+                            endDateLabel.TextColor = A.Color_NachoRed;
+                        } else { 
+                            strikethrough.Hidden = true;
+                            endDateLabel.TextColor = A.Color_808080;
+                        }
+                    } else {
+                        if (startDateOpen) {
+                            suppressLowerLayout = true;
+                            ConfigureDateView ("startClose");
+                        }
+                        ConfigureDateView ("endOpen");
+                        endDatePicker.Date = endDate;
+                        suppressLowerLayout = false;
+                    }
+
+                });
+                endView.AddGestureRecognizer (endTap);
+
+                allDaySwitch.ValueChanged += (object sender, EventArgs e) => {
+                    if (allDaySwitch.On) { 
+                        startDateLabel.Text = Pretty.FullDateString (startDate);
+                        startDateLabel.SizeToFit ();
+                        startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                        endDateLabel.Text = Pretty.FullDateString (endDate);
+                        endDateLabel.SizeToFit ();
+                        endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                        strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
+                        startDatePicker.Mode = UIDatePickerMode.Date;
+                        endDatePicker.Mode = UIDatePickerMode.Date;
+                        allDayEvent = true;
+                    } else {
+                        startDateLabel.Text = Pretty.FullDateTimeString (startDate);
+                        startDateLabel.SizeToFit ();
+                        startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                        endDatePicker.Date = endDate;
+                        endDateLabel.Text = Pretty.FullDateTimeString (endDate);
+                        endDateLabel.SizeToFit ();
+                        endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                        strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
+                        startDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                        endDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                        allDayEvent = false;
+                    }
+                    eventEditStarted = true;
+                };
+
+                strikethrough = AddLineView (0, CELL_HEIGHT / 2, SCREEN_WIDTH, A.Color_NachoRed);
+                strikethrough.Hidden = true;
+                endView.AddSubview (strikethrough);
+
+
+                //Location
+                locationView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                locationView.BackgroundColor = UIColor.White;
+
+                UIImageView locationImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                locationImage.Image = UIImage.FromBundle ("icn-mtng-location");
+                locationView.AddSubview (locationImage);
+
+                locationField = new UITextField (new RectangleF (37, 12.438f, SCREEN_WIDTH - 52, TEXT_LINE_HEIGHT));
+                locationField.Font = A.Font_AvenirNextRegular14;
+                locationField.TextColor = solidTextColor;
+                locationField.ClearButtonMode = UITextFieldViewMode.Always;
+                locationField.Placeholder = "Location";
+                locationView.AddSubview (locationField);
+
+                locationField.ShouldReturn += (textField) => {
+                    textField.ResignFirstResponder ();
+                    return true;
+                };
+
+                locationField.EditingDidBegin += (object sender, EventArgs e) => {
+                    eventEditStarted = true;
+                };
+
+                //Phone
+                phoneView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                phoneView.BackgroundColor = UIColor.White;
+
+                UIImageView phoneImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                phoneImage.Image = UIImage.FromBundle ("icn-mtng-phone");
+                phoneView.AddSubview (phoneImage);
+
+                UILabel phoneLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
+                phoneLabel.Text = "Phone";
+                phoneLabel.Font = A.Font_AvenirNextRegular14;
+                phoneLabel.TextColor = solidTextColor;
+                phoneView.AddSubview (phoneLabel);
+
+                UIImageView phoneAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                phoneAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                phoneView.AddSubview (phoneAccessoryImage);
+
+                phoneDetailLabel = new UILabel ();
+                phoneDetailLabel.Text = "559-320-9923";
+                phoneDetailLabel.Tag = PHONE_DETAIL_TAG;
+                phoneDetailLabel.SizeToFit ();
+                phoneDetailLabel.TextAlignment = UITextAlignment.Right;
+                phoneDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabel.Frame.Width - 34, 12.438f, phoneDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                phoneDetailLabel.Font = A.Font_AvenirNextRegular14;
+                phoneDetailLabel.TextColor = A.Color_808080;
+                phoneView.AddSubview (phoneDetailLabel);
+
+                var phoneTap = new UITapGestureRecognizer ();
+                phoneTap.AddTarget (() => {
+                    PerformSegue ("EventToPhone", this);
+                });
+                //phoneView.AddGestureRecognizer (phoneTap);
+
+
+                //Attachments
+                attachmentsView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                attachmentsView.BackgroundColor = UIColor.White;
+
+                UIImageView attachmentsImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                attachmentsImage.Image = UIImage.FromBundle ("icn-mtng-attachment");
+                attachmentsView.AddSubview (attachmentsImage);
+
+                UILabel attachmentsLabel = new UILabel (new RectangleF (37, 12.438f, 100, TEXT_LINE_HEIGHT));
+                attachmentsLabel.Text = "Attachments";
+                attachmentsLabel.Font = A.Font_AvenirNextRegular14;
+                attachmentsLabel.TextColor = solidTextColor;
+                attachmentsView.AddSubview (attachmentsLabel);
+
+                UIImageView attachmentsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                attachmentsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                attachmentsView.AddSubview (attachmentsAccessoryImage);
+
+                UILabel attachmentsDetailLabel = new UILabel ();
+                attachmentsDetailLabel.Text = "";
+                attachmentsDetailLabel.Tag = ATTACHMENTS_DETAIL_TAG;
+                attachmentsDetailLabel.SizeToFit ();
+                attachmentsDetailLabel.TextAlignment = UITextAlignment.Right;
+                attachmentsDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - attachmentsDetailLabel.Frame.Width - 34, 12.438f, attachmentsDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                attachmentsDetailLabel.Font = A.Font_AvenirNextRegular14;
+                attachmentsDetailLabel.TextColor = A.Color_808080;
+                attachmentsView.AddSubview (attachmentsDetailLabel);
+
+                var attachmentTap = new UITapGestureRecognizer ();
+                attachmentTap.AddTarget (() => {
+                    PerformSegue ("EventToAttachment", this);
+                });
+                //attachmentsView.AddGestureRecognizer (attachmentTap);
+
+
+                //People
+                peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                peopleView.BackgroundColor = UIColor.White;
+
+                UIImageView peopleImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                peopleImage.Image = UIImage.FromBundle ("icn-peoples");
+                peopleView.AddSubview (peopleImage);
+
+                UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
+                peopleLabel.Text = "People";
+                peopleLabel.Font = A.Font_AvenirNextRegular14;
+                peopleLabel.TextColor = solidTextColor;
+                peopleView.AddSubview (peopleLabel);
+
+                UIImageView peopleAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                peopleAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                peopleView.AddSubview (peopleAccessoryImage);
+
+                UILabel peopleDetailLabel = new UILabel ();
+                peopleDetailLabel.Text = "(" + c.attendees.Count + ")";
+                peopleDetailLabel.Tag = PEOPLE_DETAIL_TAG;
+                peopleDetailLabel.SizeToFit ();
+                peopleDetailLabel.TextAlignment = UITextAlignment.Right;
+                peopleDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - peopleDetailLabel.Frame.Width - 34, 12.438f, peopleDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                peopleDetailLabel.Font = A.Font_AvenirNextRegular14;
+                peopleDetailLabel.TextColor = A.Color_808080;
+                peopleView.AddSubview (peopleDetailLabel);
+
+                var peopleTap = new UITapGestureRecognizer ();
+                peopleTap.AddTarget (() => {
+                    PerformSegue ("EventToAttendee", this);
+                });
+                peopleView.AddGestureRecognizer (peopleTap);
+
+
+                //Alerts
+                alertsView = new UIView (new RectangleF (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                alertsView.BackgroundColor = UIColor.White;
+
+                UIImageView alertsImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                alertsImage.Image = UIImage.FromBundle ("icn-mtng-time");
+                alertsView.AddSubview (alertsImage);
+
+                UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                alertsView.AddSubview (alertsAccessoryImage);
+
+                UILabel alertsLabel = new UILabel (new RectangleF (37, 12.438f, 70, TEXT_LINE_HEIGHT));
+                alertsLabel.Text = "Add Alert";
+                alertsLabel.Font = A.Font_AvenirNextRegular14;
+                alertsLabel.TextColor = solidTextColor;
+                alertsView.AddSubview (alertsLabel);
+
+                UILabel alertsDetailLabel = new UILabel ();
+                alertsDetailLabel.Text = "None";
+                alertsDetailLabel.Tag = ALERT_DETAIL_TAG;
+                alertsDetailLabel.SizeToFit ();
+                alertsDetailLabel.TextAlignment = UITextAlignment.Right;
+                alertsDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertsDetailLabel.Frame.Width - 34, 12.438f, alertsDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                alertsDetailLabel.Font = A.Font_AvenirNextRegular14;
+                alertsDetailLabel.TextColor = A.Color_808080;
+                alertsView.AddSubview (alertsDetailLabel);
+
+                var alertTap = new UITapGestureRecognizer ();
+                alertTap.AddTarget (() => {
+                    PerformSegue ("EventToAlert", this);
+                });
+                alertsView.AddGestureRecognizer (alertTap);
+
+                //Calendar
+                calendarView = new UIView (new RectangleF (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                calendarView.BackgroundColor = UIColor.White;
+
+                UIImageView calendarImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                calendarImage.Image = UIImage.FromBundle ("icn-calendars");
+                calendarView.AddSubview (calendarImage);
+
+                UILabel calendarLabel = new UILabel (new RectangleF (37, 12.438f, 70, TEXT_LINE_HEIGHT));
+                calendarLabel.Text = "Calendar";
+                calendarLabel.Font = A.Font_AvenirNextRegular14;
+                calendarLabel.TextColor = solidTextColor;
+                calendarView.AddSubview (calendarLabel);
+
+                UIImageView calendarAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                calendarAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                calendarView.AddSubview (calendarAccessoryImage);
+
+                UILabel calendarDetailLabel = new UILabel ();
+                calendarDetailLabel.Text = "Calendar";
+                calendarDetailLabel.Tag = PEOPLE_DETAIL_TAG;
+                calendarDetailLabel.SizeToFit ();
+                calendarDetailLabel.TextAlignment = UITextAlignment.Right;
+                calendarDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabel.Frame.Width - 34, 12.438f, calendarDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                calendarDetailLabel.Font = A.Font_AvenirNextRegular14;
+                calendarDetailLabel.TextColor = A.Color_808080;
+                calendarView.AddSubview (calendarDetailLabel);
+
+                var calTap = new UITapGestureRecognizer ();
+                calTap.AddTarget (() => {
+                    PerformSegue ("EventToCal", this);
+                });
+                calendarView.AddGestureRecognizer (calTap);
+
+
+                //Content View
+                contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 7) + (CELL_HEIGHT * 12) + TEXT_LINE_HEIGHT);
+                contentView.BackgroundColor = A.Color_NachoNowBackground;
+                contentView.AddSubviews (new UIView[] {
+                    titleView,
+                    descriptionView,
+                    allDayView,
+                    startView,
+                    endView,
+                    locationView,
+                    phoneView,
+                    attachmentsView,
+                    peopleView,
+                    alertsView,
+                    calendarView
+                }); 
+                //LO
+                line1 = AddLineView (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
+                line2 = AddLineView (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line3 = AddLineView (0, LINE_OFFSET + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                //LO
+                line4 = AddLineView (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line5 = AddLineView (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line6 = AddLineView (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line7 = AddLineView (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                //LO
+                line8 = AddLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line9 = AddLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line10 = AddLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line11 = AddLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line12 = AddLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                //LO
+                line13 = AddLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line14 = AddLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                //LO
+                line15 = AddLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                line16 = AddLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+                //LO
+                contentView.AddSubviews (new UIView[] {
+                    line1,
+                    line2,
+                    line3,
+                    line4,
+                    line5,
+                    line6,
+                    line7,
+                    line8,
+                    line9,
+                    line10,
+                    line11,
+                    line12,
+                    line13,
+                    line14,
+                    line15,
+                    line16
+                }); 
+
+
+                //Scroll View
+                scrollView.BackgroundColor = A.Color_NachoNowBackground;
+                scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT);
+                scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+            }
+
+            if (displayEvent) {
+                //NavigationItem.LeftBarButtonItem = null;
+                //NavigationItem.RightBarButtonItem = editButton;
+                NavigationItem.RightBarButtonItem = null;
+                NavigationItem.Title = "Event Details";
+                //Map/location header image
+
+                map = new MKMapView (new RectangleF (0, 0, SCREEN_WIDTH, IMAGE_HEIGHT));
+                map.ZoomEnabled = false;
+                map.ScrollEnabled = false;
+
+                if (map != null) {
+                    contentView.AddSubview (map);
                 } else {
-                    startDateLabel.Text = Pretty.FullDateTimeString (startDate);
-                    startDateLabel.SizeToFit ();
-                    startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                    endDatePicker.Date = endDate;
-                    endDateLabel.Text = Pretty.FullDateTimeString (endDate);
-                    endDateLabel.SizeToFit ();
-                    endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                    strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-                    startDatePicker.Mode = UIDatePickerMode.DateAndTime;
-                    endDatePicker.Mode = UIDatePickerMode.DateAndTime;
-                    allDayEvent = false;
+                    IMAGE_HEIGHT = 0;
                 }
-            };
 
-            strikethrough = AddLine (0, CELL_HEIGHT / 2, SCREEN_WIDTH, A.Color_NachoRed);
-            strikethrough.Hidden = true;
-            endView.AddSubview (strikethrough);
+                //event view
+                EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 700));
+                EventInfoView.BackgroundColor = UIColor.White;
 
+                //title label
+                UILabel eventTitleLabel = new UILabel (new RectangleF (25, 19, SCREEN_WIDTH - 50, 18));
+                eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                eventTitleLabel.TextColor = A.Color_NachoBlack;
+                eventTitleLabel.Tag = EVENT_TITLE_LABEL_TAG;
+                EventInfoView.Add (eventTitleLabel);
 
-            //Location
-            locationView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            locationView.BackgroundColor = UIColor.White;
+                //desciption label
+                AddDetailTextLabel (25, 43, SCREEN_WIDTH - 50, 15, EVENT_DESCRIPTION_LABEL_TAG, EventInfoView);
 
-            UIImageView locationImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-            locationImage.Image = UIImage.FromBundle ("icn-mtng-location");
-            locationView.AddSubview (locationImage);
+                //location label, image and detail
+                AddTextLabelWithImage (45, 78, SCREEN_WIDTH - 50, 15, "Location", UIImage.FromBundle ("icn-mtng-location"), 77, EventInfoView);
+                AddDetailTextLabel (25, 103, SCREEN_WIDTH - 50, 15, EVENT_LOCATION_DETAIL_LABEL_TAG, EventInfoView);
 
-            locationField = new UITextField (new RectangleF (37, 12.438f, SCREEN_WIDTH - 52, TEXT_LINE_HEIGHT));
-            locationField.Font = A.Font_AvenirNextRegular14;
-            locationField.TextColor = solidTextColor;
-            locationField.ClearButtonMode = UITextFieldViewMode.Always;
-            locationField.Placeholder = "Location";
-            locationView.AddSubview (locationField);
+                //when label, image and detail
+                AddTextLabelWithImage (45, 135, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 134, EventInfoView);
+                AddDetailTextLabel (25, 160, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
+                AddDetailTextLabel (25, 180, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
 
-            locationField.ShouldReturn += (textField) => {
-                textField.ResignFirstResponder ();
-                return true;
-            };
+                //phone label, image and detail
+                AddTextLabelWithImage (45, 20 + 135 + 57, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), 20 + 134 + 57, EventInfoView);
 
+                UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, 20 + 160 + 57, SCREEN_WIDTH - 50, 15));
+                eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
+                eventPhoneDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Normal);
+                eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
+                eventPhoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                eventPhoneDetailButton.TouchUpInside += (object sender, EventArgs e) => {
+                    var urlToSend = new NSUrl ("tel:" + "5036861654"); 
+                    UIApplication.SharedApplication.OpenUrl (urlToSend);
+                };
+                EventInfoView.Add (eventPhoneDetailButton);  
 
-            //Phone
-            phoneView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            phoneView.BackgroundColor = UIColor.White;
+                //attendees label, image and detail
+                AddTextLabelWithImage (45, 20 + 135 + 57 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), 20 + 134 + 57 + 57, EventInfoView);
 
-            UIImageView phoneImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-            phoneImage.Image = UIImage.FromBundle ("icn-mtng-phone");
-            phoneView.AddSubview (phoneImage);
+                int counter = 0;
+                int SPACING = 0;
+                if (0 == c.attendees.Count) {
+                    UILabel noAttendeeDetailTextLabel = new UILabel (new RectangleF (25, 20 + 135 + 57 + 57 + 25, SCREEN_WIDTH - 50, 15));
+                    noAttendeeDetailTextLabel.Font = A.Font_AvenirNextRegular14;
+                    noAttendeeDetailTextLabel.Text = "This event has no attendees";
+                    noAttendeeDetailTextLabel.TextColor = UIColor.LightGray;
+                    EventInfoView.Add (noAttendeeDetailTextLabel);
+                } else if (5 >= c.attendees.Count) {
+                    foreach (var attendee in c.attendees) {
+                        //var name = attendee.DisplayName;
+                        UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+                        attendeeButton.Layer.CornerRadius = (45 / 2);
+                        attendeeButton.Layer.MasksToBounds = true;
+                        //attendeeButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
+                        attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
+                        attendeeButton.Frame = new RectangleF (23 + SPACING, 20 + 160 + 57 + 57, 45, 45);
+                        attendeeButton.Font = A.Font_AvenirNextRegular24;
+                        attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                        attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                        attendeeButton.Tag = EVENT_ATTENDEE_TAG + counter;
+                        //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                        attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
+                            //                var identifer = buttonInfo.segueIdentifier;
+                            //                PerformSegue (identifer, new SegueHolder (null));
+                            Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
+                        };
+                        EventInfoView.Add (attendeeButton);
 
-            UILabel phoneLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
-            phoneLabel.Text = "Phone";
-            phoneLabel.Font = A.Font_AvenirNextRegular14;
-            phoneLabel.TextColor = solidTextColor;
-            phoneView.AddSubview (phoneLabel);
+                        UILabel eventAttendeesNameLabel = new UILabel (new RectangleF (23 + SPACING, 20 + 325, 45, 15));
+                        eventAttendeesNameLabel.Font = A.Font_AvenirNextRegular14;
+                        eventAttendeesNameLabel.TextColor = A.Color_NachoBlack;
+                        eventAttendeesNameLabel.TextAlignment = UITextAlignment.Center;
+                        eventAttendeesNameLabel.Tag = EVENT_ATTENDEE_LABEL_TAG + counter;
+                        EventInfoView.Add (eventAttendeesNameLabel);
+                        counter++;
+                        SPACING = SPACING + 55;
+                    }
+                } else {
+                    foreach (var attendee in c.attendees) {
+                        //var name = attendee.DisplayName;
+                        UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+                        attendeeButton.Layer.CornerRadius = (45 / 2);
+                        attendeeButton.Layer.MasksToBounds = true;
+                        attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
+                        attendeeButton.Frame = new RectangleF (23 + SPACING, 20 + 160 + 57 + 57, 45, 45);
+                        attendeeButton.Font = A.Font_AvenirNextRegular24;
+                        attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                        attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                        attendeeButton.Tag = EVENT_ATTENDEE_TAG + counter;
+                        //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                        attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
+                            //                var identifer = buttonInfo.segueIdentifier;
+                            //                PerformSegue (identifer, new SegueHolder (null));
+                            Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
+                        };
+                        EventInfoView.Add (attendeeButton);
 
-            UIImageView phoneAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            phoneAccessoryImage.Image = UIImage.FromBundle ("acc-arrow");
-            phoneView.AddSubview (phoneAccessoryImage);
+                        UILabel eventAttendeesNameLabel = new UILabel (new RectangleF (23 + SPACING, 20 + 325, 45, 15));
+                        eventAttendeesNameLabel.Font = A.Font_AvenirNextRegular14;
+                        eventAttendeesNameLabel.TextColor = A.Color_NachoBlack;
+                        eventAttendeesNameLabel.TextAlignment = UITextAlignment.Center;
+                        eventAttendeesNameLabel.Tag = EVENT_ATTENDEE_LABEL_TAG + counter;
+                        EventInfoView.Add (eventAttendeesNameLabel);
 
-            phoneDetailLabel = new UILabel ();
-            phoneDetailLabel.Text = "559-320-9923";
-            phoneDetailLabel.Tag = PHONE_DETAIL_TAG;
-            phoneDetailLabel.SizeToFit ();
-            phoneDetailLabel.TextAlignment = UITextAlignment.Right;
-            phoneDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabel.Frame.Width - 34, 12.438f, phoneDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            phoneDetailLabel.Font = A.Font_AvenirNextRegular14;
-            phoneDetailLabel.TextColor = A.Color_808080;
-            phoneView.AddSubview (phoneDetailLabel);
+                        counter++;
+                        if (4 == counter) {
+                            break;
+                        }
+                        SPACING = SPACING + 55;
+                    }
+                    UIButton eventAttendeeDetailButton = UIButton.FromType (UIButtonType.RoundedRect);
+                    eventAttendeeDetailButton.Layer.CornerRadius = (45 / 2);
+                    eventAttendeeDetailButton.Layer.MasksToBounds = true;
+                    eventAttendeeDetailButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
+                    eventAttendeeDetailButton.Layer.BorderWidth = 1;
+                    eventAttendeeDetailButton.Frame = new RectangleF (243, 20 + 160 + 57 + 57, 45, 45);
+                    eventAttendeeDetailButton.Font = A.Font_AvenirNextRegular14;
+                    eventAttendeeDetailButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+                    eventAttendeeDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                    eventAttendeeDetailButton.Tag = EVENT_ATTENDEE_DETAIL_TAG;
+                    //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                    eventAttendeeDetailButton.TouchUpInside += (object sender, EventArgs e) => {
+                        //                var identifer = buttonInfo.segueIdentifier;
+                        //                PerformSegue (identifer, new SegueHolder (null));
+                        Console.WriteLine ("This button pressed: " + eventAttendeeDetailButton.Tag);
 
-            var phoneTap = new UITapGestureRecognizer ();
-            phoneTap.AddTarget (() => {
-                PerformSegue ("EventToPhone", this);
-            });
-            //phoneView.AddGestureRecognizer (phoneTap);
+                    };
 
+                }
 
-            //Attachments
-            attachmentsView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            attachmentsView.BackgroundColor = UIColor.White;
+                //alerts 
+                eventAlertsView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                eventAlertsView.BackgroundColor = UIColor.White;
 
-            UIImageView attachmentsImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-            attachmentsImage.Image = UIImage.FromBundle ("icn-mtng-attachment");
-            attachmentsView.AddSubview (attachmentsImage);
+                UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                eventAlertsView.AddSubview (alertsAccessoryImage);
 
-            UILabel attachmentsLabel = new UILabel (new RectangleF (37, 12.438f, 100, TEXT_LINE_HEIGHT));
-            attachmentsLabel.Text = "Attachments";
-            attachmentsLabel.Font = A.Font_AvenirNextRegular14;
-            attachmentsLabel.TextColor = solidTextColor;
-            attachmentsView.AddSubview (attachmentsLabel);
+                AddTextLabel (23, 12.438f, 70, TEXT_LINE_HEIGHT, "Alerts", eventAlertsView);
 
-            UIImageView attachmentsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentsAccessoryImage.Image = UIImage.FromBundle ("acc-arrow");
-            attachmentsView.AddSubview (attachmentsAccessoryImage);
+                UILabel alertsDetailLabel = new UILabel ();
+                alertsDetailLabel.Text = "None";
+                alertsDetailLabel.Tag = ALERT_DETAIL_TAG;
+                alertsDetailLabel.SizeToFit ();
+                alertsDetailLabel.TextAlignment = UITextAlignment.Right;
+                alertsDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertsDetailLabel.Frame.Width - 34, 12.438f, alertsDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                alertsDetailLabel.Font = A.Font_AvenirNextRegular14;
+                alertsDetailLabel.TextColor = A.Color_808080;
+                eventAlertsView.AddSubview (alertsDetailLabel);
 
-            UILabel attachmentsDetailLabel = new UILabel ();
-            attachmentsDetailLabel.Text = "";
-            attachmentsDetailLabel.Tag = ATTACHMENTS_DETAIL_TAG;
-            attachmentsDetailLabel.SizeToFit ();
-            attachmentsDetailLabel.TextAlignment = UITextAlignment.Right;
-            attachmentsDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - attachmentsDetailLabel.Frame.Width - 34, 12.438f, attachmentsDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            attachmentsDetailLabel.Font = A.Font_AvenirNextRegular14;
-            attachmentsDetailLabel.TextColor = A.Color_808080;
-            attachmentsView.AddSubview (attachmentsDetailLabel);
+                var alertTap = new UITapGestureRecognizer ();
+                alertTap.AddTarget (() => {
+                    PerformSegue ("EventToAlert", this);
+                });
+                eventAlertsView.AddGestureRecognizer (alertTap);
+                EventInfoView.Add (eventAlertsView);
 
-            var attachmentTap = new UITapGestureRecognizer ();
-            attachmentTap.AddTarget (() => {
-                PerformSegue ("EventToAttachment", this);
-            });
-            //attachmentsView.AddGestureRecognizer (attachmentTap);
+                //attachments
+                eventAttachmentsView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                eventAttachmentsView.BackgroundColor = UIColor.White;
 
+                UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                eventAttachmentsView.AddSubview (attachmentAccessoryImage);
 
-            //People
-            peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            peopleView.BackgroundColor = UIColor.White;
+                AddTextLabelWithImage (45, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, eventAttachmentsView);
 
-            UIImageView peopleImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-            peopleImage.Image = UIImage.FromBundle ("icn-peoples");
-            peopleView.AddSubview (peopleImage);
+                UILabel attachmentDetailLabel = new UILabel ();
+                attachmentDetailLabel.Text = "(0)";
+                attachmentDetailLabel.Tag = EVENT_ATTACHMENT_DETAIL_TAG;
+                attachmentDetailLabel.SizeToFit ();
+                attachmentDetailLabel.TextAlignment = UITextAlignment.Right;
+                attachmentDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetailLabel.Frame.Width - 34, 12.438f, attachmentDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                attachmentDetailLabel.Font = A.Font_AvenirNextRegular14;
+                attachmentDetailLabel.TextColor = A.Color_808080;
+                eventAttachmentsView.AddSubview (attachmentDetailLabel);
 
-            UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
-            peopleLabel.Text = "People";
-            peopleLabel.Font = A.Font_AvenirNextRegular14;
-            peopleLabel.TextColor = solidTextColor;
-            peopleView.AddSubview (peopleLabel);
+                var attachmentTap = new UITapGestureRecognizer ();
+                attachmentTap.AddTarget (() => {
+                    //PerformSegue ("EventToAttachment", this);
+                });
+                eventAttachmentsView.AddGestureRecognizer (attachmentTap);
+                EventInfoView.Add (eventAttachmentsView);
 
-            UIImageView peopleAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            peopleAccessoryImage.Image = UIImage.FromBundle ("acc-arrow");
-            peopleView.AddSubview (peopleAccessoryImage);
+                //notes
+                eventNotesView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
+                eventNotesView.BackgroundColor = UIColor.White;
 
-            UILabel peopleDetailLabel = new UILabel ();
-            peopleDetailLabel.Text = "(" + c.attendees.Count + ")";
-            peopleDetailLabel.Tag = PEOPLE_DETAIL_TAG;
-            peopleDetailLabel.SizeToFit ();
-            peopleDetailLabel.TextAlignment = UITextAlignment.Right;
-            peopleDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - peopleDetailLabel.Frame.Width - 34, 12.438f, peopleDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            peopleDetailLabel.Font = A.Font_AvenirNextRegular14;
-            peopleDetailLabel.TextColor = A.Color_808080;
-            peopleView.AddSubview (peopleDetailLabel);
+                UIImageView notesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                notesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                eventNotesView.AddSubview (notesAccessoryImage);
 
-            var peopleTap = new UITapGestureRecognizer ();
-            peopleTap.AddTarget (() => {
-                PerformSegue ("EventToAttendee", this);
-            });
-            peopleView.AddGestureRecognizer (peopleTap);
+                UIImageView notesImage = new UIImageView (new RectangleF (23, 14.5f, 15, 15));
+                notesImage.Image = UIImage.FromBundle ("icn-mtng-notes");
+                eventNotesView.AddSubview (notesImage);
 
+                AddTextLabel (45, 12.438f, 100, TEXT_LINE_HEIGHT, "Notes", eventNotesView);
 
-            //Alerts
-            alertsView = new UIView (new RectangleF (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            alertsView.BackgroundColor = UIColor.White;
+                UILabel notesDetailLabel = new UILabel ();
+                notesDetailLabel.Text = "(0)";
+                notesDetailLabel.Tag = EVENT_ATTACHMENT_DETAIL_TAG;
+                notesDetailLabel.SizeToFit ();
+                notesDetailLabel.TextAlignment = UITextAlignment.Right;
+                notesDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - notesDetailLabel.Frame.Width - 34, 12.438f, notesDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                notesDetailLabel.Font = A.Font_AvenirNextRegular14;
+                notesDetailLabel.TextColor = A.Color_808080;
+                eventNotesView.AddSubview (notesDetailLabel);
 
-            UIImageView alertsImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-            alertsImage.Image = UIImage.FromBundle ("icn-mtng-time");
-            alertsView.AddSubview (alertsImage);
-
-            UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            alertsAccessoryImage.Image = UIImage.FromBundle ("acc-arrow");
-            alertsView.AddSubview (alertsAccessoryImage);
-
-            UILabel alertsLabel = new UILabel (new RectangleF (37, 12.438f, 70, TEXT_LINE_HEIGHT));
-            alertsLabel.Text = "Add Alert";
-            alertsLabel.Font = A.Font_AvenirNextRegular14;
-            alertsLabel.TextColor = solidTextColor;
-            alertsView.AddSubview (alertsLabel);
-
-            UILabel alertsDetailLabel = new UILabel ();
-            alertsDetailLabel.Text = "None";
-            alertsDetailLabel.Tag = ALERT_DETAIL_TAG;
-            alertsDetailLabel.SizeToFit ();
-            alertsDetailLabel.TextAlignment = UITextAlignment.Right;
-            alertsDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertsDetailLabel.Frame.Width - 34, 12.438f, alertsDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            alertsDetailLabel.Font = A.Font_AvenirNextRegular14;
-            alertsDetailLabel.TextColor = A.Color_808080;
-            alertsView.AddSubview (alertsDetailLabel);
-
-            var alertTap = new UITapGestureRecognizer ();
-            alertTap.AddTarget (() => {
-                PerformSegue ("EventToAlert", this);
-            });
-            alertsView.AddGestureRecognizer (alertTap);
-
-            //Calendar
-            calendarView = new UIView (new RectangleF (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            calendarView.BackgroundColor = UIColor.White;
-
-            UIImageView calendarImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-            calendarImage.Image = UIImage.FromBundle ("icn-calendars");
-            calendarView.AddSubview (calendarImage);
-
-            UILabel calendarLabel = new UILabel (new RectangleF (37, 12.438f, 70, TEXT_LINE_HEIGHT));
-            calendarLabel.Text = "Calendar";
-            calendarLabel.Font = A.Font_AvenirNextRegular14;
-            calendarLabel.TextColor = solidTextColor;
-            calendarView.AddSubview (calendarLabel);
-
-            UIImageView calendarAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            calendarAccessoryImage.Image = UIImage.FromBundle ("acc-arrow");
-            calendarView.AddSubview (calendarAccessoryImage);
-
-            UILabel calendarDetailLabel = new UILabel ();
-            calendarDetailLabel.Text = "Calendar";
-            calendarDetailLabel.Tag = PEOPLE_DETAIL_TAG;
-            calendarDetailLabel.SizeToFit ();
-            calendarDetailLabel.TextAlignment = UITextAlignment.Right;
-            calendarDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabel.Frame.Width - 34, 12.438f, calendarDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            calendarDetailLabel.Font = A.Font_AvenirNextRegular14;
-            calendarDetailLabel.TextColor = A.Color_808080;
-            calendarView.AddSubview (calendarDetailLabel);
-
-            var calTap = new UITapGestureRecognizer ();
-            calTap.AddTarget (() => {
-                PerformSegue ("EventToCal", this);
-            });
-            calendarView.AddGestureRecognizer (calTap);
-
-
-            //Content View
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 7) + (CELL_HEIGHT * 12) + TEXT_LINE_HEIGHT);
-            contentView.BackgroundColor = A.Color_NachoNowBackground;
-            contentView.AddSubviews (new UIView[] {
-                titleView,
-                descriptionView,
-                allDayView,
-                startView,
-                endView,
-                locationView,
-                phoneView,
-                attachmentsView,
-                peopleView,
-                alertsView,
-                calendarView
-            }); 
-            //LO
-            line1 = AddLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
-            line2 = AddLine (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line3 = AddLine (0, LINE_OFFSET + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            //LO
-            line4 = AddLine (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line5 = AddLine (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line6 = AddLine (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line7 = AddLine (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            //LO
-            line8 = AddLine (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line9 = AddLine (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line10 = AddLine (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line11 = AddLine (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line12 = AddLine (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            //LO
-            line13 = AddLine (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line14 = AddLine (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            //LO
-            line15 = AddLine (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line16 = AddLine (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            //LO
-            contentView.AddSubviews (new UIView[] {
-                line1,
-                line2,
-                line3,
-                line4,
-                line5,
-                line6,
-                line7,
-                line8,
-                line9,
-                line10,
-                line11,
-                line12,
-                line13,
-                line14,
-                line15,
-                line16
-            }); 
+                var notesTap = new UITapGestureRecognizer ();
+                notesTap.AddTarget (() => {
+                    //PerformSegue ("EventToNotes", this);
+                });
+                eventNotesView.AddGestureRecognizer (notesTap);
+                EventInfoView.Add (eventNotesView);
 
 
-            //Scroll View
-            scrollView.BackgroundColor = A.Color_NachoNowBackground;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT);
-            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+                for (int i = 0; i < 4; i++) {
+                    AddLine (23f, 20 + 245 + IMAGE_HEIGHT + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
+                }
+
+
+                contentView.Add (EventInfoView);
+                contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 700);
+                contentView.BackgroundColor = UIColor.White;
+
+                //Scroll View
+                scrollView.BackgroundColor = UIColor.White;
+                scrollView.ContentSize = new SizeF (SCREEN_WIDTH, + 20 + 608 + 20 + TOOL_BAR_HEIGHT);
+                scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+            }
 
         }
 
         protected void ConfigureEventView ()
         {
-            //people view
-            var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
-            peopleDetailLabelView.Text =  "(" + c.attendees.Count + ")";
+            if (createEvent) {
+                //people view
+                var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
+                peopleDetailLabelView.Text = "(" + c.attendees.Count () + ")";
 
-            //alert view
-            var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabelView.Text =  UIntToString(c.Reminder);
-            alertDetailLabelView.SizeToFit ();
-            alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+                //alert view
+                var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
+                alertDetailLabelView.Text = UIntToString (c.Reminder);
+                alertDetailLabelView.SizeToFit ();
+                alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
-            //phone view
-            var phoneDetailLabelView = contentView.ViewWithTag (PHONE_DETAIL_TAG) as UILabel;
-            phoneDetailLabelView.Text =  TempPhone;
-            phoneDetailLabelView.SizeToFit ();
-            phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+                //phone view
+                var phoneDetailLabelView = contentView.ViewWithTag (PHONE_DETAIL_TAG) as UILabel;
+                phoneDetailLabelView.Text = TempPhone;
+                phoneDetailLabelView.SizeToFit ();
+                phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+
+                //date views
+                startDatePicker.Date = startDate;
+                endDatePicker.Date = endDate;
+
+            }
+            if (displayEvent) {
+                contentView.BackgroundColor = UIColor.White;
+
+                //title view
+                var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+                //titleLabelView.Text = "Meeting with Kevin";
+                titleLabelView.Text = c.Subject;
+
+                //description view
+                var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
+                descriptionLabelView.Text = "Description";
+                //descriptionLabelView.Text = c.Description;
+
+                //location view
+                var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
+                //locationLabelView.Text = "Starbucks 2135 Queen Anne Ave N.";
+                if ("" != c.Location) {
+                    locationLabelView.Text = c.Location;
+                } else {
+                    locationLabelView.Text = "Not specified";
+                }
+
+                //when view
+                var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
+                whenLabelView.Text = Pretty.ExtendedDateString(c.StartTime);
+                //whenLabelView.Text = "3pm to 4pm PDT - Duration: 1 Hour";
+                //whenLabelView.Text = TODO;
+
+                var durationLabelView = View.ViewWithTag (500) as UILabel;
+                if (c.StartTime.DayOfYear == c.EndTime.DayOfYear) {
+                    durationLabelView.Text = "from " + Pretty.FullTimeString (c.StartTime) + " to " + Pretty.FullTimeString (c.EndTime);
+                } else {
+                    durationLabelView.Text = "from " + Pretty.FullTimeString (c.StartTime) + " to " + Pretty.FullDateTimeString (c.EndTime);
+                }
+
+                //phone view
+                var phoneButtonView = View.ViewWithTag (EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
+                //phoneButtonView.SetTitle (c.Phone, UIControlState.Normal);
+                phoneButtonView.SetTitle ("Not available", UIControlState.Normal);
+                phoneButtonView.Enabled = false;
+
+                //alert view
+                var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
+                alertDetailLabelView.Text = UIntToString (c.Reminder);
+                alertDetailLabelView.SizeToFit ();
+                alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+            }
+
+
+            // Attendee image view
+            if (5 < c.attendees.Count ()) {
+                int i = 0;
+                while (i < 4) {
+                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
+
+                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                    //string[] name = Attendees [i].Split(' ');
+                    attendeeLabelView.Text = c.attendees.ElementAt (i).DisplayName;
+                    i++;
+                }
+                var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
+                attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count () - 4), UIControlState.Normal);
+            } else {
+                int i = 0;
+                while (i < c.attendees.Count ()) {
+                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
+
+                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                    attendeeLabelView.Text = c.attendees.ElementAt (i).DisplayName;
+                    i++;
+                }
+            }
+
 
         }
 
@@ -920,11 +1338,49 @@ namespace NachoClient.iOS
 
         }
 
-        public UIView AddLine (float offset, float yVal, float width, UIColor color)
+        public UIView AddLineView (float offset, float yVal, float width, UIColor color)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             return lineUIView;
+        }
+
+        public void AddLine (float offset, float yVal, float width, UIColor color, UIView parentView)
+        {
+            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            lineUIView.BackgroundColor = color;
+            parentView.Add (lineUIView);
+        }
+
+        public void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
+        {
+            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            textLabel.Text = text;
+            textLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.TextColor = solidTextColor;
+            parentView.AddSubview (textLabel);
+        }
+
+        public void AddTextLabelWithImage (float xOffset, float yOffset, float width, float height, string text, UIImage image, float imageOffset, UIView parentView)
+        {
+            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            textLabel.Text = text;
+            textLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.TextColor = solidTextColor;
+            parentView.AddSubview (textLabel);
+
+            UIImageView theImage = new UIImageView (new RectangleF ((xOffset - 22), imageOffset, 15, 15));
+            theImage.Image = image;
+            parentView.Add (theImage);
+        }
+
+        public void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
+        {
+            UILabel DetailTextLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+            DetailTextLabel.TextColor = UIColor.LightGray;
+            DetailTextLabel.Tag = tag;
+            parentView.Add (DetailTextLabel);
         }
 
         protected void SelectionChanged (UITextView textView)
@@ -991,7 +1447,7 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            if (suppressLayout) {
+            if (suppressLayout || displayEvent) {
                 return;
             }
 
@@ -1079,7 +1535,7 @@ namespace NachoClient.iOS
 //            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
 //            var tz = new AsTimeZone (tzi);
 //            c.TimeZone = tz.toEncodedTimeZone ();
-            c.TimeZone = TimeZone.CurrentTimeZone.ToString();
+            c.TimeZone = TimeZone.CurrentTimeZone.ToString ();
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }

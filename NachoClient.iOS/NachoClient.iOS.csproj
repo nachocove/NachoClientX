@@ -1037,6 +1037,10 @@
     <Compile Include="NachoUI.iOS\SupportViewController.designer.cs">
       <DependentUpon>SupportViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\NotesViewController.cs" />
+    <Compile Include="NachoUI.iOS\NotesViewController.designer.cs">
+      <DependentUpon>NotesViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1139,7 +1143,9 @@
     <BundleResource Include="Resources\icon_chili.jpg" />
     <BundleResource Include="Resources\icon_chili.png" />
     <BundleResource Include="Resources\beer.png" />
-    <BundleResource Include="Resources\ic_action_attachment.png" />
+    <BundleResource Include="Resources\ic_action_attachment.png">
+      <DependentUpon>ic_action_email.png</DependentUpon>
+    </BundleResource>
     <BundleResource Include="Resources\ic_action_import_export.png" />
     <BundleResource Include="Resources\inbox-icn-chilli%402x.png" />
     <BundleResource Include="Resources\inbox-icn-chilli.png" />

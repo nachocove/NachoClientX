@@ -93,7 +93,7 @@ namespace NachoClient.iOS
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
-            owner.PerformSegueForDelegate ("NachoNowToCalendarItem", new SegueHolder (c));
+            owner.PerformSegueForDelegate ("NachoNowToEventView", new SegueHolder (c));
         }
 
         protected const int SUBJECT_TAG = 99101;

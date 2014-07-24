@@ -178,7 +178,20 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "NachoNowToCalendarItem") {
-                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
+                var vc = (CalendarItemViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                }
+                vc.SetOwner (this);
+                return;
+            }
+
+            if (segue.Identifier == "NachoNowToEventView") {
+                var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
                 if (null == c) {
@@ -201,9 +214,17 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "CalendarToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                }
                 vc.SetOwner (this);
                 return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
 
