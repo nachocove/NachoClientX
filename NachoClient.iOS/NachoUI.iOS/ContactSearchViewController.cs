@@ -30,7 +30,7 @@ namespace NachoClient.iOS
         public ContactChooserViewController owner;
         public string initialSearchString;
         // Internal state
-        public bool UseDeviceContacts;
+        McAccount account;
         INachoContacts contacts;
         List<McContactEmailAddressAttribute> searchResults = null;
         /// <summary>
@@ -52,8 +52,10 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
-            TableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+            account = NcModel.Instance.Db.Table<McAccount> ().First ();
+
+//            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
+//            TableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
 
             // Manages the search bar & auto-complete table.
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
@@ -99,7 +101,7 @@ namespace NachoClient.iOS
                 }
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = contact;
-                destinationController.Title = contact.GetDisplayName();
+                destinationController.Title = contact.GetDisplayName ();
             }
         }
 
@@ -118,14 +120,6 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            // Hey!  This next bit is different from the normal implementation
-            // of GetCell. This doesn't use the tableView parameter to get the
-            // cell.  Instead, the main table is always used.  This provides a
-            // cell that's hooked up to the segue and has matching attributes.
-            UITableViewCell cell = TableView.DequeueReusableCell ("Subtitle");
-            // Should always get a prototype cell
-            NcAssert.True (null != cell);
-
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 contact = searchResults.ElementAt (indexPath.Row).GetContact ();
@@ -133,16 +127,57 @@ namespace NachoClient.iOS
                 contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
             }
 
-            cell.TextLabel.Text = contact.GetDisplayName();
-            cell.DetailTextLabel.Text = contact.GetEmailAddress();
+            UITableViewCell cell = null;
+            var displayName = contact.GetDisplayName ();
+            var displayEmailAddress = contact.GetEmailAddress ();
 
-            return cell;
+            // Both empty
+            if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
+                cell = TableView.DequeueReusableCell ("Basic");
+                NcAssert.True (null != cell);
+                cell.TextLabel.Text = "Contact has no name or email address";
+                cell.TextLabel.TextColor = UIColor.LightGray;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                return cell;
+            }
+
+            // Name empty
+            if (String.IsNullOrEmpty (displayName)) {
+                cell = TableView.DequeueReusableCell ("Basic");
+                NcAssert.True (null != cell);
+                cell.TextLabel.Text = displayEmailAddress;
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                return cell;
+            }
+
+            // Email empty
+            if (String.IsNullOrEmpty (displayEmailAddress)) {
+                cell = TableView.DequeueReusableCell ("Subtitle");
+                NcAssert.True (null != cell);
+                cell.TextLabel.Text = displayName;
+                cell.DetailTextLabel.Text = "Contact has no email address";
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                return cell;
+            }
+
+            // Everything
+            cell = TableView.DequeueReusableCell ("Subtitle");
+            NcAssert.True (null != cell);
+            cell.TextLabel.Text = displayName;
+            cell.DetailTextLabel.Text = displayEmailAddress;
+            cell.TextLabel.TextColor = A.Color_NachoBlack;
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.DetailTextLabel.TextColor = UIColor.Gray;
+            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+            return cell;  
         }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-//            base.RowSelected (tableView, indexPath);
-
             McContact contact;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 contact = searchResults.ElementAt (indexPath.Row).GetContact ();
@@ -162,20 +197,17 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
-            searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
-            return true;
-        }
+            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
+                NachoClient.Util.HighPriority ();
+                var results = McContact.SearchAllContactItems (account.Id, forSearchString);
+                NachoClient.Util.RegularPriority ();
+                InvokeOnMainThread (() => {
+                    searchResults = results;
+                    UpdateSearchResultsCallback ();
+                });
+            })).Start ();
 
-        protected bool StartsWithIgnoringNull (string prefix, string target)
-        {
-            NcAssert.True (null != prefix);
-            // Can't match a field that doesn't exist
-            if (null == target) {
-                return false;
-            }
-            // TODO: Verify that we really want InvariantCultureIgnoreCase
-            return target.StartsWith (prefix, StringComparison.InvariantCultureIgnoreCase);
+            return false;
         }
 
         /// <summary>
@@ -186,9 +218,12 @@ namespace NachoClient.iOS
             // Totally a dummy routines that exists to remind us how to trigger 
             // the update after updating the searchResult list of contacts.
             if (null != SearchDisplayController.SearchResultsTableView) {
+                NachoClient.Util.HighPriority ();
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
+                NachoClient.Util.RegularPriority ();
             }
         }
+
 
         public class SearchDisplayDelegate : UISearchDisplayDelegate
         {

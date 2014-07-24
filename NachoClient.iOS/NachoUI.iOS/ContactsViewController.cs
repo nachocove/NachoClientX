@@ -21,25 +21,19 @@ namespace NachoClient.iOS
 
     public partial class ContactsViewController : NcUITableViewController
     {
-        INachoContacts contacts;
+        McAccount account;
+        List<NcContactIndex> contacts;
         List<McContactEmailAddressAttribute> searchResults = null;
 
         public ContactsViewController (IntPtr handle) : base (handle)
         {
         }
 
-        /// <summary>
-        /// Setup the search bar & auto-complete handler.
-        /// Setup the navigation hooks for the sidebar controller.
-        /// Request permission for the device address book (really, here?)
-        /// Tables cells and search cells both trigger segues to a detail page.
-        /// </summary>
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-//            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
-//            TableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+            account = NcModel.Instance.Db.Table<McAccount> ().First ();
 
             // Manages the search bar & auto-complete table.
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
@@ -55,28 +49,32 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcContactManager.Instance.ContactsChanged += ContactsChangedCallback;
-            contacts = NcContactManager.Instance.GetNachoContacts ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            contacts = McContact.AllContactsSortedByName (account.Id);
             TableView.ReloadData ();
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcContactManager.Instance.ContactsChanged -= ContactsChangedCallback;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        public void ContactsChangedCallback (object sender, EventArgs e)
+        public void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            contacts = NcContactManager.Instance.GetNachoContacts ();
-            TableView.ReloadData ();
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+                contacts = McContact.AllContactsSortedByName (account.Id);
+                TableView.ReloadData ();
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("ContactsToContact")) {
                 var h = sender as SegueHolder;
-                var c = (McContact) h.value;
+                var c = (McContact)h.value;
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
                 destinationController.contact = c;
                 return;
@@ -104,12 +102,12 @@ namespace NachoClient.iOS
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 contact = searchResults.ElementAt (indexPath.Row).GetContact ();
             } else {
-                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
+                contact = contacts [indexPath.Row].GetContact ();
             }
 
             UITableViewCell cell = null;
-            var displayName = contact.GetDisplayName();
-            var displayEmailAddress = contact.GetEmailAddress();
+            var displayName = contact.GetDisplayName ();
+            var displayEmailAddress = contact.GetEmailAddress ();
 
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
@@ -165,7 +163,7 @@ namespace NachoClient.iOS
                 var contactEmailAttribute = searchResults [indexPath.Row];
                 contact = McContact.QueryById<McContact> ((int)contactEmailAttribute.ContactId);
             } else {
-                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
+                contact = contacts [indexPath.Row].GetContact ();
             }
             PerformSegue ("ContactsToContact", new SegueHolder (contact));
         }
@@ -180,10 +178,17 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            // TODO: Make this work like EAS
-            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
-            searchResults = McContact.SearchAllContactItems (account.Id, forSearchString);
-            return true;
+            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
+                NachoClient.Util.HighPriority ();
+                var results = McContact.SearchAllContactItems (account.Id, forSearchString);
+                NachoClient.Util.RegularPriority ();
+                InvokeOnMainThread (() => {
+                    searchResults = results;
+                    UpdateSearchResultsCallback ();
+                });
+            })).Start ();
+
+            return false;
         }
 
         /// <summary>
@@ -194,7 +199,9 @@ namespace NachoClient.iOS
             // Totally a dummy routines that exists to remind us how to trigger 
             // the update after updating the searchResult list of contacts.
             if (null != SearchDisplayController.SearchResultsTableView) {
+                NachoClient.Util.HighPriority ();
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
+                NachoClient.Util.RegularPriority ();
             }
         }
 
