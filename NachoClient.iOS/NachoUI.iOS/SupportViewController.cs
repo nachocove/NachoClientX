@@ -17,6 +17,10 @@ namespace NachoClient.iOS
         const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
+        const string SupportToComposeSegueId = "SupportToEmailCompose";
+        const string BasicCell = "BasicCell";
+        const string SubtitleCell = "SubtitleCell";
+
 		public SupportViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -24,6 +28,11 @@ namespace NachoClient.iOS
         public override int RowsInSection (UITableView tableview, int section)
         {
             return 3;
+        }
+
+        public override int NumberOfSections (UITableView tableView)
+        {
+            return 1;
         }
 
         public override void ViewDidLoad ()
@@ -35,6 +44,8 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
+
+            this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
         }
 
         public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
@@ -53,12 +64,12 @@ namespace NachoClient.iOS
 
         public void SubmitALog ()
         {
-            PerformSegue ("SupportToEmailCompose", this);
+            PerformSegue (SupportToComposeSegueId, this);
         }
 
         public void ContactViaEmail ()
         {
-            PerformSegue ("SupportToEmailCompose", this);
+            PerformSegue (SupportToComposeSegueId, this);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -67,12 +78,12 @@ namespace NachoClient.iOS
 
             switch (indexPath.Row) {
             case 0:
-                cell = tableView.DequeueReusableCell ("BasicCell");
+                cell = tableView.DequeueReusableCell (BasicCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = SubmitLogText;
                 break;
             case 1:
-                cell = tableView.DequeueReusableCell ("SubtitleCell");
+                cell = tableView.DequeueReusableCell (SubtitleCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByEmailText;
                 cell.DetailTextLabel.Text = SupportEmail;
@@ -82,7 +93,7 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Lines = 0;
                 break;
             case 2:
-                cell = tableView.DequeueReusableCell ("SubtitleCell");
+                cell = tableView.DequeueReusableCell (SubtitleCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByPhoneText;
                 cell.DetailTextLabel.Text = ContactByPhoneDetailText;
