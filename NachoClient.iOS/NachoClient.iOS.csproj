@@ -1033,6 +1033,10 @@
       <Link>NachoCore\Model\McContactEmailAddressAttribute.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\ContactsiOS.cs" />
+    <Compile Include="NachoUI.iOS\SupportViewController.cs" />
+    <Compile Include="NachoUI.iOS\SupportViewController.designer.cs">
+      <DependentUpon>SupportViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
