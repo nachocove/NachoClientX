@@ -1051,7 +1051,14 @@ namespace NachoClient.iOS
                 // Preview label view
                 var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
                 var rawPreview = message.GetBodyPreviewOrEmpty ();
-                var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+//                var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+                int oldLength;
+                var cookedPreview = rawPreview;
+                do {
+                    oldLength = cookedPreview.Length;
+                    cookedPreview = cookedPreview.Replace('\r', '\n');
+                    cookedPreview = cookedPreview.Replace("\n\n", "\n");
+                } while(cookedPreview.Length != oldLength);
                 previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
 
 //                // Reminder image view and label
