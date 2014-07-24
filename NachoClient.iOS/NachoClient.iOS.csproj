@@ -1041,6 +1041,9 @@
     <Compile Include="NachoUI.iOS\NotesViewController.designer.cs">
       <DependentUpon>NotesViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcDeviceContacts.cs">
+      <Link>NachoCore\Brain\NcDeviceContacts.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

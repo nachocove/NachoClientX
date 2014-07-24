@@ -51,6 +51,7 @@ namespace NachoCore.Model
         public const string ClientOwned_GalCache = "GAL";
         public const string ClientOwned_Gleaned = "GLEANED";
         public const string ClientOwned_LostAndFound = "LAF";
+        public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
 
         public override string ToString ()
         {
@@ -117,6 +118,11 @@ namespace NachoCore.Model
          * CLIENT-OWNED FOLDERS:
          * Any code can use them.
          */
+        public static McFolder GetDeviceContactsFolder ()
+        {
+            return McFolder.GetClientOwnedFolder (ConstMcAccount.NotAccountSpecific.Id, ClientOwned_DeviceContacts);
+        }
+
         public static McFolder GetOutboxFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);

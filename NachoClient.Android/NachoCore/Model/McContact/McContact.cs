@@ -45,6 +45,10 @@ namespace NachoCore.Model
 
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
+        /// Set only for Device contacts
+        public string DeviceUniqueId { get; set; }
+        /// Set only for Device contacts
+        public DateTime DeviceLastUpdate { get; set; }
 
         /// The collection of important dates associated with the contact
         private List<McContactDateAttribute> DbDates;
@@ -1000,6 +1004,14 @@ namespace NachoCore.Model
                 ")",
                 McAbstrFolderEntry.ClassCodeEnum.Contact, accountId
             );
+        }
+
+        public static McContact QueryByDeviceUniqueId (string deviceUniqueId)
+        {
+            return NcModel.Instance.Db.Table<McContact> ().Where (x => 
+                x.DeviceUniqueId == deviceUniqueId &&
+                x.AccountId == ConstMcAccount.NotAccountSpecific.Id
+            ).SingleOrDefault ();
         }
 
         /// TODO: VIPness should be in its own member
