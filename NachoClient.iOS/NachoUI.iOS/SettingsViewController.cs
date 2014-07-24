@@ -21,19 +21,26 @@ namespace NachoClient.iOS
         UIView statusView;
         UIActivityIndicatorView theSpinner;
         UITextView statusMessage;
-        UITextView failedConfigWarning;
-        UIButton cancelButton;
-        UIButton saveButton;
+        UITextField accountNameText;
         UITextField userNameText;
         UITextField passwordText;
+        UITextField emailText;
         UITextField mailServerText;
+        UITextField conferenceCallText;
         UILabel signatureLabel;
+        CustomTextInputElement Password;
+        CustomTextInputElement UserName;
+        UIColor userNameAndPasswordTextColor;
+        List<UITextField> textFields;
+        bool didLoad = false;
 
         public enum statusType
         {
             ErrorAuth,
             ErrorComm,
-            Success}
+            ErrorUser,
+            Success,
+            Validating}
         ;
 
         public SettingsViewController (IntPtr handle) : base (handle)
@@ -45,8 +52,10 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.White);
-
+            userNameAndPasswordTextColor = UIColor.Gray;
             NavigationItem.RightBarButtonItem = doneButton;
+
+            configureTextFields ();
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -61,10 +70,36 @@ namespace NachoClient.iOS
             LoadSettingsForSelectedAccount (null);
 
             var root = new RootElement ("Settings");
-            root.Add (AddAccountSettings ());
+            if (!didLoad)
+                root.Add (AddAccountSettings ());
             Root = root;
 
+            didLoad = true;
             configureDoneButton ();
+        }
+
+        public void configureTextFields ()
+        {
+            accountNameText = new UITextField ();
+            passwordText = new UITextField ();
+            userNameText = new UITextField ();
+            emailText = new UITextField ();
+            mailServerText = new UITextField ();
+            conferenceCallText = new UITextField ();
+
+            textFields = new List<UITextField> () {
+                accountNameText,
+                passwordText,
+                userNameText,
+                emailText,
+                mailServerText,
+                conferenceCallText
+            };
+
+            foreach (var tf in textFields) {
+                tf.AutocorrectionType = UITextAutocorrectionType.No;
+                tf.AutocapitalizationType = UITextAutocapitalizationType.None;
+            }
         }
 
         public void configureDoneButton ()
@@ -75,6 +110,13 @@ namespace NachoClient.iOS
                 McCred theCred = McCred.QueryById<McCred> (Account.McCredId);
                 McServer theServer = McServer.QueryById<McServer> (Account.ServerId);
                 McConference theConference = McConference.QueryById<McConference> (Account.PreferredConferenceId);
+
+                Account.AccountName = accountNameText.Text;
+                Account.UserName = userNameText.Text;
+                Account.Password = passwordText.Text;
+                Account.EmailAddress = emailText.Text; 
+                Account.MailServer = mailServerText.Text;
+                Account.ConferenceCallNumber = conferenceCallText.Text;
 
                 theConference.DefaultPhoneNumber = Account.ConferenceCallNumber;
                 theConference.Update ();
@@ -87,47 +129,61 @@ namespace NachoClient.iOS
                 theAccount.EmailAddr = Account.EmailAddress;
                 theServer.Host = Account.MailServer;
 
-                McCred c = new McCred ();
-                c.Username = Account.UserName;
-                c.Password = Account.Password;
-
-                McServer s = new McServer ();
-                s.Host = Account.MailServer;
-
-                var didStart = BackEnd.Instance.ValidateConfig (theAccount.Id, s, c);
+                var didStart = BackEnd.Instance.ValidateConfig (theAccount.Id, theServer, theCred);
 
                 if (!didStart) {
                     //TODO what happens when there's a network failure?
                     Console.WriteLine ("NETWORK FAILURE");
                 } else {
-                    configureStatusViewForValidating ();
+                    configureStatusViewFor (statusType.Validating);
                 }
+
+                View.ResignFirstResponder ();
+                ResignFirstResponder ();
+                View.EndEditing (true);
             };
         }
 
         public void configureStatusViewForValidating ()
         {
-            float viewwidth = View.Frame.Width / 2.5f;
-            statusView = new UIView (new System.Drawing.RectangleF (viewwidth / 1.3f, 3.5f, viewwidth, View.Frame.Height / 6.0f));
+            statusView = new UIView (new System.Drawing.RectangleF (View.Frame.Width / 6, 100 + TableView.ContentOffset.Y, View.Frame.Width * 2 / 3, 150));
             statusView.Layer.CornerRadius = 15.0f;
-            statusView.BackgroundColor = UIColor.DarkGray;
-            statusView.Alpha = .8f;
+            statusView.BackgroundColor = UIColor.LightGray;
+            statusView.Alpha = 1.0f;
 
             statusMessage = new UITextView (new System.Drawing.RectangleF (8, 2, statusView.Frame.Width - 16, statusView.Frame.Height / 2.4f));
-            statusMessage.BackgroundColor = UIColor.DarkGray;
+            statusMessage.BackgroundColor = UIColor.LightGray;
             statusMessage.Alpha = .8f;
-            statusMessage.Font = A.Font_AvenirNextDemiBold17;
-            statusMessage.TextColor = A.Color_NachoBlue;
-            statusMessage.Text = "Validating";
+            statusMessage.Font = A.Font_AvenirNextRegular17;
+            statusMessage.TextColor = UIColor.Black;
+            statusMessage.Text = "Validating Credentials";
             statusMessage.TextAlignment = UITextAlignment.Center;
             statusView.AddSubview (statusMessage);
 
-            theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.White);
+            theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
             theSpinner.HidesWhenStopped = true;
             theSpinner.Tag = SPINNER_TAG;
-            theSpinner.Frame = new System.Drawing.RectangleF (statusView.Frame.Width / 2 - 10, statusView.Frame.Height * .55f, 20, 20);
+            theSpinner.Frame = new System.Drawing.RectangleF (statusView.Frame.Width / 2 - 20, 50, 40, 40);
             theSpinner.StartAnimating ();
             statusView.AddSubview (theSpinner);
+
+            UIView cancelLine = new UIView (new System.Drawing.RectangleF (0, 105, statusView.Frame.Width, .5f));
+            cancelLine.BackgroundColor = UIColor.Gray;
+            statusView.AddSubview (cancelLine);
+
+            UIButton cancelValidation = new UIButton (new System.Drawing.RectangleF (0, 106, statusView.Frame.Width, 40));
+            cancelValidation.Layer.CornerRadius = 10.0f;
+            cancelValidation.BackgroundColor = UIColor.LightGray;
+            cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
+            cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
+            cancelValidation.TitleLabel.TextColor = UIColor.Blue;
+
+            cancelValidation.AddTarget (((object sender, EventArgs e) => {
+                dismissStatusView ();
+
+            }), UIControlEvent.TouchUpInside);
+
+            statusView.AddSubview (cancelValidation);
 
             View.AddSubview (statusView);
         }
@@ -153,117 +209,46 @@ namespace NachoClient.iOS
             string header = "";
             string message = "";
             bool isSuccess = false;
-
-            float statusViewWidth = 213.0f;
-            float statusViewHeight = 139.0f;
-            float statusViewX = 58.0f;
-            float statusViewY = 3.0f;
+            bool includeButtons = false;
 
             switch (whatType) {
             case statusType.ErrorAuth:
                 header = "Invalid Credentials";
-                message = "Password or Username is incorrect. No emails can be sent or recieved. Still Continue?";
-                isSuccess = false;
+                message = "User name or password is incorrect. No emails can be sent or recieved. Still Continue?";
+                includeButtons = true;
                 break;
             case statusType.ErrorComm:
                 header = "Validation Failed";
                 message = "This account may not be able to send or receive emails. Are you sure you want to continue?";
-                isSuccess = false;
+                includeButtons = true;
+                break;
+            case statusType.ErrorUser:
+                header = "Invalid Credentials";
+                message = "User name or password is incorrect. No emails can be sent or recieved. Still Continue?";
+                includeButtons = true;
                 break;
             case statusType.Success:
                 isSuccess = true;
                 break;
+            case statusType.Validating:
+                configureStatusViewForValidating ();
+                break;
             default:
-                NcAssert.CaseError ();
                 break;
             }
 
-            if (statusView.Subviews.Length > 0) {
-
-                while (statusView.Subviews.Length != 0) {
-                    UIView x = statusView.Subviews [0];
-                    x.RemoveFromSuperview ();
-                }
+            if (isSuccess) {
+                saveSettings ();
             }
 
-            if (isSuccess) {
-                statusView.Frame = new System.Drawing.RectangleF (105, statusViewY + TableView.ContentOffset.Y, 110, 45);
-                statusView.Layer.CornerRadius = 15.0f;
-                statusView.BackgroundColor = UIColor.DarkGray;
-                statusView.Alpha = .8f;
-
-                statusMessage.Frame = new System.Drawing.RectangleF (8, 2, statusView.Frame.Width - 16, statusView.Frame.Height - 6);
-                statusMessage.BackgroundColor = UIColor.DarkGray;
-                statusMessage.Alpha = .8f;
-                statusMessage.Font = A.Font_AvenirNextDemiBold17;
-                statusMessage.TextColor = A.Color_NachoBlue;
-                statusMessage.Text = "Success!";
-                statusMessage.TextAlignment = UITextAlignment.Center;
-                statusView.AddSubview (statusMessage);
-
-                saveSettings ();
-                //dismissStatusView();
-
-            } else {
-                statusView.Frame = new System.Drawing.RectangleF (statusViewX, statusViewY + TableView.ContentOffset.Y, statusViewWidth, statusViewHeight);
-                statusView.Layer.CornerRadius = 15.0f;
-                statusView.BackgroundColor = UIColor.DarkGray;
-                statusView.Alpha = .8f;
-                statusMessage.Frame = new System.Drawing.RectangleF (8, 2, statusView.Frame.Width - 16, 35);
-                statusMessage.BackgroundColor = UIColor.DarkGray;
-                statusMessage.Alpha = .8f;
-                statusMessage.Font = A.Font_AvenirNextDemiBold17;
-                statusMessage.TextColor = UIColor.Red;
-                statusMessage.Text = header;
-                statusMessage.TextAlignment = UITextAlignment.Center;
-                statusView.AddSubview (statusMessage);
-
-                failedConfigWarning = new UITextView (new System.Drawing.RectangleF (8, 28.0f, statusView.Frame.Width - 16, statusView.Frame.Height - 70));
-                failedConfigWarning.BackgroundColor = UIColor.DarkGray;
-                failedConfigWarning.Alpha = .8f;
-                failedConfigWarning.Font = A.Font_AvenirNextRegular12;
-                failedConfigWarning.TextColor = UIColor.White;
-                failedConfigWarning.Text = message;
-                failedConfigWarning.TextAlignment = UITextAlignment.Center;
-                statusView.AddSubview (failedConfigWarning);
-
-                cancelButton = new UIButton (new System.Drawing.RectangleF (0, 100, statusView.Frame.Width / 2 - .5f, 34));
-                cancelButton.BackgroundColor = UIColor.DarkGray;
-                cancelButton.Alpha = .8f;
-                cancelButton.Font = A.Font_AvenirNextDemiBold17;
-                cancelButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-                cancelButton.SetTitle ("Cancel", UIControlState.Normal);
-                cancelButton.Layer.CornerRadius = 10.0f;
-
-                cancelButton.AddTarget (((object sender, EventArgs e) => {
-                    dismissStatusView ();
-                }), UIControlEvent.TouchUpInside);
-
-                statusView.AddSubview (cancelButton);
-
-                UIView horizontalLine = new UIView (new System.Drawing.RectangleF (0, 99, statusView.Frame.Width, 1.0f));
-                horizontalLine.Alpha = .8f;
-                horizontalLine.BackgroundColor = UIColor.White;
-                statusView.Add (horizontalLine);
-
-                UIView verticalLine = new UIView (new System.Drawing.RectangleF (statusView.Frame.Width / 2, 99, 1.0f, 40));
-                verticalLine.Alpha = .8f;
-                verticalLine.BackgroundColor = UIColor.White;
-                statusView.Add (verticalLine);
-
-                saveButton = new UIButton (new System.Drawing.RectangleF (statusView.Frame.Width / 2 + 1.5f, 101.5f, statusView.Frame.Width / 2 - 1.5f, 34));
-                saveButton.BackgroundColor = UIColor.DarkGray;
-                saveButton.Alpha = .8f;
-                saveButton.Font = A.Font_AvenirNextDemiBold17;
-                saveButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-                saveButton.SetTitle ("Save", UIControlState.Normal);
-                saveButton.Layer.CornerRadius = 10.0f;
-
-                saveButton.AddTarget (((object sender, EventArgs e) => {
-                    saveSettings ();
-                    dismissStatusView ();
-                }), UIControlEvent.TouchUpInside);
-                statusView.AddSubview (saveButton);
+            if (includeButtons) {
+                UIAlertView errorView = new UIAlertView (header, message, null, "Save", "Cancel");
+                errorView.Clicked += (object sender, UIButtonEventArgs e) => {
+                    if (e.ButtonIndex == 0) {
+                        saveSettings ();
+                    }
+                };
+                errorView.Show ();
             }
         }
 
@@ -306,24 +291,38 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
                 UpdateAccountCredentials ();
                 StopSpinner ();
+                dismissStatusView ();
                 configureStatusViewFor (statusType.Success);
-                passwordText.TextColor = UIColor.Gray;
-                userNameText.TextColor = UIColor.Gray;
-                mailServerText.TextColor = UIColor.Gray;
+                userNameAndPasswordTextColor = UIColor.Gray;
+                passwordText.TextColor = userNameAndPasswordTextColor;
+                userNameText.TextColor = userNameAndPasswordTextColor;
                 return;
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
                 StopSpinner ();
+                dismissStatusView ();
                 configureStatusViewFor (statusType.ErrorComm);
-                userNameText.TextColor = A.Color_NachoRed; 
-                mailServerText.TextColor = A.Color_NachoRed;
+                userNameAndPasswordTextColor = UIColor.Gray;
+                userNameText.TextColor = userNameAndPasswordTextColor;
+                passwordText.TextColor = userNameAndPasswordTextColor;
                 return;
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
                 StopSpinner ();
+                dismissStatusView ();
                 configureStatusViewFor (statusType.ErrorAuth);
-                passwordText.TextColor = A.Color_NachoRed;
-                userNameText.TextColor = A.Color_NachoRed; 
+                userNameAndPasswordTextColor = A.Color_NachoRed;
+                passwordText.TextColor = userNameAndPasswordTextColor;
+                userNameText.TextColor = userNameAndPasswordTextColor; 
+                return;
+            }
+            if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
+                StopSpinner ();
+                dismissStatusView ();
+                configureStatusViewFor (statusType.ErrorAuth);
+                userNameAndPasswordTextColor = A.Color_NachoRed;
+                passwordText.TextColor = userNameAndPasswordTextColor;
+                userNameText.TextColor = userNameAndPasswordTextColor; 
                 return;
             }
         }
@@ -344,44 +343,50 @@ namespace NachoClient.iOS
         {
             var AccountSection = new Section ("ACCOUNT");
 
-            UITextField accountNameText = new UITextField ();
             var AccountName = new CustomTextInputElement (UIImage.FromBundle (""), "Account Name", Account.AccountName, accountNameText);
             accountNameText.ShouldReturn += (textField) => {
-                Account.AccountName = textField.Text;
+                //Account.AccountName = textField.Text;
                 textField.ResignFirstResponder ();
                 return true;
             };
+
+            accountNameText.EditingDidEndOnExit += (object sender, EventArgs e) => {
+                accountNameText.ResignFirstResponder ();
+            };
+
+            accountNameText.EditingDidEnd += (object sender, EventArgs e) => {
+                accountNameText.ResignFirstResponder ();
+            };
+
             AccountSection.Add (AccountName);
 
-            userNameText = new UITextField ();
-            var UserName = new CustomTextInputElement (UIImage.FromBundle (""), "User Name", Account.UserName, userNameText);
+            UserName = new CustomTextInputElement (UIImage.FromBundle (""), "User Name", Account.UserName, userNameText);
             userNameText.ShouldReturn += (textField) => {
-                Account.UserName = textField.Text;
+                //Account.UserName = textField.Text;
                 textField.ResignFirstResponder ();
                 return true;
             };
+                
+            userNameText.EditingDidBegin += (object sender, EventArgs e) => {
+                userNameText.TextColor = userNameAndPasswordTextColor;
+            };
+
             AccountSection.Add (UserName);
 
-            passwordText = new UITextField ();
-            var Password = new CustomTextInputElement (UIImage.FromBundle (""), "Password", Account.PasswordDisplay, passwordText);
+            Password = new CustomTextInputElement (UIImage.FromBundle (""), "Password", Account.Password, passwordText);
+            passwordText.SecureTextEntry = true;
             passwordText.ShouldReturn += (textField) => {
                 Account.Password = textField.Text;
-                textField.Text = String.Concat (Enumerable.Repeat ("\u2022", Account.Password.Length));
                 textField.ResignFirstResponder ();
                 return true;
-            };
-
-            passwordText.EditingDidBegin += (object sender, EventArgs e) => {
-                passwordText.SecureTextEntry = true;
             };
 
             passwordText.EditingDidEnd += (object sender, EventArgs e) => {
-                passwordText.SecureTextEntry = false;
+                passwordText.TextColor = userNameAndPasswordTextColor;
             };
-                
+
             AccountSection.Add (Password);
 
-            UITextField emailText = new UITextField ();
             var EmailAddress = new CustomTextInputElement (UIImage.FromBundle (""), "Email Address", Account.EmailAddress, emailText);
             emailText.ShouldReturn += (textField) => {
                 Account.EmailAddress = textField.Text;
@@ -390,17 +395,14 @@ namespace NachoClient.iOS
             };
             AccountSection.Add (EmailAddress);
 
-            mailServerText = new UITextField ();
             var MailServer = new CustomTextInputElement (UIImage.FromBundle (""), "Mail Server", Account.MailServer, mailServerText);
             mailServerText.ShouldReturn += (textField) => {
-                Account.MailServer = textField.Text;
+                //Account.MailServer = textField.Text;
                 textField.ResignFirstResponder ();
                 return true;
             };
             AccountSection.Add (MailServer);
 
-
-            UITextField conferenceCallText = new UITextField ();
             var ConferenceCall = new CustomTextInputElement (UIImage.FromBundle (""), "Conference Call #", Account.ConferenceCallNumber, conferenceCallText);
             conferenceCallText.ShouldReturn += (textField) => { 
                 Account.ConferenceCallNumber = textField.Text;
@@ -490,7 +492,6 @@ namespace NachoClient.iOS
             Account.AccountName = whatAccount.DisplayName == null ? "Exchange" : whatAccount.DisplayName;
             Account.UserName = userCredentials.Username;
             Account.Password = userCredentials.Password;
-            Account.PasswordDisplay = String.Concat (Enumerable.Repeat ("\u2022", userCredentials.Password.Length));
             Account.EmailAddress = whatAccount.EmailAddr;
             Account.MailServer = userMailServer.Host;
             Account.EmailSignature = whatAccount.Signature == null ? "Sent from NachoMail" : whatAccount.Signature;
@@ -504,8 +505,6 @@ namespace NachoClient.iOS
             public string UserName { get; set; }
 
             public string Password { get; set; }
-
-            public string PasswordDisplay { get ; set; }
 
             public string EmailAddress { get; set; }
 
@@ -541,7 +540,6 @@ namespace NachoClient.iOS
 
         protected void StopSpinner ()
         {
-
             theSpinner.StopAnimating ();
         }
 
