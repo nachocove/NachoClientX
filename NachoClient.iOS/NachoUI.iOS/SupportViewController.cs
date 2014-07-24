@@ -17,6 +17,10 @@ namespace NachoClient.iOS
         const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
+        const string SupportToComposeSegueId = "SupportToEmailCompose";
+        const string BasicCell = "BasicCell";
+        const string SubtitleCell = "SubtitleCell";
+
 		public SupportViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -24,6 +28,11 @@ namespace NachoClient.iOS
         public override int RowsInSection (UITableView tableview, int section)
         {
             return 3;
+        }
+
+        public override int NumberOfSections (UITableView tableView)
+        {
+            return 1;
         }
 
         public override void ViewDidLoad ()
@@ -35,18 +44,46 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
+
+            this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
+        }
+
+        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        {
+            switch (indexPath.Row) {
+            case 0:
+                SubmitALog ();
+                break;
+            case 1:
+                ContactViaEmail ();
+                break;
+            }
+
+            this.TableView.DeselectRow (indexPath, true);
+        }
+
+        public void SubmitALog ()
+        {
+            PerformSegue (SupportToComposeSegueId, this);
+        }
+
+        public void ContactViaEmail ()
+        {
+            PerformSegue (SupportToComposeSegueId, this);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             UITableViewCell cell = null;
 
-            if (indexPath.Row == 0) {
-                cell = tableView.DequeueReusableCell ("BasicCell");
+            switch (indexPath.Row) {
+            case 0:
+                cell = tableView.DequeueReusableCell (BasicCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = SubmitLogText;
-            } else if (indexPath.Row == 1) {
-                cell = tableView.DequeueReusableCell ("SubtitleCell");
+                break;
+            case 1:
+                cell = tableView.DequeueReusableCell (SubtitleCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByEmailText;
                 cell.DetailTextLabel.Text = SupportEmail;
@@ -54,8 +91,9 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
-            } else if (indexPath.Row == 2) {
-                cell = tableView.DequeueReusableCell ("SubtitleCell");
+                break;
+            case 2:
+                cell = tableView.DequeueReusableCell (SubtitleCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByPhoneText;
                 cell.DetailTextLabel.Text = ContactByPhoneDetailText;
@@ -63,13 +101,23 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
-                return cell;
+                break;
             }
 
             cell.TextLabel.TextColor = A.Color_NachoBlack;
             cell.TextLabel.Font = A.Font_AvenirNextRegular14;
 
             return cell;
+        }
+
+        public override string TitleForHeader (UITableView tableView, int section)
+        {
+            switch (section) {
+            case 0:
+                return @"NachoCove - Beta 1";
+            }
+
+            return null;
         }
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
@@ -83,26 +131,30 @@ namespace NachoClient.iOS
 
             NSString text = null;
             NSString detailText = null;
-            if (indexPath.Row == 0) {
+            switch (indexPath.Row) {
+            case 0:
                 text = new NSString (SubmitLogText);
-            } else if (indexPath.Row == 1) {
+                break;
+            case 1:
                 text = new NSString (ContactByEmailText);
                 detailText = new NSString (SupportEmail);
-            } else if (indexPath.Row == 2) {
+                break;
+            case 2:
                 text = new NSString (ContactByPhoneText);
                 detailText = new NSString (ContactByPhoneDetailText);
-            }
-
-            if (detailText != null) {
-                var detailTextSize = detailText.GetSizeUsingAttributes (detailTextAttrib);
-                var detailRect = text.GetBoundingRect (new System.Drawing.SizeF (detailTextSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, detailTextAttrib, null);
-                height += detailRect.Height;
+                break;
             }
 
             var textSize = text.GetSizeUsingAttributes (textAttrib);
             var rect = text.GetBoundingRect (new System.Drawing.SizeF (textSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, textAttrib, null);
 
-            return height + rect.Height + 40.0F;
+            if (detailText != null) {
+                var detailRect = text.GetBoundingRect (new System.Drawing.SizeF (textSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, 
+                    detailTextAttrib, null);
+                height += detailRect.Height;
+            }
+
+            return height + rect.Height + 30.0F;
         }
 	}
 }

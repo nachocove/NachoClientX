@@ -794,7 +794,97 @@ namespace Test.Android
 			public const int abc_textfield_searchview_right_holo_light = 2130837590;
 			
 			// aapt resource value: 0x7f020057
-			public const int Icon = 2130837591;
+			public const int action_other = 2130837591;
+			
+			// aapt resource value: 0x7f020058
+			public const int action_search = 2130837592;
+			
+			// aapt resource value: 0x7f020059
+			public const int bluedot = 2130837593;
+			
+			// aapt resource value: 0x7f02005a
+			public const int drawer_shadow_dark = 2130837594;
+			
+			// aapt resource value: 0x7f02005b
+			public const int drawer_shadow_light = 2130837595;
+			
+			// aapt resource value: 0x7f02005c
+			public const int ic_action_accept = 2130837596;
+			
+			// aapt resource value: 0x7f02005d
+			public const int ic_action_accounts = 2130837597;
+			
+			// aapt resource value: 0x7f02005e
+			public const int ic_action_add_alarm = 2130837598;
+			
+			// aapt resource value: 0x7f02005f
+			public const int ic_action_alarms = 2130837599;
+			
+			// aapt resource value: 0x7f020060
+			public const int ic_action_brightness_high = 2130837600;
+			
+			// aapt resource value: 0x7f020061
+			public const int ic_action_call = 2130837601;
+			
+			// aapt resource value: 0x7f020062
+			public const int ic_action_collection = 2130837602;
+			
+			// aapt resource value: 0x7f020063
+			public const int ic_action_event = 2130837603;
+			
+			// aapt resource value: 0x7f020064
+			public const int ic_action_forward = 2130837604;
+			
+			// aapt resource value: 0x7f020065
+			public const int ic_action_go_to_today = 2130837605;
+			
+			// aapt resource value: 0x7f020066
+			public const int ic_action_group = 2130837606;
+			
+			// aapt resource value: 0x7f020067
+			public const int ic_action_help = 2130837607;
+			
+			// aapt resource value: 0x7f020068
+			public const int ic_action_map = 2130837608;
+			
+			// aapt resource value: 0x7f020069
+			public const int ic_action_new = 2130837609;
+			
+			// aapt resource value: 0x7f02006a
+			public const int ic_action_place = 2130837610;
+			
+			// aapt resource value: 0x7f02006b
+			public const int ic_action_remove = 2130837611;
+			
+			// aapt resource value: 0x7f02006c
+			public const int ic_action_reply = 2130837612;
+			
+			// aapt resource value: 0x7f02006d
+			public const int ic_action_reply_all = 2130837613;
+			
+			// aapt resource value: 0x7f02006e
+			public const int ic_action_search = 2130837614;
+			
+			// aapt resource value: 0x7f02006f
+			public const int ic_action_settings = 2130837615;
+			
+			// aapt resource value: 0x7f020070
+			public const int ic_action_storage = 2130837616;
+			
+			// aapt resource value: 0x7f020071
+			public const int ic_action_time = 2130837617;
+			
+			// aapt resource value: 0x7f020072
+			public const int ic_action_web_site = 2130837618;
+			
+			// aapt resource value: 0x7f020073
+			public const int ic_drawer_dark = 2130837619;
+			
+			// aapt resource value: 0x7f020074
+			public const int ic_drawer_light = 2130837620;
+			
+			// aapt resource value: 0x7f020075
+			public const int Icon = 2130837621;
 			
 			static Drawable()
 			{
@@ -809,56 +899,59 @@ namespace Test.Android
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f050043
-			public const int OptionHostName = 2131034179;
+			// aapt resource value: 0x7f05005c
+			public const int OptionHostName = 2131034204;
 			
-			// aapt resource value: 0x7f050044
-			public const int OptionPort = 2131034180;
+			// aapt resource value: 0x7f05005d
+			public const int OptionPort = 2131034205;
 			
-			// aapt resource value: 0x7f050042
-			public const int OptionRemoteServer = 2131034178;
+			// aapt resource value: 0x7f05005b
+			public const int OptionRemoteServer = 2131034203;
 			
-			// aapt resource value: 0x7f050051
-			public const int OptionsButton = 2131034193;
+			// aapt resource value: 0x7f05006a
+			public const int OptionsButton = 2131034218;
 			
-			// aapt resource value: 0x7f05004c
-			public const int ResultFullName = 2131034188;
+			// aapt resource value: 0x7f050065
+			public const int ResultFullName = 2131034213;
 			
-			// aapt resource value: 0x7f05004e
-			public const int ResultMessage = 2131034190;
+			// aapt resource value: 0x7f050067
+			public const int ResultMessage = 2131034215;
 			
-			// aapt resource value: 0x7f05004d
-			public const int ResultResultState = 2131034189;
+			// aapt resource value: 0x7f050066
+			public const int ResultResultState = 2131034214;
 			
-			// aapt resource value: 0x7f05004f
-			public const int ResultStackTrace = 2131034191;
+			// aapt resource value: 0x7f050068
+			public const int ResultStackTrace = 2131034216;
 			
-			// aapt resource value: 0x7f050048
-			public const int ResultsFailed = 2131034184;
+			// aapt resource value: 0x7f050061
+			public const int ResultsFailed = 2131034209;
 			
-			// aapt resource value: 0x7f050045
-			public const int ResultsId = 2131034181;
+			// aapt resource value: 0x7f05005e
+			public const int ResultsId = 2131034206;
 			
-			// aapt resource value: 0x7f050049
-			public const int ResultsIgnored = 2131034185;
+			// aapt resource value: 0x7f050062
+			public const int ResultsIgnored = 2131034210;
 			
-			// aapt resource value: 0x7f05004a
-			public const int ResultsInconclusive = 2131034186;
+			// aapt resource value: 0x7f050063
+			public const int ResultsInconclusive = 2131034211;
 			
-			// aapt resource value: 0x7f05004b
-			public const int ResultsMessage = 2131034187;
+			// aapt resource value: 0x7f050064
+			public const int ResultsMessage = 2131034212;
 			
-			// aapt resource value: 0x7f050047
-			public const int ResultsPassed = 2131034183;
+			// aapt resource value: 0x7f050060
+			public const int ResultsPassed = 2131034208;
 			
-			// aapt resource value: 0x7f050046
-			public const int ResultsResult = 2131034182;
+			// aapt resource value: 0x7f05005f
+			public const int ResultsResult = 2131034207;
 			
-			// aapt resource value: 0x7f050050
-			public const int RunTestsButton = 2131034192;
+			// aapt resource value: 0x7f050069
+			public const int RunTestsButton = 2131034217;
 			
-			// aapt resource value: 0x7f050052
-			public const int TestSuiteListView = 2131034194;
+			// aapt resource value: 0x7f05006b
+			public const int TestSuiteListView = 2131034219;
+			
+			// aapt resource value: 0x7f050055
+			public const int action_accept = 2131034197;
 			
 			// aapt resource value: 0x7f05001a
 			public const int action_bar = 2131034138;
@@ -881,8 +974,14 @@ namespace Test.Android
 			// aapt resource value: 0x7f050020
 			public const int action_bar_title = 2131034144;
 			
+			// aapt resource value: 0x7f050070
+			public const int action_call = 2131034224;
+			
 			// aapt resource value: 0x7f05001b
 			public const int action_context_bar = 2131034139;
+			
+			// aapt resource value: 0x7f05006d
+			public const int action_forward = 2131034221;
 			
 			// aapt resource value: 0x7f050016
 			public const int action_menu_divider = 2131034134;
@@ -899,6 +998,21 @@ namespace Test.Android
 			// aapt resource value: 0x7f050022
 			public const int action_mode_close_button = 2131034146;
 			
+			// aapt resource value: 0x7f050056
+			public const int action_remove = 2131034198;
+			
+			// aapt resource value: 0x7f05006f
+			public const int action_reply = 2131034223;
+			
+			// aapt resource value: 0x7f05006e
+			public const int action_reply_all = 2131034222;
+			
+			// aapt resource value: 0x7f050053
+			public const int action_storage = 2131034195;
+			
+			// aapt resource value: 0x7f050054
+			public const int action_time = 2131034196;
+			
 			// aapt resource value: 0x7f050023
 			public const int activity_chooser_view_content = 2131034147;
 			
@@ -908,11 +1022,17 @@ namespace Test.Android
 			// aapt resource value: 0x7f050011
 			public const int beginning = 2131034129;
 			
+			// aapt resource value: 0x7f050048
+			public const int btnConnect = 2131034184;
+			
 			// aapt resource value: 0x7f05002b
 			public const int checkbox = 2131034155;
 			
 			// aapt resource value: 0x7f05000d
 			public const int collapseActionView = 2131034125;
+			
+			// aapt resource value: 0x7f05004a
+			public const int content_frame = 2131034186;
 			
 			// aapt resource value: 0x7f050026
 			public const int default_activity_button = 2131034150;
@@ -922,6 +1042,9 @@ namespace Test.Android
 			
 			// aapt resource value: 0x7f050008
 			public const int disableHome = 2131034120;
+			
+			// aapt resource value: 0x7f050049
+			public const int drawer_layout = 2131034185;
 			
 			// aapt resource value: 0x7f05000f
 			public const int dropdown = 2131034127;
@@ -938,6 +1061,15 @@ namespace Test.Android
 			// aapt resource value: 0x7f05002a
 			public const int expanded_menu = 2131034154;
 			
+			// aapt resource value: 0x7f050058
+			public const int goto_first = 2131034200;
+			
+			// aapt resource value: 0x7f050059
+			public const int goto_last = 2131034201;
+			
+			// aapt resource value: 0x7f050044
+			public const int header = 2131034180;
+			
 			// aapt resource value: 0x7f050014
 			public const int home = 2131034132;
 			
@@ -953,6 +1085,9 @@ namespace Test.Android
 			// aapt resource value: 0x7f050025
 			public const int image = 2131034149;
 			
+			// aapt resource value: 0x7f05004b
+			public const int left_drawer = 2131034187;
+			
 			// aapt resource value: 0x7f050031
 			public const int left_icon = 2131034161;
 			
@@ -961,6 +1096,9 @@ namespace Test.Android
 			
 			// aapt resource value: 0x7f050027
 			public const int list_item = 2131034151;
+			
+			// aapt resource value: 0x7f050043
+			public const int listview = 2131034179;
 			
 			// aapt resource value: 0x7f050012
 			public const int middle = 2131034130;
@@ -974,6 +1112,9 @@ namespace Test.Android
 			// aapt resource value: 0x7f050000
 			public const int normal = 2131034112;
 			
+			// aapt resource value: 0x7f050057
+			public const int pager = 2131034199;
+			
 			// aapt resource value: 0x7f050034
 			public const int progress_circular = 2131034164;
 			
@@ -983,11 +1124,17 @@ namespace Test.Android
 			// aapt resource value: 0x7f05002d
 			public const int radio = 2131034157;
 			
+			// aapt resource value: 0x7f050050
+			public const int received = 2131034192;
+			
 			// aapt resource value: 0x7f050032
 			public const int right_container = 2131034162;
 			
 			// aapt resource value: 0x7f050033
 			public const int right_icon = 2131034163;
+			
+			// aapt resource value: 0x7f05006c
+			public const int search = 2131034220;
 			
 			// aapt resource value: 0x7f050038
 			public const int search_badge = 2131034168;
@@ -1019,6 +1166,9 @@ namespace Test.Android
 			// aapt resource value: 0x7f050041
 			public const int search_voice_btn = 2131034177;
 			
+			// aapt resource value: 0x7f05004f
+			public const int sender = 2131034191;
+			
 			// aapt resource value: 0x7f05002c
 			public const int shortcut = 2131034156;
 			
@@ -1034,11 +1184,29 @@ namespace Test.Android
 			// aapt resource value: 0x7f05001c
 			public const int split_action_bar = 2131034140;
 			
+			// aapt resource value: 0x7f05004d
+			public const int status = 2131034189;
+			
+			// aapt resource value: 0x7f05004e
+			public const int status_image = 2131034190;
+			
+			// aapt resource value: 0x7f050051
+			public const int subject = 2131034193;
+			
 			// aapt resource value: 0x7f05003f
 			public const int submit_area = 2131034175;
 			
+			// aapt resource value: 0x7f050052
+			public const int summary = 2131034194;
+			
 			// aapt resource value: 0x7f050002
 			public const int tabMode = 2131034114;
+			
+			// aapt resource value: 0x7f05004c
+			public const int tag = 2131034188;
+			
+			// aapt resource value: 0x7f05005a
+			public const int text = 2131034202;
 			
 			// aapt resource value: 0x7f050029
 			public const int title = 2131034153;
@@ -1054,6 +1222,18 @@ namespace Test.Android
 			
 			// aapt resource value: 0x7f050003
 			public const int useLogo = 2131034115;
+			
+			// aapt resource value: 0x7f050046
+			public const int user_email = 2131034182;
+			
+			// aapt resource value: 0x7f050047
+			public const int user_password = 2131034183;
+			
+			// aapt resource value: 0x7f050045
+			public const int user_server = 2131034181;
+			
+			// aapt resource value: 0x7f050042
+			public const int value = 2131034178;
 			
 			// aapt resource value: 0x7f05000c
 			public const int withText = 2131034124;
@@ -1160,19 +1340,79 @@ namespace Test.Android
 			public const int abc_search_view = 2130903063;
 			
 			// aapt resource value: 0x7f030018
-			public const int options = 2130903064;
+			public const int calendaritemviewfragment = 2130903064;
 			
 			// aapt resource value: 0x7f030019
-			public const int results = 2130903065;
+			public const int calendarlistfragment = 2130903065;
 			
 			// aapt resource value: 0x7f03001a
-			public const int support_simple_spinner_dropdown_item = 2130903066;
+			public const int calendarlistgroup = 2130903066;
 			
 			// aapt resource value: 0x7f03001b
-			public const int test_result = 2130903067;
+			public const int contactlistfragment = 2130903067;
 			
 			// aapt resource value: 0x7f03001c
-			public const int test_suite = 2130903068;
+			public const int contactviewfragment = 2130903068;
+			
+			// aapt resource value: 0x7f03001d
+			public const int credentialsfragment = 2130903069;
+			
+			// aapt resource value: 0x7f03001e
+			public const int drawerlistitem = 2130903070;
+			
+			// aapt resource value: 0x7f03001f
+			public const int folderlistfragment = 2130903071;
+			
+			// aapt resource value: 0x7f030020
+			public const int homefragment = 2130903072;
+			
+			// aapt resource value: 0x7f030021
+			public const int main = 2130903073;
+			
+			// aapt resource value: 0x7f030022
+			public const int messageheaderitem = 2130903074;
+			
+			// aapt resource value: 0x7f030023
+			public const int messagelistfragment = 2130903075;
+			
+			// aapt resource value: 0x7f030024
+			public const int messagelistitem = 2130903076;
+			
+			// aapt resource value: 0x7f030025
+			public const int messageviewfragment = 2130903077;
+			
+			// aapt resource value: 0x7f030026
+			public const int messageviewfragmentactionbar = 2130903078;
+			
+			// aapt resource value: 0x7f030027
+			public const int mimehtml = 2130903079;
+			
+			// aapt resource value: 0x7f030028
+			public const int mimepartimage = 2130903080;
+			
+			// aapt resource value: 0x7f030029
+			public const int mimeparttext = 2130903081;
+			
+			// aapt resource value: 0x7f03002a
+			public const int nachonowfragment = 2130903082;
+			
+			// aapt resource value: 0x7f03002b
+			public const int nachonowpage = 2130903083;
+			
+			// aapt resource value: 0x7f03002c
+			public const int options = 2130903084;
+			
+			// aapt resource value: 0x7f03002d
+			public const int results = 2130903085;
+			
+			// aapt resource value: 0x7f03002e
+			public const int support_simple_spinner_dropdown_item = 2130903086;
+			
+			// aapt resource value: 0x7f03002f
+			public const int test_result = 2130903087;
+			
+			// aapt resource value: 0x7f030030
+			public const int test_suite = 2130903088;
 			
 			static Layout()
 			{
@@ -1184,8 +1424,33 @@ namespace Test.Android
 			}
 		}
 		
+		public partial class Menu
+		{
+			
+			// aapt resource value: 0x7f0c0000
+			public const int contactlistfragment = 2131492864;
+			
+			// aapt resource value: 0x7f0c0001
+			public const int messageviewfragment = 2131492865;
+			
+			static Menu()
+			{
+				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
+			}
+			
+			private Menu()
+			{
+			}
+		}
+		
 		public partial class String
 		{
+			
+			// aapt resource value: 0x7f0a000f
+			public const int DrawerClose = 2131361807;
+			
+			// aapt resource value: 0x7f0a000e
+			public const int DrawerOpen = 2131361806;
 			
 			// aapt resource value: 0x7f0a0001
 			public const int abc_action_bar_home_description = 2131361793;
@@ -1226,8 +1491,38 @@ namespace Test.Android
 			// aapt resource value: 0x7f0a000b
 			public const int abc_shareactionprovider_share_with_application = 2131361803;
 			
+			// aapt resource value: 0x7f0a0016
+			public const int action_accept = 2131361814;
+			
+			// aapt resource value: 0x7f0a0018
+			public const int action_call = 2131361816;
+			
+			// aapt resource value: 0x7f0a0014
+			public const int action_forward = 2131361812;
+			
+			// aapt resource value: 0x7f0a0015
+			public const int action_remove = 2131361813;
+			
+			// aapt resource value: 0x7f0a0012
+			public const int action_reply = 2131361810;
+			
+			// aapt resource value: 0x7f0a0013
+			public const int action_reply_all = 2131361811;
+			
+			// aapt resource value: 0x7f0a0010
+			public const int action_search = 2131361808;
+			
+			// aapt resource value: 0x7f0a0017
+			public const int action_storage = 2131361815;
+			
+			// aapt resource value: 0x7f0a0011
+			public const int action_time = 2131361809;
+			
 			// aapt resource value: 0x7f0a000d
-			public const int library_name = 2131361805;
+			public const int app_name = 2131361805;
+			
+			// aapt resource value: 0x7f0a0019
+			public const int library_name = 2131361817;
 			
 			static String()
 			{

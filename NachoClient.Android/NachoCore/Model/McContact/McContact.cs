@@ -966,38 +966,40 @@ namespace NachoCore.Model
             var target = searchFor.Split (new char[] { ' ' });
             var firstName = target.First () + "%";
             var lastName = target.Last () + "%";
-            var email1 = firstName;
-            var email2 = "'" + firstName;
-            if (1 == target.Count ()) {
-                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
-                    "Select s.* FROM McContactEmailAddressAttribute AS s  " +
-                    " JOIN McContact AS c ON s.ContactId = c.Id   " +
-                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
-                    " WHERE " +
-                    " m.ClassCode=? AND  " +
-                    " c.AccountId = ? AND " +
-                    " c.IsAwaitingDelete = 0 AND " +
-                    " c.AccountId=m.AccountId AND " +
-                    " ( " +
-                    "     ( c.FirstName LIKE ? OR c.LastName LIKE ? ) OR " +
-                    "     s.Value LIKE ? OR s.Value LIKE ? " +
-                    " ) " +
-                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                    McAbstrFolderEntry.ClassCodeEnum.Contact, accountId, firstName, lastName, email1, email2);
-            } else {
-                return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
-                    "Select s.* FROM McContactEmailAddressAttribute AS s  " +
-                    " JOIN McContact AS c ON s.ContactId = c.Id   " +
-                    " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
-                    " WHERE " +
-                    " m.ClassCode=? AND  " +
-                    " c.AccountId = ? AND " +
-                    " c.IsAwaitingDelete = 0 AND " +
-                    " c.AccountId=m.AccountId AND " +
-                    " ( c.FirstName LIKE ? AND c.LastName LIKE ? ) " +
-                    " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                    McAbstrFolderEntry.ClassCodeEnum.Contact, accountId, firstName, lastName, firstName);
-            }
+            return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
+                "Select s.*, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
+                "FROM McContactEmailAddressAttribute AS s " +
+                "JOIN McContact AS c ON s.ContactId = c.Id " +
+                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                "WHERE " +
+                "m.ClassCode=? AND " +
+                "c.AccountId = ? AND " +
+                "c.IsAwaitingDelete = 0 AND " +
+                "c.AccountId=m.AccountId AND " +
+                "( " +
+                "  c.FirstName LIKE ? OR c.LastName LIKE ?  OR s.Value LIKE ? OR s.Value LIKE ? " +
+                ") " +
+                " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
+                McAbstrFolderEntry.ClassCodeEnum.Contact, accountId, firstName, lastName, firstName, lastName);
+        }
+
+        public static List<NcContactIndex> AllContactsSortedByName (int accountId)
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (
+                "SELECT DISTINCT Id FROM ( " +
+                "SELECT c.Id, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
+                "FROM McContactEmailAddressAttribute AS s " +
+                "JOIN McContact AS c ON s.ContactId = c.Id " +
+                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                "WHERE " +
+                "m.ClassCode = 4 AND " +
+                "c.AccountId = 1 AND " +
+                "c.IsAwaitingDelete = 0 AND " +
+                "c.AccountId = m.AccountId " +
+                "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
+                ")",
+                McAbstrFolderEntry.ClassCodeEnum.Contact, accountId
+            );
         }
 
         /// TODO: VIPness should be in its own member
@@ -1018,7 +1020,7 @@ namespace NachoCore.Model
 
         public string GetDisplayName ()
         {
-            if (!String.IsNullOrEmpty(DisplayName)) {
+            if (!String.IsNullOrEmpty (DisplayName)) {
                 return DisplayName;
             }
             List<string> value = new List<string> ();
@@ -1046,7 +1048,7 @@ namespace NachoCore.Model
             return EmailAddresses.First ().Value;
         }
 
-        public string GetDisplayNameOrEmailAddress()
+        public string GetDisplayNameOrEmailAddress ()
         {
             var displayName = GetDisplayName ();
             if (String.IsNullOrEmpty (displayName)) {

@@ -138,6 +138,18 @@ namespace NachoClient.iOS
         const int EVENT_ATTENDEE_LABEL_TAG = 120;
         const int EVENT_ATTACHMENT_DETAIL_TAG = 121;
 
+        protected static TupleList<uint, string> minList = new TupleList<uint, string> {
+            { 0, "None" },
+            { 1, "At time of event" },
+            { 5, "5 min before" },
+            { 15, "15 min before" },
+            { 30, "30 min before" },
+            { 60, "1 hour before" },
+            { 120, "2 hours before" },
+            { 1440, "1 day before" },
+            { 2880, "2 days before" },
+            { 20160, "1 week before" },
+        };
 
         public EventViewController (IntPtr handle) : base (handle)
         {
@@ -235,23 +247,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            switch (action) {
-            case CalendarItemEditorAction.create:
-                c = CalendarHelper.DefaultMeeting ();
-                ConfigureEventView ();
-                break;
-            case CalendarItemEditorAction.edit:
-                c = item;
-                //ConfigureEventView ();
-                break;
-            case CalendarItemEditorAction.view:
-                c = item;
-                ConfigureEventView ();
-                break;
-            default:
-                NcAssert.CaseError ();
-                break;
-            }
+            ConfigureEventView ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -987,60 +983,16 @@ namespace NachoClient.iOS
                     EventInfoView.Add (noAttendeeDetailTextLabel);
                 } else if (5 >= c.attendees.Count) {
                     foreach (var attendee in c.attendees) {
-                        //var name = attendee.DisplayName;
-                        UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
-                        attendeeButton.Layer.CornerRadius = (45 / 2);
-                        attendeeButton.Layer.MasksToBounds = true;
-                        //attendeeButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
-                        attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
-                        attendeeButton.Frame = new RectangleF (23 + SPACING, 20 + 160 + 57 + 57, 45, 45);
-                        attendeeButton.Font = A.Font_AvenirNextRegular24;
-                        attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-                        attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
-                        attendeeButton.Tag = EVENT_ATTENDEE_TAG + counter;
-                        //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-                        attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
-                            //                var identifer = buttonInfo.segueIdentifier;
-                            //                PerformSegue (identifer, new SegueHolder (null));
-                            Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
-                        };
-                        EventInfoView.Add (attendeeButton);
+                        AttendeeButton (23 + SPACING, 20 + 160 + 57 + 57, 45, 45, EVENT_ATTENDEE_TAG + counter, EventInfoView);
+                        AttendeeNameLabel (23 + SPACING, 20 + 325, 45, 15, EVENT_ATTENDEE_LABEL_TAG + counter, EventInfoView);
 
-                        UILabel eventAttendeesNameLabel = new UILabel (new RectangleF (23 + SPACING, 20 + 325, 45, 15));
-                        eventAttendeesNameLabel.Font = A.Font_AvenirNextRegular14;
-                        eventAttendeesNameLabel.TextColor = A.Color_NachoBlack;
-                        eventAttendeesNameLabel.TextAlignment = UITextAlignment.Center;
-                        eventAttendeesNameLabel.Tag = EVENT_ATTENDEE_LABEL_TAG + counter;
-                        EventInfoView.Add (eventAttendeesNameLabel);
                         counter++;
                         SPACING = SPACING + 55;
                     }
                 } else {
                     foreach (var attendee in c.attendees) {
-                        //var name = attendee.DisplayName;
-                        UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
-                        attendeeButton.Layer.CornerRadius = (45 / 2);
-                        attendeeButton.Layer.MasksToBounds = true;
-                        attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
-                        attendeeButton.Frame = new RectangleF (23 + SPACING, 20 + 160 + 57 + 57, 45, 45);
-                        attendeeButton.Font = A.Font_AvenirNextRegular24;
-                        attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-                        attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
-                        attendeeButton.Tag = EVENT_ATTENDEE_TAG + counter;
-                        //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-                        attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
-                            //                var identifer = buttonInfo.segueIdentifier;
-                            //                PerformSegue (identifer, new SegueHolder (null));
-                            Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
-                        };
-                        EventInfoView.Add (attendeeButton);
-
-                        UILabel eventAttendeesNameLabel = new UILabel (new RectangleF (23 + SPACING, 20 + 325, 45, 15));
-                        eventAttendeesNameLabel.Font = A.Font_AvenirNextRegular14;
-                        eventAttendeesNameLabel.TextColor = A.Color_NachoBlack;
-                        eventAttendeesNameLabel.TextAlignment = UITextAlignment.Center;
-                        eventAttendeesNameLabel.Tag = EVENT_ATTENDEE_LABEL_TAG + counter;
-                        EventInfoView.Add (eventAttendeesNameLabel);
+                        AttendeeButton (23 + SPACING, 20 + 160 + 57 + 57, 45, 45, EVENT_ATTENDEE_TAG + counter, EventInfoView);
+                        AttendeeNameLabel (23 + SPACING, 20 + 325, 45, 15, EVENT_ATTENDEE_LABEL_TAG + counter, EventInfoView);
 
                         counter++;
                         if (4 == counter) {
@@ -1058,7 +1010,6 @@ namespace NachoClient.iOS
                     eventAttendeeDetailButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
                     eventAttendeeDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                     eventAttendeeDetailButton.Tag = EVENT_ATTENDEE_DETAIL_TAG;
-                    //eventAttendeeDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                     eventAttendeeDetailButton.TouchUpInside += (object sender, EventArgs e) => {
                         //                var identifer = buttonInfo.segueIdentifier;
                         //                PerformSegue (identifer, new SegueHolder (null));
@@ -1067,6 +1018,10 @@ namespace NachoClient.iOS
                     };
 
                 }
+
+                //////////////////////
+                /// Bottom three cells
+                //////////////////////
 
                 //alerts 
                 eventAlertsView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
@@ -1158,7 +1113,7 @@ namespace NachoClient.iOS
                     AddLine (23f, 20 + 245 + IMAGE_HEIGHT + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
                 }
 
-
+                //Content View
                 contentView.Add (EventInfoView);
                 contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 700);
                 contentView.BackgroundColor = UIColor.White;
@@ -1252,7 +1207,6 @@ namespace NachoClient.iOS
                     attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
 
                     var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                    //string[] name = Attendees [i].Split(' ');
                     attendeeLabelView.Text = c.attendees.ElementAt (i).DisplayName;
                     i++;
                 }
@@ -1383,6 +1337,34 @@ namespace NachoClient.iOS
             parentView.Add (DetailTextLabel);
         }
 
+        public void AttendeeNameLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
+        {
+            UILabel NameLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            NameLabel.Font = A.Font_AvenirNextRegular14;
+            NameLabel.TextColor = UIColor.LightGray;
+            NameLabel.Tag = tag;
+            parentView.Add (NameLabel);
+        }
+
+        public void AttendeeButton (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
+        {
+            UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+            attendeeButton.Layer.CornerRadius = (45 / 2);
+            attendeeButton.Layer.MasksToBounds = true;
+            attendeeButton.Layer.BackgroundColor = A.Color_NachoYellow.CGColor;
+            attendeeButton.Frame = new RectangleF (xOffset, yOffset, width, height);
+            attendeeButton.Font = A.Font_AvenirNextRegular24;
+            attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+            attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+            attendeeButton.Tag = tag;
+            attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
+                //                var identifer = buttonInfo.segueIdentifier;
+                //                PerformSegue (identifer, new SegueHolder (null));
+                Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
+            };
+            parentView.Add (attendeeButton);
+        }
+
         protected void SelectionChanged (UITextView textView)
         {
             // We want to scroll the caret rect into view
@@ -1410,39 +1392,23 @@ namespace NachoClient.iOS
             scrollView.ScrollRectToVisible (caretRect, true);
         }
 
+        public class TupleList<T1, T2> : List<Tuple<T1, T2>>
+        {
+            public void Add (T1 item, T2 item2)
+            {
+                Add (new Tuple<T1, T2> (item, item2));
+            }
+        }
+
         public string UIntToString (uint min)
         {
-            if (0 == min) {
-                return "None";
+            string time = "None";
+            foreach (var pair in minList) {
+                if (pair.Item1 == min) {
+                    time = pair.Item2;
+                }
             }
-            if (1 == min) {
-                return "At time of event";
-            }
-            if (5 == min) {
-                return "5 min before";
-            }
-            if (15 == min) {
-                return "15 min before";
-            }
-            if (30 == min) {
-                return "30 min before";
-            }
-            if (60 == min) {
-                return "1 hour before";
-            }
-            if (120 == min) {
-                return "2 hours before";
-            }
-            if (1440 == min) {
-                return "1 day before";
-            }
-            if (2880 == min) {
-                return "2 days before";
-            }
-            if (20160 == min) {
-                return "1 week before";
-            }
-            return "None";
+            return time;
         }
 
         protected void LayoutView ()

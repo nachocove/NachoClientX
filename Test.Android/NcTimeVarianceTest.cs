@@ -10,6 +10,7 @@ namespace Test.Common
 {
     public class NcTimeVarianceTest
     {
+        private const int TIMEOUT = 1000; // in milliseconds
         private const int ID_DEADLINE = 0;
         private const int ID_DEFERENCE = 1;
         private const int ID_AGING = 2;
@@ -58,13 +59,14 @@ namespace Test.Common
         private void CheckState (int id, bool waitForSignal, int state, double adjustment)
         {
             if (waitForSignal) {
-                bool signaled = Signal.WaitOne (2000);
+                bool signaled = Signal.WaitOne (TIMEOUT);
                 Assert.True (signaled);
             }
             Assert.AreEqual (state, CallbackState);
             Assert.AreEqual (adjustment, Adjustment);
             Assert.AreEqual (state, TimeVariance [id].State);
             Assert.AreEqual (adjustment, TimeVariance [id].Adjustment ());
+            MockTimer.WaitForCallBack ();
         }
 
         private void AdvanceAndCheckState (int id, int state, double adjustment, int days)

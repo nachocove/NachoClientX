@@ -87,7 +87,16 @@ namespace Test.Common
         }
 
         // Current time (in milliseconds)
-        private static object CurrentTimeLock;
+        private static object _CurrentTimeLock;
+        private static object CurrentTimeLock {
+            get {
+                if (null == _CurrentTimeLock) {
+                    _CurrentTimeLock = new object ();
+                }
+                return _CurrentTimeLock;
+            }
+        }
+
         private static Int64 _CurrentTime;
         public static Int64 CurrentTime {
             get {
@@ -95,9 +104,6 @@ namespace Test.Common
             }
             set {
                 NcAssert.True (value > _CurrentTime);
-                if (null == CurrentTimeLock) {
-                    CurrentTimeLock = new object ();
-                }
                 // This is a hack to simulate the right behavior. The unit test
                 // thread sets the mock system time asynchronously to the callback
                 // thread. This is actually how the real system works as well. However,
