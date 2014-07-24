@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
 using NachoCore.Utils;
+using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
@@ -15,11 +16,16 @@ namespace NachoClient.iOS
         const string ContactByEmailText = "Contact us via email";
         const string SupportEmail = "support@nachocove.com";
         const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
+        const string PhoneNumberLink = "telprompt://14044362246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
         const string SupportToComposeSegueId = "SupportToEmailCompose";
         const string BasicCell = "BasicCell";
         const string SubtitleCell = "SubtitleCell";
+
+        // this string is sent to Telemetry when the user sends a log so we can collect the log
+        const string LogNotification = "USER_SENDING_LOG";
+        const string ContactingSupportNotification = "USER_IS_CONTACTING_SUPPORT";
 
 		public SupportViewController (IntPtr handle) : base (handle)
 		{
@@ -57,6 +63,9 @@ namespace NachoClient.iOS
             case 1:
                 ContactViaEmail ();
                 break;
+            case 2:
+                UIApplication.SharedApplication.OpenUrl (new NSUrl (PhoneNumberLink));
+                break;
             }
 
             this.TableView.DeselectRow (indexPath, true);
@@ -64,12 +73,60 @@ namespace NachoClient.iOS
 
         public void SubmitALog ()
         {
-            PerformSegue (SupportToComposeSegueId, this);
+            Log.Info (Log.LOG_UI, LogNotification);
+            var messageContent = new Dictionary<string, string>()
+            {
+                { "subject", "Additional log information" },
+            };
+
+            UIAlertView alert = new UIAlertView (
+                "Log sent", 
+                "Would you like to send an email along with your log report?", 
+                null, 
+                "OK", 
+                "Cancel"
+            );
+            alert.Clicked += (s, b) => {
+                if (b.ButtonIndex == 0) {
+                    PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
+                }
+            };
+            alert.Show();
         }
 
         public void ContactViaEmail ()
         {
-            PerformSegue (SupportToComposeSegueId, this);
+            Log.Info (Log.LOG_UI, ContactingSupportNotification);
+            var telem = Telemetry.SharedInstance;
+            var clientId = telem.GetUserName ();
+            if (clientId != null) {
+                Log.Info (Log.LOG_UI, clientId);
+            } else {
+                Log.Info (Log.LOG_UI, "ClientId was not found");
+            }
+            PerformSegue (SupportToComposeSegueId, new SegueHolder (null));
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals (SupportToComposeSegueId)) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                NcEmailAddress address = new NcEmailAddress (NcEmailAddress.Kind.To, SupportEmail);
+
+                var holder = sender as SegueHolder;
+                var contents = (Dictionary<string, string>)holder.value;
+
+                string subject = null;
+                if (contents != null) {
+                    contents.TryGetValue ("subject", out subject);
+                }
+
+                dc.SetEmailAddressAndTemplate (address, subject);
+                return;
+            }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifier {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)

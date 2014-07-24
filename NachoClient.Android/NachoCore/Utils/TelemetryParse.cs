@@ -118,6 +118,11 @@ namespace NachoCore.Utils
             return null != CurrentUser.Username;
         }
 
+        public string GetUserName ()
+        {
+            return IsUseable () ? CurrentUser.Username : null;
+        }
+
         public static string dummy = "";
 
         public void SendEvent (TelemetryEvent tEvent)
