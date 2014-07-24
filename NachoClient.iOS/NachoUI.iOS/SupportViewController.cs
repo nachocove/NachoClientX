@@ -16,6 +16,7 @@ namespace NachoClient.iOS
         const string ContactByEmailText = "Contact us via email";
         const string SupportEmail = "support@nachocove.com";
         const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
+        const string PhoneNumberLink = "telprompt://14044362246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
         const string SupportToComposeSegueId = "SupportToEmailCompose";
@@ -61,6 +62,9 @@ namespace NachoClient.iOS
                 break;
             case 1:
                 ContactViaEmail ();
+                break;
+            case 2:
+                UIApplication.SharedApplication.OpenUrl (new NSUrl (PhoneNumberLink));
                 break;
             }
 
@@ -154,7 +158,6 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
-                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 break;
             }
 
