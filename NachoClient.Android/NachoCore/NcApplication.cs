@@ -86,7 +86,13 @@ namespace NachoCore
                         return true;
                     }
                     if (ex is System.IO.IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
+                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
                         // XAMMIT. Known bug. AsHttpOperation will time-out and retry. No need to crash.
+                        return true;
+                    }
+                    if (ex is System.OperationCanceledException && message.Contains ("Telemetry.Process")) {
+                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: OperationCanceledException with Telemetry.Process");
+                        // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                         return true;
                     }
                     return false;
