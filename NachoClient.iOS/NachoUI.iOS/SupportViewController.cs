@@ -22,6 +22,10 @@ namespace NachoClient.iOS
         const string BasicCell = "BasicCell";
         const string SubtitleCell = "SubtitleCell";
 
+        // this string is sent to Telemetry when the user sends a log so we can collect the log
+        const string LogNotification = "USER_SENDING_LOG";
+        const string ContactingSupportNotification = "USER_IS_CONTACTING_SUPPORT";
+
 		public SupportViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -65,15 +69,37 @@ namespace NachoClient.iOS
 
         public void SubmitALog ()
         {
+            Log.Info (Log.LOG_UI, LogNotification);
             var messageContent = new Dictionary<string, string>()
             {
                 { "subject", "Additional log information" },
             };
-            PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
+
+            UIAlertView alert = new UIAlertView (
+                "Log sent", 
+                "Would you like to send an email along with your log report?", 
+                null, 
+                "OK", 
+                "Cancel"
+            );
+            alert.Clicked += (s, b) => {
+                if (b.ButtonIndex == 0) {
+                    PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
+                }
+            };
+            alert.Show();
         }
 
         public void ContactViaEmail ()
         {
+            Log.Info (Log.LOG_UI, ContactingSupportNotification);
+            var telem = Telemetry.SharedInstance;
+            var clientId = telem.GetUserName ();
+            if (clientId != null) {
+                Log.Info (Log.LOG_UI, clientId);
+            } else {
+                Log.Info (Log.LOG_UI, "ClientId was not found");
+            }
             PerformSegue (SupportToComposeSegueId, new SegueHolder (null));
         }
 
