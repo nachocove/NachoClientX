@@ -142,7 +142,6 @@ namespace NachoClient.iOS
             UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
                 UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
-            application.ApplicationIconBadgeNumber = 0;
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
 
