@@ -50,6 +50,7 @@ namespace NachoCore.ActiveSync
             CredW2,
             SrvConfW,
             TestW,
+            Peek404,
         };
         // Event codes shared between TL and Robot SMs.
         public class SharedEvt : AsProtoControl.AsEvt
@@ -233,8 +234,8 @@ namespace NachoCore.ActiveSync
                             },
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
-                                Act = DoUiGetServer,
-                                State = (uint)Lst.SrvConfW
+                                Act = DoPeek404,
+                                State = (uint)Lst.Peek404
                             },
                             // We got told to re-do auto-d. But that won't work!
                             new Trans {
@@ -263,6 +264,36 @@ namespace NachoCore.ActiveSync
                             // Re-try test because app set creds.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
                             // Re-try test because app set server config.
+                            new Trans {
+                                Event = (uint)TlEvt.E.ServerSet,
+                                Act = DoTestFromUi,
+                                State = (uint)Lst.TestW
+                            },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
+                        }
+                    },
+
+                    // Treat a 404 differently - as an auth-fail due to username.
+                    new Node {State = (uint)Lst.Peek404,
+                        Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
+                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, 
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, State = (uint)Lst.TestW },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = DoUiGetServer,
+                                State = (uint)Lst.SrvConfW
+                            },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = DoUiGetCred,
+                                State = (uint)Lst.CredW2
+                            },
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerSet,
                                 Act = DoTestFromUi,
@@ -337,8 +368,7 @@ namespace NachoCore.ActiveSync
             Sm.Name = OwnerSm.Name + ":AUTOD";
             Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
-            if (null == BEContext.Server || true == BEContext.Server.UsedBefore ||
-                string.Empty == BEContext.Server.Host) {
+            if (null == BEContext.Server || true == BEContext.Server.UsedBefore) {
                 Sm.Start ();
             } else {
                 ServerCandidate = BEContext.Server;
@@ -498,6 +528,15 @@ namespace NachoCore.ActiveSync
             DoTest ();
         }
 
+        private void DoPeek404 ()
+        {
+            if (((int?)HttpStatusCode.NotFound) == Sm.Arg as int?) {
+                Sm.PostEvent ((uint)AsProtoControl.AsEvt.E.AuthFail, "AUTODP404USER");
+            } else {
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODP404HF");
+            }
+        }
+
         private void DoUiGetServer ()
         {
             OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
@@ -512,10 +551,19 @@ namespace NachoCore.ActiveSync
         private void DoAcceptServerConf ()
         {
             // Save validated server config in DB.
-            var serverRecord = BEContext.Server;
-            serverRecord.CopyFrom (ServerCandidate);
-            serverRecord.UsedBefore = true;
-            serverRecord.Update ();
+            NcModel.Instance.RunInTransaction (() => {
+                var serverRecord = BEContext.Server;
+                if (null != serverRecord) {
+                    serverRecord.CopyFrom (ServerCandidate);
+                    serverRecord.UsedBefore = true;
+                    serverRecord.Update ();
+                } else {
+                    var account = BEContext.Account;
+                    ServerCandidate.Insert ();
+                    account.ServerId = ServerCandidate.Id;
+                    account.Update ();
+                }
+            });
             // Signal that we are done and that we have a server config.
             // Success is the only way we finish - either by UI setting or autodiscovery.
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");

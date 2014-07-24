@@ -83,6 +83,25 @@ namespace NachoCore.ActiveSync
             ProtoControl = this;
             Owner = owner;
             AccountId = accountId;
+            NcModel.Instance.RunInTransaction (() => {
+                bool needUpdate = false;
+                var account = Account;
+                if (0 == account.PolicyId) {
+                    var policy = new McPolicy ();
+                    policy.Insert ();
+                    account.PolicyId = policy.Id;
+                    needUpdate = true;
+                }
+                if (0 == Account.ProtocolStateId) {
+                    var protocolState = new McProtocolState ();
+                    protocolState.Insert ();
+                    account.ProtocolStateId = protocolState.Id;
+                    needUpdate = true;
+                }
+                if (needUpdate) {
+                    account.Update();
+                }
+            });
             /*
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.

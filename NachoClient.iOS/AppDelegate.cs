@@ -486,8 +486,6 @@ namespace NachoClient.iOS
             var Mo = NcModel.Instance;
             var Be = BackEnd.Instance;
 
-            var account = McAccount.QueryById<McAccount> (accountId);
-            var tmpServer = McServer.QueryById<McServer> (account.ServerId);
 
             var credView = new UIAlertView ();
 
@@ -500,11 +498,24 @@ namespace NachoClient.iOS
                 var parent = (UIAlertView)a;
                 if (b.ButtonIndex == 0) {
                     var txt = parent.GetTextField (0).Text;
-                    // FIXME need to scan string to make sure it is of right format
+                    // FIXME need to scan string to make sure it is of right format (regex).
                     if (txt != null) {
                         Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
-                        tmpServer.Host = txt;
-                        tmpServer.Update ();
+                        NcModel.Instance.RunInTransaction(() => {
+                            var account = McAccount.QueryById<McAccount> (accountId);
+                            var tmpServer = McServer.QueryById<McServer> (account.ServerId);
+                            if (null == tmpServer) {
+                                tmpServer = new McServer() {
+                                    Host = txt,
+                                };
+                                tmpServer.Insert ();
+                                account.ServerId = tmpServer.Id;
+                                account.Update();
+                            } else {
+                                tmpServer.Host = txt;
+                                tmpServer.Update ();
+                            }
+                        });
                         Be.ServerConfResp (accountId, false); 
                         credView.ResignFirstResponder ();
                     }

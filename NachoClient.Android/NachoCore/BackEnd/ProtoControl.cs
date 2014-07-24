@@ -31,7 +31,7 @@ namespace NachoCore
         public McServer Server { 
             get {
                 var account = Account;
-                return NcModel.Instance.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).Single ();
+                return NcModel.Instance.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).SingleOrDefault ();
             }
             set {
                 var update = value;
