@@ -15,7 +15,7 @@ using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentViewController : UITableViewController, INachoFileChooser
+    public partial class AttachmentViewController : UITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate
     {
         // cell Id's 
         const string FileCell = "FileCell";
@@ -84,7 +84,8 @@ namespace NachoClient.iOS
 
         public void RefreshAttachmentSection ()
         {
-            AttachmentList = NcModel.Instance.Db.Table<McAttachment> ().ToList ();
+            // show most recent attachments first
+            AttachmentList = NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id).ToList ();
             this.TableView.ReloadData ();
         }
 

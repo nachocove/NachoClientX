@@ -266,9 +266,18 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <inset key="contentInset" minX="0.0" minY="3" maxX="0.0" maxY="0.0"/>
+                        <searchBar key="tableHeaderView" contentMode="redraw" id="vTn-fI-R0o">
+                            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                            <textInputTraits key="textInputTraits"/>
+                            <connections>
+                                <outlet property="delegate" destination="bBy-CW-6ix" id="zhe-Pp-Cxe"/>
+                            </connections>
+                        </searchBar>
                         <prototypes>
                             <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="FileCell" textLabel="1NR-qv-J0n" detailTextLabel="QmA-5j-faP" imageView="wDS-JU-bXb" rowHeight="51" style="IBUITableViewCellStyleValue1" id="l9G-Bp-lHm">
-                                <rect key="frame" x="0.0" y="22" width="320" height="51"/>
+                                <rect key="frame" x="0.0" y="66" width="320" height="51"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="l9G-Bp-lHm" id="lS0-Z1-7SJ">
                                     <rect key="frame" x="0.0" y="0.0" width="320" height="50"/>
@@ -306,12 +315,24 @@
                     <connections>
                         <outlet property="nachoButton" destination="LXM-cO-kAi" id="6Sr-gx-dP7"/>
                         <outlet property="revealButton" destination="NU1-k7-pji" id="Hpt-qH-mgu"/>
+                        <outlet property="searchDisplayController" destination="TB4-AC-yCV" id="qju-k2-ALR"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="AttachmentsToNachoNow" id="Gr5-Hy-1Yr"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wOG-Ry-VAW" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem image="navbar-icn-menu.png" id="NU1-k7-pji"/>
                 <barButtonItem image="Nacho-Cove-Icon.png" id="LXM-cO-kAi"/>
+                <searchDisplayController id="yub-9s-cFh"/>
+                <searchDisplayController id="1hp-VY-lZf"/>
+                <searchDisplayController id="TB4-AC-yCV">
+                    <connections>
+                        <outlet property="delegate" destination="bBy-CW-6ix" id="ppX-W9-hZq"/>
+                        <outlet property="searchBar" destination="vTn-fI-R0o" id="w6v-F1-GRb"/>
+                        <outlet property="searchContentsController" destination="bBy-CW-6ix" id="cBo-fs-woq"/>
+                        <outlet property="searchResultsDataSource" destination="bBy-CW-6ix" id="xFI-4S-ZTp"/>
+                        <outlet property="searchResultsDelegate" destination="bBy-CW-6ix" id="N3N-rd-54a"/>
+                    </connections>
+                </searchDisplayController>
             </objects>
             <point key="canvasLocation" x="-3882" y="445"/>
         </scene>
@@ -1850,16 +1871,17 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="qSV-ar-VcH"/>
+        <segue reference="n8e-Oj-wO2"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="i3N-5g-evG"/>
-        <segue reference="n8e-Oj-wO2"/>
         <segue reference="Pu5-w4-aps"/>
         <segue reference="n8e-Oj-wO2"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
         <segue reference="zXa-AG-jcx"/>
         <segue reference="ywO-BF-h0n"/>
-        <segue reference="xrp-ey-B0j"/>
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="vah-yS-677"/>
         <segue reference="zDw-Tx-fTt"/>
@@ -1871,5 +1893,9 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="qB9-ce-7gT"/>
         <segue reference="mo4-Vz-xJh"/>
         <segue reference="G1z-aV-19B"/>
+        <segue reference="lVj-NH-yQq"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="hxO-14-opZ"/>
     </inferredMetricsTieBreakers>
 </document>
