@@ -12,13 +12,22 @@ namespace NachoClient.iOS
 {
 	public partial class SupportViewController : NcUITableViewController
 	{
+        // Submit a log cell
         const string SubmitLogText = "Submit a log";
+
+        // Email cell
         const string ContactByEmailText = "Contact us via email";
         const string SupportEmail = "support@nachocove.com";
-        const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
+
+        // Phone # cell
+        const string ContactByPhoneText = "Support number: +1 (404) 436-2246";
         const string PhoneNumberLink = "telprompt://14044362246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
+        // Version # cell
+        const string VersionNumberText = "Version number: ";
+
+        // Id's
         const string SupportToComposeSegueId = "SupportToEmailCompose";
         const string BasicCell = "BasicCell";
         const string SubtitleCell = "SubtitleCell";
@@ -33,7 +42,7 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return 3;
+            return 4;
         }
 
         public override int NumberOfSections (UITableView tableView)
@@ -159,6 +168,13 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
                 break;
+            case 3:
+                cell = tableView.DequeueReusableCell (BasicCell);
+                NcAssert.True (null != cell);
+                var version = NSBundle.FromIdentifier ("com.nachocove.nachomail").InfoDictionary ["CFBundleShortVersionString"];
+                cell.TextLabel.Text = VersionNumberText + version;
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+                break;
             }
 
             cell.TextLabel.TextColor = A.Color_NachoBlack;
@@ -199,6 +215,12 @@ namespace NachoClient.iOS
             case 2:
                 text = new NSString (ContactByPhoneText);
                 detailText = new NSString (ContactByPhoneDetailText);
+                break;
+            case 3:
+                text = new NSString (VersionNumberText);
+                break;
+            default:
+                NcAssert.True (false, "Tried to show extra cell on support page");
                 break;
             }
 
