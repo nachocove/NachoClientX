@@ -13,10 +13,16 @@ namespace NachoClient.iOS
 	partial class EventViewController
 	{
 		[Outlet]
+		MonoTouch.UIKit.UIButton acceptButton { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem cancelButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIView contentView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIButton declineButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem doneButton { get; set; }
@@ -32,17 +38,20 @@ namespace NachoClient.iOS
 
 		[Outlet]
 		MonoTouch.UIKit.UIDatePicker startDatePicker { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIButton tentativeButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (startDatePicker != null) {
-				startDatePicker.Dispose ();
-				startDatePicker = null;
-			}
-
 			if (cancelButton != null) {
 				cancelButton.Dispose ();
 				cancelButton = null;
+			}
+
+			if (contentView != null) {
+				contentView.Dispose ();
+				contentView = null;
 			}
 
 			if (doneButton != null) {
@@ -55,11 +64,6 @@ namespace NachoClient.iOS
 				endDatePicker = null;
 			}
 
-			if (contentView != null) {
-				contentView.Dispose ();
-				contentView = null;
-			}
-
 			if (nachoNowButton != null) {
 				nachoNowButton.Dispose ();
 				nachoNowButton = null;
@@ -68,6 +72,26 @@ namespace NachoClient.iOS
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
+			}
+
+			if (startDatePicker != null) {
+				startDatePicker.Dispose ();
+				startDatePicker = null;
+			}
+
+			if (acceptButton != null) {
+				acceptButton.Dispose ();
+				acceptButton = null;
+			}
+
+			if (declineButton != null) {
+				declineButton.Dispose ();
+				declineButton = null;
+			}
+
+			if (tentativeButton != null) {
+				tentativeButton.Dispose ();
+				tentativeButton = null;
 			}
 		}
 	}

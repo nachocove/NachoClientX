@@ -472,7 +472,6 @@ namespace NachoClient.iOS
                             },
                             () => {
                                 View.BringSubviewToFront (calendarTableView);
-                                currentDate = selectedDate;
                                 ConfigureCalendarTableSize (rows);
                             }
                         );
