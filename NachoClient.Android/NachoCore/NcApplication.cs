@@ -187,6 +187,7 @@ namespace NachoCore
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
+                NcDeviceContacts.Run();
                 NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();

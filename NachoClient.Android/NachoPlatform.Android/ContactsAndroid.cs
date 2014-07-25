@@ -8,7 +8,12 @@ namespace NachoPlatform
 {
     public sealed class Contacts : IPlatformContacts
     {
-        public IEnumerable<McContact> GetContacts ()
+        public void AskForPermission (Action<bool> result)
+        {
+            // Should never be called on Android.
+        }
+
+        public IEnumerable<PlatformContactRecord> GetContacts ()
         {
             return null;
         }
