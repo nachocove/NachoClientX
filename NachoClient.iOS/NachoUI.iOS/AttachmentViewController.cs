@@ -11,11 +11,17 @@ using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentViewController : NcUITableViewController, INachoFileChooser
+    public partial class AttachmentViewController : UITableViewController, INachoFileChooser
     {
+        // cell Id's 
+        const string FileCell = "FileCell";
+
+        List<McAttachment> AttachmentList;
+
         INachoFileChooserParent owner;
 
         public AttachmentViewController (IntPtr handle) : base (handle)
@@ -47,14 +53,16 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
-                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            // don't show hamburger/nachonow buttons if selecting attachment for event or email
+            if (owner == null) {
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+                using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+                    nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+                }
+                nachoButton.Clicked += (object sender, EventArgs e) => {
+                    PerformSegue ("AttachmentsToNachoNow", this);
+                };
             }
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("AttachmentsToNachoNow", this);
-            };
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -76,34 +84,51 @@ namespace NachoClient.iOS
 
         public void RefreshAttachmentSection ()
         {
-            var root = new RootElement ("Attachments");
-            var section = new Section ();
+            AttachmentList = NcModel.Instance.Db.Table<McAttachment> ().ToList ();
+            this.TableView.ReloadData ();
+        }
 
-            var attachmentList = NcModel.Instance.Db.Table<McAttachment> ().ToList ();
-            foreach (var a in attachmentList) {
-                StyledStringElement s;
-                if (a.IsInline) {
-                    s = new StyledStringElement (a.DisplayName, "Is inline", UITableViewCellStyle.Subtitle);
-                } else if (a.IsDownloaded) {
-                    s = new StyledStringElement (a.DisplayName, "Is downloaded", UITableViewCellStyle.Subtitle);
-                    s.Tapped += delegate {
-                        var id = a.Id;
-                        attachmentAction (id);
-                    };
-                } else if (a.PercentDownloaded > 0) {
-                    s = new StyledStringElement (a.DisplayName, "Downloading...", UITableViewCellStyle.Subtitle);
-                } else {
-                    s = new StyledStringElement (a.DisplayName, "Is not downloaded", UITableViewCellStyle.Subtitle);
-                    s.Tapped += delegate {
-                        var id = a.Id;
-                        attachmentAction (id);
-                    };
-                }
-                section.Add (s);
+        public override int RowsInSection (UITableView tableview, int section)
+        {
+            if (AttachmentList == null) {
+                RefreshAttachmentSection ();
             }
-            root.Add (section);
-            Root = root;
+            return AttachmentList.Count;
+        }
 
+        public override int NumberOfSections (UITableView tableView)
+        {
+            return 1;
+        }
+
+        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+        {
+            UITableViewCell cell = null;
+            cell = tableView.DequeueReusableCell (FileCell);
+            NcAssert.True (null != cell);
+
+            var attachment = AttachmentList [indexPath.Row];
+            cell.TextLabel.Text = attachment.DisplayName;
+            cell.DetailTextLabel.Text = attachment.ContentType;
+            if (attachment.IsDownloaded || attachment.IsInline) {
+                cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+            } else {
+                cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
+            }
+
+            // styling
+            cell.TextLabel.TextColor = A.Color_NachoBlack;
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            cell.DetailTextLabel.TextColor = UIColor.LightGray;
+            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+            return cell;
+        }
+
+        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        {
+            var attachment = AttachmentList [indexPath.Row];
+            attachmentAction (attachment.Id);
+            tableView.DeselectRow (indexPath, true);
         }
 
         void attachmentAction (int attachmentId)

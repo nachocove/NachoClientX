@@ -40,16 +40,6 @@ namespace NachoClient.iOS
 		{
 		}
 
-        public override int RowsInSection (UITableView tableview, int section)
-        {
-            return 4;
-        }
-
-        public override int NumberOfSections (UITableView tableView)
-        {
-            return 1;
-        }
-
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -61,6 +51,16 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
 
             this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
+        }
+
+        public override int RowsInSection (UITableView tableview, int section)
+        {
+            return 4;
+        }
+
+        public override int NumberOfSections (UITableView tableView)
+        {
+            return 1;
         }
 
         public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
@@ -77,7 +77,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            this.TableView.DeselectRow (indexPath, true);
+            tableView.DeselectRow (indexPath, true);
         }
 
         public void SubmitALog ()
