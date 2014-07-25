@@ -301,15 +301,14 @@ namespace NachoClient.iOS
 
         public void dismissStatusView ()
         {
-            UIView[] subviews = View.Subviews;
-            for (int i = 0; i < subviews.Length; i++) {
-                UIView z = subviews [i];
-                if (z.Tag == 69) {
-                    z.RemoveFromSuperview ();
-                }
-                if (z.Tag == 50) {
-                    z.RemoveFromSuperview ();
-                }
+            UIView statusWindow = View.ViewWithTag (50);
+            UIView grayBackground = View.ViewWithTag (69);
+
+            if (null != statusWindow) {
+                statusWindow.RemoveFromSuperview ();
+            }
+            if (null != grayBackground) {
+                grayBackground.RemoveFromSuperview ();
             }
         }
 
