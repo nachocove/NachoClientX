@@ -24,44 +24,31 @@ namespace NachoClient.iOS
     /// Handles search in an INachoContacts.
     /// Handles async search too.
     /// </summary>
-    public partial class ContactSearchViewController : NcUITableViewController
+    public partial class ContactSearchViewController : NcUITableViewController, IContactsTableViewSourceDelegate
     {
         // Interface
         public ContactChooserViewController owner;
         public string initialSearchString;
         // Internal state
         McAccount account;
-        INachoContacts contacts;
-        List<McContactEmailAddressAttribute> searchResults = null;
-        /// <summary>
-        ///  Must match the id in the prototype cell.
-        /// </summary>
-        static readonly NSString CellSegueID = new NSString ("ContactsToContact");
+        ContactsTableViewSource contactTableViewSource;
 
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
         }
-
-        /// <summary>
-        /// Setup the search bar & auto-complete handler.
-        /// Setup the navigation hooks for the sidebar controller.
-        /// Request permission for the device address book (really, here?)
-        /// Tables cells and search cells both trigger segues to a detail page.
-        /// </summary>
+            
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
             account = NcModel.Instance.Db.Table<McAccount> ().First ();
 
-//            TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth;
-//            TableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
-
             // Manages the search bar & auto-complete table.
-            SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
+            contactTableViewSource = new ContactsTableViewSource ();
+            contactTableViewSource.SetOwner (this, account.Id, SearchDisplayController);
 
-            contacts = NcContactManager.Instance.GetNachoContacts ();
-            TableView.ReloadData ();
+            TableView.Source = contactTableViewSource;
+            SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
 
             // Let's be ready to search!
             SearchDisplayController.Active = true;
@@ -78,180 +65,53 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            LoadContacts ();
         }
 
-        /// <summary>
-        /// Prepares for segue.
-        /// </summary>
-        /// <param name="segue">Segue in charge</param>
-        /// <param name="sender">Typically the cell that was clicked.</param>
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+                LoadContacts ();
+            }
+        }
+
+        protected void LoadContacts()
+        {
+            NachoClient.Util.HighPriority ();
+            var contacts = McContact.AllContactsSortedByName (account.Id);
+            contactTableViewSource.SetContacts (contacts);
+            TableView.ReloadData ();
+            NachoClient.Util.RegularPriority ();
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            // The "+" button segues with ContactsToNewContact
-            // Cells segue with CellSegueID, ContactsToContact
-            if (segue.Identifier.Equals (CellSegueID)) {
-                McContact contact;
-                UITableViewCell cell = (UITableViewCell)sender;
-                NSIndexPath indexPath = SearchDisplayController.SearchResultsTableView.IndexPathForCell (cell);
-                if (null != indexPath) {
-                    contact = searchResults.ElementAt (indexPath.Row).GetContact ();
-                } else {
-                    indexPath = TableView.IndexPathForCell (cell);
-                    contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
-                }
+            if (segue.Identifier.Equals ("ContactsToContact")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
                 ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
-                destinationController.contact = contact;
-                destinationController.Title = contact.GetDisplayName ();
+                destinationController.contact = c;
+                return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
-        public override int NumberOfSections (UITableView tableView)
+        /// IContactsTableViewSourceDelegate
+        public void ContactSelectedCallback(McContact contact)
         {
-            return 1;
-        }
-
-        public override int RowsInSection (UITableView tableview, int section)
-        {
-            if (SearchDisplayController.SearchResultsTableView == tableview) {
-                return ((null == searchResults) ? 0 : searchResults.Count ());
-            }
-            return ((null == contacts) ? 0 : contacts.Count ());
-        }
-
-        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
-        {
-            McContact contact;
-            if (SearchDisplayController.SearchResultsTableView == tableView) {
-                contact = searchResults.ElementAt (indexPath.Row).GetContact ();
-            } else {
-                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
-            }
-
-            UITableViewCell cell = null;
-            var displayName = contact.GetDisplayName ();
-            var displayEmailAddress = contact.GetEmailAddress ();
-
-            // Both empty
-            if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
-                cell = TableView.DequeueReusableCell ("Basic");
-                NcAssert.True (null != cell);
-                cell.TextLabel.Text = "Contact has no name or email address";
-                cell.TextLabel.TextColor = UIColor.LightGray;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                return cell;
-            }
-
-            // Name empty
-            if (String.IsNullOrEmpty (displayName)) {
-                cell = TableView.DequeueReusableCell ("Basic");
-                NcAssert.True (null != cell);
-                cell.TextLabel.Text = displayEmailAddress;
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                return cell;
-            }
-
-            // Email empty
-            if (String.IsNullOrEmpty (displayEmailAddress)) {
-                cell = TableView.DequeueReusableCell ("Subtitle");
-                NcAssert.True (null != cell);
-                cell.TextLabel.Text = displayName;
-                cell.DetailTextLabel.Text = "Contact has no email address";
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                return cell;
-            }
-
-            // Everything
-            cell = TableView.DequeueReusableCell ("Subtitle");
-            NcAssert.True (null != cell);
-            cell.TextLabel.Text = displayName;
-            cell.DetailTextLabel.Text = displayEmailAddress;
-            cell.TextLabel.TextColor = A.Color_NachoBlack;
-            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-            cell.DetailTextLabel.TextColor = UIColor.Gray;
-            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-            return cell;  
-        }
-
-        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
-        {
-            McContact contact;
-            if (SearchDisplayController.SearchResultsTableView == tableView) {
-                contact = searchResults.ElementAt (indexPath.Row).GetContact ();
-            } else {
-                contact = contacts.GetContactIndex (indexPath.Row).GetContact ();
-            }
             owner.DoublePop (this, contact);
         }
-
-        /// <summary>
-        /// Updates the search results.
-        /// Return false if an asynch update is triggers.
-        /// For async, the table and view should be updated in UpdateSearchResultsCallback.  
-        /// </summary>
-        /// <returns><c>true</c>, if search results are updated, <c>false</c> otherwise.</returns>
-        /// <param name="forSearchOption">Index of the selected tab.</param>
-        /// <param name="forSearchString">The prefix string to search for.</param>
-        public bool UpdateSearchResults (int forSearchOption, string forSearchString)
-        {
-            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-                NachoClient.Util.HighPriority ();
-                var results = McContact.SearchAllContactItems (account.Id, forSearchString);
-                NachoClient.Util.RegularPriority ();
-                InvokeOnMainThread (() => {
-                    searchResults = results;
-                    UpdateSearchResultsCallback ();
-                });
-            })).Start ();
-
-            return false;
-        }
-
-        /// <summary>
-        /// Updates the search results async.
-        /// </summary>
-        public void UpdateSearchResultsCallback ()
-        {
-            // Totally a dummy routines that exists to remind us how to trigger 
-            // the update after updating the searchResult list of contacts.
-            if (null != SearchDisplayController.SearchResultsTableView) {
-                NachoClient.Util.HighPriority ();
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-                NachoClient.Util.RegularPriority ();
-            }
-        }
-
-
-        public class SearchDisplayDelegate : UISearchDisplayDelegate
-        {
-            ContactSearchViewController v;
-
-            private SearchDisplayDelegate ()
-            {
-            }
-
-            public SearchDisplayDelegate (ContactSearchViewController owner)
-            {
-                v = owner;
-            }
-
-            public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, int forSearchOption)
-            {
-                // TODO: Trigger asynch search & return false
-                string searchString = controller.SearchBar.Text;
-                return v.UpdateSearchResults (forSearchOption, searchString);
-            }
-
-            public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
-            {
-                // TODO: Trigger asynch search & return false
-                int searchOption = controller.SearchBar.SelectedScopeButtonIndex;
-                return v.UpdateSearchResults (searchOption, forSearchString);
-            }
-        }
+ 
     }
 }
 

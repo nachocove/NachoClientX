@@ -543,7 +543,7 @@
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -950,7 +950,7 @@
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
                                 <rect key="frame" x="-3" y="38" width="323" height="422"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -1792,19 +1792,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Pu5-w4-aps"/>
-        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="p6V-c0-caL"/>
         <segue reference="n8e-Oj-wO2"/>
         <segue reference="i3N-5g-evG"/>
-        <segue reference="p6V-c0-caL"/>
+        <segue reference="Pu5-w4-aps"/>
+        <segue reference="DSB-SJ-fIa"/>
         <segue reference="ywO-BF-h0n"/>
         <segue reference="xrp-ey-B0j"/>
+        <segue reference="WJc-Y6-XJB"/>
         <segue reference="zXa-AG-jcx"/>
-        <segue reference="mo4-Vz-xJh"/>
         <segue reference="vah-yS-677"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="s9j-Ih-SWz"/>
         <segue reference="4Sl-0E-160"/>
+        <segue reference="s9j-Ih-SWz"/>
         <segue reference="ja3-Zu-g6R"/>
         <segue reference="G1z-aV-19B"/>
         <segue reference="qB9-ce-7gT"/>

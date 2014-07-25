@@ -197,13 +197,7 @@ namespace NachoClient.iOS
             this.address.kind = NcEmailAddress.ToKind (ToButton.TitleLabel.Text);
             owner.UpdateEmailAddress (this.address);
         }
-
-        [Export ("scrollViewWillBeginDragging:")]
-        public void ScrollViewWillBeginDragging (UIScrollView scrollView)
-        {
-            AutocompleteTextField.ResignFirstResponder ();
-        }
-
+            
         /// <summary>
         /// DoneSelected mean return the typed-in contact.
         /// </summary>

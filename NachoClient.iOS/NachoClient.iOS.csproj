@@ -1041,6 +1041,8 @@
     <Compile Include="NachoUI.iOS\NotesViewController.designer.cs">
       <DependentUpon>NotesViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
