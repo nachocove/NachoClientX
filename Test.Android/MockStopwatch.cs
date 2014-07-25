@@ -13,7 +13,7 @@ namespace Test.Common
                 return _CurrentMillisecond;
             }
             set {
-                NcAssert.True ((value > _CurrentMillisecond) || (0 == value));
+                NcAssert.True ((value >= _CurrentMillisecond) || (0 == value));
                 _CurrentMillisecond = value;
             }
         }

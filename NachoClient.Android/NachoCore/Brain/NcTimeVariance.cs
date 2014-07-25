@@ -36,7 +36,7 @@ namespace NachoCore.Brain
     /// We may have 100 email messages with different deadlines.
     /// These McEmailMessage objects will not be kept in memory all the
     /// time but their state machine must run.
-    public class NcTimeVariance
+    public class NcTimeVariance : IDisposable
     {
         public const int STATE_TERMINATED = 0;
         public const int STATE_NONE = -1;
@@ -306,6 +306,19 @@ namespace NachoCore.Brain
             lock (LockObj) {
                 Log.Debug (Log.LOG_BRAIN, "{0}: pausing", ToString ());
                 StopTimer ();
+            }
+        }
+
+        /// Normally, a time variance object is internally cleaned up when it
+        /// goes to state 0. However, one should call this method to
+        /// abnormally terminates a time variance object. One example of this
+        /// when a NcTimeVarianceTest case fails and it needs to clean up
+        /// before the next test case.
+        public void Dispose ()
+        {
+            lock (LockObj) {
+                StopTimer ();
+                ActiveList.Remove (this);
             }
         }
 

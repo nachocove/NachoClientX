@@ -39,6 +39,15 @@ namespace Test.Common
         {
             MockTimer.Stop ();
             NcTimeVariance.GetCurrentDateTime = NcTimeVariance.PlatformGetCurrentDateTime;
+
+            // Clean up lingering time variance objects in case of errors. When tests are
+            // passing, this step is unnecessary.
+            for (int n = 0; n < 3; n++) {
+                if (null == TimeVariance [n]) {
+                    continue;
+                }
+                TimeVariance [n].Dispose ();
+            }
         }
 
         private void Callback (int state, Int64 objId)
