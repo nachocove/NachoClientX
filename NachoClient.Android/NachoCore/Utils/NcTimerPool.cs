@@ -249,13 +249,17 @@ namespace NachoCore.Utils
 
         public void Pause ()
         {
-            StopRealTimer ();
+            lock (LockObj) {
+                StopRealTimer ();
+            }
         }
 
         public void Resume ()
         {
-            if (0 < ChildrenTimers.Count) {
-                StartTimer ();
+            lock (LockObj) {
+                if (0 < ChildrenTimers.Count) {
+                    StartTimer ();
+                }
             }
         }
 
