@@ -48,34 +48,8 @@ namespace NachoClient.iOS
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
 
-            // Manage the button toggles thru To, Cc, and Bcc
-            ToButton.TouchUpInside += (object sender, EventArgs e) => {
-                switch (NcEmailAddress.ToKind (ToButton.TitleLabel.Text)) {
-                case NcEmailAddress.Kind.To:
-                    SetToButtonLabel (NcEmailAddress.Kind.Cc);
-                    break;
-                case NcEmailAddress.Kind.Cc:
-                    SetToButtonLabel (NcEmailAddress.Kind.Bcc);
-                    break;
-                case NcEmailAddress.Kind.Bcc:
-                    SetToButtonLabel (NcEmailAddress.Kind.To);
-                    break;
-                case NcEmailAddress.Kind.Required:
-                    SetToButtonLabel (NcEmailAddress.Kind.Optional);
-                    break;
-                case NcEmailAddress.Kind.Optional:
-                    SetToButtonLabel (NcEmailAddress.Kind.Resource);
-                    break;
-                case NcEmailAddress.Kind.Resource:
-                    SetToButtonLabel (NcEmailAddress.Kind.Required);
-                    break;
-                case NcEmailAddress.Kind.Unknown:
-                    SetToButtonLabel (NcEmailAddress.Kind.Required);
-                    break;
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
+            cancelButton.TouchUpInside += (object sender, EventArgs e) => {
+                CancelSelected();
             };
 
             // Update the auto-complete on each keystroke
@@ -95,7 +69,6 @@ namespace NachoClient.iOS
 
             AutocompleteTextField.Text = address.address;
             UpdateAutocompleteResults (0, address.address);
-            SetToButtonLabel (address.kind);
 
             AutocompleteTextField.BecomeFirstResponder ();
             TableView.SeparatorColor = A.Color_NachoSeparator;
@@ -134,36 +107,6 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void SetToButtonLabel (NcEmailAddress.Kind k)
-        {
-            switch (k) {
-            case NcEmailAddress.Kind.To:
-                ToButton.SetTitle ("To:", UIControlState.Normal);
-                break;
-            case NcEmailAddress.Kind.Cc:
-                ToButton.SetTitle ("Cc:", UIControlState.Normal);
-                break;
-            case NcEmailAddress.Kind.Bcc:
-                ToButton.SetTitle ("Bcc:", UIControlState.Normal);
-                break;
-            case NcEmailAddress.Kind.Required:
-                ToButton.SetTitle ("Req:", UIControlState.Normal);
-                break;
-            case NcEmailAddress.Kind.Optional:
-                ToButton.SetTitle ("Opt:", UIControlState.Normal);
-                break;
-            case NcEmailAddress.Kind.Resource:
-                ToButton.SetTitle ("Res:", UIControlState.Normal);
-                break;
-            case NcEmailAddress.Kind.Unknown:
-                ToButton.SetTitle ("Unk:", UIControlState.Normal);
-                break;
-            default:
-                NcAssert.CaseError ();
-                break;
-            }
-        }
-
         /// <summary>
         /// RowSelected means return the selected contact.
         /// </summary>
@@ -194,7 +137,6 @@ namespace NachoClient.iOS
         {
             this.address.contact = contact;
             this.address.address = address;
-            this.address.kind = NcEmailAddress.ToKind (ToButton.TitleLabel.Text);
             owner.UpdateEmailAddress (this.address);
         }
             
@@ -209,6 +151,11 @@ namespace NachoClient.iOS
                 UpdateEmailAddress (null, textField.Text);
             }
             owner = null;
+            NavigationController.PopViewControllerAnimated (true);
+        }
+
+        public void CancelSelected()
+        {
             NavigationController.PopViewControllerAnimated (true);
         }
 
