@@ -1302,6 +1302,10 @@
     <BundleResource Include="Resources\icn-contact-quickcall%402x.png" />
     <BundleResource Include="Resources\icn-contact-quickemail.png" />
     <BundleResource Include="Resources\icn-contact-quickemail%402x.png" />
+    <BundleResource Include="Resources\icn-file-complete%402x.png" />
+    <BundleResource Include="Resources\icn-file-complete.png" />
+    <BundleResource Include="Resources\icn-file-download%402x.png" />
+    <BundleResource Include="Resources\icn-file-download.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
