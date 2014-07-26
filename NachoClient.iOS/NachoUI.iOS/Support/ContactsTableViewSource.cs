@@ -89,6 +89,20 @@ namespace NachoClient.iOS
             owner.ContactSelectedCallback (contact);
         }
 
+        public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
+        {
+            McContact contact;
+
+            if (SearchDisplayController.SearchResultsTableView == tableView) {
+                var contactEmailAttribute = searchResults [indexPath.Row];
+                contact = McContact.QueryById<McContact> ((int)contactEmailAttribute.ContactId);
+            } else {
+                contact = contacts [indexPath.Row].GetContact ();
+            }
+
+            owner.PerformSegueForDelegate ("ContactsToContactDetail", new SegueHolder (contact));
+        }
+
  
         /// <summary>
         /// Configures the swipes.
@@ -191,6 +205,8 @@ namespace NachoClient.iOS
 
             cell.TextLabel.Text = null;
             cell.DetailTextLabel.Text = null;
+
+            cell.Accessory = UITableViewCellAccessory.DetailDisclosureButton;
 
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
