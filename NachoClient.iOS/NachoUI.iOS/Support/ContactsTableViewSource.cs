@@ -30,7 +30,7 @@ namespace NachoClient.iOS
             owner = null;
         }
 
-        public void SetOwner(IContactsTableViewSourceDelegate owner, int accountId, UISearchDisplayController SearchDisplayController)
+        public void SetOwner (IContactsTableViewSourceDelegate owner, int accountId, UISearchDisplayController SearchDisplayController)
         {
             this.owner = owner;
             this.accountId = accountId;
@@ -39,12 +39,12 @@ namespace NachoClient.iOS
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
 
-        public void SetContacts(List<NcContactIndex> contacts)
+        public void SetContacts (List<NcContactIndex> contacts)
         {
             this.contacts = contacts;
         }
 
-        public void SetSearchResults(List<McContactEmailAddressAttribute> searchResults)
+        public void SetSearchResults (List<McContactEmailAddressAttribute> searchResults)
         {
             this.searchResults = searchResults;
         }
@@ -174,11 +174,18 @@ namespace NachoClient.iOS
                 contact = contacts [indexPath.Row].GetContact ();
             }
 
-            var displayName = contact.GetDisplayName ();
-            var displayEmailAddress = contact.GetEmailAddress ();
-
             var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             NcAssert.True (null != cell);
+
+            ConfigureCell (cell, contact);
+
+            return cell;
+        }
+
+        public void ConfigureCell (MCSwipeTableViewCell cell, McContact contact)
+        {
+            var displayName = contact.GetDisplayName ();
+            var displayEmailAddress = contact.GetEmailAddress ();
 
             ConfigureSwipes (cell, contact.Id);
 
@@ -190,7 +197,7 @@ namespace NachoClient.iOS
                 cell.TextLabel.Text = "Contact has no name or email address";
                 cell.TextLabel.TextColor = UIColor.LightGray;
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                return cell;
+                return;
             }
 
             // Name empty
@@ -198,7 +205,7 @@ namespace NachoClient.iOS
                 cell.TextLabel.Text = displayEmailAddress;
                 cell.TextLabel.TextColor = A.Color_NachoBlack;
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                return cell;
+                return;
             }
 
             // Email empty
@@ -209,7 +216,7 @@ namespace NachoClient.iOS
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                 cell.DetailTextLabel.TextColor = UIColor.LightGray;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                return cell;
+                return;
             }
 
             // Everything
@@ -219,8 +226,6 @@ namespace NachoClient.iOS
             cell.TextLabel.Font = A.Font_AvenirNextRegular14;
             cell.DetailTextLabel.TextColor = UIColor.Gray;
             cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-            return cell;  
-
         }
 
         public override void DraggingStarted (UIScrollView scrollView)
@@ -268,7 +273,7 @@ namespace NachoClient.iOS
                 NachoClient.Util.RegularPriority ();
                 InvokeOnMainThread (() => {
                     var searchResults = results;
-                    SetSearchResults(searchResults);
+                    SetSearchResults (searchResults);
                     UpdateSearchResultsCallback ();
                 });
             })).Start ();

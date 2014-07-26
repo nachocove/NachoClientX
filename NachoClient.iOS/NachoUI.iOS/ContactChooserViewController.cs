@@ -13,6 +13,7 @@ using Xamarin.Contacts;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
+using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
 {
@@ -25,6 +26,11 @@ namespace NachoClient.iOS
         // Internal state
         McAccount account;
         List<McContactEmailAddressAttribute> searchResults;
+       
+        ContactsTableViewSource contactTableViewSource;
+        // Just used for ConfigureCell
+
+        protected const string ContactCellReuseIdentifier = "ContactCell";
 
         public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType contactType)
         {
@@ -48,8 +54,10 @@ namespace NachoClient.iOS
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
 
+            contactTableViewSource = new ContactsTableViewSource ();
+
             cancelButton.TouchUpInside += (object sender, EventArgs e) => {
-                CancelSelected();
+                CancelSelected ();
             };
 
             // Update the auto-complete on each keystroke
@@ -83,7 +91,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NachoClient.Util.HighPriority ();
-            TableView.ReloadData();
+            TableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
         }
 
@@ -139,7 +147,7 @@ namespace NachoClient.iOS
             this.address.address = address;
             owner.UpdateEmailAddress (this.address);
         }
-            
+
         /// <summary>
         /// DoneSelected mean return the typed-in contact.
         /// </summary>
@@ -154,7 +162,7 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
-        public void CancelSelected()
+        public void CancelSelected ()
         {
             NavigationController.PopViewControllerAnimated (true);
         }
@@ -218,7 +226,6 @@ namespace NachoClient.iOS
                 } else {
                     return 0;
                 }
-               
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -227,53 +234,12 @@ namespace NachoClient.iOS
 
                 contact = Owner.searchResults [indexPath.Row].GetContact ();
 
-                UITableViewCell cell = null;
-                var displayName = contact.GetDisplayName ();
-                var displayEmailAddress = contact.GetEmailAddress ();
-
-                // Both empty
-                if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
-                    cell = tableView.DequeueReusableCell ("Basic");
-                    NcAssert.True (null != cell);
-                    cell.TextLabel.Text = "Contact has no name or email address";
-                    cell.TextLabel.TextColor = UIColor.LightGray;
-                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                    return cell;
-                }
-
-                // Name empty
-                if (String.IsNullOrEmpty (displayName)) {
-                    cell = tableView.DequeueReusableCell ("Basic");
-                    NcAssert.True (null != cell);
-                    cell.TextLabel.Text = displayEmailAddress;
-                    cell.TextLabel.TextColor = A.Color_NachoBlack;
-                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                    return cell;
-                }
-
-                // Email empty
-                if (String.IsNullOrEmpty (displayEmailAddress)) {
-                    cell = tableView.DequeueReusableCell ("Subtitle");
-                    NcAssert.True (null != cell);
-                    cell.TextLabel.Text = displayName;
-                    cell.DetailTextLabel.Text = "Contact has no email address";
-                    cell.TextLabel.TextColor = A.Color_NachoBlack;
-                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                    cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                    cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                    return cell;
-                }
-
-                // Everything
-                cell = tableView.DequeueReusableCell ("Subtitle");
+                var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
                 NcAssert.True (null != cell);
-                cell.TextLabel.Text = displayName;
-                cell.DetailTextLabel.Text = displayEmailAddress;
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.DetailTextLabel.TextColor = UIColor.Gray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                return cell;  
+
+                Owner.contactTableViewSource.ConfigureCell (cell, contact);
+
+                return cell;
             }
         }
 
