@@ -164,54 +164,25 @@ namespace NachoCore
 
         public void EstablishService (int accountId)
         {
-            // TODO: this is AS-specific.
-            var service = new AsProtoControl (this, accountId);
+            ProtoControl service = null;
+            var account = McAccount.QueryById<McAccount> (accountId);
+            switch (account.AccountType) {
+            case McAccount.AccountTypeEnum.Device:
+                service = new ProtoControl (this, accountId);
+                break;
+
+            case McAccount.AccountTypeEnum.Exchange:
+                service = new AsProtoControl (this, accountId);
+                break;
+
+            default:
+                NcAssert.True (false);
+                break;
+            }
             if (!Services.TryAdd (accountId, service)) {
                 // Concurrency. Another thread has jumped in and done the add.
-                Log.Info (Log.LOG_AS, "Another thread has already called EstablishService");
+                Log.Info (Log.LOG_SYS, "Another thread has already called EstablishService for Account.Id {0}", accountId);
             }
-            // Create client owned objects as needed.
-            McFolder freshMade;
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetOutboxFolder (accountId)) {
-                    freshMade = McFolder.Create (accountId, true, false, "0",
-                        McFolder.ClientOwned_Outbox, "Device Outbox",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetOutboxFolder (accountId)) {
-                    freshMade = McFolder.Create (accountId, true, false, "0",
-                        McFolder.ClientOwned_Drafts, "Device Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetGalCacheFolder (accountId)) {
-                    freshMade = McFolder.Create (accountId, true, true, "0",
-                        McFolder.ClientOwned_GalCache, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetGleanedFolder (accountId)) {
-                    freshMade = McFolder.Create (accountId, true, true, "0",
-                        McFolder.ClientOwned_Gleaned, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetLostAndFoundFolder (accountId)) {
-                    freshMade = McFolder.Create (accountId, true, true, "0",
-                        McFolder.ClientOwned_LostAndFound, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
-                    freshMade.Insert ();
-                }
-            });
         }
 
         public void Start (int accountId)
