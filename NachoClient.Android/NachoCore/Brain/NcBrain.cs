@@ -74,8 +74,7 @@ namespace NachoCore.Brain
             // Look for a list of emails
             int numGleaned = 0;
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                    x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState).FirstOrDefault ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning ();
                 if (null == emailMessage) {
                     return numGleaned;
                 }
@@ -90,7 +89,7 @@ namespace NachoCore.Brain
         {
             int numAnalyzed = 0;
             while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailAddress emailAddress = NcModel.Instance.Db.Table<McEmailAddress> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
+                McEmailAddress emailAddress = McEmailAddress.QueryNeedAnalysis ();
                 if (null == emailAddress) {
                     break;
                 }
@@ -106,9 +105,7 @@ namespace NachoCore.Brain
         {
             int numAnalyzed = 0;
             while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ()
-                    .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == true)
-                    .FirstOrDefault ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedAnalysis ();
                 if (null == emailMessage) {
                     break;
                 }
@@ -124,7 +121,7 @@ namespace NachoCore.Brain
         {
             int numUpdated = 0;
             while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailAddress emailAddress = NcModel.Instance.Db.Table<McEmailAddress> ().Where (x => x.NeedUpdate).FirstOrDefault ();
+                McEmailAddress emailAddress = McEmailAddress.QueryNeedUpdate ();
                 if (null == emailAddress) {
                     return numUpdated;
                 }
@@ -143,7 +140,7 @@ namespace NachoCore.Brain
         {
             int numUpdated = 0;
             while (numUpdated < count  && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.NeedUpdate).FirstOrDefault ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
                 if (null == emailMessage) {
                     return numUpdated;
                 }

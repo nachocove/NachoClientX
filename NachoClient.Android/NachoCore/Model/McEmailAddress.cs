@@ -30,6 +30,8 @@ namespace NachoCore.Model
 
         public bool IsHot { get; set; }
 
+        public bool IsVip { get; set; }
+
         public bool IsBlacklisted { get; set; }
 
         public int ColorIndex { get; set; }

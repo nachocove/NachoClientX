@@ -1041,6 +1041,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\EmailAddressScore.cs">
       <Link>NachoCore\Model\EmailAddressScore.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScoreSyncInfo.cs">
+      <Link>NachoCore\Model\McEmailAddressScoreSyncInfo.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

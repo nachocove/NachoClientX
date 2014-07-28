@@ -315,6 +315,8 @@
     <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
     <Compile Include="NachoPlatform.Android\ContactsAndroid.cs" />
     <Compile Include="NachoCore\Model\EmailAddressScore.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddressScoreSyncInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

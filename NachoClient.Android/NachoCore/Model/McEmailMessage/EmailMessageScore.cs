@@ -182,6 +182,27 @@ namespace NachoCore.Model
             }
         }
 
+        public static McEmailMessage QueryNeedUpdate ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.NeedUpdate)
+                .FirstOrDefault ();
+        }
+
+        public static McEmailMessage QueryNeedAnalysis ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == true)
+                .FirstOrDefault ();
+        }
+
+        public static McEmailMessage QueryNeedGleaning ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState)
+                .FirstOrDefault ();
+        }
+
         /// <summary>
         /// Evaluate the parameters in McEmailMessage and produce a list of 
         /// NcTimeVariance that applies. These NcTimeVariance do not need to be 
@@ -371,50 +392,6 @@ namespace NachoCore.Model
         public static void MarkAll ()
         {
             NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
-        }
-    }
-
-    public class McEmailMessageScoreSyncInfo : McAbstrObject
-    {
-        // Id of the corresponding McEmailMessage
-        [Indexed]
-        public Int64 EmailMessageId { get; set; }
-
-        // How many times the email is read
-        public int TimesRead { get; set; }
-
-        // How long the user read the email
-        public int SecondsRead { get; set; }
-
-        public McEmailMessageScoreSyncInfo ()
-        {
-            EmailMessageId = 0;
-            TimesRead = 0;
-            SecondsRead = 0;
-        }
-
-        public void InsertByBrain ()
-        {
-            int rc = Insert ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Insert.Click ();
-            }
-        }
-
-        public void UpdateByBrain ()
-        {
-            int rc = Update ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Update.Click ();
-            }
-        }
-
-        public void DeleteByBrain ()
-        {
-            int rc = Delete ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Delete.Click ();
-            }
         }
     }
 }

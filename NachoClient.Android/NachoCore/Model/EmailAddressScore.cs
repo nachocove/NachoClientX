@@ -48,9 +48,6 @@ namespace NachoCore.Model
         // Number of emails deleted without being read
         public int EmailsDeleted { get; set; }
 
-        // If true, the score is 1.0
-        public bool IsVip { get; set; }
-
         // If there is update that is not uploaded to the synchronization server,
         // this object is non-null and holds the update.
         private McEmailAddressScoreSyncInfo SyncInfo { get; set; }
@@ -207,69 +204,19 @@ namespace NachoCore.Model
                 NcBrain.SharedInstance.McEmailAddressCounters.Delete.Click ();
             }
         }
-    }
 
-    public class McEmailAddressScoreSyncInfo : McAbstrObject 
-    {
-        // Id of the corresponding McEmailAddress
-        [Indexed]
-        public Int64 EmailAddressId { get; set; }
-
-        // Number of emails receivied
-        public int EmailsReceived { get; set; }
-
-        // Number of emails read
-        public int EmailsRead { get; set; }
-
-        // Number of emails replied
-        public int EmailsReplied { get; set; }
-
-        // Number of emails archived
-        public int EmailsArchived { get; set; }
-
-        // Number of emails sent to this contact
-        public int EmailsSent { get; set; }
-
-        // Number of emails deleted without being read
-        public int EmailsDeleted { get; set; }
-
-        // If true, the score is 1.0
-        public bool IsVip { get; set; }
-
-        public McEmailAddressScoreSyncInfo ()
+        public static McEmailAddress QueryNeedUpdate ()
         {
-            EmailAddressId = 0;
-            EmailsReceived = 0;
-            EmailsRead = 0;
-            EmailsReplied = 0;
-            EmailsArchived = 0;
-            EmailsSent = 0;
-            EmailsDeleted = 0;
-            IsVip = false;
+            return NcModel.Instance.Db.Table<McEmailAddress> ()
+                .Where (x => x.NeedUpdate)
+                .FirstOrDefault ();
         }
 
-        public void InsertByBrain ()
+        public static McEmailAddress QueryNeedAnalysis ()
         {
-            int rc = Insert ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailAddressScoreSyncInfo.Insert.Click ();
-            }
-        }
-
-        public void UpdateByBrain ()
-        {
-            int rc = Update ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailAddressScoreSyncInfo.Update.Click ();
-            }
-        }
-
-        public void DeleteByBrain ()
-        {
-            int rc = Delete ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailAddressScoreSyncInfo.Delete.Click ();
-            }
+            return NcModel.Instance.Db.Table<McEmailAddress> ()
+                .Where (x => x.ScoreVersion < Scoring.Version)
+                .FirstOrDefault ();
         }
     }
 }
