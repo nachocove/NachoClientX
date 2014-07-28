@@ -91,7 +91,7 @@ namespace NachoCore.Model
             Db.CreateTable<McContactStringAttribute> ();
             Db.CreateTable<McContactAddressAttribute> ();
             Db.CreateTable<McContactEmailAddressAttribute> ();
-            Db.CreateTable<McContactScoreSyncInfo> ();
+            Db.CreateTable<McEmailAddressScoreSyncInfo> ();
             Db.CreateTable<McPolicy> ();
             Db.CreateTable<McProtocolState> ();
             Db.CreateTable<McServer> ();

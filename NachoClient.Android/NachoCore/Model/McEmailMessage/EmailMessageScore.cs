@@ -43,13 +43,16 @@ namespace NachoCore.Model
         {
             double score = 0.0;
 
-            McContact sender = GetFromContact ();
-            if (null == sender) {
+            McEmailAddress emailAddress;
+            var address = NcEmailAddress.ParseMailboxAddressString (From);
+            bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+            if (!found) {
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                 return score;
             }
 
             // TODO - Combine with content score... once we have such value
-            score = sender.GetScore ();
+            score = emailAddress.GetScore ();
             NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
                 DateTime now = DateTime.Now;
@@ -65,25 +68,27 @@ namespace NachoCore.Model
         {
             NcAssert.True (Scoring.Version > ScoreVersion);
             if (0 == ScoreVersion) {
-                McContact sender = GetFromContact ();
-                if (null != sender) {
-                    if (!DownloadScore ()) {
-                        // Analyze sender
-                        sender.IncrementEmailsReceived ();
-                        if (IsRead) {
-                            sender.IncrementEmailsRead ();
-                        }
-                        // TODO - How to determine if the email has been replied?
-                        sender.ForceReadAncillaryData ();
-                        sender.Score = sender.GetScore ();
-                        sender.UpdateByBrain ();
+                McEmailAddress emailAddress;
+                var address = NcEmailAddress.ParseMailboxAddressString (From);
+                bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+                if (found) {
+                    // Analyze sender
+                    emailAddress.IncrementEmailsReceived ();
+                    if (IsRead) {
+                        emailAddress.IncrementEmailsRead ();
                     }
+                    // TODO - How to determine if the email has been replied?
+                    emailAddress.Score = emailAddress.GetScore ();
+                    emailAddress.UpdateByBrain ();
+
                     // Add Sender dependency
                     McEmailMessageDependency dep = new McEmailMessageDependency ();
                     dep.EmailMessageId = Id;
-                    dep.ContactId = sender.Id;
-                    dep.ContactType = "Sender";
+                    dep.EmailAddressId = emailAddress.Id;
+                    dep.EmailAddressType = "Sender";
                     dep.InsertByBrain ();
+                } else {
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                 }
 
                 ScoreVersion++;

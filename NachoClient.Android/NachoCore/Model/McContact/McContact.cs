@@ -40,9 +40,6 @@ namespace NachoCore.Model
         /// </summary>
         /// 
 
-        public const int minHotScore = 1;
-        public const int minVipScore = 1000000;
-
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
 
@@ -557,9 +554,6 @@ namespace NachoCore.Model
         {
             int retval = base.Update ();
             InsertAncillaryData (NcModel.Instance.Db);
-            if (null != SyncInfo) {
-                SyncInfo.Update ();
-            }
             return retval;
         }
 
@@ -954,7 +948,7 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " c.Score > ? " +
                 " ORDER BY c.Score DESC, c.FirstName",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, minHotScore);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
         }
 
         public static List<McContactEmailAddressAttribute> SearchAllContactItems (int accountId, string searchFor)
@@ -1000,22 +994,6 @@ namespace NachoCore.Model
                 ")",
                 McAbstrFolderEntry.ClassCodeEnum.Contact, accountId
             );
-        }
-
-        /// TODO: VIPness should be in its own member
-        public bool isHot ()
-        {
-            if (isVip ()) {
-                return ((Score - minVipScore) >= minHotScore);
-            } else {
-                return (Score >= minHotScore);
-            }
-        }
-
-        /// TODO: VIPness should be in its own member
-        public bool isVip ()
-        {
-            return (Score >= minVipScore);
         }
 
         public string GetDisplayName ()

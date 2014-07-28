@@ -16,42 +16,42 @@ namespace NachoCore.Model
     public class McEmailMessageDependency : McAbstrObject
     {
         [Indexed]
-        public Int64 ContactId { get; set; }
+        public Int64 EmailAddressId { get; set; }
 
         // Type of contacts. Currently, support "Sender".
-        public string ContactType { get; set; }
+        public string EmailAddressType { get; set; }
 
         [Indexed]
         public Int64 EmailMessageId { get; set; }
 
         public McEmailMessageDependency ()
         {
-            ContactId = 0;
+            EmailAddressId = 0;
             EmailMessageId = 0;
-            ContactType = "";
+            EmailAddressType = "";
         }
 
         // Get all McEmailMessage given a contact id
-        public static List<McEmailMessage> QueryNonUpdatedDependenciesByContactId (Int64 contactId)
+        public static List<McEmailMessage> QueryNonUpdatedDependenciesByEmailAddressId (Int64 emailAddressId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT m.* FROM McEmailMessage AS m " +
             "INNER JOIN McEmailMessageDependency AS d " +
             "ON m.Id = d.EmailMessageId " +
-            "WHERE d.ContactId = ? AND m.NeedUpdate = 0", contactId);
+            "WHERE d.EmailAddressId = ? AND m.NeedUpdate = 0", emailAddressId);
         }
 
         // Get all McContact given an email message id
-        public static List<McContact> QueryNonUpdatedDependenciesByEmailMessageId (Int64 emailMessageId)
+        public static List<McEmailAddress> QueryNonUpdatedDependenciesByEmailMessageId (Int64 emailMessageId)
         {
-            return NcModel.Instance.Db.Query<McContact> ("SELECT c.* FROM McContact AS c " +
+            return NcModel.Instance.Db.Query<McEmailAddress> ("SELECT c.* FROM McEmailAddress AS c " +
             "INNER JOIN McEmailMessageDependency AS d " +
-            "ON c.Id = d.ContactId " +
+            "ON c.Id = d.EmailAddressId " +
             "WHERE d.EmailMessageId = ? AND c.NeedUpdate = 0", emailMessageId);
         }
 
         private bool ValidType ()
         {
-            return ("Sender" == ContactType);
+            return ("Sender" == EmailAddressType);
         }
 
         public static List<McEmailMessageDependency> QueryByEmailMessageId (Int64 emailMessagegId)
@@ -59,9 +59,9 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessageDependency> ("SELECT * FROM McEmailMessageDependency WHERE EmailMessageId == ?", emailMessagegId);
         }
 
-        public static List<McEmailMessageDependency> QueryByContactId (Int64 contactId)
+        public static List<McEmailMessageDependency> QueryByEmailAddressId (Int64 emailAddressId)
         {
-            return NcModel.Instance.Db.Query<McEmailMessageDependency> ("SELECT * FROM McEmailMessageDependency WHERE ContactId == ?", contactId);
+            return NcModel.Instance.Db.Query<McEmailMessageDependency> ("SELECT * FROM McEmailMessageDependency WHERE EmailAddressId == ?", emailAddressId);
         }
 
         public static void DeleteByEmailMessageId (Int64 emailMessageid)
@@ -69,9 +69,9 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE EmailMessageId == ?", emailMessageid);
         }
 
-        public static void DeleteByContactId (Int64 contactId)
+        public static void DeleteByEmailAddressId (Int64 emailAddressId)
         {
-            NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE ContactId == ?", contactId);
+            NcModel.Instance.Db.Query<McEmailMessageDependency> ("DELETE FROM McEmailMessageDependency WHERE EmailAddressId == ?", emailAddressId);
         }
 
         public override int Insert ()
