@@ -522,6 +522,7 @@
                         <outlet property="revealButton" destination="jLa-UU-2VJ" id="dUB-Zb-Sre"/>
                         <outlet property="searchDisplayController" destination="rbr-Tg-MJy" id="gRe-Gf-Fmo"/>
                         <segue destination="cRD-uS-uKj" kind="push" identifier="ContactsToContact" id="mo4-Vz-xJh"/>
+                        <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="fwk-9p-tlV"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jgG-ds-vYF" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -543,7 +544,7 @@
             <objects>
                 <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -921,6 +922,7 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="searchDisplayController" destination="d2b-8D-Qih" id="NuX-J9-6Lz"/>
+                        <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="dAf-rc-Hh3"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pfN-iL-6BF" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -945,11 +947,18 @@
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
-                                <rect key="frame" x="46" y="0.0" width="274" height="30"/>
+                                <rect key="frame" x="13" y="0.0" width="223" height="30"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress" returnKeyType="done"/>
                             </textField>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="evg-g8-Cwf">
+                                <rect key="frame" x="251" y="0.0" width="55" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Cancel">
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                            </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
                                 <rect key="frame" x="-3" y="38" width="323" height="422"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -998,11 +1007,6 @@
                                     </tableViewCell>
                                 </prototypes>
                             </tableView>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="right" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="t9Q-AT-iDf">
-                                <rect key="frame" x="0.0" y="4" width="40" height="26"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="To:"/>
-                            </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -1020,7 +1024,7 @@
                         <outlet property="AutocompleteTextField" destination="mbI-GE-sAa" id="rLe-qh-MZx"/>
                         <outlet property="ContactsButton" destination="PfB-rr-F7z" id="JTC-Ef-UAG"/>
                         <outlet property="TableView" destination="9hu-Bf-IM7" id="BGO-Do-fuf"/>
-                        <outlet property="ToButton" destination="t9Q-AT-iDf" id="3ct-gd-Zi5"/>
+                        <outlet property="cancelButton" destination="evg-g8-Cwf" id="LYO-8h-85t"/>
                         <segue destination="cRD-uS-uKj" kind="push" identifier="ContactChooserToContactView" id="WJc-Y6-XJB"/>
                     </connections>
                 </viewController>
@@ -1684,6 +1688,39 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-1049" y="924"/>
         </scene>
+        <!--Contact Detail View Controller - Contact Detail-->
+        <scene sceneID="Faz-15-tSR">
+            <objects>
+                <viewController storyboardIdentifier="ContactDetailViewController" title="Contact Detail" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MG9-1p-N0l" customClass="ContactDetailViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="zQH-nM-jXW">
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="RJq-gT-NuY">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="njj-ho-OMu" userLabel="View - ContentView">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Contact Detail" id="xBH-1J-udq"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <connections>
+                        <outlet property="contentView" destination="njj-ho-OMu" id="j6u-eh-quk"/>
+                        <outlet property="scrollView" destination="RJq-gT-NuY" id="PRQ-NN-dgK"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-525" y="656"/>
+        </scene>
         <!--Navigation Controller-->
         <scene sceneID="qtI-DM-OKG">
             <objects>
@@ -1826,20 +1863,27 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="i3N-5g-evG"/>
+        <segue reference="Pu5-w4-aps"/>
+        <segue reference="n8e-Oj-wO2"/>
+        <segue reference="p6V-c0-caL"/>
+        <segue reference="DSB-SJ-fIa"/>
+        <segue reference="zXa-AG-jcx"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="DSB-SJ-fIa"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="n8e-Oj-wO2"/>
         <segue reference="ywO-BF-h0n"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="WJc-Y6-XJB"/>
-        <segue reference="zXa-AG-jcx"/>
+        <segue reference="dAf-rc-Hh3"/>
         <segue reference="vah-yS-677"/>
-        <segue reference="4Sl-0E-160"/>
+        <segue reference="zDw-Tx-fTt"/>
         <segue reference="s9j-Ih-SWz"/>
+        <segue reference="4Sl-0E-160"/>
         <segue reference="ja3-Zu-g6R"/>
         <segue reference="G1z-aV-19B"/>
         <segue reference="qB9-ce-7gT"/>
+        <segue reference="mo4-Vz-xJh"/>
         <segue reference="1ti-Nl-FYh"/>
         <segue reference="TmW-KY-ab0"/>
     </inferredMetricsTieBreakers>
