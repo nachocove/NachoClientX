@@ -39,7 +39,6 @@ namespace NachoCore.Model
             EmailsArchived = 0;
             EmailsSent = 0;
             EmailsDeleted = 0;
-            IsVip = false;
         }
 
         public void InsertByBrain ()
