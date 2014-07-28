@@ -138,7 +138,6 @@ namespace NachoCore
             NcTask.StartService ();
             NcModel.Instance.Nop ();
             EstablishService ();
-            McFolder freshMade;
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
         }
 
