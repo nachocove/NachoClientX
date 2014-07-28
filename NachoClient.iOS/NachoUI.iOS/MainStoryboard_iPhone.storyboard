@@ -899,7 +899,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -984,7 +984,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -1001,7 +1001,7 @@
                                 </state>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="422"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="466"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>

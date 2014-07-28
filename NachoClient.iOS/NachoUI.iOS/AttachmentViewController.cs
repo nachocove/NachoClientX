@@ -17,12 +17,9 @@ namespace NachoClient.iOS
 {
     public partial class AttachmentViewController : UITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate
     {
-        // cell Id's 
-        const string FileCell = "FileCell";
-
-        List<McAttachment> AttachmentList;
-
         INachoFileChooserParent owner;
+        FilesTableSource filesSource;
+        SearchDelegate searchDelegate;
 
         public AttachmentViewController (IntPtr handle) : base (handle)
         {
@@ -53,6 +50,16 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
+            // set up the table view source
+            filesSource = new FilesTableSource (owner, this, SearchDisplayController);
+            TableView.Source = filesSource;
+
+            // set up the search bar
+            searchDelegate = new SearchDelegate (filesSource);
+            SearchDisplayController.Delegate = searchDelegate;
+            SearchDisplayController.SearchResultsSource = filesSource;
+            SearchDisplayController.SearchBar.SearchButtonClicked += (s, e) => { SearchDisplayController.SearchBar.ResignFirstResponder(); };
+
             // don't show hamburger/nachonow buttons if selecting attachment for event or email
             if (owner == null) {
                 NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
@@ -71,6 +78,18 @@ namespace NachoClient.iOS
                     RefreshAttachmentSection ();
                 }
             };
+
+            // Search cancel handler needed as workaround for 'inactive button' bug
+            SearchDisplayController.SearchBar.CancelButtonClicked += (object sender, EventArgs e) => {
+                // Disable search & reset the tableview
+                var savedContentOffset = TableView.ContentOffset;
+                if (44.0f >= savedContentOffset.Y) {
+                    SearchDisplayController.SetActive (false, true);
+                } else {
+                    SearchDisplayController.SetActive (false, false);
+                }
+                TableView.SetContentOffset (savedContentOffset, false);
+            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -85,91 +104,164 @@ namespace NachoClient.iOS
         public void RefreshAttachmentSection ()
         {
             // show most recent attachments first
-            AttachmentList = NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id).ToList ();
-            this.TableView.ReloadData ();
-        }
-
-        public override int RowsInSection (UITableView tableview, int section)
-        {
-            if (AttachmentList == null) {
-                RefreshAttachmentSection ();
+            filesSource.Attachments = NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id).ToList ();
+            SearchDisplayController.SearchResultsTableView.ReloadData ();
+            if (searchDelegate != null && searchDelegate.searchString != null) {
+                searchDelegate.ShouldReloadForSearchString (SearchDisplayController, searchDelegate.searchString);
             }
-            return AttachmentList.Count;
+            base.TableView.ReloadData ();
         }
-
-        public override int NumberOfSections (UITableView tableView)
+            
+        protected class FilesTableSource : UITableViewSource
         {
-            return 1;
-        }
+            // cell Id's
+            const string FileCell = "FileCell";
 
-        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
-        {
-            UITableViewCell cell = null;
-            cell = tableView.DequeueReusableCell (FileCell);
-            NcAssert.True (null != cell);
+            protected List<McAttachment> attachments = new List<McAttachment> ();
+            protected List<McAttachment> searchResults = new List<McAttachment> ();
 
-            var attachment = AttachmentList [indexPath.Row];
-            cell.TextLabel.Text = attachment.DisplayName;
-            cell.DetailTextLabel.Text = attachment.ContentType;
-            if (attachment.IsDownloaded || attachment.IsInline) {
-                cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
-            } else {
-                cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
+            INachoFileChooserParent owner;
+            UIViewController viewController;
+            UISearchDisplayController searchController;
+
+            public List<McAttachment> Attachments
+            {
+                get { return attachments; }
+                set { attachments = value; }
             }
 
-            // styling
-            cell.TextLabel.TextColor = A.Color_NachoBlack;
-            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-            cell.DetailTextLabel.TextColor = UIColor.LightGray;
-            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-            return cell;
-        }
-
-        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-        {
-            var attachment = AttachmentList [indexPath.Row];
-            attachmentAction (attachment.Id);
-            tableView.DeselectRow (indexPath, true);
-        }
-
-        void attachmentAction (int attachmentId)
-        {
-            var a = McAttachment.QueryById<McAttachment> (attachmentId);
-            if (false == a.IsDownloaded) {
-                PlatformHelpers.DownloadAttachment (a);
-                return;
+            public List<McAttachment> SearchResults
+            {
+                get { return searchResults; }
+                set { searchResults = value; }
             }
 
-            if (null == owner) {
-                PlatformHelpers.DisplayAttachment (this, a);
-                return;
+            public FilesTableSource (INachoFileChooserParent owner, UIViewController vc, UISearchDisplayController searchController)
+            {
+                this.owner = owner;
+                this.viewController = vc;
+                this.searchController = searchController;
             }
 
-            // We're in "chooser' mode & the attachment is downloaded
-            var actionSheet = new UIActionSheet ();
-            actionSheet.TintColor = A.Color_NachoBlue;
-            actionSheet.Add ("Preview");
-            actionSheet.Add ("Select Attachment");
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 2;
-
-            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    PlatformHelpers.DisplayAttachment (this, a);
-                    break; 
-                case 1:
-                    owner.SelectFile (this, a);
-                    break;
-                case 2:
-                    break; // Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
+            public override int RowsInSection (UITableView tableview, int section)
+            {
+                if (tableview == searchController.SearchResultsTableView) {
+                    return SearchResults.Count;
+                } else {
+                    return Attachments.Count;
                 }
-            };
+            }
 
-            actionSheet.ShowInView (this.View);
+            public override int NumberOfSections (UITableView tableView)
+            {
+                return 1;
+            }
+
+            public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+            {
+                UITableViewCell cell = null;
+                cell = tableView.DequeueReusableCell (FileCell);
+                if (cell == null) {
+                    cell = new UITableViewCell (UITableViewCellStyle.Value1, FileCell);
+                }
+                NcAssert.True (null != cell);
+
+                McAttachment attachment;
+
+                // determine if table is for search results or all attachments
+                if (tableView == searchController.SearchResultsTableView) {
+                    attachment = SearchResults [indexPath.Row];
+                } else {
+                    attachment = Attachments [indexPath.Row];
+                }
+
+                cell.TextLabel.Text = attachment.DisplayName;
+                cell.DetailTextLabel.Text = attachment.ContentType;
+                if (attachment.IsDownloaded || attachment.IsInline) {
+                    cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+                } else {
+                    cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
+                }
+
+                // styling
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+                return cell;
+            }
+
+            public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+            {
+                McAttachment attachment;
+                if (tableView == searchController.SearchResultsTableView) {
+                    attachment = SearchResults [indexPath.Row];
+                } else {
+                    attachment = Attachments [indexPath.Row];
+                }
+                attachmentAction (attachment.Id);
+                tableView.DeselectRow (indexPath, true);
+            }
+
+            public void attachmentAction (int attachmentId)
+            {
+                var a = McAttachment.QueryById<McAttachment> (attachmentId);
+                if (false == a.IsDownloaded) {
+                    PlatformHelpers.DownloadAttachment (a);
+                    return;
+                }
+
+                if (null == owner) {
+                    PlatformHelpers.DisplayAttachment (viewController, a);
+                    return;
+                }
+
+                // We're in "chooser' mode & the attachment is downloaded
+                var actionSheet = new UIActionSheet ();
+                actionSheet.TintColor = A.Color_NachoBlue;
+                actionSheet.Add ("Preview");
+                actionSheet.Add ("Select Attachment");
+                actionSheet.Add ("Cancel");
+                actionSheet.CancelButtonIndex = 2;
+
+                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                    switch (b.ButtonIndex) {
+                    case 0:
+                        PlatformHelpers.DisplayAttachment (viewController, a);
+                        break; 
+                    case 1:
+                        owner.SelectFile ((INachoFileChooser)viewController, a);
+                        break;
+                    case 2:
+                        break; // Cancel
+                    default:
+                        NcAssert.CaseError ();
+                        break;
+                    }
+                };
+
+                actionSheet.ShowInView (viewController.View);
+            }
+        }
+
+        protected class SearchDelegate : UISearchDisplayDelegate
+        {
+            FilesTableSource filesSource;
+            public string searchString;
+
+            public SearchDelegate (FilesTableSource filesSource)
+            {
+                this.filesSource = filesSource;
+                this.searchString = null;
+            }
+
+            public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
+            {
+                filesSource.SearchResults = filesSource.Attachments.Where (w => w.DisplayName.Contains (forSearchString)).ToList ();
+                searchString = forSearchString;
+                controller.SearchResultsTableView.ReloadData ();
+                return true;
+            }
         }
     }
 }
