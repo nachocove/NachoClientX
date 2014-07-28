@@ -274,36 +274,6 @@
                                 <outlet property="delegate" destination="bBy-CW-6ix" id="zhe-Pp-Cxe"/>
                             </connections>
                         </searchBar>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="FileCell" textLabel="1NR-qv-J0n" detailTextLabel="QmA-5j-faP" imageView="wDS-JU-bXb" rowHeight="51" style="IBUITableViewCellStyleValue1" id="l9G-Bp-lHm">
-                                <rect key="frame" x="0.0" y="66" width="320" height="51"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="l9G-Bp-lHm" id="lS0-Z1-7SJ">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="50"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="1NR-qv-J0n">
-                                            <rect key="frame" x="54" y="15" width="33" height="21"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Detail" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="QmA-5j-faP">
-                                            <rect key="frame" x="261" y="15" width="44" height="21"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                            <color key="textColor" red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="calibratedRGB"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" image="icn-file-download.png" id="wDS-JU-bXb">
-                                            <rect key="frame" x="15" y="13" width="24" height="24"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                        </imageView>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
                         <connections>
                             <outlet property="dataSource" destination="bBy-CW-6ix" id="LKy-69-vsN"/>
                             <outlet property="delegate" destination="bBy-CW-6ix" id="Mmh-49-Ptx"/>
@@ -1846,7 +1816,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="icn-archive.png" width="24" height="24"/>
         <image name="icn-attach-files.png" width="16" height="16"/>
         <image name="icn-calendar-top.png" width="24" height="24"/>
-        <image name="icn-file-download.png" width="24" height="24"/>
         <image name="icn-send.png" width="24" height="24"/>
         <image name="list.png" width="20" height="18"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>

@@ -12,6 +12,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
 {
@@ -153,7 +154,7 @@ namespace NachoClient.iOS
                 UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell (FileCell);
                 if (cell == null) {
-                    cell = new UITableViewCell (UITableViewCellStyle.Value1, FileCell);
+                    cell = new MCSwipeTableViewCell (UITableViewCellStyle.Value1, FileCell);
                 }
                 NcAssert.True (null != cell);
 
@@ -179,6 +180,10 @@ namespace NachoClient.iOS
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                 cell.DetailTextLabel.TextColor = UIColor.LightGray;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+
+                // swipes
+                ConfigureSwipes (cell as MCSwipeTableViewCell, attachment);
+
                 return cell;
             }
 
@@ -232,6 +237,84 @@ namespace NachoClient.iOS
                 };
 
                 actionSheet.ShowInView (viewController.View);
+            }
+
+            /// <summary>
+            /// Configures the swipes.
+            /// </summary>
+            void ConfigureSwipes (MCSwipeTableViewCell cell, McAttachment attachment)
+            {
+                cell.FirstTrigger = 0.20f;
+                cell.SecondTrigger = 0.50f;
+
+                UIView forwardView = null;
+                UIColor greenColor = null;
+                UIView crossView = null;
+                UIColor redColor = null;
+                UIView previewView = null;
+                UIColor yellowColor = null;
+                UIView openView = null;
+                UIColor brownColor = null;
+
+                try { 
+                    forwardView = ViewWithImageName ("check");
+                    greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        attachmentAction (attachment.Id);
+                        return;
+                    });
+                    crossView = ViewWithImageName ("cross");
+                    redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        attachmentAction (attachment.Id);
+                        return;
+                    });
+                    previewView = ViewWithImageName ("clock");
+                    yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        attachmentAction (attachment.Id);
+                        return;
+                    });
+                    openView = ViewWithImageName ("list");
+                    brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
+                    cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                        attachmentAction (attachment.Id);
+                        return;
+                    });
+                } finally {
+                    if (null != forwardView) {
+                        forwardView.Dispose ();
+                    }
+                    if (null != greenColor) {
+                        greenColor.Dispose ();
+                    }
+                    if (null != crossView) {
+                        crossView.Dispose ();
+                    }
+                    if (null != redColor) {
+                        redColor.Dispose ();
+                    }
+                    if (null != previewView) {
+                        previewView.Dispose ();
+                    }
+                    if (null != yellowColor) {
+                        yellowColor.Dispose ();
+                    }
+                    if (null != openView) {
+                        openView.Dispose ();
+                    }
+                    if (null != brownColor) {
+                        brownColor.Dispose ();
+                    }
+                }
+            }
+
+            UIView ViewWithImageName (string imageName)
+            {
+                var image = UIImage.FromBundle (imageName);
+                var imageView = new UIImageView (image);
+                imageView.ContentMode = UIViewContentMode.Center;
+                return imageView;
             }
         }
 
