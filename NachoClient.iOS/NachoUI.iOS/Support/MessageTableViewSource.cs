@@ -284,6 +284,7 @@ namespace NachoClient.iOS
                 var userImageTap = new UITapGestureRecognizer ();
                 userImageTap.NumberOfTapsRequired = 1;
                 userImageTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
+                userImageTap.CancelsTouchesInView = false;
                 userImageView.AddGestureRecognizer (userImageTap);
                 userImageView.UserInteractionEnabled = true;
 
@@ -302,6 +303,7 @@ namespace NachoClient.iOS
                 var userLabelTap = new UITapGestureRecognizer ();
                 userLabelTap.NumberOfTapsRequired = 1;
                 userLabelTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
+                userLabelTap.CancelsTouchesInView = false;
                 userLabelView.AddGestureRecognizer (userLabelTap);
                 userLabelView.UserInteractionEnabled = true;
 
@@ -324,6 +326,7 @@ namespace NachoClient.iOS
                 var userCheckmarkTap = new UITapGestureRecognizer ();
                 userCheckmarkTap.NumberOfTapsRequired = 1;
                 userCheckmarkTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
+                userCheckmarkTap.CancelsTouchesInView = false;
                 userCheckmarkView.AddGestureRecognizer (userCheckmarkTap);
                 userCheckmarkView.UserInteractionEnabled = true;
 

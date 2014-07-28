@@ -12,13 +12,22 @@ namespace NachoClient.iOS
 {
 	public partial class SupportViewController : NcUITableViewController
 	{
+        // Submit a log cell
         const string SubmitLogText = "Submit a log";
+
+        // Email cell
         const string ContactByEmailText = "Contact us via email";
         const string SupportEmail = "support@nachocove.com";
-        const string ContactByPhoneText = "Support Number: +1 (404) 436-2246";
+
+        // Phone # cell
+        const string ContactByPhoneText = "Support number: +1 (404) 436-2246";
         const string PhoneNumberLink = "telprompt://14044362246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
+        // Version # cell
+        const string VersionNumberText = "Version number: ";
+
+        // Id's
         const string SupportToComposeSegueId = "SupportToEmailCompose";
         const string BasicCell = "BasicCell";
         const string SubtitleCell = "SubtitleCell";
@@ -33,7 +42,7 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return 3;
+            return 4;
         }
 
         public override int NumberOfSections (UITableView tableView)
@@ -73,10 +82,13 @@ namespace NachoClient.iOS
 
         public void SubmitALog ()
         {
-            Log.Info (Log.LOG_UI, LogNotification);
+            // send guid to Telemetry and append it to message body so we can correlate 
+            var guid = Guid.NewGuid ();
+            Log.Info (Log.LOG_UI, LogNotification + ": " + guid);
             var messageContent = new Dictionary<string, string>()
             {
                 { "subject", "Additional log information" },
+                { "template", "\n\nSupport identifier: " + guid },
             };
 
             UIAlertView alert = new UIAlertView (
@@ -96,15 +108,13 @@ namespace NachoClient.iOS
 
         public void ContactViaEmail ()
         {
-            Log.Info (Log.LOG_UI, ContactingSupportNotification);
-            var telem = Telemetry.SharedInstance;
-            var clientId = telem.GetUserName ();
-            if (clientId != null) {
-                Log.Info (Log.LOG_UI, clientId);
-            } else {
-                Log.Info (Log.LOG_UI, "ClientId was not found");
-            }
-            PerformSegue (SupportToComposeSegueId, new SegueHolder (null));
+            // send guid to Telemetry and append it to message body so we can correlate 
+            var guid = Guid.NewGuid ();
+            Log.Info (Log.LOG_UI, ContactingSupportNotification + ": " + guid);
+            var messageContent = new Dictionary<string, string> () {
+                { "template", "\n\nSupport identifier: " + guid },
+            };
+            PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -117,11 +127,13 @@ namespace NachoClient.iOS
                 var contents = (Dictionary<string, string>)holder.value;
 
                 string subject = null;
+                string template = null;
                 if (contents != null) {
                     contents.TryGetValue ("subject", out subject);
+                    contents.TryGetValue ("template", out template);
                 }
 
-                dc.SetEmailAddressAndTemplate (address, subject);
+                dc.SetEmailAddressAndTemplate (address, subject, template);
                 return;
             }
 
@@ -158,6 +170,13 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
+                break;
+            case 3:
+                cell = tableView.DequeueReusableCell (BasicCell);
+                NcAssert.True (null != cell);
+                var version = NSBundle.FromIdentifier ("com.nachocove.nachomail").InfoDictionary ["CFBundleShortVersionString"];
+                cell.TextLabel.Text = VersionNumberText + version;
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 break;
             }
 
@@ -199,6 +218,12 @@ namespace NachoClient.iOS
             case 2:
                 text = new NSString (ContactByPhoneText);
                 detailText = new NSString (ContactByPhoneDetailText);
+                break;
+            case 3:
+                text = new NSString (VersionNumberText);
+                break;
+            default:
+                NcAssert.True (false, "Tried to show extra cell on support page");
                 break;
             }
 

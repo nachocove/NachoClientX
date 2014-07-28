@@ -1047,6 +1047,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScoreSyncInfo.cs">
       <Link>NachoCore\Model\McEmailAddressScoreSyncInfo.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\ContactDetailViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactDetailViewController.designer.cs">
+      <DependentUpon>ContactDetailViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
