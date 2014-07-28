@@ -1295,6 +1295,10 @@
     <BundleResource Include="Resources\Icon-Small-40.png" />
     <BundleResource Include="Resources\Icon-Small-40%402x.png" />
     <BundleResource Include="Resources\Default%402x.png" />
+    <BundleResource Include="Resources\icn-contact-quickcall.png" />
+    <BundleResource Include="Resources\icn-contact-quickcall%402x.png" />
+    <BundleResource Include="Resources\icn-contact-quickemail.png" />
+    <BundleResource Include="Resources\icn-contact-quickemail%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
