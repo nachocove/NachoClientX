@@ -6,8 +6,8 @@ import model_db
 Base = declarative_base()
 
 
-class McContact(Base):
-    __table__ = Table('McContact', model_db.ModelDb.metadata,
+class McEmailAddress(Base):
+    __table__ = Table('McEmailAddress', model_db.ModelDb.metadata,
                       autoload=True,
                       autoload_with=model_db.ModelDb.engine)
 
@@ -34,8 +34,8 @@ class McContact(Base):
         self.NeedUpdate = 1
 
 
-class McContactScoreSyncInfo(Base):
-    __table__ = Table('McContactScoreSyncInfo', model_db.ModelDb.metadata,
+class McEmailAddressScoreSyncInfo(Base):
+    __table__ = Table('McEmailAddressScoreSyncInfo', model_db.ModelDb.metadata,
                       autoload=True,
                       autoload_with=model_db.ModelDb.engine)
 

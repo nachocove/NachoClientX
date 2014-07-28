@@ -116,9 +116,17 @@ namespace NachoClient.iOS
             var r = AsContact.FromMcContact (m);
             var c = r.GetValue<AsContact> ();
 
-            if (contact.Score <= 1) {
+            // Get the score from email addresss
+            NcAssert.True (1 == m.EmailAddresses.Count);
+            McEmailAddress emailAddress;
+            bool found = McEmailAddress.Get (m.AccountId, m.EmailAddresses [0].Value, out emailAddress);
+            double score = 0.0;
+            if (found) {
+                score = emailAddress.Score;
+            }
+            if (score <= 0.5) {
                 section.Add (new StyledStringElementWithIndent (contact.GetDisplayName()));
-            } else if (contact.Score < 10) {
+            } else if (score < 10) {
                 var chili = UIImage.FromBundle ("icon_chili").Scale (new System.Drawing.SizeF (22.0f, 22.0f));
                 section.Add (new StyledStringElementWithIcon (contact.GetDisplayName(), chili));
             } else {
