@@ -60,6 +60,9 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsSource = filesSource;
             SearchDisplayController.SearchBar.SearchButtonClicked += (s, e) => { SearchDisplayController.SearchBar.ResignFirstResponder(); };
 
+            // Initially let's hide the search controller
+            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+
             // don't show hamburger/nachonow buttons if selecting attachment for event or email
             if (owner == null) {
                 NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
@@ -77,18 +80,6 @@ namespace NachoClient.iOS
                 if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
                     RefreshAttachmentSection ();
                 }
-            };
-
-            // Search cancel handler needed as workaround for 'inactive button' bug
-            SearchDisplayController.SearchBar.CancelButtonClicked += (object sender, EventArgs e) => {
-                // Disable search & reset the tableview
-                var savedContentOffset = TableView.ContentOffset;
-                if (44.0f >= savedContentOffset.Y) {
-                    SearchDisplayController.SetActive (false, true);
-                } else {
-                    SearchDisplayController.SetActive (false, false);
-                }
-                TableView.SetContentOffset (savedContentOffset, false);
             };
         }
 
