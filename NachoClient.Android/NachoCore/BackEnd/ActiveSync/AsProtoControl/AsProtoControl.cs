@@ -78,30 +78,10 @@ namespace NachoCore.ActiveSync
 
         private bool RequestQuickFetch;
 
-        public AsProtoControl (IProtoControlOwner owner, int accountId)
+        public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
-            Owner = owner;
-            AccountId = accountId;
-            NcModel.Instance.RunInTransaction (() => {
-                bool needUpdate = false;
-                var account = Account;
-                if (0 == account.PolicyId) {
-                    var policy = new McPolicy ();
-                    policy.Insert ();
-                    account.PolicyId = policy.Id;
-                    needUpdate = true;
-                }
-                if (0 == Account.ProtocolStateId) {
-                    var protocolState = new McProtocolState ();
-                    protocolState.Insert ();
-                    account.ProtocolStateId = protocolState.Id;
-                    needUpdate = true;
-                }
-                if (needUpdate) {
-                    account.Update();
-                }
-            });
+            EstablishService ();
             /*
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
@@ -125,10 +105,6 @@ namespace NachoCore.ActiveSync
                 LocalStateType = typeof(Lst),
                 StateChangeIndication = UpdateSavedState,
                 TransTable = new[] {
-                    // GENERAL CONVENTIONS:
-                    //
-                    // 
-                    //
                     new Node {
                         State = (uint)St.Start,
                         Drop = new [] {
@@ -639,8 +615,75 @@ namespace NachoCore.ActiveSync
             McPending.ResolveAllDispatchedAsDeferred (Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
-            // FIXME - make pretty. Make a generic timer service in the Brain.
         }
+
+        private void EstablishService ()
+        {
+            // Hang our records off Account.
+            NcModel.Instance.RunInTransaction (() => {
+                bool needUpdate = false;
+                var account = Account;
+                if (0 == account.PolicyId) {
+                    var policy = new McPolicy ();
+                    policy.Insert ();
+                    account.PolicyId = policy.Id;
+                    needUpdate = true;
+                }
+                if (0 == Account.ProtocolStateId) {
+                    var protocolState = new McProtocolState ();
+                    protocolState.Insert ();
+                    account.ProtocolStateId = protocolState.Id;
+                    needUpdate = true;
+                }
+                if (needUpdate) {
+                    account.Update();
+                }
+            });
+
+            // Make the application-defined folders.
+            McFolder freshMade;
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetOutboxFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, "0",
+                        McFolder.ClientOwned_Outbox, "Device Outbox",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetOutboxFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, "0",
+                        McFolder.ClientOwned_Drafts, "Device Drafts",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetGalCacheFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, "0",
+                        McFolder.ClientOwned_GalCache, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetGleanedFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, "0",
+                        McFolder.ClientOwned_Gleaned, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, "0",
+                        McFolder.ClientOwned_LostAndFound, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                    freshMade.Insert ();
+                }
+            });
+        }
+
         // Methods callable by the owner.
         public override void Execute ()
         {
@@ -1035,16 +1078,6 @@ namespace NachoCore.ActiveSync
                 // The "Down" case.
                 StopCurrentOp ();
             }
-        }
-
-        public override void StatusInd (NcResult status)
-        {
-            Owner.StatusInd (this, status);
-        }
-
-        public override void StatusInd (NcResult status, string[] tokens)
-        {
-            Owner.StatusInd (this, status, tokens);
         }
     }
 }

@@ -48,6 +48,8 @@ namespace NachoCore.Model
         /// Set only for Device contacts
         public string DeviceUniqueId { get; set; }
         /// Set only for Device contacts
+        public DateTime DeviceCreation { get; set; }
+        /// Set only for Device contacts
         public DateTime DeviceLastUpdate { get; set; }
 
         /// The collection of important dates associated with the contact
@@ -1008,9 +1010,10 @@ namespace NachoCore.Model
 
         public static McContact QueryByDeviceUniqueId (string deviceUniqueId)
         {
+            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
             return NcModel.Instance.Db.Table<McContact> ().Where (x => 
                 x.DeviceUniqueId == deviceUniqueId &&
-                x.AccountId == ConstMcAccount.NotAccountSpecific.Id
+                x.AccountId == account.Id
             ).SingleOrDefault ();
         }
 

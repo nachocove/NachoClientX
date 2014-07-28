@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using MonoTouch.Foundation;
 using MonoTouch.AddressBook;
@@ -13,6 +14,7 @@ namespace NachoPlatform
 {
     public sealed class Contacts : IPlatformContacts
     {
+        private const int SchemaRev = 0;
         private static volatile Contacts instance;
         private static object syncRoot = new Object ();
 
@@ -34,46 +36,71 @@ namespace NachoPlatform
 
         public class PlatformContactRecordiOS : PlatformContactRecord
         {
-            public override string UniqueId { get { return person.Id.ToString (); } }
-            public override DateTime LastUpdate { get { return person.ModificationDate.ToDateTime (); } }
+            public override string UniqueId { get { 
+                    return Person.Id.ToString (); 
+                } 
+            }
+            public override DateTime LastUpdate { get {
+                    return Person.ModificationDate.ToDateTime ();
+                }
+            }
+            // Person not to be referenced from platform independent code.
+            public ABPerson Person { get; set; }
 
             public override NcResult ToMcContact ()
             {
                 var contact = new McContact () {
                     Source = McAbstrItem.ItemSource.Device,
-                    ServerId = "PlatformContactRecord" + UniqueId,
-                    AccountId = ConstMcAccount.NotAccountSpecific.Id,
+                    ServerId = "NachoDeviceContact:" + UniqueId,
+                    AccountId = McAccount.QueryByAccountType(McAccount.AccountTypeEnum.Device).Single ().Id,
+                    OwnerEpoch = SchemaRev,
                 };
-                contact.FirstName = person.FirstName;
-                contact.LastName = person.LastName;
-                contact.MiddleName = person.MiddleName;
-                // TODO: ignoring person.Prefix.
-                contact.Suffix = person.Suffix;
-                contact.NickName = person.Nickname;
-                contact.YomiFirstName = person.FirstNamePhonetic;
-                contact.YomiLastName = person.LastNamePhonetic;
-                // Ignoring person.MiddleNamePhonetic.
-                contact.CompanyName = person.Organization;
-                contact.Title = person.JobTitle;
-                contact.Department = person.Department;
-                var emails = person.GetEmails ();
+                contact.FirstName = Person.FirstName;
+                contact.LastName = Person.LastName;
+                contact.MiddleName = Person.MiddleName;
+                contact.Suffix = Person.Suffix;
+                contact.NickName = Person.Nickname;
+                contact.YomiFirstName = Person.FirstNamePhonetic;
+                contact.YomiLastName = Person.LastNamePhonetic;
+                contact.CompanyName = Person.Organization;
+                contact.Title = Person.JobTitle;
+                contact.Department = Person.Department;
+                var emails = Person.GetEmails ();
                 int i = 1;
                 foreach (var email in emails) {
                     contact.AddEmailAddressAttribute (string.Format ("Email{0}Address", i), null, email.Value);
                     ++i;
                 }
-                var birthday = person.Birthday;
+                var birthday = Person.Birthday;
                 if (null != birthday) {
                     contact.AddDateAttribute ("Birthday", null, birthday.ToDateTime ());
                 }
-                // TODO: ignoring person.Note.
-                // FIXME person.CreationDate;
-                // FIXME person.GetPhones()
+                if (null != Person.Note) {
+                    var body = McBody.Save (Person.Note);
+                    contact.BodyId = body.Id;
+                    contact.BodyType = McBody.PlainText;
+                }
+                var phones = Person.GetPhones ();
+                foreach (var phone in phones) {
+                    var phoneLabel = phone.Label.ToString ();
+                    if (phoneLabel.Contains ("Work")) {
+                        contact.AddPhoneNumberAttribute ("BusinessPhoneNumber", "Work", phone.Value);
+                    } else if (phoneLabel.Contains ("Home")) {
+                        contact.AddPhoneNumberAttribute ("HomePhoneNumber", "Home", phone.Value);
+                    } else {
+                        // Guess mobile.
+                        contact.AddPhoneNumberAttribute ("MobilePhoneNumber", null, phone.Value);
+                    }
+                }
+                contact.DeviceCreation = Person.CreationDate.ToDateTime ();
+                contact.DeviceLastUpdate = LastUpdate;
+                contact.DeviceUniqueId = UniqueId;
+
+                // TODO: Picture.
+                // TODO: Street addresses, IM addresses, etc.
+
                 return NcResult.OK (contact);
             }
-
-            // Not to be referenced from platform independent code.
-            public ABPerson person { get; set; }
         }
 
         private ABAddressBook ABAddressBookCreate ()
@@ -107,7 +134,6 @@ namespace NachoPlatform
         public IEnumerable<PlatformContactRecord> GetContacts ()
         {
             if (ABAddressBook.GetAuthorizationStatus () != ABAuthorizationStatus.Authorized) {
-
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedContactsPermission),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -130,11 +156,9 @@ namespace NachoPlatform
                     var peeps = ab.GetPeople (source);
                     foreach (var peep in peeps) {
                         retval.Add (new PlatformContactRecordiOS () {
+                            Person = peep,
                         });
                     }
-                    // peeps [0].Id;
-                    // peeps [0].ModificationDate;
-                    // peeps [0].CreationDate;
                     break;
                 }
             }

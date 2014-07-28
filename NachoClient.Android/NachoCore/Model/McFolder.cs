@@ -120,7 +120,8 @@ namespace NachoCore.Model
          */
         public static McFolder GetDeviceContactsFolder ()
         {
-            return McFolder.GetClientOwnedFolder (ConstMcAccount.NotAccountSpecific.Id, ClientOwned_DeviceContacts);
+            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
+            return McFolder.GetClientOwnedFolder (account.Id, ClientOwned_DeviceContacts);
         }
 
         public static McFolder GetOutboxFolder (int accountId)
@@ -381,15 +382,19 @@ namespace NachoCore.Model
         public NcResult Unlink (McAbstrItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
+            return Unlink (obj.Id, classCode);
+        }
+
+        public NcResult Unlink (int feId, ClassCodeEnum classCode)
+        {
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
-                (AccountId, Id, obj.Id, classCode);
+                (AccountId, Id, feId, classCode);
             if (null == existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
             }
             existing.Delete ();
             return NcResult.OK ();
         }
-
         public static void AsSetExpected (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
