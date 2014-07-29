@@ -279,7 +279,6 @@ namespace NachoCore.ActiveSync
                         c.BodyType = bodyType;
                     } else {
                         c.BodyId = 0;
-                        Log.Info (Log.LOG_AS, "Truncated message or zero-length body from server.");
                     }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
