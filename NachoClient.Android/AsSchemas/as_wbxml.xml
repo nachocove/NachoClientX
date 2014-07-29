@@ -526,7 +526,7 @@
             <id>0x32</id>
         </token>
         <token>
-            <name>Timezone</name>
+            <name>TimeZone</name>
             <id>0x33</id>
         </token>
         <token>
