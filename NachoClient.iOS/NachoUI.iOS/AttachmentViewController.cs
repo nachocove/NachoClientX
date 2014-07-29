@@ -259,8 +259,8 @@ namespace NachoClient.iOS
 
             public void openInOtherApp (McAttachment attachment)
             {
-                downloadAndDoAction (attachment.Id, (att) => {
-                    UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (attachment.FilePath ()));
+                downloadAndDoAction (attachment.Id, (a) => {
+                    UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.FilePath ()));
                     Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (vc);
                     Preview.PresentOpenInMenu (vc.View.Frame, vc.View, true);
                 });
