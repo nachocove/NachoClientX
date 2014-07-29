@@ -70,25 +70,29 @@ namespace NachoCore.Model
             if (0 == ScoreVersion) {
                 McEmailAddress emailAddress;
                 var address = NcEmailAddress.ParseMailboxAddressString (From);
-                bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
-                if (found) {
-                    // Analyze sender
-                    emailAddress.IncrementEmailsReceived ();
-                    if (IsRead) {
-                        emailAddress.IncrementEmailsRead ();
-                    }
-                    // TODO - How to determine if the email has been replied?
-                    emailAddress.Score = emailAddress.GetScore ();
-                    emailAddress.UpdateByBrain ();
+                if (null != address) {
+                    bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+                    if (found) {
+                        // Analyze sender
+                        emailAddress.IncrementEmailsReceived ();
+                        if (IsRead) {
+                            emailAddress.IncrementEmailsRead ();
+                        }
+                        // TODO - How to determine if the email has been replied?
+                        emailAddress.Score = emailAddress.GetScore ();
+                        emailAddress.UpdateByBrain ();
 
-                    // Add Sender dependency
-                    McEmailMessageDependency dep = new McEmailMessageDependency ();
-                    dep.EmailMessageId = Id;
-                    dep.EmailAddressId = emailAddress.Id;
-                    dep.EmailAddressType = "Sender";
-                    dep.InsertByBrain ();
+                        // Add Sender dependency
+                        McEmailMessageDependency dep = new McEmailMessageDependency ();
+                        dep.EmailMessageId = Id;
+                        dep.EmailAddressId = emailAddress.Id;
+                        dep.EmailAddressType = "Sender";
+                        dep.InsertByBrain ();
+                    } else {
+                        Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    }
                 } else {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
                 }
 
                 ScoreVersion++;
