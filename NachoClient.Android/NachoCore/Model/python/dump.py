@@ -319,7 +319,7 @@ def main():
     order_group.add_argument('--date-received', action='store_true',
                              help='Sorted by DateReceived in ascending order [McEmailMessage only]')
     order_group.add_argument('--emails-received', action='store_true',
-                             help='Sorted by EmailsReceived in descending order [McContact only]')
+                             help='Sorted by EmailsReceived in descending order [McEmailAddress only]')
     order_group.add_argument('--score', action='store_true',
                              help='Sorted by Score in descending order')
     order_group.add_argument('--score-version', action='store_true',
@@ -327,8 +327,13 @@ def main():
     order_group.add_argument('--time-variance', action='store_true',
                              help='Sorted by TimeVarianceType, TimeVarianceState in descending order')
 
-    parser.add_argument('tables', nargs='*', help='Choices are: McEmailMessage')
+    parser.add_argument('tables', nargs='*', help='Choices are: McEmailMessage, McEmailAddress, '
+                                                  'McEmailMessageDependency, McContactStringAttribute. '
+                                                  '(Names are case insensitive.)')
     options = parser.parse_args()
+    if len(options.tables) == 0:
+        parser.print_help()
+        exit(0)
 
     # Initialize SQLAlchemy
     if not os.path.exists(options.db_file):
@@ -359,7 +364,7 @@ def main():
         query = session.query(model_class)
         if options.date_received and table == 'mcemailmessage':
             objects = query.order_by(model_class.DateReceived)
-        elif options.emails_received:
+        elif options.emails_received and table == 'mcemailaddress':
             objects = query.order_by(sqlalchemy.desc(model_class.EmailsReceived))
         elif options.score:
             objects = query.order_by(sqlalchemy.desc(model_class.Score))
