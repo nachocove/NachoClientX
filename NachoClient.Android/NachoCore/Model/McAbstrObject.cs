@@ -74,8 +74,10 @@ namespace NachoCore.Model
 
         [PrimaryKey, AutoIncrement, Unique]
         public virtual int Id { get; set; }
-        // Optimistic concurrency control
+        // Optimistic concurrency control.
         public DateTime LastModified { get; set; }
+        // Set only on Insert.
+        public DateTime CreatedAt { get; set; }
 
         public McAbstrObject ()
         {
@@ -107,6 +109,7 @@ namespace NachoCore.Model
             NcAssert.True (0 == Id);
             NcModel.Instance.TakeTokenOrSleep ();
             LastModified = DateTime.UtcNow;
+            CreatedAt = LastModified;
             NcCapture capture = InsertCaptures.Find (ClassName ());
             capture.Start ();
             int rc = NcModel.Instance.BusyProtect (() => {

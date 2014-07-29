@@ -309,7 +309,7 @@ namespace NachoCore.Model
         public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                false == x.IsRead && since < x.LastModified).OrderByDescending (x => x.LastModified);
+                false == x.IsRead && since < x.CreatedAt).OrderByDescending (x => x.CreatedAt);
         }
 
         public static ClassCodeEnum GetClassCode ()
