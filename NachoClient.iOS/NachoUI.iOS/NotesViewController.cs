@@ -21,12 +21,13 @@ namespace NachoClient.iOS
 
         UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
-        protected float LINE_OFFSET = 30f;
-        protected float CELL_HEIGHT = 44f;
-        protected float TEXT_LINE_HEIGHT = 19.124f;
+        protected static float LINE_OFFSET = 30f;
+        protected static float KEYBOARD_HEIGHT = 216f;
+        protected static float NOTES_TEXT_VIEW_HEIGHT = UIScreen.MainScreen.Bounds.Height - KEYBOARD_HEIGHT - LINE_OFFSET - 10;
+        protected static float TEXT_LINE_HEIGHT = 19.124f;
         protected float NOTES_OFFSET = 0f;
         protected float keyboardHeight;
-        protected float KEYBOARD_HEIGHT = 216f;
+
         UIColor solidTextColor = A.Color_NachoBlack;
 
         protected int DATE_DETAIL_TAG = 100;
@@ -62,15 +63,16 @@ namespace NachoClient.iOS
 
         protected void CreateNotesView ()
         {
+
+            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - KEYBOARD_HEIGHT);
             //notes
-            notesTextView = new UITextView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, View.Frame.Height));
+            notesTextView = new UITextView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.TextColor = solidTextColor;
-            notesTextView.BackgroundColor = A.Color_NachoYellow;
+            notesTextView.BackgroundColor = UIColor.White;
             //notesTextView.ContentInset = new UIEdgeInsets (0, 35, 0, 15);
             var beginningRange = new NSRange (0, 0);
             notesTextView.SelectedRange = beginningRange;
-
 
             notesTextView.Changed += (object sender, EventArgs e) => {
                 //NotesSelectionChanged (notesTextView);
@@ -78,33 +80,16 @@ namespace NachoClient.iOS
             line1 = AddLine (0, LINE_OFFSET + 10, SCREEN_WIDTH, separatorColor);
 
             //Content View
-
-            //contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT);
-
-            contentView.BackgroundColor = A.Color_NachoBlue;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
-//            contentView.AddSubviews (new UIView[] {
-//                notesTextView,
-//                line1,
-//                line2
-//            });
             MakeDateLabel (0, LINE_OFFSET - 10, SCREEN_WIDTH, 15, DATE_DETAIL_TAG, contentView);
             contentView.Add (notesTextView);
             contentView.Add (line1);
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 184);
+            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + LINE_OFFSET + 10);
 
             //Scroll View
-            scrollView.BackgroundColor = A.Color_NachoRed;
-            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 194);
-            //scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT);
-            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
-
-            Console.WriteLine ("______________________________________________________________________________________");
-            Console.WriteLine ("contentView: " + contentView.Frame.ToString ());
-            Console.WriteLine ("contentView.size: " + contentView.Frame.Size.ToString ());
-            Console.WriteLine ("scrollView: " + scrollView.Frame.ToString ());
-            Console.WriteLine ("scrollView.ContentSize: " + scrollView.ContentSize.ToString ());
-            Console.WriteLine ("______________________________________________________________________________________");
+            scrollView.BackgroundColor = A.Color_NachoNowBackground;
+            scrollView.ContentSize = contentView.Frame.Size;
+           
         }
 
 //        protected void NotesSelectionChanged (UITextView textView)
