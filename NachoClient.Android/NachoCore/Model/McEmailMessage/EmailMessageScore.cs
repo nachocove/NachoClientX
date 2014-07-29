@@ -45,6 +45,10 @@ namespace NachoCore.Model
 
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
+            if (null == address) {
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
+                return score;
+            }
             bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
             if (!found) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
