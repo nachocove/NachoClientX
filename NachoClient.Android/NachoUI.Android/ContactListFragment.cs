@@ -18,7 +18,7 @@ namespace NachoClient.AndroidClient
     public class ContactListFragment : Android.Support.V4.App.Fragment
     {
         INachoContacts contacts;
-        ContactListAdapter adapter;
+//        ContactListAdapter adapter;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -31,14 +31,14 @@ namespace NachoClient.AndroidClient
             var rootView = inflater.Inflate (Resource.Layout.MessageListFragment, container, false);
             var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
-            contacts = NcContactManager.Instance.GetNachoContacts ();
-            adapter = new ContactListAdapter (this.Activity, contacts);
-            listview.Adapter = adapter;
-
-            NcContactManager.Instance.ContactsChanged += (object sender, EventArgs e) => {
-                contacts = NcContactManager.Instance.GetNachoContacts ();
-                adapter.NotifyDataSetChanged ();
-            };
+//            contacts = NcContactManager.Instance.GetNachoContacts ();
+//            adapter = new ContactListAdapter (this.Activity, contacts);
+//            listview.Adapter = adapter;
+//
+//            NcContactManager.Instance.ContactsChanged += (object sender, EventArgs e) => {
+//                contacts = NcContactManager.Instance.GetNachoContacts ();
+//                adapter.NotifyDataSetChanged ();
+//            };
                 
             listview.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
                 var fragment = new ContactViewFragment ();

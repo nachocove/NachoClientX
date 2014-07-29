@@ -42,10 +42,13 @@ namespace NachoCore.Model
 
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
+
         /// Set only for Device contacts
         public string DeviceUniqueId { get; set; }
+
         /// Set only for Device contacts
         public DateTime DeviceCreation { get; set; }
+
         /// Set only for Device contacts
         public DateTime DeviceLastUpdate { get; set; }
 
@@ -890,7 +893,7 @@ namespace NachoCore.Model
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
                                               " m.FolderId = ? ",
-                                              accountId, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
+                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
             return contactList;
         }
 
@@ -909,7 +912,7 @@ namespace NachoCore.Model
                                               " s.Value = ? AND " +
                                               " m.ClassCode = ? AND " +
                                               " f.IsClientOwned = false ",
-                                              accountId, emailAddress, McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
             return contactList;
         }
 
@@ -936,7 +939,7 @@ namespace NachoCore.Model
                 " c.IsAwaitingDelete = 0 AND " +
                 " m.ClassCode = ?  " +
                 " ORDER BY c.FirstName",
-                McAbstrFolderEntry.ClassCodeEnum.Contact);
+                (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
@@ -951,36 +954,38 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? " +
                 " ORDER BY c.FirstName",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
+                accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
         }
 
-        public static List<NcContactIndex> QueryAllHotContactItems ()
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ? AND " +
-                " c.Score > ? " +
-                " ORDER BY c.Score DESC, c.FirstName",
-                McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
-        }
+        // FIXME: NOT USED But using Score
+        //        public static List<NcContactIndex> QueryAllHotContactItems ()
+        //        {
+        //            return NcModel.Instance.Db.Query<NcContactIndex> (
+        //                "SELECT c.Id as Id FROM McContact AS c " +
+        //                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+        //                " WHERE " +
+        //                " c.IsAwaitingDelete = 0 AND " +
+        //                " m.ClassCode = ? AND " +
+        //                " c.Score > ? " +
+        //                " ORDER BY c.Score DESC, c.FirstName",
+        //                McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
+        //        }
 
-        public static List<NcContactIndex> QueryAllHotContactItems (int accountId)
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.AccountId = ? AND " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " c.Score > ? " +
-                " ORDER BY c.Score DESC, c.FirstName",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
-        }
+        // FIXME: NOT USED But using Score
+        //        public static List<NcContactIndex> QueryAllHotContactItems (int accountId)
+        //        {
+        //            return NcModel.Instance.Db.Query<NcContactIndex> (
+        //                "SELECT c.Id as Id FROM McContact AS c " +
+        //                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+        //                " WHERE " +
+        //                " c.AccountId = ? AND " +
+        //                " c.IsAwaitingDelete = 0 AND " +
+        //                " m.AccountId = ? AND " +
+        //                " m.ClassCode = ? AND " +
+        //                " c.Score > ? " +
+        //                " ORDER BY c.Score DESC, c.FirstName",
+        //                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
+        //        }
 
         public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)
         {
@@ -994,17 +999,17 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McContactEmailAddressAttribute> (
                 "Select s.*, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
                 "FROM McContactEmailAddressAttribute AS s " +
+                "JOIN McEmailAddress AS a ON s.EmailAddress = a.Id " +
                 "JOIN McContact AS c ON s.ContactId = c.Id " +
                 "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 "WHERE " +
                 "m.ClassCode=? AND " +
-                "c.AccountId = ? AND " +
                 "c.IsAwaitingDelete = 0 AND " +
                 "( " +
                 "  c.FirstName LIKE ? OR c.LastName LIKE ?  OR s.Value LIKE ? OR s.Value LIKE ? " +
                 ") " +
-                " ORDER BY c.Score DESC, c.FirstName LIMIT 100", 
-                McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
+                "ORDER BY a.Score DESC, SORT_ORDER COLLATE NOCASE ASC  LIMIT 100", 
+                (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
         }
 
         public static List<NcContactIndex> AllContactsSortedByName (int accountId)
@@ -1048,7 +1053,7 @@ namespace NachoCore.Model
             var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
             return NcModel.Instance.Db.Table<McContact> ().Where (x => 
                 x.DeviceUniqueId == deviceUniqueId &&
-                x.AccountId == account.Id
+            x.AccountId == account.Id
             ).SingleOrDefault ();
         }
 
