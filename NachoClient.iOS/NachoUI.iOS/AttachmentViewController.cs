@@ -199,6 +199,13 @@ namespace NachoClient.iOS
                 tableView.DeselectRow (indexPath, true);
             }
 
+            public void openInOtherApp (McAttachment attachment)
+            {
+                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (attachment.FilePath ()));
+                Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (viewController);
+                Preview.PresentOpenInMenu (viewController.View.Frame, viewController.View, true);
+            }
+
             public void attachmentAction (int attachmentId)
             {
                 var a = McAttachment.QueryById<McAttachment> (attachmentId);
@@ -278,7 +285,7 @@ namespace NachoClient.iOS
                     openView = ViewWithImageName ("list");
                     brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        attachmentAction (attachment.Id);
+                        openInOtherApp (attachment);
                         return;
                     });
                 } finally {
