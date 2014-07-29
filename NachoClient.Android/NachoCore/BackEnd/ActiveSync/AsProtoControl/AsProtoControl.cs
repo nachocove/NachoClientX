@@ -617,6 +617,23 @@ namespace NachoCore.ActiveSync
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
+        public override BackEndAutoDStateEnum AutoDState {
+            get {
+                switch (Sm.State) {
+                case (uint)Lst.UiCertOkW:
+                    return BackEndAutoDStateEnum.CertAskWait;
+                case (uint)Lst.UiDCrdW:
+                    return BackEndAutoDStateEnum.CredWait;
+                case (uint)Lst.UiServConfW:
+                    return BackEndAutoDStateEnum.ServerConfWait;
+                case (uint)Lst.DiscW:
+                    return BackEndAutoDStateEnum.Running;
+                default:
+                    return BackEndAutoDStateEnum.NA;
+                }
+            }
+        }
+
         private void EstablishService ()
         {
             // Hang our records off Account.

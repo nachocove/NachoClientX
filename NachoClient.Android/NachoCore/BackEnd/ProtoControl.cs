@@ -52,6 +52,12 @@ namespace NachoCore
             }
         }
 
+        public virtual BackEndAutoDStateEnum AutoDState {
+            get {
+                return BackEndAutoDStateEnum.NA;
+            }
+        }
+
         public ProtoControl (IProtoControlOwner owner, int accountId)
         {
             Owner = owner;

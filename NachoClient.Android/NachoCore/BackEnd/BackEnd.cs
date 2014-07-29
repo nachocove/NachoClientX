@@ -440,6 +440,11 @@ namespace NachoCore
             ServiceFromAccountId (accountId).CancelValidateConfig ();
         }
 
+        public BackEndAutoDStateEnum AutoDState (int accountId)
+        {
+            return ServiceFromAccountId (accountId).AutoDState;
+        }
+
         //
         // For IProtoControlOwner.
         //

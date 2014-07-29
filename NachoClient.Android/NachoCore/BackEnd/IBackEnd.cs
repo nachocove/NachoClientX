@@ -7,6 +7,8 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
+    public enum BackEndAutoDStateEnum { NA, Running, CertAskWait, ServerConfWait, CredWait };
+
     public interface IBackEnd
     {
         // This is the API Contract for the BackEnd object. The owner of the BackEnd
@@ -95,6 +97,8 @@ namespace NachoCore
         // validate account config.
         bool ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);
+        // auto-discovery state.
+        BackEndAutoDStateEnum AutoDState (int accountId);
     }
 }
 
