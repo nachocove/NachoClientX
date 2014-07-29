@@ -10,6 +10,25 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
+    /* REWRITE GOALS
+     * A) No matter what state we're in w/r/t background activity, there is a priority of operations:
+     * 
+     * #1 user-is-wating-operations are most important (body download, search, ...).
+     * These cancel any primary operations and are driven to the HTTP request by the UI thread.
+     * #2 user needs to see new mail. So inbox-only fetches must occur regularly (by time, not %age of requests) 
+     * when we are getting all synced up.
+     * #3 user actions (pending Q) trump background activity.
+     * 
+     * B) We need to adhere to an overall rate limit of (N operations per hour). In reality, we want this 
+     * limiting to only apply to getting all synced up.
+     * 
+     * C) We want strategy to decide whether to get bodies or not on a sync (e.g. get bodies on 1st sync, quick-fetch).
+     * 
+     * D) Trend: for ops that can do N at a time, we want strategy to pick the N.
+     * 
+     * E) DoPick/DoQOp defers to strategy to decide what is next.
+     * 
+     */
     public class AsStrategy : IAsStrategy
     {
         public const int KBaseOverallWindowSize = 150;
