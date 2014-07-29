@@ -15,7 +15,6 @@ namespace NachoClient.iOS
 {
     public class ContactsTableViewSource : UITableViewSource
     {
-        int accountId;
         List<NcContactIndex> contacts;
         List<McContactEmailAddressAttribute> searchResults = null;
         public IContactsTableViewSourceDelegate owner;
@@ -30,10 +29,9 @@ namespace NachoClient.iOS
             owner = null;
         }
 
-        public void SetOwner (IContactsTableViewSourceDelegate owner, int accountId, UISearchDisplayController SearchDisplayController)
+        public void SetOwner (IContactsTableViewSourceDelegate owner, UISearchDisplayController SearchDisplayController)
         {
             this.owner = owner;
-            this.accountId = accountId;
             this.SearchDisplayController = SearchDisplayController;
 
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
@@ -285,7 +283,7 @@ namespace NachoClient.iOS
         {
             new System.Threading.Thread (new System.Threading.ThreadStart (() => {
                 NachoClient.Util.HighPriority ();
-                var results = McContact.SearchAllContactItems (accountId, forSearchString);
+                var results = McContact.SearchAllContactItems (forSearchString);
                 NachoClient.Util.RegularPriority ();
                 InvokeOnMainThread (() => {
                     var searchResults = results;

@@ -80,7 +80,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             if (showMenu) {
                 // Navigation

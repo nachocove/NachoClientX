@@ -544,7 +544,7 @@ namespace NachoClient.iOS
         public void LoadSettingsForSelectedAccount (McAccount whatAccount)
         {
             if (null == whatAccount) {
-                whatAccount = NcModel.Instance.Db.Table<McAccount> ().First ();
+                whatAccount = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             }
 
             McCred userCredentials = McCred.QueryById<McCred> (whatAccount.CredId);

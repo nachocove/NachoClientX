@@ -219,7 +219,8 @@ namespace NachoClient.iOS
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
 
-            Account = NcModel.Instance.Db.Table<McAccount> ().FirstOrDefault ();
+            Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {

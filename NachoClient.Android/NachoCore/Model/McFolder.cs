@@ -423,7 +423,7 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Folder;
         }
 
-        public static List<McFolder> SearchFolders(int accountId, string searchFor)
+        public static List<McFolder> SearchFolders(string searchFor)
         {
             if (String.IsNullOrEmpty (searchFor)) {
                 return new List<McFolder> ();
@@ -435,10 +435,9 @@ namespace NachoCore.Model
                 "SELECT f.* FROM McFolder AS f" +
                 "WHERE " +
                 "f.IsAwaitingDelete = 0 AND " +
-                "f.AccountId = ? AND " +
                 "f.DisplayName LIKE ? " +
                 "ORDER BY f.DisplayName DESC",
-                accountId, searchFor);
+                searchFor);
         }
     }
 }

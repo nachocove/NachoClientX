@@ -254,10 +254,9 @@ namespace NachoClient.iOS
 
         void MarkAsRead ()
         {
-            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
             var message = thread.SingleMessageSpecialCase ();
             if (false == message.IsRead) {
-                BackEnd.Instance.MarkEmailReadCmd (account.Id, message.Id);
+                BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
             }
         }
 

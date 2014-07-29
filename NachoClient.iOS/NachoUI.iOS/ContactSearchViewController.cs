@@ -30,22 +30,19 @@ namespace NachoClient.iOS
         public ContactChooserViewController owner;
         public string initialSearchString;
         // Internal state
-        McAccount account;
         ContactsTableViewSource contactTableViewSource;
 
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
         }
-            
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
-
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, account.Id, SearchDisplayController);
+            contactTableViewSource.SetOwner (this, SearchDisplayController);
 
             TableView.Source = contactTableViewSource;
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
@@ -84,10 +81,10 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void LoadContacts()
+        protected void LoadContacts ()
         {
             NachoClient.Util.HighPriority ();
-            var contacts = McContact.AllContactsSortedByName (account.Id);
+            var contacts = McContact.AllContactsSortedByName ();
             contactTableViewSource.SetContacts (contacts);
             TableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
@@ -120,7 +117,7 @@ namespace NachoClient.iOS
         }
 
         /// IContactsTableViewSourceDelegate
-        public void ContactSelectedCallback(McContact contact)
+        public void ContactSelectedCallback (McContact contact)
         {
             owner.DoublePop (this, contact);
         }

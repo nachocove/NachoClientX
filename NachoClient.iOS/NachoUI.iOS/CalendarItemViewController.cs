@@ -143,7 +143,7 @@ namespace NachoClient.iOS
 
             // TODO: Need account manager.
             // We only have one account, for now.
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             // Set up view
