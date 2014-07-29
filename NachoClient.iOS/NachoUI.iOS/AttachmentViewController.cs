@@ -115,6 +115,92 @@ namespace NachoClient.iOS
             }
             base.TableView.ReloadData ();
         }
+
+        // TODO: make this animation look like the design spec in Dropbox
+        public CABasicAnimation DownloadAnimation ()
+        {
+            CABasicAnimation rotation = CABasicAnimation.FromKeyPath ("transform.rotation");
+            rotation.From = NSNumber.FromFloat (0.0F);
+            rotation.To = NSNumber.FromDouble (2.0 * Math.PI);
+            rotation.Duration = 1.1; // Speed
+            rotation.RepeatCount = 10000; // Repeat forever. Can be a finite number.
+            return rotation;
+        }
+
+        public void downloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
+        {
+            var a = McAttachment.QueryById<McAttachment> (attachmentId);
+            if (!a.IsDownloaded) {
+                string token = PlatformHelpers.DownloadAttachment (a);
+                NcAssert.NotNull (token, "Found token should not be null");
+                // If another download action has been registered, don't do action on it
+                if (fileAction != null) {
+                    NcApplication.Instance.StatusIndEvent -= new EventHandler (fileAction);
+                }
+                // prepare to do action on the most recently clicked item
+                fileAction = (object sender, EventArgs e) => {
+                    var s = (StatusIndEventArgs)e;
+                    var eventTokens = s.Tokens;
+                    if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
+                        a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
+                        if (a.IsDownloaded) {
+                            attachmentAction (a);
+                        } else {
+                            NcAssert.True (false, "Item should have been downloaded at this point");
+                        }
+                    }
+                };
+                NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
+                return;
+            } else {
+                attachmentAction (a);
+            }
+        }
+
+        public void openInOtherApp (McAttachment attachment)
+        {
+            downloadAndDoAction (attachment.Id, (a) => {
+                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.FilePath ()));
+                Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
+                Preview.PresentOpenInMenu (View.Frame, View, true);
+            });
+        }
+
+        public void attachmentAction (int attachmentId)
+        {
+            downloadAndDoAction (attachmentId, (a) => {
+                if (null == owner) {
+                    PlatformHelpers.DisplayAttachment (this, a);
+                    return;
+                }
+
+                // We're in "chooser' mode & the attachment is downloaded
+                var actionSheet = new UIActionSheet ();
+                actionSheet.TintColor = A.Color_NachoBlue;
+                actionSheet.Add ("Preview");
+                actionSheet.Add ("Select Attachment");
+                actionSheet.Add ("Cancel");
+                actionSheet.CancelButtonIndex = 2;
+
+                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                    switch (b.ButtonIndex) {
+                    case 0:
+                        PlatformHelpers.DisplayAttachment (this, a);
+                        break; 
+                    case 1:
+                        owner.SelectFile (this, a);
+                        break;
+                    case 2:
+                        break; // Cancel
+                    default:
+                        NcAssert.CaseError ();
+                        break;
+                    }
+                };
+
+                actionSheet.ShowInView (View);
+            });
+        }
             
         protected class FilesTableSource : UITableViewSource
         {
@@ -157,17 +243,6 @@ namespace NachoClient.iOS
                 return 1;
             }
 
-            // TODO: make this animation look like the design spec in Dropbox
-            public CABasicAnimation DownloadAnimation ()
-            {
-                CABasicAnimation rotation = CABasicAnimation.FromKeyPath ("transform.rotation");
-                rotation.From = NSNumber.FromFloat (0.0F);
-                rotation.To = NSNumber.FromDouble (2.0 * Math.PI);
-                rotation.Duration = 1.1; // Speed
-                rotation.RepeatCount = 10000; // Repeat forever. Can be a finite number.
-                return rotation;
-            }
-
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
                 UITableViewCell cell = null;
@@ -193,7 +268,7 @@ namespace NachoClient.iOS
                     cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
-                    var rotation = DownloadAnimation ();
+                    var rotation = vc.DownloadAnimation ();
                     cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
                 } else {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
@@ -219,89 +294,14 @@ namespace NachoClient.iOS
                 } else {
                     attachment = Attachments [indexPath.Row];
                 }
-                attachmentAction (attachment.Id);
+                vc.attachmentAction (attachment.Id);
                 if (!attachment.IsDownloaded) {
-                    var rotation = DownloadAnimation ();
+                    var rotation = vc.DownloadAnimation ();
                     tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
                 }
                 tableView.DeselectRow (indexPath, true);
             }
-
-            public void downloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
-            {
-                var a = McAttachment.QueryById<McAttachment> (attachmentId);
-                if (!a.IsDownloaded) {
-                    string token = PlatformHelpers.DownloadAttachment (a);
-                    NcAssert.NotNull (token, "Found token should not be null");
-                    // If another download action has been registered, don't do action on it
-                    if (vc.fileAction != null) {
-                        NcApplication.Instance.StatusIndEvent -= new EventHandler (vc.fileAction);
-                    }
-                    // prepare to do action on the most recently clicked item
-                    vc.fileAction = (object sender, EventArgs e) => {
-                        var s = (StatusIndEventArgs)e;
-                        var eventTokens = s.Tokens;
-                        if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
-                            a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
-                            if (a.IsDownloaded) {
-                                attachmentAction (a);
-                            } else {
-                                NcAssert.True (false, "Item should have been downloaded at this point");
-                            }
-                        }
-                    };
-                    NcApplication.Instance.StatusIndEvent += new EventHandler (vc.fileAction);
-                    return;
-                } else {
-                    attachmentAction (a);
-                }
-            }
-
-            public void openInOtherApp (McAttachment attachment)
-            {
-                downloadAndDoAction (attachment.Id, (a) => {
-                    UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.FilePath ()));
-                    Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (vc);
-                    Preview.PresentOpenInMenu (vc.View.Frame, vc.View, true);
-                });
-            }
-
-            public void attachmentAction (int attachmentId)
-            {
-                downloadAndDoAction (attachmentId, (a) => {
-                    if (null == vc.owner) {
-                        PlatformHelpers.DisplayAttachment (vc, a);
-                        return;
-                    }
-
-                    // We're in "chooser' mode & the attachment is downloaded
-                    var actionSheet = new UIActionSheet ();
-                    actionSheet.TintColor = A.Color_NachoBlue;
-                    actionSheet.Add ("Preview");
-                    actionSheet.Add ("Select Attachment");
-                    actionSheet.Add ("Cancel");
-                    actionSheet.CancelButtonIndex = 2;
-
-                    actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                        switch (b.ButtonIndex) {
-                        case 0:
-                            PlatformHelpers.DisplayAttachment (vc, a);
-                            break; 
-                        case 1:
-                            vc.owner.SelectFile (vc, a);
-                            break;
-                        case 2:
-                            break; // Cancel
-                        default:
-                            NcAssert.CaseError ();
-                            break;
-                        }
-                    };
-
-                    actionSheet.ShowInView (vc.View);
-                });
-            }
-
+                
             /// <summary>
             /// Configures the swipes.
             /// </summary>
@@ -323,25 +323,25 @@ namespace NachoClient.iOS
                     forwardView = ViewWithImageName ("check");
                     greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        attachmentAction (attachment.Id);
+                        vc.attachmentAction (attachment.Id);
                         return;
                     });
                     crossView = ViewWithImageName ("cross");
                     redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        attachmentAction (attachment.Id);
+                        vc.attachmentAction (attachment.Id);
                         return;
                     });
                     previewView = ViewWithImageName ("clock");
                     yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        attachmentAction (attachment.Id);
+                        vc.attachmentAction (attachment.Id);
                         return;
                     });
                     openView = ViewWithImageName ("list");
                     brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        openInOtherApp (attachment);
+                        vc.openInOtherApp (attachment);
                         return;
                     });
                 } finally {
