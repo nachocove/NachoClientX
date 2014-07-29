@@ -231,6 +231,7 @@ namespace NachoCore.ActiveSync
                         policy.Update ();
                     }
                 }
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsProvisionSuccess));
                 return Event.Create ((uint)SmEvt.E.Success, "PROVSUCCESS");
 
             case Xml.Provision.ProvisionStatusCode.ProtocolError_2:

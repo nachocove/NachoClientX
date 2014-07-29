@@ -68,6 +68,10 @@ namespace NachoCore.Utils
             Info_ValidateConfigSucceeded,
             Info_ExplicitThrottling,
             Info_NeedContactsPermission,
+            Info_AsAutoDComplete,
+            Info_AsProvisionSuccess,
+            Info_AsOptionsSuccess,
+            Info_AsSettingsSuccess,
             // Warning.
             // Error.
             Error_NetworkUnavailable,
