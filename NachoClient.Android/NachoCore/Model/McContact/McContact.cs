@@ -919,6 +919,20 @@ namespace NachoCore.Model
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
+                " c.AccountId = ? AND " +
+                " c.IsAwaitingDelete = 0 AND " +
+                " m.ClassCode = ?  " +
+                " m.AccountId = ? AND " +
+                " ORDER BY c.FirstName",
+                McAbstrFolderEntry.ClassCodeEnum.Contact);
+        }
+
+        public static List<NcContactIndex> QueryAllContactItems (int accountId)
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (
+                "SELECT c.Id as Id FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
                 " c.IsAwaitingDelete = 0 AND " +
                 " m.ClassCode = ?  " +
                 " ORDER BY c.FirstName",
@@ -941,6 +955,19 @@ namespace NachoCore.Model
         }
 
         public static List<NcContactIndex> QueryAllHotContactItems ()
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (
+                "SELECT c.Id as Id FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.IsAwaitingDelete = 0 AND " +
+                " m.ClassCode = ? AND " +
+                " c.Score > ? " +
+                " ORDER BY c.Score DESC, c.FirstName",
+                McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
+        }
+
+        public static List<NcContactIndex> QueryAllHotContactItems (int accountId)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT c.Id as Id FROM McContact AS c " +
@@ -980,6 +1007,25 @@ namespace NachoCore.Model
                 McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
         }
 
+        public static List<NcContactIndex> AllContactsSortedByName (int accountId)
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (
+                "SELECT DISTINCT Id FROM ( " +
+                "SELECT c.Id, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
+                "FROM McContactEmailAddressAttribute AS s " +
+                "JOIN McContact AS c ON s.ContactId = c.Id " +
+                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                "WHERE " +
+                "m.ClassCode = ? AND " +
+                "c.AccountId = ? AND " +
+                "c.IsAwaitingDelete = 0 AND " +
+                "c.AccountId = m.AccountId " +
+                "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
+                ")",
+                (int)McAbstrFolderEntry.ClassCodeEnum.Contact, accountId
+            );
+        }
+
         public static List<NcContactIndex> AllContactsSortedByName ()
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
@@ -989,12 +1035,11 @@ namespace NachoCore.Model
                 "JOIN McContact AS c ON s.ContactId = c.Id " +
                 "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 "WHERE " +
-                "m.ClassCode = 4 AND " +
-                "c.IsAwaitingDelete = 0 AND " +
-                "c.AccountId = m.AccountId " +
+                "m.ClassCode = ? AND " +
+                "c.IsAwaitingDelete = 0 " +
                 "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
                 ")",
-                McAbstrFolderEntry.ClassCodeEnum.Contact
+                (int)McAbstrFolderEntry.ClassCodeEnum.Contact
             );
         }
 
@@ -1005,22 +1050,6 @@ namespace NachoCore.Model
                 x.DeviceUniqueId == deviceUniqueId &&
                 x.AccountId == account.Id
             ).SingleOrDefault ();
-        }
-
-        /// TODO: VIPness should be in its own member
-        public bool isHot ()
-        {
-            if (isVip ()) {
-                return ((Score - minVipScore) >= minHotScore);
-            } else {
-                return (Score >= minHotScore);
-            }
-        }
-
-        /// TODO: VIPness should be in its own member
-        public bool isVip ()
-        {
-            return (Score >= minVipScore);
         }
 
         public string GetDisplayName ()

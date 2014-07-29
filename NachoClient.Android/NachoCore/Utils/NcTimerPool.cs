@@ -100,7 +100,7 @@ namespace NachoCore.Utils
             try {
                 return time + duration;
             }
-            catch (ArgumentOutOfRangeException e) {
+            catch (ArgumentOutOfRangeException) {
                 /// Instead of throw exceptions all over, if we ever exceed
                 /// the range of DateTime, just clip the returned value to
                 /// DateTime.MaxValue.
