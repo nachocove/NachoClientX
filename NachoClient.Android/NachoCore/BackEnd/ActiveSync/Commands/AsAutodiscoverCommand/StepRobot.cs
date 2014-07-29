@@ -877,10 +877,12 @@ namespace NachoCore.ActiveSync
                         serverType = Xml.Autodisco.TypeCode.MobileSync;
                     }
                     var xmlUrl = xmlServer.ElementAnyNs (Xml.Autodisco.Url);
+                    string xmlUrlValue = null;
                     if (null != xmlUrl) {
                         Uri serverUri;
                         try {
-                            serverUri = new Uri (xmlUrl.Value);
+                            xmlUrlValue = xmlUrl.Value;
+                            serverUri = new Uri (xmlUrlValue);
                         } catch (ArgumentNullException) {
                             // FIXME - log it.
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD0");
@@ -889,8 +891,12 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
-                            SrServerUri = serverUri;
-                            haveServerSettings = true;
+                            if (null == serverUri) {
+                                Log.Error (Log.LOG_AS, "URI not extracted from: {0} in: {1}", xmlUrlValue, xmlSettings);
+                            } else {
+                                SrServerUri = serverUri;
+                                haveServerSettings = true;
+                            }
                         }
                         // FIXME: add support for CertEnroll.
                     }
