@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using SQLite;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -84,8 +85,18 @@ namespace NachoPlatform
         void CancelNotif (int handle);
     }
 
+    public abstract class PlatformContactRecord
+    {
+        public abstract string UniqueId { get; }
+        public abstract DateTime LastUpdate { get; }
+        public abstract NcResult ToMcContact ();
+    }
+
     public interface IPlatformContacts
     {
-        IEnumerable<McContact> GetContacts ();
+        // Can be called from any thread.
+        IEnumerable<PlatformContactRecord> GetContacts ();
+        // Must be called from UI thread.
+        void AskForPermission (Action<bool> result);
     }
 }

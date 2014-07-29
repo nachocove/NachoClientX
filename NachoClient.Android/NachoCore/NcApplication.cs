@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NachoCore.Brain;
@@ -136,6 +137,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
             NcModel.Instance.Nop ();
+            EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
         }
 
@@ -186,6 +188,7 @@ namespace NachoCore
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
+                NcDeviceContacts.Run();
                 NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
@@ -237,6 +240,31 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
             Log.Info (Log.LOG_SYS, "Monitor: Comm Status {0}, Speed {1}", 
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
+        }
+
+        public void EstablishService ()
+        {
+            // Create Device account if not yet there.
+            McAccount deviceAccount = null;
+            NcModel.Instance.RunInTransaction (() => {
+                deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+                if (null == deviceAccount) {
+                    deviceAccount = new McAccount() {
+                        AccountType = McAccount.AccountTypeEnum.Device,
+                    };
+                    deviceAccount.Insert ();
+                }
+            });
+            // Create Device contacts if not yet there.
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetDeviceContactsFolder ()) {
+                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
+                        McFolder.ClientOwned_DeviceContacts, "Device Contacts",
+                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+
         }
 
         public void QuickCheck (uint seconds)

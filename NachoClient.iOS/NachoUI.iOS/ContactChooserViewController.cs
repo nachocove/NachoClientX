@@ -24,7 +24,6 @@ namespace NachoClient.iOS
         protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
         // Internal state
-        McAccount account;
         List<McContactEmailAddressAttribute> searchResults;
        
         ContactsTableViewSource contactTableViewSource;
@@ -80,8 +79,6 @@ namespace NachoClient.iOS
 
             AutocompleteTextField.BecomeFirstResponder ();
             TableView.SeparatorColor = A.Color_NachoSeparator;
-
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -186,7 +183,7 @@ namespace NachoClient.iOS
             }
             new System.Threading.Thread (new System.Threading.ThreadStart (() => {
                 NachoClient.Util.HighPriority ();
-                var results = McContact.SearchAllContactItems (account.Id, forSearchString);
+                var results = McContact.SearchAllContactItems (forSearchString);
                 NachoClient.Util.RegularPriority ();
                 InvokeOnMainThread (() => {
                     searchResults = results;

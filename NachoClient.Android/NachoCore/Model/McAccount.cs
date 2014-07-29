@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
@@ -7,7 +8,10 @@ namespace NachoCore.Model
 {
     public class McAccount : McAbstrObject
     {
-        [Unique]
+        public enum AccountTypeEnum { Exchange, Device };
+
+        public AccountTypeEnum AccountType { get; set; }
+
         public string EmailAddr { get; set; }
 
         public string DisplayName { get; set; }
@@ -26,11 +30,14 @@ namespace NachoCore.Model
 
         public string Signature { get; set; }
 
-        [Unique]
         public int ProtocolStateId { get; set; }
 
-        [Unique]
         public int PolicyId { get; set; }
+
+        public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == accountType);
+        }
     }
 
     public class ConstMcAccount : McAccount

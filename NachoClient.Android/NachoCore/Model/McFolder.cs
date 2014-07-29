@@ -51,6 +51,7 @@ namespace NachoCore.Model
         public const string ClientOwned_GalCache = "GAL";
         public const string ClientOwned_Gleaned = "GLEANED";
         public const string ClientOwned_LostAndFound = "LAF";
+        public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
 
         public override string ToString ()
         {
@@ -117,6 +118,12 @@ namespace NachoCore.Model
          * CLIENT-OWNED FOLDERS:
          * Any code can use them.
          */
+        public static McFolder GetDeviceContactsFolder ()
+        {
+            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
+            return McFolder.GetClientOwnedFolder (account.Id, ClientOwned_DeviceContacts);
+        }
+
         public static McFolder GetOutboxFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
@@ -375,15 +382,19 @@ namespace NachoCore.Model
         public NcResult Unlink (McAbstrItem obj)
         {
             ClassCodeEnum classCode = ClassCodeEnumFromObj (obj);
+            return Unlink (obj.Id, classCode);
+        }
+
+        public NcResult Unlink (int feId, ClassCodeEnum classCode)
+        {
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
-                (AccountId, Id, obj.Id, classCode);
+                (AccountId, Id, feId, classCode);
             if (null == existing) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
             }
             existing.Delete ();
             return NcResult.OK ();
         }
-
         public static void AsSetExpected (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -412,7 +423,7 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Folder;
         }
 
-        public static List<McFolder> SearchFolders(int accountId, string searchFor)
+        public static List<McFolder> SearchFolders(string searchFor)
         {
             if (String.IsNullOrEmpty (searchFor)) {
                 return new List<McFolder> ();
@@ -424,10 +435,9 @@ namespace NachoCore.Model
                 "SELECT f.* FROM McFolder AS f" +
                 "WHERE " +
                 "f.IsAwaitingDelete = 0 AND " +
-                "f.AccountId = ? AND " +
                 "f.DisplayName LIKE ? " +
                 "ORDER BY f.DisplayName DESC",
-                accountId, searchFor);
+                searchFor);
         }
     }
 }

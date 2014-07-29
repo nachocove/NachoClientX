@@ -195,7 +195,7 @@ namespace NachoClient.iOS
             contentView.AddGestureRecognizer (g);
 
             c = CalendarHelper.DefaultMeeting ();
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             switch (action) {

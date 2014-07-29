@@ -16,8 +16,8 @@ namespace NachoClient.iOS
 
         public TaskTableSource ()
         {
-            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
-            tasks = McTask.QueryAllTaskItems (account.Id);
+//            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
+//            tasks = McTask.QueryAllTaskItems (account.Id);
         }
 
         public override int RowsInSection (UITableView tableview, int section)

@@ -187,8 +187,7 @@ namespace NachoClient.iOS
 
         public bool UpdateSearchResults (string forSearchString)
         {
-            var account = NcModel.Instance.Db.Table<McAccount> ().First ();
-            var searchResults = McFolder.SearchFolders (account.Id, forSearchString);
+            var searchResults = McFolder.SearchFolders (forSearchString);
             foldersToMcFolders = searchResults;
             foldersTable.ReloadData ();
             return true;

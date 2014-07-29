@@ -27,7 +27,7 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             // Initial view
-            if (0 == NcModel.Instance.Db.Table<McAccount> ().Count ()) {
+            if (0 == NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).Count ()) {
                 PerformSegue ("StartupToLaunch", this); // modal
                 PerformSegue ("StartupToHome", this);  // launch the documentation
             } else {

@@ -8,7 +8,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
-    public abstract class ProtoControl
+    public class ProtoControl
     {
         public int AccountId;
 
@@ -24,7 +24,7 @@ namespace NachoCore
             get {
                 // Note the lack of join :-(.
                 var account = Account;
-                return NcModel.Instance.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).Single ();
+                return NcModel.Instance.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).SingleOrDefault ();
             }
         }
 
@@ -52,107 +52,245 @@ namespace NachoCore
             }
         }
 
+        public ProtoControl (IProtoControlOwner owner, int accountId)
+        {
+            Owner = owner;
+            AccountId = accountId;
+        }
+
         public NcStateMachine Sm { set; get; }
         // Interface to owner.
-        public abstract void Execute ();
+        public virtual void Execute ()
+        {
+        }
 
-        public abstract void ForceSync ();
+        public virtual void ForceSync ()
+        {
+        }
 
-        public abstract void ForceStop ();
+        public virtual void ForceStop ()
+        {
+        }
 
-        public abstract void CertAskResp (bool isOkay);
+        public virtual void CertAskResp (bool isOkay)
+        {
+        }
 
-        public abstract void ServerConfResp (bool forceAutodiscovery);
+        public virtual void ServerConfResp (bool forceAutodiscovery)
+        {
+        }
 
-        public abstract void CredResp ();
+        public virtual void CredResp ()
+        {
+        }
 
-        public abstract void Cancel (string token);
+        public virtual void Cancel (string token)
+        {
+        }
 
-        public abstract void UnblockPendingCmd (int pendingId);
+        public virtual void UnblockPendingCmd (int pendingId)
+        {
+        }
 
-        public abstract void DeletePendingCmd (int pendingId);
+        public virtual void DeletePendingCmd (int pendingId)
+        {
+        }
 
-        public abstract string StartSearchContactsReq (string prefix, uint? maxResults);
+        public virtual string StartSearchContactsReq (string prefix, uint? maxResults)
+        {
+            return null;
+        }
 
-        public abstract void SearchContactsReq (string prefix, uint? maxResults, string token);
+        public virtual void SearchContactsReq (string prefix, uint? maxResults, string token)
+        {
+        }
 
-        public abstract string SendEmailCmd (int emailMessageId);
+        public virtual string SendEmailCmd (int emailMessageId)
+        {
+            return null;
+        }
 
-        public abstract string SendEmailCmd (int emailMessageId, int calId);
+        public virtual string SendEmailCmd (int emailMessageId, int calId)
+        {
+            return null;
+        }
 
-        public abstract string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-                                                int folderId, bool originalEmailIsEmbedded);
+        public virtual string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+                                                int folderId, bool originalEmailIsEmbedded)
+        {
+            return null;
+        }
 
-        public abstract string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-                                              int folderId, bool originalEmailIsEmbedded);
+        public virtual string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+                                              int folderId, bool originalEmailIsEmbedded)
+        {
+            return null;
+        }
 
-        public abstract string DeleteEmailCmd (int emailMessageId);
+        public virtual string DeleteEmailCmd (int emailMessageId)
+        {
+            return null;
+        }
 
-        public abstract string MarkEmailReadCmd (int emailMessageId);
+        public virtual string MarkEmailReadCmd (int emailMessageId)
+        {
+            return null;
+        }
 
-        public abstract string MoveEmailCmd (int emailMessageId, int destFolderId);
+        public virtual string MoveEmailCmd (int emailMessageId, int destFolderId)
+        {
+            return null;
+        }
 
-        public abstract string SetEmailFlagCmd (int emailMessageId, string flagType, 
-                                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
+        public virtual string SetEmailFlagCmd (int emailMessageId, string flagType, 
+                                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
+        {
+            return null;
+        }
 
-        public abstract string ClearEmailFlagCmd (int emailMessageId);
+        public virtual string ClearEmailFlagCmd (int emailMessageId)
+        {
+            return null;
+        }
 
-        public abstract string MarkEmailFlagDone (int emailMessageId,
-                                                  DateTime completeTime, DateTime dateCompleted);
+        public virtual string MarkEmailFlagDone (int emailMessageId,
+                                                  DateTime completeTime, DateTime dateCompleted)
+        {
+            return null;
+        }
 
-        public abstract string DnldEmailBodyCmd (int emailMessageId);
+        public virtual string DnldEmailBodyCmd (int emailMessageId)
+        {
+            return null;
+        }
 
-        public abstract string DnldAttCmd (int attId);
+        public virtual string DnldAttCmd (int attId)
+        {
+            return null;
+        }
 
-        public abstract string CreateCalCmd (int calId, int folderId);
+        public virtual string CreateCalCmd (int calId, int folderId)
+        {
+            return null;
+        }
 
-        public abstract string UpdateCalCmd (int calId);
+        public virtual string UpdateCalCmd (int calId)
+        {
+            return null;
+        }
 
-        public abstract string DeleteCalCmd (int calId);
+        public virtual string DeleteCalCmd (int calId)
+        {
+            return null;
+        }
+       
+        public virtual string MoveCalCmd (int calId, int destFolderId)
+        {
+            return null;
+        }
 
-        public abstract string MoveCalCmd (int calId, int destFolderId);
+        public virtual string RespondCalCmd (int calId, NcResponseType response)
+        {
+            return null;
+        }
 
-        public abstract string RespondCalCmd (int calId, NcResponseType response);
+        public virtual string DnldCalBodyCmd (int calId)
+        {
+            return null;
+        }
 
-        public abstract string DnldCalBodyCmd (int calId);
+        public virtual string CreateContactCmd (int contactId, int folderId)
+        {
+            return null;
+        }
 
-        public abstract string CreateContactCmd (int contactId, int folderId);
+        public virtual string UpdateContactCmd (int contactId)
+        {
+            return null;
+        }
 
-        public abstract string UpdateContactCmd (int contactId);
+        public virtual string DeleteContactCmd (int contactId)
+        {
+            return null;
+        }
 
-        public abstract string DeleteContactCmd (int contactId);
+        public virtual string MoveContactCmd (int contactId, int destFolderId)
+        {
+            return null;
+        }
 
-        public abstract string MoveContactCmd (int contactId, int destFolderId);
+        public virtual string DnldContactBodyCmd (int contactId)
+        {
+            return null;
+        }
 
-        public abstract string DnldContactBodyCmd (int contactId);
+        public virtual string CreateTaskCmd (int taskId, int folderId)
+        {
+            return null;
+        }
 
-        public abstract string CreateTaskCmd (int taskId, int folderId);
+        public virtual string UpdateTaskCmd (int taskId)
+        {
+            return null;
+        }
 
-        public abstract string UpdateTaskCmd (int taskId);
+        public virtual string DeleteTaskCmd (int taskId)
+        {
+            return null;
+        }
 
-        public abstract string DeleteTaskCmd (int taskId);
+        public virtual string MoveTaskCmd (int taskId, int destFolderId)
+        {
+            return null;
+        }
 
-        public abstract string MoveTaskCmd (int taskId, int destFolderId);
+        public virtual string DnldTaskBodyCmd (int taskId)
+        {
+            return null;
+        }
 
-        public abstract string DnldTaskBodyCmd (int taskId);
+        public virtual string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        {
+            return null;
+        }
 
-        public abstract string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
+        public virtual string CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
+        {
+            return null;
+        }
 
-        public abstract string CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType);
+        public virtual string DeleteFolderCmd (int folderId)
+        {
+            return null;
+        }
 
-        public abstract string DeleteFolderCmd (int folderId);
+        public virtual string MoveFolderCmd (int folderId, int destFolderId)
+        {
+            return null;
+        }
 
-        public abstract string MoveFolderCmd (int folderId, int destFolderId);
+        public virtual string RenameFolderCmd (int folderId, string displayName)
+        {
+            return null;
+        }
 
-        public abstract string RenameFolderCmd (int folderId, string displayName);
+        public virtual void ValidateConfig (McServer server, McCred cred)
+        {
+        }
 
-        public abstract void ValidateConfig (McServer server, McCred cred);
-
-        public abstract void CancelValidateConfig ();
+        public virtual void CancelValidateConfig ()
+        {
+        }
         //
         // Interface to controllers.
-        public abstract void StatusInd (NcResult status);
+        public virtual void StatusInd (NcResult status)
+        {
+            Owner.StatusInd (this, status);
+        }
 
-        public abstract void StatusInd (NcResult status, string[] tokens);
+        public virtual void StatusInd (NcResult status, string[] tokens)
+        {
+            Owner.StatusInd (this, status, tokens);
+        }
     }
 }

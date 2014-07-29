@@ -36,6 +36,15 @@ namespace NachoCore.Model
                 accountId, folderId).ToList();
         }
 
+        public static List<McMapFolderFolderEntry> QueryByFolderIdClassCode (int accountId, int folderId, McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            return NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
+                " mm.AccountId = ? AND " +
+                " mm.FolderId = ? AND " +
+                " mm.ClassCode = ?",
+                accountId, folderId, classCode).ToList();
+        }
+
         public static McMapFolderFolderEntry QueryByFolderIdFolderEntryIdClassCode (int accountId, int folderId, int folderEntryId,
                                                                                     McAbstrFolderEntry.ClassCodeEnum classCode)
         {

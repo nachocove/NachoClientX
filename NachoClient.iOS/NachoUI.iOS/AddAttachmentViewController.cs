@@ -36,7 +36,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             addAttachmentButton.SetTitle ("Attach Files", UIControlState.Normal);
             addAttachmentButton.Font = A.Font_AvenirNextDemiBold17;
