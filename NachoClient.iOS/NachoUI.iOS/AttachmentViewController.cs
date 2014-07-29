@@ -231,7 +231,8 @@ namespace NachoClient.iOS
             {
                 var a = McAttachment.QueryById<McAttachment> (attachmentId);
                 if (!a.IsDownloaded) {
-                    PlatformHelpers.DownloadAttachment (a);
+                    string token = PlatformHelpers.DownloadAttachment (a);
+                    NcAssert.NotNull (token, "Found token should not be null");
                     // If another download action has been registered, don't do action on it
                     if (vc.fileAction != null) {
                         NcApplication.Instance.StatusIndEvent -= new EventHandler (vc.fileAction);
@@ -239,7 +240,8 @@ namespace NachoClient.iOS
                     // prepare to do action on the most recently clicked item
                     vc.fileAction = (object sender, EventArgs e) => {
                         var s = (StatusIndEventArgs)e;
-                        if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
+                        var eventTokens = s.Tokens;
+                        if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
                             a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
                             if (a.IsDownloaded) {
                                 attachmentAction (a);

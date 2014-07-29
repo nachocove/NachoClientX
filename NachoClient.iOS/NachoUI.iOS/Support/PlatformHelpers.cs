@@ -141,7 +141,10 @@ namespace NachoClient
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
                 return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
-            }
+            } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
+                return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+            } 
+            NcAssert.True (false, "Should not try to download an already-downloaded attachment");
             return null;
         }
 

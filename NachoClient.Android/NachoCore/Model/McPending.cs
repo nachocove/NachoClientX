@@ -882,6 +882,15 @@ namespace NachoCore.Model
             rec.ServerId == serverId).OrderBy (x => x.Priority).FirstOrDefault ();
         }
 
+        public static McPending QueryByAttachmentId (int accountId, int AttachmentId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.AttachmentId == AttachmentId
+            ).FirstOrDefault ();
+        }
+
         public class ReWrite
         {
             public enum ObjActionEnum
