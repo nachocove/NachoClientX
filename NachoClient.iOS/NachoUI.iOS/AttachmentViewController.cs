@@ -268,8 +268,7 @@ namespace NachoClient.iOS
                     cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
-                    var rotation = vc.DownloadAnimation ();
-                    cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                    SetAnimationOnCell (cell);
                 } else {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
                 }
@@ -285,7 +284,7 @@ namespace NachoClient.iOS
 
                 return cell;
             }
-
+                
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
                 McAttachment attachment;
@@ -324,6 +323,7 @@ namespace NachoClient.iOS
                     greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         vc.attachmentAction (attachment.Id);
+                        SetAnimationOnCell (cell);
                         return;
                     });
                     crossView = ViewWithImageName ("cross");
@@ -336,12 +336,14 @@ namespace NachoClient.iOS
                     yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         vc.attachmentAction (attachment.Id);
+                        SetAnimationOnCell (cell);
                         return;
                     });
                     openView = ViewWithImageName ("list");
                     brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         vc.openInOtherApp (attachment);
+                        SetAnimationOnCell (cell);
                         return;
                     });
                 } finally {
@@ -370,6 +372,13 @@ namespace NachoClient.iOS
                         brownColor.Dispose ();
                     }
                 }
+            }
+
+
+            private void SetAnimationOnCell (UITableViewCell cell)
+            {
+                var rotation = vc.DownloadAnimation ();
+                cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
             }
 
             UIView ViewWithImageName (string imageName)
