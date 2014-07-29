@@ -13,6 +13,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using MCSwipeTableViewCellBinding;
+using MonoTouch.CoreAnimation;
 
 namespace NachoClient.iOS
 {
@@ -21,6 +22,7 @@ namespace NachoClient.iOS
         INachoFileChooserParent owner;
         FilesTableSource filesSource;
         SearchDelegate searchDelegate;
+        Action<object, EventArgs> fileAction;
 
         public AttachmentViewController (IntPtr handle) : base (handle)
         {
@@ -52,7 +54,7 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             // set up the table view source
-            filesSource = new FilesTableSource (owner, this, SearchDisplayController);
+            filesSource = new FilesTableSource (this);
             TableView.Source = filesSource;
 
             // set up the search bar
@@ -93,6 +95,16 @@ namespace NachoClient.iOS
             RefreshAttachmentSection ();
         }
 
+        public override void ViewWillDisappear (bool animated)
+        {
+            // remove any remaining file actions before leaving
+            if (fileAction != null) {
+                NcApplication.Instance.StatusIndEvent -= new EventHandler (fileAction);
+            }
+            fileAction = null;
+            base.ViewWillDisappear (animated);
+        }
+
         public void RefreshAttachmentSection ()
         {
             // show most recent attachments first
@@ -112,9 +124,7 @@ namespace NachoClient.iOS
             protected List<McAttachment> attachments = new List<McAttachment> ();
             protected List<McAttachment> searchResults = new List<McAttachment> ();
 
-            INachoFileChooserParent owner;
-            UIViewController viewController;
-            UISearchDisplayController searchController;
+            AttachmentViewController vc;
 
             public List<McAttachment> Attachments
             {
@@ -128,16 +138,14 @@ namespace NachoClient.iOS
                 set { searchResults = value; }
             }
 
-            public FilesTableSource (INachoFileChooserParent owner, UIViewController vc, UISearchDisplayController searchController)
+            public FilesTableSource (AttachmentViewController vc)
             {
-                this.owner = owner;
-                this.viewController = vc;
-                this.searchController = searchController;
+                this.vc = vc;
             }
 
             public override int RowsInSection (UITableView tableview, int section)
             {
-                if (tableview == searchController.SearchResultsTableView) {
+                if (tableview == vc.SearchDisplayController.SearchResultsTableView) {
                     return SearchResults.Count;
                 } else {
                     return Attachments.Count;
@@ -147,6 +155,17 @@ namespace NachoClient.iOS
             public override int NumberOfSections (UITableView tableView)
             {
                 return 1;
+            }
+
+            // TODO: make this animation look like the design spec in Dropbox
+            public CABasicAnimation DownloadAnimation ()
+            {
+                CABasicAnimation rotation = CABasicAnimation.FromKeyPath ("transform.rotation");
+                rotation.From = NSNumber.FromFloat (0.0F);
+                rotation.To = NSNumber.FromDouble (2.0 * Math.PI);
+                rotation.Duration = 1.1; // Speed
+                rotation.RepeatCount = 10000; // Repeat forever. Can be a finite number.
+                return rotation;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -161,7 +180,7 @@ namespace NachoClient.iOS
                 McAttachment attachment;
 
                 // determine if table is for search results or all attachments
-                if (tableView == searchController.SearchResultsTableView) {
+                if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
                     attachment = SearchResults [indexPath.Row];
                 } else {
                     attachment = Attachments [indexPath.Row];
@@ -171,6 +190,11 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Text = attachment.ContentType;
                 if (attachment.IsDownloaded || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+                    cell.ImageView.Layer.RemoveAllAnimations ();
+                } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
+                    cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
+                    var rotation = DownloadAnimation ();
+                    cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
                 } else {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
                 }
@@ -190,60 +214,90 @@ namespace NachoClient.iOS
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
                 McAttachment attachment;
-                if (tableView == searchController.SearchResultsTableView) {
+                if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
                     attachment = SearchResults [indexPath.Row];
                 } else {
                     attachment = Attachments [indexPath.Row];
                 }
                 attachmentAction (attachment.Id);
+                if (!attachment.IsDownloaded) {
+                    var rotation = DownloadAnimation ();
+                    tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                }
                 tableView.DeselectRow (indexPath, true);
+            }
+
+            public void downloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
+            {
+                var a = McAttachment.QueryById<McAttachment> (attachmentId);
+                if (!a.IsDownloaded) {
+                    PlatformHelpers.DownloadAttachment (a);
+                    // If another download action has been registered, don't do action on it
+                    if (vc.fileAction != null) {
+                        NcApplication.Instance.StatusIndEvent -= new EventHandler (vc.fileAction);
+                    }
+                    // prepare to do action on the most recently clicked item
+                    vc.fileAction = (object sender, EventArgs e) => {
+                        var s = (StatusIndEventArgs)e;
+                        if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
+                            a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
+                            if (a.IsDownloaded) {
+                                attachmentAction (a);
+                            } else {
+                                NcAssert.True (false, "Item should have been downloaded at this point");
+                            }
+                        }
+                    };
+                    NcApplication.Instance.StatusIndEvent += new EventHandler (vc.fileAction);
+                    return;
+                } else {
+                    attachmentAction (a);
+                }
             }
 
             public void openInOtherApp (McAttachment attachment)
             {
-                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (attachment.FilePath ()));
-                Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (viewController);
-                Preview.PresentOpenInMenu (viewController.View.Frame, viewController.View, true);
+                downloadAndDoAction (attachment.Id, (att) => {
+                    UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (attachment.FilePath ()));
+                    Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (vc);
+                    Preview.PresentOpenInMenu (vc.View.Frame, vc.View, true);
+                });
             }
 
             public void attachmentAction (int attachmentId)
             {
-                var a = McAttachment.QueryById<McAttachment> (attachmentId);
-                if (false == a.IsDownloaded) {
-                    PlatformHelpers.DownloadAttachment (a);
-                    return;
-                }
-
-                if (null == owner) {
-                    PlatformHelpers.DisplayAttachment (viewController, a);
-                    return;
-                }
-
-                // We're in "chooser' mode & the attachment is downloaded
-                var actionSheet = new UIActionSheet ();
-                actionSheet.TintColor = A.Color_NachoBlue;
-                actionSheet.Add ("Preview");
-                actionSheet.Add ("Select Attachment");
-                actionSheet.Add ("Cancel");
-                actionSheet.CancelButtonIndex = 2;
-
-                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    switch (b.ButtonIndex) {
-                    case 0:
-                        PlatformHelpers.DisplayAttachment (viewController, a);
-                        break; 
-                    case 1:
-                        owner.SelectFile ((INachoFileChooser)viewController, a);
-                        break;
-                    case 2:
-                        break; // Cancel
-                    default:
-                        NcAssert.CaseError ();
-                        break;
+                downloadAndDoAction (attachmentId, (a) => {
+                    if (null == vc.owner) {
+                        PlatformHelpers.DisplayAttachment (vc, a);
+                        return;
                     }
-                };
 
-                actionSheet.ShowInView (viewController.View);
+                    // We're in "chooser' mode & the attachment is downloaded
+                    var actionSheet = new UIActionSheet ();
+                    actionSheet.TintColor = A.Color_NachoBlue;
+                    actionSheet.Add ("Preview");
+                    actionSheet.Add ("Select Attachment");
+                    actionSheet.Add ("Cancel");
+                    actionSheet.CancelButtonIndex = 2;
+
+                    actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                        switch (b.ButtonIndex) {
+                        case 0:
+                            PlatformHelpers.DisplayAttachment (vc, a);
+                            break; 
+                        case 1:
+                            vc.owner.SelectFile (vc, a);
+                            break;
+                        case 2:
+                            break; // Cancel
+                        default:
+                            NcAssert.CaseError ();
+                            break;
+                        }
+                    };
+
+                    actionSheet.ShowInView (vc.View);
+                });
             }
 
             /// <summary>

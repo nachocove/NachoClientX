@@ -137,11 +137,12 @@ namespace NachoClient
             Preview.PresentPreview (true);
         }
 
-        public static void DownloadAttachment (McAttachment attachment)
+        public static string DownloadAttachment (McAttachment attachment)
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
+                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
             }
+            return null;
         }
 
         public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate
