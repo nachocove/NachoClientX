@@ -193,7 +193,7 @@ namespace NachoCore.Wbxml
             codePages [2].AddToken (0x30, "MonthOfYear");
             codePages [2].AddToken (0x31, "StartTime");
             codePages [2].AddToken (0x32, "Sensitivity");
-            codePages [2].AddToken (0x33, "Timezone");
+            codePages [2].AddToken (0x33, "TimeZone");
             codePages [2].AddToken (0x34, "GlobalObjId");
             codePages [2].AddToken (0x35, "ThreadTopic");
             codePages [2].AddToken (0x39, "InternetCPID");
