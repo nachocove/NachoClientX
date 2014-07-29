@@ -43,13 +43,16 @@ namespace NachoCore.Model
         {
             double score = 0.0;
 
-            McContact sender = GetFromContact ();
-            if (null == sender) {
+            McEmailAddress emailAddress;
+            var address = NcEmailAddress.ParseMailboxAddressString (From);
+            bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+            if (!found) {
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                 return score;
             }
 
             // TODO - Combine with content score... once we have such value
-            score = sender.GetScore ();
+            score = emailAddress.GetScore ();
             NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
                 DateTime now = DateTime.Now;
@@ -65,25 +68,31 @@ namespace NachoCore.Model
         {
             NcAssert.True (Scoring.Version > ScoreVersion);
             if (0 == ScoreVersion) {
-                McContact sender = GetFromContact ();
-                if (null != sender) {
-                    if (!DownloadScore ()) {
+                McEmailAddress emailAddress;
+                var address = NcEmailAddress.ParseMailboxAddressString (From);
+                if (null != address) {
+                    bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+                    if (found) {
                         // Analyze sender
-                        sender.IncrementEmailsReceived ();
+                        emailAddress.IncrementEmailsReceived ();
                         if (IsRead) {
-                            sender.IncrementEmailsRead ();
+                            emailAddress.IncrementEmailsRead ();
                         }
                         // TODO - How to determine if the email has been replied?
-                        sender.ForceReadAncillaryData ();
-                        sender.Score = sender.GetScore ();
-                        sender.UpdateByBrain ();
+                        emailAddress.Score = emailAddress.GetScore ();
+                        emailAddress.UpdateByBrain ();
+
+                        // Add Sender dependency
+                        McEmailMessageDependency dep = new McEmailMessageDependency ();
+                        dep.EmailMessageId = Id;
+                        dep.EmailAddressId = emailAddress.Id;
+                        dep.EmailAddressType = "Sender";
+                        dep.InsertByBrain ();
+                    } else {
+                        Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                     }
-                    // Add Sender dependency
-                    McEmailMessageDependency dep = new McEmailMessageDependency ();
-                    dep.EmailMessageId = Id;
-                    dep.ContactId = sender.Id;
-                    dep.ContactType = "Sender";
-                    dep.InsertByBrain ();
+                } else {
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
                 }
 
                 ScoreVersion++;
@@ -175,6 +184,27 @@ namespace NachoCore.Model
             if (time > DateTime.Now) {
                 output = time;
             }
+        }
+
+        public static McEmailMessage QueryNeedUpdate ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.NeedUpdate)
+                .FirstOrDefault ();
+        }
+
+        public static McEmailMessage QueryNeedAnalysis ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == true)
+                .FirstOrDefault ();
+        }
+
+        public static McEmailMessage QueryNeedGleaning ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState)
+                .FirstOrDefault ();
         }
 
         /// <summary>
@@ -366,50 +396,6 @@ namespace NachoCore.Model
         public static void MarkAll ()
         {
             NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
-        }
-    }
-
-    public class McEmailMessageScoreSyncInfo : McAbstrObject
-    {
-        // Id of the corresponding McEmailMessage
-        [Indexed]
-        public Int64 EmailMessageId { get; set; }
-
-        // How many times the email is read
-        public int TimesRead { get; set; }
-
-        // How long the user read the email
-        public int SecondsRead { get; set; }
-
-        public McEmailMessageScoreSyncInfo ()
-        {
-            EmailMessageId = 0;
-            TimesRead = 0;
-            SecondsRead = 0;
-        }
-
-        public void InsertByBrain ()
-        {
-            int rc = Insert ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Insert.Click ();
-            }
-        }
-
-        public void UpdateByBrain ()
-        {
-            int rc = Update ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Update.Click ();
-            }
-        }
-
-        public void DeleteByBrain ()
-        {
-            int rc = Delete ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageScoreSyncInfoCounters.Delete.Click ();
-            }
         }
     }
 }

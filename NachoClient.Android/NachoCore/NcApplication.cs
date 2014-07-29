@@ -182,7 +182,6 @@ namespace NachoCore
             MonitorStart (); // Has a deferred timer start inside.
             Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
-                AsXmlFilterSet.Initialize ();
                 BackEnd.Instance.Start ();
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
             }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);

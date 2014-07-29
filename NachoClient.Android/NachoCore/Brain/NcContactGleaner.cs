@@ -96,11 +96,6 @@ namespace NachoCore.Brain
                     EmailAddress = emailAddress.Id,
                 };
 
-                // Update statistics
-                contact.EmailsReceived += 1;
-                if (emailMessage.IsRead) {
-                    contact.EmailsReplied += 1;
-                }
                 // TODO - Get the reply state
                 NcModel.Instance.Db.Insert (strattr);
             } else {

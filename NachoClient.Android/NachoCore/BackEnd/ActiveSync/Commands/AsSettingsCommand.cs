@@ -84,6 +84,7 @@ namespace NachoCore.ActiveSync
                         return Event.Create ((uint)SmEvt.E.HardFail, "MVUNKSTATUSB");
                     }
                 }
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsSettingsSuccess));
                 return Event.Create ((uint)SmEvt.E.Success, "SETTSUCCESS");
 
             case Xml.Settings.StatusCode.ProtocolError_2:

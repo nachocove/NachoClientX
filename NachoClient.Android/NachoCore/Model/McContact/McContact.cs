@@ -40,9 +40,6 @@ namespace NachoCore.Model
         /// </summary>
         /// 
 
-        public const int minHotScore = 1;
-        public const int minVipScore = 1000000;
-
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
         /// Set only for Device contacts
@@ -563,9 +560,6 @@ namespace NachoCore.Model
         {
             int retval = base.Update ();
             InsertAncillaryData (NcModel.Instance.Db);
-            if (null != SyncInfo) {
-                SyncInfo.Update ();
-            }
             return retval;
         }
 
@@ -952,11 +946,13 @@ namespace NachoCore.Model
                 "SELECT c.Id as Id FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
+                " c.AccountId = ? AND " +
                 " c.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " c.Score > ? " +
                 " ORDER BY c.Score DESC, c.FirstName",
-                McAbstrFolderEntry.ClassCodeEnum.Contact, minHotScore);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
         }
 
         public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)

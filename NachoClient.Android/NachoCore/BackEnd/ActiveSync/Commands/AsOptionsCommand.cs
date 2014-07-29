@@ -23,6 +23,7 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             if (ProcessOptionsHeaders (response.Headers, BEContext)) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsOptionsSuccess));
                 return Event.Create ((uint)SmEvt.E.Success, "OPTSUCCESS");
             }
             return Event.Create ((uint)SmEvt.E.HardFail, "OPTHARD");

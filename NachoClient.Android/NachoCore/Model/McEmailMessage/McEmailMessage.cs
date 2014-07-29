@@ -317,46 +317,6 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Email;
         }
 
-        public McContact GetFromContact ()
-        {
-            List<McContact> contactList = GetContactsFromEmailAddressString (From);
-            // TODO: Do we need to return just one?
-            // NachoAssert.True (1 == contactList.Count);
-            if ((null == contactList) || (0 == contactList.Count)) {
-                return null;
-            }
-            return contactList [0];
-        }
-
-        public List<McContact> GetContactsFromEmailAddressString (string emailAddressString)
-        {
-            //TODO: Test this
-            var addresses = NcEmailAddress.ParseAddressListString (emailAddressString);
-
-            // Use a set to eliminate duplicates
-            HashSet<McContact> contactSet = new HashSet<McContact> ();
-
-            foreach (var address in addresses) {
-                var emailAddress = address as MailboxAddress;
-                if (null != emailAddress) {
-                    List<McContact> queryResult = McContact.QueryByEmailAddress (AccountId, emailAddress.Address);
-                    if (0 == queryResult.Count) {
-                        Log.Warn (Log.LOG_BRAIN, "Unknown email address {0}", emailAddress);
-                    }
-                    foreach (McContact contact in queryResult) {
-                        contactSet.Add (contact);
-                    }
-                }
-            }
-
-            // Convert set to list
-            List<McContact> contactList = new List<McContact> ();
-            foreach (McContact contact in contactSet) {
-                contactList.Add (contact);
-            }
-            return contactList;
-        }
-
         public const double minHotScore = 0.1;
 
         public bool isHot ()
@@ -579,11 +539,11 @@ namespace NachoCore.Model
         {
             NcAssert.True (NcModel.Instance.IsInTransaction ());
             if (!IsRead) {
-                McContact sender = GetFromContact ();
-                if (null != sender) {
-                    sender.IncrementEmailsDeleted ();
-                    sender.ForceReadAncillaryData ();
-                    sender.UpdateByBrain ();
+                McEmailAddress emailAddress;
+                bool found = McEmailAddress.Get (AccountId, From, out emailAddress);
+                if (found) {
+                    emailAddress.IncrementEmailsDeleted ();
+                    emailAddress.UpdateByBrain ();
                 }
             }
             DeleteBody ();

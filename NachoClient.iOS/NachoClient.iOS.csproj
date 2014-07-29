@@ -999,9 +999,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessage.cs">
       <Link>NachoCore\Model\McEmailMessage\McEmailMessage.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McContact\ContactScore.cs">
-      <Link>NachoCore\Model\McContact\ContactScore.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\EmailMessageScore.cs">
       <Link>NachoCore\Model\McEmailMessage\EmailMessageScore.cs</Link>
     </Compile>
@@ -1040,6 +1037,15 @@
     <Compile Include="NachoUI.iOS\NotesViewController.cs" />
     <Compile Include="NachoUI.iOS\NotesViewController.designer.cs">
       <DependentUpon>NotesViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\EmailAddressScore.cs">
+      <Link>NachoCore\Model\EmailAddressScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScoreSyncInfo.cs">
+      <Link>NachoCore\Model\McEmailAddressScoreSyncInfo.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
@@ -1292,6 +1298,10 @@
     <BundleResource Include="Resources\Icon-Small-40.png" />
     <BundleResource Include="Resources\Icon-Small-40%402x.png" />
     <BundleResource Include="Resources\Default%402x.png" />
+    <BundleResource Include="Resources\icn-contact-quickcall.png" />
+    <BundleResource Include="Resources\icn-contact-quickcall%402x.png" />
+    <BundleResource Include="Resources\icn-contact-quickemail.png" />
+    <BundleResource Include="Resources\icn-contact-quickemail%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

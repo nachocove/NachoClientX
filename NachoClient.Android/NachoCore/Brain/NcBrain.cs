@@ -43,8 +43,8 @@ namespace NachoCore.Brain
         public OperationCounters McEmailMessageCounters;
         public OperationCounters McEmailMessageDependencyCounters;
         public OperationCounters McEmailMessageScoreSyncInfoCounters;
-        public OperationCounters McContactCounters;
-        public OperationCounters McContactScoreSyncInfo;
+        public OperationCounters McEmailAddressCounters;
+        public OperationCounters McEmailAddressScoreSyncInfo;
 
         public NcBrain ()
         {
@@ -52,8 +52,8 @@ namespace NachoCore.Brain
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
             McEmailMessageDependencyCounters = new OperationCounters ("McEmailMessageDependency", RootCounter);
             McEmailMessageScoreSyncInfoCounters = new OperationCounters ("McEmailMessageScoreSyncInfo", RootCounter);
-            McContactCounters = new OperationCounters ("McContact", RootCounter);
-            McContactScoreSyncInfo = new OperationCounters ("McContactScoreSyncInfo", RootCounter);
+            McEmailAddressCounters = new OperationCounters ("McEmailAddress", RootCounter);
+            McEmailAddressScoreSyncInfo = new OperationCounters ("McEmailAddressScoreSyncInfo", RootCounter);
             RootCounter.AutoReset = true;
             RootCounter.ReportPeriod = 60 * 60; // report once per hour
 
@@ -74,8 +74,7 @@ namespace NachoCore.Brain
             // Look for a list of emails
             int numGleaned = 0;
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                    x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState).FirstOrDefault ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning ();
                 if (null == emailMessage) {
                     return numGleaned;
                 }
@@ -86,18 +85,19 @@ namespace NachoCore.Brain
             return numGleaned;
         }
 
-        private int AnalyzeContacts (int count)
+        private int AnalyzeEmailAddresses (int count)
         {
             int numAnalyzed = 0;
             while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
-                if (null == contact) {
-                    return numAnalyzed;
+                McEmailAddress emailAddress = McEmailAddress.QueryNeedAnalysis ();
+                if (null == emailAddress) {
+                    break;
                 }
-                Log.Info (Log.LOG_BRAIN, "analyze contact {0}", contact.Id);
-                contact.ScoreObject ();
+                Log.Info (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
+                emailAddress.ScoreObject ();
                 numAnalyzed++;
             }
+            Log.Info (Log.LOG_BRAIN, "{0} email addresses analyzed", numAnalyzed);
             return numAnalyzed;
         }
 
@@ -105,30 +105,31 @@ namespace NachoCore.Brain
         {
             int numAnalyzed = 0;
             while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion < Scoring.Version).FirstOrDefault ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedAnalysis ();
                 if (null == emailMessage) {
-                    return numAnalyzed;
+                    break;
                 }
-                Log.Info (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
+                Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
                 emailMessage.ScoreObject ();
                 numAnalyzed++;
             }
+            Log.Info (Log.LOG_BRAIN, "{0} email messages analyzed", numAnalyzed);
             return numAnalyzed;
         }
 
-        private int UpdateContactScores (int count)
+        private int UpdateEmailAddressScores (int count)
         {
             int numUpdated = 0;
             while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McContact contact = NcModel.Instance.Db.Table<McContact> ().Where (x => x.NeedUpdate).FirstOrDefault ();
-                if (null == contact) {
+                McEmailAddress emailAddress = McEmailAddress.QueryNeedUpdate ();
+                if (null == emailAddress) {
                     return numUpdated;
                 }
-                contact.Score = contact.GetScore ();
-                Log.Debug (Log.LOG_BRAIN, "[McContact:{0}] update score -> {1:F6}",
-                    contact.Id, contact.Score);
-                contact.NeedUpdate = false;
-                contact.Update ();
+                emailAddress.Score = emailAddress.GetScore ();
+                Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
+                    emailAddress.Id, emailAddress.Score);
+                emailAddress.NeedUpdate = false;
+                emailAddress.Update ();
 
                 numUpdated++;
             }
@@ -139,7 +140,7 @@ namespace NachoCore.Brain
         {
             int numUpdated = 0;
             while (numUpdated < count  && !NcApplication.Instance.IsBackgroundAbateRequired) {
-                McEmailMessage emailMessage = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.NeedUpdate).FirstOrDefault ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
                 if (null == emailMessage) {
                     return numUpdated;
                 }
@@ -176,7 +177,7 @@ namespace NachoCore.Brain
                 if (0 >= num_entries) {
                     break;
                 }
-                num_entries -= AnalyzeContacts (num_entries);
+                num_entries -= AnalyzeEmailAddresses (num_entries);
                 if (0 >= num_entries) {
                     break;
                 }
@@ -184,7 +185,7 @@ namespace NachoCore.Brain
                 if (0 >= num_entries) {
                     break;
                 }
-                num_entries -= UpdateContactScores (num_entries);
+                num_entries -= UpdateEmailAddressScores (num_entries);
                 if (0 >= num_entries) {
                     break;
                 }

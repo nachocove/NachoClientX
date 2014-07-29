@@ -566,6 +566,7 @@ namespace NachoCore.ActiveSync
             });
             // Signal that we are done and that we have a server config.
             // Success is the only way we finish - either by UI setting or autodiscovery.
+            BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");
         }
         // IBEContext proxying.
