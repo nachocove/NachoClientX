@@ -7,14 +7,14 @@ namespace NachoCore.Wbxml
 {
     public static class AsXmlFilterSet
     {
-        private static bool IsInitialized = false;
         private static NcXmlFilterSet _Requests = null;
         private static NcXmlFilterSet _Responses = null;
 
-        public  static NcXmlFilterSet Requests {
+        public static NcXmlFilterSet Requests {
             get {
                 if (null == _Requests) {
                     _Requests = new NcXmlFilterSet ();
+                    InitializeRequestFilters ();
                 }
                 return _Requests;
             }
@@ -24,62 +24,62 @@ namespace NachoCore.Wbxml
             get {
                 if (null == _Responses) {
                     _Responses = new NcXmlFilterSet ();
+                    InitializeResponseFilters ();
                 }
                 return _Responses;
             }
         }
 
-        public static void Initialize ()
+        private static void InitializeRequestFilters ()
         {
-            if (IsInitialized) {
-                return;
-            }
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterAirSyncRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterComposeMailRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterFolderHierarchyRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterGetItemEstimateRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterItemOperationsRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterMeetingResponseRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterMoveRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterPingRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterProvisionRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterResolveRecipientsRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterSearchRequest ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterSettingsRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterAirSyncRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterComposeMailRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterFolderHierarchyRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterGetItemEstimateRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterItemOperationsRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterMeetingResponseRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterMoveRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterPingRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterProvisionRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterResolveRecipientsRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterSearchRequest ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterSettingsRequest ());
 
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterAirSyncBase ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterCalendar ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterContacts ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterContacts2 ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterDocumentLibrary ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterEmail ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterEmail2 ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterRightsManagement ());
-            AsXmlFilterSet.Requests.Add (new AsXmlFilterTasks ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterAirSyncBase ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterCalendar ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterContacts ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterContacts2 ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterDocumentLibrary ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterEmail ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterEmail2 ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterRightsManagement ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterTasks ());
+        }
 
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterAirSyncResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterComposeMailResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterFolderHierarchyResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterGetItemEstimateResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterItemOperationsResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterMeetingResponseResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterMoveResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterPingResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterProvisionResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterResolveRecipientsResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterSearchResponse ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterSettingsResponse ());
+        public static void InitializeResponseFilters ()
+        {
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterAirSyncResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterComposeMailResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterFolderHierarchyResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterGetItemEstimateResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterItemOperationsResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterMeetingResponseResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterMoveResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterPingResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterProvisionResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterResolveRecipientsResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterSearchResponse ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterSettingsResponse ());
 
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterAirSyncBase ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterCalendar ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterContacts ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterContacts2 ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterDocumentLibrary ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterEmail ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterEmail2 ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterRightsManagement ());
-            AsXmlFilterSet.Responses.Add (new AsXmlFilterTasks ());
-            IsInitialized = true;
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterAirSyncBase ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterCalendar ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterContacts ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterContacts2 ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterDocumentLibrary ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterEmail ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterEmail2 ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterRightsManagement ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterTasks ());
         }
     }
 }
