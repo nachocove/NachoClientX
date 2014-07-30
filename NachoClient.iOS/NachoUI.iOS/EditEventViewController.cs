@@ -157,7 +157,7 @@ namespace NachoClient.iOS
             var g = new UITapGestureRecognizer (() => View.EndEditing (true));
             contentView.AddGestureRecognizer (g);
 
-            account = NcModel.Instance.Db.Table<McAccount> ().First ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             c = item;
