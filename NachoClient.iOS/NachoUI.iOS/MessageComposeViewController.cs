@@ -54,6 +54,7 @@ namespace NachoClient.iOS
         NcEmailAddress PresetToAddress;
         string PresetSubject;
         string EmailTemplate;
+        McAttachment PresetAttachment;
 
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
@@ -68,12 +69,13 @@ namespace NachoClient.iOS
             owner = o;
         }
 
-        // Can be called by owner to set a pre-existing To: address, subject, and email template
-        public void SetEmailAddressAndTemplate (NcEmailAddress toAddress, string subject = null, string emailTemplate = null)
+        // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
+        public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, McAttachment attachment = null)
         {
             PresetToAddress = toAddress;
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
+            PresetAttachment = attachment;
         }
 
         public override void ViewDidLoad ()
@@ -320,6 +322,10 @@ namespace NachoClient.iOS
 
             if (PresetToAddress != null) {
                 UpdateEmailAddress (PresetToAddress);
+            }
+
+            if (PresetAttachment != null) {
+                attachmentView.Append (PresetAttachment);
             }
 
 //            attachmentView.BackgroundColor = UIColor.Yellow;
