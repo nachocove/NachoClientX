@@ -540,10 +540,12 @@ namespace NachoCore.Model
             NcAssert.True (NcModel.Instance.IsInTransaction ());
             if (!IsRead) {
                 McEmailAddress emailAddress;
-                bool found = McEmailAddress.Get (AccountId, From, out emailAddress);
-                if (found) {
-                    emailAddress.IncrementEmailsDeleted ();
-                    emailAddress.UpdateByBrain ();
+                if (null != From) {
+                    bool found = McEmailAddress.Get (AccountId, From, out emailAddress);
+                    if (found) {
+                        emailAddress.IncrementEmailsDeleted ();
+                        emailAddress.UpdateByBrain ();
+                    }
                 }
             }
             DeleteBody ();
