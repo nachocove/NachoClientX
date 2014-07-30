@@ -72,6 +72,13 @@ namespace NachoClient.iOS
                 };
                 return;
             }
+            if (segue.Identifier.Equals ("ContactToEmailCompose")) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var address = holder.value as string;
+                dc.SetEmailAddressAndTemplate (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -103,7 +110,7 @@ namespace NachoClient.iOS
             topEmailButton.TintColor = UIColor.White;
             topEmailButton.SetImage (UIImage.FromBundle ("icn-contact-quickemail"), UIControlState.Normal);
             topEmailButton.TouchUpInside += (sender, e) => {
-                TouchedEmailButton ();
+                TouchedEmailButton (contact.GetEmailAddress ());
             };
             topEmailButton.Tag = TOP_EMAIL_BUTTON_TAG;
             topImage.AddSubview (topEmailButton);
@@ -116,7 +123,7 @@ namespace NachoClient.iOS
             topCallButton.TintColor = UIColor.White;
             topCallButton.SetImage (UIImage.FromBundle ("icn-contact-quickcall"), UIControlState.Normal);
             topCallButton.TouchUpInside += (sender, e) => {
-                TouchedCallButton ();
+                TouchedCallButton (contact.GetPhoneNumber ());
             };
             topCallButton.Tag = TOP_CALL_BUTTON_TAG;
             topImage.AddSubview (topCallButton);
@@ -249,7 +256,7 @@ namespace NachoClient.iOS
                 goto skippedEmail;
             }
 
-            yOffset += AddHeader ("Email", yOffset);
+//            yOffset += AddHeader ("Email", yOffset);
 
             foreach (var emailAddressAttributes in contact.EmailAddresses) {
                 yOffset += AddEmailAddress (emailAddressAttributes, yOffset);
@@ -257,7 +264,8 @@ namespace NachoClient.iOS
 
             var emailHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
             emailHL.BackgroundColor = A.Color_NachoSeparator;
-            emailHL.Tag = TRANSIENT_TAG;;
+            emailHL.Tag = TRANSIENT_TAG;
+            ;
             contentView.AddSubview (emailHL);
 
             yOffset += 6;
@@ -268,7 +276,7 @@ namespace NachoClient.iOS
                 goto skippedPhones;
             }
 
-            yOffset += AddHeader ("Phone", yOffset);
+//            yOffset += AddHeader ("Phone", yOffset);
 
             foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
                 yOffset += AddPhoneNumber (phoneNumberAttribute, yOffset);
@@ -294,30 +302,80 @@ namespace NachoClient.iOS
 
         protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset)
         {
-            return AddSideBySide (email.Name, email.Value, yOffset);
+            var view = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
+            view.Tag = TRANSIENT_TAG;
+            contentView.AddSubview (view);
+
+            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
+
+            var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
+            labelLabel.Font = A.Font_AvenirNextRegular14;
+            labelLabel.TextColor = A.Color_0B3239;
+            labelLabel.Text = email.Name;
+            labelLabel.SizeToFit ();
+            labelLabel.Tag = TRANSIENT_TAG;
+            view.AddSubview (labelLabel);
+
+            var imageView = new UIImageView (new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24));
+            imageView.Image = UIImage.FromBundle ("icn-quick-message");
+            view.AddSubview (imageView);
+
+            var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+                TouchedEmailButton(email.Value);
+            });
+            view.AddGestureRecognizer (tap);
+            view.UserInteractionEnabled = true;
+
+            var valueLabel = new UILabel (new RectangleF (35, 20, View.Frame.Width - 75, 20));
+            valueLabel.Font = A.Font_AvenirNextRegular14;
+            valueLabel.TextColor = A.Color_808080;
+            valueLabel.Text = emailAddress.CanonicalEmailAddress;
+            valueLabel.SizeToFit ();
+            view.AddSubview (valueLabel);
+
+            return 40;
         }
 
         protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset)
         {
-            return AddSideBySide (phone.Name, phone.Value, yOffset);
-        }
+            var view = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
+            view.Tag = TRANSIENT_TAG;
+            contentView.AddSubview (view);
 
-        protected float AddSideBySide(string label, string value, float yOffset)
-        {
-            var labelLabel = new UILabel (new RectangleF (15, yOffset, 45, 20));
+            var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = label;
+            labelLabel.Text = phone.Name;
+            labelLabel.SizeToFit ();
             labelLabel.Tag = TRANSIENT_TAG;
-            contentView.AddSubview(labelLabel);
+            view.AddSubview (labelLabel);
 
-            var valueLabel = new UILabel (new RectangleF (75, yOffset, View.Frame.Width - 75, 20));
+            var phoneButton = UIButton.FromType (UIButtonType.RoundedRect);
+            phoneButton.Frame = new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24);
+            phoneButton.SetImage (UIImage.FromBundle ("icn-mtng-phone"), UIControlState.Normal);
+            phoneButton.TouchUpInside += (sender, e) => {
+                TouchedEmailButton (phone.Value);
+            };
+            view.AddSubview (phoneButton);
+
+            var smsButton = UIButton.FromType (UIButtonType.RoundedRect);
+            smsButton.Frame = new RectangleF (View.Frame.Width - 24 - 15 - 24 - 15, 10, 24, 24);
+            smsButton.SetImage (UIImage.FromBundle ("icn-sms"), UIControlState.Normal);
+            smsButton.TouchUpInside += (sender, e) => {
+                TouchedEmailButton (phone.Value);
+            };
+            view.AddSubview (smsButton);
+
+            yOffset += 20;
+
+            var valueLabel = new UILabel (new RectangleF (35, 20, View.Frame.Width - 75, 20));
             valueLabel.Font = A.Font_AvenirNextRegular14;
             valueLabel.TextColor = A.Color_808080;
-            valueLabel.Text = value;
-            contentView.AddSubview(valueLabel);
+            valueLabel.Text = phone.Value;
+            valueLabel.SizeToFit ();
+            view.AddSubview (valueLabel);
 
-            return 20;
+            return 40;
         }
 
         protected void DisplayContactInfo ()
@@ -371,17 +429,49 @@ namespace NachoClient.iOS
             return emailAddress.CanonicalEmailAddress;
         }
 
-        protected void TouchedEmailButton ()
+        protected void TouchedEmailButton (string address)
         {
             Log.Info (Log.LOG_UI, "TouchedEmailButton");
+
+            if (string.IsNullOrEmpty (address)) {
+                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                return;
+            }
+            PerformSegue ("ContactToEmailCompose", new SegueHolder(address));
         }
 
-        protected void TouchedCallButton ()
+        protected void TouchedCallButton (string number)
         {
             Log.Info (Log.LOG_UI, "TouchedCallButton");
+
+            if (string.IsNullOrEmpty (number)) {
+                ComplainAbout ("No phone number", "You've selected a contact who does not have an phone number");
+                return;
+            }
+            PerformAction ("tel", number);
         }
 
- 
+        protected void TouchedSmsButton (string number)
+        {
+            Log.Info (Log.LOG_UI, "TouchedSmsButton");
+
+            if (null == number) {
+                ComplainAbout ("No phone number", "You've selected a contact who does not have an phone number");
+                return;
+            }
+            PerformAction ("sms", number);
+        }
+
+        protected void PerformAction (string action, string number)
+        {
+            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}://{1}", action, number)));
+        }
+
+        protected void ComplainAbout (string complaintTitle, string complaintMessage)
+        {
+            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
+            alert.Show ();
+        }
 
     }
 }

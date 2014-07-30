@@ -106,7 +106,7 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
-            PerformSegue ("ContactsToContact", new SegueHolder (contact));
+            PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
     }
 }

@@ -1077,7 +1077,6 @@ namespace NachoCore.Model
 
         public string GetEmailAddress ()
         {
-
             if (null == EmailAddresses) {
                 return "";
             }
@@ -1085,6 +1084,17 @@ namespace NachoCore.Model
                 return "";
             }
             return EmailAddresses.First ().Value;
+        }
+
+        public string GetPhoneNumber()
+        {
+            if (null == PhoneNumbers) {
+                return "";
+            }
+            if (0 == PhoneNumbers.Count ()) {
+                return "";
+            }
+            return PhoneNumbers.First ().Value;
         }
 
         public string GetDisplayNameOrEmailAddress ()

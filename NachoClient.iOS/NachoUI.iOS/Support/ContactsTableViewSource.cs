@@ -204,8 +204,6 @@ namespace NachoClient.iOS
             cell.TextLabel.Text = null;
             cell.DetailTextLabel.Text = null;
 
-            cell.Accessory = UITableViewCellAccessory.DetailDisclosureButton;
-
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
                 cell.TextLabel.Text = "Contact has no name or email address";
