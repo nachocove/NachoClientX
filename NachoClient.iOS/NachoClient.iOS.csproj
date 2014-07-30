@@ -1057,6 +1057,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcDeviceContacts.cs">
       <Link>NachoCore\Brain\NcDeviceContacts.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\AdvancedLoginViewController.cs" />
+    <Compile Include="NachoUI.iOS\AdvancedLoginViewController.designer.cs">
+      <DependentUpon>AdvancedLoginViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
