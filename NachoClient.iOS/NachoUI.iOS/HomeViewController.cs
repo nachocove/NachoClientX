@@ -13,6 +13,8 @@ namespace NachoClient.iOS
     public partial class HomeViewController : NcUIViewController
     {
         UIPageViewController pageController;
+        bool hasSyncCompleted = false;
+        UILabel autoDState;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -48,6 +50,38 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
+                autoDState.Text = "FolderSyncSucceeded";
+                autoDState.TextColor = UIColor.Green;
+                hasSyncCompleted = true;
+                folderSyncSuccesful ();
+            }
+            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
+                autoDState.Text = "AutoDComplete";
+                autoDState.TextColor = UIColor.Yellow;
+            }
+
+            if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
+                autoDState.Text = "NetworkUnavailable";
+                autoDState.TextColor = UIColor.Red;
+            }
         }
 
         public void InitializePageViewController ()
@@ -60,12 +94,36 @@ namespace NachoClient.iOS
 
             this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
                 false, s => {
-            });
+                });
 
             this.pageController.DataSource = new PageDataSource (this);
 
             this.pageController.View.Frame = this.View.Bounds;
             this.View.AddSubview (this.pageController.View);
+
+            //Simulates a user dismissing tutorial, or the tutorial finishing on its own
+            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (20, 400, View.Frame.Width - 40, 50));
+            closeTutorial.SetTitle ("Dismiss Tutorial", UIControlState.Normal);
+            closeTutorial.TitleLabel.TextColor = UIColor.White;
+            closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            closeTutorial.BackgroundColor = A.Color_NachoBlue;
+            closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
+                userViewedTutorial();
+                if(hasSyncCompleted){
+                    PerformSegue ("HomeToNachoNow", this);
+                }else{
+                    PerformSegue("HomeToAdvancedLogin", this);
+                }
+            };
+            View.Add (closeTutorial);
+
+            //For testing purposes to see live state of Auto-D
+            autoDState = new UILabel (new System.Drawing.RectangleF(20, 460, View.Frame.Width - 40, 30));
+            autoDState.Text = "Attempting Auto-D.... ";
+            autoDState.TextAlignment = UITextAlignment.Center;
+            autoDState.Font = A.Font_AvenirNextDemiBold17;
+            autoDState.TextColor = A.Color_NachoRed;
+            View.Add (autoDState);
         }
 
         /// <summary>
@@ -78,6 +136,17 @@ namespace NachoClient.iOS
             get {
                 return 7;
             }
+        }
+        public void userViewedTutorial()
+        {
+            //User has view tutorial, set the bit.
+            McMutables.GetOrCreate ("TUTORIAL", "hasViewedTutorial", "1");
+        }
+
+        public void folderSyncSuccesful()
+        {
+            //File Sync has been completed, set the bit
+            McMutables.Set ("ASYNC", "hasSyncedFolders", "1");
         }
 
         private class PageDataSource : UIPageViewControllerDataSource

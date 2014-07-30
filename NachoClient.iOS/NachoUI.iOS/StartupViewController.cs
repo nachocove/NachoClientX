@@ -11,6 +11,10 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
+        bool hasSynced;
+        bool hasCreds;
+        bool hasViewedTutorial;
+
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
@@ -33,6 +37,10 @@ namespace NachoClient.iOS
             } else {
                 PerformSegue ("StartupToNachoNow", this); // push
             }
+
+            setSyncBit ();
+            setViewTutorialBit ();
+            setHasCredsBit ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -40,6 +48,48 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+            }
+        }
+
+        public void setSyncBit()
+        {
+            string hasSyncedFoldersVal = McMutables.Get ("ASYNC", "hasSyncedFolders");
+            if (null != hasSyncedFoldersVal) {
+                if (hasSyncedFoldersVal == "1") {
+                    hasSynced = true;
+                } else {
+                    hasSynced = false;
+                }
+            } else {
+                hasSynced = false;
+            }
+        }
+
+        public void setViewTutorialBit()
+        {
+            string hasViewedTutorialVal = McMutables.Get ("TUTORIAL", "hasViewedTutorial");
+            if (null != hasViewedTutorialVal) {
+                if (hasViewedTutorialVal == "1") {
+                    hasViewedTutorial = true;
+                } else {
+                    hasViewedTutorial = false;
+                }
+            } else {
+                hasViewedTutorial = false;
+            }
+        }
+
+        public void setHasCredsBit()
+        {
+            string hasSetCredsVal = McMutables.Get ("CREDS", "hasEnteredCreds");
+            if (null != hasSetCredsVal) {
+                if (hasSetCredsVal == "1") {
+                    hasCreds = true;
+                } else {
+                    hasCreds = false;
+                }
+            } else {
+                hasCreds = false;
             }
         }
     }
