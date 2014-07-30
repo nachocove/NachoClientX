@@ -76,7 +76,7 @@ namespace NachoClient.iOS
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = holder.value as string;
-                dc.SetEmailAddressAndTemplate (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

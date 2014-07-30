@@ -133,7 +133,7 @@ namespace NachoClient.iOS
                     contents.TryGetValue ("template", out template);
                 }
 
-                dc.SetEmailAddressAndTemplate (address, subject, template);
+                dc.SetEmailPresetFields (address, subject, template);
                 return;
             }
 

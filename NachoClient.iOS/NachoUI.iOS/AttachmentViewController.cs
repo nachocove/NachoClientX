@@ -24,6 +24,9 @@ namespace NachoClient.iOS
         SearchDelegate searchDelegate;
         Action<object, EventArgs> fileAction;
 
+        // segue ids
+        string FilesToComposeSegueId = "FilesToEmailCompose";
+
         public AttachmentViewController (IntPtr handle) : base (handle)
         {
         }
@@ -105,6 +108,18 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
         }
 
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals (FilesToComposeSegueId)) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+
+                var holder = sender as SegueHolder;
+                var attachment = (McAttachment)holder.value;
+
+                dc.SetEmailPresetFields (attachment: attachment);
+            }
+        }
+
         public void RefreshAttachmentSection ()
         {
             // show most recent attachments first
@@ -155,6 +170,13 @@ namespace NachoClient.iOS
             } else {
                 attachmentAction (a);
             }
+        }
+
+        public void ForwardAttachment (McAttachment attachment)
+        {
+            downloadAndDoAction (attachment.Id, (a) => {
+                PerformSegue (FilesToComposeSegueId, new SegueHolder (a));
+            });
         }
 
         public void openInOtherApp (McAttachment attachment)
@@ -322,7 +344,7 @@ namespace NachoClient.iOS
                     forwardView = ViewWithImageName ("check");
                     greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.attachmentAction (attachment.Id);
+                        vc.ForwardAttachment (attachment);
                         SetAnimationOnCell (cell);
                         return;
                     });

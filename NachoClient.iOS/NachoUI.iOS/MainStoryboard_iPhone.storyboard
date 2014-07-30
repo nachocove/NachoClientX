@@ -263,7 +263,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="AttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="AttachmentViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="vTn-fI-R0o">
@@ -286,6 +286,7 @@
                         <outlet property="revealButton" destination="NU1-k7-pji" id="Hpt-qH-mgu"/>
                         <outlet property="searchDisplayController" destination="TB4-AC-yCV" id="qju-k2-ALR"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="AttachmentsToNachoNow" id="Gr5-Hy-1Yr"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="FilesToEmailCompose" id="Wtf-SG-mz2"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wOG-Ry-VAW" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -868,7 +869,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -953,7 +954,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -970,7 +971,7 @@
                                 </state>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="422"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="466"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -1841,23 +1842,23 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="p6V-c0-caL"/>
+        <segue reference="zDw-Tx-fTt"/>
         <segue reference="i3N-5g-evG"/>
         <segue reference="n8e-Oj-wO2"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="vah-yS-677"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="4Sl-0E-160"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="zXa-AG-jcx"/>
+        <segue reference="p6V-c0-caL"/>
         <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
         <segue reference="Afu-47-Kju"/>
-        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="zXa-AG-jcx"/>
+        <segue reference="mo4-Vz-xJh"/>
+        <segue reference="vah-yS-677"/>
+        <segue reference="4Sl-0E-160"/>
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="r1y-34-GvV"/>
+        <segue reference="Wtf-SG-mz2"/>
         <segue reference="EmX-Dp-jXs"/>
         <segue reference="Gr5-Hy-1Yr"/>
+        <segue reference="alQ-9Z-W4y"/>
     </inferredMetricsTieBreakers>
 </document>
