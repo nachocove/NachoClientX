@@ -6,7 +6,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
 
-namespace NachoCore.Brain
+namespace NachoCore
 {
     public class NcDeviceContacts
     {

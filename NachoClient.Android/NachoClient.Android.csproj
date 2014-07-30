@@ -314,10 +314,12 @@
     <Compile Include="NachoPlatform.Android\PlatformUserColorIndex.cs" />
     <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
     <Compile Include="NachoPlatform.Android\ContactsAndroid.cs" />
-    <Compile Include="NachoCore\Brain\NcDeviceContacts.cs" />
     <Compile Include="NachoCore\Model\EmailAddressScore.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs" />
     <Compile Include="NachoCore\Model\McEmailAddressScoreSyncInfo.cs" />
+    <Compile Include="NachoCore\Adapters\NcDeviceContacts.cs" />
+    <Compile Include="NachoCore\Adapters\NcDeviceCalendars.cs" />
+    <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

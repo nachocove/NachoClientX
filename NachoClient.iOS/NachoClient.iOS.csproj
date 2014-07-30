@@ -405,7 +405,6 @@
       <Link>NachoCore\Adapters\INachoContacts.cs</Link>
     </Compile>
     <Compile Include="NachoCore\Adapters\DeviceCalendar.cs" />
-    <Compile Include="NachoCore\Adapters\DeviceContacts.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\BackEnd.cs">
       <Link>NachoCore\BackEnd\BackEnd.cs</Link>
     </Compile>
@@ -1054,13 +1053,17 @@
     <Compile Include="NachoUI.iOS\ContactDetailViewController.designer.cs">
       <DependentUpon>ContactDetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcDeviceContacts.cs">
-      <Link>NachoCore\Brain\NcDeviceContacts.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\AdvancedLoginViewController.cs" />
     <Compile Include="NachoUI.iOS\AdvancedLoginViewController.designer.cs">
       <DependentUpon>AdvancedLoginViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceContacts.cs">
+      <Link>NachoCore\Adapters\NcDeviceContacts.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceCalendars.cs">
+      <Link>NachoCore\Adapters\NcDeviceCalendars.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\CalendarsiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -99,4 +99,8 @@ namespace NachoPlatform
         // Must be called from UI thread.
         void AskForPermission (Action<bool> result);
     }
+
+    public interface IPlatformCalendars
+    {
+    }
 }
