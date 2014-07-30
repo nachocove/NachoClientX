@@ -70,6 +70,33 @@ namespace NachoCore.Model
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
         }
 
+        private void ConfigureDb (SQLiteConnection db)
+        {
+            NcAssert.NotNull (db);
+            var journal_mode = db.ExecuteScalar<string> ("PRAGMA journal_mode");
+            QueueLogInfo (string.Format ("PRAGMA journal_mode: {0}", journal_mode));
+            if ("wal" != journal_mode.ToLower ()) {
+                journal_mode = db.ExecuteScalar<string> ("PRAGMA journal_mode = WAL");
+                NcAssert.Equals ("wal", journal_mode.ToLower ());
+                QueueLogInfo (string.Format ("PRAGMA journal_mode set to {0}", journal_mode));
+            }
+            var wal_autocheckpoint = db.ExecuteScalar<int> ("PRAGMA wal_autocheckpoint");
+            QueueLogInfo (string.Format ("PRAGMA wal_autocheckpoint: {0}", wal_autocheckpoint));
+            if (1000 != wal_autocheckpoint) {
+                journal_mode = db.ExecuteScalar<string> ("PRAGMA wal_autocheckpoint = 1000");
+                NcAssert.Equals (1000, wal_autocheckpoint);
+                QueueLogInfo (string.Format ("PRAGMA wal_autocheckpoint set to {0}", wal_autocheckpoint));
+            }
+            var synchronous = db.ExecuteScalar<int> ("PRAGMA synchronous");
+            QueueLogInfo (string.Format ("PRAGMA synchronous: {0}", synchronous));
+            if (1 != synchronous) {
+                db.Execute ("PRAGMA synchronous = 1");
+                synchronous = db.ExecuteScalar<int> ("PRAGMA synchronous");
+                NcAssert.Equals (synchronous, 1);
+                QueueLogInfo (string.Format ("PRAGMA synchronous set to: {0}", synchronous));
+            }
+        }
+
         private void InitializeDb ()
         {
             RateLimiter = new NcRateLimter (16, 0.250);
@@ -108,11 +135,23 @@ namespace NachoCore.Model
             Db.CreateTable<McFile> ();
             Db.CreateTable<McMutables> ();
             Db.CreateTable<McPath> ();
+            ConfigureDb (Db);
         }
 
         private void InitializeTeleDb ()
         {
             TeleDb.CreateTable<McTelemetryEvent> ();
+            ConfigureDb (TeleDb);
+        }
+
+        private void QueueLogInfo (string message)
+        {
+            Log.IndirectQ.Enqueue (new LogElement () {
+                Level = LogElement.LevelEnum.Info,
+                Subsystem = Log.LOG_DB,
+                Message = message,
+                Occurred = DateTime.UtcNow,
+            });
         }
 
         private NcModel ()
