@@ -266,16 +266,14 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="l9G-Bp-lHm">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="l9G-Bp-lHm" id="lS0-Z1-7SJ">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
+                        <searchBar key="tableHeaderView" contentMode="redraw" id="vTn-fI-R0o">
+                            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                            <textInputTraits key="textInputTraits"/>
+                            <connections>
+                                <outlet property="delegate" destination="bBy-CW-6ix" id="zhe-Pp-Cxe"/>
+                            </connections>
+                        </searchBar>
                         <connections>
                             <outlet property="dataSource" destination="bBy-CW-6ix" id="LKy-69-vsN"/>
                             <outlet property="delegate" destination="bBy-CW-6ix" id="Mmh-49-Ptx"/>
@@ -286,12 +284,24 @@
                     <connections>
                         <outlet property="nachoButton" destination="LXM-cO-kAi" id="6Sr-gx-dP7"/>
                         <outlet property="revealButton" destination="NU1-k7-pji" id="Hpt-qH-mgu"/>
+                        <outlet property="searchDisplayController" destination="TB4-AC-yCV" id="qju-k2-ALR"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="AttachmentsToNachoNow" id="Gr5-Hy-1Yr"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wOG-Ry-VAW" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem image="navbar-icn-menu.png" id="NU1-k7-pji"/>
                 <barButtonItem image="Nacho-Cove-Icon.png" id="LXM-cO-kAi"/>
+                <searchDisplayController id="yub-9s-cFh"/>
+                <searchDisplayController id="1hp-VY-lZf"/>
+                <searchDisplayController id="TB4-AC-yCV">
+                    <connections>
+                        <outlet property="delegate" destination="bBy-CW-6ix" id="ppX-W9-hZq"/>
+                        <outlet property="searchBar" destination="vTn-fI-R0o" id="w6v-F1-GRb"/>
+                        <outlet property="searchContentsController" destination="bBy-CW-6ix" id="cBo-fs-woq"/>
+                        <outlet property="searchResultsDataSource" destination="bBy-CW-6ix" id="xFI-4S-ZTp"/>
+                        <outlet property="searchResultsDelegate" destination="bBy-CW-6ix" id="N3N-rd-54a"/>
+                    </connections>
+                </searchDisplayController>
             </objects>
             <point key="canvasLocation" x="-3882" y="445"/>
         </scene>
@@ -858,7 +868,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -943,7 +953,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -960,7 +970,7 @@
                                 </state>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="422"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="466"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -1829,22 +1839,30 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="lVj-NH-yQq"/>
+        <segue reference="n8e-Oj-wO2"/>
         <segue reference="i3N-5g-evG"/>
         <segue reference="Pu5-w4-aps"/>
-        <segue reference="n8e-Oj-wO2"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
         <segue reference="zXa-AG-jcx"/>
         <segue reference="ywO-BF-h0n"/>
-        <segue reference="xrp-ey-B0j"/>
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="vah-yS-677"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="s9j-Ih-SWz"/>
         <segue reference="4Sl-0E-160"/>
+        <segue reference="WJc-Y6-XJB"/>
+        <segue reference="Gr5-Hy-1Yr"/>
         <segue reference="ja3-Zu-g6R"/>
-        <segue reference="G1z-aV-19B"/>
         <segue reference="qB9-ce-7gT"/>
         <segue reference="mo4-Vz-xJh"/>
+        <segue reference="G1z-aV-19B"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="qSV-ar-VcH"/>
+        <segue reference="EmX-Dp-jXs"/>
+        <segue reference="xrp-ey-B0j"/>
     </inferredMetricsTieBreakers>
 </document>

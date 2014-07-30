@@ -137,11 +137,15 @@ namespace NachoClient
             Preview.PresentPreview (true);
         }
 
-        public static void DownloadAttachment (McAttachment attachment)
+        public static string DownloadAttachment (McAttachment attachment)
         {
             if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
-                BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
-            }
+                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
+            } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
+                return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+            } 
+            NcAssert.True (false, "Should not try to download an already-downloaded attachment");
+            return null;
         }
 
         public class DocumentInteractionControllerDelegate : UIDocumentInteractionControllerDelegate

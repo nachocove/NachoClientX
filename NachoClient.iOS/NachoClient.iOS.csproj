@@ -85,7 +85,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>A5A410CF-93E6-4AC9-979B-27C42C717007</CodesignProvision>
+    <CodesignProvision>8DEC71A1-4FF8-4BC3-B1D7-895A8CE952B7</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>full</DebugType>
@@ -1302,6 +1302,10 @@
     <BundleResource Include="Resources\icn-contact-quickcall%402x.png" />
     <BundleResource Include="Resources\icn-contact-quickemail.png" />
     <BundleResource Include="Resources\icn-contact-quickemail%402x.png" />
+    <BundleResource Include="Resources\icn-file-complete%402x.png" />
+    <BundleResource Include="Resources\icn-file-complete.png" />
+    <BundleResource Include="Resources\icn-file-download%402x.png" />
+    <BundleResource Include="Resources\icn-file-download.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
