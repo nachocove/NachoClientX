@@ -75,14 +75,6 @@ namespace NachoClient.iOS
             calendar = NcCalendarManager.Instance;
             calendarTableView.ReloadData ();
 
-            // Watch for changes from the back end
-            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
-                var s = (StatusIndEventArgs)e;
-                if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                    calendar.Refresh ();
-                    calendarTableView.ReloadData ();
-                }
-            };
             var todayButtonLabel = new UIButton (new RectangleF (79, 2, (dateBarHeight - 8), 44));
             todayButtonLabel.SetTitle (DateTime.Today.Day.ToString(), UIControlState.Normal);
             todayButtonLabel.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
@@ -152,6 +144,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            calendar.Refresh ();
+            calendarTableView.ReloadData();
 
             if (adjustScrollPosition && (calendar.NumberOfDays () > 0)) {
                 adjustScrollPosition = false;
@@ -167,7 +162,14 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            //calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
+            calendar.Refresh ();
+            calendarTableView.ReloadData();
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         /// <summary>
@@ -202,12 +204,12 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-//            if (segue.Identifier.Equals ("CalendarToNewCalendarItem")) {
-//                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-//                dvc.SetCalendarItem (null, CalendarItemEditorAction.create);
-//                dvc.SetOwner (this);
-//                return;
-//            }
+            //            if (segue.Identifier.Equals ("CalendarToNewCalendarItem")) {
+            //                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
+            //                dvc.SetCalendarItem (null, CalendarItemEditorAction.create);
+            //                dvc.SetOwner (this);
+            //                return;
+            //            }
             if (segue.Identifier.Equals ("CalendarToNachoNow")) {
                 // Nothing to do
                 return;
@@ -226,6 +228,16 @@ namespace NachoClient.iOS
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
+                calendar.Refresh ();
+                calendarTableView.ReloadData();
+            }
         }
 
         public void PerformSegueForDelegate (string identifier, NSObject sender)
@@ -392,7 +404,7 @@ namespace NachoClient.iOS
                 Image.Dispose ();
                 return;
             }
- 
+
             if (UIGestureRecognizerState.Changed == obj.State) {
                 yOffset = obj.TranslationInView (this.View).Y;
                 xOffset = obj.TranslationInView (this.View).X;
@@ -472,7 +484,6 @@ namespace NachoClient.iOS
                             },
                             () => {
                                 View.BringSubviewToFront (calendarTableView);
-                                currentDate = selectedDate;
                                 ConfigureCalendarTableSize (rows);
                             }
                         );
@@ -626,7 +637,7 @@ namespace NachoClient.iOS
                 return;
             }
         }
-            
+
         protected void ConfigureCalendarTableSize(int rows){
             if (4 == rows){
                 calendarTableView.Frame = CalendarTableFourSize ();

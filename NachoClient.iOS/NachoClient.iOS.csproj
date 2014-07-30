@@ -1064,6 +1064,10 @@
       <Link>NachoCore\Adapters\NcDeviceCalendars.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\CalendarsiOS.cs" />
+    <Compile Include="NachoUI.iOS\EditEventViewController.cs" />
+    <Compile Include="NachoUI.iOS\EditEventViewController.designer.cs">
+      <DependentUpon>EditEventViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

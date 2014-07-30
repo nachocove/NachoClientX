@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NachoCore;
+using NachoCore.Utils;
 using NachoCore.Model;
 
 namespace NachoCore
@@ -102,6 +103,11 @@ namespace NachoCore
 
         public McCalendar GetCalendarItem (int day, int item)
         {
+            NcAssert.True (0 != listOfEventsOnADay.Length, "List is empty");
+            NcAssert.True (day >= 0, "Day is negative");
+            NcAssert.True (day < listOfEventsOnADay.Length, "Day greater than or equal to list count");
+            NcAssert.True (item >= 0, "Day is negative");
+            NcAssert.True (item < listOfEventsOnADay [day].Count, "Day greater than or equal to list count");
             return GetCalendarItem (listOfEventsOnADay [day] [item]);
         }
 
