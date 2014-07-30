@@ -73,6 +73,8 @@ namespace NachoCore.Model
         private void ConfigureDb (SQLiteConnection db)
         {
             NcAssert.NotNull (db);
+            var cache_size = db.ExecuteScalar<int> ("PRAGMA cache_size");
+            QueueLogInfo (string.Format ("PRAGMA cache_size: {0}", cache_size));
             var journal_mode = db.ExecuteScalar<string> ("PRAGMA journal_mode");
             QueueLogInfo (string.Format ("PRAGMA journal_mode: {0}", journal_mode));
             if ("wal" != journal_mode.ToLower ()) {
