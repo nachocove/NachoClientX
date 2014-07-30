@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13C64" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
     </dependencies>
@@ -22,6 +22,25 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="MoL-v9-szX" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-4196" y="-2321"/>
+        </scene>
+        <!--Advanced Login View Controller-->
+        <scene sceneID="82q-hP-OFu">
+            <objects>
+                <viewController storyboardIdentifier="AdvancedLoginViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tch-Ox-Ppd" customClass="AdvancedLoginViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="QRf-dz-YUv">
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="8g2-6N-eMx"/>
+                    <connections>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="AdvancedLoginToNachoNow" id="Dxn-bx-hdu"/>
+                        <segue destination="MRl-Tp-bqC" kind="push" identifier="AdvancedLoginToSupport" id="lXf-yZ-Qj9"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="GIv-K1-Hbe" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-4199" y="-1473"/>
         </scene>
         <!--Nacho Now View Controller - Now!-->
         <scene sceneID="w1N-3O-jJd">
@@ -263,7 +282,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="AttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="AttachmentViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="vTn-fI-R0o">
@@ -751,6 +770,7 @@
                         <outlet property="nachoButton" destination="nOm-08-vvV" id="kRl-O8-Agh"/>
                         <outlet property="revealButton" destination="5xM-Np-yHN" id="4Xf-uv-Ic1"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="HomeToNachoNow" id="v5u-iO-UgY"/>
+                        <segue destination="tch-Ox-Ppd" kind="push" identifier="HomeToAdvancedLogin" id="od0-Sz-R9p"/>
                     </connections>
                 </pageViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1uw-1F-jlg" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -766,13 +786,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="Welcome to Nacho Mail!" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="3GF-CP-chd">
-                                <rect key="frame" x="51" y="93" width="219" height="21"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="center" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Server Name" textAlignment="center" minimumFontSize="17" clearButtonMode="always" id="FAx-1P-Ryk">
                                 <rect key="frame" x="83" y="122" width="154" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -789,7 +802,7 @@
                                 <rect key="frame" x="83" y="198" width="154" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" autocorrectionType="no" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
+                                <textInputTraits key="textInputTraits" autocorrectionType="no" secureTextEntry="YES"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="yIU-n1-bEg">
                                 <rect key="frame" x="110" y="52" width="101" height="44"/>
@@ -869,7 +882,7 @@
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="eCT-v0-EUY">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="bWo-z7-sbJ">
@@ -954,7 +967,7 @@
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="cmS-Dh-ahf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" clearButtonMode="always" id="mbI-GE-sAa">
@@ -971,7 +984,7 @@
                                 </state>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="9hu-Bf-IM7">
-                                <rect key="frame" x="-3" y="38" width="323" height="466"/>
+                                <rect key="frame" x="-3" y="38" width="323" height="422"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <prototypes>
@@ -1471,11 +1484,11 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="NotesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qAG-NA-NKz" customClass="NotesViewController" sceneMemberID="viewController">
                     <scrollView key="view" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="QZW-F5-7iQ">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" id="KXH-12-evM" userLabel="Content View">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
@@ -1670,15 +1683,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="ContactDetailViewController" title="Contact Detail" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MG9-1p-N0l" customClass="ContactDetailViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="zQH-nM-jXW">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="RJq-gT-NuY">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="njj-ho-OMu" userLabel="View - ContentView">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1740,6 +1753,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <segue destination="OQ8-xH-iKh" kind="push" identifier="StartupToHome" id="g4G-tD-G9H"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="StartupToNachoNow" id="emO-35-rbd"/>
                         <segue destination="UKd-1I-ARy" kind="push" identifier="StartupToFolders" id="Mvu-uQ-8cr"/>
+                        <segue destination="tch-Ox-Ppd" kind="push" identifier="StartupToAdvancedLogin" id="iqA-wd-xqD"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0IS-Oz-vYd" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1842,23 +1856,25 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="lXf-yZ-Qj9"/>
+        <segue reference="iqA-wd-xqD"/>
         <segue reference="i3N-5g-evG"/>
-        <segue reference="n8e-Oj-wO2"/>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="p6V-c0-caL"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="hxO-14-opZ"/>
         <segue reference="zXa-AG-jcx"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="vah-yS-677"/>
-        <segue reference="4Sl-0E-160"/>
-        <segue reference="dAf-rc-Hh3"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="Wtf-SG-mz2"/>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="Dxn-bx-hdu"/>
+        <segue reference="Zli-hF-qvP"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="wNy-ed-w10"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="73P-Mz-0ur"/>
+        <segue reference="Q8y-4K-BAb"/>
         <segue reference="EmX-Dp-jXs"/>
-        <segue reference="Gr5-Hy-1Yr"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="dAf-rc-Hh3"/>
         <segue reference="alQ-9Z-W4y"/>
+        <segue reference="mo4-Vz-xJh"/>
+        <segue reference="4Sl-0E-160"/>
     </inferredMetricsTieBreakers>
 </document>
