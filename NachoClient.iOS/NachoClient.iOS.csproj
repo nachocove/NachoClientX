@@ -1061,6 +1061,10 @@
     <Compile Include="NachoUI.iOS\AdvancedLoginViewController.designer.cs">
       <DependentUpon>AdvancedLoginViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\EditEventViewController.cs" />
+    <Compile Include="NachoUI.iOS\EditEventViewController.designer.cs">
+      <DependentUpon>EditEventViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
