@@ -180,6 +180,14 @@ namespace Test.iOS
                 AccountId = accountId,
                 ServerId = serverId,
             };
+
+            if (typeof(T) == typeof(McEmailMessage)) {
+                var email = (McEmailMessage)(object)newItem;
+                email.From = "jane@example.com";
+                email.To = "john@example.com";
+                newItem = email as T;
+            }
+
             newItem.Insert ();
             return newItem;
         }

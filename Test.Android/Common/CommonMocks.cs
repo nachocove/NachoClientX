@@ -43,7 +43,7 @@ namespace Test.iOS
         // DNS tests depends on RedirectionUrl being exactly this because the certificate contains this url
         public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml"; 
         public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
-        public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
+        public static string PhonyAbsolutePath = "/outlook.office365.com/Microsoft-Server-ActiveSync";
 
         public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
         public static XDocument MockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
@@ -141,7 +141,6 @@ namespace Test.iOS
         public MockContext (AsProtoControl protoControl = null, McServer server = null)
         {
             Owner = new MockOwner ();
-            ProtoControl = protoControl;
             var protoState = new McProtocolState ();
             protoState.Insert ();
             ProtocolState = protoState;
@@ -154,7 +153,7 @@ namespace Test.iOS
                 EmailAddr = "johnd@foo.utopiasystems.net",
                 ServerId = 1,
             };
-
+            ProtoControl = protoControl;
             Cred = new McCred () {
                 Username = "dummy",
                 Password = "password",
