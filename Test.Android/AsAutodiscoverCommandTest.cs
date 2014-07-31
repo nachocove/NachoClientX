@@ -496,9 +496,11 @@ namespace Test.iOS
             mockContext = new MockContext ();
             // make a server for this context
             mockContext.Server = new McServer ();
-            mockContext.Server.Host = "";
+            mockContext.Server.Host = "outlook.office365.com";
             mockContext.Server.UsedBefore = false;
             mockContext.Server.Id = 1;
+
+            mockContext.ProtoControl = ProtoOps.CreateProtoControl (mockContext.Account.Id);
 
             // flush the certificate cache so it doesn't interfere with future tests
             var instance = ServerCertificatePeek.Instance; // do this in case instance has not yet been created
