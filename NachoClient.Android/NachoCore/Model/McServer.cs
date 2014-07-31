@@ -8,7 +8,7 @@ namespace NachoCore.Model
 	{
 		public McServer ()
 		{
-			Path = "/outlook.office365.com/Microsoft-Server-ActiveSync";
+			Path = "/Microsoft-Server-ActiveSync";
 			Scheme = "https";
 			Port = 443;
 		}
