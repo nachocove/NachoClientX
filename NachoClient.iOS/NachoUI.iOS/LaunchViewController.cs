@@ -34,11 +34,7 @@ namespace NachoClient.iOS
                 appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Insert ();
 
-                //At least one of the textboxes has a character in it
-                if(txtUserName.Text.Length != 0 || txtPassword.Text.Length != 0){
-                    McMutables.GetOrCreate ("CREDS", "hasEnteredCreds", "1");
-                }
-
+                McMutables.GetOrCreate ("CREDS", "hasEnteredCreds", "1");
             });
             BackEnd.Instance.Start (appDelegate.Account.Id);
         }

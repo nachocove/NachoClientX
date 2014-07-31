@@ -30,17 +30,26 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
+//            bool hasCredsToo = false;
+//            if (0 != NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).Count ()) {
+//                hasCredsToo = true;
+//            }
             // Initial view
-            if (0 == NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).Count ()) {
-                PerformSegue ("StartupToLaunch", this); // modal
-                PerformSegue ("StartupToHome", this);  // launch the documentation
-            } else {
-                PerformSegue ("StartupToNachoNow", this); // push
-            }
 
             setSyncBit ();
             setViewTutorialBit ();
             setHasCredsBit ();
+
+            if (!hasCreds) {
+                PerformSegue ("StartupToLaunch", this); // modal
+                PerformSegue ("StartupToHome", this);  // launch the documentation
+            } else if (!hasViewedTutorial) {
+                PerformSegue ("StartupToHome", this);
+            } else if (!hasSynced) {
+                PerformSegue ("StartupToAdvanced", this);
+            } else {
+                PerformSegue ("StartupToNachoNow", this); // push
+            }
         }
 
         public override void ViewWillAppear (bool animated)

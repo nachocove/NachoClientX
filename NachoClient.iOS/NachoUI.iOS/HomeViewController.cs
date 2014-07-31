@@ -26,7 +26,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
+            setSyncBit ();
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
@@ -70,7 +70,6 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
                 autoDState.Text = "FolderSyncSucceeded";
                 autoDState.TextColor = UIColor.Green;
-                hasSyncCompleted = true;
                 folderSyncSuccesful ();
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
@@ -147,6 +146,21 @@ namespace NachoClient.iOS
         {
             //File Sync has been completed, set the bit
             McMutables.Set ("ASYNC", "hasSyncedFolders", "1");
+            hasSyncCompleted = true;
+        }
+
+        public void setSyncBit()
+        {
+            string hasSyncedFoldersVal = McMutables.Get ("ASYNC", "hasSyncedFolders");
+            if (null != hasSyncedFoldersVal) {
+                if (hasSyncedFoldersVal == "1") {
+                    hasSyncCompleted = true;
+                } else {
+                    hasSyncCompleted = false;
+                }
+            } else {
+                hasSyncCompleted = false;
+            }
         }
 
         private class PageDataSource : UIPageViewControllerDataSource
