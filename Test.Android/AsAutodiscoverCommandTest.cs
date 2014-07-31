@@ -206,6 +206,13 @@ namespace Test.iOS
 
             private void TestAutodPingWithXmlResponse (string xml, MockSteps step, NcResult.SubKindEnum errorKind)
             {
+                bool didReportError = false;
+                MockOwner.StatusIndCallback += (result) => {
+                    if (result.SubKind == errorKind) {
+                        didReportError = true;
+                    }
+                };
+
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
@@ -219,7 +226,9 @@ namespace Test.iOS
                     MockSteps robotType = DetermineRobotType (httpRequest);
                     httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                     httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                }, resultKind: errorKind, testEndingDbState:false);
+                }, testEndingDbState:false);
+
+                Assert.True (didReportError, "Should report correct status ind result");
             }
         }
 
@@ -232,7 +241,7 @@ namespace Test.iOS
             {
                 int retries = 5;
                 McMutables.Set ("HTTPOP", "Retries", (retries).ToString ());
-                int expectedRetries = retries + 1;
+                int expectedRetries = (retries + 1) * 2; // 2x because 2 robots are sending retry StatusInds
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;
@@ -503,12 +512,6 @@ namespace Test.iOS
             NcModel.Instance.Db.Insert (phonyServer);
 
             mockContext = new MockContext ();
-            // make a server for this context
-            mockContext.Server = new McServer ();
-            mockContext.Server.Host = "outlook.office365.com";
-            mockContext.Server.UsedBefore = false;
-            mockContext.Server.Id = 1;
-
             mockContext.ProtoControl = ProtoOps.CreateProtoControl (mockContext.Account.Id);
 
             // flush the certificate cache so it doesn't interfere with future tests
@@ -591,9 +594,6 @@ namespace Test.iOS
 
         public void DoOptionsAsserts (HttpRequestMessage request)
         {
-            McServer serv = NcModel.Instance.Db.Table<McServer> ().First ();
-            ServerFalseAssertions (serv, mockContext.Server);
-
             Assert.AreEqual (request.RequestUri.AbsolutePath, CommonMockData.PhonyAbsolutePath, "Options request absolute path should match phony path");
 
             string protocolVersion = request.Headers.GetValues ("MS-ASProtocolVersion").FirstOrDefault ();
@@ -636,7 +636,7 @@ namespace Test.iOS
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
             Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
-            NcResult.SubKindEnum resultKind = NcResult.SubKindEnum.NotSpecified, bool testEndingDbState = true)
+            bool testEndingDbState = true)
         {
             var autoResetEvent = new AutoResetEvent(false);
 
@@ -686,16 +686,9 @@ namespace Test.iOS
             bool didFinish = autoResetEvent.WaitOne (8000);
             Assert.IsTrue (didFinish, "Operation did not finish");
 
-            // if result kind was set by test (see 600/601 for example),
-            // then test that code was set correctly
-            if (resultKind != NcResult.SubKindEnum.NotSpecified) {
-                Assert.AreEqual (resultKind, MockOwner.Status.SubKind, "StatusInd should set status code correctly");
-            }
-
             if (testEndingDbState) {
                 // Test that the server record was updated
                 McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
-                ServerTrueAssertions (mockContext.Server, serv);
             }
 
         }
