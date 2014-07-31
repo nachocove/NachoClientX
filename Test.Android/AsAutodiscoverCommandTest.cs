@@ -230,7 +230,9 @@ namespace Test.iOS
             [Test]
             public void TestFailureHasRetries ()
             {
-                int expectedRetries = 15;
+                int retries = 5;
+                McMutables.Set ("HTTPOP", "Retries", (retries).ToString ());
+                int expectedRetries = retries + 1;
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;
@@ -263,6 +265,7 @@ namespace Test.iOS
                 // header settings
                 string mockResponseLength = xml.Length.ToString ();
 
+                bool didSetCreds = false;
                 PerformAutoDiscoveryWithSettings (true, sm => {
                     sm.PostEvent ((uint)SmEvt.E.Launch, "TEST-FAIL");
                 }, request => {
@@ -278,8 +281,14 @@ namespace Test.iOS
                         httpResponse.StatusCode = HttpStatusCode.Found;
                         httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
                     } else if (IsOptionsRequest (httpRequest)) {
-                        // check for OPTIONS header and set status code to 404 to force hard fail
-                        httpResponse.StatusCode = status;
+                        // pass after creds are set (don't do this for the BadGateway tests
+                        if (didSetCreds && status != HttpStatusCode.BadGateway) {
+                            httpResponse.StatusCode = HttpStatusCode.OK;
+                        } else {
+                            // check for OPTIONS header and set status code to 404 to force hard fail
+                            httpResponse.StatusCode = status;
+                            didSetCreds = true;
+                        }
                     } else {
                         MockSteps robotType = DetermineRobotType (httpRequest);
                         httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
