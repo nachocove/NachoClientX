@@ -174,8 +174,18 @@ namespace NachoClient.iOS
 
         public void DeleteAttachment (McAttachment attachment)
         {
-            attachment.RemoveFromStorage ();
-            RefreshAttachmentSection ();
+            if (attachment.IsInline) {
+                UIAlertView alert = new UIAlertView (
+                    "File is Inline", 
+                    "Attachments that are contained within the body of an email cannot be deleted", 
+                    null, 
+                    "OK"
+                );
+                alert.Show();
+            } else {
+                attachment.RemoveFromStorage ();
+                RefreshAttachmentSection ();
+            }
         }
 
         public void ForwardAttachment (McAttachment attachment)
@@ -276,7 +286,7 @@ namespace NachoClient.iOS
                 UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell (FileCell);
                 if (cell == null) {
-                    cell = new MCSwipeTableViewCell (UITableViewCellStyle.Value1, FileCell);
+                    cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, FileCell);
                 }
                 NcAssert.True (null != cell);
 
@@ -289,9 +299,17 @@ namespace NachoClient.iOS
                     attachment = Attachments [indexPath.Row];
                 }
 
-                cell.TextLabel.Text = attachment.DisplayName;
-                cell.DetailTextLabel.Text = attachment.ContentType;
-                if (attachment.IsDownloaded || attachment.IsInline) {
+                cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+
+                cell.DetailTextLabel.Text = "";
+                if (attachment.IsInline) {
+                    cell.DetailTextLabel.Text += "Inline ";
+                }
+                string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
+                cell.DetailTextLabel.Text += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+                cell.DetailTextLabel.Text += "file";
+
+                if (attachment.IsDownloaded) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
                     cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
