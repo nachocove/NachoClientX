@@ -53,10 +53,20 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
+            RemoveFromStorage ();
+            return base.Delete ();
+        }
+
+        public void RemoveFromStorage ()
+        {
             if (IsDownloaded) {
                 File.Delete (FilePath ());
+                // reset fields
+                IsDownloaded = false;
+                PercentDownloaded = 0;
+                LocalFileName = null;
+                base.Update ();
             }
-            return base.Delete ();
         }
 
         public static FileStream TempFileStream (string guidString)

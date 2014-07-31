@@ -172,6 +172,12 @@ namespace NachoClient.iOS
             }
         }
 
+        public void DeleteAttachment (McAttachment attachment)
+        {
+            attachment.RemoveFromStorage ();
+            RefreshAttachmentSection ();
+        }
+
         public void ForwardAttachment (McAttachment attachment)
         {
             downloadAndDoAction (attachment.Id, (a) => {
@@ -351,7 +357,7 @@ namespace NachoClient.iOS
                     crossView = ViewWithImageName ("cross");
                     redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.attachmentAction (attachment.Id);
+                        vc.DeleteAttachment (attachment);
                         return;
                     });
                     previewView = ViewWithImageName ("clock");
