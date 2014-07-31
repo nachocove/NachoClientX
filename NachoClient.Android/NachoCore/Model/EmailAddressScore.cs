@@ -182,7 +182,9 @@ namespace NachoCore.Model
         {
             int rc = Insert ();
             if (0 < rc) {
-                NcBrain.SharedInstance.McEmailAddressCounters.Insert.Click ();
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailAddressCounters.Insert.Click ();
+                brain.NotifyEmailAddressUpdates ();
             }
         }
 
@@ -190,7 +192,9 @@ namespace NachoCore.Model
         {
             int rc = Update ();
             if (0 < rc) {
-                NcBrain.SharedInstance.McEmailAddressCounters.Update.Click ();
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailAddressCounters.Update.Click ();
+                brain.NotifyEmailAddressUpdates ();
                 if (null != SyncInfo) {
                     SyncInfo.Update ();
                 }
@@ -201,7 +205,9 @@ namespace NachoCore.Model
         {
             int rc = Delete ();
             if (0 < rc) {
-                NcBrain.SharedInstance.McEmailAddressCounters.Delete.Click ();
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailAddressCounters.Delete.Click ();
+                brain.NotifyEmailAddressUpdates ();
             }
         }
 
