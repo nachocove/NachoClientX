@@ -43,7 +43,7 @@ namespace Test.iOS
         // DNS tests depends on RedirectionUrl being exactly this because the certificate contains this url
         public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml"; 
         public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
-        public static string PhonyAbsolutePath = "/outlook.office365.com/Microsoft-Server-ActiveSync";
+        public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
 
         public static XDocument MockRequestXml = XDocument.Parse (BasicPhonyPingRequestXml);
         public static XDocument MockResponseXml = XDocument.Parse (BasicPhonyPingResponseXml);
