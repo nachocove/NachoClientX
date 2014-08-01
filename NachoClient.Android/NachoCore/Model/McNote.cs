@@ -10,7 +10,6 @@ namespace NachoCore.Model
 {
     public class McNote : McAbstrObject
     {
-
         [Indexed]
         public int TypeId { get; set; }
 
@@ -21,7 +20,6 @@ namespace NachoCore.Model
 
         public string noteContent { get; set; }
 
-
         public static List<McNote> QueryByTypeId (int typeId, string noteType)
         {
             return NcModel.Instance.Db.Query<McNote> ("SELECT n.* FROM McNote AS n WHERE " +
@@ -29,6 +27,5 @@ namespace NachoCore.Model
                 " n.noteType = ?",
                 typeId, noteType);
         }
-       
     }
 }
