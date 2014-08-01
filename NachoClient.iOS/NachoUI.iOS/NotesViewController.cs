@@ -164,14 +164,14 @@ namespace NachoClient.iOS
         public void ConfigureItem ()
         {
             if (null != eventItem) {
-                Note = McNote.QueryByTypeId (eventItem.Id, "event").FirstOrDefault ();
+                Note = McNote.QueryByTypeId (eventItem.Id, McNote.NoteType.Event).FirstOrDefault ();
                 if (null == Note) {
                     Note = new McNote ();
                 }
                 return;
             }
             if (null != contactItem) {
-                Note = McNote.QueryByTypeId (contactItem.Id, "contact").FirstOrDefault ();
+                Note = McNote.QueryByTypeId (contactItem.Id, McNote.NoteType.Contact).FirstOrDefault ();
                 if (null == Note) {
                     Note = new McNote ();
                 }
@@ -185,7 +185,7 @@ namespace NachoClient.iOS
             Note.DisplayName = (contactItem.DisplayName + " - " + Pretty.ShortDateString (DateTime.UtcNow));
             Note.TypeId = contactItem.Id;
             Note.noteContent = notesTextView.Text;
-            Note.noteType = "contact";
+            Note.noteType = McNote.NoteType.Contact;
             SyncNoteRequest (Note);
         }
 
@@ -194,7 +194,7 @@ namespace NachoClient.iOS
             Note.DisplayName = (eventItem.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
             Note.TypeId = eventItem.Id;
             Note.noteContent = notesTextView.Text;
-            Note.noteType = "event";
+            Note.noteType = McNote.NoteType.Event;
             SyncNoteRequest (Note);
         }
 

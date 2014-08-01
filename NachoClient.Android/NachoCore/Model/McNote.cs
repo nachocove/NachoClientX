@@ -10,17 +10,24 @@ namespace NachoCore.Model
 {
     public class McNote : McAbstrObject
     {
+        public enum NoteType
+        {
+            Event,
+            Contact,
+        };
+
+
         [Indexed]
         public int TypeId { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
 
-        public string noteType { get; set; }
+        public NoteType noteType { get; set; }
 
         public string noteContent { get; set; }
 
-        public static List<McNote> QueryByTypeId (int typeId, string noteType)
+        public static List<McNote> QueryByTypeId (int typeId, NoteType noteType)
         {
             return NcModel.Instance.Db.Query<McNote> ("SELECT n.* FROM McNote AS n WHERE " +
                 " n.TypeId = ? AND " +
