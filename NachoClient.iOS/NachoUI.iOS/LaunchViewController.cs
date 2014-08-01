@@ -34,7 +34,7 @@ namespace NachoClient.iOS
                 appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Insert ();
 
-                McMutables.GetOrCreate ("CREDS", "hasEnteredCreds", "1");
+                LoginHelpers.SetCredsBit(appDelegate.Account.Id, true);
             });
             BackEnd.Instance.Start (appDelegate.Account.Id);
         }

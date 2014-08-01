@@ -552,6 +552,8 @@ namespace NachoClient.iOS
             McConference userConference = McConference.QueryById<McConference> (whatAccount.PreferredConferenceId);
             Account.AccountId = whatAccount.Id;
             Account.McCredId = userCredentials.Id;
+
+            //CHECK THIS
             Account.ServerId = userMailServer.Id;
 
             if (null != userConference) {

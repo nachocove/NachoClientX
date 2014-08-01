@@ -320,6 +320,7 @@
     <Compile Include="NachoCore\Adapters\NcDeviceContacts.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceCalendars.cs" />
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
+    <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

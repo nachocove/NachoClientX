@@ -4,13 +4,422 @@ using System;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using System.Drawing;
+using NachoCore.Model;
+using NachoCore.Utils;
+using NachoCore;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
-	public partial class AdvancedLoginViewController : UIViewController
-	{
-		public AdvancedLoginViewController (IntPtr handle) : base (handle)
-		{
-		}
-	}
+    public partial class AdvancedLoginViewController : NcUIViewController
+    {
+        UIColor separatorColor = A.Color_NachoSeparator;
+        protected int LINE_OFFSET = 25;
+        protected float CELL_HEIGHT = 44;
+        protected float INSET = 15;
+        protected float TOP_CELL_YVAL = 95;
+        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        protected float keyboardHeight;
+
+        UITextField emailText = new UITextField ();
+        UITextField serverText = new UITextField ();
+        UITextField domainText = new UITextField ();
+        UITextField usernameText = new UITextField ();
+        UITextField passwordText = new UITextField ();
+        UIScrollView scrollView;
+        UILabel errorMessage;
+        bool passError;
+
+        AccountSettings theAccount;
+        int accountId;
+        UILabel autoDState;
+
+        public AdvancedLoginViewController (IntPtr handle) : base (handle)
+        {
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+       
+            createScrollView ();
+            theAccount = new AccountSettings ();
+            accountId = LoginHelpers.getCurrentAccountId ();
+            loadSettingsForAccount (accountId);
+            addErrorLabel ();
+            addCells ();
+            addLines ();
+            fillInKnownFields ();
+            configureKeyboards ();
+            setErrorLabelToCurrentState ();
+            addTryAgainButton ();
+            addAutoDStateLabel ();
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
+        }
+
+        public void createScrollView ()
+        {
+            scrollView = new UIScrollView (View.Frame);
+            scrollView.BackgroundColor = A.Color_NachoNowBackground;
+            scrollView.ContentSize = new SizeF (View.Frame.Width, View.Frame.Height - 64);
+            View.Add (scrollView);
+        }
+
+        public void layoutView ()
+        {
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+        }
+
+        public void addAutoDStateLabel ()
+        {
+            autoDState = new UILabel (new RectangleF (60, 460, 200, 40));
+            autoDState.Text = "Auto-D State...";
+            autoDState.TextColor = UIColor.White;
+            autoDState.TextAlignment = UITextAlignment.Center;
+            autoDState.Font = A.Font_AvenirNextDemiBold17;
+            scrollView.Add (autoDState);
+        }
+
+        public void addTryAgainButton ()
+        {
+            UIButton tryAgainButton = new UIButton (new RectangleF (30, 405, View.Frame.Width - 60, 44));
+            tryAgainButton.BackgroundColor = A.Color_NachoBlue;
+            tryAgainButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            tryAgainButton.SetTitle ("Try Again", UIControlState.Normal);
+            tryAgainButton.TitleLabel.TextColor = UIColor.White;
+            tryAgainButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            tryAgainButton.TouchUpInside += (object sender, EventArgs e) => {
+                if (haveEnteredHost ()) {
+                    tryValidateConfig ();
+                } else {
+                    tryAutoD ();
+                }
+            };
+            scrollView.Add (tryAgainButton);
+        }
+
+        public void addErrorLabel ()
+        {
+            errorMessage = new UILabel (new RectangleF (25, 20, View.Frame.Width - 50, 50));
+            errorMessage.Font = A.Font_AvenirNextRegular17;
+            errorMessage.TextColor = A.Color_NachoRed;
+            errorMessage.Lines = 2;
+            errorMessage.TextAlignment = UITextAlignment.Center;
+            scrollView.Add (errorMessage);
+        }
+
+        public void addCells ()
+        {
+            AddInputCell ("Email", emailText, "joe@bigdog.com", TOP_CELL_YVAL);
+            AddInputCell ("Server", serverText, "Required", TOP_CELL_YVAL + 69);
+            AddInputCell ("Domain", domainText, "Optional", TOP_CELL_YVAL + 138);
+            AddInputCell ("Username", usernameText, "Required", TOP_CELL_YVAL + 182);
+            AddInputCell ("Password", passwordText, "******", TOP_CELL_YVAL + 226);
+        }
+
+        public void addLines ()
+        {
+            AddLine (INSET, TOP_CELL_YVAL + 182, View.Frame.Width - INSET, separatorColor);
+            AddLine (INSET, TOP_CELL_YVAL + 226, View.Frame.Width - INSET, separatorColor);
+        }
+
+        public void configureKeyboards ()
+        {
+            usernameText.ShouldReturn += (textField) => {
+                textField.ResignFirstResponder ();
+                return true;
+            };
+            usernameText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            usernameText.AutocorrectionType = UITextAutocorrectionType.No;
+
+            emailText.ShouldReturn += (textField) => {
+                textField.ResignFirstResponder ();
+                return true;
+            };
+            emailText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            emailText.AutocorrectionType = UITextAutocorrectionType.No;
+
+            domainText.ShouldReturn += (textField) => {
+                textField.ResignFirstResponder ();
+                return true;
+            };
+            domainText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            domainText.AutocorrectionType = UITextAutocorrectionType.No;
+
+            serverText.ShouldReturn += (textField) => {
+                textField.ResignFirstResponder ();
+                return true;
+            };
+            serverText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            serverText.AutocorrectionType = UITextAutocorrectionType.No;
+
+            passwordText.SecureTextEntry = true;
+            passwordText.ShouldReturn += (textField) => {
+                textField.ResignFirstResponder ();
+                return true;
+            };
+            passwordText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            passwordText.AutocorrectionType = UITextAutocorrectionType.No;
+        }
+
+        public void setErrorLabelToCurrentState ()
+        {
+            NachoCore.ActiveSync.AsProtoControl x = new NachoCore.ActiveSync.AsProtoControl (BackEnd.Instance, accountId);
+            BackEndAutoDStateEnum AutoDState = x.AutoDState;
+            switch (AutoDState) {
+            case BackEndAutoDStateEnum.ServerConfWait:
+                errorMessage.Text = "Looks like we had a problem finding " + theAccount.EmailAddress;
+                emailText.TextColor = A.Color_NachoRed;
+                return;
+            case BackEndAutoDStateEnum.CredWait:
+                errorMessage.Text = "There seems to be a problem with your credentials.";
+                passwordText.TextColor = A.Color_NachoRed;
+                usernameText.TextColor = A.Color_NachoRed;
+                passError = true;
+                return;
+            case BackEndAutoDStateEnum.Running:
+                errorMessage.Text = "Auto-D is running.";
+                return;
+            }
+            return;
+        }
+
+        public void AddLine (float offset, float yVal, float width, UIColor color)
+        {
+            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            lineUIView.BackgroundColor = color;
+            scrollView.Add (lineUIView);
+        }
+
+        public void AddInputCell (string labelText, UITextField textInput, string placeHolder, float yVal)
+        {
+            UIView inputBox = new UIView (new RectangleF (0, yVal, View.Frame.Width, CELL_HEIGHT));
+            inputBox.BackgroundColor = UIColor.White;
+            inputBox.Layer.BorderColor = separatorColor.CGColor;
+
+            UILabel cellLefthandLabel = new UILabel (new RectangleF (INSET, 0, 80, CELL_HEIGHT));
+            cellLefthandLabel.Text = labelText;
+            cellLefthandLabel.BackgroundColor = UIColor.White;
+            cellLefthandLabel.TextColor = A.Color_NachoGreen;
+            cellLefthandLabel.Font = A.Font_AvenirNextMedium14;
+            inputBox.Add (cellLefthandLabel);
+
+            textInput.Frame = new RectangleF (120, 0, inputBox.Frame.Width - 100, inputBox.Frame.Height);
+            textInput.BackgroundColor = UIColor.White;
+            textInput.Placeholder = placeHolder;
+            textInput.Font = A.Font_AvenirNextRegular14;
+            inputBox.Add (textInput);
+
+            scrollView.Add (inputBox);
+        }
+
+        public void fillInKnownFields ()
+        {
+            emailText.Text = theAccount.EmailAddress;
+            usernameText.Text = theAccount.Credentials.Username;
+            passwordText.Text = theAccount.Credentials.Password;
+        }
+
+        public void loadSettingsForAccount (int accountId)
+        {
+            McAccount userAccount = McAccount.QueryById<McAccount> (accountId);
+            theAccount.Credentials = McCred.QueryById<McCred> (userAccount.CredId);
+            theAccount.AccountId = userAccount.Id;
+            theAccount.EmailAddress = userAccount.EmailAddr;
+        }
+
+        public void setUsersSettings ()
+        {
+            McAccount userAccount = McAccount.QueryById<McAccount> (accountId);
+            theAccount.Credentials.Username = usernameText.Text;
+            theAccount.Credentials.Password = passwordText.Text;
+            userAccount.EmailAddr = emailText.Text;
+            theAccount.EmailAddress = userAccount.EmailAddr;
+            theAccount.Credentials.Update ();
+            userAccount.Update ();
+
+            if (haveEnteredHost () && !isValidHost ()) {
+                UIAlertView badHost = new UIAlertView ();
+                badHost.Title = "Bad Server Name";
+                badHost.Message = "Please check that the server name is entered correctly.";
+                badHost.Show ();
+            }
+        }
+
+        public void tryAutoD ()
+        {
+            setUsersSettings ();
+            //BackEnd.Instance.Start (accountId);
+
+            if (passError) {
+                //BackEnd.Instance.CredResp (accountId);
+                BackEnd.Instance.ServerConfResp (accountId, true); 
+            } else {
+                BackEnd.Instance.ServerConfResp (accountId, true); 
+            }
+        }
+
+        public void tryValidateConfig ()
+        {
+            setUsersSettings ();
+            //FIXME where is bad host getting set?
+            McServer test = McServer.QueryById<McServer> (1);
+
+            if (isValidHost ()) {
+                if (test == null || test.Host == theAccount.Credentials.Username) {
+                    test = new McServer ();
+                    test.Host = serverText.Text;
+                    BackEnd.Instance.ValidateConfig (accountId, test, theAccount.Credentials);
+                } else {
+                    BackEnd.Instance.ValidateConfig (accountId, test, theAccount.Credentials);
+                }
+            }
+        }
+
+        public bool haveEnteredHost ()
+        {
+            if (serverText.Text.Length == 0) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        public bool isValidHost ()
+        {
+            UriHostNameType hostnameURI = Uri.CheckHostName (serverText.Text);
+            if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public virtual bool HandlesKeyboardNotifications {
+            get { return true; }
+        }
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+                //Start an animation, using values from the keyboard
+                UIView.BeginAnimations ("AnimateForKeyboard");
+                UIView.SetAnimationBeginsFromCurrentState (true);
+                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
+                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
+                //Pass the notification, calculating keyboard height, etc.
+                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
+                if (visible) {
+                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                } else {
+                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                }
+                //Commit the animation
+                UIView.CommitAnimations (); 
+            }
+        }
+
+        protected virtual void OnKeyboardChanged (bool visible, float height)
+        {
+            var newHeight = (visible ? height : 0);
+
+            if (newHeight == keyboardHeight) {
+                return;
+            }
+            keyboardHeight = newHeight;
+
+            layoutView ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
+                autoDState.Text = "FolderSyncSucceeded";
+                autoDState.TextColor = UIColor.Green;
+                LoginHelpers.SetSyncedBit (accountId, true);
+                PerformSegue ("AdvancedLoginToNachoNow", this);
+            }
+            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
+                autoDState.Text = "AutoDComplete";
+                autoDState.TextColor = UIColor.Yellow;
+                theAccount.Server = McServer.QueryById<McServer> (1);
+                serverText.Text = theAccount.Server.Host;
+            }
+            if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
+                autoDState.Text = "NetworkUnavailable";
+                autoDState.TextColor = UIColor.Red;
+            }
+            if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
+                autoDState.Text = "success";
+                autoDState.TextColor = UIColor.Red;
+                BackEnd.Instance.ServerConfResp (accountId, true); 
+            }
+            if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
+                autoDState.Text = "failedcomm";
+                autoDState.TextColor = UIColor.Red;
+            }
+            if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
+                autoDState.Text = "failedauth";
+                autoDState.TextColor = UIColor.Red;
+            }
+            if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
+                autoDState.Text = "faileduser";
+                autoDState.TextColor = UIColor.Red;
+            }
+        }
+
+        public class AccountSettings
+        {
+            public string EmailAddress { get; set; }
+
+            public int AccountId { get; set; }
+
+            public McCred Credentials { get; set; }
+
+            public McServer Server { get; set; }
+
+            public AccountSettings ()
+            {
+
+            }
+        }
+    }
 }

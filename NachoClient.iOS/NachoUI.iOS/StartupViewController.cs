@@ -6,6 +6,7 @@ using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -14,6 +15,7 @@ namespace NachoClient.iOS
         bool hasSynced;
         bool hasCreds;
         bool hasViewedTutorial;
+        int accountId;
 
         public StartupViewController (IntPtr handle) : base (handle)
         {
@@ -30,15 +32,13 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
-//            bool hasCredsToo = false;
-//            if (0 != NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).Count ()) {
-//                hasCredsToo = true;
-//            }
             // Initial view
 
-            setSyncBit ();
-            setViewTutorialBit ();
-            setHasCredsBit ();
+            //FIXME what is initial accountId before appDelegate has been configured
+            accountId = LoginHelpers.getCurrentAccountId ();
+            hasSynced = LoginHelpers.GetSyncedBit (accountId);
+            hasCreds = LoginHelpers.GetCredsBit (accountId);
+            hasViewedTutorial = LoginHelpers.GetTutorialBit (accountId);
 
             if (!hasCreds) {
                 PerformSegue ("StartupToLaunch", this); // modal
@@ -46,7 +46,7 @@ namespace NachoClient.iOS
             } else if (!hasViewedTutorial) {
                 PerformSegue ("StartupToHome", this);
             } else if (!hasSynced) {
-                PerformSegue ("StartupToAdvanced", this);
+                PerformSegue ("StartupToAdvancedLogin", this);
             } else {
                 PerformSegue ("StartupToNachoNow", this); // push
             }
@@ -57,48 +57,6 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-            }
-        }
-
-        public void setSyncBit()
-        {
-            string hasSyncedFoldersVal = McMutables.Get ("ASYNC", "hasSyncedFolders");
-            if (null != hasSyncedFoldersVal) {
-                if (hasSyncedFoldersVal == "1") {
-                    hasSynced = true;
-                } else {
-                    hasSynced = false;
-                }
-            } else {
-                hasSynced = false;
-            }
-        }
-
-        public void setViewTutorialBit()
-        {
-            string hasViewedTutorialVal = McMutables.Get ("TUTORIAL", "hasViewedTutorial");
-            if (null != hasViewedTutorialVal) {
-                if (hasViewedTutorialVal == "1") {
-                    hasViewedTutorial = true;
-                } else {
-                    hasViewedTutorial = false;
-                }
-            } else {
-                hasViewedTutorial = false;
-            }
-        }
-
-        public void setHasCredsBit()
-        {
-            string hasSetCredsVal = McMutables.Get ("CREDS", "hasEnteredCreds");
-            if (null != hasSetCredsVal) {
-                if (hasSetCredsVal == "1") {
-                    hasCreds = true;
-                } else {
-                    hasCreds = false;
-                }
-            } else {
-                hasCreds = false;
             }
         }
     }

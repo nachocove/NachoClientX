@@ -219,6 +219,7 @@
     <Folder Include="NachoUI.iOS\ViewControllers\" />
     <Folder Include="NachoCore\Model\McContact\" />
     <Folder Include="NachoCore\Model\McEmailMessage\" />
+    <Folder Include="NachoCore\Utils\NachoCore\Utils\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1067,6 +1068,9 @@
     <Compile Include="NachoUI.iOS\EditEventViewController.cs" />
     <Compile Include="NachoUI.iOS\EditEventViewController.designer.cs">
       <DependentUpon>EditEventViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
+      <Link>NachoCore\Utils\LoginHelpers.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

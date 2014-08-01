@@ -114,7 +114,7 @@ namespace NachoClient.iOS
         public static UIFont Font_AvenirNextMedium24 {
             get {
                 if (null == _Font_AvenirNextMedium24) {
-                    _Font_AvenirNextMedium24 = UIFont.FromName ("AvenirNext-Regular", 24);
+                    _Font_AvenirNextMedium24 = UIFont.FromName ("AvenirNext-Medium", 24);
                 }
                 return _Font_AvenirNextMedium24;
             }
@@ -123,7 +123,7 @@ namespace NachoClient.iOS
         public static UIFont Font_AvenirNextMedium14 {
             get {
                 if (null == _Font_AvenirNextMedium14) {
-                    _Font_AvenirNextMedium14 = UIFont.FromName ("AvenirNext-Regular", 14);
+                    _Font_AvenirNextMedium14 = UIFont.FromName ("AvenirNext-Medium", 14);
                 }
                 return _Font_AvenirNextMedium14;
             }

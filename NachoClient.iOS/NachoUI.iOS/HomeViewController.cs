@@ -15,6 +15,7 @@ namespace NachoClient.iOS
         UIPageViewController pageController;
         bool hasSyncCompleted = false;
         UILabel autoDState;
+        int accountId;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -26,7 +27,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            setSyncBit ();
+
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
@@ -52,6 +53,10 @@ namespace NachoClient.iOS
             }
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            accountId = LoginHelpers.getCurrentAccountId ();
+            hasSyncCompleted = LoginHelpers.GetSyncedBit (accountId);
+            setCurrentStatusLabel ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -70,7 +75,7 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
                 autoDState.Text = "FolderSyncSucceeded";
                 autoDState.TextColor = UIColor.Green;
-                folderSyncSuccesful ();
+                LoginHelpers.SetSyncedBit (accountId, true);
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 autoDState.Text = "AutoDComplete";
@@ -107,8 +112,8 @@ namespace NachoClient.iOS
             closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
             closeTutorial.BackgroundColor = A.Color_NachoBlue;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
-                userViewedTutorial();
-                if(hasSyncCompleted){
+                LoginHelpers.SetTutorialBit (accountId, true);
+                if(LoginHelpers.GetSyncedBit(accountId) == true){
                     PerformSegue ("HomeToNachoNow", this);
                 }else{
                     PerformSegue("HomeToAdvancedLogin", this);
@@ -118,7 +123,6 @@ namespace NachoClient.iOS
 
             //For testing purposes to see live state of Auto-D
             autoDState = new UILabel (new System.Drawing.RectangleF(20, 460, View.Frame.Width - 40, 30));
-            autoDState.Text = "Attempting Auto-D.... ";
             autoDState.TextAlignment = UITextAlignment.Center;
             autoDState.Font = A.Font_AvenirNextDemiBold17;
             autoDState.TextColor = A.Color_NachoRed;
@@ -136,30 +140,13 @@ namespace NachoClient.iOS
                 return 7;
             }
         }
-        public void userViewedTutorial()
-        {
-            //User has view tutorial, set the bit.
-            McMutables.GetOrCreate ("TUTORIAL", "hasViewedTutorial", "1");
-        }
 
-        public void folderSyncSuccesful()
+        public void setCurrentStatusLabel()
         {
-            //File Sync has been completed, set the bit
-            McMutables.Set ("ASYNC", "hasSyncedFolders", "1");
-            hasSyncCompleted = true;
-        }
-
-        public void setSyncBit()
-        {
-            string hasSyncedFoldersVal = McMutables.Get ("ASYNC", "hasSyncedFolders");
-            if (null != hasSyncedFoldersVal) {
-                if (hasSyncedFoldersVal == "1") {
-                    hasSyncCompleted = true;
-                } else {
-                    hasSyncCompleted = false;
-                }
+            if (hasSyncCompleted) {
+                autoDState.Text = "You need to watch the tutorial";
             } else {
-                hasSyncCompleted = false;
+                autoDState.Text = "Attempting Auto-D...";
             }
         }
 
@@ -184,7 +171,6 @@ namespace NachoClient.iOS
                     int previousPageIndex = currentPageController.PageIndex - 1;
                     return new HomePageController (previousPageIndex);
                 }
-
             }
 
             public override UIViewController GetNextViewController (UIPageViewController pageViewController, UIViewController referenceViewController)
