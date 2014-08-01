@@ -53,7 +53,11 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            RemoveFromStorage ();
+            try {
+                RemoveFromStorage ();
+            } catch (Exception e) {
+                Log.Info (Log.LOG_STATE, "Exception thrown while removing attachment from storage: {0}", e.Message);
+            }
             return base.Delete ();
         }
 

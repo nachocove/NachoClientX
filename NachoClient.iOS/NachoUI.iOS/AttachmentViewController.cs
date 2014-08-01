@@ -142,7 +142,7 @@ namespace NachoClient.iOS
             return rotation;
         }
 
-        public void downloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
+        public void DownloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
             if (!a.IsDownloaded) {
@@ -190,23 +190,23 @@ namespace NachoClient.iOS
 
         public void ForwardAttachment (McAttachment attachment)
         {
-            downloadAndDoAction (attachment.Id, (a) => {
+            DownloadAndDoAction (attachment.Id, (a) => {
                 PerformSegue (FilesToComposeSegueId, new SegueHolder (a));
             });
         }
 
-        public void openInOtherApp (McAttachment attachment)
+        public void OpenInOtherApp (McAttachment attachment)
         {
-            downloadAndDoAction (attachment.Id, (a) => {
+            DownloadAndDoAction (attachment.Id, (a) => {
                 UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.FilePath ()));
                 Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
                 Preview.PresentOpenInMenu (View.Frame, View, true);
             });
         }
 
-        public void attachmentAction (int attachmentId)
+        public void AttachmentAction (int attachmentId)
         {
-            downloadAndDoAction (attachmentId, (a) => {
+            DownloadAndDoAction (attachmentId, (a) => {
                 if (null == owner) {
                     PlatformHelpers.DisplayAttachment (this, a);
                     return;
@@ -314,7 +314,7 @@ namespace NachoClient.iOS
                     cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
-                    SetAnimationOnCell (cell);
+                    SetAnimationOnCell (cell, attachment.IsDownloaded);
                 } else {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
                 }
@@ -339,7 +339,7 @@ namespace NachoClient.iOS
                 } else {
                     attachment = Attachments [indexPath.Row];
                 }
-                vc.attachmentAction (attachment.Id);
+                vc.AttachmentAction (attachment.Id);
                 if (!attachment.IsDownloaded) {
                     var rotation = vc.DownloadAnimation ();
                     tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
@@ -369,7 +369,7 @@ namespace NachoClient.iOS
                     greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         vc.ForwardAttachment (attachment);
-                        SetAnimationOnCell (cell);
+                        SetAnimationOnCell (cell, attachment.IsDownloaded);
                         return;
                     });
                     crossView = ViewWithImageName ("cross");
@@ -381,15 +381,15 @@ namespace NachoClient.iOS
                     previewView = ViewWithImageName ("clock");
                     yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.attachmentAction (attachment.Id);
-                        SetAnimationOnCell (cell);
+                        vc.AttachmentAction (attachment.Id);
+                        SetAnimationOnCell (cell, attachment.IsDownloaded);
                         return;
                     });
                     openView = ViewWithImageName ("list");
                     brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.openInOtherApp (attachment);
-                        SetAnimationOnCell (cell);
+                        vc.OpenInOtherApp (attachment);
+                        SetAnimationOnCell (cell, attachment.IsDownloaded);
                         return;
                     });
                 } finally {
@@ -421,10 +421,12 @@ namespace NachoClient.iOS
             }
 
 
-            private void SetAnimationOnCell (UITableViewCell cell)
+            private void SetAnimationOnCell (UITableViewCell cell, bool isDownloaded)
             {
-                var rotation = vc.DownloadAnimation ();
-                cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                if (!isDownloaded) {
+                    var rotation = vc.DownloadAnimation ();
+                    cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                }
             }
 
             UIView ViewWithImageName (string imageName)
