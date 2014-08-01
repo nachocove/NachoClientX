@@ -8,8 +8,10 @@ using MonoTouch.UIKit;
 using System.IO;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Linq;
 
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
@@ -19,6 +21,10 @@ namespace NachoClient.iOS
         {
         }
 
+        protected McNote Note;
+        protected McCalendar eventItem;
+        protected McContact contactItem;
+        protected McAccount account;
         UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected static float LINE_OFFSET = 30f;
@@ -41,7 +47,9 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateNotesView ();
+            ConfigureItem ();
             notesTextView.BecomeFirstResponder ();
         }
 
@@ -60,23 +68,34 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
+        public void SetEvent (McCalendar item)
+        {
+            this.eventItem = item;
+        }
+
+        public void SetContact (McContact item)
+        {
+            this.contactItem = item;
+        }
 
         protected void CreateNotesView ()
         {
 
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - KEYBOARD_HEIGHT);
             //notes
-            notesTextView = new UITextView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT));
+            notesView = new UIView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + 200));
+            notesView.BackgroundColor = UIColor.White;
+            notesTextView = new UITextView (new RectangleF (15, 15, SCREEN_WIDTH - 30, NOTES_TEXT_VIEW_HEIGHT));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.TextColor = solidTextColor;
             notesTextView.BackgroundColor = UIColor.White;
-            //notesTextView.ContentInset = new UIEdgeInsets (0, 35, 0, 15);
             var beginningRange = new NSRange (0, 0);
             notesTextView.SelectedRange = beginningRange;
 
             notesTextView.Changed += (object sender, EventArgs e) => {
                 NotesSelectionChanged (notesTextView);
             };
+            notesView.Add (notesTextView);
             line1 = AddLine (0, LINE_OFFSET + 10, SCREEN_WIDTH, separatorColor);
 
             //Content View
@@ -86,7 +105,7 @@ namespace NachoClient.iOS
             DateView.BackgroundColor = A.Color_NachoNowBackground;
             MakeDateLabel (0, LINE_OFFSET - 10, SCREEN_WIDTH, 15, DATE_DETAIL_TAG, DateView);
             contentView.Add (DateView);
-            contentView.Add (notesTextView);
+            contentView.Add (notesView);
             contentView.Add (line1);
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + LINE_OFFSET + 10);
 
@@ -104,12 +123,12 @@ namespace NachoClient.iOS
             return (lineUIView);
         }
 
-        public void ConfigureNotesView () {
-            //NotesLayoutView();
-
+        public void ConfigureNotesView ()
+        {
+            notesTextView.Text = Note.noteContent;
             //date
             var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;
-            dateDetailLabel.Text = Pretty.ExtendedDateString(DateTime.UtcNow);
+            dateDetailLabel.Text = Pretty.ExtendedDateString (DateTime.UtcNow);
 
         }
 
@@ -130,14 +149,73 @@ namespace NachoClient.iOS
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
             // Make sure our textview is big enough to hold the text
             var frame = textView.Frame;
-            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height + 40);
+            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
             textView.Frame = frame;
+            var newNotesViewFrame = notesView.Frame;
+            newNotesViewFrame.Size = new SizeF (notesView.Frame.Width, textView.ContentSize.Height + 250);
+            notesView.Frame = newNotesViewFrame;
             // And update our enclosing scrollview for the new content size
-            scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height);
+            scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Height + notesView.Frame.Y + 30);
             // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
-            caretRect.Y += textView.Frame.Y;
+            caretRect.Y += notesView.Frame.Y + 30;
             scrollView.ScrollRectToVisible (caretRect, true);
         }
+
+        public void ConfigureItem ()
+        {
+
+            if (null != eventItem) {
+                Note = McNote.QueryByTypeId (eventItem.Id, "event").FirstOrDefault ();
+                if (null == Note) {
+                    Note = new McNote ();
+                }
+                return;
+            }
+
+            if (null != contactItem) {
+                Note = McNote.QueryByTypeId (contactItem.Id, "contact").FirstOrDefault ();
+                if (null == Note) {
+                    Note = new McNote ();
+                }
+                return;
+            }
+
+            NcAssert.CaseError ();
+
+        }
+
+        public void SaveContactNote ()
+        {
+
+            Note.DisplayName = (contactItem.DisplayName + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+            Note.TypeId = contactItem.Id;
+            Note.noteContent = notesTextView.Text;
+            Note.noteType = "contact";
+            SyncNoteRequest (Note);
+
+        }
+
+        public void SaveEventNote ()
+        {
+
+            Note.DisplayName = (eventItem.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+            Note.TypeId = eventItem.Id;
+            Note.noteContent = notesTextView.Text;
+            Note.noteType = "event";
+            SyncNoteRequest (Note);
+
+        }
+
+        protected void SyncNoteRequest (McNote note)
+        {
+            if (0 == note.Id) {
+                note.Insert (); // new entry
+            } else {
+                note.Update ();
+            }
+
+        }
+            
 
     }
 }

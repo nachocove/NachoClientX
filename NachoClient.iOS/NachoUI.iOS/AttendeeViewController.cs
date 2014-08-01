@@ -91,7 +91,8 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < AttendeeList.Count; i++) {
                 var a = AttendeeList [i];
-                var e = new StringElement (a.DisplayName);
+                var e = new StyledStringElement (a.DisplayName);
+                e.Font = A.Font_AvenirNextRegular14;
                 var lambda_object = i;
                 e.Tapped += () => {
                     AddressTapped (lambda_object);

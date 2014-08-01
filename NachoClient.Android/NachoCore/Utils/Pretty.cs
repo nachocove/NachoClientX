@@ -137,6 +137,12 @@ namespace NachoCore.Utils
             return LocalT (d).ToString ("ddd, MMM d");
         }
 
+        static public string ShortDateString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return LocalT (d).ToString ("M/d/yy");
+        }
+
         static public string ExtendedDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
