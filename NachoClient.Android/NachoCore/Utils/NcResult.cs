@@ -72,6 +72,10 @@ namespace NachoCore.Utils
             Info_AsProvisionSuccess,
             Info_AsOptionsSuccess,
             Info_AsSettingsSuccess,
+
+            Info_EmailAddressScoreUpdated,
+            Info_EmailMessageScoreUpdated,
+
             // Warning.
             // Error.
             Error_NetworkUnavailable,

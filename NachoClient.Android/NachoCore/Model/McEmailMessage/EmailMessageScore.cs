@@ -177,16 +177,12 @@ namespace NachoCore.Model
 
         private void ExtractDateTimeFromPair (DateTime local, DateTime utc, ref DateTime output)
         {
-            DateTime time;
             if (IsValidDateTime (local)) {
-                time = local;
+                output = local;
             } else if (IsValidDateTime (utc)) {
-                time = utc;
+                output = utc;
             } else {
                 return;
-            }
-            if (time > DateTime.Now) {
-                output = time;
             }
         }
 
@@ -270,7 +266,7 @@ namespace NachoCore.Model
         /// <returns><c>true</c>, if time variance was updated, <c>false</c> otherwise.</returns>
         /// <param name="tvList">A list of active time variance.</param>
         /// <param name="now">A timestamp to be used for finding next state for all tv.</param>
-        private bool UpdateTimeVariance (NcTimeVariance.TimeVarianceList tvList, DateTime now)
+        private bool UpdateTimeVarianceStates (NcTimeVariance.TimeVarianceList tvList, DateTime now)
         {
             DateTime latestEvent = new DateTime (1, 1, 1, 0, 0, 0);
             int latestType = (int)NcTimeVarianceType.DONE;
@@ -320,16 +316,24 @@ namespace NachoCore.Model
                 Score = GetScore ();
             }
 
-            if (UpdateTimeVariance (tvList, now)) {
+            if (UpdateTimeVarianceStates (tvList, now)) {
                 UpdateByBrain ();
             }
+        }
+
+        public void UpdateTimeVariance ()
+        {
+            NcTimeVariance.StopList (TimeVarianceDescription ());
+            InitializeTimeVariance ();
         }
 
         public void InsertByBrain ()
         {
             int rc = Insert ();
             if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageCounters.Insert.Click ();
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailMessageCounters.Insert.Click ();
+                brain.NotifyEmailMessageUpdates ();
             }
         }
 
@@ -337,7 +341,9 @@ namespace NachoCore.Model
         {
             int rc = Update ();
             if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageCounters.Update.Click ();
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailMessageCounters.Update.Click ();
+                brain.NotifyEmailMessageUpdates ();
             }
         }
 
@@ -345,7 +351,9 @@ namespace NachoCore.Model
         {
             int rc = Delete ();
             if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageCounters.Delete.Click ();
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailMessageCounters.Delete.Click ();
+                brain.NotifyEmailMessageUpdates ();
             }
         }
 
@@ -360,7 +368,7 @@ namespace NachoCore.Model
             DateTime now = DateTime.Now;
             NcTimeVariance.TimeVarianceList tvList =
                 emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
-            bool updated = emailMessage.UpdateTimeVariance (tvList, now);
+            bool updated = emailMessage.UpdateTimeVarianceStates (tvList, now);
 
             /// Recompute a new score and update it in the cache
             double newScore = emailMessage.GetScore ();

@@ -97,8 +97,7 @@ namespace NachoClient.iOS
             } else {
                 contact = contacts [indexPath.Row].GetContact ();
             }
-
-            owner.PerformSegueForDelegate ("ContactsToContactDetail", new SegueHolder (contact));
+            owner.ContactSelectedCallback (contact);
         }
 
  
@@ -177,6 +176,15 @@ namespace NachoClient.iOS
             return imageView;
         }
 
+        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            return 69;
+        }
+
+        protected const int USER_NAME_TAG = 333;
+        protected const int USER_LABEL_TAG = 334;
+        protected const int USER_EMAIL_TAG = 335;
+
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             McContact contact;
@@ -186,11 +194,37 @@ namespace NachoClient.iOS
                 contact = contacts [indexPath.Row].GetContact ();
             }
 
+            var cell = CreateCell ();
+            ConfigureCell (cell, contact);
+
+            return cell;
+        }
+
+        public MCSwipeTableViewCell CreateCell()
+        {
             var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             NcAssert.True (null != cell);
 
-            ConfigureCell (cell, contact);
-
+            if (null == cell.ViewWithTag (USER_NAME_TAG)) {
+                var userNameView = new UILabel (new RectangleF (65, 17, 320 - 15 - 65, 20));
+                userNameView.LineBreakMode = UILineBreakMode.TailTruncation;
+                userNameView.Tag = USER_NAME_TAG;
+                cell.ContentView.AddSubview (userNameView);
+                var userEmailView = new UILabel (new RectangleF (65, 35, 320 - 15 - 65, 20));
+                userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
+                userEmailView.Tag = USER_EMAIL_TAG;
+                cell.ContentView.AddSubview (userEmailView);
+                // User userLabelView view, if no image
+                var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+                userLabelView.Font = A.Font_AvenirNextRegular24;
+                userLabelView.TextColor = UIColor.White;
+                userLabelView.TextAlignment = UITextAlignment.Center;
+                userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                userLabelView.Layer.CornerRadius = 20;
+                userLabelView.Layer.MasksToBounds = true;
+                userLabelView.Tag = USER_LABEL_TAG;
+                cell.ContentView.AddSubview (userLabelView);
+            }
             return cell;
         }
 
@@ -199,45 +233,74 @@ namespace NachoClient.iOS
             var displayName = contact.GetDisplayName ();
             var displayEmailAddress = contact.GetEmailAddress ();
 
+            int colorIndex = 1;
+
+            if (!String.IsNullOrEmpty (displayEmailAddress)) {
+                McEmailAddress emailAddress;
+                if (McEmailAddress.Get (contact.AccountId, displayEmailAddress, out emailAddress)) {
+                    displayEmailAddress = emailAddress.CanonicalEmailAddress;
+                    colorIndex = emailAddress.ColorIndex;
+                }
+            }
+
+            if (1 == colorIndex) {
+                colorIndex = contact.CircleColor;
+            }
+
             ConfigureSwipes (cell, contact.Id);
 
             cell.TextLabel.Text = null;
             cell.DetailTextLabel.Text = null;
 
+            var TextLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
+            var DetailTextLabel = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
+            var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
-                cell.TextLabel.Text = "Contact has no name or email address";
-                cell.TextLabel.TextColor = UIColor.LightGray;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                TextLabel.Text = "Contact has no name or email address";
+                TextLabel.TextColor = UIColor.LightGray;
+                TextLabel.Font = A.Font_AvenirNextRegular14;
+                labelView.Hidden = true;
                 return;
             }
 
             // Name empty
             if (String.IsNullOrEmpty (displayName)) {
-                cell.TextLabel.Text = displayEmailAddress;
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                TextLabel.Text = displayEmailAddress;
+                TextLabel.TextColor = A.Color_0B3239;
+                TextLabel.Font = A.Font_AvenirNextDemiBold17;
+                labelView.Hidden = false;
+                labelView.Text = Util.NameToLetters (displayEmailAddress);
+                labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
             }
 
             // Email empty
             if (String.IsNullOrEmpty (displayEmailAddress)) {
-                cell.TextLabel.Text = displayName;
-                cell.DetailTextLabel.Text = "Contact has no email address";
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                TextLabel.Text = displayName;
+                DetailTextLabel.Text = "Contact has no email address";
+                TextLabel.TextColor = A.Color_0B3239;
+                TextLabel.Font = A.Font_AvenirNextDemiBold17;
+                DetailTextLabel.TextColor = UIColor.LightGray;
+                DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                labelView.Hidden = false;
+                labelView.Text = Util.NameToLetters (displayName);
+                labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
             }
 
             // Everything
-            cell.TextLabel.Text = displayName;
-            cell.DetailTextLabel.Text = displayEmailAddress;
-            cell.TextLabel.TextColor = A.Color_NachoBlack;
-            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-            cell.DetailTextLabel.TextColor = UIColor.Gray;
-            cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+            TextLabel.Text = displayName;
+            DetailTextLabel.Text = displayEmailAddress;
+            TextLabel.TextColor = A.Color_0B3239;
+            TextLabel.Font = A.Font_AvenirNextDemiBold17;
+            DetailTextLabel.TextColor = A.Color_0B3239;
+            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+
+            labelView.Hidden = false;
+            labelView.Text = Util.NameToLetters (displayName);
+            labelView.BackgroundColor = Util.ColorForUser (colorIndex);
         }
 
         public override void DraggingStarted (UIScrollView scrollView)
