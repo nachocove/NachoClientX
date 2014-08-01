@@ -15,8 +15,7 @@ namespace NachoCore.Model
             Event,
             Contact,
         };
-
-
+            
         [Indexed]
         public int TypeId { get; set; }
 
@@ -33,6 +32,12 @@ namespace NachoCore.Model
                 " n.TypeId = ? AND " +
                 " n.noteType = ?",
                 typeId, noteType);
+        }
+
+        public static List<McNote> QueryByType (NoteType noteType)
+        {
+            return NcModel.Instance.Db.Query<McNote> ("SELECT n.* FROM McNote AS n WHERE " +
+                " n.noteType = ?", noteType);
         }
     }
 }
