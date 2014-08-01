@@ -137,6 +137,7 @@ namespace NachoCore.Model
             Db.CreateTable<McFile> ();
             Db.CreateTable<McMutables> ();
             Db.CreateTable<McPath> ();
+            Db.CreateTable<McNote> ();
             ConfigureDb (Db);
         }
 
