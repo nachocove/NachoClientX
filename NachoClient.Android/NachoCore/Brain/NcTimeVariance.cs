@@ -384,6 +384,19 @@ namespace NachoCore.Brain
             Run ();
         }
 
+        public static void StopList (string description)
+        {
+            TimeVarianceList tvList = ActiveList.GetList (description);
+            if (null == tvList) {
+                return;
+            }
+            foreach (NcTimeVariance tv in tvList) {
+                tv.StopTimer ();
+            }
+            bool removed = ActiveList.RemoveList (description);
+            NcAssert.True (removed);
+        }
+
         public static void AdvanceCallback (object obj)
         {
             NcTimeVariance tv = obj as NcTimeVariance;

@@ -70,8 +70,7 @@ namespace NachoClient.iOS
                 return false;
             });
 
-            TableView.WeakDelegate = this;
-            TableView.DataSource = new ContactChooserDataSource (this);
+            TableView.Source = new ContactChooserDataSource (this);
 
 
             AutocompleteTextField.Text = address.address;
@@ -112,31 +111,7 @@ namespace NachoClient.iOS
             }
         }
 
-        /// <summary>
-        /// RowSelected means return the selected contact.
-        /// </summary>
-        [Export ("tableView:didSelectRowAtIndexPath:")]
-        public void RowSelected (UITableView tableView, NSIndexPath indexPath)
-        {
-            McContact contact;
 
-            contact = searchResults [indexPath.Row].GetContact ();
-
-            // TODO: require phone numbers in contact chooser
-            NcAssert.True (0 == (contactType & NachoContactType.PhoneNumberRequired));
-
-            if (NachoContactType.EmailRequired == (contactType & NachoContactType.EmailRequired)) {
-                if (String.IsNullOrEmpty (contact.GetEmailAddress ())) {
-                    ComplainAboutMissingEmailAddress (contact);
-                    return;
-                }
-            }
-
-            UpdateEmailAddress (contact, contact.GetEmailAddress ());
-
-            owner = null;
-            NavigationController.PopViewControllerAnimated (true);
-        }
 
         protected void UpdateEmailAddress (McContact contact, string address)
         {
@@ -202,7 +177,7 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
-        public class ContactChooserDataSource : UITableViewDataSource
+        public class ContactChooserDataSource : UITableViewSource
         {
             ContactChooserViewController Owner;
 
@@ -225,19 +200,40 @@ namespace NachoClient.iOS
                 }
             }
 
+            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            {
+                return Owner.contactTableViewSource.GetHeightForRow (tableView, indexPath);
+            }
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+            {
+                var cell = Owner.contactTableViewSource.CreateCell ();
+                var contact = Owner.searchResults [indexPath.Row].GetContact ();
+                Owner.contactTableViewSource.ConfigureCell (cell, contact);
+                return cell;
+            }
+
+            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
                 McContact contact;
 
                 contact = Owner.searchResults [indexPath.Row].GetContact ();
 
-                var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
-                NcAssert.True (null != cell);
+                // TODO: require phone numbers in contact chooser
+                NcAssert.True (0 == (Owner.contactType & NachoContactType.PhoneNumberRequired));
 
-                Owner.contactTableViewSource.ConfigureCell (cell, contact);
+                if (NachoContactType.EmailRequired == (Owner.contactType & NachoContactType.EmailRequired)) {
+                    if (String.IsNullOrEmpty (contact.GetEmailAddress ())) {
+                        Owner.ComplainAboutMissingEmailAddress (contact);
+                        return;
+                    }
+                }
 
-                return cell;
+                Owner.UpdateEmailAddress (contact, contact.GetEmailAddress ());
+
+                Owner.owner = null;
+                Owner.NavigationController.PopViewControllerAnimated (true);
             }
+
         }
 
         string complaintTitle = "Email Address Missing";

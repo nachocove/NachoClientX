@@ -141,7 +141,6 @@ namespace Test.iOS
         public MockContext (AsProtoControl protoControl = null, McServer server = null)
         {
             Owner = new MockOwner ();
-            ProtoControl = protoControl;
             var protoState = new McProtocolState ();
             protoState.Insert ();
             ProtocolState = protoState;
@@ -154,7 +153,7 @@ namespace Test.iOS
                 EmailAddr = "johnd@foo.utopiasystems.net",
                 ServerId = 1,
             };
-
+            ProtoControl = protoControl;
             Cred = new McCred () {
                 Username = "dummy",
                 Password = "password",

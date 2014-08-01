@@ -46,8 +46,14 @@ namespace NachoCore.Brain
         public OperationCounters McEmailAddressCounters;
         public OperationCounters McEmailAddressScoreSyncInfo;
 
+        private DateTime LastEmailAddressScoreUpdate;
+        private DateTime LastEmailMessageScoreUpdate;
+
         public NcBrain ()
         {
+            LastEmailAddressScoreUpdate = new DateTime ();
+            LastEmailMessageScoreUpdate = new DateTime ();
+
             RootCounter = new NcCounter ("Brain", true);
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
             McEmailMessageDependencyCounters = new OperationCounters ("McEmailMessageDependency", RootCounter);
@@ -166,6 +172,16 @@ namespace NachoCore.Brain
             }
         }
 
+        private void ProcessMessageFlagsEvent (NcBrainMessageFlagEvent brainEvent)
+        {
+            McEmailMessage emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
+            if (null == emailMessage) {
+                return;
+            }
+            NcAssert.True (emailMessage.AccountId == brainEvent.AccountId);
+            emailMessage.UpdateTimeVariance ();
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
@@ -201,6 +217,9 @@ namespace NachoCore.Brain
             case NcBrainEventType.UI:
                 ProcessUIEvent (brainEvent as NcBrainUIEvent);
                 break;
+            case NcBrainEventType.MESSAGE_FLAGS:
+                ProcessMessageFlagsEvent (brainEvent as NcBrainMessageFlagEvent);
+                break;
             default:
                 throw new NcAssert.NachoDefaultCaseFailure ("unknown brain event type");
             }
@@ -208,7 +227,9 @@ namespace NachoCore.Brain
 
         private void Process ()
         {
-            McEmailMessage.StartTimeVariance ();
+            if (ENABLED) {
+                McEmailMessage.StartTimeVariance ();
+            }
             while (true) {
                 var brainEvent = EventQueue.Dequeue ();
                 if (NcBrainEventType.TERMINATE == brainEvent.Type) {
@@ -218,6 +239,31 @@ namespace NachoCore.Brain
                     ProcessEvent (brainEvent);
                 }
             }
+        }
+
+        private void NotifyUpdates (NcResult.SubKindEnum type, ref DateTime last)
+        {
+            // Rate limit to one notification per 2 seconds.
+            DateTime now = DateTime.Now;
+            if (2000 < (long)(now - last).TotalMilliseconds) {
+                last = now;
+                StatusIndEventArgs e = new StatusIndEventArgs ();
+                e.Account = ConstMcAccount.NotAccountSpecific;
+                e.Status = NcResult.Info (type);
+                NcApplication.Instance.InvokeStatusIndEvent(e);
+            }
+        }
+
+        public void NotifyEmailAddressUpdates ()
+        {
+            NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated,
+                ref LastEmailAddressScoreUpdate);
+        }
+
+        public void NotifyEmailMessageUpdates ()
+        {
+            NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated,
+                ref LastEmailMessageScoreUpdate);
         }
     }
 }
