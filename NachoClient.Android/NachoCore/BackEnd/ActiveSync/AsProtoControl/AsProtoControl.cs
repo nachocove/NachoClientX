@@ -38,6 +38,45 @@ namespace NachoCore.ActiveSync
             QOpW,
             FetchW,
         };
+
+        public override BackEndAutoDStateEnum AutoDState {
+            get {
+                // Every state above must be mapped here.
+                switch (Sm.State) {
+                case (uint)Lst.DiscW:
+                    return BackEndAutoDStateEnum.Running;
+
+                case (uint)Lst.UiDCrdW:
+                case (uint)Lst.UiPCrdW:
+                    return BackEndAutoDStateEnum.CredWait;
+
+                case (uint)Lst.UiServConfW:
+                    return BackEndAutoDStateEnum.ServerConfWait;
+
+                case (uint)Lst.UiCertOkW:
+                    return BackEndAutoDStateEnum.CertAskWait;
+
+                case (uint)Lst.OptW:
+                case (uint)Lst.ProvW:
+                case (uint)Lst.SettingsW:
+                case (uint)Lst.FSyncW:
+                    return BackEndAutoDStateEnum.PostAutoDPreFsync;
+
+                    // FSync2W can only happen AFTER 1st FSync has been done.
+                case (uint)Lst.FSync2W: 
+                case (uint)Lst.Pick:
+                case (uint)Lst.SyncW:
+                case (uint)Lst.PingW:
+                case (uint)Lst.QOpW:
+                case (uint)Lst.FetchW:
+                
+                default:
+                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    return BackEndAutoDStateEnum.PostAutoDPostFSync;
+                }
+            }
+        }
+
         // If you're exposed to AsHttpOperation, you need to cover these.
         public class AsEvt : SmEvt
         {
@@ -615,23 +654,6 @@ namespace NachoCore.ActiveSync
             McPending.ResolveAllDispatchedAsDeferred (Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
-        }
-
-        public override BackEndAutoDStateEnum AutoDState {
-            get {
-                switch (Sm.State) {
-                case (uint)Lst.UiCertOkW:
-                    return BackEndAutoDStateEnum.CertAskWait;
-                case (uint)Lst.UiDCrdW:
-                    return BackEndAutoDStateEnum.CredWait;
-                case (uint)Lst.UiServConfW:
-                    return BackEndAutoDStateEnum.ServerConfWait;
-                case (uint)Lst.DiscW:
-                    return BackEndAutoDStateEnum.Running;
-                default:
-                    return BackEndAutoDStateEnum.NA;
-                }
-            }
         }
 
         private void EstablishService ()

@@ -7,7 +7,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
-    public enum BackEndAutoDStateEnum { NA, Running, CertAskWait, ServerConfWait, CredWait };
+    public enum BackEndAutoDStateEnum { Running, CertAskWait, ServerConfWait, CredWait, PostAutoDPreFsync, PostAutoDPostFSync };
 
     public interface IBackEnd
     {
