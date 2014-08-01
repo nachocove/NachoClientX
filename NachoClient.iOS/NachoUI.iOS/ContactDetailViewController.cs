@@ -67,7 +67,10 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                dc.SetContact (holder.value as McContact);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
+                    dc.SaveContactNote();
                     DisplayContactInfo ();
                 };
                 return;

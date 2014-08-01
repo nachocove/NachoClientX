@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -320,6 +320,7 @@
     <Compile Include="NachoCore\Adapters\NcDeviceContacts.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceCalendars.cs" />
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
+    <Compile Include="NachoCore\Model\McNote.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
