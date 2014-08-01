@@ -1071,6 +1071,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McNote.cs">
       <Link>NachoCore\Model\McNote.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
