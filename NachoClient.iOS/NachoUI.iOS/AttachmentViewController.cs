@@ -23,6 +23,9 @@ namespace NachoClient.iOS
         FilesTableSource filesSource;
         SearchDelegate searchDelegate;
         Action<object, EventArgs> fileAction;
+        public ItemType itemType;
+
+        public enum ItemType {Attachment = 1, Note, Document};
 
         // segue ids
         string FilesToComposeSegueId = "FilesToEmailCompose";
@@ -51,6 +54,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            NcAssert.True (itemType != 0, "Item type should be set before transitioning to FilesViewController");
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -123,7 +128,7 @@ namespace NachoClient.iOS
         public void RefreshAttachmentSection ()
         {
             // show most recent attachments first
-            filesSource.Attachments = NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id).ToList ();
+            filesSource.Items = NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id).ToList ();
             SearchDisplayController.SearchResultsTableView.ReloadData ();
             if (searchDelegate != null && searchDelegate.searchString != null) {
                 searchDelegate.ShouldReloadForSearchString (SearchDisplayController, searchDelegate.searchString);
@@ -245,18 +250,18 @@ namespace NachoClient.iOS
             // cell Id's
             const string FileCell = "FileCell";
 
-            protected List<McAttachment> attachments = new List<McAttachment> ();
-            protected List<McAttachment> searchResults = new List<McAttachment> ();
+            protected List<IFilesViewItem> items = new List<IFilesViewItems> ();
+            protected List<IFilesViewItem> searchResults = new List<IFilesViewItem> ();
 
             AttachmentViewController vc;
 
-            public List<McAttachment> Attachments
+            public List<IFilesViewItem> Items
             {
-                get { return attachments; }
-                set { attachments = value; }
+                get { return items; }
+                set { items = value; }
             }
 
-            public List<McAttachment> SearchResults
+            public List<IFilesViewItem> SearchResults
             {
                 get { return searchResults; }
                 set { searchResults = value; }
@@ -272,7 +277,7 @@ namespace NachoClient.iOS
                 if (tableview == vc.SearchDisplayController.SearchResultsTableView) {
                     return SearchResults.Count;
                 } else {
-                    return Attachments.Count;
+                    return Items.Count;
                 }
             }
 
@@ -290,15 +295,37 @@ namespace NachoClient.iOS
                 }
                 NcAssert.True (null != cell);
 
-                McAttachment attachment;
+                IFilesViewItem item;
 
                 // determine if table is for search results or all attachments
                 if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
-                    attachment = SearchResults [indexPath.Row];
+                    item = SearchResults [indexPath.Row];
                 } else {
-                    attachment = Attachments [indexPath.Row];
+                    item = Items [indexPath.Row];
                 }
 
+                cell.TextLabel.Text = item.DisplayName;
+
+                if (typeof(item) == McAttachment) {
+                    cell = FormatAttachmentCell (cell, item as McAttachment);
+                } else if (typeof(item) == McNote) {
+                    cell = FormatNoteCell (cell, item as McNote);
+                }
+
+                // styling
+                cell.TextLabel.TextColor = A.Color_NachoBlack;
+                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                cell.DetailTextLabel.TextColor = UIColor.LightGray;
+                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+
+                // swipes
+                ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+
+                return cell;
+            }
+
+            private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment)
+            {
                 cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
 
                 cell.DetailTextLabel.Text = "";
@@ -309,7 +336,8 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Text += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
                 cell.DetailTextLabel.Text += "file";
 
-                if (attachment.IsDownloaded) {
+                cell.DetailTextLabel.Text = attachment.ContentType;
+                if (attachment.IsDownloaded || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
                     cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
@@ -318,39 +346,41 @@ namespace NachoClient.iOS
                 } else {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
                 }
+                return cell;
+            }
 
-                // styling
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-
-                // swipes
-                ConfigureSwipes (cell as MCSwipeTableViewCell, attachment);
-
+            private UITableViewCell FormatNoteCell (UITableViewCell cell, McNote note)
+            {
+                cell.DetailTextLabel.Text = note.noteContent;
+                cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
                 return cell;
             }
                 
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
-                McAttachment attachment;
+                IFilesViewItem item;
                 if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
-                    attachment = SearchResults [indexPath.Row];
+                    item = SearchResults [indexPath.Row];
                 } else {
-                    attachment = Attachments [indexPath.Row];
+                    item = Items [indexPath.Row];
                 }
-                vc.AttachmentAction (attachment.Id);
-                if (!attachment.IsDownloaded) {
-                    var rotation = vc.DownloadAnimation ();
-                    tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+
+                if (typeof(item) == McAttachment) {
+                    McAttachment att = (McAttachment)item;
+                    vc.attachmentAction (att.Id);
+                    if (!att.IsDownloaded) {
+                        var rotation = vc.DownloadAnimation ();
+                        tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                    }
                 }
+
                 tableView.DeselectRow (indexPath, true);
             }
                 
             /// <summary>
             /// Configures the swipes.
             /// </summary>
-            void ConfigureSwipes (MCSwipeTableViewCell cell, McAttachment attachment)
+            void ConfigureSwipes (MCSwipeTableViewCell cell, IFilesViewItem item)
             {
                 cell.FirstTrigger = 0.20f;
                 cell.SecondTrigger = 0.50f;
@@ -368,28 +398,40 @@ namespace NachoClient.iOS
                     forwardView = ViewWithImageName ("check");
                     greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.ForwardAttachment (attachment);
-                        SetAnimationOnCell (cell, attachment.IsDownloaded);
+                        if (typeof(item) == McAttachment) {
+                            McAttachment attachment = (McAttachment)item;
+                            vc.ForwardAttachment (attachment);
+                            SetAnimationOnCell (cell, attachment.IsDownloaded);
+                        }
                         return;
                     });
                     crossView = ViewWithImageName ("cross");
                     redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.DeleteAttachment (attachment);
+                        if (typeof(item) == McAttachment) {
+                            McAttachment attachment = (McAttachment)item;
+                            vc.DeleteAttachment (attachment);
+                        }
                         return;
                     });
                     previewView = ViewWithImageName ("clock");
                     yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.AttachmentAction (attachment.Id);
-                        SetAnimationOnCell (cell, attachment.IsDownloaded);
+                        if (typeof(item) == McAttachment) {
+                            McAttachment attachment = (McAttachment)item;
+                            vc.attachmentAction (attachment.Id);
+                            SetAnimationOnCell (cell, attachment.IsDownloaded);
+                        }
                         return;
                     });
                     openView = ViewWithImageName ("list");
                     brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        vc.OpenInOtherApp (attachment);
-                        SetAnimationOnCell (cell, attachment.IsDownloaded);
+                        if (typeof(item) == McAttachment) {
+                            McAttachment attachment = (McAttachment)item;
+                            vc.openInOtherApp (attachment);
+                            SetAnimationOnCell (cell, attachment.IsDownloaded);
+                        }
                         return;
                     });
                 } finally {
@@ -451,7 +493,7 @@ namespace NachoClient.iOS
 
             public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
             {
-                filesSource.SearchResults = filesSource.Attachments.Where (w => w.DisplayName.Contains (forSearchString)).ToList ();
+                filesSource.SearchResults = filesSource.Items.Where (w => w.DisplayName.Contains (forSearchString)).ToList ();
                 searchString = forSearchString;
                 controller.SearchResultsTableView.ReloadData ();
                 return true;

@@ -4,9 +4,10 @@ using System.IO;
 using System.Collections.Generic;
 using NachoCore.Utils;
 
+
 namespace NachoCore.Model
 {
-    public class McAttachment : McAbstrObjectPerAcc
+    public class McAttachment : McAbstrObjectPerAcc, IFilesViewItem
     {
         [Indexed]
         public int EmailMessageId { get; set; }

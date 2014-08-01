@@ -322,6 +322,7 @@
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
     <Compile Include="NachoCore\Model\McNote.cs" />
     <Compile Include="NachoPlatform.Android\PowerAndroid.cs" />
+    <Compile Include="NachoCore\Model\IFilesViewItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
