@@ -1206,6 +1206,15 @@ namespace NachoClient.iOS
 
                         var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
                         attendeeLabelView.Text = Util.GetFirstName (c.attendees.ElementAt (i).DisplayName);
+
+                        var attendeeResponseView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 200) as UIView;
+                        var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
+                        if (null == GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
+                            attendeeResponseView.Hidden = true;
+                        } else {
+                            attendeeResponseView.Hidden = false;
+                            attendeeResponseImageView.Image = GetImageForAttendeeResponse (c.attendees.ElementAt (i));
+                        }
                         i++;
                     }
                     var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
@@ -1218,6 +1227,15 @@ namespace NachoClient.iOS
 
                         var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
                         attendeeLabelView.Text = Util.GetFirstName (c.attendees.ElementAt (i).DisplayName);
+
+                        var attendeeResponseView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 200) as UIView;
+                        var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
+                        if (null == GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
+                            attendeeResponseView.Hidden = true;
+                        } else {
+                            attendeeResponseView.Hidden = false;
+                            attendeeResponseImageView.Image = GetImageForAttendeeResponse (c.attendees.ElementAt (i));
+                        }
                         i++;
                     }
                 }
@@ -1356,7 +1374,6 @@ namespace NachoClient.iOS
             attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
                 //                var identifer = buttonInfo.segueIdentifier;
                 //                PerformSegue (identifer, new SegueHolder (null));
-                Console.WriteLine ("This button pressed: " + attendeeButton.Tag);
             };
             parentView.Add (attendeeButton);
         }
@@ -1379,6 +1396,16 @@ namespace NachoClient.iOS
                     AttendeeButton (23 + SPACING, 10, 45, 45, EVENT_ATTENDEE_TAG + counter, parentView);
                     AttendeeNameLabel (23 + SPACING, 65, 45, 15, EVENT_ATTENDEE_LABEL_TAG + counter, parentView);
 
+                    var attendeeResponseView = new UIView (new RectangleF (23 + SPACING + 27, 37, 20, 20));
+                    attendeeResponseView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 200;
+                    attendeeResponseView.BackgroundColor = UIColor.White;
+                    attendeeResponseView.Layer.CornerRadius = 10;
+
+                    UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                    responseImageView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 100;
+                    attendeeResponseView.Add (responseImageView);
+                    parentView.Add (attendeeResponseView);
+
                     counter++;
                     SPACING = SPACING + 55;
                 }
@@ -1386,6 +1413,16 @@ namespace NachoClient.iOS
                 foreach (var attendee in c.attendees) {
                     AttendeeButton (23 + SPACING, 10, 45, 45, EVENT_ATTENDEE_TAG + counter, parentView);
                     AttendeeNameLabel (23 + SPACING, 65, 45, 15, EVENT_ATTENDEE_LABEL_TAG + counter, parentView);
+
+                    var attendeeResponseView = new UIView (new RectangleF (23 + SPACING + 27, 37, 20, 20));
+                    attendeeResponseView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 200;
+                    attendeeResponseView.BackgroundColor = UIColor.White;
+                    attendeeResponseView.Layer.CornerRadius = 10;
+
+                    UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                    responseImageView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 100;
+                    attendeeResponseView.Add (responseImageView);
+                    parentView.Add (attendeeResponseView);
 
                     counter++;
                     if (4 == counter) {
@@ -1406,14 +1443,27 @@ namespace NachoClient.iOS
                 eventAttendeeDetailButton.TouchUpInside += (object sender, EventArgs e) => {
                     //                var identifer = buttonInfo.segueIdentifier;
                     //                PerformSegue (identifer, new SegueHolder (null));
-                    Console.WriteLine ("This button pressed: " + eventAttendeeDetailButton.Tag);
-
                 };
                 parentView.Add (eventAttendeeDetailButton);
             }
-
         }
 
+        public UIImage GetImageForAttendeeResponse(McAttendee attendee){
+            var reponseImage = new UIImage ();
+            if (attendee.AttendeeStatus == NcAttendeeStatus.Accept) {
+                reponseImage = UIImage.FromBundle ("btn-mtng-accept-pressed");
+                return reponseImage;
+            }
+            if (attendee.AttendeeStatus == NcAttendeeStatus.Tentative) {
+                reponseImage = UIImage.FromBundle ("btn-mtng-tenative-pressed");
+                return reponseImage;
+            }
+            if (attendee.AttendeeStatus == NcAttendeeStatus.Decline) {
+                reponseImage = UIImage.FromBundle ("btn-mtng-decline-pressed");
+                return reponseImage;
+            }
+            return null;
+        }
 
         public void ClearView (UIView parentView)
         {
@@ -1644,7 +1694,6 @@ namespace NachoClient.iOS
                 c.Update ();
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
-
         }
 
         /// <summary>
@@ -1653,7 +1702,6 @@ namespace NachoClient.iOS
         protected void SendInvites ()
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-
             CalendarHelper.SendInvites (account, c, "Local");
         }
 
