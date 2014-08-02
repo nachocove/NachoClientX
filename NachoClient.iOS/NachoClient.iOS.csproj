@@ -1072,6 +1072,7 @@
       <Link>NachoCore\Model\McNote.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
+    <Compile Include="NachoUI.iOS\Support\SignInView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1326,6 +1327,8 @@
     <BundleResource Include="Resources\icn-quick-message%402x.png" />
     <BundleResource Include="Resources\icn-sms.png" />
     <BundleResource Include="Resources\icn-sms%402x.png" />
+    <BundleResource Include="Resources\Splash-BG.png" />
+    <BundleResource Include="Resources\iPhoneIcon.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
