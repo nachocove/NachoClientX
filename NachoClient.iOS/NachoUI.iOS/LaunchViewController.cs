@@ -72,7 +72,9 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoGreen;
             SignInView signInView = new SignInView(new System.Drawing.RectangleF(View.Frame.X, View.Frame.Y,View.Frame.Width, View.Frame.Height));
 
-            addSplashTriangle (signInView);
+            if (View.Frame.Height == 568) {
+                addSplashTriangle (signInView);
+            }
             addNachoLogo (signInView);
             formatUserName (signInView);
             formatPassword (signInView);
@@ -93,7 +95,13 @@ namespace NachoClient.iOS
         void addNachoLogo(SignInView view)
         {
             UIImageView nachoLogo = new UIImageView (UIImage.FromBundle ("iPhoneIcon"));
-            nachoLogo.Frame = new System.Drawing.RectangleF (View.Frame.Width/2 - 43f, 34, 86, 86);
+            float yVal;
+            if (View.Frame.Height == 568) {
+                yVal = 34;
+            } else {
+                yVal = -5;
+            }
+            nachoLogo.Frame = new System.Drawing.RectangleF (View.Frame.Width/2 - 43f, yVal, 86, 86);
             nachoLogo.Alpha = 1;
             nachoLogo.Layer.CornerRadius = 86 / 2f;
             nachoLogo.Layer.MasksToBounds = true;
