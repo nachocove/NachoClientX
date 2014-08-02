@@ -6,6 +6,10 @@
 # MUST add that repo to repos.sh.
 
 tag=$1
+if [ "$tag" == "" ]; then
+  echo "USAGE: push_tag [tag]"
+  exit 1
+fi
 
 source repos.sh
 
