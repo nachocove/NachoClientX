@@ -11,7 +11,10 @@ namespace NachoCore.Utils
 
         // Version 0 - A quick-n-dirty experimentation. Lots of lessons learned.
         // Version 1 - Add contact scoring, threading statistics.
-        public const int Version = 1;
+        // Version 2 - Enforce EmailsReplied counter. Migrate EmailsRead count
+        //             to EmailsReplied counter when appropriate. Add ScoreIsRead,
+        //             ScoreIsReplied.
+        public const int Version = 2;
     }
 }
 

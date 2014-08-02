@@ -36,6 +36,15 @@ namespace NachoCore.Model
         High_2 = 2,
     };
 
+    /// From MS-ASEMAIL.pdf, Section 2.2.2.36
+    public enum AsLastVerbExecutedType
+    {
+        UNKNOWN = 0,
+        REPLYTOSENDER = 1,
+        REPLYTOALL = 2,
+        FORWARD = 3,
+    }
+
     public class NcEmailMessageIndex
     {
         public int Id { set; get; }

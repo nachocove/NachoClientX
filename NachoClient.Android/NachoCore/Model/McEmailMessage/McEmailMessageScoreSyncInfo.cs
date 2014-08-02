@@ -18,11 +18,19 @@ namespace NachoCore.Model
         // How long the user read the email
         public int SecondsRead { get; set; }
 
+        // Whether brain marks this email as has been read
+        public bool ScoreIsRead { get; set; }
+
+        // Whether brain marks this email as has been replied
+        public bool ScoreIsReplied { get; set; }
+
         public McEmailMessageScoreSyncInfo ()
         {
             EmailMessageId = 0;
             TimesRead = 0;
             SecondsRead = 0;
+            ScoreIsRead = false;
+            ScoreIsReplied = false;
         }
 
         public void InsertByBrain ()

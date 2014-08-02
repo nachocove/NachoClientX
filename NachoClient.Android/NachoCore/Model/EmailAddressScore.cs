@@ -71,10 +71,14 @@ namespace NachoCore.Model
                 if (!DownloadScore ()) {
                     // Version 1 statistics are updated by emails. Nothing to do here
                 }
-                Score = GetScore ();
+                ScoreVersion++;
+            }
+            if (1 == ScoreVersion) {
+                // Version 2 statistics are updated by emails. Nothing to do here
                 ScoreVersion++;
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
+            Score = GetScore ();
             UpdateByBrain ();
         }
 
