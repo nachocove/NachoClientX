@@ -103,4 +103,8 @@ namespace NachoPlatform
     public interface IPlatformCalendars
     {
     }
+
+    public interface IPlatformPower
+    {
+    }
 }

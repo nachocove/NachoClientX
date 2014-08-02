@@ -6,6 +6,10 @@
 # MUST add that repo to repos.sh.
 
 tag=$1
+if [ "$tag" == "" ]; then
+  echo "USAGE: push_tag [tag]"
+  exit 1
+fi
 
 source repos.sh
 
@@ -13,7 +17,7 @@ function gitPushTag ()
 {
     pushd "../$1" 1> /dev/null
 	echo "Pushing tag $tag in `pwd`..."
-	git push origin $tags
+	git push origin $tag
 	popd 1> /dev/null
 }
 
