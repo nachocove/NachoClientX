@@ -13,7 +13,7 @@ function gitPushTag ()
 {
     pushd "../$1" 1> /dev/null
 	echo "Pushing tag $tag in `pwd`..."
-	git push origin $tags
+	git push origin $tag
 	popd 1> /dev/null
 }
 
