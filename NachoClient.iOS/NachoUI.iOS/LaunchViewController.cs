@@ -145,7 +145,7 @@ namespace NachoClient.iOS
             view.configureAdvancedButton (advancedSignInButton);
             advancedSignInButton.TouchUpInside += (object sender, EventArgs e) => {
                 //FIXME add segue to Storyboard
-                //PerformSegue("LaunchToAdvancedLogin", this);
+                PerformSegue("LaunchToAdvancedLogin", this);
             };
         }
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13C64" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
     </dependencies>
@@ -28,7 +28,7 @@
             <objects>
                 <viewController storyboardIdentifier="AdvancedLoginViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tch-Ox-Ppd" customClass="AdvancedLoginViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="QRf-dz-YUv">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -804,7 +804,7 @@
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" secureTextEntry="YES"/>
                             </textField>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="yIU-n1-bEg">
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="yIU-n1-bEg">
                                 <rect key="frame" x="110" y="52" width="101" height="44"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Connect Me">
@@ -825,6 +825,7 @@
                         <outlet property="txtPassword" destination="WPa-HS-ZhK" id="FN7-rp-R5m"/>
                         <outlet property="txtServerName" destination="FAx-1P-Ryk" id="QFi-Cs-JyS"/>
                         <outlet property="txtUserName" destination="uBu-6j-Bbo" id="sIL-a0-Vjh"/>
+                        <segue destination="tch-Ox-Ppd" kind="modal" identifier="LaunchToAdvancedLogin" modalTransitionStyle="flipHorizontal" id="ljp-nW-Zcd"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="B4U-5i-lJV" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1993,13 +1994,12 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Mvu-uQ-8cr"/>
         <segue reference="i3N-5g-evG"/>
         <segue reference="zXa-AG-jcx"/>
-        <segue reference="iqA-wd-xqD"/>
+        <segue reference="Mvu-uQ-8cr"/>
+        <segue reference="ljp-nW-Zcd"/>
         <segue reference="lXf-yZ-Qj9"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="Zli-hF-qvP"/>
+        <segue reference="RaB-9o-azo"/>
         <segue reference="s9j-Ih-SWz"/>
         <segue reference="73P-Mz-0ur"/>
         <segue reference="JTo-qU-j7O"/>
@@ -2007,12 +2007,13 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
         <segue reference="FHc-YP-jWH"/>
+        <segue reference="Rd3-YY-NMX"/>
         <segue reference="wNy-ed-w10"/>
         <segue reference="ja3-Zu-g6R"/>
-        <segue reference="Rd3-YY-NMX"/>
         <segue reference="Q8y-4K-BAb"/>
-        <segue reference="RaB-9o-azo"/>
+        <segue reference="Zli-hF-qvP"/>
         <segue reference="mo4-Vz-xJh"/>
+        <segue reference="xrp-ey-B0j"/>
         <segue reference="EmX-Dp-jXs"/>
         <segue reference="dAf-rc-Hh3"/>
     </inferredMetricsTieBreakers>
