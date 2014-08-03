@@ -762,6 +762,9 @@ namespace NachoClient.iOS
                     }
                 }
             }
+
+            subjectField.Text = CreateInitialSubjectLine ();
+
             // TODO: Setup message id, etc etc.
             // Handle body
             if (Action.Equals (Forward)) {
