@@ -234,11 +234,20 @@ class McEmailMessageDumper(HtmlTable):
                    'DateReceived',
                    'From',
                    'Subject',
+                   'IsRead',
+                   'LastVerbExecuted',
+                   'HasBeenGleaned',
                    'TimesRead',
-                   'SecondsRead']
+                   'SecondsRead',
+                   'ScoreIsRead',
+                   'ScoreIsReplied']
         column_formatters = {'Score': DoubleFormatter(7, 6),
                              'NeedUpdate': BooleanFormatter(short_form=True),
-                             'DateReceived': DateTimeFormatter()}
+                             'DateReceived': DateTimeFormatter(),
+                             'IsRead': BooleanFormatter(short_form=True),
+                             'HasBeenGleaned': BooleanFormatter(short_form=True),
+                             'ScoreIsRead': BooleanFormatter(short_form=True),
+                             'ScoreIsReplied': BooleanFormatter(short_form=True)}
         align_right = {'align': 'right'}
         align_center = {'align': 'center'}
         column_attributes = {'Score': align_right,
@@ -247,7 +256,12 @@ class McEmailMessageDumper(HtmlTable):
                              'TimeVarianceState': align_right,
                              'NeedUpdate': align_center,
                              'TimesRead': align_right,
-                             'SecondsRead': align_right}
+                             'SecondsRead': align_right,
+                             'IsRead': align_center,
+                             'LastVerbExecuted': align_center,
+                             'HasBeenGleaned': align_center,
+                             'ScoreIsRead': align_center,
+                             'ScoreIsReplied': align_center}
         HtmlTable.__init__(self, columns, rows=objects,
                            column_attributes=column_attributes,
                            column_formatters=column_formatters,
@@ -276,7 +290,7 @@ class McEmailAddressDumper(HtmlTable):
                    'EmailsArchived',
                    'EmailsSent',
                    'EmailsDeleted',
-                   'IsVip']
+                   'IsHot']
         column_formatters = {'Score': DoubleFormatter(7, 6),
                              'NeedUpdate': BooleanFormatter(True),
                              'IsVip': BooleanFormatter(True)}
