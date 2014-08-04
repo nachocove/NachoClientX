@@ -45,13 +45,17 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
                 action.Invoke ();
                 Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
-                if (!TaskMap.TryRemove (taskRef, out name)) {
+                if (null == taskRef) {
+                    // XAMMIT - Likely inappropriate Task inlining.
+                    Log.Error (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable");
+                }
+                else if (!TaskMap.TryRemove (taskRef, out name)) {
                     Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
                 }
             }, Cts.Token);
             taskRef = new WeakReference (task);
             if (!TaskMap.TryAdd (taskRef, name)) {
-                Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
+                Log.Error (Log.LOG_SYS, "Task {0} already added to TaskMap.", name);
             }
             return task;
             /*
