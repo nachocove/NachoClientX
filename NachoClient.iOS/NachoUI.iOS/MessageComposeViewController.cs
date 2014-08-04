@@ -197,7 +197,7 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
-            if (segue.Identifier.Equals ("ComposeToAttachments")) {
+            if (segue.Identifier.Equals ("ComposeToFiles")) {
                 var dc = (INachoFileChooser)segue.DestinationViewController;
                 dc.SetOwner (this);
                 return;

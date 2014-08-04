@@ -27,7 +27,7 @@ namespace NachoClient.iOS
         ///      "SidebarToDeferredMessages"
         ///      "SidebarToNachoNow"
         ///      "SidebarToHome"
-        ///      "SidebarToAttachments"
+        ///      "SidebarToFiles"
 
         const string SidebarToFoldersSegueId = "SidebarToFolders";
         const string SidebarToContactsSegueId = "SidebarToContacts";
@@ -39,7 +39,7 @@ namespace NachoClient.iOS
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
         const string SidebarToSupportSegueId = "SidebarToSupport";
-        const string SidebarToAttachmentsSegueId = "SidebarToAttachments";
+        const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToTasksSegueId = "SidebarToTasks";
         const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
@@ -109,7 +109,7 @@ namespace NachoClient.iOS
                 new ButtonInfo ("New Event", "menu-new-event", SidebarToEventSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
-                new ButtonInfo ("Attachments", "menu-attachments", SidebarToAttachmentsSegueId),
+                new ButtonInfo ("Attachments", "menu-attachments", SidebarToFilesSegueId),
                 new ButtonInfo ("Folders", "menu-folders", SidebarToFoldersSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Settings", "menu-settings", SidebarToSettingsSegueId),

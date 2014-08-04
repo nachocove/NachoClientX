@@ -1006,10 +1006,6 @@
     <Compile Include="NachoUI.iOS\ChooseCalendarViewController.designer.cs">
       <DependentUpon>ChooseCalendarViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
-      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AlertChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\AlertChooserViewController.designer.cs">
       <DependentUpon>AlertChooserViewController.cs</DependentUpon>
@@ -1074,6 +1070,14 @@
     <Compile Include="NachoUI.iOS\FilesViewController.cs" />
     <Compile Include="NachoUI.iOS\FilesViewController.designer.cs">
       <DependentUpon>FilesViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\FilesHierarchyViewController.cs" />
+    <Compile Include="NachoUI.iOS\FilesHierarchyViewController.designer.cs">
+      <DependentUpon>FilesHierarchyViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AddAttachmentViewController.cs" />
+    <Compile Include="AddAttachmentViewController.designer.cs">
+      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

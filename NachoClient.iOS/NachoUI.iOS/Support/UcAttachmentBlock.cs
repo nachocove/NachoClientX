@@ -211,7 +211,7 @@ namespace NachoClient.iOS
                         break;
                     case 2:
                         if (null != owner) {
-                            owner.PerformSegueForAttachmentBlock ("ComposeToAttachments", new SegueHolder (null));
+                            owner.PerformSegueForAttachmentBlock ("ComposeToFiles", new SegueHolder (null));
                         }
                         break;
                     case 3:
