@@ -8,6 +8,6 @@ namespace NachoCore
     public interface INachoFiles
     {
         int Count ();
-        McFile GetFile (int i);
+        McDocument GetFile (int i);
     }
 }

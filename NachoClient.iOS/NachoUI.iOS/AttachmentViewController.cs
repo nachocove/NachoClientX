@@ -142,7 +142,7 @@ namespace NachoClient.iOS
                     .OrderByDescending (a => a.Id));
                 break;
             case ItemType.Document:
-                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McFile> ().OrderByDescending (a => a.Id));
+                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McDocument> ().OrderByDescending (a => a.Id));
                 break;
             }
 
@@ -210,7 +210,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DeleteDocument (McFile document)
+        public void DeleteDocument (McDocument document)
         {
             document.Delete ();
             RefreshTableSource ();
@@ -341,7 +341,7 @@ namespace NachoClient.iOS
                     break;
                 case ItemType.Document:
                     ConfigureSwipes (cell as MCSwipeTableViewCell, item);
-                    cell = FormatDocumentCell (cell, item as McFile);
+                    cell = FormatDocumentCell (cell, item as McDocument);
                     break;
                 }
 
@@ -385,7 +385,7 @@ namespace NachoClient.iOS
                 return cell;
             }
 
-            private UITableViewCell FormatDocumentCell (UITableViewCell cell, McFile document)
+            private UITableViewCell FormatDocumentCell (UITableViewCell cell, McDocument document)
             {
                 cell.DetailTextLabel.Text = document.SourceApplication;
                 cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
@@ -415,7 +415,7 @@ namespace NachoClient.iOS
                     // TODO: Add segue to edit notes view
                     break;
                 case ItemType.Document:
-                    McFile document = (McFile)item;
+                    McDocument document = (McDocument)item;
                     PlatformHelpers.DisplayFile (vc, document);
                     break;
                 }
@@ -460,7 +460,7 @@ namespace NachoClient.iOS
                             vc.DeleteAttachment (attachment);
                             break;
                         case ItemType.Document:
-                            McFile document = (McFile)item;
+                            McDocument document = (McDocument)item;
                             vc.DeleteDocument (document);
                             break;
                         }

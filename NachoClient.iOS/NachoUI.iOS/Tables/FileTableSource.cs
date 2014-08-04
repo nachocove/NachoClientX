@@ -11,15 +11,15 @@ namespace NachoClient.iOS
 {
     public class FileTableSource : UITableViewDataSource
     {
-        List<McFile> files;
+        List<McDocument> files;
         public UIColor cellTextColor = UIColor.Black;
 
         public FileTableSource ()
         {
-            files = McFile.QueryAllFiles ();
+            files = McDocument.QueryAllFiles ();
         }
 
-        public McFile GetFile(int i)
+        public McDocument GetFile(int i)
         {
             return files [i];
         }

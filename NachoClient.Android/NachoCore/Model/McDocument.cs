@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McFile : McAbstrObject, IFilesViewItem
+    public class McDocument : McAbstrObject, IFilesViewItem
     {
         [Indexed]
         public string DisplayName { get; set; }
@@ -25,9 +25,9 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
-        public static List<McFile> QueryAllFiles ()
+        public static List<McDocument> QueryAllFiles ()
         {
-            return NcModel.Instance.Db.Query<McFile> ("SELECT * FROM McFile ORDER BY DisplayName");
+            return NcModel.Instance.Db.Query<McDocument> ("SELECT * FROM McFile ORDER BY DisplayName");
         }
     }
 }

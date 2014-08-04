@@ -704,9 +704,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoTasks.cs">
       <Link>NachoCore\Adapters\INachoTasks.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFile.cs">
-      <Link>NachoCore\Model\McFile.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Tables\FileTableSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+SanitizeFileName.cs">
       <Link>NachoCore\Extensions\String+SanitizeFileName.cs</Link>
@@ -1079,6 +1076,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\IFilesViewItem.cs">
       <Link>NachoCore\Model\IFilesViewItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McDocument.cs">
+      <Link>NachoCore\Model\McDocument.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

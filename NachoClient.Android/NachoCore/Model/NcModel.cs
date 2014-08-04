@@ -134,7 +134,7 @@ namespace NachoCore.Model
             Db.CreateTable<McTimeZone> ();
             Db.CreateTable<McTask> ();
             Db.CreateTable<McBody> ();
-            Db.CreateTable<McFile> ();
+            Db.CreateTable<McDocument> ();
             Db.CreateTable<McMutables> ();
             Db.CreateTable<McPath> ();
             Db.CreateTable<McNote> ();

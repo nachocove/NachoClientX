@@ -192,7 +192,7 @@ namespace NachoClient.iOS
             if (!url.IsFileUrl) {
                 return false;
             }
-            var file = new McFile ();
+            var file = new McDocument ();
             file.DisplayName = Path.GetFileName (url.Path);
             file.SourceApplication = sourceApplication;
             file.Insert ();

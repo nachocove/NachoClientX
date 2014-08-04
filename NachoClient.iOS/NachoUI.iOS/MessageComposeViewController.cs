@@ -804,7 +804,7 @@ namespace NachoClient.iOS
             }
 
             // File
-            var file = obj as McFile;
+            var file = obj as McDocument;
             if (null != file) {
                 var attachment = new McAttachment ();
                 attachment.DisplayName = file.DisplayName;
