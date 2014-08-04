@@ -23,6 +23,8 @@ namespace NachoCore.Model
 
         public string BodiesDir { set; get; }
 
+        public string PortraitsDir { set; get; }
+
         public string DbFileName { set; get; }
 
         public string TeleDbFileName { set; get; }
@@ -68,6 +70,7 @@ namespace NachoCore.Model
             Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
             BodiesDir = Path.Combine (Documents, "bodies");
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
+            PortraitsDir = Path.Combine (Documents, "portraits");
         }
 
         private void ConfigureDb (SQLiteConnection db)
