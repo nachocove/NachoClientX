@@ -104,7 +104,14 @@ namespace NachoPlatform
     {
     }
 
+    public enum PowerStateEnum { Unknown, Plugged, PluggedUSB, PluggedAC, Unplugged }
+
     public interface IPlatformPower
     {
+        // BatteryLevel value of 0.0 returned when true level is unknown.
+        double BatteryLevel { get; }
+
+        // Plugged is returned when AC vs USB is not known.
+        PowerStateEnum PowerState { get; }
     }
 }

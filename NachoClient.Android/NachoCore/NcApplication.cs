@@ -240,6 +240,8 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
             Log.Info (Log.LOG_SYS, "Monitor: Comm Status {0}, Speed {1}", 
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
+            Log.Info (Log.LOG_SYS, "Monitor: Battery Level {0}, Plugged Status {1}",
+                NachoPlatform.Power.Instance.BatteryLevel, NachoPlatform.Power.Instance.PowerState);
         }
 
         public void EstablishService ()
