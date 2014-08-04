@@ -179,7 +179,7 @@ namespace Test.iOS
                         httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
-                }, testEndingDbState: false);
+                });
             }
         }
 
@@ -226,7 +226,7 @@ namespace Test.iOS
                     MockSteps robotType = DetermineRobotType (httpRequest);
                     httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                     httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
-                }, testEndingDbState:false);
+                });
 
                 Assert.True (didReportError, "Should report correct status ind result");
             }
@@ -303,7 +303,7 @@ namespace Test.iOS
                         httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
-                }, testEndingDbState: false);
+                });
             }
         }
 
@@ -635,8 +635,7 @@ namespace Test.iOS
         }
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
-            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage, 
-            bool testEndingDbState = true)
+            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
         {
             var autoResetEvent = new AutoResetEvent(false);
 
@@ -685,12 +684,6 @@ namespace Test.iOS
 
             bool didFinish = autoResetEvent.WaitOne (8000);
             Assert.IsTrue (didFinish, "Operation did not finish");
-
-            if (testEndingDbState) {
-                // Test that the server record was updated
-                McServer serv = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == mockContext.Account.ServerId);
-            }
-
         }
 
         private void ServerTrueAssertions (McServer expected, McServer actual)

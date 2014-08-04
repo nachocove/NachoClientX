@@ -1073,6 +1073,10 @@
     </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
     <Compile Include="NachoUI.iOS\Support\SignInView.cs" />
+    <Compile Include="NachoUI.iOS\EventAttendeeViewController.cs" />
+    <Compile Include="NachoUI.iOS\EventAttendeeViewController.designer.cs">
+      <DependentUpon>EventAttendeeViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
