@@ -130,6 +130,7 @@ namespace NachoClient.iOS
         public void RefreshAttachmentSection ()
         {
             // show most recent attachments first
+            filesSource.Items = new List<IFilesViewItem> ();
             filesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
             SearchDisplayController.SearchResultsTableView.ReloadData ();
             if (searchDelegate != null && searchDelegate.searchString != null) {
@@ -166,7 +167,7 @@ namespace NachoClient.iOS
                     if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
                         a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
                         if (a.IsDownloaded) {
-                            AttachmentAction (a.Id);
+                            attachmentAction (a);
                         } else {
                             NcAssert.True (false, "Item should have been downloaded at this point");
                         }
@@ -175,7 +176,7 @@ namespace NachoClient.iOS
                 NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
                 return;
             } else {
-                AttachmentAction (a.Id);
+                attachmentAction (a);
             }
         }
 
@@ -340,7 +341,6 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Text += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
                 cell.DetailTextLabel.Text += "file";
 
-                cell.DetailTextLabel.Text = attachment.ContentType;
                 if (attachment.IsDownloaded || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
                     cell.ImageView.Layer.RemoveAllAnimations ();
