@@ -12,9 +12,15 @@ namespace NachoClient.iOS
 	[Register ("FilesHierarchyViewController")]
 	partial class FilesHierarchyViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (revealButton != null) {
+				revealButton.Dispose ();
+				revealButton = null;
+			}
 		}
 	}
 }

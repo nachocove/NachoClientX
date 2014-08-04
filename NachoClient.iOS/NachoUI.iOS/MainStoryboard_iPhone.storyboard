@@ -308,9 +308,12 @@
                             <outlet property="delegate" destination="F7u-PM-e8E" id="RAZ-66-KtI"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="Files" id="ZTf-oF-bGu"/>
+                    <navigationItem key="navigationItem" title="Files" id="ZTf-oF-bGu">
+                        <barButtonItem key="leftBarButtonItem" image="list.png" id="AMR-Uc-eJt"/>
+                    </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
+                        <outlet property="revealButton" destination="AMR-Uc-eJt" id="le6-T0-FNI"/>
                         <segue destination="bBy-CW-6ix" kind="push" identifier="FilesHierarchyToFiles" id="Qqw-9m-Ahd"/>
                     </connections>
                 </tableViewController>
@@ -342,8 +345,6 @@
                     <navigationItem key="navigationItem" title="File Type" id="jwI-jd-NQT"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="nachoButton" destination="LXM-cO-kAi" id="6Sr-gx-dP7"/>
-                        <outlet property="revealButton" destination="NU1-k7-pji" id="Hpt-qH-mgu"/>
                         <outlet property="searchDisplayController" destination="TB4-AC-yCV" id="qju-k2-ALR"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="AttachmentsToNachoNow" id="Gr5-Hy-1Yr"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="FilesToEmailCompose" id="Wtf-SG-mz2"/>
@@ -351,8 +352,6 @@
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wOG-Ry-VAW" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="navbar-icn-menu.png" id="NU1-k7-pji"/>
-                <barButtonItem image="Nacho-Cove-Icon.png" id="LXM-cO-kAi"/>
                 <searchDisplayController id="yub-9s-cFh"/>
                 <searchDisplayController id="1hp-VY-lZf"/>
                 <searchDisplayController id="TB4-AC-yCV">
@@ -1568,15 +1567,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="NotesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qAG-NA-NKz" customClass="NotesViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="LZR-Ny-gTT">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="19G-Gm-Ixk">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="fO8-qu-GHp" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1994,27 +1993,27 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="7f1-U8-A7w"/>
         <segue reference="ljp-nW-Zcd"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="8Rc-6G-ec1"/>
         <segue reference="J8i-gn-UTn"/>
         <segue reference="p6V-c0-caL"/>
-        <segue reference="8Rc-6G-ec1"/>
         <segue reference="WNy-bM-xGW"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="7f1-U8-A7w"/>
         <segue reference="vRC-Oi-s8D"/>
-        <segue reference="mo4-Vz-xJh"/>
+        <segue reference="Gr5-Hy-1Yr"/>
+        <segue reference="RnP-wd-ySV"/>
         <segue reference="Wtf-SG-mz2"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="Q8y-4K-BAb"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="dAf-rc-Hh3"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="s9j-Ih-SWz"/>
+        <segue reference="mo4-Vz-xJh"/>
         <segue reference="4Sl-0E-160"/>
         <segue reference="tdu-G2-PEp"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="RaB-9o-azo"/>
+        <segue reference="Tfk-Mt-BlS"/>
     </inferredMetricsTieBreakers>
 </document>
