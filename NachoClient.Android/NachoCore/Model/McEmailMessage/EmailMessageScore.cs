@@ -86,7 +86,6 @@ namespace NachoCore.Model
                     if (IsRead) {
                         emailAddress.IncrementEmailsRead ();
                     }
-                    // TODO - How to determine if the email has been replied?
                     emailAddress.Score = emailAddress.GetScore ();
                     emailAddress.UpdateByBrain ();
 
