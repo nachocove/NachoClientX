@@ -1146,7 +1146,6 @@ namespace NachoClient.iOS
 
                 //title view
                 var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
-                //titleLabelView.Text = "Meeting with Kevin";
                 titleLabelView.Text = c.Subject;
 
                 //description view
@@ -1156,8 +1155,7 @@ namespace NachoClient.iOS
 
                 //location view
                 var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-                //locationLabelView.Text = "Starbucks 2135 Queen Anne Ave N.";
-                if ("" != c.Location) {
+                if (null != c.Location) {
                     locationLabelView.Text = c.Location;
                 } else {
                     locationLabelView.Text = "Not specified";
