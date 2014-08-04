@@ -56,7 +56,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            itemType = ItemType.Note;
+            itemType = ItemType.Attachment;
 
             NcAssert.True (itemType != 0, "Item type should be set before transitioning to FilesViewController");
 
@@ -135,11 +135,14 @@ namespace NachoClient.iOS
 
             switch (itemType) {
             case ItemType.Attachment:
-            case ItemType.Document:
                 filesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
                 break;
             case ItemType.Note:
-                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McNote> ().OrderByDescending (a => a.Id));
+                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McNote> ().Where (a => a.noteType == McNote.NoteType.Event)
+                    .OrderByDescending (a => a.Id));
+                break;
+            case ItemType.Document:
+                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McFile> ().OrderByDescending (a => a.Id));
                 break;
             }
 
@@ -205,6 +208,12 @@ namespace NachoClient.iOS
                 attachment.RemoveFromStorage ();
                 RefreshTableSource ();
             }
+        }
+
+        public void DeleteDocument (McFile document)
+        {
+            document.Delete ();
+            RefreshTableSource ();
         }
 
         public void ForwardAttachment (McAttachment attachment)
@@ -322,10 +331,18 @@ namespace NachoClient.iOS
 
                 cell.TextLabel.Text = item.DisplayName;
 
-                if (vc.itemType == ItemType.Attachment) {
+                switch (vc.itemType) {
+                case ItemType.Attachment:
                     cell = FormatAttachmentCell (cell, item as McAttachment);
-                } else if (vc.itemType == ItemType.Note) {
+                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    break;
+                case ItemType.Note:
                     cell = FormatNoteCell (cell, item as McNote);
+                    break;
+                case ItemType.Document:
+                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    cell = FormatDocumentCell (cell, item as McFile);
+                    break;
                 }
 
                 // styling
@@ -333,9 +350,6 @@ namespace NachoClient.iOS
                 cell.TextLabel.Font = A.Font_AvenirNextRegular14;
                 cell.DetailTextLabel.TextColor = UIColor.LightGray;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-
-                // swipes
-                ConfigureSwipes (cell as MCSwipeTableViewCell, item);
 
                 return cell;
             }
@@ -370,6 +384,13 @@ namespace NachoClient.iOS
                 cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
                 return cell;
             }
+
+            private UITableViewCell FormatDocumentCell (UITableViewCell cell, McFile document)
+            {
+                cell.DetailTextLabel.Text = document.SourceApplication;
+                cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+                return cell;
+            }
                 
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
@@ -380,13 +401,23 @@ namespace NachoClient.iOS
                     item = Items [indexPath.Row];
                 }
 
-                if (vc.itemType == ItemType.Attachment) {
+                switch (vc.itemType) {
+                case ItemType.Attachment:
                     McAttachment att = (McAttachment)item;
                     vc.AttachmentAction (att.Id);
                     if (!att.IsDownloaded) {
                         var rotation = vc.DownloadAnimation ();
-                        tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                        tableView.CellAt (indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
                     }
+                    break;
+                case ItemType.Note:
+                    McNote note = (McNote)item;
+                    // TODO: Add segue to edit notes view
+                    break;
+                case ItemType.Document:
+                    McFile document = (McFile)item;
+                    PlatformHelpers.DisplayFile (vc, document);
+                    break;
                 }
 
                 tableView.DeselectRow (indexPath, true);
@@ -423,9 +454,15 @@ namespace NachoClient.iOS
                     crossView = ViewWithImageName ("cross");
                     redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                        if (vc.itemType == ItemType.Attachment) {
+                        switch (vc.itemType) {
+                        case ItemType.Attachment:
                             McAttachment attachment = (McAttachment)item;
                             vc.DeleteAttachment (attachment);
+                            break;
+                        case ItemType.Document:
+                            McFile document = (McFile)item;
+                            vc.DeleteDocument (document);
+                            break;
                         }
                         return;
                     });
