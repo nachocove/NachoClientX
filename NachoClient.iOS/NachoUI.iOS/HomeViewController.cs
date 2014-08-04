@@ -13,8 +13,6 @@ namespace NachoClient.iOS
     public partial class HomeViewController : NcUIViewController
     {
         UIPageViewController pageController;
-        bool hasSyncCompleted = false;
-        UILabel autoDState;
         int accountId;
 
         public HomeViewController (IntPtr handle) : base (handle)
@@ -55,8 +53,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             accountId = LoginHelpers.getCurrentAccountId ();
-            hasSyncCompleted = LoginHelpers.GetSyncedBit (accountId);
-            setCurrentStatusLabel ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -73,18 +69,15 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
-                autoDState.Text = "FolderSyncSucceeded";
-                autoDState.TextColor = UIColor.Green;
                 LoginHelpers.SetSyncedBit (accountId, true);
             }
-            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                autoDState.Text = "AutoDComplete";
-                autoDState.TextColor = UIColor.Yellow;
-            }
+        }
 
-            if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
-                autoDState.Text = "NetworkUnavailable";
-                autoDState.TextColor = UIColor.Red;
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "StartupToAdvancedLogin") {
+                var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
+                AdvancedView.setBEState (true);
             }
         }
 
@@ -110,7 +103,7 @@ namespace NachoClient.iOS
             closeTutorial.SetTitle ("Dismiss Tutorial", UIControlState.Normal);
             closeTutorial.TitleLabel.TextColor = UIColor.White;
             closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            closeTutorial.BackgroundColor = A.Color_NachoBlue;
+            closeTutorial.BackgroundColor = A.Color_NachoGreen;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetTutorialBit (accountId, true);
                 if(LoginHelpers.GetSyncedBit(accountId) == true){
@@ -120,13 +113,6 @@ namespace NachoClient.iOS
                 }
             };
             View.Add (closeTutorial);
-
-            //For testing purposes to see live state of Auto-D
-            autoDState = new UILabel (new System.Drawing.RectangleF(20, 460, View.Frame.Width - 40, 30));
-            autoDState.TextAlignment = UITextAlignment.Center;
-            autoDState.Font = A.Font_AvenirNextDemiBold17;
-            autoDState.TextColor = A.Color_NachoRed;
-            View.Add (autoDState);
         }
 
         /// <summary>
@@ -138,15 +124,6 @@ namespace NachoClient.iOS
         public int TotalPages {
             get {
                 return 7;
-            }
-        }
-
-        public void setCurrentStatusLabel()
-        {
-            if (hasSyncCompleted) {
-                autoDState.Text = "You need to watch the tutorial";
-            } else {
-                autoDState.Text = "Attempting Auto-D...";
             }
         }
 

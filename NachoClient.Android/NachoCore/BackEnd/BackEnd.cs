@@ -131,6 +131,11 @@ namespace NachoCore
         {
             var service = ServiceFromAccountId (accountId);
             service.ForceStop ();
+
+            //FIXME temporary to see 'live' BE state
+            if (accountId == LoginHelpers.getCurrentAccountId()) {
+                LoginHelpers.SetBeStateBit (accountId, false);
+            }
         }
 
         public void QuickCheck (uint seconds)
@@ -195,6 +200,11 @@ namespace NachoCore
                 }
                 ServiceFromAccountId (accountId).Execute ();
             }, "Start");
+
+            //FIXME temporary to see 'live' BE state
+            if (accountId == LoginHelpers.getCurrentAccountId()) {
+                LoginHelpers.SetBeStateBit (accountId, true);
+            }
         }
 
         public void ForceSync (int accountId)

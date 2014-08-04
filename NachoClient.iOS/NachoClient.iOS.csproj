@@ -1073,6 +1073,10 @@
     </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
     <Compile Include="NachoUI.iOS\Support\SignInView.cs" />
+    <Compile Include="NachoUI.iOS\Support\LoginHelpers.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\RegexUtilities.cs">
+      <Link>NachoCore\Utils\RegexUtilities.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

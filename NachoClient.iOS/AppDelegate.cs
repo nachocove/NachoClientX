@@ -439,6 +439,10 @@ namespace NachoClient.iOS
 
             if (hasSynced == false) {
                 Log.Info (Log.LOG_LIFECYCLE, "CredReqCallback Called");
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CredReqCallback),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
             } else {
 
                 var Mo = NcModel.Instance;
@@ -479,7 +483,6 @@ namespace NachoClient.iOS
                             }
 
                             DoitYadummy.ResignFirstResponder ();
-
                         };
                     }
                     ;
@@ -492,9 +495,12 @@ namespace NachoClient.iOS
         {
 
             hasSynced = LoginHelpers.GetSyncedBit (accountId); 
-
             if (hasSynced == false) {
                 Log.Info (Log.LOG_LIFECYCLE, "ServConfReqCallback Called");
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
             } else {
 
             // called if server name is wrong
@@ -536,7 +542,6 @@ namespace NachoClient.iOS
                         credView.ResignFirstResponder ();
                     }
                     ;
-
                 }
                 ;
 
@@ -562,8 +567,17 @@ namespace NachoClient.iOS
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
-            // UI FIXME - ask user and call CertAskResp async'ly.
-            NcApplication.Instance.CertAskResp (accountId, true);
+//            hasSynced = LoginHelpers.GetSyncedBit (accountId); 
+//            if (hasSynced == false  && LoginHelpers.GetCertificateBit(accountId) == false) {
+//                Log.Info (Log.LOG_LIFECYCLE, "CertAskReqCallback Called");
+//                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+//                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
+//                    Account = ConstMcAccount.NotAccountSpecific,
+//                });
+//            } else {
+                // UI FIXME - ask user and call CertAskResp async'ly.
+                NcApplication.Instance.CertAskResp (accountId, true);
+//            }
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.

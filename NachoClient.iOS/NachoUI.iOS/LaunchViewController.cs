@@ -13,6 +13,7 @@ namespace NachoClient.iOS
     public partial class LaunchViewController : NcUIViewController
     {
         AppDelegate appDelegate;
+        UIButton submitButton;
 
         private void EnterFullConfiguration () {
             NcModel.Instance.RunInTransaction (() => {
@@ -81,6 +82,7 @@ namespace NachoClient.iOS
             formatUserName (signInView);
             formatPassword (signInView);
             configureAndAddSubmitButton (signInView);
+            haveEnteredEmailAndPass ();
             signInView.addStartLabel ();
             configureAndAddAdvancedButton (signInView);
             View.Add (signInView);
@@ -130,17 +132,18 @@ namespace NachoClient.iOS
 
         void configureAndAddSubmitButton(SignInView view)
         {
-            UIButton submitButton = new UIButton (new System.Drawing.RectangleF (25, View.Frame.Height / 2 + 11, View.Frame.Width - 50, 45));
+            submitButton = new UIButton (new System.Drawing.RectangleF (25, View.Frame.Height / 2 + 11, View.Frame.Width - 50, 45));
             submitButton.TouchUpInside += delegate {
 
-                if(txtUserName.Text.Length == 0 || txtPassword.Text.Length == 0)
+                if(!haveEnteredEmailAndPass())
                 {
-                    if(txtUserName.Text.Length == 0){
-                        txtUserName.Text = "Required";
-                        txtUserName.TextColor = A.Color_NachoRed;
-                    }
-                    if(txtPassword.Text.Length == 0){
-                    }
+//                    if(txtUserName.Text.Length == 0){
+//                        txtUserName.Text = "Required";
+//                        txtUserName.TextColor = A.Color_NachoRed;
+//                    }
+                }
+                else if(!isValidEmail(txtUserName.Text)){
+                    txtUserName.TextColor = A.Color_NachoRed;
                 }else{
                     EnterFullConfiguration();
                     DismissViewController(true, null);
@@ -149,6 +152,10 @@ namespace NachoClient.iOS
             view.configureSubmitButton (submitButton);
         }
 
+        bool isValidEmail(string email){
+            RegexUtilities regexUtil = new RegexUtilities ();
+            return regexUtil.IsValidEmail (email);
+        }
         void configureAndAddAdvancedButton(SignInView view)
         {
             UIButton advancedSignInButton = new UIButton ();
@@ -173,7 +180,8 @@ namespace NachoClient.iOS
             };
         }
         void getUserName(){
-            this.txtUserName.ShouldReturn += (textField) => { 
+            this.txtUserName.ShouldReturn += (textField) => {
+                haveEnteredEmailAndPass();
                 if (txtUserName.Text.Contains("Hello")){
                     Log.Info (Log.LOG_UI, "Hello"); 
                 }
@@ -188,7 +196,7 @@ namespace NachoClient.iOS
         }
         void getPassword(){
             this.txtPassword.ShouldReturn += (textField) => { 
-
+                haveEnteredEmailAndPass();
                 if (txtPassword.Text.Contains("Hello")){
                     Log.Info (Log.LOG_UI, "Hello"); 
                 }
@@ -198,14 +206,32 @@ namespace NachoClient.iOS
                 return true;
             };
         }
-          //FIXME need to add back in once AdvancedLogin has been merged to Master
-//        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-//        {
-//            if (segue.Identifier == "StartupToAdvancedLogin") {
-//                var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
-//                AdvancedView.setBEState (false);
-//            }
-//        }
+        public bool haveEnteredEmailAndPass(){
+            if (0 == txtUserName.Text.Length || 0 == txtPassword.Text.Length) {
+                enableConnect (false);
+                return false;
+            } else {
+                enableConnect (true);
+                return true;
+            }
+        }
+        public void enableConnect(bool shouldWe)
+        {
+            if (true == shouldWe) {
+                submitButton.Enabled = true;
+                submitButton.Alpha = 1.0f;
+            } else {
+                submitButton.Enabled = false;
+                submitButton.Alpha = .5f;
+            }
+        }
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "StartupToAdvancedLogin") {
+                var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
+                AdvancedView.setBEState (false);
+            }
+        }
         public LaunchViewController (IntPtr handle) : base (handle)
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;

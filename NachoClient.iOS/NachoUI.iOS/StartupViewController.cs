@@ -59,5 +59,14 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
         }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "StartupToAdvancedLogin") {
+                    var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
+                    AdvancedView.setBEState (false);
+            }
+        }
     }
 }
+    
