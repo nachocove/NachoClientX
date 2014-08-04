@@ -25,6 +25,7 @@ namespace NachoClient.iOS
         Action<object, EventArgs> fileAction;
         public ItemType itemType;
 
+        // set by caller
         public enum ItemType {Attachment = 1, Note, Document};
 
         // segue ids
@@ -55,7 +56,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            itemType = ItemType.Attachment;
+            itemType = ItemType.Note;
 
             NcAssert.True (itemType != 0, "Item type should be set before transitioning to FilesViewController");
 
@@ -91,7 +92,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
-                    RefreshAttachmentSection ();
+                    RefreshTableSource ();
                 }
             };
         }
@@ -102,7 +103,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            RefreshAttachmentSection ();
+            RefreshTableSource ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -127,11 +128,21 @@ namespace NachoClient.iOS
             }
         }
 
-        public void RefreshAttachmentSection ()
+        public void RefreshTableSource ()
         {
             // show most recent attachments first
             filesSource.Items = new List<IFilesViewItem> ();
-            filesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
+
+            switch (itemType) {
+            case ItemType.Attachment:
+            case ItemType.Document:
+                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
+                break;
+            case ItemType.Note:
+                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McNote> ().OrderByDescending (a => a.Id));
+                break;
+            }
+
             SearchDisplayController.SearchResultsTableView.ReloadData ();
             if (searchDelegate != null && searchDelegate.searchString != null) {
                 searchDelegate.ShouldReloadForSearchString (SearchDisplayController, searchDelegate.searchString);
@@ -192,7 +203,7 @@ namespace NachoClient.iOS
                 alert.Show();
             } else {
                 attachment.RemoveFromStorage ();
-                RefreshAttachmentSection ();
+                RefreshTableSource ();
             }
         }
 

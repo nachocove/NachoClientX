@@ -42,6 +42,10 @@ namespace NachoCore.Model
 
         public string ContentType { get; set; }
 
+        public uint AttachedTo { get; set; }
+
+        public enum OwnerTypes {Email = 0, Event};
+
         public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
         {
             // ActiveSync only supports email attachments.
