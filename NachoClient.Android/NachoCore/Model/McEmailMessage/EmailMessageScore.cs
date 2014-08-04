@@ -35,6 +35,12 @@ namespace NachoCore.Model
         [Indexed]
         public bool NeedUpdate { get; set; }
 
+        [Indexed]
+        public bool ScoreIsRead { get; set; }
+
+        [Indexed]
+        public bool ScoreIsReplied { get; set; }
+
         /// If there is update that is not uploaded to the synchronization server,
         /// this object is non-null and holds the update.
         private McEmailMessageScoreSyncInfo SyncInfo { get; set; }
@@ -68,41 +74,80 @@ namespace NachoCore.Model
             return score;
         }
 
+        private void ScoreObject_V1 ()
+        {
+            McEmailAddress emailAddress;
+            var address = NcEmailAddress.ParseMailboxAddressString (From);
+            if (null != address) {
+                bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+                if (found) {
+                    // Analyze sender
+                    emailAddress.IncrementEmailsReceived ();
+                    if (IsRead) {
+                        emailAddress.IncrementEmailsRead ();
+                    }
+                    emailAddress.Score = emailAddress.GetScore ();
+                    emailAddress.UpdateByBrain ();
+
+                    // Add Sender dependency
+                    McEmailMessageDependency dep = new McEmailMessageDependency ();
+                    dep.EmailMessageId = Id;
+                    dep.EmailAddressId = emailAddress.Id;
+                    dep.EmailAddressType = "Sender";
+                    dep.InsertByBrain ();
+                } else {
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                }
+            } else {
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
+            }
+
+            ScoreVersion++;
+        }
+
+        private bool IsReplied ()
+        {
+            return (((int)AsLastVerbExecutedType.REPLYTOALL == LastVerbExecuted) ||
+            ((int)AsLastVerbExecutedType.REPLYTOSENDER == LastVerbExecuted));
+        }
+
+        private void ScoreObject_V2 ()
+        {
+            McEmailAddress emailAddress;
+            var address = NcEmailAddress.ParseMailboxAddressString (From);
+            if (null != address) {
+                bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+                if (found) {
+                    // Migrate EmailsRead count to EmailsReplied when appropriate
+                    if (IsReplied ()) {
+                        if (IsRead) {
+                            emailAddress.IncrementEmailsRead (-1);
+                        }
+                        emailAddress.IncrementEmailsReplied ();
+                        emailAddress.Score = emailAddress.GetScore();
+                        emailAddress.UpdateByBrain ();
+                    }
+
+                    // Initialize new columns
+                    SetScoreIsRead (IsRead);
+                    SetScoreIsReplied (IsReplied ());
+                } else {
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                }
+            } else {
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
+            }
+            ScoreVersion++;
+        }  
+
         public void ScoreObject ()
         {
             NcAssert.True (Scoring.Version > ScoreVersion);
             if (0 == ScoreVersion) {
-                McEmailAddress emailAddress;
-                var address = NcEmailAddress.ParseMailboxAddressString (From);
-                if (null != address) {
-                    bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
-                    if (found) {
-                        // Analyze sender
-                        emailAddress.IncrementEmailsReceived ();
-                        if (IsRead) {
-                            emailAddress.IncrementEmailsRead ();
-                        }
-                        // TODO - How to determine if the email has been replied?
-                        emailAddress.Score = emailAddress.GetScore ();
-                        emailAddress.UpdateByBrain ();
-
-                        // Add Sender dependency
-                        McEmailMessageDependency dep = new McEmailMessageDependency ();
-                        dep.EmailMessageId = Id;
-                        dep.EmailAddressId = emailAddress.Id;
-                        dep.EmailAddressType = "Sender";
-                        dep.InsertByBrain ();
-                    } else {
-                        Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
-                    }
-                } else {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
-                }
-
-                ScoreVersion++;
+                ScoreObject_V1 ();
             }
             if (1 == ScoreVersion) {
-                // TODO - Analyze thread, content
+                ScoreObject_V2 ();
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
             InitializeTimeVariance ();
@@ -146,6 +191,26 @@ namespace NachoCore.Model
             SecondsRead += seconds;
             GetScoreSyncInfo ();
             SyncInfo.SecondsRead += seconds;
+        }
+
+        public void SetScoreIsRead (bool value)
+        {
+            if (value == ScoreIsRead) {
+                return;
+            }
+            ScoreIsRead = value;
+            GetScoreSyncInfo ();
+            SyncInfo.ScoreIsRead = value;
+        }
+
+        public void SetScoreIsReplied (bool value)
+        {
+            if (value == ScoreIsReplied) {
+                return;
+            }
+            ScoreIsReplied = value;
+            GetScoreSyncInfo ();
+            SyncInfo.ScoreIsReplied = value;
         }
 
         public void UploadScore ()
@@ -203,7 +268,7 @@ namespace NachoCore.Model
         public static McEmailMessage QueryNeedGleaning ()
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.HasBeenGleaned == false && McAbstrItem.BodyStateEnum.Whole_0 == x.BodyState)
+                .Where (x => x.HasBeenGleaned == false)
                 .FirstOrDefault ();
         }
 

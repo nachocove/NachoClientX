@@ -53,10 +53,25 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            if (IsDownloaded) {
-                File.Delete (FilePath ());
-            }
+            RemoveFromStorage ();
             return base.Delete ();
+        }
+
+        // best-effort attempt to find and remove the file
+        public void RemoveFromStorage ()
+        {
+            if (IsDownloaded) {
+                try {
+                    File.Delete (FilePath ());
+                    // reset fields
+                    IsDownloaded = false;
+                    PercentDownloaded = 0;
+                    LocalFileName = null;
+                    base.Update ();
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_STATE, "Exception thrown while removing attachment from storage: {0}", e.Message);
+                }
+            }
         }
 
         public static FileStream TempFileStream (string guidString)

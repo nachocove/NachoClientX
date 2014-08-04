@@ -238,6 +238,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "PrepareForSqueue: SWRevealViewControllerSegue");
                 SWRevealViewControllerSegue swSegue = (SWRevealViewControllerSegue)segue;
                 swSegue.PerformBlock = PerformBlock;
+            } else {
+                this.RevealViewController ().SetFrontViewPosition (FrontViewPosition.Left, true);
             }
         }
 

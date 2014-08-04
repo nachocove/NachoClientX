@@ -17,6 +17,7 @@ namespace NachoClient.iOS
     {
         AccountSettings Account = new AccountSettings ();
         UIBarButtonItem doneButton;
+        UIBarButtonItem cancelButton;
         const int SPINNER_TAG = 109;
         UIView statusView;
         UIActivityIndicatorView theSpinner;
@@ -43,12 +44,14 @@ namespace NachoClient.iOS
             ErrorComm,
             ErrorUser,
             Success,
-            Validating
+            Validating,
         };
 
         public SettingsViewController (IntPtr handle) : base (handle)
         {
             doneButton = new UIBarButtonItem (UIBarButtonSystemItem.Save);
+            cancelButton = new UIBarButtonItem (UIBarButtonSystemItem.Cancel);
+
         }
 
         public override void ViewDidLoad ()
@@ -58,15 +61,9 @@ namespace NachoClient.iOS
             userNameAndPasswordTextColor = UIColor.Gray;
             serverNameTextColor = UIColor.Gray;
             NavigationItem.RightBarButtonItem = doneButton;
+            NavigationItem.LeftBarButtonItem = cancelButton;
 
             configureTextFields ();
-
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
 
             //The intention is that when this method gets called you will pass in the account
             //That you are going to configure. We only have one account right now so we don't 
@@ -74,12 +71,26 @@ namespace NachoClient.iOS
             LoadSettingsForSelectedAccount (null);
 
             var root = new RootElement ("Settings");
-            if (!didLoad)
+            if (!didLoad) {
                 root.Add (AddAccountSettings ());
+            }
+
+            Pushing = true;
             Root = root;
 
             didLoad = true;
             configureDoneButton ();
+
+            cancelButton.Clicked += (object sender, EventArgs e) => {
+                CloseThisView ();               
+            };
+        }
+
+        protected void CloseThisView ()
+        {
+            NavigationController.DismissViewController (true, new NSAction (delegate {
+                NavigationController.PopToRootViewController (false);
+            }));
         }
 
         public void configureTextFields ()
@@ -249,6 +260,8 @@ namespace NachoClient.iOS
             theCred.Update ();
             theAccount.Update ();
             theServer.Update ();
+
+            CloseThisView ();
         }
 
         public void configureStatusViewFor (statusType whatType)

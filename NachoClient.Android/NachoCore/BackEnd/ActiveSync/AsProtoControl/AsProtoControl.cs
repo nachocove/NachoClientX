@@ -69,7 +69,8 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.PingW:
                 case (uint)Lst.QOpW:
                 case (uint)Lst.FetchW:
-                
+                    return BackEndAutoDStateEnum.PostAutoDPostFSync;
+
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
                     return BackEndAutoDStateEnum.PostAutoDPostFSync;

@@ -179,13 +179,10 @@ namespace NachoCore
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
         {
+            BackEnd.Instance.Start ();
             MonitorStart (); // Has a deferred timer start inside.
             Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
-                if(LoginHelpers.GetSyncedBit(LoginHelpers.getCurrentAccountId())){
-                    BackEnd.Instance.Start ();
-                }
-                
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
             }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
@@ -205,10 +202,10 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
+            BackEnd.Instance.Stop ();
             MonitorStop ();
             if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
-                BackEnd.Instance.Stop ();
             }
 
             if (Class4LateShowTimer.DisposeAndCheckHasFired ()) {
@@ -243,6 +240,8 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
             Log.Info (Log.LOG_SYS, "Monitor: Comm Status {0}, Speed {1}", 
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
+            Log.Info (Log.LOG_SYS, "Monitor: Battery Level {0}, Plugged Status {1}",
+                NachoPlatform.Power.Instance.BatteryLevel, NachoPlatform.Power.Instance.PowerState);
         }
 
         public void EstablishService ()

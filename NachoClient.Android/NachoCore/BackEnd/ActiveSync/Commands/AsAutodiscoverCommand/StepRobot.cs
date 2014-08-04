@@ -26,7 +26,7 @@ namespace NachoCore.ActiveSync
         private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner
         {
             private const string KDefaultCertTimeoutSeconds = "8";
-
+            private double KDefaultTimeoutExpander = 2.0;
             public enum RobotLst : uint
             {
                 PostWait = (St.Last + 1),
@@ -461,6 +461,7 @@ namespace NachoCore.ActiveSync
                     Allow451Follow = false,
                     DontReportCommResult = true,
                     TriesLeft = 3,
+                    TimeoutExpander = KDefaultTimeoutExpander,
                 };
             }
 
