@@ -166,7 +166,7 @@ namespace NachoClient.iOS
                     if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
                         a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
                         if (a.IsDownloaded) {
-                            attachmentAction (a);
+                            AttachmentAction (a.Id);
                         } else {
                             NcAssert.True (false, "Item should have been downloaded at this point");
                         }
@@ -175,7 +175,7 @@ namespace NachoClient.iOS
                 NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
                 return;
             } else {
-                attachmentAction (a);
+                AttachmentAction (a.Id);
             }
         }
 
@@ -371,7 +371,7 @@ namespace NachoClient.iOS
 
                 if (vc.itemType == ItemType.Attachment) {
                     McAttachment att = (McAttachment)item;
-                    vc.attachmentAction (att.Id);
+                    vc.AttachmentAction (att.Id);
                     if (!att.IsDownloaded) {
                         var rotation = vc.DownloadAnimation ();
                         tableView.CellAt(indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
@@ -423,7 +423,7 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            vc.attachmentAction (attachment.Id);
+                            vc.AttachmentAction (attachment.Id);
                             SetAnimationOnCell (cell, attachment.IsDownloaded);
                         }
                         return;
@@ -433,7 +433,7 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            vc.openInOtherApp (attachment);
+                            vc.OpenInOtherApp (attachment);
                             SetAnimationOnCell (cell, attachment.IsDownloaded);
                         }
                         return;
