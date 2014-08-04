@@ -622,10 +622,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AttachmentViewController.designer.cs">
-      <DependentUpon>AttachmentViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TnefEncoding.cs">
       <Link>NachoCore\Utils\TnefEncoding.cs</Link>
     </Compile>
@@ -1074,6 +1070,10 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McDocument.cs">
       <Link>NachoCore\Model\McDocument.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\FilesViewController.cs" />
+    <Compile Include="NachoUI.iOS\FilesViewController.designer.cs">
+      <DependentUpon>FilesViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

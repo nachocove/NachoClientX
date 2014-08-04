@@ -9,8 +9,8 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AttachmentViewController")]
-	partial class AttachmentViewController
+	[Register ("FilesViewController")]
+	partial class FilesViewController
 	{
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem actionButton { get; set; }

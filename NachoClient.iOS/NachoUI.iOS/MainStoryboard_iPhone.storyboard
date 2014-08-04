@@ -276,10 +276,10 @@
             </objects>
             <point key="canvasLocation" x="-1049" y="-955"/>
         </scene>
-        <!--Attachment View Controller - Attachments-->
+        <!--Files View Controller - Files-->
         <scene sceneID="KYr-4w-GFq">
             <objects>
-                <tableViewController storyboardIdentifier="AttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="AttachmentViewController" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="FilesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="FilesViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
                         <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -297,7 +297,7 @@
                             <outlet property="delegate" destination="bBy-CW-6ix" id="Mmh-49-Ptx"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" title="Attachments" id="jwI-jd-NQT"/>
+                    <navigationItem key="navigationItem" title="Files" id="jwI-jd-NQT"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="nachoButton" destination="LXM-cO-kAi" id="6Sr-gx-dP7"/>
@@ -1983,16 +1983,11 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="ljp-nW-Zcd"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="DSB-SJ-fIa"/>
-        <segue reference="HKc-NA-tOt"/>
         <segue reference="J8i-gn-UTn"/>
         <segue reference="Pu5-w4-aps"/>
         <segue reference="mo4-Vz-xJh"/>
-        <segue reference="eK3-Wd-Zbv"/>
         <segue reference="vah-yS-677"/>
         <segue reference="zDw-Tx-fTt"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="Q8y-4K-BAb"/>
         <segue reference="JTo-qU-j7O"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="xSG-RA-4K6"/>
@@ -2001,5 +1996,10 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="4M9-UI-9mt"/>
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="zXa-AG-jcx"/>
+        <segue reference="Wtf-SG-mz2"/>
+        <segue reference="Gr5-Hy-1Yr"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="Q8y-4K-BAb"/>
     </inferredMetricsTieBreakers>
 </document>
