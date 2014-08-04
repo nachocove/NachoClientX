@@ -47,7 +47,7 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
                 if (null == taskRef) {
                     // XAMMIT - Likely inappropriate Task inlining.
-                    Log.Error (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable");
+                    Log.Warn (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable", name);
                 }
                 else if (!TaskMap.TryRemove (taskRef, out name)) {
                     Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);

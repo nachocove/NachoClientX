@@ -98,7 +98,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)ECLst.DefI3dC2w },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSayRicDone, State = (uint)ECLst.DefI3dC2w },
                         }
                     },
                     new Node {
@@ -262,6 +262,12 @@ namespace NachoCore.ActiveSync
         private void DoNop ()
         {
             // Do nothing.
+        }
+
+        private void DoSayRicDone ()
+        {
+            // Once we get to "ping" on 1st series of Syncs, then RIC must be downloaded.
+            BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
         }
 
         private void DoAvCon ()
