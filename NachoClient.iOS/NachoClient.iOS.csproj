@@ -1065,7 +1065,6 @@
     <Compile Include="NachoUI.iOS\EventAttendeeViewController.designer.cs">
       <DependentUpon>EventAttendeeViewController.cs</DependentUpon>
     </Compile>
-<<<<<<< HEAD
     <Compile Include="..\NachoClient.Android\NachoCore\Model\IFilesViewItem.cs">
       <Link>NachoCore\Model\IFilesViewItem.cs</Link>
     </Compile>
