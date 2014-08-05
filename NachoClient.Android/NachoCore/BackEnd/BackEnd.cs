@@ -129,6 +129,9 @@ namespace NachoCore
 
         public void Stop (int accountId)
         {
+            if (!HasServiceFromAccountId (accountId)) {
+                EstablishService (accountId);
+            }
             var service = ServiceFromAccountId (accountId);
             service.ForceStop ();
 

@@ -423,12 +423,13 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             var accountId = ea.Account.Id;
             var status = ea.Status;
-            NcAssert.True (ConstMcAccount.NotAccountSpecific.Id == accountId || accountId == Account.Id);
             switch (status.SubKind) {
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 // We use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because we want
                 // To also act when the server marks a message as read (we remove the notif).
-                BadgeNotifUpdate ();
+                if (accountId == Account.Id) {
+                    BadgeNotifUpdate ();
+                }
                 break;
             }
         }
