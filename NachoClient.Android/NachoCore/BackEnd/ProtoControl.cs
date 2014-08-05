@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -55,6 +56,12 @@ namespace NachoCore
         public virtual BackEndAutoDStateEnum AutoDState {
             get {
                 return BackEndAutoDStateEnum.PostAutoDPostFSync;
+            }
+        }
+
+        public virtual X509Certificate2 ServerCertToBeExamined {
+            get {
+                return null;
             }
         }
 

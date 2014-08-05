@@ -448,6 +448,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).AutoDState;
         }
 
+        public X509Certificate2 ServerCertToBeExamined (int accountId)
+        {
+            return ServiceFromAccountId (accountId).ServerCertToBeExamined;
+        }
+
         //
         // For IProtoControlOwner.
         //

@@ -78,6 +78,13 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private X509Certificate2 _ServerCertToBeExamined;
+        public override X509Certificate2 ServerCertToBeExamined {
+            get {
+                return _ServerCertToBeExamined;
+            }
+        }
+
         // If you're exposed to AsHttpOperation, you need to cover these.
         public class AsEvt : SmEvt
         {
@@ -809,7 +816,8 @@ namespace NachoCore.ActiveSync
 
         private void DoUiCertOkReq ()
         {
-            Owner.CertAskReq (this, (X509Certificate2)Sm.Arg);
+            _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
+            Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
 
         private void DoCertOkNo ()

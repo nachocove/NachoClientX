@@ -1,6 +1,7 @@
 // # Copyright (C) 2013, 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 // TODO: this file should not reference ActiveSync.
 using NachoCore.ActiveSync;
@@ -99,6 +100,7 @@ namespace NachoCore
         void CancelValidateConfig (int accountId);
         // auto-discovery state.
         BackEndAutoDStateEnum AutoDState (int accountId);
+        X509Certificate2 ServerCertToBeExamined (int accountId);
     }
 }
 
