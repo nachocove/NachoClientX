@@ -436,7 +436,7 @@ namespace NachoClient.iOS
 
         public void CredReqCallback (int accountId)
         {
-            hasSynced = LoginHelpers.GetSyncedBit (accountId); 
+            hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId); 
 
             if (hasSynced == false) {
                 Log.Info (Log.LOG_LIFECYCLE, "CredReqCallback Called");
@@ -495,7 +495,7 @@ namespace NachoClient.iOS
         public void ServConfReqCallback (int accountId)
         {
 
-            hasSynced = LoginHelpers.GetSyncedBit (accountId); 
+            hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasSynced == false) {
                 Log.Info (Log.LOG_LIFECYCLE, "ServConfReqCallback Called");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 

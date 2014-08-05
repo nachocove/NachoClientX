@@ -28,24 +28,24 @@ namespace NachoClient.iOS
         UITextField domainText = new UITextField ();
         UITextField usernameText = new UITextField ();
         UITextField passwordText = new UITextField ();
-        List<UITextField> inputFields = new List<UITextField>();
+        List<UITextField> inputFields = new List<UITextField> ();
         UIScrollView scrollView;
         UILabel errorMessage;
         UITextView statusMessage;
-        UIButton cancelValidation; 
+        UIButton cancelValidation;
         UIActivityIndicatorView theSpinner;
         UIView cancelLine;
         UIView statusView;
         UIButton genericSystemButton;
         UIButton connectButton;
-
         UIColor systemBlue;
         UIAlertView certificateAlert;
         AccountSettings theAccount;
-        bool isBERunning;
-        int accountId;
+        McServer serverToValidate;
         AppDelegate appDelegate;
-        public enum errorMessageEnum{
+
+        public enum errorMessageEnum
+        {
             Server,
             RequiredFields,
             InvalidEmail,
@@ -54,8 +54,9 @@ namespace NachoClient.iOS
             Certificate,
             ServerConf,
             Network,
-            FirstTime
-        };
+            FirstTime}
+
+        ;
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
@@ -66,17 +67,16 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             createCertificateAlert ();
-          
+
             generateSystemBlue ();
             createWaitingView ();
             createScrollView ();
             createInputFieldList ();
             theAccount = new AccountSettings ();
-            accountId = LoginHelpers.getCurrentAccountId ();
-            loadSettingsForAccount (accountId);
+            //accountId = LoginHelpers.getCurrentAccountId ();
+            loadSettingsForAccount ();
             addErrorLabel ();
             addCells ();
-            //addLines ();
             fillInKnownFields ();
             configureKeyboards ();
             handleStatusEnums ();
@@ -116,16 +116,13 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
             }
         }
-        public void setBEState(bool BERunning)
-        {
-            isBERunning = BERunning;
-        }
-            
-        public void generateSystemBlue()
+
+        public void generateSystemBlue ()
         {
             genericSystemButton = new UIButton (UIButtonType.System);
             systemBlue = genericSystemButton.CurrentTitleColor;
         }
+
         public void createScrollView ()
         {
             scrollView = new UIScrollView (View.Frame);
@@ -133,21 +130,24 @@ namespace NachoClient.iOS
             scrollView.ContentSize = new SizeF (View.Frame.Width, View.Frame.Height - 64);
             View.Add (scrollView);
         }
-        public void createInputFieldList(){
+
+        public void createInputFieldList ()
+        {
             inputFields.Add (emailText);
             inputFields.Add (serverText);
             inputFields.Add (domainText);
             inputFields.Add (usernameText);
             inputFields.Add (passwordText);
         }
+
         public void layoutView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
-        public void createWaitingView()
+        public void createWaitingView ()
         {
-            statusView = new UIView (new System.Drawing.RectangleF (60,100,View.Frame.Width - 120, 146));
+            statusView = new UIView (new System.Drawing.RectangleF (60, 100, View.Frame.Width - 120, 146));
             statusView.Tag = 50;
             statusView.Layer.CornerRadius = 7.0f;
             statusView.BackgroundColor = UIColor.White;
@@ -183,17 +183,16 @@ namespace NachoClient.iOS
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
             cancelValidation.TitleLabel.TextColor = systemBlue;
             cancelValidation.TouchUpInside += (object sender, EventArgs e) => {
-                if(isBERunning){
-                    BackEnd.Instance.Stop ();
-                }
-                setErrorMessage(errorMessageEnum.FirstTime);
-                setTextToRed(new UITextField[] {});
+
+                setErrorMessage (errorMessageEnum.FirstTime);
+                setTextToRed (new UITextField[] { });
                 dismissWaitingView ();
             };
             statusView.Add (cancelValidation);
         }
 
-        public void showWaitingView(){
+        public void showWaitingView ()
+        {
 
             UIView greyBackground = new UIView (new System.Drawing.RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
             greyBackground.BackgroundColor = UIColor.DarkGray;
@@ -209,11 +208,9 @@ namespace NachoClient.iOS
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
             cancelValidation.TitleLabel.TextColor = systemBlue;
             cancelValidation.TouchUpInside += (object sender, EventArgs e) => {
-                if(isBERunning){
-                    BackEnd.Instance.Stop ();
-                }
-                setErrorMessage(errorMessageEnum.FirstTime);
-                setTextToRed(new UITextField[] {});
+                stopBeIfRunning ();
+                setErrorMessage (errorMessageEnum.FirstTime);
+                setTextToRed (new UITextField[] { });
                 dismissWaitingView ();
             };
 
@@ -221,7 +218,7 @@ namespace NachoClient.iOS
             View.AddSubview (statusView);
         }
 
-        public void dismissWaitingView()
+        public void dismissWaitingView ()
         {
             UIView statusWindow = View.ViewWithTag (50);
             UIView grayBackground = View.ViewWithTag (69);
@@ -236,7 +233,6 @@ namespace NachoClient.iOS
             if (null != spinner) {
                 spinner.RemoveFromSuperview ();
             }
-
         }
 
         public void addConnectButton ()
@@ -249,16 +245,16 @@ namespace NachoClient.iOS
             connectButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             connectButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (canUserConnect ()) {
-                    if (!LoginHelpers.GetCredsBit (accountId)) {
+                    if (!LoginHelpers.IsCurrentAccountSet ()) {
                         basicEnterFullConfiguration ();
                     } else {
                         if (haveEnteredHost ()) {
                             if (isValidHost ()) {
-                                showWaitingView();
+                                showWaitingView ();
                                 tryValidateConfig ();
                             }
                         } else {
-                            showWaitingView();
+                            showWaitingView ();
                             tryAutoD ();
                         }
                     }
@@ -267,7 +263,8 @@ namespace NachoClient.iOS
             scrollView.Add (connectButton);
         }
 
-        public bool haveEnteredEmailAndPass(){
+        public bool haveEnteredEmailAndPass ()
+        {
             if (0 == emailText.Text.Length || 0 == passwordText.Text.Length) {
                 enableConnect (false);
                 return false;
@@ -276,7 +273,8 @@ namespace NachoClient.iOS
                 return true;
             }
         }
-        public void enableConnect(bool shouldWe)
+
+        public void enableConnect (bool shouldWe)
         {
             if (true == shouldWe) {
                 connectButton.Enabled = true;
@@ -286,6 +284,7 @@ namespace NachoClient.iOS
                 connectButton.Alpha = .5f;
             }
         }
+
         public void addCustomerSupportButton ()
         {
             UIButton customerSupportButton = new UIButton (new RectangleF (30, 439, View.Frame.Width - 60, CELL_HEIGHT));
@@ -295,7 +294,7 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.TextColor = UIColor.White;
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue("AdvancedLoginToSupport", this);
+                PerformSegue ("AdvancedLoginToSupport", this);
             };
             scrollView.Add (customerSupportButton);
         }
@@ -307,29 +306,26 @@ namespace NachoClient.iOS
             errorMessage.TextColor = A.Color_NachoRed;
             errorMessage.Lines = 2;
             errorMessage.TextAlignment = UITextAlignment.Center;
-            if (LoginHelpers.GetCredsBit(accountId)) {
-                setErrorMessage (errorMessageEnum.FirstTime);
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                if (!LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
+                    setErrorMessage (errorMessageEnum.FirstTime);
+                }
             }
+
             scrollView.Add (errorMessage);
         }
 
         public void addCells ()
         {
-            AddInputCell ("Email", emailText, "joe@bigdog.com", TOP_CELL_YVAL,true);
+            AddInputCell ("Email", emailText, "joe@bigdog.com", TOP_CELL_YVAL, true);
             AddInputCell ("Server", serverText, "Required", TOP_CELL_YVAL + 69, true);
             AddInputCell ("Domain", domainText, "Optional", TOP_CELL_YVAL + 138, true);
-            AddInputCell ("Username", usernameText, "Required", TOP_CELL_YVAL + 182,false);
+            AddInputCell ("Username", usernameText, "Required", TOP_CELL_YVAL + 182, false);
             AddInputCell ("Password", passwordText, "******", TOP_CELL_YVAL + 226, true);
-            UIView whiteInset = new UIView (new RectangleF(0, TOP_CELL_YVAL + 139, 15, 90));
+            UIView whiteInset = new UIView (new RectangleF (0, TOP_CELL_YVAL + 139, 15, 90));
             whiteInset.BackgroundColor = UIColor.White;
             scrollView.Add (whiteInset);
         }
-
-//        public void addLines ()
-//        {
-//            AddLine (INSET, TOP_CELL_YVAL + 182, View.Frame.Width - INSET, separatorColor);
-//            AddLine (INSET, TOP_CELL_YVAL + 226, View.Frame.Width - INSET, separatorColor);
-//        }
 
         public void configureKeyboards ()
         {
@@ -341,7 +337,7 @@ namespace NachoClient.iOS
             usernameText.AutocorrectionType = UITextAutocorrectionType.No;
 
             emailText.ShouldReturn += (textField) => {
-                haveEnteredEmailAndPass();
+                haveEnteredEmailAndPass ();
                 textField.ResignFirstResponder ();
                 return true;
             };
@@ -364,7 +360,7 @@ namespace NachoClient.iOS
 
             passwordText.SecureTextEntry = true;
             passwordText.ShouldReturn += (textField) => {
-                haveEnteredEmailAndPass();
+                haveEnteredEmailAndPass ();
                 textField.ResignFirstResponder ();
                 return true;
             };
@@ -374,26 +370,22 @@ namespace NachoClient.iOS
 
         public void handleStatusEnums ()
         {
-            if (accountId != 0) {
-                NachoCore.ActiveSync.AsProtoControl protoControl = new NachoCore.ActiveSync.AsProtoControl (BackEnd.Instance, accountId);
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                NachoCore.ActiveSync.AsProtoControl protoControl = new NachoCore.ActiveSync.AsProtoControl (BackEnd.Instance, LoginHelpers.GetCurrentAccountId ());
                 if (protoControl != null) {
-                    //NcCaseError
                     BackEndAutoDStateEnum AutoDState = protoControl.AutoDState;
                     switch (AutoDState) {
                     case BackEndAutoDStateEnum.ServerConfWait:
                         setErrorMessage (errorMessageEnum.ServerConf);
                         setTextToRed (new UITextField[] { emailText });
-                        if (isBERunning) {
-                            BackEnd.Instance.Stop (accountId);
-                        }
+                        //BE.ServConf response?
+                        stopBeIfRunning ();
                         return;
 
                     case BackEndAutoDStateEnum.CredWait:
                         setErrorMessage (errorMessageEnum.Credentials);
                         setTextToRed (new UITextField[] { usernameText, passwordText });
-                        if (isBERunning) {
-                            BackEnd.Instance.Stop (accountId);
-                        }
+                        stopBeIfRunning ();
                         return;
 
                     case BackEndAutoDStateEnum.CertAskWait:
@@ -402,7 +394,7 @@ namespace NachoClient.iOS
                         return;
 
                     case BackEndAutoDStateEnum.PostAutoDPostFSync:
-                        if (LoginHelpers.GetTutorialBit (accountId)) {
+                        if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                             PerformSegue ("AdvancedLoginToNachoNow", this);
                         } else {
                             PerformSegue ("AdvancedLoginToHome", this);
@@ -410,15 +402,8 @@ namespace NachoClient.iOS
                         return;
 
                     case BackEndAutoDStateEnum.Running:
-                        if (LoginHelpers.GetBeStateBit (2)) {
-                            errorMessage.Text = "Auto-D is running.";
-                            isBERunning = true;
-                            showWaitingView();
-                        }
-                        else{
-                            setErrorMessage (errorMessageEnum.FirstTime);
-                        }
-
+                        errorMessage.Text = "Auto-D is running.";
+                        showWaitingView ();
                         return;
                     }
                 }
@@ -426,16 +411,9 @@ namespace NachoClient.iOS
 
         }
 
-        public void AddLine (float offset, float yVal, float width, UIColor color)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            scrollView.Add (lineUIView);
-        }
-
         public void AddInputCell (string labelText, UITextField textInput, string placeHolder, float yVal, bool hasBorder)
         {
-            UIView inputBox = new UIView (new RectangleF (0, yVal, View.Frame.Width+1, CELL_HEIGHT));
+            UIView inputBox = new UIView (new RectangleF (0, yVal, View.Frame.Width + 1, CELL_HEIGHT));
             inputBox.BackgroundColor = UIColor.White;
             if (hasBorder) {
                 inputBox.Layer.BorderColor = UIColor.LightGray.CGColor;
@@ -460,66 +438,66 @@ namespace NachoClient.iOS
 
         public void fillInKnownFields ()
         {
-            if (LoginHelpers.GetCredsBit(accountId)) {
-                emailText.Text = theAccount.Account.EmailAddr;
-                usernameText.Text = theAccount.Credentials.Username;
-                passwordText.Text = theAccount.Credentials.Password;
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                if (LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
+                    emailText.Text = theAccount.Account.EmailAddr;
+                    usernameText.Text = theAccount.Credentials.Username;
+                    passwordText.Text = theAccount.Credentials.Password;
+                    if (null != theAccount.Server) {
+                        serverText.Text = theAccount.Server.Host;
+                    }
+                }
             }
         }
 
-
-        public void loadSettingsForAccount (int accountId)
+        public void loadSettingsForAccount ()
         {
-            if (LoginHelpers.GetCredsBit(accountId)) {
-                theAccount.Account = McAccount.QueryById<McAccount> (accountId);
-                theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId);
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                if (LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
+                    theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                    theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId);
+                    theAccount.Server = McServer.QueryById<McServer> (theAccount.Account.ServerId);
+                }
             }
         }
 
         public void setUsersSettings ()
         {
-            McAccount account = McAccount.QueryById<McAccount> (accountId);
-            McCred theCred = McCred.QueryById<McCred> (account.CredId); 
+            theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId); 
 
-           // theAccount.Account = McAccount.QueryById<McAccount> (accountId);
-           // McCred theCred = McCred.QueryById<McCred> (theAccount.Account.CredId); 
-           // theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId);
+            // theAccount.Account = McAccount.QueryById<McAccount> (accountId);
+            // McCred theCred = McCred.QueryById<McCred> (theAccount.Account.CredId); 
+            //theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId);
             if (usernameText.Text.Length > 0) {
-                theCred.Username = usernameText.Text;
+                theAccount.Credentials.Username = usernameText.Text;
             } else {
-                theCred.Username = emailText.Text;
+                theAccount.Credentials.Username = emailText.Text;
             }
 
-            theCred.Password = passwordText.Text;
-            theCred.Update ();
-            account.CredId = theCred.Id;
-            account.EmailAddr = emailText.Text;
-            account.Update ();
-
-//            theAccount.Credentials = theCred;
-//            theAccount.Account.CredId = theCred.Id;
-//            theAccount.Account.EmailAddr = emailText.Text;
-//            theAccount.Account.Update ();
-
-            theAccount.Account.Id = account.Id;
-            theAccount.Credentials.Id = theCred.Id;
+            theAccount.Credentials.Password = passwordText.Text;
+            theAccount.Credentials.Update ();
+            theAccount.Account.CredId = theAccount.Credentials.Id;
+            theAccount.Account.EmailAddr = emailText.Text;
+            theAccount.Account.Update ();
         }
 
-        public void  basicEnterFullConfiguration () {
+        public void  basicEnterFullConfiguration ()
+        {
             string credUserName = "";
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
-                if(usernameText.Text.Length == 0){
+                if (usernameText.Text.Length == 0) {
                     credUserName = emailText.Text;
-                }else{
+                } else {
                     credUserName = usernameText.Text;
                 }
                 var cred = new McCred () { Username = credUserName, Password = passwordText.Text };
                 cred.Insert ();
                 theAccount.Credentials = cred;
                 int serverId = 0;
-                if (haveEnteredHost() && isValidHost()) {
+                if (haveEnteredHost () && isValidHost ()) {
                     var server = new McServer () { Host = serverText.Text };
                     server.Insert ();
                     serverId = server.Id;
@@ -531,32 +509,29 @@ namespace NachoClient.iOS
                 appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Insert ();
                 theAccount.Account = appDelegate.Account;
-                LoginHelpers.SetCredsBit(appDelegate.Account.Id, true);
+                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
-            accountId = LoginHelpers.getCurrentAccountId ();
-            NcAssert.True (0 != accountId, "BAD ACCOUNT");
 
-            BackEnd.Instance.Start (appDelegate.Account.Id);
-            isBERunning = true;
-            showWaitingView();
+            startBe ();
+            showWaitingView ();
         }
 
         public void tryAutoD ()
         {
             setUsersSettings ();
-            BackEnd.Instance.Start (accountId);
-            isBERunning = true;
+            startBe ();
         }
 
         public void tryValidateConfig ()
         {
             setUsersSettings ();
-            McServer test = new McServer ();
-            test.Host = serverText.Text;
-            BackEnd.Instance.ValidateConfig (accountId, test, theAccount.Credentials);
+            serverToValidate = new McServer ();
+            serverToValidate.Host = serverText.Text;
+            BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), serverToValidate, theAccount.Credentials);
         }
 
-        public void setTextToRed(UITextField[] whichFields){
+        public void setTextToRed (UITextField[] whichFields)
+        {
             foreach (var textField in inputFields) {
                 textField.TextColor = UIColor.Black;
                 for (int i = 0; i < whichFields.Count (); i++) {
@@ -566,6 +541,7 @@ namespace NachoClient.iOS
                 }
             }
         }
+
         public bool haveEnteredHost ()
         {
             if (0 == serverText.Text.Length) {
@@ -575,7 +551,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public bool hasNetworkConnection()
+        public bool hasNetworkConnection ()
         {
             if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
                 return false;
@@ -583,25 +559,28 @@ namespace NachoClient.iOS
                 return true;
             }
         }
-        public bool canUserConnect()
+
+        public bool canUserConnect ()
         {
             if (!haveEnteredEmailAndPass ()) {
-                setErrorMessage(errorMessageEnum.RequiredFields);
+                setErrorMessage (errorMessageEnum.RequiredFields);
                 return false;
             }
 
             if (!isValidEmail (emailText.Text)) {
-                setErrorMessage(errorMessageEnum.InvalidEmail);
+                setErrorMessage (errorMessageEnum.InvalidEmail);
                 return false;
             }
 
-            if(!hasNetworkConnection()){
+            if (!hasNetworkConnection ()) {
                 setErrorMessage (errorMessageEnum.Network);
                 return false;
             }
             return true;
         }
-        bool isValidEmail(string email){
+
+        bool isValidEmail (string email)
+        {
             RegexUtilities regexUtil = new RegexUtilities ();
             return regexUtil.IsValidEmail (email);
         }
@@ -620,12 +599,23 @@ namespace NachoClient.iOS
                 };
                 badHost.Show ();
                 errorMessage.Text = "Invalid server name. Please check that you typed it in correctly.";
-                setTextToRed (new UITextField[] {serverText});
+                setTextToRed (new UITextField[] { serverText });
                 return false;
             }
         }
 
-        public void createCertificateAlert()
+        public void stopBeIfRunning ()
+        {
+            BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
+        }
+
+        public void startBe ()
+        {
+            BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
+            BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+        }
+
+        public void createCertificateAlert ()
         {
             certificateAlert = new UIAlertView ();
             certificateAlert.Title = "Need To Accept Certificate";
@@ -634,9 +624,8 @@ namespace NachoClient.iOS
             certificateAlert.AddButton ("Cancel");
             certificateAlert.DismissWithClickedButtonIndex (1, false);
             certificateAlert.Clicked += (object sender, UIButtonEventArgs e) => {
-                NcApplication.Instance.CertAskResp (accountId, true);
-                LoginHelpers.SetCertificateBit(accountId, true);
-                showWaitingView();
+                NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
+                showWaitingView ();
             };
         }
 
@@ -679,7 +668,8 @@ namespace NachoClient.iOS
 
             layoutView ();
         }
-        public void setErrorMessage(errorMessageEnum whatType)
+
+        public void setErrorMessage (errorMessageEnum whatType)
         {
             switch (whatType) {
             case errorMessageEnum.Credentials:
@@ -726,9 +716,9 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
-                LoginHelpers.SetSyncedBit (accountId, true);
+                LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 dismissWaitingView ();
-                if (LoginHelpers.GetTutorialBit (accountId)) {
+                if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                     PerformSegue ("AdvancedLoginToNachoNow", this);
                 } else {
                     //FIXME Segue issues what type of Segue to use? No NavBar if coming from basic
@@ -743,16 +733,28 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Network);
-                setTextToRed (new UITextField[] {});
+                setTextToRed (new UITextField[] { });
                 dismissWaitingView ();
+                //FIXME do we want to stop BE in this case?
+                stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                setTextToRed (new UITextField[] {});
-                BackEnd.Instance.Start ();
-                isBERunning = true;
+                setTextToRed (new UITextField[] { });
+                var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                if (0 == account.ServerId) {
+                    serverToValidate.Insert ();
+                    account.ServerId = serverToValidate.Id;
+                    account.Update ();
+                } else {
+                    var server = McServer.QueryById<McServer> (account.ServerId);
+                    serverToValidate.Id = server.Id;
+                    serverToValidate.Update ();
+                }
+                loadSettingsForAccount ();
+                startBe ();
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
-                setTextToRed (new UITextField[] {serverText});
+                setTextToRed (new UITextField[] { serverText });
                 setErrorMessage (errorMessageEnum.Server);
                 dismissWaitingView ();
             }
@@ -763,32 +765,38 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Username);
-                setTextToRed (new UITextField[] { usernameText});
+                setTextToRed (new UITextField[] { usernameText });
                 dismissWaitingView ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.ServerConf);
-                setTextToRed (new UITextField[] { emailText});
+                setTextToRed (new UITextField[] { emailText });
                 dismissWaitingView ();
+                //Call BE.ServResp?
+                stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Error_CredReqCallback == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Credentials);
                 setTextToRed (new UITextField[] { usernameText, passwordText });
                 dismissWaitingView ();
+                stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Certificate);
                 certificateAlert.Show ();
+                stopBeIfRunning ();
             }
         }
 
         public class AccountSettings
         {
             public string EmailAddress { get; set; }
-            public int AccountId { get; set; }
-            public int CredId { get; set; }
+            //public int AccountId { get; set; }
+            //public int CredId { get; set; }
             public McAccount Account { get; set; }
+
             public McCred Credentials { get; set; }
+
             public McServer Server { get; set; }
 
             public AccountSettings ()

@@ -135,7 +135,7 @@ namespace NachoCore.Utils
             Error_ValidateConfigFailedUser,
             Error_ServerConfReqCallback,
             Error_CredReqCallback,
-            Error_CertAskReqCallback
+            Error_CertAskReqCallback,
         };
 
         public enum WhyEnum {

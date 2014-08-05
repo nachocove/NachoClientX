@@ -32,13 +32,16 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
-            // Initial view
-
-            //FIXME what is initial accountId before appDelegate has been configured
-            accountId = LoginHelpers.getCurrentAccountId ();
-            hasSynced = LoginHelpers.GetSyncedBit (accountId);
-            hasCreds = LoginHelpers.GetCredsBit (accountId);
-            hasViewedTutorial = LoginHelpers.GetTutorialBit (accountId);
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                accountId = LoginHelpers.GetCurrentAccountId ();
+                hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId);
+                hasCreds = LoginHelpers.HasProvidedCreds (accountId);
+                hasViewedTutorial = LoginHelpers.HasViewedTutorial (accountId);
+            } else {
+                hasSynced = false;
+                hasCreds = false;
+                hasViewedTutorial = false;
+            }
 
             if (!hasCreds) {
                 PerformSegue ("StartupToLaunch", this); // modal
@@ -60,13 +63,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "StartupToAdvancedLogin") {
-                    var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
-                    AdvancedView.setBEState (false);
-            }
-        }
     }
 }
     

@@ -52,7 +52,7 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
-            accountId = LoginHelpers.getCurrentAccountId ();
+            accountId = LoginHelpers.GetCurrentAccountId ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -69,17 +69,10 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
-                LoginHelpers.SetSyncedBit (accountId, true);
+                LoginHelpers.SetFirstSyncCompleted (accountId, true);
             }
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "StartupToAdvancedLogin") {
-                var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
-                AdvancedView.setBEState (true);
-            }
-        }
 
         public void InitializePageViewController ()
         {
@@ -91,7 +84,7 @@ namespace NachoClient.iOS
 
             this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
                 false, s => {
-                });
+            });
 
             this.pageController.DataSource = new PageDataSource (this);
 
@@ -105,11 +98,11 @@ namespace NachoClient.iOS
             closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
             closeTutorial.BackgroundColor = A.Color_NachoGreen;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
-                LoginHelpers.SetTutorialBit (accountId, true);
-                if(LoginHelpers.GetSyncedBit(accountId) == true){
+                LoginHelpers.SetHasViewedTutorial (accountId, true);
+                if (LoginHelpers.HasFirstSyncCompleted (accountId) == true) {
                     PerformSegue ("HomeToNachoNow", this);
-                }else{
-                    PerformSegue("HomeToAdvancedLogin", this);
+                } else {
+                    PerformSegue ("HomeToAdvancedLogin", this);
                 }
             };
             View.Add (closeTutorial);

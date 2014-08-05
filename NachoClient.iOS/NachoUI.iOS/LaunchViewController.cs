@@ -15,7 +15,8 @@ namespace NachoClient.iOS
         AppDelegate appDelegate;
         UIButton submitButton;
 
-        private void EnterFullConfiguration () {
+        private void EnterFullConfiguration ()
+        {
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
@@ -35,20 +36,20 @@ namespace NachoClient.iOS
                 appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Insert ();
 
-                LoginHelpers.SetCredsBit(appDelegate.Account.Id, true);
+                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
             BackEnd.Instance.Start (appDelegate.Account.Id);
         }
 
-        public override void ViewDidLoad()
+        public override void ViewDidLoad ()
         {
             // By the time we get here, we have launched a BE via appdelegate, so we should always be able to update
             // our app's DB by referencing the appdelegate BE
             // we want to gather any changes here, if its first time through we will need to gather a full set of configuration parameters
             // any other times we will want to update the info on a given field.
 
-            base.ViewDidLoad();
-            stylizeFormControls();
+            base.ViewDidLoad ();
+            stylizeFormControls ();
 
             // Perform any additional setup after loading the view, typically from a nib.
 
@@ -63,17 +64,19 @@ namespace NachoClient.iOS
             // logic neeeded here so that any change in the fields kicks off a new update in the BE
 
         }
-        partial void btnLaunchAcct (MonoTouch.Foundation.NSObject sender){
-            EnterFullConfiguration();
+
+        partial void btnLaunchAcct (MonoTouch.Foundation.NSObject sender)
+        {
+            EnterFullConfiguration ();
 
             //[self dismissViewControllerAnimated:TRUE completion:nil];
-            DismissViewController(true, null);
+            DismissViewController (true, null);
         }
-    
-        public void stylizeFormControls()
+
+        public void stylizeFormControls ()
         {
             View.BackgroundColor = A.Color_NachoGreen;
-            SignInView signInView = new SignInView(new System.Drawing.RectangleF(View.Frame.X, View.Frame.Y,View.Frame.Width, View.Frame.Height));
+            SignInView signInView = new SignInView (new System.Drawing.RectangleF (View.Frame.X, View.Frame.Y, View.Frame.Width, View.Frame.Height));
 
             if (View.Frame.Height == 568) {
                 addSplashTriangle (signInView);
@@ -89,14 +92,14 @@ namespace NachoClient.iOS
             txtServerName.Hidden = true;
         }
 
-        void addSplashTriangle(SignInView view)
+        void addSplashTriangle (SignInView view)
         {
             UIImageView triangleSplash = new UIImageView (UIImage.FromBundle ("Splash-BG"));
             triangleSplash.Frame = new System.Drawing.RectangleF (0, View.Frame.Height - 693, triangleSplash.Frame.Width, triangleSplash.Frame.Height);
             view.Add (triangleSplash);
         }
-       
-        void addNachoLogo(SignInView view)
+
+        void addNachoLogo (SignInView view)
         {
             UIImageView nachoLogo = new UIImageView (UIImage.FromBundle ("iPhoneIcon"));
             float yVal;
@@ -105,7 +108,7 @@ namespace NachoClient.iOS
             } else {
                 yVal = -5;
             }
-            nachoLogo.Frame = new System.Drawing.RectangleF (View.Frame.Width/2 - 43f, yVal, 86, 86);
+            nachoLogo.Frame = new System.Drawing.RectangleF (View.Frame.Width / 2 - 43f, yVal, 86, 86);
             nachoLogo.Alpha = 1;
             nachoLogo.Layer.CornerRadius = 86 / 2f;
             nachoLogo.Layer.MasksToBounds = true;
@@ -116,97 +119,105 @@ namespace NachoClient.iOS
             nachoLogo.Layer.ShadowColor = UIColor.Black.CGColor;
             view.Add (nachoLogo);
         }
-        void formatUserName(SignInView view)
+
+        void formatUserName (SignInView view)
         {
             txtUserName.BorderStyle = UITextBorderStyle.None;
             txtUserName.TextAlignment = UITextAlignment.Left;
             view.AddEmailField (txtUserName);
         }
 
-        void formatPassword(SignInView view)
+        void formatPassword (SignInView view)
         {
             txtPassword.BorderStyle = UITextBorderStyle.None;
             txtPassword.TextAlignment = UITextAlignment.Left;
             view.AddPasswordField (txtPassword);
         }
 
-        void configureAndAddSubmitButton(SignInView view)
+        void configureAndAddSubmitButton (SignInView view)
         {
             submitButton = new UIButton (new System.Drawing.RectangleF (25, View.Frame.Height / 2 + 11, View.Frame.Width - 50, 45));
             submitButton.TouchUpInside += delegate {
 
-                if(!haveEnteredEmailAndPass())
-                {
+                if (!haveEnteredEmailAndPass ()) {
 //                    if(txtUserName.Text.Length == 0){
 //                        txtUserName.Text = "Required";
 //                        txtUserName.TextColor = A.Color_NachoRed;
 //                    }
-                }
-                else if(!isValidEmail(txtUserName.Text)){
+                } else if (!isValidEmail (txtUserName.Text)) {
                     txtUserName.TextColor = A.Color_NachoRed;
-                }else{
-                    EnterFullConfiguration();
-                    DismissViewController(true, null);
+                } else {
+                    EnterFullConfiguration ();
+                    DismissViewController (true, null);
                 }
             };
             view.configureSubmitButton (submitButton);
         }
 
-        bool isValidEmail(string email){
+        bool isValidEmail (string email)
+        {
             RegexUtilities regexUtil = new RegexUtilities ();
             return regexUtil.IsValidEmail (email);
         }
-        void configureAndAddAdvancedButton(SignInView view)
+
+        void configureAndAddAdvancedButton (SignInView view)
         {
             UIButton advancedSignInButton = new UIButton ();
             view.configureAdvancedButton (advancedSignInButton);
             advancedSignInButton.TouchUpInside += (object sender, EventArgs e) => {
                 //FIXME add segue to Storyboard
-                PerformSegue("LaunchToAdvancedLogin", this);
+                PerformSegue ("LaunchToAdvancedLogin", this);
             };
         }
 
-        void getServerName(){
+        void getServerName ()
+        {
             // add all logic to ensure that any change in the field is updated .. unless cancel hit
             this.txtServerName.ShouldReturn += (textField) => { 
-                if (txtServerName.Text.Contains("Hello")){
+                if (txtServerName.Text.Contains ("Hello")) {
                     Log.Info (Log.LOG_UI, "Hello"); 
                 }
                 //ncServername = txtServerName.Text;
                 //Console.WriteLine(ncServername);
 
-                textField.ResignFirstResponder(); 
+                textField.ResignFirstResponder (); 
                 return true;
             };
         }
-        void getUserName(){
+
+        void getUserName ()
+        {
             this.txtUserName.ShouldReturn += (textField) => {
-                haveEnteredEmailAndPass();
-                if (txtUserName.Text.Contains("Hello")){
+                haveEnteredEmailAndPass ();
+                if (txtUserName.Text.Contains ("Hello")) {
                     Log.Info (Log.LOG_UI, "Hello"); 
                 }
                 //ncUserName = txtUserName.Text;
                 //Console.WriteLine(ncPassword);
-                if(textField.Text != "Required"){
+                if (textField.Text != "Required") {
                     textField.TextColor = UIColor.Black;
                 }
-                textField.ResignFirstResponder(); 
+                textField.ResignFirstResponder (); 
                 return true;
             };
         }
-        void getPassword(){
+
+        void getPassword ()
+        {
             this.txtPassword.ShouldReturn += (textField) => { 
-                haveEnteredEmailAndPass();
-                if (txtPassword.Text.Contains("Hello")){
+                haveEnteredEmailAndPass ();
+                if (txtPassword.Text.Contains ("Hello")) {
                     Log.Info (Log.LOG_UI, "Hello"); 
                 }
                 //ncPassword = txtPassword.Text;
                 //Console.WriteLine(ncPassword);
-                textField.ResignFirstResponder(); 
+                textField.ResignFirstResponder (); 
                 return true;
             };
         }
-        public bool haveEnteredEmailAndPass(){
+
+        public bool haveEnteredEmailAndPass ()
+        {
             if (0 == txtUserName.Text.Length || 0 == txtPassword.Text.Length) {
                 enableConnect (false);
                 return false;
@@ -215,7 +226,8 @@ namespace NachoClient.iOS
                 return true;
             }
         }
-        public void enableConnect(bool shouldWe)
+
+        public void enableConnect (bool shouldWe)
         {
             if (true == shouldWe) {
                 submitButton.Enabled = true;
@@ -225,13 +237,7 @@ namespace NachoClient.iOS
                 submitButton.Alpha = .5f;
             }
         }
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier == "StartupToAdvancedLogin") {
-                var AdvancedView = (AdvancedLoginViewController)segue.DestinationViewController; //our destination
-                AdvancedView.setBEState (false);
-            }
-        }
+
         public LaunchViewController (IntPtr handle) : base (handle)
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
