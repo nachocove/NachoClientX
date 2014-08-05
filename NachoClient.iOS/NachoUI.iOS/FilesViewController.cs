@@ -47,8 +47,8 @@ namespace NachoClient.iOS
         public void DismissFileChooser (bool animated, NSAction action)
         {
             var controllers = this.NavigationController.ViewControllers;
-            int total = controllers.Count ();
-            NavigationController.PopToViewController (controllers [total - 3], true);
+            int currentVC = controllers.Count () - 1; // take 0 indexing into account
+            NavigationController.PopToViewController (controllers [currentVC - 2], true); // pop 2 views: one for attachments page, one for hierarchy
             owner = null;
         }
 
