@@ -15,7 +15,7 @@
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
@@ -219,7 +219,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterTasks.cs" />
     <Compile Include="NachoCore\Adapters\INachoTasks.cs" />
     <Compile Include="NachoCore\Adapters\INachoFiles.cs" />
-    <Compile Include="NachoCore\Model\McFile.cs" />
     <Compile Include="NachoCore\Extensions\String+SanitizeFileName.cs" />
     <Compile Include="NachoCore\Model\McBody.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\AsXmlFilterAirSyncRequest.cs" />
@@ -322,6 +321,8 @@
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
     <Compile Include="NachoCore\Model\McNote.cs" />
     <Compile Include="NachoPlatform.Android\PowerAndroid.cs" />
+    <Compile Include="NachoCore\Model\IFilesViewItem.cs" />
+    <Compile Include="NachoCore\Model\McDocument.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

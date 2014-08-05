@@ -4,9 +4,10 @@ using System.IO;
 using System.Collections.Generic;
 using NachoCore.Utils;
 
+
 namespace NachoCore.Model
 {
-    public class McAttachment : McAbstrObjectPerAcc
+    public class McAttachment : McAbstrObjectPerAcc, IFilesViewItem
     {
         [Indexed]
         public int EmailMessageId { get; set; }
@@ -40,6 +41,10 @@ namespace NachoCore.Model
         public string LocalFileName { get; set; }
 
         public string ContentType { get; set; }
+
+        public uint AttachedTo { get; set; }
+
+        public enum OwnerTypes {Email = 0, Event};
 
         public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
         {

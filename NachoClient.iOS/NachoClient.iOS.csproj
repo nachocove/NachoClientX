@@ -622,10 +622,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AttachmentViewController.designer.cs">
-      <DependentUpon>AttachmentViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TnefEncoding.cs">
       <Link>NachoCore\Utils\TnefEncoding.cs</Link>
     </Compile>
@@ -697,17 +693,9 @@
       <DependentUpon>TaskListViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Tables\TaskTableSource.cs" />
-    <Compile Include="NachoUI.iOS\FileListViewController.cs" />
-    <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
-      <DependentUpon>FileListViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoTasks.cs">
       <Link>NachoCore\Adapters\INachoTasks.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McFile.cs">
-      <Link>NachoCore\Model\McFile.cs</Link>
-    </Compile>
-    <Compile Include="NachoUI.iOS\Tables\FileTableSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+SanitizeFileName.cs">
       <Link>NachoCore\Extensions\String+SanitizeFileName.cs</Link>
     </Compile>
@@ -1018,10 +1006,6 @@
     <Compile Include="NachoUI.iOS\ChooseCalendarViewController.designer.cs">
       <DependentUpon>ChooseCalendarViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
-      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\AlertChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\AlertChooserViewController.designer.cs">
       <DependentUpon>AlertChooserViewController.cs</DependentUpon>
@@ -1076,6 +1060,24 @@
     <Compile Include="NachoUI.iOS\EventAttendeeViewController.cs" />
     <Compile Include="NachoUI.iOS\EventAttendeeViewController.designer.cs">
       <DependentUpon>EventAttendeeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\IFilesViewItem.cs">
+      <Link>NachoCore\Model\IFilesViewItem.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McDocument.cs">
+      <Link>NachoCore\Model\McDocument.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\FilesViewController.cs" />
+    <Compile Include="NachoUI.iOS\FilesViewController.designer.cs">
+      <DependentUpon>FilesViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\FilesHierarchyViewController.cs" />
+    <Compile Include="NachoUI.iOS\FilesHierarchyViewController.designer.cs">
+      <DependentUpon>FilesHierarchyViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AddAttachmentViewController.cs" />
+    <Compile Include="AddAttachmentViewController.designer.cs">
+      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

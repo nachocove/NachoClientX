@@ -124,7 +124,7 @@ namespace NachoClient
             DisplayFile (vc, path);
         }
 
-        public static void DisplayFile (UIViewController vc, McFile file)
+        public static void DisplayFile (UIViewController vc, McDocument file)
         {
             var path = file.FilePath ();
             DisplayFile (vc, path);
