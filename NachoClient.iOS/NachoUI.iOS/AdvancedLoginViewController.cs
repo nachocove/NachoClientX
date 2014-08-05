@@ -793,7 +793,6 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Certificate);
                 certificateAlert.Show ();
-                stopBeIfRunning ();
             }
         }
 
