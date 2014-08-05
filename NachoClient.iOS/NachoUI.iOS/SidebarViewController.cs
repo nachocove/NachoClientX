@@ -44,6 +44,8 @@ namespace NachoClient.iOS
         const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
         const string SidebarToNewEventSegueId = "SidebarToNewEvent";
         const string SidebarToEventSegueId = "SidebarToEvent";
+        const string SidebarToHotListSegueId = "SidebarToHotList";
+
 
         protected class ButtonInfo
         {
@@ -102,7 +104,7 @@ namespace NachoClient.iOS
                 new ButtonInfo ("Calendar", "menu-calendar", SidebarToCalendarSegueId),
                 new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Hot List", "menu-chili", SidebarToNachoNowSegueId),
+                new ButtonInfo ("Hot List", "menu-chili", SidebarToHotListSegueId),
                 new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
 //                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
                 new ButtonInfo ("New Event", "menu-new-event", SidebarToEventSegueId),
@@ -198,6 +200,13 @@ namespace NachoClient.iOS
                 {
                     MessageListViewController vc = (MessageListViewController)destViewController;
                     var messageList = NcEmailManager.Inbox ();
+                    vc.SetEmailMessages (messageList);
+                }
+                break;
+            case SidebarToHotListSegueId:
+                {
+                    MessageListViewController vc = (MessageListViewController)destViewController;
+                    var messageList = NcEmailManager.PriorityInbox ();
                     vc.SetEmailMessages (messageList);
                 }
                 break;
