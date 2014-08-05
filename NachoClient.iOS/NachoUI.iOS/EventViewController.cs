@@ -326,6 +326,16 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (segue.Identifier.Equals ("EventToEventAttendees")) {
+                var dc = (EventAttendeeViewController)segue.DestinationViewController;
+                dc.SetAttendeeList (c.attendees);
+                dc.ViewDisappearing += (object s, EventArgs e) => {
+                    c.attendees = dc.GetAttendeeList ();
+                    ConfigureEventView ();
+                };
+                return;
+            }
+
             if (segue.Identifier.Equals ("EventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
                 dc.SetReminder (c.Reminder);
@@ -365,7 +375,7 @@ namespace NachoClient.iOS
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetEvent (item);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    dc.SaveEventNote();
+                    dc.SaveEventNote ();
                     displayEvent = true;
                 };
                 return;
@@ -1205,12 +1215,8 @@ namespace NachoClient.iOS
                         var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
                         attendeeLabelView.Text = Util.GetFirstName (c.attendees.ElementAt (i).DisplayName);
 
-                        var attendeeResponseView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 200) as UIView;
                         var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
-                        if (null == GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
-                            attendeeResponseView.Hidden = true;
-                        } else {
-                            attendeeResponseView.Hidden = false;
+                        if (null != GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
                             attendeeResponseImageView.Image = GetImageForAttendeeResponse (c.attendees.ElementAt (i));
                         }
                         i++;
@@ -1226,12 +1232,8 @@ namespace NachoClient.iOS
                         var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
                         attendeeLabelView.Text = Util.GetFirstName (c.attendees.ElementAt (i).DisplayName);
 
-                        var attendeeResponseView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 200) as UIView;
                         var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
-                        if (null == GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
-                            attendeeResponseView.Hidden = true;
-                        } else {
-                            attendeeResponseView.Hidden = false;
+                        if (null != GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
                             attendeeResponseImageView.Image = GetImageForAttendeeResponse (c.attendees.ElementAt (i));
                         }
                         i++;
@@ -1376,6 +1378,16 @@ namespace NachoClient.iOS
             parentView.Add (attendeeButton);
         }
 
+        public void MakeEmptyCircle (UIView parentView)
+        {
+            var attendeeResponseView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+            attendeeResponseView.BackgroundColor = UIColor.White;
+            attendeeResponseView.Layer.CornerRadius = 15 / 2;
+            attendeeResponseView.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
+            attendeeResponseView.Layer.BorderWidth = 1;
+            parentView.Add (attendeeResponseView);
+        }
+
         public void CreateAttendeesButtons (UIView parentView)
         {
 
@@ -1399,6 +1411,8 @@ namespace NachoClient.iOS
                     attendeeResponseView.BackgroundColor = UIColor.White;
                     attendeeResponseView.Layer.CornerRadius = 10;
 
+                    MakeEmptyCircle (attendeeResponseView);
+
                     UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
                     responseImageView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 100;
                     attendeeResponseView.Add (responseImageView);
@@ -1416,6 +1430,8 @@ namespace NachoClient.iOS
                     attendeeResponseView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 200;
                     attendeeResponseView.BackgroundColor = UIColor.White;
                     attendeeResponseView.Layer.CornerRadius = 10;
+
+                    MakeEmptyCircle (attendeeResponseView);
 
                     UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
                     responseImageView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 100;
@@ -1446,7 +1462,8 @@ namespace NachoClient.iOS
             }
         }
 
-        public UIImage GetImageForAttendeeResponse(McAttendee attendee){
+        public UIImage GetImageForAttendeeResponse (McAttendee attendee)
+        {
             var reponseImage = new UIImage ();
             if (attendee.AttendeeStatus == NcAttendeeStatus.Accept) {
                 reponseImage = UIImage.FromBundle ("btn-mtng-accept-pressed");

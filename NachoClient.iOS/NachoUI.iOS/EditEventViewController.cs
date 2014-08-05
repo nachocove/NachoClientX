@@ -284,6 +284,16 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
+                var dc = (EventAttendeeViewController)segue.DestinationViewController;
+                dc.SetAttendeeList (c.attendees);
+                dc.ViewDisappearing += (object s, EventArgs e) => {
+                    c.attendees = dc.GetAttendeeList ();
+                    ConfigureEditEventView ();
+                };
+                return;
+            }
+
             if (segue.Identifier.Equals ("EditEventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
                 dc.SetReminder (c.Reminder);
@@ -733,7 +743,7 @@ namespace NachoClient.iOS
 
             var peopleTap = new UITapGestureRecognizer ();
             peopleTap.AddTarget (() => {
-                PerformSegue ("EditEventToAttendee", this);
+                PerformSegue ("EditEventToEventAttendees", this);
             });
             peopleView.AddGestureRecognizer (peopleTap);
 
