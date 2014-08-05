@@ -215,6 +215,35 @@ namespace NachoClient.iOS
             });
         }
 
+        public void FileChooserSheet (McAbstrObject file, Action displayAction)
+        {
+            // We're in "chooser' mode & the attachment is downloaded
+            var actionSheet = new UIActionSheet ();
+            actionSheet.TintColor = A.Color_NachoBlue;
+            actionSheet.Add ("Preview");
+            actionSheet.Add ("Add as attachment");
+            actionSheet.Add ("Cancel");
+            actionSheet.CancelButtonIndex = 2;
+
+            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    displayAction ();
+                    break; 
+                case 1:
+                    owner.SelectFile (this, file);
+                    break;
+                case 2:
+                    break; // Cancel
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            };
+
+            actionSheet.ShowInView (View);
+        }
+
         public void AttachmentAction (int attachmentId)
         {
             DownloadAndDoAction (attachmentId, (a) => {
@@ -223,32 +252,18 @@ namespace NachoClient.iOS
                     return;
                 }
 
-                // We're in "chooser' mode & the attachment is downloaded
-                var actionSheet = new UIActionSheet ();
-                actionSheet.TintColor = A.Color_NachoBlue;
-                actionSheet.Add ("Preview");
-                actionSheet.Add ("Select Attachment");
-                actionSheet.Add ("Cancel");
-                actionSheet.CancelButtonIndex = 2;
-
-                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    switch (b.ButtonIndex) {
-                    case 0:
-                        PlatformHelpers.DisplayAttachment (this, a);
-                        break; 
-                    case 1:
-                        owner.SelectFile (this, a);
-                        break;
-                    case 2:
-                        break; // Cancel
-                    default:
-                        NcAssert.CaseError ();
-                        break;
-                    }
-                };
-
-                actionSheet.ShowInView (View);
+                FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
             });
+        }
+
+        public void DocumentAction (McDocument document)
+        {
+            if (null == owner) {
+                PlatformHelpers.DisplayFile (this, document);
+                return;
+            }
+
+            FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
         }
             
         protected class FilesTableSource : UITableViewSource
@@ -408,7 +423,7 @@ namespace NachoClient.iOS
                     break;
                 case ItemType.Document:
                     McDocument document = (McDocument)item;
-                    PlatformHelpers.DisplayFile (vc, document);
+                    vc.DocumentAction (document);
                     break;
                 }
 
