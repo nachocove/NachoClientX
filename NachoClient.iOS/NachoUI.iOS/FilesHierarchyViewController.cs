@@ -24,6 +24,7 @@ namespace NachoClient.iOS
 
         // segue id's
         string FilesHierarchyToFiles = "FilesHierarchyToFiles";
+        string FilesHierarchyToNachoNow = "SegueToNachoNow";
 
         public FilesHierarchyViewController (IntPtr handle) : base (handle)
         {
@@ -41,15 +42,14 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
+            if (null == owner) {
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                    A.RevealButton (this),
+                    A.NachoNowButton (this),
+                };
 
-            if (owner == null) {
-                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
             }
-               
-
+                
             FilesHierarchyView ();
         }
 
@@ -207,6 +207,11 @@ namespace NachoClient.iOS
 
                 dc.itemType = this.itemType; // tell the files VC what item type to display
             }
+            if (segue.Identifier.Equals (FilesHierarchyToNachoNow)) {
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
 
