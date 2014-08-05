@@ -394,6 +394,7 @@ namespace NachoClient.iOS
                         return;
 
                     case BackEndAutoDStateEnum.PostAutoDPostFSync:
+                        LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                         if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                             PerformSegue ("AdvancedLoginToNachoNow", this);
                         } else {
