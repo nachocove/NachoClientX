@@ -9,7 +9,7 @@ using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
-	public partial class FilesHierarchyViewController : UITableViewController
+	public partial class FilesHierarchyViewController : NcUITableViewController
 	{
         INachoFileChooserParent owner;
         FilesViewController.ItemType itemType;

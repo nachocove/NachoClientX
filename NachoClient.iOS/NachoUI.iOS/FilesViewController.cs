@@ -15,7 +15,7 @@ using MonoTouch.CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public partial class FilesViewController : UITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate
+    public partial class FilesViewController : NcUITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate
     {
         INachoFileChooserParent owner;
         FilesTableSource filesSource;
