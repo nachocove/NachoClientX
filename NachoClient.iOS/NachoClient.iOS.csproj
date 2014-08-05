@@ -1333,6 +1333,10 @@
     <BundleResource Include="Resources\icn-sms%402x.png" />
     <BundleResource Include="Resources\Splash-BG.png" />
     <BundleResource Include="Resources\iPhoneIcon.png" />
+    <BundleResource Include="Content\Tutorial-Page1.png" />
+    <BundleResource Include="Content\Tutorial-Page2.png" />
+    <BundleResource Include="Content\Tutorial-Page3.png" />
+    <BundleResource Include="Content\Tutorial-Page4.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

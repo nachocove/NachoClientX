@@ -24,6 +24,20 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            /*
+            // ideally we get rid of Navcontroller and have a dismiss button in toolbar
+            // that said, for now, leave the NachoNow navigation controller so we can exit
+            // the tutorial.
+               
+            UIBarButtonItem dismissButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
+            dismissButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("HomeToNachoNow", this);
+            };
+            NavigationItem.RightBarButtonItem = dismissButton;
+
+            this.NavigationController.NavigationBar.Translucent = true;
+            this.NavigationController.NavigationBar.BackgroundColor = UIColor.Clear;
+            */
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -45,27 +59,31 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
+           if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+
         }
 
         public void InitializePageViewController ()
         {
             // Initialize the first page
             HomePageController firstPageController = new HomePageController (0);
+           
 
-            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.PageCurl, 
-                UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.Min);
+            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
+                UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.None);
 
             this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
                 false, s => {
             });
+            this.NavigationController.NavigationBarHidden = false;
 
             this.pageController.DataSource = new PageDataSource (this);
 
             this.pageController.View.Frame = this.View.Bounds;
             this.View.AddSubview (this.pageController.View);
+
         }
 
         /// <summary>
@@ -76,7 +94,7 @@ namespace NachoClient.iOS
         /// </value>
         public int TotalPages {
             get {
-                return 7;
+                return 4;
             }
         }
 
@@ -117,6 +135,21 @@ namespace NachoClient.iOS
                 }
 
             }
+
+            public override int GetPresentationCount (UIPageViewController pageViewController)
+            {
+                // NOTE: Don't call the base implementation on a Model class
+                // see http://docs.xamarin.com/guides/ios/application_fundamentals/delegates,_protocols,_and_events
+                //throw new NotImplementedException ();
+                return 4;
+            }
+            public override int GetPresentationIndex (UIPageViewController pageViewController)
+            {
+                // NOTE: Don't call the base implementation on a Model class
+                // see http://docs.xamarin.com/guides/ios/application_fundamentals/delegates,_protocols,_and_events
+                return 0;
+            }
+         
         }
     }
 }
