@@ -71,6 +71,7 @@ namespace NachoCore.Model
             BodiesDir = Path.Combine (Documents, "bodies");
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
             PortraitsDir = Path.Combine (Documents, "portraits");
+            Directory.CreateDirectory (Path.Combine (Documents, PortraitsDir));
         }
 
         private void ConfigureDb (SQLiteConnection db)
@@ -141,6 +142,7 @@ namespace NachoCore.Model
             Db.CreateTable<McMutables> ();
             Db.CreateTable<McPath> ();
             Db.CreateTable<McNote> ();
+            Db.CreateTable<McPortrait> ();
             ConfigureDb (Db);
         }
 

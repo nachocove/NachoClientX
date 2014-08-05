@@ -121,9 +121,6 @@ namespace NachoCore.Model
         /// Specifies how a contact is filed in the Contacts folder
         public string FileAs { get; set; }
 
-        /// Picture of the contact (base64 encoded)
-        public string Picture { get; set; }
-
         /// Web site or personal Web page for the contact
         public string WebPage { get; set; }
 
@@ -150,6 +147,8 @@ namespace NachoCore.Model
 
         // Color of contact's profile circle if they have not set their photo or a photo cannot be found
         public int CircleColor { get; set; }
+
+        public int PortraitId { get; set; }
 
         public static ClassCodeEnum GetClassCode ()
         {
@@ -595,8 +594,7 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.Data:
-                    // FIXME.
-                    Log.Warn (Log.LOG_AS, "Xml.Gal.Data not yet implemented.");
+                    Log.Warn (Log.LOG_AS, "Xml.Gal.Data seen not under Xml.Gal.Picture.");
                     break;
 
                 case Xml.Gal.DisplayName:
@@ -632,8 +630,15 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.Picture:
-                    // FIXME.
-                    Log.Warn (Log.LOG_AS, "Xml.Gal.Picture not yet implemented.");
+                    var xmlStatus = prop.ElementAnyNs (Xml.AirSync.Status);
+                    if (null != xmlStatus) {
+                        Log.Info (Log.LOG_AS, "Status for Xml.Gal.Picture {0}", xmlStatus.Value);
+                    }
+                    var xmlData = prop.ElementAnyNs (Xml.Gal.Data);
+                    if (null != xmlData) {
+                        /* FIXME - debug against a 14.1 server to find out true nature of xmlData.Value.
+                         */
+                    }
                     break;
 
                 default:
@@ -750,9 +755,13 @@ namespace NachoCore.Model
             if (null != MiddleName) {
                 xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.MiddleName, MiddleName));
             }
-            if (null != Picture) {
-                // FIXME - we may not need to send this.
-                xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Picture, Picture));
+            if (0 != PortraitId) {
+                var data = McPortrait.Get (PortraitId);
+                var portraitB64 = Convert.ToBase64String (data);
+                // MS-ASCNTC 2.2.2.56 Picture.
+                if (48 * 1024 > portraitB64.Length) {
+                    xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Picture, portraitB64));
+                }
             }
             if (null != Suffix) {
                 xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.Suffix, Suffix));

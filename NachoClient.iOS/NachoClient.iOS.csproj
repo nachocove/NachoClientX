@@ -1065,6 +1065,7 @@
     <Compile Include="NachoUI.iOS\EventAttendeeViewController.designer.cs">
       <DependentUpon>EventAttendeeViewController.cs</DependentUpon>
     </Compile>
+<<<<<<< HEAD
     <Compile Include="..\NachoClient.Android\NachoCore\Model\IFilesViewItem.cs">
       <Link>NachoCore\Model\IFilesViewItem.cs</Link>
     </Compile>
@@ -1089,6 +1090,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
+      <Link>NachoCore\Model\McPortrait.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

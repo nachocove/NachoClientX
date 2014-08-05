@@ -324,6 +324,7 @@
     <Compile Include="NachoCore\Model\IFilesViewItem.cs" />
     <Compile Include="NachoCore\Model\McDocument.cs" />
     <Compile Include="NachoCore\Utils\RegexUtilities.cs" />
+    <Compile Include="NachoCore\Model\McPortrait.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
