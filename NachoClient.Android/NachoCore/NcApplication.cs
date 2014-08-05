@@ -303,6 +303,10 @@ namespace NachoCore
 
         public void CertAskReq (int accountId, X509Certificate2 certificate)
         {
+            if (McMutables.GetBool ("CERTAPPROVAL", certificate.Thumbprint)) {
+                CertAskResp (accountId, true);
+                return;
+            }
             if (null != CertAskReqCallback) {
                 CertAskReqCallback (accountId, certificate);
             } else {
@@ -321,10 +325,12 @@ namespace NachoCore
 
         public void CertAskResp (int accountId, bool isOkay)
         {
+            if (isOkay) {
+                McMutables.GetOrCreateBool ("CERTAPPROVAL", 
+                    BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
+            }
             BackEnd.Instance.CertAskResp (accountId, isOkay);
         }
-
-
     }
 }
 

@@ -31,7 +31,9 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             var xmlMeetingResp = doc.Root;
-            switch ((Xml.MeetingResp.StatusCode)Convert.ToUInt32 (xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Status).Value)) {
+            var xmlResult = xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Result);
+            var xmlStatus = xmlResult.Element (m_ns + Xml.MeetingResp.Status);
+            switch ((Xml.MeetingResp.StatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
             case Xml.MeetingResp.StatusCode.Success_1:
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_MeetingResponseSucceeded));
