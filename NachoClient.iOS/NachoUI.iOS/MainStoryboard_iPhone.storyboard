@@ -165,7 +165,7 @@
                         <segue destination="tAw-fh-hJX" kind="custom" identifier="SidebarToNewEmail" customClass="SWRevealViewControllerSegue" id="HKc-NA-tOt"/>
                         <segue destination="em2-Kh-10O" kind="custom" identifier="SidebarToEvent" customClass="SWRevealViewControllerSegue" id="7f1-U8-A7w"/>
                         <segue destination="MRl-Tp-bqC" kind="custom" identifier="SidebarToSupport" customClass="SWRevealViewControllerSegue" id="J8i-gn-UTn"/>
-                        <segue destination="F7u-PM-e8E" kind="custom" identifier="SidebarToFiles" customClass="SWRevealViewControllerSegue" id="8Rc-6G-ec1"/>
+                        <segue destination="j5A-VG-u0P" kind="custom" identifier="SidebarToFiles" customClass="SWRevealViewControllerSegue" id="wZa-Ld-8vI"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -276,50 +276,41 @@
             </objects>
             <point key="canvasLocation" x="-1049" y="-955"/>
         </scene>
-        <!--Files Hierarchy View Controller - Files-->
-        <scene sceneID="7e8-L1-LxI">
+        <!--Files Hierarchy View Controller-->
+        <scene sceneID="Xtx-pM-5iq">
             <objects>
-                <tableViewController storyboardIdentifier="FilesHierarchyViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="F7u-PM-e8E" customClass="FilesHierarchyViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="Pmc-9U-ifk">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="BasicCell" textLabel="VvE-p9-0cw" style="IBUITableViewCellStyleDefault" id="BXr-86-5SF">
-                                <rect key="frame" x="0.0" y="86" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="BXr-86-5SF" id="9z9-Pl-z3F">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="VvE-p9-0cw">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="F7u-PM-e8E" id="na2-XO-uJg"/>
-                            <outlet property="delegate" destination="F7u-PM-e8E" id="RAZ-66-KtI"/>
-                        </connections>
-                    </tableView>
-                    <navigationItem key="navigationItem" title="Files" id="ZTf-oF-bGu">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="AMR-Uc-eJt"/>
-                    </navigationItem>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                <viewController storyboardIdentifier="FilesHierarchyViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="j5A-VG-u0P" customClass="FilesHierarchyViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="TVD-m5-4u5">
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="jnW-WZ-zcs">
+                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="LNu-UJ-Y6e" userLabel="Content View">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="he1-rB-xCt"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="revealButton" destination="AMR-Uc-eJt" id="le6-T0-FNI"/>
-                        <segue destination="bBy-CW-6ix" kind="push" identifier="FilesHierarchyToFiles" id="Qqw-9m-Ahd"/>
+                        <outlet property="contentView" destination="LNu-UJ-Y6e" id="nLo-4i-7X8"/>
+                        <outlet property="revealButton" destination="5Jm-5s-J5i" id="w6g-Fy-rf0"/>
+                        <outlet property="scrollView" destination="jnW-WZ-zcs" id="Qi4-EG-NbW"/>
+                        <segue destination="bBy-CW-6ix" kind="push" identifier="FilesHierarchyToFiles" id="Q0p-Wi-Xwl"/>
                     </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="fM9-lt-hkY" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Xeg-mf-gAf" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="5Jm-5s-J5i" userLabel="Bar Button Item - revealButton"/>
             </objects>
-            <point key="canvasLocation" x="-4495" y="479"/>
+            <point key="canvasLocation" x="-4507" y="79"/>
         </scene>
         <!--Files View Controller - File Type-->
         <scene sceneID="KYr-4w-GFq">
@@ -1290,7 +1281,7 @@
                         <segue destination="qAG-NA-NKz" kind="push" identifier="EventToNotes" id="JTo-qU-j7O"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="EventToEditEvent" id="k2t-Pj-AhS"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EventToEventAttendees" id="HCr-Oa-UHV"/>
-                        <segue destination="F7u-PM-e8E" kind="push" identifier="EventToFiles" id="b7Y-IT-5YM"/>
+                        <segue destination="j5A-VG-u0P" kind="push" identifier="EventToFiles" id="11B-OX-HZh"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jJS-cc-DzZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1598,15 +1589,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="NotesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qAG-NA-NKz" customClass="NotesViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="LZR-Ny-gTT">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="19G-Gm-Ixk">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="fO8-qu-GHp" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1663,7 +1654,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <outlet property="taskButton" destination="WmS-2K-Dgt" id="eXM-YJ-TnQ"/>
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="ComposeToContactChooser" id="xrp-ey-B0j"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
-                        <segue destination="F7u-PM-e8E" kind="push" identifier="ComposeToFiles" id="4aq-Ha-V3N"/>
+                        <segue destination="j5A-VG-u0P" kind="push" identifier="ComposeToFiles" id="kd2-jR-F9u"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2025,28 +2016,28 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="wdd-u9-GeA"/>
         <segue reference="ljp-nW-Zcd"/>
-        <segue reference="J8i-gn-UTn"/>
-        <segue reference="8Rc-6G-ec1"/>
+        <segue reference="wZa-Ld-8vI"/>
         <segue reference="p6V-c0-caL"/>
-        <segue reference="DSB-SJ-fIa"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="WNy-bM-xGW"/>
         <segue reference="vRC-Oi-s8D"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="HKc-NA-tOt"/>
+        <segue reference="DSB-SJ-fIa"/>
         <segue reference="7f1-U8-A7w"/>
-        <segue reference="Gr5-Hy-1Yr"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="RaB-9o-azo"/>
+        <segue reference="J8i-gn-UTn"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="W3H-fb-nEJ"/>
         <segue reference="mo4-Vz-xJh"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="r1y-34-GvV"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="tdu-G2-PEp"/>
+        <segue reference="JTo-qU-j7O"/>
         <segue reference="Tfk-Mt-BlS"/>
         <segue reference="HCr-Oa-UHV"/>
         <segue reference="4Sl-0E-160"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="ja3-Zu-g6R"/>
     </inferredMetricsTieBreakers>
 </document>
