@@ -47,7 +47,6 @@ namespace NachoClient.iOS
                     A.RevealButton (this),
                     A.NachoNowButton (this),
                 };
-
             }
                 
             FilesHierarchyView ();
