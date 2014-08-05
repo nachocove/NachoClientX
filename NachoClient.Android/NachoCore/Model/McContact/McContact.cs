@@ -3,6 +3,7 @@ using System;
 using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
 
@@ -514,7 +515,8 @@ namespace NachoCore.Model
             // Don't read what will be deleted
             HasReadAncillaryData = true;
 
-            // TODO: Fix this hammer?
+            // FIXME: Fix this hammer?
+            // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
             DeleteAncillaryData (db);
 
             foreach (var o in Dates) {
@@ -631,13 +633,15 @@ namespace NachoCore.Model
 
                 case Xml.Gal.Picture:
                     var xmlStatus = prop.ElementAnyNs (Xml.AirSync.Status);
-                    if (null != xmlStatus) {
+                    if (null != xmlStatus && (int)Xml.Search.SearchStatusCode.Success_1 != xmlStatus.Value.ToInt ()) {
+                        // We can expect non-error, non-success codes for missing pic, too many pics, etc.
                         Log.Info (Log.LOG_AS, "Status for Xml.Gal.Picture {0}", xmlStatus.Value);
                     }
                     var xmlData = prop.ElementAnyNs (Xml.Gal.Data);
                     if (null != xmlData) {
-                        /* FIXME - debug against a 14.1 server to find out true nature of xmlData.Value.
-                         */
+                        var data = Convert.FromBase64String (xmlData.Value);
+                        var portrait = McPortrait.Save (data);
+                        PortraitId = portrait.Id;
                     }
                     break;
 
