@@ -393,6 +393,14 @@ namespace NachoClient.iOS
                         certificateAlert.Show ();
                         return;
 
+                    case BackEndAutoDStateEnum.PostAutoDPreFsync:
+                        //FIXME change this message?
+                        errorMessage.Text = "Waiting for Folder-Sync.";
+                        showWaitingView ();
+                        statusMessage.TextColor = systemBlue;
+                        statusMessage.Text = "Found Your Server...";
+                        return;
+
                     case BackEndAutoDStateEnum.PostAutoDPostFSync:
                         LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                         if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
@@ -403,13 +411,13 @@ namespace NachoClient.iOS
                         return;
 
                     case BackEndAutoDStateEnum.Running:
+                        //FIXME change this message?
                         errorMessage.Text = "Auto-D is running.";
                         showWaitingView ();
                         return;
                     }
                 }
             }
-
         }
 
         public void AddInputCell (string labelText, UITextField textInput, string placeHolder, float yVal, bool hasBorder)
