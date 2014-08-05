@@ -1001,7 +1001,9 @@ namespace NachoCore.ActiveSync
             // Alpha order.
             public const string DeepTraversal = "DeepTraversal";
             public const string Properties = "Properties";
+            public const string MaxPictures = "MaxPictures";
             public const string Name = "Name";
+            public const string Picture = "Picture";
             public const string Options = "Options";
             public const string Query = "Query";
             public const string Range = "Range";

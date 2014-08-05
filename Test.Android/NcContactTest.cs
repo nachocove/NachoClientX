@@ -171,6 +171,7 @@ namespace Test.Common
                         <FileAs xmlns=""Contacts"">Steve, Contact</FileAs>
                         <FirstName xmlns=""Contacts"">Contact</FirstName>
                         <LastName xmlns=""Contacts"">Steve</LastName>
+                        <Picture>TWVhbmluZ2xlc3MgYnl0ZXMu</Picture>
                       </ApplicationData>
                     </Add>
             ";

@@ -1089,6 +1089,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
+      <Link>NachoCore\Model\McPortrait.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -96,7 +96,11 @@ namespace NachoPlatform
                 contact.DeviceLastUpdate = LastUpdate;
                 contact.DeviceUniqueId = UniqueId;
 
-                // TODO: Picture.
+                if (Person.HasImage) {
+                    var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
+                    var portrait = McPortrait.Save (data.ToArray ());
+                    contact.PortraitId = portrait.Id;
+                }
                 // TODO: Street addresses, IM addresses, etc.
 
                 return NcResult.OK (contact);

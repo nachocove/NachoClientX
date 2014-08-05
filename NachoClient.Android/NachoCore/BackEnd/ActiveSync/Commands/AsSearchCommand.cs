@@ -23,7 +23,11 @@ namespace NachoCore.ActiveSync
 
             var options = new XElement (m_ns + Xml.Search.Options,
                               new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.Search_MaxResults - 1)));
-                            
+            // TODO: move decision to strategy.
+            if (NcCommStatus.Instance.Speed != NachoPlatform.NetStatusSpeedEnum.CellSlow) {
+                options.Add (new XElement (m_ns + Xml.Search.Picture,
+                    new XElement (m_ns + Xml.Search.MaxPictures, PendingSingle.Search_MaxResults)));
+            }
             var search = new XElement (m_ns + Xml.Search.Ns,
                              new XElement (m_ns + Xml.Search.Store, 
                                  new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.GAL),

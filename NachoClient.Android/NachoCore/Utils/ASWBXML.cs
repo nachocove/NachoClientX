@@ -574,7 +574,12 @@ namespace NachoCore.Wbxml
             codePages [16].AddToken (0x0F, "EmailAddress");
             codePages [16].AddToken (0x10, "Picture");
             codePages [16].AddToken (0x11, "Status");
-            codePages [16].AddToken (0x12, "Data");
+            /* EAS spec says Data is a string, and that it contains the binary picture data - 
+             * incompatible statements. In reality, server sends it as opaque, not string.
+             * Because this is an input-only element, we can mark it as b64, so that the WBXML
+             * decoder encodes the binary with b64 for safe passage to the code that saves the image.
+             */
+            codePages [16].AddOpaqueBase64Token (0x12, "Data");
             #endregion
 
             // Code Page 17: AirSyncBase
