@@ -987,6 +987,15 @@ namespace NachoCore.Model
         //                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
         //        }
 
+        public static List<McContact> QueryAllRicContacts (int accountId)
+        {
+            // Order by descending weighted rank so that the first entry has the max rank.
+            return NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                "WHERE c.ServerId LIKE \"RI:%\" AND c.AccountId = ?" +
+                "ORDER BY c.WeightedRank DESC", accountId);
+        }
+
         public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)
         {
             // TODO: Put this in the brain

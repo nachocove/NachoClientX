@@ -2,6 +2,7 @@
 //
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
 
@@ -182,6 +183,43 @@ namespace NachoCore.Brain
             emailMessage.UpdateTimeVariance ();
         }
 
+        private void ProcessInitialRicEvent (NcBrainInitialRicEvent brainEvent)
+        {
+            Log.Debug (Log.LOG_BRAIN, "ProcessInitialRicEvent: accountId={0}", brainEvent.AccountId);
+            List<McContact> contactList = McContact.QueryAllRicContacts ((int)brainEvent.AccountId);
+            if ((null == contactList) || (0 == contactList.Count)) {
+                return;
+            }
+
+            /// We normalize all weighted rank by dividing against the maximum weight rank.
+            /// QueryAllRicContacts return contacts (desendingly) sorted by weighted rank.
+            double maxWeightedRank = (double)contactList [0].WeightedRank;
+            foreach (McContact contact in contactList) {
+                // Compute the score for all email addresses of the contact
+                double score = 0.0;
+                if (0 < maxWeightedRank) {
+                    score = (double)contact.WeightedRank / maxWeightedRank;
+                }
+                foreach (McContactEmailAddressAttribute addressAttr in contact.EmailAddresses) {
+                    // Find the corresponding McEmailAddress
+                    McEmailAddress address = McEmailAddress.QueryById<McEmailAddress> (addressAttr.EmailAddress);
+                    if (null == address) {
+                        continue;
+                    }
+                    if (0 < address.ScoreVersion) {
+                        /// If Scoreversion > 0, this object has already been scored by
+                        /// the real algorithm. So, there is no need for a temporary
+                        /// initial score.
+                        continue;
+                    }
+
+                    // Generate an initial score
+                    address.Score = score;
+                    address.Update ();
+                }
+            }
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
@@ -220,6 +258,9 @@ namespace NachoCore.Brain
             case NcBrainEventType.MESSAGE_FLAGS:
                 ProcessMessageFlagsEvent (brainEvent as NcBrainMessageFlagEvent);
                 break;
+            case NcBrainEventType.INITIAL_RIC:
+                ProcessInitialRicEvent (brainEvent as NcBrainInitialRicEvent);
+                break;
             default:
                 throw new NcAssert.NachoDefaultCaseFailure ("unknown brain event type");
             }
@@ -229,6 +270,7 @@ namespace NachoCore.Brain
         {
             if (ENABLED) {
                 McEmailMessage.StartTimeVariance ();
+                NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
             }
             while (true) {
                 var brainEvent = EventQueue.Dequeue ();
@@ -264,6 +306,22 @@ namespace NachoCore.Brain
         {
             NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated,
                 ref LastEmailMessageScoreUpdate);
+        }
+
+        /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
+        /// generate initial email address scores from RIC in this function for 2
+        /// reasons. First, we do not want to hold up the status indication callback
+        /// for a long duration. Second, the callback may be in a different threads
+        /// as NcBrain task. So, we may have two threads updatind the same object.
+        /// Therefore, we enqueue a brain event and let brain task to do the actual
+        /// processing.
+        public static void GenerateInitialContactScores (object sender, EventArgs args)
+        {
+            StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
+            if (NcResult.SubKindEnum.Info_RicInitialSyncCompleted != eventArgs.Status.SubKind) {
+                return;
+            }
+            NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
         }
     }
 }
