@@ -78,10 +78,7 @@ namespace NachoClient.iOS
 
             AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesAttachmentsView);
 
-            SegueHolder holder = new SegueHolder (null);
-            if (owner != null) {
-                holder = new SegueHolder (owner);
-            }
+            var holder = new SegueHolder(owner); // ok if owner is null
 
             var attachmentTap = new UITapGestureRecognizer ();
             attachmentTap.AddTarget (() => {
