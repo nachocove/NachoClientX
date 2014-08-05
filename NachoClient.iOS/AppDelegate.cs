@@ -58,6 +58,8 @@ namespace NachoClient.iOS
         private bool FinalShutdownHasHappened = false;
         private bool StartCrashReportingHasHappened = false;
 
+        private bool hasSynced;
+
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -129,6 +131,8 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
 
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
+            Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
 
             UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
@@ -218,8 +222,6 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
-
-            Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
@@ -434,54 +436,74 @@ namespace NachoClient.iOS
 
         public void CredReqCallback (int accountId)
         {
-            var Mo = NcModel.Instance;
-            var Be = BackEnd.Instance;
+            hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId); 
 
-            var credView = new UIAlertView ();
-            var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-            var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
+            if (hasSynced == false) {
+                Log.Info (Log.LOG_LIFECYCLE, "CredReqCallback Called");
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CredReqCallback),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            } else {
 
-            credView.Title = "Need to update Login Credentials";
-            credView.AddButton ("Update");
-            credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
-            credView.Show ();
+                var Mo = NcModel.Instance;
+                var Be = BackEnd.Instance;
 
-            credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                var parent = (UIAlertView)sender;
-                // FIXME - need  to display the login id they used in first login attempt
-                var tmplog = parent.GetTextField (0).Text; // login id
-                var tmppwd = parent.GetTextField (1).Text; // password
-                if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
-                    tmpCred.Username = (string)tmplog;
-                    tmpCred.Password = (string)tmppwd;
-                    Mo.Db.Update (tmpCred); //  update with new username/password
+                var credView = new UIAlertView ();
+                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
+                var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
 
-                    Be.CredResp (accountId);
-                    credView.ResignFirstResponder ();
-                } else {
-                    var DoitYadummy = new UIAlertView ();
-                    DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                    DoitYadummy.AddButton ("Go Back");
-                    DoitYadummy.AddButton ("Exit - Do Not Care");
-                    DoitYadummy.CancelButtonIndex = 1;
-                    DoitYadummy.Show ();
-                    DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
+                credView.Title = "Need to update Login Credentials";
+                credView.AddButton ("Update");
+                credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
+                credView.Show ();
 
-                        if (e.ButtonIndex == 0) { // I want to actually enter login data
-                            CredReqCallback (accountId);    // call to get credentials
-                        }
+                credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                    var parent = (UIAlertView)sender;
+                    // FIXME - need  to display the login id they used in first login attempt
+                    var tmplog = parent.GetTextField (0).Text; // login id
+                    var tmppwd = parent.GetTextField (1).Text; // password
+                    if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
+                        tmpCred.Username = (string)tmplog;
+                        tmpCred.Password = (string)tmppwd;
+                        Mo.Db.Update (tmpCred); //  update with new username/password
 
-                        DoitYadummy.ResignFirstResponder ();
+                        Be.CredResp (accountId);
+                        credView.ResignFirstResponder ();
+                    } else {
+                        var DoitYadummy = new UIAlertView ();
+                        DoitYadummy.Title = "You need to enter fields for Login ID and Password";
+                        DoitYadummy.AddButton ("Go Back");
+                        DoitYadummy.AddButton ("Exit - Do Not Care");
+                        DoitYadummy.CancelButtonIndex = 1;
+                        DoitYadummy.Show ();
+                        DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
 
-                    };
-                }
-                ;
-                credView.ResignFirstResponder (); // might want this moved
-            };
+                            if (e.ButtonIndex == 0) { // I want to actually enter login data
+                                CredReqCallback (accountId);    // call to get credentials
+                            }
+
+                            DoitYadummy.ResignFirstResponder ();
+                        };
+                    }
+                    ;
+                    credView.ResignFirstResponder (); // might want this moved
+                };
+            }
         }
 
         public void ServConfReqCallback (int accountId)
         {
+
+            hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId); 
+            if (hasSynced == false) {
+                Log.Info (Log.LOG_LIFECYCLE, "ServConfReqCallback Called");
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            } else {
+
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
             var Mo = NcModel.Instance;
@@ -521,7 +543,6 @@ namespace NachoClient.iOS
                         credView.ResignFirstResponder ();
                     }
                     ;
-
                 }
                 ;
 
@@ -542,12 +563,22 @@ namespace NachoClient.iOS
                 }
                 ;
             };
+            }
         }
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
-            // UI FIXME - ask user and call CertAskResp async'ly.
-            NcApplication.Instance.CertAskResp (accountId, true);
+//            hasSynced = LoginHelpers.GetSyncedBit (accountId); 
+//            if (hasSynced == false  && LoginHelpers.GetCertificateBit(accountId) == false) {
+//                Log.Info (Log.LOG_LIFECYCLE, "CertAskReqCallback Called");
+//                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+//                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
+//                    Account = ConstMcAccount.NotAccountSpecific,
+//                });
+//            } else {
+                // UI FIXME - ask user and call CertAskResp async'ly.
+                NcApplication.Instance.CertAskResp (accountId, true);
+//            }
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.

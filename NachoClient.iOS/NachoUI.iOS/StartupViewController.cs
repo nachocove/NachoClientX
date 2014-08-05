@@ -6,11 +6,17 @@ using MonoTouch.UIKit;
 using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
+        bool hasSynced;
+        bool hasCreds;
+        bool hasViewedTutorial;
+        int accountId;
+
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
@@ -26,10 +32,24 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
-            // Initial view
-            if (0 == NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).Count ()) {
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                accountId = LoginHelpers.GetCurrentAccountId ();
+                hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId);
+                hasCreds = LoginHelpers.HasProvidedCreds (accountId);
+                hasViewedTutorial = LoginHelpers.HasViewedTutorial (accountId);
+            } else {
+                hasSynced = false;
+                hasCreds = false;
+                hasViewedTutorial = false;
+            }
+
+            if (!hasCreds) {
                 PerformSegue ("StartupToLaunch", this); // modal
                 PerformSegue ("StartupToHome", this);  // launch the documentation
+            } else if (!hasViewedTutorial) {
+                PerformSegue ("StartupToHome", this);
+            } else if (!hasSynced) {
+                PerformSegue ("StartupToAdvancedLogin", this);
             } else {
                 PerformSegue ("StartupToNachoNow", this); // push
             }
@@ -42,5 +62,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
         }
+
     }
 }
+    

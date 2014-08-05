@@ -79,6 +79,24 @@ namespace NachoCore.Model
                 exists.Delete ();
             }
         }
+
+        public static bool GetBool (string module, string key)
+        {
+            var value = Get (module, key);
+            if (value == "1") {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public static void SetBool (string module, string key, bool value){
+            if (true == value) {
+                Set (module, key, "1");
+            } else {
+                Set (module, key, "0");
+            }
+        }
     }
 }
 

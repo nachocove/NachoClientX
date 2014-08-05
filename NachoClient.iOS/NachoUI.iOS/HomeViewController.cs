@@ -13,6 +13,7 @@ namespace NachoClient.iOS
     public partial class HomeViewController : NcUIViewController
     {
         UIPageViewController pageController;
+        int accountId;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -63,7 +64,29 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
 
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            accountId = LoginHelpers.GetCurrentAccountId ();
         }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
+                LoginHelpers.SetFirstSyncCompleted (accountId, true);
+            }
+        }
+
 
         public void InitializePageViewController ()
         {
@@ -84,6 +107,21 @@ namespace NachoClient.iOS
             this.pageController.View.Frame = this.View.Bounds;
             this.View.AddSubview (this.pageController.View);
 
+            //Simulates a user dismissing tutorial, or the tutorial finishing on its own
+            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (20, 400, View.Frame.Width - 40, 50));
+            closeTutorial.SetTitle ("Dismiss Tutorial", UIControlState.Normal);
+            closeTutorial.TitleLabel.TextColor = UIColor.White;
+            closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            closeTutorial.BackgroundColor = A.Color_NachoGreen;
+            closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
+                LoginHelpers.SetHasViewedTutorial (accountId, true);
+                if (LoginHelpers.HasFirstSyncCompleted (accountId) == true) {
+                    PerformSegue ("HomeToNachoNow", this);
+                } else {
+                    PerformSegue ("HomeToAdvancedLogin", this);
+                }
+            };
+            View.Add (closeTutorial);
         }
 
         /// <summary>
@@ -119,7 +157,6 @@ namespace NachoClient.iOS
                     int previousPageIndex = currentPageController.PageIndex - 1;
                     return new HomePageController (previousPageIndex);
                 }
-
             }
 
             public override UIViewController GetNextViewController (UIPageViewController pageViewController, UIViewController referenceViewController)
