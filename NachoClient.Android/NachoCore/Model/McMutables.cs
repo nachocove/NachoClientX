@@ -50,6 +50,15 @@ namespace NachoCore.Model
             }
         }
 
+        // TODO: Eliminate "Bool" suffix and just use overloads.
+        // TODO: Put 0/1 <=> true/false in one place.
+        public static bool GetOrCreateBool (string module, string key, bool defaultValue)
+        {
+            string boolString = (defaultValue) ? "1" : "0";
+            var stringRetval = GetOrCreate (module, key, boolString);
+            return ("1" == stringRetval) ? true : false;
+        }
+
         public static string GetOrCreate (string module, string key, string defaultValue)
         {
             var exists = Get (module, key);
