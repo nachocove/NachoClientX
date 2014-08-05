@@ -46,8 +46,10 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissFileChooser (bool animated, NSAction action)
         {
+            var controllers = this.NavigationController.ViewControllers;
+            int total = controllers.Count ();
+            NavigationController.PopToViewController (controllers [total - 3], true);
             owner = null;
-            NavigationController.PopViewControllerAnimated (true);
         }
 
         public override void ViewDidLoad ()
