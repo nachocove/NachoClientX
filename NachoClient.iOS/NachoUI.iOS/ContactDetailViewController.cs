@@ -31,6 +31,13 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            var editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
+            NavigationItem.RightBarButtonItem = editButton;
+
+            editButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("ContactToContactEdit", new SegueHolder (contact));
+            };
+
             CreateView ();
         }
 
@@ -80,6 +87,9 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 var address = holder.value as string;
                 dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                return;
+            }
+            if (segue.Identifier.Equals ("ContactToContactEdit")) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

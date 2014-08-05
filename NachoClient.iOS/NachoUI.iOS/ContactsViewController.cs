@@ -41,6 +41,10 @@ namespace NachoClient.iOS
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
+
+            addButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue("ContactsToContactEdit", new SegueHolder(null));
+            };
         }
 
         public override void ViewWillAppear (bool animated)
@@ -91,6 +95,9 @@ namespace NachoClient.iOS
                 var c = (McContact)h.value;
                 ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
                 destinationController.contact = c;
+                return;
+            }
+            if (segue.Identifier.Equals ("ContactsToContactEdit")) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

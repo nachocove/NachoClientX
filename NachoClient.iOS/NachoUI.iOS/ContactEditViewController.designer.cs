@@ -9,8 +9,8 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("ContactDetailViewController")]
-	partial class ContactDetailViewController
+	[Register ("ContactEditViewController")]
+	partial class ContactEditViewController
 	{
 		[Outlet]
 		MonoTouch.UIKit.UIView contentView { get; set; }
@@ -20,14 +20,14 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (contentView != null) {
-				contentView.Dispose ();
-				contentView = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
+			}
+
+			if (contentView != null) {
+				contentView.Dispose ();
+				contentView = null;
 			}
 		}
 	}

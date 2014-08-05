@@ -1083,6 +1083,10 @@
     <Compile Include="AddAttachmentViewController.designer.cs">
       <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\ContactEditViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactEditViewController.designer.cs">
+      <DependentUpon>ContactEditViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
