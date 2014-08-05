@@ -110,7 +110,7 @@ namespace NachoCore.Model
             }
         }
 
-        private NcResult ReadAncillaryData ()
+        protected NcResult ReadAncillaryData ()
         {
             NcResult result = NcResult.OK ();
             if (!HasReadAncillaryData) {
@@ -124,7 +124,7 @@ namespace NachoCore.Model
             return result;
         }
 
-        private NcResult ForceReadAncillaryData ()
+        protected NcResult ForceReadAncillaryData ()
         {
             SQLiteConnection db = NcModel.Instance.Db;
             // FIXME: Parent types

@@ -1087,6 +1087,8 @@
     <Compile Include="NachoUI.iOS\ContactEditViewController.designer.cs">
       <DependentUpon>ContactEditViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

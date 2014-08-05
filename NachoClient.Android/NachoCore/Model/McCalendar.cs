@@ -77,6 +77,7 @@ namespace NachoCore.Model
 
         private NcResult ReadAncillaryData ()
         {
+            base.ReadAncillaryData ();
             if (!HasReadAncillaryData) {
                 HasReadAncillaryData = true;
                 return ForceReadAncillaryData ();
@@ -86,6 +87,7 @@ namespace NachoCore.Model
 
         public NcResult ForceReadAncillaryData ()
         {
+            base.ForceReadAncillaryData();
             HasReadAncillaryData = true;
             DbExceptions = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
             DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
@@ -95,9 +97,6 @@ namespace NachoCore.Model
         public NcResult InsertAncillaryData (SQLiteConnection db)
         {
             NcAssert.True (0 < Id);
-
-            // TODO: Fix this hammer?
-            DeleteAncillaryData (db);
 
             foreach (var a in attendees) {
                 a.SetParent (this);
@@ -125,8 +124,15 @@ namespace NachoCore.Model
         public override int Update ()
         {
             int retval = base.Update ();
-            InsertAncillaryData (NcModel.Instance.Db);
+            UpdateAncillaryData (NcModel.Instance.Db);
             return retval;
+        }
+
+        public void UpdateAncillaryData (SQLiteConnection db)
+        {
+            ReadAncillaryData ();
+            DeleteAncillaryData (db);
+            InsertAncillaryData (db);
         }
 
         public override void DeleteAncillary ()
