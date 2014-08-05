@@ -322,14 +322,18 @@ namespace NachoClient.iOS
                 switch (vc.itemType) {
                 case ItemType.Attachment:
                     cell = FormatAttachmentCell (cell, item as McAttachment);
-                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    if (vc.owner == null) {
+                        ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    }
                     break;
                 case ItemType.Note:
                     cell = FormatNoteCell (cell, item as McNote);
                     break;
                 case ItemType.Document:
-                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     cell = FormatDocumentCell (cell, item as McDocument);
+                    if (vc.owner == null) {
+                        ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    }
                     break;
                 }
 
