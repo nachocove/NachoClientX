@@ -294,6 +294,11 @@ namespace NachoClient.iOS
                 return 1;
             }
 
+            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            {
+                return 50.0f;
+            }
+
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
                 UITableViewCell cell = null;
