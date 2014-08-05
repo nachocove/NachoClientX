@@ -54,13 +54,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            itemType = ItemType.Attachment;
-
             NcAssert.True (itemType != 0, "Item type should be set before transitioning to FilesViewController");
-
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
 
             // set up the table view source
             filesSource = new FilesTableSource (this);
@@ -74,17 +68,6 @@ namespace NachoClient.iOS
 
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
-
-            // don't show hamburger/nachonow buttons if selecting attachment for event or email
-            if (owner == null) {
-                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-                using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
-                    nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-                }
-                nachoButton.Clicked += (object sender, EventArgs e) => {
-                    PerformSegue ("AttachmentsToNachoNow", this);
-                };
-            }
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {

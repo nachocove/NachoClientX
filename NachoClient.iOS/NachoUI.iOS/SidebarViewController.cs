@@ -41,7 +41,6 @@ namespace NachoClient.iOS
         const string SidebarToSupportSegueId = "SidebarToSupport";
         const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToTasksSegueId = "SidebarToTasks";
-        const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
         const string SidebarToNewEventSegueId = "SidebarToNewEvent";
         const string SidebarToEventSegueId = "SidebarToEvent";
