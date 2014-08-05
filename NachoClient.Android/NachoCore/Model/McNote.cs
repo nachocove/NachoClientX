@@ -4,11 +4,10 @@ using SQLite;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McNote : McAbstrObject
+    public class McNote : McAbstrObject, IFilesViewItem
     {
         public enum NoteType
         {

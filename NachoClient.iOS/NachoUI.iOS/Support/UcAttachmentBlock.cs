@@ -193,10 +193,9 @@ namespace NachoClient.iOS
             var actionSheet = new UIActionSheet ();
 
             actionSheet.Add ("Add Photo");
-            actionSheet.Add ("Add Shared File");
-            actionSheet.Add ("Add Existing Attachment");
+            actionSheet.Add ("Add Attachment");
             actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 3;
+            actionSheet.CancelButtonIndex = 2;
 
             if ("message" == compositionType) {
                 actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
@@ -210,11 +209,6 @@ namespace NachoClient.iOS
                         }
                         break;
                     case 2:
-                        if (null != owner) {
-                            owner.PerformSegueForAttachmentBlock ("ComposeToAttachments", new SegueHolder (null));
-                        }
-                        break;
-                    case 3:
 
                         break;// Cancel
                     default:
@@ -231,15 +225,10 @@ namespace NachoClient.iOS
                         break; 
                     case 1:
                         if (null != owner) {
-                            owner.PerformSegueForAttachmentBlock ("AddAttachmentToFiles", new SegueHolder (null));
+                            owner.PerformSegueForAttachmentBlock ("EventToFiles", new SegueHolder (null));
                         }
                         break;
                     case 2:
-                        if (null != owner) {
-                            owner.PerformSegueForAttachmentBlock ("AddAttachmentToAttachment", new SegueHolder (null));
-                        }
-                        break;
-                    case 3:
 
                         break;// Cancel
                     default:

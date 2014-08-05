@@ -9,11 +9,11 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("FileListViewController")]
-	partial class FileListViewController
+	[Register ("FilesViewController")]
+	partial class FilesViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem editButton { get; set; }
+		MonoTouch.UIKit.UIBarButtonItem actionButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
@@ -23,19 +23,19 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (editButton != null) {
-				editButton.Dispose ();
-				editButton = null;
-			}
-
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
+			if (actionButton != null) {
+				actionButton.Dispose ();
+				actionButton = null;
 			}
 
 			if (revealButton != null) {
 				revealButton.Dispose ();
 				revealButton = null;
+			}
+
+			if (nachoButton != null) {
+				nachoButton.Dispose ();
+				nachoButton = null;
 			}
 		}
 	}

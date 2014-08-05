@@ -197,13 +197,8 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
-            if (segue.Identifier.Equals ("ComposeToAttachments")) {
-                var dc = (INachoFileChooser)segue.DestinationViewController;
-                dc.SetOwner (this);
-                return;
-            }
             if (segue.Identifier.Equals ("ComposeToFiles")) {
-                var dc = (INachoFileChooser)segue.DestinationViewController;
+                var dc = (FilesHierarchyViewController)segue.DestinationViewController;
                 dc.SetOwner (this);
                 return;
             }
@@ -804,7 +799,7 @@ namespace NachoClient.iOS
             }
 
             // File
-            var file = obj as McFile;
+            var file = obj as McDocument;
             if (null != file) {
                 var attachment = new McAttachment ();
                 attachment.DisplayName = file.DisplayName;
