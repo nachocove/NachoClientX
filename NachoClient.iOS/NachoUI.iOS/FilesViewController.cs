@@ -28,6 +28,7 @@ namespace NachoClient.iOS
 
         // segue ids
         string FilesToComposeSegueId = "FilesToEmailCompose";
+        string FilesToNotesSegueId = "FilesToNotes";
 
         public FilesViewController (IntPtr handle) : base (handle)
         {
@@ -108,6 +109,18 @@ namespace NachoClient.iOS
                 var attachment = (McAttachment)holder.value;
 
                 dc.SetEmailPresetFields (attachment: attachment);
+                return;
+            }
+
+            if (segue.Identifier.Equals (FilesToNotesSegueId)) {
+                var dc = (NotesViewController)segue.DestinationViewController;
+
+                var holder = sender as SegueHolder;
+                var note = (McNote)holder.value;
+                var calEvent = McCalendar.QueryById<McCalendar> (note.TypeId);
+                dc.SetEvent (calEvent);
+
+                return;
             }
         }
 
@@ -269,13 +282,15 @@ namespace NachoClient.iOS
         public void NoteAction (McNote note)
         {
             if (null == owner) {
-                // TODO: Display note
+                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
                 return;
             }
 
-            FileChooserSheet (note, () => {} );
+            FileChooserSheet (note, () => {
+                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+            });
         }
-            
+
         protected class FilesTableSource : UITableViewSource
         {
             // cell Id's
