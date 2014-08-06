@@ -1079,10 +1079,6 @@
     <Compile Include="NachoUI.iOS\FilesHierarchyViewController.designer.cs">
       <DependentUpon>FilesHierarchyViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="AddAttachmentViewController.cs" />
-    <Compile Include="AddAttachmentViewController.designer.cs">
-      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactEditViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactEditViewController.designer.cs">
       <DependentUpon>ContactEditViewController.cs</DependentUpon>
@@ -1091,6 +1087,10 @@
     <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
       <Link>NachoCore\Model\McPortrait.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
+    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
+      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
