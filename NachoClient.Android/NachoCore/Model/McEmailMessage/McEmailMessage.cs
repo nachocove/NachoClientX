@@ -506,6 +506,13 @@ namespace NachoCore.Model
 
             try 
             {
+                if (0 == ScoreVersion) {
+                    // Try to use the contact score for initial email message score
+                    McEmailAddress emailAddress = GetFromAddress ();
+                    if (null != emailAddress) {
+                        Score = emailAddress.Score;
+                    }
+                }
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Insert ();
                     InsertAncillaryData (NcModel.Instance.Db);
@@ -571,6 +578,21 @@ namespace NachoCore.Model
                 isDeleted = true;
             }
             return returnVal;
+        }
+
+        public McEmailAddress GetFromAddress ()
+        {
+            McEmailAddress emailAddress = null;
+            var address = NcEmailAddress.ParseMailboxAddressString (From);
+            if (null == address) {
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
+            } else {
+                bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+                if (!found) {
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                }
+            }
+            return emailAddress;
         }
     }
 }

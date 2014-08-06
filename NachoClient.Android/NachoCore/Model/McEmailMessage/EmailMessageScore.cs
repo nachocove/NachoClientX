@@ -366,7 +366,9 @@ namespace NachoCore.Model
         {
             Log.Debug (Log.LOG_BRAIN, "Initialize time variance for email message id {0}", Id);
 
-            NcAssert.True (1 <= ScoreVersion);
+            if (0 == ScoreVersion) {
+                return;
+            }
 
             DateTime now = DateTime.Now;
             NcTimeVariance.TimeVarianceList tvList;

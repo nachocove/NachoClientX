@@ -1000,6 +1000,27 @@ namespace NachoCore.Model
         //                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Contact, McEmailAddress.minHotScore);
         //        }
 
+        public static List<McContact> QueryAllRicContacts (int accountId)
+        {
+            // Get the RIC folder
+            McFolder ricFolder = McFolder.GetRicContactFolder (accountId);
+            if (null == ricFolder) {
+                return null;
+            }
+
+            // Order by descending weighted rank so that the first entry has the max rank.
+            return NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? " +
+                " ORDER BY c.WeightedRank DESC",
+                accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
+        }
+
         public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)
         {
             // TODO: Put this in the brain

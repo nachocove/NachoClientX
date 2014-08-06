@@ -12,6 +12,7 @@ namespace NachoCore.Brain
         STATE_MACHINE,
         TERMINATE,
         MESSAGE_FLAGS,
+        INITIAL_RIC,
     };
 
     public class NcBrainEvent : NcQueueElement
@@ -98,8 +99,23 @@ namespace NachoCore.Brain
 
         public override string ToString ()
         {
-            return String.Format ("[NcBrainMessageFlagEvent: type={0}, accountId={2}, emailMessageId={3}",
+            return String.Format ("[NcBrainMessageFlagEvent: type={0}, accountId={1}, emailMessageId={2}]",
                 GetEventType (), AccountId, EmailMessageId);
+        }
+    }
+
+    public class NcBrainInitialRicEvent : NcBrainEvent
+    {
+        public Int64 AccountId;
+
+        public NcBrainInitialRicEvent (Int64 accountId) : base (NcBrainEventType.INITIAL_RIC)
+        {
+            AccountId = accountId;
+        }
+
+        public override string ToString ()
+        {
+            return String.Format ("[NcBrainInitialRicEvent: type={0}, accountId={1}]", GetEventType (), AccountId);
         }
     }
 }
