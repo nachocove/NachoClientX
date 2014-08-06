@@ -47,7 +47,6 @@ namespace NachoClient.iOS
                     A.RevealButton (this),
                     A.NachoNowButton (this),
                 };
-
             }
                 
             FilesHierarchyView ();
@@ -60,34 +59,6 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
         }
-
-        //        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
-        //        {
-        //            UITableViewCell cell = null;
-        //            cell = tableView.DequeueReusableCell (BasicCell);
-        //            if (cell == null) {
-        //                cell = new UITableViewCell (UITableViewCellStyle.Default, BasicCell);
-        //            }
-        //            NcAssert.True (null != cell);
-        //
-        //            switch (indexPath.Row) {
-        //            case 0:
-        //                cell.TextLabel.Text = "Attachments";
-        //                break;
-        //            case 1:
-        //                cell.TextLabel.Text = "Shared Documents";
-        //                break;
-        //            case 2:
-        //                cell.TextLabel.Text = "Notes";
-        //                break;
-        //            }
-        //
-        //            // styling
-        //            cell.TextLabel.TextColor = A.Color_NachoBlack;
-        //            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-        //
-        //            return cell;
-        //        }
 
         const int FILES_ATTACHMENT_DETAIL_TAG = 100;
         const int FILES_SHARED_FILE_DETAIL_TAG = 101;
@@ -107,10 +78,12 @@ namespace NachoClient.iOS
 
             AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesAttachmentsView);
 
+            var holder = new SegueHolder(owner); // ok if owner is null
+
             var attachmentTap = new UITapGestureRecognizer ();
             attachmentTap.AddTarget (() => {
                 itemType = FilesViewController.ItemType.Attachment;
-                //PerformSegue ("EventToAttachment", this);
+                PerformSegue (FilesHierarchyToFiles, holder); // holder can be filled with owner or null
             });
             filesAttachmentsView.AddGestureRecognizer (attachmentTap);
 
@@ -127,7 +100,7 @@ namespace NachoClient.iOS
             var sharedFilesTap = new UITapGestureRecognizer ();
             sharedFilesTap.AddTarget (() => {
                 itemType = FilesViewController.ItemType.Document;
-                //PerformSegue ("EventToAttachment", this);
+                PerformSegue (FilesHierarchyToFiles, holder); // holder can be filled with owner or null
             });
             filesSharedFilesView.AddGestureRecognizer (sharedFilesTap);
 
@@ -144,7 +117,7 @@ namespace NachoClient.iOS
             var noteTap = new UITapGestureRecognizer ();
             noteTap.AddTarget (() => {
                 itemType = FilesViewController.ItemType.Note;
-                //PerformSegue ("EventToAttachment", this);
+                PerformSegue (FilesHierarchyToFiles, holder); // holder can be filled with owner or null
             });
             filesNotesView.AddGestureRecognizer (noteTap);
 
@@ -169,30 +142,6 @@ namespace NachoClient.iOS
 
         }
 
-        //        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-        //        {
-        //            SegueHolder holder = new SegueHolder (null);
-        //            if (owner != null) {
-        //                holder = new SegueHolder (owner);
-        //            }
-        //
-        //            switch (indexPath.Row) {
-        //            case 0:
-        //                itemType = FilesViewController.ItemType.Attachment;
-        //                break;
-        //            case 1:
-        //                itemType = FilesViewController.ItemType.Document;
-        //                break;
-        //            case 2:
-        //                itemType = FilesViewController.ItemType.Note;
-        //                break;
-        //            }
-        //
-        //            PerformSegue (FilesHierarchyToFiles, holder); // holder can be filled with owner or null
-        //
-        //            tableView.DeselectRow (indexPath, true);
-        //        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals (FilesHierarchyToFiles)) {
@@ -206,6 +155,7 @@ namespace NachoClient.iOS
                 }
 
                 dc.itemType = this.itemType; // tell the files VC what item type to display
+                return;
             }
             if (segue.Identifier.Equals (FilesHierarchyToNachoNow)) {
                 return;
@@ -213,7 +163,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
-
 
         public void AddTextLabelWithImage (float xOffset, float yOffset, float width, float height, string text, UIImage image, float imageOffset, UIView parentView)
         {
