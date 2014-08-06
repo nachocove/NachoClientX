@@ -108,7 +108,7 @@ namespace NachoClient.iOS
             this.View.AddSubview (this.pageController.View);
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
-            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (20, 400, View.Frame.Width - 40, 50));
+            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (20, 350, View.Frame.Width - 40, 50));
             closeTutorial.SetTitle ("Dismiss Tutorial", UIControlState.Normal);
             closeTutorial.TitleLabel.TextColor = UIColor.White;
             closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;

@@ -57,7 +57,6 @@ namespace NachoClient.iOS
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
         private bool StartCrashReportingHasHappened = false;
-
         private bool hasFirstSyncCompleted;
 
         private void StartCrashReporting ()
@@ -437,11 +436,10 @@ namespace NachoClient.iOS
         public void CredReqCallback (int accountId)
         {
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
-
             if (hasFirstSyncCompleted == false) {
                 Log.Info (Log.LOG_LIFECYCLE, "CredReqCallback Called");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CredReqCallback),
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
@@ -568,7 +566,7 @@ namespace NachoClient.iOS
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
-            hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
+            hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId);
             if (hasFirstSyncCompleted == false) {
                 Log.Info (Log.LOG_LIFECYCLE, "CertAskReqCallback Called");
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 

@@ -75,6 +75,7 @@ namespace NachoCore.Utils
             Info_EmailAddressScoreUpdated,
             Info_EmailMessageScoreUpdated,
             Info_RicInitialSyncCompleted,
+            Info_CredReqCallback,
 
             // Warning.
             // Error.
@@ -134,7 +135,6 @@ namespace NachoCore.Utils
             Error_ValidateConfigFailedComm,
             Error_ValidateConfigFailedUser,
             Error_ServerConfReqCallback,
-            Error_CredReqCallback,
             Error_CertAskReqCallback,
         };
 

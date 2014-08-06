@@ -23,6 +23,9 @@ namespace NachoClient.iOS
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected float keyboardHeight;
 
+        const int GRAY_BACKGROUND_TAG = 20;
+        const int CUSTOM_CERTIFICATE_TAG = 21;
+
         UITextField emailText = new UITextField ();
         UITextField serverText = new UITextField ();
         UITextField domainText = new UITextField ();
@@ -39,7 +42,6 @@ namespace NachoClient.iOS
         UIButton genericSystemButton;
         UIButton connectButton;
         UIColor systemBlue;
-        UIAlertView certificateAlert;
         AccountSettings theAccount;
         McServer serverToValidate;
         AppDelegate appDelegate;
@@ -66,14 +68,11 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            createCertificateAlert ();
-
             generateSystemBlue ();
             createWaitingView ();
             createScrollView ();
             createInputFieldList ();
             theAccount = new AccountSettings ();
-            //accountId = LoginHelpers.getCurrentAccountId ();
             loadSettingsForAccount ();
             addErrorLabel ();
             addCells ();
@@ -390,7 +389,8 @@ namespace NachoClient.iOS
 
                     case BackEndAutoDStateEnum.CertAskWait:
                         setErrorMessage (errorMessageEnum.Certificate);
-                        certificateAlert.Show ();
+                        showWaitingView ();
+                        certificateCallbackHandler ();
                         return;
 
                     case BackEndAutoDStateEnum.PostAutoDPreFsync:
@@ -623,21 +623,6 @@ namespace NachoClient.iOS
             BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
             BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
         }
-
-        public void createCertificateAlert ()
-        {
-            certificateAlert = new UIAlertView ();
-            certificateAlert.Title = "Need To Accept Certificate";
-            certificateAlert.Message = "Do you trust this?";
-            certificateAlert.AddButton ("Accept");
-            certificateAlert.AddButton ("Cancel");
-            certificateAlert.DismissWithClickedButtonIndex (1, false);
-            certificateAlert.Clicked += (object sender, UIButtonEventArgs e) => {
-                NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
-                showWaitingView ();
-            };
-        }
-
         public virtual bool HandlesKeyboardNotifications {
             get { return true; }
         }
@@ -781,10 +766,9 @@ namespace NachoClient.iOS
                 setErrorMessage (errorMessageEnum.ServerConf);
                 setTextToRed (new UITextField[] { emailText });
                 dismissWaitingView ();
-                //Call BE.ServResp?
                 stopBeIfRunning ();
             }
-            if (NcResult.SubKindEnum.Error_CredReqCallback == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Credentials);
                 setTextToRed (new UITextField[] { usernameText, passwordText });
                 dismissWaitingView ();
@@ -792,8 +776,143 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
                 setErrorMessage (errorMessageEnum.Certificate);
-                certificateAlert.Show ();
+                certificateCallbackHandler ();
             }
+        }
+
+        public void certificateCallbackHandler ()
+        {
+            string certificateInformation = "";
+            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
+            certificateInformation = CertificateHelper.formatCertificateData (certToBeExamined);
+            createCustomCertificateAlert (certificateInformation);
+        }
+
+        public void acceptCertificate ()
+        {
+            NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
+        }
+
+        public void dismissCustomCertificate ()
+        {
+            setTextToRed (new UITextField[] { });
+            UIView grayBackground = View.ViewWithTag (GRAY_BACKGROUND_TAG);
+            UIView customCertificateView = View.ViewWithTag (CUSTOM_CERTIFICATE_TAG);
+
+            if (null != grayBackground) {
+                grayBackground.RemoveFromSuperview ();
+            }
+            if (null != customCertificateView) {
+                customCertificateView.RemoveFromSuperview ();
+            }
+        }
+
+        //FIXME Only temporary until segues / Navigation controller issue gets taken care of
+        public bool hasNavBar ()
+        {
+            if (null != NavigationController) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public void createCustomCertificateAlert (string certInformation)
+        {
+            //FIXME Only temporary until segues / Navigation controller issue gets taken care of
+            float SCREEN_HEIGHT;
+            if (hasNavBar ()) {
+                SCREEN_HEIGHT = UIScreen.MainScreen.Bounds.Height - 64f;
+            } else {
+                SCREEN_HEIGHT = UIScreen.MainScreen.Bounds.Height;
+            }
+            //Grey Background to mimic UIAlertView blurry background
+            UIView greyBackground = new UIView (new System.Drawing.RectangleF (0, 0, View.Frame.Width, SCREEN_HEIGHT));
+            greyBackground.Tag = GRAY_BACKGROUND_TAG;
+            greyBackground.BackgroundColor = UIColor.DarkGray;
+            greyBackground.Alpha = .4f;
+            View.Add (greyBackground);
+
+            //Create main certificate view container
+            UIView certificateView = new UIView (new RectangleF (20, 20, View.Frame.Width - 40, SCREEN_HEIGHT - 40));
+            certificateView.Tag = CUSTOM_CERTIFICATE_TAG;
+            certificateView.BackgroundColor = UIColor.White;
+            certificateView.Layer.CornerRadius = 7.0f;
+            certificateView.Alpha = 1.0f;
+            //Create title: Larger text at top of view
+            UITextView certificateViewTitle = new UITextView (new System.Drawing.RectangleF (8, 2, certificateView.Frame.Width - 16, 40));
+            certificateViewTitle.BackgroundColor = UIColor.White;
+            certificateViewTitle.Alpha = 1.0f;
+            certificateViewTitle.Font = UIFont.SystemFontOfSize (17);
+            certificateViewTitle.TextColor = systemBlue;
+            certificateViewTitle.Text = "Trust This Certifcate?";
+            certificateViewTitle.TextAlignment = UITextAlignment.Center;
+            certificateView.Add (certificateViewTitle);
+
+            UILabel descriptionOfProblem = new UILabel (new RectangleF (15, 47, certificateView.Frame.Width - 30, 230));
+            descriptionOfProblem.Text = "You have asked Nacho Mail to connect securely to a server but we can't confirm" +
+            " that your connection is secure. \n\n Normally, when you try to connect securely, the server will present" +
+            " trusted identification to prove that you are going to the right place.  However, this server's identity" +
+            " can't be verified. \n\n If you usually connect to this site without problems, this problem could mean that" +
+            " someone is trying to impersonate the server and you shouldn't continue.";
+            descriptionOfProblem.TextColor = UIColor.Black;
+            descriptionOfProblem.Font = A.Font_AvenirNextMedium12;
+            descriptionOfProblem.Alpha = 1.0f;
+            descriptionOfProblem.BackgroundColor = UIColor.White;
+            descriptionOfProblem.Lines = 50;
+            certificateView.Add (descriptionOfProblem);
+
+            //Create certificate body: Main body of text giving all information about the certificate
+            UITextView certificateInformation = new UITextView (new System.Drawing.RectangleF (15, 47 + 236, certificateView.Frame.Width - 30, certificateView.Frame.Height - 100 - 230 - 6));
+            certificateInformation.BackgroundColor = UIColor.White;
+            certificateInformation.TextColor = UIColor.Black;
+            certificateInformation.Font = A.Font_AvenirNextRegular12;
+            certificateInformation.Alpha = 1.0f;
+            certificateInformation.TextAlignment = UITextAlignment.Left;
+            certificateInformation.Text = certInformation;
+            certificateView.Add (certificateInformation);
+
+            //Create trust button: Button on bottom-left side of view that says "Trust"
+            UIButton trustCertificateButton = new UIButton (new RectangleF (0, certificateView.Frame.Height - 44, certificateView.Frame.Width / 2, 44));
+            trustCertificateButton.Layer.CornerRadius = 10.0f;
+            trustCertificateButton.BackgroundColor = UIColor.White;
+            trustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            trustCertificateButton.SetTitle ("Trust", UIControlState.Normal);
+            trustCertificateButton.TitleLabel.TextColor = systemBlue;
+            trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
+                dismissCustomCertificate ();
+                setErrorMessage (errorMessageEnum.FirstTime);
+                acceptCertificate ();
+            };
+            certificateView.Add (trustCertificateButton);
+
+            //Create cancel button: Button on bottom-right side of view that says "Cancel"
+            UIButton dontTrustCertificateButton = new UIButton (new RectangleF (certificateView.Frame.Width / 2, certificateView.Frame.Height - 44, certificateView.Frame.Width / 2, 44));
+            dontTrustCertificateButton.Layer.CornerRadius = 10.0f;
+            dontTrustCertificateButton.BackgroundColor = UIColor.White;
+            dontTrustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            dontTrustCertificateButton.SetTitle ("Cancel", UIControlState.Normal);
+            dontTrustCertificateButton.TitleLabel.TextColor = systemBlue;
+            dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
+                dismissCustomCertificate ();
+                setErrorMessage (errorMessageEnum.FirstTime);
+                dismissWaitingView();
+            };
+            certificateView.Add (dontTrustCertificateButton);
+
+            UIView horizontalLineAboveButtons = new UIView (new RectangleF (0, certificateView.Frame.Height - 45, certificateView.Frame.Width, .5f));
+            horizontalLineAboveButtons.BackgroundColor = UIColor.LightGray;
+            certificateView.Add (horizontalLineAboveButtons);
+
+            UIView verticalLineBetweenButtons = new UIView (new RectangleF (certificateView.Frame.Width / 2, certificateView.Frame.Height - 45, .5f, 45));
+            verticalLineBetweenButtons.BackgroundColor = UIColor.LightGray;
+            certificateView.Add (verticalLineBetweenButtons);
+
+            UIView horizontalLineAfterDescriptionOfProblem = new UIView (new RectangleF (15, 47 + 236, certificateView.Frame.Width - 30, .5f));
+            horizontalLineAfterDescriptionOfProblem.BackgroundColor = UIColor.LightGray;
+            certificateView.Add (horizontalLineAfterDescriptionOfProblem);
+
+            View.Add (certificateView);
         }
 
         public class AccountSettings
