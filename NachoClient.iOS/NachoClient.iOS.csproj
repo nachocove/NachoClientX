@@ -1088,13 +1088,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
       <Link>NachoCore\Model\McPortrait.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
-      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
-      <Link>NachoCore\Utils\CertificateHelper.cs</Link>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

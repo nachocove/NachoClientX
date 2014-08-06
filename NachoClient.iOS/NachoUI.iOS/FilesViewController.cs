@@ -46,8 +46,10 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissFileChooser (bool animated, NSAction action)
         {
+            var controllers = this.NavigationController.ViewControllers;
+            int currentVC = controllers.Count () - 1; // take 0 indexing into account
+            NavigationController.PopToViewController (controllers [currentVC - 2], true); // pop 2 views: one for attachments page, one for hierarchy
             owner = null;
-            NavigationController.PopViewControllerAnimated (true);
         }
 
         public override void ViewDidLoad ()
@@ -213,6 +215,35 @@ namespace NachoClient.iOS
             });
         }
 
+        public void FileChooserSheet (McAbstrObject file, Action displayAction)
+        {
+            // We're in "chooser' mode & the attachment is downloaded
+            var actionSheet = new UIActionSheet ();
+            actionSheet.TintColor = A.Color_NachoBlue;
+            actionSheet.Add ("Preview");
+            actionSheet.Add ("Add as attachment");
+            actionSheet.Add ("Cancel");
+            actionSheet.CancelButtonIndex = 2;
+
+            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    displayAction ();
+                    break; 
+                case 1:
+                    owner.SelectFile (this, file);
+                    break;
+                case 2:
+                    break; // Cancel
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            };
+
+            actionSheet.ShowInView (View);
+        }
+
         public void AttachmentAction (int attachmentId)
         {
             DownloadAndDoAction (attachmentId, (a) => {
@@ -221,32 +252,18 @@ namespace NachoClient.iOS
                     return;
                 }
 
-                // We're in "chooser' mode & the attachment is downloaded
-                var actionSheet = new UIActionSheet ();
-                actionSheet.TintColor = A.Color_NachoBlue;
-                actionSheet.Add ("Preview");
-                actionSheet.Add ("Select Attachment");
-                actionSheet.Add ("Cancel");
-                actionSheet.CancelButtonIndex = 2;
-
-                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    switch (b.ButtonIndex) {
-                    case 0:
-                        PlatformHelpers.DisplayAttachment (this, a);
-                        break; 
-                    case 1:
-                        owner.SelectFile (this, a);
-                        break;
-                    case 2:
-                        break; // Cancel
-                    default:
-                        NcAssert.CaseError ();
-                        break;
-                    }
-                };
-
-                actionSheet.ShowInView (View);
+                FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
             });
+        }
+
+        public void DocumentAction (McDocument document)
+        {
+            if (null == owner) {
+                PlatformHelpers.DisplayFile (this, document);
+                return;
+            }
+
+            FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
         }
             
         protected class FilesTableSource : UITableViewSource
@@ -292,6 +309,11 @@ namespace NachoClient.iOS
                 return 1;
             }
 
+            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            {
+                return 50.0f;
+            }
+
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
                 UITableViewCell cell = null;
@@ -315,14 +337,18 @@ namespace NachoClient.iOS
                 switch (vc.itemType) {
                 case ItemType.Attachment:
                     cell = FormatAttachmentCell (cell, item as McAttachment);
-                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    if (vc.owner == null) {
+                        ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    }
                     break;
                 case ItemType.Note:
                     cell = FormatNoteCell (cell, item as McNote);
                     break;
                 case ItemType.Document:
-                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     cell = FormatDocumentCell (cell, item as McDocument);
+                    if (vc.owner == null) {
+                        ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    }
                     break;
                 }
 
@@ -392,12 +418,11 @@ namespace NachoClient.iOS
                     }
                     break;
                 case ItemType.Note:
-                    McNote note = (McNote)item;
                     // TODO: Add segue to edit notes view
                     break;
                 case ItemType.Document:
                     McDocument document = (McDocument)item;
-                    PlatformHelpers.DisplayFile (vc, document);
+                    vc.DocumentAction (document);
                     break;
                 }
 
