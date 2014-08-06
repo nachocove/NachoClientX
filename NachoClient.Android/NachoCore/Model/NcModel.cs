@@ -206,6 +206,12 @@ namespace NachoCore.Model
         public int BusyProtect (Func<int> action)
         {
             int rc = 0;
+            if (IsInTransaction ()) {
+                // Do not loop-retry within the transaction. 
+                // If we are being given the busy, then rollback may be needed to release a SQLite lock.
+                rc = action ();
+                return rc;
+            }
             var whoa = DateTime.UtcNow.AddSeconds (5.0);
             do {
                 try {
@@ -237,12 +243,19 @@ namespace NachoCore.Model
 
         public void RunInTransaction (Action action)
         {
-            // DO NOT ADD LOGGING IN THE TRANSACTION, BECAUSE WE DON'T WANT LOGGING WRITES TO GET LUMPED IN.
+            if (NcModel.Instance.IsInTransaction ()) {
+                // If we are already in transaction, then no need to nest - just run the code.
+                action ();
+                return;
+            }
             var threadId = Thread.CurrentThread.ManagedThreadId;
-            if (NcApplication.Instance.UiThreadId != threadId && !NcModel.Instance.IsInTransaction ()) {
-                NcModel.Instance.RateLimiter.TakeTokenOrSleep ();
+            if (NcApplication.Instance.UiThreadId != threadId) {
+                // We aren't in a transaction yet. If not UI thread, adhere to rate limiting.
+                RateLimiter.TakeTokenOrSleep ();
             }
             int exitValue = 0;
+            // TODO: We use a concurrent dict for now, but we can move to a var-per-conn, 
+            // since each conn is single threaded.
             TransDepth.AddOrUpdate (threadId, 1, (key, oldValue) => {
                 exitValue = oldValue;
                 return oldValue + 1;
@@ -250,6 +263,8 @@ namespace NachoCore.Model
             System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch ();
             try {
                 var whoa = DateTime.UtcNow.AddSeconds (5.0);
+                // It is okay to loop here, because a busy will have caused us to ROLLBACK and release
+                // all locks. We can then run the action code again.
                 do {
                     try {
                         watch.Start ();
