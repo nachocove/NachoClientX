@@ -155,6 +155,7 @@ namespace NachoClient.iOS
                 }
 
                 dc.itemType = this.itemType; // tell the files VC what item type to display
+                return;
             }
             if (segue.Identifier.Equals (FilesHierarchyToNachoNow)) {
                 return;

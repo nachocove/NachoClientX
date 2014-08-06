@@ -418,7 +418,6 @@ namespace NachoClient.iOS
                     }
                     break;
                 case ItemType.Note:
-                    McNote note = (McNote)item;
                     // TODO: Add segue to edit notes view
                     break;
                 case ItemType.Document:
