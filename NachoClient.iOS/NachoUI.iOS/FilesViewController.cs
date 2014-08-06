@@ -265,6 +265,16 @@ namespace NachoClient.iOS
 
             FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
         }
+
+        public void NoteAction (McNote note)
+        {
+            if (null == owner) {
+                // TODO: Display note
+                return;
+            }
+
+            FileChooserSheet (note, () => {} );
+        }
             
         protected class FilesTableSource : UITableViewSource
         {
@@ -363,7 +373,9 @@ namespace NachoClient.iOS
 
             private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment)
             {
-                cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+                // sanitize file name so that /'s in display name don't cause formatting issues in the cells
+                string displayName = attachment.DisplayName.SantizeFileName ();
+                cell.TextLabel.Text = Path.GetFileNameWithoutExtension (displayName);
 
                 cell.DetailTextLabel.Text = "";
                 if (attachment.IsInline) {
@@ -418,7 +430,8 @@ namespace NachoClient.iOS
                     }
                     break;
                 case ItemType.Note:
-                    // TODO: Add segue to edit notes view
+                    McNote note = (McNote)item;
+                    vc.NoteAction (note);
                     break;
                 case ItemType.Document:
                     McDocument document = (McDocument)item;
