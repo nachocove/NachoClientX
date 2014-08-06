@@ -1088,10 +1088,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
       <Link>NachoCore\Model\McPortrait.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
-    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
-      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1099,6 +1095,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Xamarin.ObjcBinding.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
   <ItemGroup>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
       <Link>Resources\xsd\request\Ping.xsd</Link>

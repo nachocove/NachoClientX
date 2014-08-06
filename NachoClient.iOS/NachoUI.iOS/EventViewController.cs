@@ -367,7 +367,6 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier.Equals ("EventToAttachment")) {
-                var dc = (AddAttachmentViewController)segue.DestinationViewController;
                 return;
             }
 
