@@ -219,8 +219,10 @@ namespace Test.iOS
 
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
 
+        #pragma warning disable 067
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
         public event NetStatusEventHandler CommStatusNetEvent;
+        #pragma warning restore 067
 
         public void ReportCommResult (int serverId, DateTime delayUntil)
         {
