@@ -538,6 +538,7 @@ namespace NachoCore.ActiveSync
                 if (ServerCertificatePeek.Instance.Cache.TryGetValue (ReDirUri.Host, out cached)) {
                     ServerCertificate = cached;
                     StepSm.PostEvent ((uint)SmEvt.E.Success, "SRDRGSCC");
+                    return;
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;

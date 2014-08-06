@@ -545,6 +545,7 @@ namespace NachoCore.ActiveSync
         private void DoUiServerCertAsk ()
         {
             var robot = EnqAskAndGimmieRobot ();
+            NcAssert.NotNull (robot.ServerCertificate);
             OwnerSm.PostEvent (Event.Create ((uint)AsProtoControl.CtlEvt.E.GetCertOk, "AUTODCERTASK", robot.ServerCertificate));
         }
 
