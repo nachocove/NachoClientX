@@ -457,7 +457,7 @@ namespace NachoCore.Model
             // 2. TimeVarianceType is not DONE
             List<McEmailMessage> emailMessageList =
                 NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage AS m " +
-                "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ?", NcTimeVarianceType.DONE);
+                "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ? ORDER BY DateReceived ASC", NcTimeVarianceType.DONE);
             int n = 0;
             Log.Info (Log.LOG_BRAIN, "Starting all time variances");
             foreach (McEmailMessage emailMessage in emailMessageList) {
@@ -469,7 +469,7 @@ namespace NachoCore.Model
                     Thread.Sleep (new TimeSpan (0, 0, 0, 0, 500));
                 }
             }
-            Log.Info (Log.LOG_BRAIN, "All time variances started");
+            Log.Info (Log.LOG_BRAIN, "{0} time variances started", emailMessageList.Count);
         }
 
         public static void MarkAll ()
