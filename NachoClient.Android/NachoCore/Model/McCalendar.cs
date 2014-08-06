@@ -75,7 +75,7 @@ namespace NachoCore.Model
             }
         }
 
-        private NcResult ReadAncillaryData ()
+        private new NcResult ReadAncillaryData ()
         {
             base.ReadAncillaryData ();
             if (!HasReadAncillaryData) {
@@ -85,7 +85,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public NcResult ForceReadAncillaryData ()
+        public new NcResult ForceReadAncillaryData ()
         {
             base.ForceReadAncillaryData();
             HasReadAncillaryData = true;
