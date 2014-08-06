@@ -128,7 +128,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private async void DoSess ()
+        private void DoSess () // will need to make async.
         {
             var requestJson = new StartSessionRequest () {
                 ClientToken = McMutables.Get (k_ios, k_clienttoken),
@@ -146,7 +146,7 @@ namespace NachoClient.iOS
 
         public void SetDeviceToken (byte[] deviceToken)
         {
-            return;
+            /*
             NcTask.Run (delegate {
                 var existing = McMutables.Get (k_ios, k_devicetoken);
                 var b64tok = Convert.ToBase64String (deviceToken);
@@ -155,6 +155,7 @@ namespace NachoClient.iOS
                     Sm.PostEvent ((uint)PAEvt.E.DevTok, "SETDEVTOK");
                 }
             }, "PushAssist");
+            */
         }
 
         public void ResetDeviceToken ()

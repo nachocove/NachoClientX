@@ -639,6 +639,7 @@ namespace NachoCore.ActiveSync
             // FIXME - don't prefetch until we are happy w/priority.
             return false;
             // If there is behind-the-scenes fetching to do, then true.
+            /*
             var folders = FolderListProvider (false);
             foreach (var folder in folders) {
                 if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
@@ -646,6 +647,7 @@ namespace NachoCore.ActiveSync
                 }
             }
             return false;
+            */
         }
 
         public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()

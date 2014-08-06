@@ -94,7 +94,7 @@ namespace NachoCore.ActiveSync
         private bool ServerUriBeingTested;
         private Stream ContentData;
         private string ContentType;
-        private bool IsBeingThrottled;
+        //private bool IsBeingThrottled;
         private uint ConsecThrottlePriorDelaySecs;
         // Properties.
         // Used for mocking.
@@ -501,7 +501,7 @@ namespace NachoCore.ActiveSync
             }
             XDocument responseDoc;
             if (HttpStatusCode.ServiceUnavailable != response.StatusCode) {
-                IsBeingThrottled = false;
+                //IsBeingThrottled = false;
                 ConsecThrottlePriorDelaySecs = 0;
             }
             switch (response.StatusCode) {
@@ -699,7 +699,7 @@ namespace NachoCore.ActiveSync
                 uint bestSecs, configuredSecs;
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsThrottle)) {
-                    IsBeingThrottled = true;
+                    //IsBeingThrottled = true;
                     Log.Info (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
                     try {
                         var protocolState = BEContext.ProtocolState;
