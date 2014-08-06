@@ -10,8 +10,8 @@ using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
-	public partial class SupportViewController : NcUITableViewController
-	{
+    public partial class SupportViewController : NcUITableViewController
+    {
         // Submit a log cell
         const string SubmitLogText = "Submit a log";
 
@@ -29,6 +29,7 @@ namespace NachoClient.iOS
 
         // Id's
         const string SupportToComposeSegueId = "SupportToEmailCompose";
+        const string SegueToNachoNowSegueId = "SegueToNachoNow";
         const string BasicCell = "BasicCell";
         const string SubtitleCell = "SubtitleCell";
 
@@ -36,19 +37,18 @@ namespace NachoClient.iOS
         const string LogNotification = "USER_SENDING_LOG";
         const string ContactingSupportNotification = "USER_IS_CONTACTING_SUPPORT";
 
-		public SupportViewController (IntPtr handle) : base (handle)
-		{
-		}
+        public SupportViewController (IntPtr handle) : base (handle)
+        {
+        }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton };
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                A.NachoNowButton (this)
+            };
 
             this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
         }
@@ -85,25 +85,24 @@ namespace NachoClient.iOS
             // send guid to Telemetry and append it to message body so we can correlate 
             var guid = Guid.NewGuid ();
             Log.Info (Log.LOG_UI, LogNotification + ": " + guid);
-            var messageContent = new Dictionary<string, string>()
-            {
+            var messageContent = new Dictionary<string, string> () {
                 { "subject", "Additional log information" },
                 { "template", "\n\nSupport identifier: " + guid },
             };
 
             UIAlertView alert = new UIAlertView (
-                "Log sent", 
-                "Would you like to send an email along with your log report?", 
-                null, 
-                "OK", 
-                "Cancel"
-            );
+                                    "Log sent", 
+                                    "Would you like to send an email along with your log report?", 
+                                    null, 
+                                    "OK", 
+                                    "Cancel"
+                                );
             alert.Clicked += (s, b) => {
                 if (b.ButtonIndex == 0) {
                     PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
                 }
             };
-            alert.Show();
+            alert.Show ();
         }
 
         public void ContactViaEmail ()
@@ -134,6 +133,9 @@ namespace NachoClient.iOS
                 }
 
                 dc.SetEmailPresetFields (address, subject, template);
+                return;
+            }
+            if (segue.Identifier.Equals (SegueToNachoNowSegueId)) {
                 return;
             }
 
@@ -202,8 +204,8 @@ namespace NachoClient.iOS
 
             var textAttributesDict = new NSDictionary (UIStringAttributeKey.Font, A.Font_AvenirNextRegular14);
             var detailTextAttributesDict = new NSDictionary (UIStringAttributeKey.Font, A.Font_AvenirNextRegular12);
-            UIStringAttributes textAttrib = new UIStringAttributes(textAttributesDict);
-            UIStringAttributes detailTextAttrib = new UIStringAttributes(detailTextAttributesDict);
+            UIStringAttributes textAttrib = new UIStringAttributes (textAttributesDict);
+            UIStringAttributes detailTextAttrib = new UIStringAttributes (detailTextAttributesDict);
 
             NSString text = null;
             NSString detailText = null;
@@ -232,11 +234,11 @@ namespace NachoClient.iOS
 
             if (detailText != null) {
                 var detailRect = text.GetBoundingRect (new System.Drawing.SizeF (textSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, 
-                    detailTextAttrib, null);
+                                     detailTextAttrib, null);
                 height += detailRect.Height;
             }
 
             return height + rect.Height + 30.0F;
         }
-	}
+    }
 }

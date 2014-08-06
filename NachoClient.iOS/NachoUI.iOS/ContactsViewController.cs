@@ -38,12 +38,10 @@ namespace NachoClient.iOS
             TableView.Source = contactTableViewSource;
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { A.RevealButton (this), A.NachoNowButton (this) };
 
             addButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("ContactsToContactEdit", new SegueHolder(null));
+                PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
             };
         }
 
@@ -72,7 +70,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void LoadContacts()
+        protected void LoadContacts ()
         {
             NachoClient.Util.HighPriority ();
             var contacts = McContact.AllContactsSortedByName ();
@@ -98,6 +96,9 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier.Equals ("ContactsToContactEdit")) {
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

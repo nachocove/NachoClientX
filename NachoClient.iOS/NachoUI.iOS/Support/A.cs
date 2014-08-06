@@ -3,6 +3,7 @@
 using System;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
+using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -263,7 +264,7 @@ namespace NachoClient.iOS
                 return _Color_009E85;
             }
         }
-            
+
         public static UIColor Color_NachoNowBackground {
             get {
                 if (null == _Color_NachoNowBackground) {
@@ -335,6 +336,29 @@ namespace NachoClient.iOS
                 return _Color_NachoSeparator;
             }
         }
+
+        public static UIBarButtonItem RevealButton (UIViewController vc)
+        {
+            var selector = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+            var target = vc.RevealViewController ();
+            using (var rawImage = UIImage.FromBundle ("navbar-icn-menu")) {
+                var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+                return new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, target, selector);
+            }
+        }
+
+        public static UIBarButtonItem NachoNowButton (UIViewController vc)
+        {
+            using (var rawImage = UIImage.FromBundle ("navbar-icn-inbox-active")) {
+                var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+                var button = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                button.Clicked += (object sender, EventArgs e) => {
+                    vc.PerformSegue("SegueToNachoNow", new SegueHolder(null));
+                };
+                return button;
+            }
+        }
+            
     }
 }
 

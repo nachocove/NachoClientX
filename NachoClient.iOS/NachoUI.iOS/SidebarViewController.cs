@@ -110,7 +110,7 @@ namespace NachoClient.iOS
                 new ButtonInfo ("New Event", "menu-new-event", SidebarToEventSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
-                new ButtonInfo ("Attachments", "menu-attachments", SidebarToFilesSegueId),
+                new ButtonInfo ("Files", "menu-attachments", SidebarToFilesSegueId),
                 new ButtonInfo ("Folders", "menu-folders", SidebarToFoldersSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Settings", "menu-settings", SidebarToSettingsSegueId),
