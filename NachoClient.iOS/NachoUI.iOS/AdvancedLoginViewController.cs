@@ -784,7 +784,7 @@ namespace NachoClient.iOS
         {
             string certificateInformation = "";
             var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
-            certificateInformation = CertificateHelper.formatCertificateData (certToBeExamined);
+            certificateInformation = new CertificateHelper().formatCertificateData (certToBeExamined);
             createCustomCertificateAlert (certificateInformation);
         }
 

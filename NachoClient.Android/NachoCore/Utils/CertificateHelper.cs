@@ -14,21 +14,21 @@ namespace NachoCore.Utils
 {
     public class CertificateHelper
     {
-        static string subjectCountry = "";
-        static string subjectOrganization = "";
-        static string subjectOrgainizationalUnit = "";
-        static string subjectCommonName = "";
-        static string issuerCountry = "";
-        static string issuerOrganization = "";
-        static string issuerOrganizationalUnit = "";
-        static string issuerCommonName = "";
-        static char[] delimeters = { ',', '=' };
+        string subjectCountry = "";
+        string subjectOrganization = "";
+        string subjectOrgainizationalUnit = "";
+        string subjectCommonName = "";
+        string issuerCountry = "";
+        string issuerOrganization = "";
+        string issuerOrganizationalUnit = "";
+        string issuerCommonName = "";
+        char[] delimeters = { ',', '=' };
 
         public CertificateHelper ()
         {
         }
 
-        public static string formatCertificateData (X509Certificate2 certificate)
+        public string formatCertificateData (X509Certificate2 certificate)
         {
             string subject = certificate.Subject;
             string issuer = certificate.Issuer;
@@ -61,7 +61,6 @@ namespace NachoCore.Utils
 
                 "Signature Algorithm: " + signatureAlgorithm + "\n\n" +
 
-
                 "Not Valid Before: \n" +
                 notValidBefore + "\n\n" +
                 "Not Valid After: \n" +
@@ -70,7 +69,7 @@ namespace NachoCore.Utils
             return  certificateToken;
         }
 
-        public static void parseSubjectItems (string subject)
+        public void parseSubjectItems (string subject)
         {
             string[] subjectTokens = subject.Split (delimeters);
             List<KeyValuePair<string, string>> subjectComponentKVPs = new List<KeyValuePair<string,string>> ();
@@ -97,7 +96,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void parseIssuerItems (string issuer)
+        public void parseIssuerItems (string issuer)
         {
             string[] issuerTokens = issuer.Split (delimeters);
             List<KeyValuePair<string, string>> issuerComponentKVPs = new List<KeyValuePair<string,string>> ();
