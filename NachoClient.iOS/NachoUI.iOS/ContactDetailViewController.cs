@@ -66,7 +66,6 @@ namespace NachoClient.iOS
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            var s = (StatusIndEventArgs)e;
 
         }
 
