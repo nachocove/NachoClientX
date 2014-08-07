@@ -317,7 +317,7 @@ namespace NachoClient.iOS
 
         public void NoteAction (McNote note)
         {
-            if (null == owner) {
+            if (null == Owner) {
                 PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
                 return;
             }
