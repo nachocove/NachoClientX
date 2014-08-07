@@ -169,12 +169,12 @@ namespace NachoCore.Utils
                 }
                 dict.AddData ("wbxml", tEvent.Wbxml);
             } else if (tEvent.IsCounterEvent ()) {
-                dict.AddString ("event_type",  "COUNTER");
+                dict.AddString ("event_type", "COUNTER");
                 dict.AddString ("counter_name", tEvent.CounterName);
                 dict.AddInteger ("count", tEvent.Count);
                 dict.AddDate ("counter_start", tEvent.CounterStart);
                 dict.AddDate ("counter_end", tEvent.CounterEnd);
-            } else if (tEvent.IsCaptureEvent()) {
+            } else if (tEvent.IsCaptureEvent ()) {
                 dict.AddString ("event_type", "CAPTURE");
                 dict.AddString ("capture_name", tEvent.CaptureName);
                 dict.AddInteger ("count", tEvent.Count);
@@ -182,6 +182,14 @@ namespace NachoCore.Utils
                 dict.AddInteger ("min", tEvent.Min);
                 dict.AddInteger ("max", tEvent.Max);
                 dict.AddInteger ("stddev", tEvent.StdDev);
+            } else if (tEvent.IsUiEvent ()) {
+                dict.AddString ("event_type", "UI");
+                dict.AddString ("ui_type", tEvent.UiType);
+                if (null == tEvent.UiObject) {
+                    dict.AddString ("ui_object", "(unknown)");
+                } else { 
+                    dict.AddString ("ui_object", tEvent.UiObject);
+                }
             } else {
                 NcAssert.True (false);
             }
