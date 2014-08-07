@@ -30,6 +30,7 @@ namespace NachoClient.iOS
 
         // segue ids
         string FilesToComposeSegueId = "FilesToEmailCompose";
+        string FilesToNotesSegueId = "FilesToNotes";
 
         public FilesViewController (IntPtr handle) : base (handle)
         {
@@ -143,6 +144,18 @@ namespace NachoClient.iOS
                 var attachment = (McAttachment)holder.value;
 
                 dc.SetEmailPresetFields (attachment: attachment);
+                return;
+            }
+
+            if (segue.Identifier.Equals (FilesToNotesSegueId)) {
+                var dc = (NotesViewController)segue.DestinationViewController;
+
+                var holder = sender as SegueHolder;
+                var note = (McNote)holder.value;
+                var calEvent = McCalendar.QueryById<McCalendar> (note.TypeId);
+                dc.SetEvent (calEvent);
+
+                return;
             }
         }
 
@@ -301,7 +314,19 @@ namespace NachoClient.iOS
 
             FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
         }
-            
+
+        public void NoteAction (McNote note)
+        {
+            if (null == owner) {
+                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+                return;
+            }
+
+            FileChooserSheet (note, () => {
+                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+            });
+        }
+
         protected class FilesTableSource : UITableViewSource
         {
             // cell Id's
@@ -399,7 +424,9 @@ namespace NachoClient.iOS
 
             private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment)
             {
-                cell.TextLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+                // sanitize file name so that /'s in display name don't cause formatting issues in the cells
+                string displayName = attachment.DisplayName.SantizeFileName ();
+                cell.TextLabel.Text = Path.GetFileNameWithoutExtension (displayName);
 
                 cell.DetailTextLabel.Text = "";
                 if (attachment.IsInline) {
@@ -454,7 +481,8 @@ namespace NachoClient.iOS
                     }
                     break;
                 case ItemType.Note:
-                    // TODO: Add segue to edit notes view
+                    McNote note = (McNote)item;
+                    vc.NoteAction (note);
                     break;
                 case ItemType.Document:
                     McDocument document = (McDocument)item;

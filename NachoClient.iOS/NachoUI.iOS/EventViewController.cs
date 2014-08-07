@@ -374,7 +374,6 @@ namespace NachoClient.iOS
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetEvent (item);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    dc.SaveEventNote ();
                     displayEvent = true;
                 };
                 return;

@@ -811,11 +811,32 @@ namespace NachoClient.iOS
                 //                File.Move (file.FilePath (), McAttachment.TempPath (guidString));
                 //                file.Delete ();
                 attachment.SaveFromTemp (guidString);
+                attachment.IsDownloaded = true;
+                attachment.IsInline = true;
                 attachment.Update ();
                 attachmentView.Append (attachment);
                 vc.DismissFileChooser (true, null);
                 return;
             }
+
+            // Note
+            var note = obj as McNote;
+            if (null != note) {
+                var attachment = new McAttachment ();
+                attachment.DisplayName = note.DisplayName + ".txt";
+                attachment.AccountId = account.Id;
+                attachment.Insert ();
+                var guidString = Guid.NewGuid ().ToString ("N");
+                File.WriteAllText (McAttachment.TempPath (guidString), note.noteContent);
+                attachment.SaveFromTemp (guidString);
+                attachment.IsDownloaded = true;
+                attachment.IsInline = true;
+                attachment.Update ();
+                attachmentView.Append (attachment);
+                vc.DismissFileChooser (true, null);
+                return;
+            }
+
             NcAssert.CaseError ();
         }
 
