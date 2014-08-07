@@ -17,10 +17,11 @@ namespace NachoClient.iOS
     public class AttendeeTableViewSource : UITableViewSource
     {
         List<McAttendee> AttendeeList = new List<McAttendee> ();
+        protected McAccount Account;
         public IAttendeeTableViewSourceDelegate owner;
 
         protected const string UICellReuseIdentifier = "UICell";
-        protected const string ContactCellReuseIdentifier = "ContactCell";
+        protected const string AttendeeCellReuseIdentifier = "AttendeeCell";
 
         public AttendeeTableViewSource ()
         {
@@ -40,12 +41,16 @@ namespace NachoClient.iOS
             }
         }
 
+        public void SetAccount (McAccount account)
+        {
+            this.Account = account;
+        }
+
         public List<McAttendee> GetAttendeeList ()
         {
             return this.AttendeeList;
         }
-
-
+            
         /// <summary>
         /// Tableview delegate
         /// </summary>
@@ -88,6 +93,24 @@ namespace NachoClient.iOS
             return imageView;
         }
 
+        UIView ViewWithLabel (string text, string side)
+        {
+            var label = new UILabel ();
+            label.Text = text;
+            label.Font = A.Font_AvenirNextDemiBold14;
+            label.TextColor = UIColor.White;
+            //label.TextAlignment = ta;
+            label.SizeToFit ();
+            var labelView = new UIView ();
+            if ("left" == side) {
+                labelView.Frame = new RectangleF (0, 0, label.Frame.Width + 50, label.Frame.Height);
+            } else {
+                labelView.Frame = new RectangleF (65, 0, label.Frame.Width + 50, label.Frame.Height);
+            }
+            labelView.Add (label);
+            return labelView;
+        }
+
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             return 69;
@@ -109,9 +132,77 @@ namespace NachoClient.iOS
             return cell;
         }
 
+        void ConfigureSwipes (MCSwipeTableViewCell cell, McAttendee attendee)
+        {
+            cell.FirstTrigger = 0.20f;
+            cell.SecondTrigger = 0.50f;
+
+            UIView resendView = null;
+            UIColor blueColor = null;
+            UIView crossView = null;
+            UIColor redColor = null;
+            UIView typeView = null;
+            UIColor yellowColor = null;
+            UIView deleteView = null;
+            UIColor brownColor = null;
+
+            try { 
+                resendView = ViewWithLabel ("resend invite", "left");
+                blueColor = new UIColor (A.Color_NachoBlue.CGColor);
+                cell.SetSwipeGestureWithView (resendView, blueColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                    ResendInvite (attendee);
+                });
+                crossView = ViewWithLabel ("resend invite", "left");
+                cell.SetSwipeGestureWithView (crossView, blueColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                    ResendInvite (attendee);
+                });
+                if (NcAttendeeType.Optional == attendee.AttendeeType) {
+                    typeView = ViewWithLabel ("attendee required", "right");
+                    yellowColor = new UIColor (A.Color_NachoGreen.CGColor);
+                }
+                if (NcAttendeeType.Required == attendee.AttendeeType) {
+                    typeView = ViewWithLabel ("attendee optional", "right");
+                    yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
+                }
+                cell.SetSwipeGestureWithView (typeView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                    ChangeAttendeeType (cell, attendee);
+                });
+                deleteView = ViewWithLabel ("remove attendee", "right");
+                redColor = new UIColor (A.Color_NachoRed.CGColor);
+                cell.SetSwipeGestureWithView (deleteView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                    RemoveAttendee (attendee);
+                });
+            } finally {
+                if (null != resendView) {
+                    resendView.Dispose ();
+                }
+                if (null != blueColor) {
+                    blueColor.Dispose ();
+                }
+                if (null != crossView) {
+                    crossView.Dispose ();
+                }
+                if (null != redColor) {
+                    redColor.Dispose ();
+                }
+                if (null != typeView) {
+                    typeView.Dispose ();
+                }
+                if (null != yellowColor) {
+                    yellowColor.Dispose ();
+                }
+                if (null != deleteView) {
+                    deleteView.Dispose ();
+                }
+                if (null != brownColor) {
+                    brownColor.Dispose ();
+                }
+            }
+        }
+
         public MCSwipeTableViewCell CreateCell ()
         {
-            var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
+            var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, AttendeeCellReuseIdentifier);
             NcAssert.True (null != cell);
 
             if (null == cell.ViewWithTag (USER_NAME_TAG)) {
@@ -153,12 +244,18 @@ namespace NachoClient.iOS
 
             int colorIndex = 1;
 
-            if (1 == colorIndex) {
-                colorIndex = Util.PickRandomColorForUser ();
+            if (!String.IsNullOrEmpty (displayEmailAddress)) {
+                McEmailAddress emailAddress;
+                if (McEmailAddress.Get (Account.Id, displayEmailAddress, out emailAddress)) {
+                    displayEmailAddress = emailAddress.CanonicalEmailAddress;
+                    colorIndex = emailAddress.ColorIndex;
+                }
             }
                 
             cell.TextLabel.Text = null;
             cell.DetailTextLabel.Text = null;
+
+            ConfigureSwipes (cell, attendee);
 
             var TextLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
             var DetailTextLabel = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
@@ -217,6 +314,45 @@ namespace NachoClient.iOS
             } else {
                 attendeeResponseImageView.Hidden = true;
             }
+        }
+
+        public void ResendInvite (McAttendee attendee)
+        {
+            UIAlertView alert = new UIAlertView ();
+            alert.Title = "Resend invite?";
+            alert.Message = attendee.Email;
+            alert.AddButton ("Cancel");
+            alert.AddButton ("Yes");
+            alert.CancelButtonIndex = 0;
+            alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                if (1 == alertEvent.ButtonIndex) {
+                    owner.SendAttendeeInvite (attendee); 
+                }
+            };
+            alert.Show ();
+        }
+
+        public void ChangeAttendeeType (MCSwipeTableViewCell cell, McAttendee attendee)
+        {
+            if (NcAttendeeType.Optional == attendee.AttendeeType) {
+                attendee.AttendeeType = NcAttendeeType.Required;
+                owner.UpdateLists ();
+                ConfigureCell (cell, attendee);
+                owner.ConfigureAttendeeTable ();
+                return;
+            }
+            if (NcAttendeeType.Required == attendee.AttendeeType) {
+                attendee.AttendeeType = NcAttendeeType.Optional;
+                owner.UpdateLists ();
+                ConfigureCell (cell, attendee);
+                owner.ConfigureAttendeeTable ();
+                return;
+            }
+        }
+
+        public void RemoveAttendee (McAttendee attendee)
+        {
+            owner.RemoveAttendee (attendee);
         }
 
         public UIImage GetImageForAttendeeResponse (McAttendee attendee)
