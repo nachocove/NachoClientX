@@ -58,7 +58,7 @@ namespace NachoPlatform
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NoteKey),
                     SoundName = UILocalNotification.DefaultSoundName,
                     FireDate = when.ToNSDate(),
-                    TimeZone = NSTimeZone.LocalTimeZone, // FIXME.
+                    TimeZone = NSTimeZone.FromAbbreviation ("UTC"),
                 };
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
             });
