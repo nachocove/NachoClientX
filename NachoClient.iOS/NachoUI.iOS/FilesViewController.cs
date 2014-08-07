@@ -28,7 +28,7 @@ namespace NachoClient.iOS
         // set by caller
         public enum ItemType {Attachment = 1, Note, Document};
 
-        // segue ids
+        // segue id's
         string FilesToComposeSegueId = "FilesToEmailCompose";
         string FilesToNotesSegueId = "FilesToNotes";
 
@@ -337,6 +337,10 @@ namespace NachoClient.iOS
 
             FilesViewController vc;
 
+            // icon id's
+            string DownloadIcon = "downloadicon.png";
+            string DownloadCompleteIcon = "icn-file-complete.png";
+
             public List<IFilesViewItem> Items
             {
                 get { return items; }
@@ -437,13 +441,13 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Text += "file";
 
                 if (attachment.IsDownloaded || attachment.IsInline) {
-                    cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+                    cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                     cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
-                    cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
+                    cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                     SetAnimationOnCell (cell, attachment.IsDownloaded);
                 } else {
-                    cell.ImageView.Image = UIImage.FromFile ("icn-file-download.png");
+                    cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                 }
                 return cell;
             }
@@ -451,14 +455,14 @@ namespace NachoClient.iOS
             private UITableViewCell FormatNoteCell (UITableViewCell cell, McNote note)
             {
                 cell.DetailTextLabel.Text = note.noteContent;
-                cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+                cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 return cell;
             }
 
             private UITableViewCell FormatDocumentCell (UITableViewCell cell, McDocument document)
             {
                 cell.DetailTextLabel.Text = document.SourceApplication;
-                cell.ImageView.Image = UIImage.FromFile ("icn-file-complete.png");
+                cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 return cell;
             }
                 
