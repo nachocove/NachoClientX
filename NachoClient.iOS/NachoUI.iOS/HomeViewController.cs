@@ -50,7 +50,7 @@ namespace NachoClient.iOS
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("HomeToNachoNow", this);
+                PerformSegue ("SegueToNachoNow", this);
             };
 
             // Help & demo pages
@@ -115,11 +115,7 @@ namespace NachoClient.iOS
             closeTutorial.BackgroundColor = A.Color_NachoGreen;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
-                if (LoginHelpers.HasFirstSyncCompleted (accountId) == true) {
-                    PerformSegue ("HomeToNachoNow", this);
-                } else {
-                    PerformSegue ("HomeToAdvancedLogin", this);
-                }
+                PerformSegue(StartupViewController.NextSegue(), this);
             };
             View.Add (closeTutorial);
         }

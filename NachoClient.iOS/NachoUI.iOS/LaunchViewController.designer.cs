@@ -16,29 +16,18 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UITextField txtPassword { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UITextField txtServerName { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UITextField txtUserName { get; set; }
-
-		[Action ("btnLaunchAcct:")]
-		partial void btnLaunchAcct (MonoTouch.Foundation.NSObject sender);
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (txtPassword != null) {
-				txtPassword.Dispose ();
-				txtPassword = null;
-			}
-
-			if (txtServerName != null) {
-				txtServerName.Dispose ();
-				txtServerName = null;
-			}
-
 			if (txtUserName != null) {
 				txtUserName.Dispose ();
 				txtUserName = null;
+			}
+
+			if (txtPassword != null) {
+				txtPassword.Dispose ();
+				txtPassword = null;
 			}
 		}
 	}

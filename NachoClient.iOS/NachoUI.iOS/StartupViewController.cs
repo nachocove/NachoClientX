@@ -12,10 +12,6 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
-        bool hasSynced;
-        bool hasCreds;
-        bool hasViewedTutorial;
-        int accountId;
 
         public StartupViewController (IntPtr handle) : base (handle)
         {
@@ -28,9 +24,15 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
+            PerformSegue (NextSegue (), this);
+        }
+
+        public static string NextSegue()
+        {
+            bool hasSynced;
+            bool hasCreds;
+            bool hasViewedTutorial;
+            int accountId;
 
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 accountId = LoginHelpers.GetCurrentAccountId ();
@@ -44,16 +46,17 @@ namespace NachoClient.iOS
             }
 
             if (!hasCreds) {
-                PerformSegue ("StartupToLaunch", this); // modal
-                PerformSegue ("StartupToHome", this);  // launch the documentation
+                return "SegueToLaunch";
             } else if (!hasViewedTutorial) {
-                PerformSegue ("StartupToHome", this);
+                return "SegueToHome";
             } else if (!hasSynced) {
-                PerformSegue ("StartupToAdvancedLogin", this);
+                return "SegueToAdvancedLogin";
             } else {
-                PerformSegue ("StartupToNachoNow", this); // push
+                return "SegueToNachoNow";
             }
         }
+
+
 
         public override void ViewWillAppear (bool animated)
         {

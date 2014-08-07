@@ -82,6 +82,7 @@ namespace NachoClient.iOS
             addConnectButton ();
             haveEnteredEmailAndPass ();
             addCustomerSupportButton ();
+
         }
 
         public override void ViewDidAppear (bool animated)
@@ -98,6 +99,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                NavigationItem.SetHidesBackButton (true, false);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
@@ -107,6 +109,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                NavigationItem.SetHidesBackButton (false, false);
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
@@ -142,6 +145,7 @@ namespace NachoClient.iOS
         public void layoutView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            scrollView.ContentSize = new SizeF (View.Frame.Width, 500);
         }
 
         public void createWaitingView ()
@@ -293,7 +297,7 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.TextColor = UIColor.White;
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue ("AdvancedLoginToSupport", this);
+                PerformSegue ("SegueToSupport", this);
             };
             scrollView.Add (customerSupportButton);
         }
@@ -403,11 +407,7 @@ namespace NachoClient.iOS
 
                     case BackEndAutoDStateEnum.PostAutoDPostFSync:
                         LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                        if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
-                            PerformSegue ("AdvancedLoginToNachoNow", this);
-                        } else {
-                            PerformSegue ("AdvancedLoginToHome", this);
-                        }
+                        PerformSegue (StartupViewController.NextSegue (), this);
                         return;
 
                     case BackEndAutoDStateEnum.Running:
@@ -712,12 +712,7 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
                 LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 dismissWaitingView ();
-                if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
-                    PerformSegue ("AdvancedLoginToNachoNow", this);
-                } else {
-                    //FIXME Segue issues what type of Segue to use? No NavBar if coming from basic
-                    PerformSegue ("AdvancedLoginToHome", this);
-                }
+                PerformSegue (StartupViewController.NextSegue (), this);
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 statusMessage.TextColor = systemBlue;

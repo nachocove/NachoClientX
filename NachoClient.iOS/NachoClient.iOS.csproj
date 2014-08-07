@@ -1098,6 +1098,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Xamarin.ObjcBinding.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
   <ItemGroup>
     <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
       <Link>Resources\xsd\request\Ping.xsd</Link>
@@ -1351,6 +1352,26 @@
     <BundleResource Include="Content\Tutorial-Page2.png" />
     <BundleResource Include="Content\Tutorial-Page3.png" />
     <BundleResource Include="Content\Tutorial-Page4.png" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.dep" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\build-state.dat" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AccountViewController-521CDBA6A5A3C9FF.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AccountViewController-521CDBA6A5A3C9FF.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-452E9EFC7C611F04.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-452E9EFC7C611F04.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-452E9EFC7C611F04.o" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\CalendarViewController-93066682FBB189EC.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\CalendarViewController-93066682FBB189EC.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactsViewController-3C4120E426A59A9.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactsViewController-3C4120E426A59A9.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\FolderViewController-7F12F88B54842DD3.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\FolderViewController-7F12F88B54842DD3.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\LaunchViewController-191F12A1D64FE4D4.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\LaunchViewController-191F12A1D64FE4D4.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\MainViewController-55B0CEF987173BC6.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\MainViewController-55B0CEF987173BC6.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\NachoClient.iOS.LinkFileList" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SidebarViewController-C06BE10DA053A2D4.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SidebarViewController-C06BE10DA053A2D4.dia" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
