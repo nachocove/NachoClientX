@@ -409,6 +409,19 @@ namespace Test.Common
             Assert.AreEqual (c.OrganizerName, "Steve Scalpone");
             Assert.IsNotNull (c.attendees);
             Assert.AreEqual (c.attendees.Count, 4);
+
+            var mds = new MockDataSource ();
+            c.AccountId = mds.Account.Id;
+
+            c.Insert ();
+            var d = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (c.attendees.Count, 4);
+            Assert.AreEqual (d.attendees.Count, 4);
+
+            c.Update ();
+            var e = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (c.attendees.Count, 4);
+            Assert.AreEqual (e.attendees.Count, 4);
         }
 
         [Test]
