@@ -21,13 +21,15 @@ namespace NachoCore.Utils
         STATE_MACHINE,
         COUNTER,
         CAPTURE,
-        MAX_TELEMETRY_EVENT_TYPE}
-
-    ;
+        UI,
+        MAX_TELEMETRY_EVENT_TYPE
+    };
 
     [Serializable]
     public class TelemetryEvent : NcQueueElement
     {
+        public const string UIBUTTON = "UIButton";
+
         public DateTime Timestamp { set; get; }
 
         private TelemetryEventType _Type;
@@ -182,6 +184,33 @@ namespace NachoCore.Utils
             }
         }
 
+
+        // UI event fields
+        // UI type is the type of objects - UIButton, UILabel and etc
+        private string _UiType;
+
+        public string UiType {
+            get {
+                return _UiType;
+            }
+            set {
+                NcAssert.True (IsUiEvent ());
+                _UiType = value;
+            }
+        }
+
+        private string _UiObject;
+
+        public string UiObject {
+            get {
+                return _UiObject;
+            }
+            set {
+                NcAssert.True (IsUiEvent ());
+                _UiObject = value;
+            }
+        }
+
         public static bool IsLogEvent (TelemetryEventType type)
         {
             return ((TelemetryEventType.ERROR == type) ||
@@ -206,6 +235,11 @@ namespace NachoCore.Utils
             return (TelemetryEventType.CAPTURE == type);
         }
 
+        public static bool IsUiEvent (TelemetryEventType type)
+        {
+            return (TelemetryEventType.UI == type);
+        }
+
         public bool IsLogEvent ()
         {
             return IsLogEvent (Type);
@@ -224,6 +258,11 @@ namespace NachoCore.Utils
         public bool IsCaptureEvent ()
         {
             return IsCaptureEvent (Type);
+        }
+
+        public bool IsUiEvent ()
+        {
+            return IsUiEvent (Type);
         }
 
         public TelemetryEvent (TelemetryEventType type)
@@ -404,6 +443,20 @@ namespace NachoCore.Utils
             tEvent.Min = min;
             tEvent.Max = max;
             tEvent.StdDev = stddev;
+
+            RecordRawEvent (tEvent);
+        }
+
+        public static void RecordUiButton (string uiObject)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.UI);
+
+            tEvent.UiType = TelemetryEvent.UIBUTTON;
+            tEvent.UiObject = uiObject;
 
             RecordRawEvent (tEvent);
         }

@@ -22,6 +22,7 @@ using MonoTouch.ObjCRuntime;
 using ParseBinding;
 using NachoClient.Build;
 using HockeyApp;
+using NachoUIMonitorBinding;
 
 namespace NachoClient.iOS
 {
@@ -117,12 +118,25 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 
+        /// This is not a service but rather initialization of some native
+        /// ObjC functions. It must be initialized before any UI object is
+        /// created.
+        private void StartUIMonitor ()
+        {
+            NachoUIMonitor.SetupUIButton (delegate(string description) {
+                if (null == description) {
+                    description = "(unknown)";
+                }
+                Telemetry.RecordUiButton (description);
+            });
+        }
+
         // This method is common to both launching into the background and into the foreground.
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
-
+            StartUIMonitor ();
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 
