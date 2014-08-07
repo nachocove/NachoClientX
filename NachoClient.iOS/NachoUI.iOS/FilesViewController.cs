@@ -185,17 +185,6 @@ namespace NachoClient.iOS
             ConfigureFilesView ();
         }
 
-        // TODO: make this animation look like the design spec in Dropbox
-        public CABasicAnimation DownloadAnimation ()
-        {
-            CABasicAnimation rotation = CABasicAnimation.FromKeyPath ("transform.rotation");
-            rotation.From = NSNumber.FromFloat (0.0F);
-            rotation.To = NSNumber.FromDouble (2.0 * Math.PI);
-            rotation.Duration = 1.1; // Speed
-            rotation.RepeatCount = 10000; // Repeat forever. Can be a finite number.
-            return rotation;
-        }
-
         public void DownloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
@@ -340,6 +329,9 @@ namespace NachoClient.iOS
             // icon id's
             string DownloadIcon = "downloadicon.png";
             string DownloadCompleteIcon = "icn-file-complete.png";
+            string DownloadArrow = "downloadarrow.png";
+            string DownloadLine = "downloadline.png";
+            string DownloadCircle = "downloadcircle.png";
 
             public List<IFilesViewItem> Items
             {
@@ -480,8 +472,7 @@ namespace NachoClient.iOS
                     McAttachment att = (McAttachment)item;
                     vc.AttachmentAction (att.Id);
                     if (!att.IsDownloaded) {
-                        var rotation = vc.DownloadAnimation ();
-                        tableView.CellAt (indexPath).ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                        StartDownloadingAnimation (tableView.CellAt (indexPath));
                     }
                     break;
                 case ItemType.Note:
@@ -592,8 +583,7 @@ namespace NachoClient.iOS
             private void SetAnimationOnCell (UITableViewCell cell, bool isDownloaded)
             {
                 if (!isDownloaded) {
-                    var rotation = vc.DownloadAnimation ();
-                    cell.ImageView.Layer.AddAnimation (rotation, "downloadAnimation");
+                    StartDownloadingAnimation (cell);
                 }
             }
 
@@ -603,6 +593,50 @@ namespace NachoClient.iOS
                 var imageView = new UIImageView (image);
                 imageView.ContentMode = UIViewContentMode.Center;
                 return imageView;
+            }
+
+            public void StartDownloadingAnimation (UITableViewCell cell)
+            {
+                cell.ImageView.Image = UIImage.FromFile (DownloadCircle);
+                UIImageView line =  new UIImageView (UIImage.FromBundle (DownloadLine));
+                UIImageView arrow = new UIImageView (UIImage.FromBundle (DownloadArrow));
+                cell.ImageView.AddSubview (line);
+                cell.ImageView.AddSubview (arrow);
+
+                PointF center = line.Center;
+                UIView.Animate (
+                    duration: 0.4, 
+                    delay: 0, 
+                    options: UIViewAnimationOptions.CurveEaseIn,
+                    animation: () => {
+                        line.Center = new PointF (center.X, cell.ImageView.Image.Size.Height * 3 / 4);
+                        arrow.Center = new PointF (center.X, cell.ImageView.Image.Size.Height * 3 / 4);
+                        line.Alpha = 0.0f;
+                        arrow.Alpha = 0.4f;
+                    },
+                    completion: () => {
+                        arrow.Center = new PointF (center.X, 2);
+                        arrow.Alpha = 1.0f;
+                        ArrowAnimation (cell, arrow, center);
+                    }
+               );
+            }
+
+            public void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
+            {
+                UIView.Animate (
+                    duration: 0.4,
+                    delay: 0,
+                    options: UIViewAnimationOptions.CurveEaseIn,
+                    animation: () => {
+                        arrow.Center = new PointF (center.X, cell.ImageView.Image.Size.Height * 3 / 4);
+                        arrow.Alpha = 0.4f;
+                    },
+                    completion: () => {
+                        arrow.Center = new PointF (center.X, 2);
+                        arrow.Alpha = 1.0f;
+                    }
+                );
             }
         }
 
