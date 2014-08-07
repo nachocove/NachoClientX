@@ -17,11 +17,13 @@ namespace NachoClient.iOS
 {
     public partial class FilesViewController : NcUITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate
     {
-        INachoFileChooserParent owner;
-        FilesTableSource filesSource;
+        INachoFileChooserParent Owner;
+        FilesTableSource FilesSource;
         SearchDelegate searchDelegate;
-        Action<object, EventArgs> fileAction;
+        Action<object, EventArgs> FileAction;
         public ItemType itemType;
+
+        UILabel EmptyListLabel;
 
         // set by caller
         public enum ItemType {Attachment = 1, Note, Document};
@@ -38,7 +40,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void SetOwner (INachoFileChooserParent owner)
         {
-            this.owner = owner;
+            this.Owner = owner;
         }
 
         /// <summary>
@@ -49,7 +51,7 @@ namespace NachoClient.iOS
             var controllers = this.NavigationController.ViewControllers;
             int currentVC = controllers.Count () - 1; // take 0 indexing into account
             NavigationController.PopToViewController (controllers [currentVC - 2], true); // pop 2 views: one for attachments page, one for hierarchy
-            owner = null;
+            Owner = null;
         }
 
         public override void ViewDidLoad ()
@@ -59,17 +61,24 @@ namespace NachoClient.iOS
             NcAssert.True (itemType != 0, "Item type should be set before transitioning to FilesViewController");
 
             // set up the table view source
-            filesSource = new FilesTableSource (this);
-            TableView.Source = filesSource;
+            FilesSource = new FilesTableSource (this);
+            TableView.Source = FilesSource;
 
             // set up the search bar
-            searchDelegate = new SearchDelegate (filesSource);
+            searchDelegate = new SearchDelegate (FilesSource);
             SearchDisplayController.Delegate = searchDelegate;
-            SearchDisplayController.SearchResultsSource = filesSource;
+            SearchDisplayController.SearchResultsSource = FilesSource;
             SearchDisplayController.SearchBar.SearchButtonClicked += (s, e) => { SearchDisplayController.SearchBar.ResignFirstResponder(); };
 
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+
+            EmptyListLabel = new UILabel (new RectangleF (0, 80, UIScreen.MainScreen.Bounds.Width, 20));
+            EmptyListLabel.TextAlignment = UITextAlignment.Center;
+            EmptyListLabel.Font = A.Font_AvenirNextDemiBold14;
+            EmptyListLabel.TextColor = A.Color_NachoSeparator;
+            EmptyListLabel.Hidden = true;
+            View.AddSubview (EmptyListLabel);
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -78,6 +87,32 @@ namespace NachoClient.iOS
                     RefreshTableSource ();
                 }
             };
+        }
+
+        private void ConfigureFilesView ()
+        {
+            this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
+            if (FilesSource.Items.Count == 0) {
+                this.TableView.ScrollEnabled = false;
+                EmptyListLabel.Hidden = false;
+                switch (itemType) {
+                case ItemType.Attachment:
+                    EmptyListLabel.Text = "No attachments";
+                    break;
+                case ItemType.Document:
+                    EmptyListLabel.Text = "No documents";
+                    break;
+                case ItemType.Note:
+                    EmptyListLabel.Text = "No notes";
+                    break;
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            } else {
+                this.TableView.ScrollEnabled = true;
+                EmptyListLabel.Hidden = true;
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -92,10 +127,10 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             // remove any remaining file actions before leaving
-            if (fileAction != null) {
-                NcApplication.Instance.StatusIndEvent -= new EventHandler (fileAction);
+            if (FileAction != null) {
+                NcApplication.Instance.StatusIndEvent -= new EventHandler (FileAction);
             }
-            fileAction = null;
+            FileAction = null;
             base.ViewWillDisappear (animated);
         }
 
@@ -114,18 +149,18 @@ namespace NachoClient.iOS
         public void RefreshTableSource ()
         {
             // show most recent attachments first
-            filesSource.Items = new List<IFilesViewItem> ();
+            FilesSource.Items = new List<IFilesViewItem> ();
 
             switch (itemType) {
             case ItemType.Attachment:
-                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
+                FilesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
                 break;
             case ItemType.Note:
-                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McNote> ().Where (a => a.noteType == McNote.NoteType.Event)
+                FilesSource.Items.AddRange (NcModel.Instance.Db.Table<McNote> ().Where (a => a.noteType == McNote.NoteType.Event)
                     .OrderByDescending (a => a.Id));
                 break;
             case ItemType.Document:
-                filesSource.Items.AddRange (NcModel.Instance.Db.Table<McDocument> ().OrderByDescending (a => a.Id));
+                FilesSource.Items.AddRange (NcModel.Instance.Db.Table<McDocument> ().OrderByDescending (a => a.Id));
                 break;
             }
 
@@ -134,6 +169,7 @@ namespace NachoClient.iOS
                 searchDelegate.ShouldReloadForSearchString (SearchDisplayController, searchDelegate.searchString);
             }
             base.TableView.ReloadData ();
+            ConfigureFilesView ();
         }
 
         // TODO: make this animation look like the design spec in Dropbox
@@ -154,11 +190,11 @@ namespace NachoClient.iOS
                 string token = PlatformHelpers.DownloadAttachment (a);
                 NcAssert.NotNull (token, "Found token should not be null");
                 // If another download action has been registered, don't do action on it
-                if (fileAction != null) {
-                    NcApplication.Instance.StatusIndEvent -= new EventHandler (fileAction);
+                if (FileAction != null) {
+                    NcApplication.Instance.StatusIndEvent -= new EventHandler (FileAction);
                 }
                 // prepare to do action on the most recently clicked item
-                fileAction = (object sender, EventArgs e) => {
+                FileAction = (object sender, EventArgs e) => {
                     var s = (StatusIndEventArgs)e;
                     var eventTokens = s.Tokens;
                     if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
@@ -170,7 +206,7 @@ namespace NachoClient.iOS
                         }
                     }
                 };
-                NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
+                NcApplication.Instance.StatusIndEvent += new EventHandler (FileAction);
                 return;
             } else {
                 attachmentAction (a);
@@ -231,7 +267,7 @@ namespace NachoClient.iOS
                     displayAction ();
                     break; 
                 case 1:
-                    owner.SelectFile (this, file);
+                    Owner.SelectFile (this, file);
                     break;
                 case 2:
                     break; // Cancel
@@ -247,7 +283,7 @@ namespace NachoClient.iOS
         public void AttachmentAction (int attachmentId)
         {
             DownloadAndDoAction (attachmentId, (a) => {
-                if (null == owner) {
+                if (null == Owner) {
                     PlatformHelpers.DisplayAttachment (this, a);
                     return;
                 }
@@ -258,7 +294,7 @@ namespace NachoClient.iOS
 
         public void DocumentAction (McDocument document)
         {
-            if (null == owner) {
+            if (null == Owner) {
                 PlatformHelpers.DisplayFile (this, document);
                 return;
             }
@@ -337,7 +373,7 @@ namespace NachoClient.iOS
                 switch (vc.itemType) {
                 case ItemType.Attachment:
                     cell = FormatAttachmentCell (cell, item as McAttachment);
-                    if (vc.owner == null) {
+                    if (vc.Owner == null) {
                         ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     }
                     break;
@@ -346,7 +382,7 @@ namespace NachoClient.iOS
                     break;
                 case ItemType.Document:
                     cell = FormatDocumentCell (cell, item as McDocument);
-                    if (vc.owner == null) {
+                    if (vc.Owner == null) {
                         ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     }
                     break;
