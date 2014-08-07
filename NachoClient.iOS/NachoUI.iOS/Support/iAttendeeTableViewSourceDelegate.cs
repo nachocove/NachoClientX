@@ -10,6 +10,10 @@ namespace NachoClient.iOS
     {
         void ContactSelectedCallback(McContact contact);
         void PerformSegueForDelegate (string identifier, NSObject sender);
+        void SendAttendeeInvite (McAttendee attendee);
+        void UpdateLists ();
+        void ConfigureAttendeeTable();
+        void RemoveAttendee(McAttendee attendee);
     }
 }
 

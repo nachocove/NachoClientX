@@ -76,7 +76,6 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 dc.SetContact (holder.value as McContact);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    dc.SaveContactNote();
                     DisplayContactInfo ();
                 };
                 return;

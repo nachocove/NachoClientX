@@ -68,6 +68,19 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
+        public override void ViewWillDisappear (bool animated)
+        {
+            if (eventItem != null) {
+                SaveEventNote ();
+            } else if (contactItem != null) {
+                SaveContactNote ();
+            } else {
+                NcAssert.True (false, "Owner of note was not found; unable to save note");
+            }
+
+            base.ViewWillDisappear (animated);
+        }
+
         public void SetEvent (McCalendar item)
         {
             this.eventItem = item;

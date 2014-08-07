@@ -1085,6 +1085,7 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AttendeeTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\iAttendeeTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoAttendeeListChooser.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
       <Link>NachoCore\Model\McPortrait.cs</Link>
     </Compile>

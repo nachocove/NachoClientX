@@ -251,11 +251,53 @@ namespace NachoCore.Utils
             MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
         }
 
+        public static void SendInvite (McAccount account, McCalendar c, McAttendee attendee, string tzid)
+        {
+
+            IICalendar iCal = CalendarHelper.iCalendarFromMcCalendar (account, c, tzid);
+
+            var mimeMessage = new MimeMessage ();
+
+            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+
+            mimeMessage.To.Add (new MailboxAddress (attendee.Name, attendee.Email));
+
+            if (null != c.Subject) {
+                mimeMessage.Subject = c.Subject;
+            }
+            mimeMessage.Date = System.DateTime.UtcNow;
+
+            var body = new TextPart ("calendar");
+            body.ContentType.Parameters.Add ("METHOD", "REQUEST");
+            iCal.Method = "REQUEST";
+            using (var iCalStream = new MemoryStream ()) {
+                iCalendarSerializer serializer = new iCalendarSerializer ();
+                serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
+                iCalStream.Seek (0, SeekOrigin.Begin);
+                using (var textStream = new StreamReader (iCalStream)) {
+                    body.Text = textStream.ReadToEnd ();
+                }
+            }
+            body.ContentTransferEncoding = ContentEncoding.Base64;
+
+            var textPart = new TextPart ("plain") {
+                Text = ""
+            };
+
+            var alternative = new Multipart ("alternative");
+            alternative.Add (textPart);
+            alternative.Add (body);
+
+            mimeMessage.Body = alternative;
+
+            MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
+        }
+
         protected static McAttendee CreateAttendee (InternetAddress address, NcAttendeeType attendeeType)
         {
             var mailboxAddress = address as MailboxAddress;
 
-            if(null == mailboxAddress) {
+            if (null == mailboxAddress) {
                 return null;
             }
 
@@ -267,7 +309,7 @@ namespace NachoCore.Utils
             return attendee;
         }
 
-        protected static List<McAttendee> CreateAttendeeList(string addressLine, NcAttendeeType attendeeType)
+        protected static List<McAttendee> CreateAttendeeList (string addressLine, NcAttendeeType attendeeType)
         {
             var addressList = NcEmailAddress.ParseAddressListString (addressLine);
             var attendeeList = new List<McAttendee> ();
@@ -286,9 +328,9 @@ namespace NachoCore.Utils
             c.Subject = message.Subject;
             c.BodyId = McBody.Duplicate (message.BodyId);
             c.attendees = new System.Collections.Generic.List<McAttendee> ();
-            c.attendees.AddRange(CreateAttendeeList(message.From, NcAttendeeType.Required));
-            c.attendees.AddRange(CreateAttendeeList(message.To, NcAttendeeType.Required));
-            c.attendees.AddRange(CreateAttendeeList(message.Cc, NcAttendeeType.Optional));
+            c.attendees.AddRange (CreateAttendeeList (message.From, NcAttendeeType.Required));
+            c.attendees.AddRange (CreateAttendeeList (message.To, NcAttendeeType.Required));
+            c.attendees.AddRange (CreateAttendeeList (message.Cc, NcAttendeeType.Optional));
             return c;
         }
 

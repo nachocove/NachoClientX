@@ -36,6 +36,7 @@ namespace NachoClient.iOS
             contactTableViewSource.SetOwner (this, SearchDisplayController);
 
             TableView.Source = contactTableViewSource;
+            TableView.SeparatorColor = A.Color_NachoSeparator;
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
 
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { A.RevealButton (this), A.NachoNowButton (this) };

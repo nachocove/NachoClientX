@@ -13,10 +13,15 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate
+    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser
     {
 
         protected AttendeeTableViewSource attendeeSource;
+        protected McAccount account;
+        protected McCalendar c;
+        protected bool editing;
+        protected INachoAttendeeListChooserDelegate owner;
+        protected UISegmentedControl segmentedControl;
         List<McAttendee> AttendeeList = new List<McAttendee> ();
         List<McAttendee> RequiredList = new List<McAttendee> ();
         List<McAttendee> OptionalList = new List<McAttendee> ();
@@ -30,18 +35,22 @@ namespace NachoClient.iOS
         {
         }
 
+        public void SetOwner (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McCalendar c, bool editing)
+        {
+            this.owner = owner;
+            this.AttendeeList = attendees;
+            this.c = c;
+            this.editing = editing;
+        }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
             EventAttendeesTableView.Frame = new RectangleF (0, 40, SCREEN_WIDTH, View.Frame.Height - 40);
-            // Multiple buttons on the left side
-            NavigationItem.RightBarButtonItem = addAttendeeButton;
-            addAttendeeButton.Clicked += (object sender, EventArgs e) => {
-                //PerformSegue ("EventAttendeeToContactChooser", this);
-            };
+            EventAttendeesTableView.SeparatorColor = A.Color_NachoSeparator;
 
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             attendeeSource = new AttendeeTableViewSource ();
             attendeeSource.SetOwner (this);
 
@@ -59,6 +68,7 @@ namespace NachoClient.iOS
             }
             LoadAttendees ();
             ConfigureEventAttendeesView ();
+            UpdateLists ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -70,6 +80,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            owner.UpdateAttendeeList (this.AttendeeList);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
@@ -80,13 +91,14 @@ namespace NachoClient.iOS
         /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-        
-//            if (segue.Identifier.Equals ("EventAttendeesToContactChooser")) {
-//                var dc = (INachoContactChooser)segue.DestinationViewController;
-//                var holder = sender as SegueHolder;
-//                var address = (NcEmailAddress)holder.value;
-//                dc.SetOwner (this, address, NachoContactType.EmailRequired);
-//            }
+            if (segue.Identifier.Equals ("EventAttendeesToContactChooser")) {
+                var dc = (INachoContactChooser)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var address = (NcEmailAddress)holder.value;
+                dc.SetOwner (this, address, NachoContactType.EmailRequired);
+                return;
+            }
+
  
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
@@ -96,6 +108,7 @@ namespace NachoClient.iOS
         {
             NachoClient.Util.HighPriority ();
             attendeeSource.SetAttendeeList (this.AttendeeList);
+            attendeeSource.SetAccount (account);
             EventAttendeesTableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
         }
@@ -126,6 +139,16 @@ namespace NachoClient.iOS
 
         protected void CreateEventAttendeeView ()
         {
+            if (editing) {
+                NavigationItem.RightBarButtonItem = addAttendeeButton;
+                addAttendeeButton.Clicked += (object sender, EventArgs e) => {
+                    var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
+                    address.action = NcEmailAddress.Action.create;
+                    PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
+                };
+            } else {
+                NavigationItem.RightBarButtonItem = null;
+            }
             emptyListLabel = new UILabel (new RectangleF (0, 80, SCREEN_WIDTH, 20));
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
@@ -136,7 +159,7 @@ namespace NachoClient.iOS
             var segmentedControlView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
-            var segmentedControl = new UISegmentedControl ();
+            segmentedControl = new UISegmentedControl ();
             segmentedControl.Frame = new RectangleF (6, 5, View.Frame.Width - 12, 30);
             segmentedControl.InsertSegment ("All", 0, false);
             segmentedControl.InsertSegment ("Required", 1, false);
@@ -145,7 +168,6 @@ namespace NachoClient.iOS
 
             var segmentedControlTextAttributes = new UITextAttributes ();
             segmentedControlTextAttributes.Font = A.Font_AvenirNextRegular12;
-            //segmentedControlTextAttributes.TextColor = A.Color_009E85;
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
@@ -173,6 +195,7 @@ namespace NachoClient.iOS
 
         protected void ConfigureEventAttendeesView ()
         {
+            segmentedControl.SelectedSegment = 0;
             if (0 == AttendeeList.Count) {
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
@@ -183,7 +206,6 @@ namespace NachoClient.iOS
                 EventAttendeesTableView.Hidden = false;
                 emptyListLabel.Hidden = true;
             }
-
         }
 
         protected void ConfigureRequiredList ()
@@ -198,10 +220,9 @@ namespace NachoClient.iOS
                 EventAttendeesTableView.Hidden = false;
                 emptyListLabel.Hidden = true;
             }
-
         }
 
-        protected void ConfigureOptionalList()
+        protected void ConfigureOptionalList ()
         {
             if (0 == OptionalList.Count) {
                 EventAttendeesTableView.Hidden = true;
@@ -213,13 +234,42 @@ namespace NachoClient.iOS
                 EventAttendeesTableView.Hidden = false;
                 emptyListLabel.Hidden = true;
             }
-
         }
+
+        public void ConfigureAttendeeTable ()
+        {
+            if (0 == segmentedControl.SelectedSegment) {
+                ConfigureEventAttendeesView ();
+            } else if (1 == segmentedControl.SelectedSegment) {
+                ConfigureRequiredList ();
+            } else if (2 == segmentedControl.SelectedSegment) {
+                ConfigureOptionalList ();
+            }
+        }
+
         public void AddLine (float offset, float yVal, float width, UIColor color, UIView parentView)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
+        }
+
+        public void SendAttendeeInvite (McAttendee attendee)
+        {
+            CalendarHelper.SendInvite (account, c, attendee, "Local");
+        }
+
+        public void RemoveAttendee (McAttendee attendee)
+        {
+            List<McAttendee> tempList = new List<McAttendee> ();
+            foreach (var a in AttendeeList) {
+                if (a.Email != attendee.Email) {
+                    tempList.Add (a);
+                }
+            }
+            AttendeeList = tempList;
+            ConfigureEventAttendeesView ();
+            UpdateLists ();
         }
 
         public void UpdateEmailAddress (NcEmailAddress address)
@@ -270,8 +320,11 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        protected void UpdateLists ()
+        public void UpdateLists ()
         {
+            this.RequiredList.Clear ();
+            this.OptionalList.Clear ();
+
             foreach (var attendee in AttendeeList) {
                 if (attendee.AttendeeType == NcAttendeeType.Required) {
                     this.RequiredList.Add (attendee);

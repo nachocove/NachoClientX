@@ -42,6 +42,7 @@ namespace NachoClient.iOS
             // Stylize TableView
             folders = new HierarchicalFolderTableSource(TableView);
             TableView.DataSource = folders;
+            TableView.SeparatorColor = A.Color_NachoSeparator;
             UISearchBar sb = new UISearchBar(new RectangleF (0, 45, TableView.Frame.Width, 45));
             sb.BarTintColor = A.Color_NachoSeparator;
             sb.Placeholder = "Search";
@@ -49,6 +50,9 @@ namespace NachoClient.iOS
             UITextField txtField = (UITextField)sb.ValueForKey (x);
             txtField.BackgroundColor = UIColor.White;;
             TableView.TableHeaderView = sb;
+
+            // Initially let's hide the search controller
+            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {

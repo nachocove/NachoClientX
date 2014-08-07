@@ -148,13 +148,13 @@ namespace NachoClient.iOS
 
             theCell.SeparatorInset = new UIEdgeInsets (0, 15, 0, 0);
             theCell.TextLabel.Font = A.Font_AvenirNextRegular14;
-            theCell.TextLabel.TextColor = A.Color_999999;
+            theCell.TextLabel.TextColor = A.Color_NachoBlack;
             theCell.BackgroundColor = UIColor.White;
             theCell.ContentMode = UIViewContentMode.Left;
 
             if (isRootFolder) {
                 theCell.ImageView.Image = UIImage.FromBundle ("icn-folder");
-                theCell.TextLabel.Font = A.Font_AvenirNextDemiBold14;
+                theCell.TextLabel.Font = A.Font_AvenirNextRegular14;
             } else {
                 initialSpacing = "                 " + "".PadRight (theFolder.indentLevel * 5);
                 cellIconSpace = new UIView (new RectangleF (10 * theFolder.indentLevel, 4, 55, 26));
