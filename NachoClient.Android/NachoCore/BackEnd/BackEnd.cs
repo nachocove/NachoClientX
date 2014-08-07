@@ -136,7 +136,7 @@ namespace NachoCore
             service.ForceStop ();
         }
 
-        public void QuickCheck (uint seconds)
+        public void QuickSync (uint seconds)
         {
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
 
@@ -161,7 +161,7 @@ namespace NachoCore
                 if (!HasServiceFromAccountId (account.Id)) {
                     EstablishService (account.Id);
                 }
-                ForceSync (account.Id);
+                QuickSync (account.Id);
             }
         }
 
@@ -200,12 +200,12 @@ namespace NachoCore
             }, "Start");
         }
 
-        public void ForceSync (int accountId)
+        public void QuickSync (int accountId)
         {
             NcTask.Run (delegate {
                 NcCommStatus.Instance.Refresh ();
-                ServiceFromAccountId (accountId).ForceSync ();
-            }, "ForceSync");
+                ServiceFromAccountId (accountId).QuickSync ();
+            }, "QuickSync");
         }
 
         public void CertAskResp (int accountId, bool isOkay)

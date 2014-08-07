@@ -344,13 +344,7 @@ namespace NachoCore.ActiveSync
 
         private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
         {
-            XDocument doc;
-            try {
-                doc = Owner.ToXDocument (this);
-            } catch (AsCommand.AbortCommandException) {
-                request = null;
-                return false;
-            }
+            XDocument doc = Owner.ToXDocument (this);
             request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);

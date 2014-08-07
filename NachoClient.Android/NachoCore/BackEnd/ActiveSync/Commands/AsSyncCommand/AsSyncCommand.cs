@@ -30,9 +30,8 @@ namespace NachoCore.ActiveSync
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
-        private void ApplyStrategy ()
+        private void ApplyStrategy (Tuple<uint, List<Tuple<McFolder, List<McPending>>>> syncKit)
         {
-            var syncKit = BEContext.ProtoControl.SyncStrategy.SyncKit ();
             WindowSize = syncKit.Item1;
             SyncKitList = syncKit.Item2;
             FoldersInRequest = new List<McFolder> ();
@@ -42,14 +41,16 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public AsSyncCommand (IBEContext beContext) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
+        public AsSyncCommand (IBEContext beContext, Tuple<uint, List<Tuple<McFolder, List<McPending>>>> syncKit) 
+            : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
         {
             Timeout = new TimeSpan (0, 0, 20);
             EmailNs = Xml.Email.Ns;
             TasksNs = Xml.Tasks.Ns;
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
-            ApplyStrategy ();
+            syncKit = (null == syncKit) ? BEContext.ProtoControl.SyncStrategy.SyncKit () : syncKit;
+            ApplyStrategy (syncKit);
             foreach (var pending in PendingList) {
                 pending.MarkDispached ();
             }
@@ -186,10 +187,6 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            if (0 == SyncKitList.Count) {
-                // Abort if there are no folders to Sync.
-                throw new AsCommand.AbortCommandException ();
-            }
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
             foreach (var tup in SyncKitList) {
                 var folder = tup.Item1;

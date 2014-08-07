@@ -10,25 +10,6 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    /* REWRITE GOALS
-     * A) No matter what state we're in w/r/t background activity, there is a priority of operations:
-     * 
-     * #1 user-is-wating-operations are most important (body download, search, ...).
-     * These cancel any primary operations and are driven to the HTTP request by the UI thread.
-     * #2 user needs to see new mail. So inbox-only fetches must occur regularly (by time, not %age of requests) 
-     * when we are getting all synced up.
-     * #3 user actions (pending Q) trump background activity.
-     * 
-     * B) We need to adhere to an overall rate limit of (N operations per hour). In reality, we want this 
-     * limiting to only apply to getting all synced up.
-     * 
-     * C) We want strategy to decide whether to get bodies or not on a sync (e.g. get bodies on 1st sync, quick-fetch).
-     * 
-     * D) Trend: for ops that can do N at a time, we want strategy to pick the N.
-     * 
-     * E) DoPick/DoQOp defers to strategy to decide what is next.
-     * 
-     */
     public class AsStrategy : IAsStrategy
     {
         public const int KBaseOverallWindowSize = 150;
@@ -56,10 +37,6 @@ namespace NachoCore.ActiveSync
             All,
         };
 
-        // Anyone can set to request that the next Sync command be a "quick fetch".
-        public bool RequestQuickFetch { set; get; }
-
-        private bool IsQuickFetch;
         private const uint CTLstLast = (uint)CTLst.All;
         private NcStateMachine EmailCalendarSm;
         private NcStateMachine ContactsTasksSm;
@@ -280,9 +257,9 @@ namespace NachoCore.ActiveSync
             ContactsTasksSm.PostEvent ((uint)SmEvt.E.HardFail, "DOSPCON");
         }
 
-        private List<McFolder> ECFolderListProvider (bool quickFetch)
+        private List<McFolder> ECFolderListProvider ()
         {
-            if (quickFetch) {
+            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
                 return DefaultInboxAndDefaultCalendarFolders ();
             }
             switch ((ECLst)EmailCalendarSm.State) {
@@ -303,15 +280,15 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> CTFolderListProvider (bool quickFetch)
+        private List<McFolder> CTFolderListProvider ()
         {
             var ric = McFolder.GetRicContactFolder (BEContext.Account.Id);
             var retval = new List<McFolder> ();
             if (null != ric) {
                 retval.Add (ric);
             }
-            if (quickFetch) {
-                // Only the RIC in a quickfetch.
+            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+                // Only the RIC in a QuickSync.
                 return retval;
             }
             switch ((CTLst)ContactsTasksSm.State) {
@@ -331,10 +308,10 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> FolderListProvider (bool quickFetch)
+        private List<McFolder> FolderListProvider ()
         {
-            List<McFolder> ecFolders = ECFolderListProvider (quickFetch);
-            List<McFolder> cFolders = CTFolderListProvider (quickFetch);
+            List<McFolder> ecFolders = ECFolderListProvider ();
+            List<McFolder> cFolders = CTFolderListProvider ();
             ecFolders.AddRange (cFolders);
             return ecFolders;
         }
@@ -493,11 +470,9 @@ namespace NachoCore.ActiveSync
             }
         }
         // External API.
+        // FIXME SyncKit will need to pull pending and also give options/filters.
         public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ()
         {
-            IsQuickFetch = RequestQuickFetch;
-            // Quick fetch request is good only for *next* Sync command.
-            RequestQuickFetch = false;
             uint overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
@@ -507,7 +482,7 @@ namespace NachoCore.ActiveSync
                 overallWindowSize *= 3;
                 break;
             }
-            List<McFolder> eligibleForGetChanges = FolderListProvider (IsQuickFetch);
+            List<McFolder> eligibleForGetChanges = FolderListProvider ();
             List<McPending> issuePendings;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
@@ -567,14 +542,16 @@ namespace NachoCore.ActiveSync
             return Tuple.Create (overallWindowSize, retList);
         }
 
-        public bool IsMoreSyncNeeded ()
+        // FIXME - this must take into account the pending Q sync-based ops.
+        private bool IsMoreSyncNeeded ()
         {
             // Are there any AsSyncMetaToClientExpected folders available?
             bool areExpecting = FolderListProvider (false).Any (f => f.AsSyncMetaToClientExpected);
 
             // if we're not in the ultimate state(s), then true.
             if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
-                if (!areExpecting && !IsQuickFetch) {
+                if (!areExpecting && 
+                    NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
                     EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
                 }
                 Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: EmailCalendarSm.State/ContactsTasksSm.State");
@@ -582,8 +559,8 @@ namespace NachoCore.ActiveSync
             }
             // if a within-scope folder has to-client stuff waiting on the server, then true.
             // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
-            if (areExpecting || IsQuickFetch) {
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: areExpecting == {0}, IsQuickFetch == {1}", areExpecting, IsQuickFetch);
+            if (areExpecting || NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: areExpecting == {0}, QuickSync == {1}", areExpecting, NcApplication.Instance.ExecutionContext);
                 return true;
             }
             // if there is a sync-based operation pending, then true.
@@ -596,7 +573,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public IEnumerable<McFolder> PingKit ()
+        private IEnumerable<McFolder> PingKit ()
         {
             var folders = FolderListProvider (false);
             if (BEContext.ProtocolState.MaxFolders >= folders.Count) {
@@ -618,7 +595,7 @@ namespace NachoCore.ActiveSync
             return fewer;
         }
 
-        public bool IsMoreFetchingNeeded ()
+        private bool IsMoreFetchingNeeded ()
         {
             // If there are user-initiated fetches, then true.
             if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1).Count ()) {
@@ -650,7 +627,7 @@ namespace NachoCore.ActiveSync
             */
         }
 
-        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
+        private Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
         {
             // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
             var fetchSize = KBaseFetchSize;
@@ -705,6 +682,47 @@ namespace NachoCore.ActiveSync
             // Return a tuple: Item1 is the list of McPendings (user-initiated fetches),
             // Item2 is the list of McItems (background fetching).
             return Tuple.Create (pendings.Take (fetchSize), prefetches.Take (remaining));
+        }
+
+        public Tuple<PickActionEnum, object> Pick ()
+        {
+            var next = McPending.QueryEligible (BEContext.Account.Id).FirstOrDefault ();
+            if (null != next) {
+                switch (next.Operation) {
+                // FIXME - n-ary ops.
+                // need to tell the SM what we are doing, and also give it AsCommand.
+                // ItemOperations could be driven by Q (user) or pre-fetch.
+                case McPending.Operations.ContactSearch:
+                case McPending.Operations.FolderCreate:
+                case McPending.Operations.FolderUpdate:
+                case McPending.Operations.FolderDelete:
+                case McPending.Operations.EmailSend:
+                case McPending.Operations.EmailForward:
+                case McPending.Operations.EmailReply:
+                case McPending.Operations.EmailMove:
+                case McPending.Operations.CalMove:
+                case McPending.Operations.ContactMove:
+                case McPending.Operations.TaskMove:
+                case McPending.Operations.AttachmentDownload:
+                case McPending.Operations.EmailBodyDownload:
+                case McPending.Operations.CalBodyDownload:
+                case McPending.Operations.ContactBodyDownload:
+                case McPending.Operations.TaskBodyDownload:
+                case McPending.Operations.CalRespond:
+                    return Tuple.Create<PickActionEnum, McPending> 
+                        (PickActionEnum.QOop, new List<McPending> { next });
+                }
+            }
+            if (IsMoreSyncNeeded ()) {
+                return Tuple.Create<PickActionEnum, Tuple<uint, List<Tuple<McFolder, List<McPending>>>>> 
+                    (PickActionEnum.Sync, SyncKit ());
+            } 
+            if (IsMoreFetchingNeeded ()) {
+                return Tuple.Create<PickActionEnum, Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>>> 
+                    (PickActionEnum.Fetch, FetchKit ());
+            } 
+            return Tuple.Create<PickActionEnum, IEnumerable<McFolder>> 
+                (PickActionEnum.Ping, PingKit ());
         }
     }
 }

@@ -24,6 +24,11 @@ namespace NachoCore
         private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
 
+        public enum ExecutionContextEnum { Foreground, Background, QuickSync };
+
+        private ExecutionContextEnum _ExecutionContext;
+        public ExecutionContextEnum ExecutionContext { get { return _ExecutionContext; } }
+
         public delegate void CredReqCallbackDele (int accountId);
 
         /// <summary>
@@ -185,6 +190,7 @@ namespace NachoCore
         public void StartClass3Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services called.");
+            _ExecutionContext = ExecutionContextEnum.Foreground;
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services exited.");
@@ -192,8 +198,12 @@ namespace NachoCore
 
         public void StopClass3Services ()
         {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services called.");
+            _ExecutionContext = ExecutionContextEnum.Background;
             // Empty so far. 
             // No harm in leaving inactive BackEnd data structures intact.
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services exited.");
+
         }
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
@@ -303,11 +313,12 @@ namespace NachoCore
             });
         }
 
-        public void QuickCheck (uint seconds)
+        public void QuickSync (uint seconds)
         {
+            _ExecutionContext = ExecutionContextEnum.QuickSync;
             // Needs Class-3 Services up. Cause accounts to do a quick check for new messages.
             // If start is called while wating for the QuickCheck, the system keeps going after the QuickCheck completes.
-            BackEnd.Instance.QuickCheck (seconds);
+            BackEnd.Instance.QuickSync (seconds);
         }
         // method can be used to post to StatusIndEvent from outside NcApplication.
         public void InvokeStatusIndEvent (StatusIndEventArgs e)

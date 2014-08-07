@@ -886,37 +886,47 @@ namespace NachoCore.ActiveSync
             // threading race condition we must clear any event possibly posted by a non-cancelled-in-time await.
             StopCurrentOp ();
             Sm.ClearEventQueue ();
-            // We pick between Ping, Sync and doing a McPending.
-            // Only do Ping if nothing else to do.
-            if (McPending.QueryEligible (Account.Id).Any ()) {
-                Sm.PostEvent ((uint)CtlEvt.E.PkQOop, "PCKQOP");
-            } else if (SyncStrategy.IsMoreSyncNeeded ()) {
-                Sm.PostEvent ((uint)AsEvt.E.ReSync, "PCKSYNC");
-            } else if (SyncStrategy.IsMoreFetchingNeeded ()) {
-                Sm.PostEvent ((uint)CtlEvt.E.PkFetch, "PCKFETCH");
-            } else {
-                Sm.PostEvent ((uint)CtlEvt.E.PkPing, "PCKPING");
+            var pack = SyncStrategy.Pick ();
+            var cmd = pack.Item1;
+            var kit = pack.Item2;
+            switch (cmd) {
+            case PickActionEnum.Fetch:
+                Sm.PostEvent ((uint)CtlEvt.E.PkFetch, "PCKFETCH", kit);
+                break;
+
+            case PickActionEnum.Ping:
+                Sm.PostEvent ((uint)CtlEvt.E.PkPing, "PCKPING", kit);
+                break;
+
+            case PickActionEnum.QOop:
+                Sm.PostEvent ((uint)CtlEvt.E.PkQOop, "PCKQOP", kit);
+                break;
+
+            case PickActionEnum.Sync:
+                Sm.PostEvent ((uint)AsEvt.E.ReSync, "PCKSYNC", kit);
+                break;
+
+            case PickActionEnum.Wait:
+                // FIXME.
+                break;
+
+            default:
+                NcAssert.CaseError (cmd.ToString ());
+                break;
             }
         }
 
         private void DoSync ()
         {
-            // FIXME - look for scenarios where a resync is sent but folder meta not updated.
-            NcAssert.True (SyncStrategy.IsMoreSyncNeeded ());
-            if (!SyncStrategy.RequestQuickFetch) {
-                // TODO - move logic into Strategy.
-                // If it hasn't already been requested externally, we want every other Sync to be a quick-fetch.
-                SyncStrategy.RequestQuickFetch = RequestQuickFetch;
-                RequestQuickFetch = !RequestQuickFetch;
-            }
-            SetCmd (new AsSyncCommand (this));
+            SetCmd (new AsSyncCommand (this, 
+                (Tuple<uint, List<Tuple<McFolder, List<McPending>>>>)Sm.Arg));
             Cmd.Execute (Sm);
         }
 
         private void DoFetch ()
         {
-            NcAssert.True (SyncStrategy.IsMoreFetchingNeeded ());
-            SetCmd (new AsItemOperationsCommand (this));
+            SetCmd (new AsItemOperationsCommand (this,
+                (Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>>)Sm.Arg));
             Cmd.Execute (Sm);
         }
 
@@ -928,66 +938,60 @@ namespace NachoCore.ActiveSync
 
         private void DoQOp ()
         {
-            var next = McPending.QueryEligible (Account.Id).FirstOrDefault ();
-            // TODO: need to prefer search command.
-            if (null != next) {
-                switch (next.Operation) {
-                case McPending.Operations.ContactSearch:
-                    SetCmd (new AsSearchCommand (this));
-                    break;
+            var next = (McPending)Sm.Arg;
+            switch (next.Operation) {
+            case McPending.Operations.ContactSearch:
+                SetCmd (new AsSearchCommand (this));
+                break;
 
-                case McPending.Operations.FolderCreate:
-                    SetCmd (new AsFolderCreateCommand (this));
-                    break;
+            case McPending.Operations.FolderCreate:
+                SetCmd (new AsFolderCreateCommand (this));
+                break;
 
-                case McPending.Operations.FolderUpdate:
-                    SetCmd (new AsFolderUpdateCommand (this));
-                    break;
+            case McPending.Operations.FolderUpdate:
+                SetCmd (new AsFolderUpdateCommand (this));
+                break;
 
-                case McPending.Operations.FolderDelete:
-                    SetCmd (new AsFolderDeleteCommand (this));
-                    break;
+            case McPending.Operations.FolderDelete:
+                SetCmd (new AsFolderDeleteCommand (this));
+                break;
 
-                case McPending.Operations.EmailSend:
-                    SetCmd (new AsSendMailCommand (this));
-                    break;
+            case McPending.Operations.EmailSend:
+                SetCmd (new AsSendMailCommand (this));
+                break;
 
-                case McPending.Operations.EmailForward:
-                    SetCmd (new AsSmartForwardCommand (this));
-                    break;
+            case McPending.Operations.EmailForward:
+                SetCmd (new AsSmartForwardCommand (this));
+                break;
 
-                case McPending.Operations.EmailReply:
-                    SetCmd (new AsSmartReplyCommand (this));
-                    break;
+            case McPending.Operations.EmailReply:
+                SetCmd (new AsSmartReplyCommand (this));
+                break;
 
-                case McPending.Operations.EmailMove:
-                case McPending.Operations.CalMove:
-                case McPending.Operations.ContactMove:
-                case McPending.Operations.TaskMove:
-                    SetCmd (new AsMoveItemsCommand (this));
-                    break;
+            case McPending.Operations.EmailMove:
+            case McPending.Operations.CalMove:
+            case McPending.Operations.ContactMove:
+            case McPending.Operations.TaskMove:
+                SetCmd (new AsMoveItemsCommand (this));
+                break;
 
-                case McPending.Operations.AttachmentDownload:
-                case McPending.Operations.EmailBodyDownload:
-                case McPending.Operations.CalBodyDownload:
-                case McPending.Operations.ContactBodyDownload:
-                case McPending.Operations.TaskBodyDownload:
-                     SetCmd (new AsItemOperationsCommand (this));
-                    break;
+            case McPending.Operations.AttachmentDownload:
+            case McPending.Operations.EmailBodyDownload:
+            case McPending.Operations.CalBodyDownload:
+            case McPending.Operations.ContactBodyDownload:
+            case McPending.Operations.TaskBodyDownload:
+                SetCmd (new AsItemOperationsCommand (this));
+                break;
 
-                case McPending.Operations.CalRespond:
-                    SetCmd (new AsMeetingResponseCommand (this));
-                    break;
+            case McPending.Operations.CalRespond:
+                SetCmd (new AsMeetingResponseCommand (this));
+                break;
 
-                default:
-                    // If it isn't above then it is accomplished by doing a Sync.
-                    NcAssert.True (AsSyncCommand.IsSyncCommand (next.Operation));
-                    Sm.PostEvent ((uint)AsEvt.E.ReSync, "ASPCPDIRS");
-                    return;
-                }
-                // In the non-Sync case, kick-off execution.
-                Cmd.Execute (Sm);
+            default:
+                NcAssert.CaseError (next.Operation.ToString ());
+                break;
             }
+            Cmd.Execute (Sm);
         }
 
         private bool CmdIs (Type cmdType)
@@ -1018,7 +1022,7 @@ namespace NachoCore.ActiveSync
             SetCmd (null);
         }
 
-        public override void ForceSync ()
+        public override void QuickSync ()
         {
             StopCurrentOp ();
             var defaultInbox = McFolder.GetDefaultInboxFolder (Account.Id);
@@ -1036,7 +1040,6 @@ namespace NachoCore.ActiveSync
                 return;
             }
             // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
-            SyncStrategy.RequestQuickFetch = true;
             if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
                 Log.Warn (Log.LOG_AS, "Execute called while network is down.");
                 return;
@@ -1135,4 +1138,3 @@ namespace NachoCore.ActiveSync
         }
     }
 }
-

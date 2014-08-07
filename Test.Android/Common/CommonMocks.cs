@@ -278,13 +278,11 @@ namespace Test.iOS
             return Tuple.Create (windowSize, retList);
         }
 
-        public bool IsMoreSyncNeeded () { return false; }
+        private bool IsMoreSyncNeeded () { return false; }
 
         public System.Collections.Generic.IEnumerable<McFolder> PingKit () { throw new NotImplementedException (); }
 
-        public bool RequestQuickFetch { get; set; }
-
-        public bool IsMoreFetchingNeeded ()
+        private bool IsMoreFetchingNeeded ()
         {
             return false;
         }
@@ -292,6 +290,11 @@ namespace Test.iOS
         public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
         {
             return null;
+        }
+
+        public PickActionEnum Pick ()
+        {
+            return PickActionEnum.Wait;
         }
     }
 }

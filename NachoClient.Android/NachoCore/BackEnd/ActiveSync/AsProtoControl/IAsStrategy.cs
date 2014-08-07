@@ -6,16 +6,15 @@ using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
+    public enum PickActionEnum { Sync, Ping, QOop, Fetch, Wait };
     public interface IAsStrategy
     {
-        bool RequestQuickFetch { set; get; }
-
+        // FIXME - get rid of ReportSyncResult.
         void ReportSyncResult (List<McFolder> folders);
         Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ();
-        bool IsMoreSyncNeeded ();
-        IEnumerable<McFolder> PingKit ();
-        bool IsMoreFetchingNeeded ();
-        Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ();
+
+        // revised API below this line.
+        Tuple<PickActionEnum, object> Pick ();
     }
 }
 

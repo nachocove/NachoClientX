@@ -15,17 +15,17 @@ namespace NachoCore.ActiveSync
         private List<Tuple<McAbstrItem, string>> Prefetches;
         private static XNamespace AirSyncNs = Xml.AirSync.Ns;
 
-        private void ApplyStrategy ()
+        private void ApplyStrategy (Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> fetchKit)
         {
-            var fetchKit = BEContext.ProtoControl.SyncStrategy.FetchKit ();
             PendingList.AddRange (fetchKit.Item1);
             Prefetches = fetchKit.Item2.ToList ();
         }
 
-        public AsItemOperationsCommand (IBEContext dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
+        public AsItemOperationsCommand (IBEContext dataSource, 
+            Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> fetchKit) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
         {
             Attachments = new List<McAttachment> ();
-            ApplyStrategy ();
+            ApplyStrategy (fetchKit);
             foreach (var pending in PendingList) {
                 pending.MarkDispached ();
             }
