@@ -140,10 +140,6 @@ namespace NachoClient.iOS
             submitButton.TouchUpInside += delegate {
 
                 if (!haveEnteredEmailAndPass ()) {
-//                    if(txtUserName.Text.Length == 0){
-//                        txtUserName.Text = "Required";
-//                        txtUserName.TextColor = A.Color_NachoRed;
-//                    }
                 } else if (!isValidEmail (txtUserName.Text)) {
                     txtUserName.TextColor = A.Color_NachoRed;
                 } else {
@@ -187,6 +183,11 @@ namespace NachoClient.iOS
 
         void getUserName ()
         {
+            txtUserName.EditingChanged += (object sender, EventArgs e) => {
+                txtUserName.TextColor = UIColor.Black;
+                haveEnteredEmailAndPass ();
+            };
+
             this.txtUserName.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
                 if (txtUserName.Text.Contains ("Hello")) {
@@ -204,11 +205,16 @@ namespace NachoClient.iOS
 
         void getPassword ()
         {
+            txtPassword.EditingChanged += (object sender, EventArgs e) => {
+                haveEnteredEmailAndPass ();
+            };
+
             this.txtPassword.ShouldReturn += (textField) => { 
                 haveEnteredEmailAndPass ();
                 if (txtPassword.Text.Contains ("Hello")) {
                     Log.Info (Log.LOG_UI, "Hello"); 
                 }
+
                 //ncPassword = txtPassword.Text;
                 //Console.WriteLine(ncPassword);
                 textField.ResignFirstResponder (); 
