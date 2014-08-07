@@ -83,6 +83,8 @@ namespace NachoClient.iOS
             haveEnteredEmailAndPass ();
             addCustomerSupportButton ();
 
+            NavigationItem.Title = "Account Settings";
+
         }
 
         public override void ViewDidAppear (bool animated)
