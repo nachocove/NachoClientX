@@ -15,6 +15,7 @@ SWRevealViewControllerBinding
 MCSwipeTableViewCell
 MCSwipeTableViewCellBinding
 NachoPlatformBinding
+NachoUIMonitorBinding
 bc-csharp
 MimeKit
 DnDns

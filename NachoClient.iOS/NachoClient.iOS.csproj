@@ -1389,6 +1389,10 @@
       <Project>{3D62A798-BABE-4639-B504-24E045E8B0A0}</Project>
       <Name>Parse.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">
+      <Project>{B516077B-652E-4AC9-B728-AB64B65044F4}</Project>
+      <Name>NachoUIMonitor.iOS</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <XamarinComponentReference Include="xamarin.mobile">
