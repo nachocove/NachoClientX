@@ -22,7 +22,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class EditEventViewController : NcUIViewController
+    public partial class EditEventViewController : NcUIViewController, INachoAttendeeListChooserDelegate
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
@@ -188,7 +188,6 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
             }
-
             ConfigureEditEventView ();
         }
 
@@ -274,23 +273,19 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("EditEventToAttendee")) {
-                var dc = (AttendeeViewController)segue.DestinationViewController;
-                dc.SetAttendeeList (c.attendees);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    c.attendees = dc.GetAttendeeList ();
-                    ConfigureEditEventView ();
-                };
-                return;
-            }
+//            if (segue.Identifier.Equals ("EditEventToAttendee")) {
+//                var dc = (AttendeeViewController)segue.DestinationViewController;
+//                dc.SetAttendeeList (c.attendees);
+//                dc.ViewDisappearing += (object s, EventArgs e) => {
+//                    c.attendees = dc.GetAttendeeList ();
+//                    ConfigureEditEventView ();
+//                };
+//                return;
+//            }
 
             if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.SetAttendeeList (c.attendees);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    c.attendees = dc.GetAttendeeList ();
-                    ConfigureEditEventView ();
-                };
+                dc.SetOwner (this, c.attendees, c, true);
                 return;
             }
 
@@ -342,10 +337,11 @@ namespace NachoClient.iOS
                     UIAlertView alert = new UIAlertView ();
                     alert.Title = "Are you sure?";
                     alert.Message = "This event will not be saved";
+                    alert.AddButton ("Cancel");
                     alert.AddButton ("Yes");
-                    alert.AddButton ("No");
+                    alert.CancelButtonIndex = 0;
                     alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                        if (0 == alertEvent.ButtonIndex) {
+                        if (1 == alertEvent.ButtonIndex) {
                             DismissView (showMenu);
                         }
                     };
@@ -1045,7 +1041,7 @@ namespace NachoClient.iOS
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
-        }   
+        }
 
         protected void SelectionChanged (UITextView textView)
         {
@@ -1219,6 +1215,16 @@ namespace NachoClient.iOS
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
 
             CalendarHelper.SendInvites (account, c, "Local");
+        }
+
+        public void UpdateAttendeeList (List<McAttendee> attendees)
+        {
+            c.attendees = attendees;
+        }
+
+        public void DismissINachoAttendeeListChooser (INachoAttendeeListChooser vc)
+        {
+            NcAssert.CaseError ();
         }
     }
 }

@@ -84,6 +84,7 @@ namespace NachoClient.iOS
 
             // Initially let's hide the search controller
             TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+            TableView.SeparatorColor = A.Color_NachoSeparator;
 
             // Search button brings up the search controller
             searchButton.Clicked += (object sender, EventArgs e) => {
