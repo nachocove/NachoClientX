@@ -433,8 +433,8 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Text += "file";
 
                 if (attachment.IsDownloaded || attachment.IsInline) {
+                    StopAnimationsOnCell (cell);
                     cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
-                    cell.ImageView.Layer.RemoveAllAnimations ();
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
                     cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                     SetAnimationOnCell (cell, attachment.IsDownloaded);
@@ -587,6 +587,14 @@ namespace NachoClient.iOS
                 }
             }
 
+            private void StopAnimationsOnCell (UITableViewCell cell)
+            {
+                foreach (UIView subview in cell.ImageView.Subviews) {
+                    subview.Layer.RemoveAllAnimations ();
+                    subview.RemoveFromSuperview ();
+                }
+            }
+
             UIView ViewWithImageName (string imageName)
             {
                 var image = UIImage.FromBundle (imageName);
@@ -622,7 +630,7 @@ namespace NachoClient.iOS
                );
             }
 
-            public void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
+            private void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
             {
                 UIView.Animate (
                     duration: 0.4,
@@ -635,8 +643,14 @@ namespace NachoClient.iOS
                     completion: () => {
                         arrow.Center = new PointF (center.X, 2);
                         arrow.Alpha = 1.0f;
+                        ArrowAnimation (cell, arrow, center);
                     }
                 );
+            }
+
+            private void DownloadCompleteAnimation ()
+            {
+
             }
         }
 
