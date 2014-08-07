@@ -193,7 +193,7 @@ namespace NachoClient.iOS
             if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
                 var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                var emailMessageId = ((NSNumber)localNotification.UserInfo.ObjectForKey (NoteKey)).IntValue;
+                var emailMessageId = localNotification.Handle ();
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
             }
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
@@ -424,11 +424,8 @@ namespace NachoClient.iOS
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
             Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification called.");
-            var value = (NSNumber)notification.UserInfo.ObjectForKey (NoteKey);
-            if (null != value) {
-                var emailMessageId = value.IntValue;
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
-            }
+            var emailMessageId = notification.Handle ();
+            Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
@@ -601,8 +598,6 @@ namespace NachoClient.iOS
          *     after we left the active state.
          * NOTE: This code will need to get a little smarter when we are doing many types of notification.
          */
-        static NSString NoteKey = new NSString ("McEmailMessage.Id");
-
         private bool BadgeNotifAllowed = false;
 
         private void BadgeNotifClear ()
@@ -639,16 +634,12 @@ namespace NachoClient.iOS
                 if (message.HasBeenNotified) {
                     continue;
                 }
-                var notif = new UILocalNotification () {
-                    AlertAction = "Nacho Mail",
-                    AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), NoteKey),
-                };
+                Notif.Instance.ScheduleNotif (message.Id, DateTime.UtcNow,
+                    ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
+                    !soundExpressed);
                 if (!soundExpressed) {
-                    notif.SoundName = UILocalNotification.DefaultSoundName;
                     soundExpressed = true;
                 }
-                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
                 message.HasBeenNotified = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");

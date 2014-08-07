@@ -30,7 +30,7 @@ namespace NachoPlatform
             }
         }
 
-        public void ScheduleNotif (int handle, DateTime when, string message)
+        public void ScheduleNotif (int handle, DateTime when, string message, bool sound)
         {
             NcAssert.True (false);
         }
