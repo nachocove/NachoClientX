@@ -340,6 +340,12 @@ namespace NachoClient.iOS
                 textField.ResignFirstResponder ();
                 return true;
             };
+
+            emailText.EditingChanged += (object sender, EventArgs e) => {
+                haveEnteredEmailAndPass ();
+                emailText.Text = UIColor.Black;
+            };
+
             emailText.AutocapitalizationType = UITextAutocapitalizationType.None;
             emailText.AutocorrectionType = UITextAutocorrectionType.No;
 
@@ -362,6 +368,10 @@ namespace NachoClient.iOS
                 haveEnteredEmailAndPass ();
                 textField.ResignFirstResponder ();
                 return true;
+            };
+            passwordText.EditingChanged += (object sender, EventArgs e) => {
+                haveEnteredEmailAndPass ();
+                passwordText.Text = UIColor.Black;
             };
             passwordText.AutocapitalizationType = UITextAutocapitalizationType.None;
             passwordText.AutocorrectionType = UITextAutocorrectionType.No;
@@ -450,7 +460,9 @@ namespace NachoClient.iOS
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 if (LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
                     emailText.Text = theAccount.Account.EmailAddr;
-                    usernameText.Text = theAccount.Credentials.Username;
+                    if (theAccount.Credentials.Username != theAccount.Account.EmailAddr) {
+                        usernameText.Text = theAccount.Credentials.Username;
+                    }
                     passwordText.Text = theAccount.Credentials.Password;
                     if (null != theAccount.Server) {
                         serverText.Text = theAccount.Server.Host;
@@ -475,9 +487,6 @@ namespace NachoClient.iOS
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId); 
 
-            // theAccount.Account = McAccount.QueryById<McAccount> (accountId);
-            // McCred theCred = McCred.QueryById<McCred> (theAccount.Account.CredId); 
-            //theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId);
             if (usernameText.Text.Length > 0) {
                 theAccount.Credentials.Username = usernameText.Text;
             } else {
@@ -525,9 +534,23 @@ namespace NachoClient.iOS
             showWaitingView ();
         }
 
+        public void removeServerRecord ()
+        {
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                if (0 != account.ServerId) {
+                    McServer removeServerRecord = McServer.QueryById<McServer> (account.ServerId);
+                    removeServerRecord.Delete ();
+                    account.ServerId = 0;
+                    account.Update ();
+                }
+            }
+        }
+
         public void tryAutoD ()
         {
             setUsersSettings ();
+            removeServerRecord ();
             startBe ();
         }
 
