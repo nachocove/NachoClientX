@@ -63,6 +63,8 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
            if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                this.NavigationController.NavigationBar.Hidden = true;
+
             }
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
@@ -75,6 +77,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                this.NavigationController.NavigationBar.Hidden = false;
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
