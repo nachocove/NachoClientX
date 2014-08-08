@@ -37,6 +37,9 @@ namespace NachoClient.iOS
         const string LogNotification = "USER_SENDING_LOG";
         const string ContactingSupportNotification = "USER_IS_CONTACTING_SUPPORT";
 
+        public bool CalledFromLogin = false;
+        // Implies that account is not yet set up or sync'd
+
         public SupportViewController (IntPtr handle) : base (handle)
         {
         }
@@ -45,12 +48,33 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
-                A.NachoNowButton (this)
-            };
-
             this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+
+            if (CalledFromLogin) {
+                NavigationItem.SetHidesBackButton (false, true);
+            } else {
+                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                    A.RevealButton (this),
+                    A.NachoNowButton (this)
+                };
+            }
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
         }
 
         public override int RowsInSection (UITableView tableview, int section)
