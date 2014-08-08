@@ -72,7 +72,6 @@ namespace NachoClient.iOS
 
             TableView.Source = new ContactChooserDataSource (this);
 
-
             AutocompleteTextField.Text = address.address;
             UpdateAutocompleteResults (0, address.address);
 
@@ -110,8 +109,6 @@ namespace NachoClient.iOS
                 destinationController.contact = (McContact)holder.value;
             }
         }
-
-
 
         protected void UpdateEmailAddress (McContact contact, string address)
         {
