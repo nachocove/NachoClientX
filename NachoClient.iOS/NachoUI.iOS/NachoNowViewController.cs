@@ -1151,7 +1151,7 @@ namespace NachoClient.iOS
             public override void DidSelectItemAtIndex (iCarousel carousel, int index)
             {
                 // Ignore placeholders
-                if ((0 > index) && (owner.priorityInbox.Count () <= index)) {
+                if ((0 > index) || (owner.priorityInbox.Count () <= index)) {
                     return;
                 }
                 var messageThread = owner.priorityInbox.GetEmailThread (index);
