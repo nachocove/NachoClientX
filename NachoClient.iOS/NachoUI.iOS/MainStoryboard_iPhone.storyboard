@@ -28,7 +28,7 @@
             <objects>
                 <viewController storyboardIdentifier="AdvancedLoginViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tch-Ox-Ppd" customClass="AdvancedLoginViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="QRf-dz-YUv">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -753,28 +753,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="User Name" textAlignment="center" minimumFontSize="17" id="uBu-6j-Bbo">
-                                <rect key="frame" x="83" y="160" width="154" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="emailAddress"/>
-                            </textField>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Password" textAlignment="center" minimumFontSize="17" id="WPa-HS-ZhK">
-                                <rect key="frame" x="83" y="198" width="154" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" autocorrectionType="no" secureTextEntry="YES"/>
-                            </textField>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="yIU-n1-bEg">
-                                <rect key="frame" x="110" y="52" width="101" height="44"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Connect Me">
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <action selector="btnLaunchAcct:" destination="B4U-5i-lJV" eventType="touchUpInside" id="dDT-c8-x2X"/>
-                                </connections>
-                            </button>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="otx-5M-4eP">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="Nxw-gv-RGA" userLabel="View - ContentView">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
@@ -784,8 +773,8 @@
                     <nil key="simulatedTopBarMetrics"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="txtPassword" destination="WPa-HS-ZhK" id="t8j-Mw-hYH"/>
-                        <outlet property="txtUserName" destination="uBu-6j-Bbo" id="KH8-6e-GBy"/>
+                        <outlet property="contentView" destination="Nxw-gv-RGA" id="SDz-YN-2Xn"/>
+                        <outlet property="scrollView" destination="otx-5M-4eP" id="Qog-KN-YCS"/>
                         <segue destination="tch-Ox-Ppd" kind="push" identifier="SegueToAdvancedLogin" id="9pm-2U-9AI"/>
                         <segue destination="OQ8-xH-iKh" kind="push" identifier="SegueToHome" id="QbR-l1-NT5"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNow" id="dHu-Pd-Udl"/>
@@ -2005,20 +1994,19 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="HCr-Oa-UHV"/>
         <segue reference="CoK-I1-8hz"/>
-        <segue reference="emO-35-rbd"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="9pm-2U-9AI"/>
+        <segue reference="QbR-l1-NT5"/>
+        <segue reference="dHu-Pd-Udl"/>
         <segue reference="lXf-yZ-Qj9"/>
         <segue reference="ywO-BF-h0n"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="VgN-QU-7Sb"/>
-        <segue reference="wZa-Ld-8vI"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="RaB-9o-azo"/>
         <segue reference="ebP-h4-BhC"/>
+        <segue reference="wZa-Ld-8vI"/>
+        <segue reference="VgN-QU-7Sb"/>
         <segue reference="p6V-c0-caL"/>
         <segue reference="mo4-Vz-xJh"/>
         <segue reference="fwk-9p-tlV"/>
@@ -2028,5 +2016,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="tdu-G2-PEp"/>
         <segue reference="JTo-qU-j7O"/>
         <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="HCr-Oa-UHV"/>
     </inferredMetricsTieBreakers>
 </document>

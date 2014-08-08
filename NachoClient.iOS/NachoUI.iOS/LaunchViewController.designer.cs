@@ -13,21 +13,21 @@ namespace NachoClient.iOS
 	partial class LaunchViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UITextField txtPassword { get; set; }
+		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UITextField txtUserName { get; set; }
+		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (txtUserName != null) {
-				txtUserName.Dispose ();
-				txtUserName = null;
+			if (scrollView != null) {
+				scrollView.Dispose ();
+				scrollView = null;
 			}
 
-			if (txtPassword != null) {
-				txtPassword.Dispose ();
-				txtPassword = null;
+			if (contentView != null) {
+				contentView.Dispose ();
+				contentView = null;
 			}
 		}
 	}
