@@ -511,7 +511,7 @@ namespace NachoClient.iOS
                 UIColor brownColor = null;
 
                 try { 
-                    forwardView = ViewWithImageName ("check");
+                    forwardView = ViewWithImageName ("forwardicon");
                     greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
@@ -536,7 +536,7 @@ namespace NachoClient.iOS
                         }
                         return;
                     });
-                    previewView = ViewWithImageName ("clock");
+                    previewView = ViewWithImageName ("previewicon");
                     yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
@@ -546,7 +546,7 @@ namespace NachoClient.iOS
                         }
                         return;
                     });
-                    openView = ViewWithImageName ("list");
+                    openView = ViewWithImageName ("openicon");
                     brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {

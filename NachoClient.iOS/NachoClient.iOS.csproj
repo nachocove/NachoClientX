@@ -1360,6 +1360,12 @@
     <BundleResource Include="Resources\Launch%402x.png" />
     <BundleResource Include="Resources\Launch.png" />
     <BundleResource Include="Resources\Launch-568h%402x.png" />
+    <BundleResource Include="Resources\previewicon%402x.png" />
+    <BundleResource Include="Resources\previewicon.png" />
+    <BundleResource Include="Resources\openicon%402x.png" />
+    <BundleResource Include="Resources\openicon.png" />
+    <BundleResource Include="Resources\forwardicon%402x.png" />
+    <BundleResource Include="Resources\forwardicon.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
