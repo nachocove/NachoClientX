@@ -44,9 +44,9 @@ namespace NachoClient.iOS
         public void CreateView ()
         {
             float VIEW_HEIGHT;
-
             VIEW_HEIGHT = this.Frame.Height - 64f;
 
+            this.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.4f);
             certificateView = new UIView (new RectangleF (20, 20, owner.View.Frame.Width - 40, VIEW_HEIGHT - 40));
             certificateView.Tag = CERTIFICATE_VIEW_TAG;
             certificateView.BackgroundColor = UIColor.White;
@@ -141,22 +141,13 @@ namespace NachoClient.iOS
 
         public void ShowView ()
         {
-
             this.Hidden = false;
-            owner.greyBackground.Hidden = false;
         }
 
         public void DismissView (bool greyScreenToo)
         {
             owner.setTextToRed (new UITextField[] { });
             this.Hidden = true;
-            if (greyScreenToo) {
-                owner.greyBackground.Hidden = true;
-            } else {
-                if (!owner.isWaitingUp) {
-                    owner.greyBackground.Hidden = true;
-                }
-            }
         }
     }
 }

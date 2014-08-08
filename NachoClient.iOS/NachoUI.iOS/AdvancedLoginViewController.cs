@@ -37,7 +37,7 @@ namespace NachoClient.iOS
         UIActivityIndicatorView theSpinner;
         UIView cancelLine;
         UIView statusView;
-        public UIView greyBackground;
+        public UIView statusViewBackground;
         UIButton genericSystemButton;
         UIButton connectButton;
         public UIColor systemBlue;
@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         AppDelegate appDelegate;
         public string certificateInformation = "";
         CertificateView certificateView;
-        public bool isWaitingUp;
 
         public enum errorMessageEnum
         {
@@ -59,7 +58,6 @@ namespace NachoClient.iOS
             ServerConf,
             Network,
             FirstTime}
-
         ;
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
@@ -162,20 +160,18 @@ namespace NachoClient.iOS
 
         public void createWaitingView ()
         {
-            greyBackground = new UIView (new System.Drawing.RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
-            greyBackground.Tag = GRAY_BACKGROUND_TAG;
-            greyBackground.BackgroundColor = UIColor.DarkGray;
-            greyBackground.Alpha = .4f;
-            greyBackground.Hidden = true;
-            View.Add (greyBackground);
+            statusViewBackground = new UIView (new System.Drawing.RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            statusViewBackground.Tag = GRAY_BACKGROUND_TAG;
+            statusViewBackground.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.4f);
+            statusViewBackground.Hidden = true;
+            View.Add (statusViewBackground);
 
             statusView = new UIView (new System.Drawing.RectangleF (60, 100, View.Frame.Width - 120, 146));
             statusView.Tag = 50;
             statusView.Layer.CornerRadius = 7.0f;
             statusView.BackgroundColor = UIColor.White;
             statusView.Alpha = 1.0f;
-            statusView.Hidden = true;
-            View.Add (statusView);
+            statusViewBackground.Add (statusView);
 
             statusMessage = new UITextView (new System.Drawing.RectangleF (8, 2, statusView.Frame.Width - 16, statusView.Frame.Height / 2.4f));
             statusMessage.BackgroundColor = UIColor.White;
@@ -206,9 +202,9 @@ namespace NachoClient.iOS
             cancelValidation.BackgroundColor = UIColor.White;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
-            cancelValidation.TitleLabel.TextColor = systemBlue;
+            cancelValidation.SetTitleColor (systemBlue, UIControlState.Normal);
             cancelValidation.TouchUpInside += (object sender, EventArgs e) => {
-
+                stopBeIfRunning ();
                 setErrorMessage (errorMessageEnum.FirstTime);
                 setTextToRed (new UITextField[] { });
                 dismissWaitingView ();
@@ -218,26 +214,7 @@ namespace NachoClient.iOS
 
         public void showWaitingView ()
         {
-
-            statusView.Hidden = false;
-            greyBackground.Hidden = false;
-
-            cancelValidation = new UIButton (new System.Drawing.RectangleF (0, 106, statusView.Frame.Width, 40));
-            cancelValidation.Tag = 3;
-            cancelValidation.Layer.CornerRadius = 10.0f;
-            cancelValidation.BackgroundColor = UIColor.White;
-            cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
-            cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
-            cancelValidation.TitleLabel.TextColor = systemBlue;
-            cancelValidation.TouchUpInside += (object sender, EventArgs e) => {
-                stopBeIfRunning ();
-                setErrorMessage (errorMessageEnum.FirstTime);
-                setTextToRed (new UITextField[] { });
-                dismissWaitingView ();
-            };
-
-            statusView.Add (cancelValidation);
-            isWaitingUp = true;
+            statusViewBackground.Hidden = false;
         }
 
         public void createCertificateView ()
@@ -250,9 +227,7 @@ namespace NachoClient.iOS
 
         public void dismissWaitingView ()
         {
-            greyBackground.Hidden = true;
-            statusView.Hidden = true;
-            isWaitingUp = false;
+            statusViewBackground.Hidden = true;
         }
 
         public void addConnectButton ()
@@ -359,6 +334,7 @@ namespace NachoClient.iOS
             emailText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
                 textField.ResignFirstResponder ();
+                emailText.TextColor = UIColor.Black;
                 return true;
             };
 
@@ -388,6 +364,7 @@ namespace NachoClient.iOS
             passwordText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
                 textField.ResignFirstResponder ();
+                passwordText.TextColor = UIColor.Black;
                 return true;
             };
             passwordText.EditingChanged += (object sender, EventArgs e) => {
@@ -833,12 +810,8 @@ namespace NachoClient.iOS
         public class AccountSettings
         {
             public string EmailAddress { get; set; }
-            //public int AccountId { get; set; }
-            //public int CredId { get; set; }
             public McAccount Account { get; set; }
-
             public McCred Credentials { get; set; }
-
             public McServer Server { get; set; }
 
             public AccountSettings ()
