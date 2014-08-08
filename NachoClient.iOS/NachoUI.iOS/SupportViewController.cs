@@ -200,8 +200,20 @@ namespace NachoClient.iOS
             case 3:
                 cell = tableView.DequeueReusableCell (BasicCell);
                 NcAssert.True (null != cell);
-                var version = NSBundle.FromIdentifier ("com.nachocove.nachomail").InfoDictionary ["CFBundleShortVersionString"];
-                cell.TextLabel.Text = VersionNumberText + version;
+
+                var devBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail");
+                var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
+
+                if (devBundleId != null) {
+                    var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"];
+                    cell.TextLabel.Text = VersionNumberText + version;
+                } else if (betaBundleId != null) {
+                    var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"];
+                    cell.TextLabel.Text = VersionNumberText + version;
+                } else {
+                    cell.TextLabel.Text = VersionNumberText + "Unknown version";
+                }
+
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 break;
             }
