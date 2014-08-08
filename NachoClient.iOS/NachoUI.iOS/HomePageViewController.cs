@@ -12,12 +12,12 @@ namespace NachoClient.iOS
     public partial class HomePageController : NcUIViewController
     {
         //loads the HomePageController.xib file and connects it to this object
-       
+        public HomeViewController owner;
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
             this.PageIndex = pageIndex;
-
+            owner = null;
         }
 
         public int PageIndex {
@@ -45,23 +45,14 @@ namespace NachoClient.iOS
            
 
             string fileName = Tutorial [this.PageIndex];
-
-
-
+           
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
             tutImage.Frame = this.View.Frame;
             base.ViewDidLoad ();
             tutImage.ContentMode = UIViewContentMode.ScaleToFill;
-
-           
             //tutImage.Image = ResizeImage (fullImage, tutImage.Frame.Width, tutImage.Frame.Height);
-
             tutImage.UserInteractionEnabled = true;
-            // We will want to add said button to the lower toolbar later.
-            //tutImage.AddSubview (dismissButton); 
-            //tutImage.BringSubviewToFront (dismissButton);
             this.View.AddSubview (tutImage);
-
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
             Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
         }
@@ -71,6 +62,11 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+            }
+            if (this.owner == null) {
+                NcAssert.True (false, "Tutorial Page has no owner");
+            } else {
+                this.owner.pageDots.CurrentPage = this.PageIndex; // update containerView.PageDots
             }
         }
 

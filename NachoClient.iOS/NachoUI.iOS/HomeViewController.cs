@@ -14,7 +14,7 @@ namespace NachoClient.iOS
     {
         UIPageViewController pageController;
         int accountId;
-        UIPageControl pageDots;
+        public UIPageControl pageDots;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -56,6 +56,7 @@ namespace NachoClient.iOS
 
             // Help & demo pages
             InitializePageViewController ();
+
         }
 
         public override void ViewWillAppear (bool animated)
@@ -93,15 +94,13 @@ namespace NachoClient.iOS
         {
             // Initialize the first page
             HomePageController firstPageController = new HomePageController (0);
-            // set up our own "dots" for page indicator
+            firstPageController.owner = this;   // set up our own "dots" for page indicator
             // remove the navigation bars
             // overlay the page controller and the dismiss button
            
             pageDots = new UIPageControl (); // page indicators; will get updates as datasource updates
             UIView containerView = new UIView(); // contain pageDots and the dismiss button
-
-
-            //setup 
+             //setup 
             pageDots.Pages = this.TotalPages;
             pageDots.CurrentPage = 0;
             pageDots.BackgroundColor = A.Color_NachoGreen;
@@ -110,17 +109,13 @@ namespace NachoClient.iOS
             containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Height-50  , this.View.Frame.Width, 50);
             containerView.BackgroundColor = A.Color_NachoGreen;
             pageDots.Frame = new System.Drawing.RectangleF(10,0, 50, 40);  // relative to containerView
-
-
-
-            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
+           this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
                 UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.None);
 
             this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
                 false, s => {
             });
             this.NavigationController.NavigationBarHidden = true;
-
             this.pageController.DataSource = new PageDataSource (this);
            
 
@@ -138,7 +133,6 @@ namespace NachoClient.iOS
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
                 PerformSegue(StartupViewController.NextSegue(), this);
             };
-
             containerView.Add (pageDots);
             containerView.Add (closeTutorial);
             View.Add (containerView);
@@ -175,8 +169,9 @@ namespace NachoClient.iOS
                     return null;
                 } else {
                     int previousPageIndex = currentPageController.PageIndex - 1;
-                    this.parentController.pageDots.CurrentPage = previousPageIndex;
-                    return new HomePageController (previousPageIndex);
+                    var newPage = new HomePageController (previousPageIndex);
+                    newPage.owner = this.parentController;
+                    return newPage;
                 }
             }
 
@@ -189,13 +184,15 @@ namespace NachoClient.iOS
                     return null;
                 } else {
                     int nextPageIndex = currentPageController.PageIndex + 1;
-                    this.parentController.pageDots.CurrentPage = nextPageIndex;
-                    return new HomePageController (nextPageIndex);
+                    var newPage = new HomePageController (nextPageIndex);
+                    newPage.owner = this.parentController;
+                    return newPage;
                 }
 
             }
 
-          /*  public override int GetPresentationCount (UIPageViewController pageViewController)
+          /* 
+           public override int GetPresentationCount (UIPageViewController pageViewController)
             {
                 // NOTE: Don't call the base implementation on a Model class
                 // see http://docs.xamarin.com/guides/ios/application_fundamentals/delegates,_protocols,_and_events
