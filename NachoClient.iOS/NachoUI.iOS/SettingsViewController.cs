@@ -559,6 +559,10 @@ namespace NachoClient.iOS
             if (null == whatAccount) {
                 whatAccount = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             }
+            if (null == whatAccount) {
+                Log.Error (Log.LOG_UI, "No accouunt found in settings view.");
+                return;
+            }
 
             McCred userCredentials = McCred.QueryById<McCred> (whatAccount.CredId);
             McServer userMailServer = McServer.QueryById<McServer> (whatAccount.ServerId);
@@ -634,17 +638,6 @@ namespace NachoClient.iOS
         {
             theSpinner.StopAnimating ();
         }
-
-        void Kickstart ()
-        {
-            Log.Info (Log.LOG_UI, "Kickstart pressed");
-            // TODO: Kickstart
-        }
-
-        void Reset ()
-        {
-            Log.Info (Log.LOG_UI, "Reset pressed");
-            // TODO: Reset
-        }
+     
     }
 }
