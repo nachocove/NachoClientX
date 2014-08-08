@@ -602,7 +602,7 @@ namespace NachoClient.iOS
 
         private void BadgeNotifClear ()
         {
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
+            Notif.Instance.BadgeNumber = 0;
             BadgeNotifAllowed = false;
             Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
 
@@ -626,7 +626,7 @@ namespace NachoClient.iOS
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
 
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
+            Notif.Instance.BadgeNumber = unreadAndHot.Count ();
 
             var soundExpressed = false;
             int remainingVisibleSlots = 10;

@@ -47,6 +47,15 @@ namespace NachoPlatform
             return null;
         }
 
+        public int BadgeNumber { 
+            get { 
+                return UIApplication.SharedApplication.ApplicationIconBadgeNumber;
+            }
+            set {
+                UIApplication.SharedApplication.ApplicationIconBadgeNumber = value;
+            }
+        }
+
         public void ScheduleNotif (int handle, DateTime when, string message, bool sound)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
