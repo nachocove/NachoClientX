@@ -229,7 +229,7 @@ namespace NachoClient.iOS
         public override void OnActivated (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
-            BadgeNotifClear ();
+            NcApplication.Instance.BadgeNotifClear ();
             NcApplication.Instance.StartClass3Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass3Services complete");
 
@@ -255,7 +255,7 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
-            BadgeNotifGoInactive ();
+            NcApplication.Instance.BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
             NcApplication.Instance.StopClass4Services ();
@@ -384,7 +384,7 @@ namespace NachoClient.iOS
                 // preceed Info_SyncSucceeded.
                 BackEnd.Instance.Stop ();
                 UnhookFetchStatusHandler ();
-                BadgeNotifUpdate ();
+                NcApplication.Instance.BadgeNotifUpdate ();
                 FinalShutdown (null);
                 CompletionHandler (FetchResult);
                 break;
@@ -438,7 +438,7 @@ namespace NachoClient.iOS
                 // We use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because we want
                 // To also act when the server marks a message as read (we remove the notif).
                 if (accountId == Account.Id) {
-                    BadgeNotifUpdate ();
+                    NcApplication.Instance.BadgeNotifUpdate ();
                 }
                 break;
             }
@@ -587,66 +587,6 @@ namespace NachoClient.iOS
             } else {
                 // UI FIXME - ask user and call CertAskResp async'ly.
                 NcApplication.Instance.CertAskResp (accountId, true);
-            }
-        }
-
-        /* BADGE & NOTIFICATION LOGIC HERE.
-         * - OnActivated clears ALL notifications an the badge.
-         * - When we are not in the active state, and we get an indication of a new, hot, and unread email message:
-         *   - we create a local notification for that message.
-         *   - we set the badge number to the count of all new, hot, and unread email messages that have arrived 
-         *     after we left the active state.
-         * NOTE: This code will need to get a little smarter when we are doing many types of notification.
-         */
-        private bool BadgeNotifAllowed = false;
-
-        private void BadgeNotifClear ()
-        {
-            Notif.Instance.BadgeNumber = 0;
-            BadgeNotifAllowed = false;
-            Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
-
-        }
-
-        private void BadgeNotifGoInactive ()
-        {
-            McMutables.Set ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            BadgeNotifAllowed = true;
-            Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
-        }
-
-        // It is okay if this function is called more than it needs to be.
-        private void BadgeNotifUpdate ()
-        {
-            Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
-            if (!BadgeNotifAllowed) {
-                return;
-            }
-            var datestring = McMutables.GetOrCreate ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            var since = DateTime.Parse (datestring);
-            var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
-
-            Notif.Instance.BadgeNumber = unreadAndHot.Count ();
-
-            var soundExpressed = false;
-            int remainingVisibleSlots = 10;
-            foreach (var message in unreadAndHot) {
-                if (message.HasBeenNotified) {
-                    continue;
-                }
-                Notif.Instance.ScheduleNotif (message.Id, DateTime.UtcNow,
-                    ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
-                    !soundExpressed);
-                if (!soundExpressed) {
-                    soundExpressed = true;
-                }
-                message.HasBeenNotified = true;
-                message.Update ();
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
-                --remainingVisibleSlots;
-                if (0 >= remainingVisibleSlots) {
-                    break;
-                }
             }
         }
     }

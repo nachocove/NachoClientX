@@ -8,6 +8,7 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Wbxml;
+using NachoPlatform;
 
 using System.Security.Cryptography.X509Certificates;
 
@@ -283,7 +284,7 @@ namespace NachoCore
                 StatusIndEvent.Invoke (this, e);
             }
         }
-        // IBackEndOwner methods below.
+        // IBackEndOwner methods.
         public void CredReq (int accountId)
         {
             if (null != CredReqCallback) {
@@ -331,6 +332,62 @@ namespace NachoCore
                     BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
             }
             BackEnd.Instance.CertAskResp (accountId, isOkay);
+        }
+
+        // Platform-independent badge/notification code. The Model must be operational whenever these methods are called.
+
+        private bool BadgeNotifAllowed = false;
+        private const string kBadgeNotif = "BADGENOTIF";
+        private const string kGoInactiveTime = "GoInactiveTime";
+
+        public void BadgeNotifClear ()
+        {
+            Notif.Instance.BadgeNumber = 0;
+            BadgeNotifAllowed = false;
+            Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
+
+        }
+
+        public void BadgeNotifGoInactive ()
+        {
+            McMutables.Set ("BADGENOTIF", "GoInactiveTime", DateTime.UtcNow.ToString ());
+            BadgeNotifAllowed = true;
+            Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
+        }
+
+        // It is okay if this function is called more than it needs to be.
+        public void BadgeNotifUpdate ()
+        {
+            Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
+            if (!BadgeNotifAllowed) {
+                return;
+            }
+            var datestring = McMutables.GetOrCreate (kBadgeNotif, kGoInactiveTime, DateTime.UtcNow.ToString ());
+            var since = DateTime.Parse (datestring);
+            var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
+
+            Notif.Instance.BadgeNumber = unreadAndHot.Count ();
+
+            var soundExpressed = false;
+            int remainingVisibleSlots = 10;
+            foreach (var message in unreadAndHot) {
+                if (message.HasBeenNotified) {
+                    continue;
+                }
+                Notif.Instance.ScheduleNotif (message.Id, DateTime.UtcNow,
+                    ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
+                    !soundExpressed);
+                if (!soundExpressed) {
+                    soundExpressed = true;
+                }
+                message.HasBeenNotified = true;
+                message.Update ();
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                --remainingVisibleSlots;
+                if (0 >= remainingVisibleSlots) {
+                    break;
+                }
+            }
         }
     }
 }
