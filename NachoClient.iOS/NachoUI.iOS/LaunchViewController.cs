@@ -81,30 +81,13 @@ namespace NachoClient.iOS
             yOffset = 0f;
 
             var triangleSplash = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Splash-BG")) {
+            using (var image = UIImage.FromBundle ("Launch")) {
                 triangleSplash.Frame = new RectangleF (new PointF (0, yOffset), image.Size);
                 triangleSplash.Image = image;
             }
             contentView.AddSubview (triangleSplash);
 
             yOffset = triangleSplash.Frame.Bottom;
-
-            var nachoLogo = new UIImageView (new RectangleF ());
-            using (var image = UIImage.FromBundle ("iPhoneIcon")) {
-                nachoLogo.Frame = new RectangleF (new PointF (0, 0), image.Size);
-                nachoLogo.Center = new PointF (View.Frame.Width / 2, yOffset - (image.Size.Height / 2));
-                nachoLogo.Image = image;
-            }
-            nachoLogo.Layer.CornerRadius = 86 / 2;
-            nachoLogo.Layer.MasksToBounds = true;
-            nachoLogo.Layer.BorderColor = UIColor.LightGray.CGColor;
-            nachoLogo.Layer.BorderWidth = .15f;
-            nachoLogo.Layer.ShadowRadius = 8;
-            nachoLogo.Layer.ShadowOffset = new System.Drawing.SizeF (0, 1);
-            nachoLogo.Layer.ShadowColor = UIColor.Black.CGColor;
-            contentView.AddSubview (nachoLogo);
-
-            yOffset = nachoLogo.Frame.Bottom + 10f;
 
             UILabel startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 60));
             startLabel.Text = "Start by entering your Exchange email address and password.";
@@ -201,12 +184,12 @@ namespace NachoClient.iOS
                 PerformSegue ("SegueToAdvancedLogin", this);
             };
 
-            yOffset += 20;
-
+            yOffset = advancedButton.Frame.Bottom + 20;
+           
             LayoutView ();
         }
 
-        protected void LayoutView()
+        protected void LayoutView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
@@ -316,12 +299,14 @@ namespace NachoClient.iOS
             keyboardHeight = newHeight;
 
             LayoutView ();
+
+            var advancedButton = contentView.ViewWithTag (ADVANCED_SIGNIN_BUTTON_TAG);
+            scrollView.ScrollRectToVisible (advancedButton.Frame, false);
         }
 
         protected void OnKeyboardChangeCompleted ()
         {
-            var advancedButton = contentView.ViewWithTag (ADVANCED_SIGNIN_BUTTON_TAG);
-            scrollView.ScrollRectToVisible (advancedButton.Frame, true);
+
         }
     }
 }
