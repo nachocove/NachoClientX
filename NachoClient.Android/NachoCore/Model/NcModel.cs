@@ -3,6 +3,7 @@
 using SQLite;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using NachoCore.Utils;
@@ -197,6 +198,44 @@ namespace NachoCore.Model
             }
         }
 
+        private NcTimer CheckPointTimer;
+        private class CheckpointResult
+        {
+            // Note: these property names can't be changed - they are hard-coded in the SQLite C code.
+            public int busy { set; get; }
+            public int log { set; get; }
+            public int checkpointed { set; get; }
+        }
+
+        public void Start ()
+        {
+
+            CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
+                var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
+                foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
+                    db.Query<CheckpointResult> (checkpointCmd);
+                    /*
+                     * TODO: Try using the C interface. It doesn't seem that the log/checkpointed
+                     * values always make sense as they don't float down to zero. This is the case 
+                     * no matter the mode.
+                    if (0 != results.Count && (0 != results[0].busy || 0 < results[0].checkpointed)) {
+                        Log.Info (Log.LOG_DB, "Checkpoint of {0}: {1}, {2}, {3}", db.DatabasePath, 
+                            results[0].busy, results[0].log, results[0].checkpointed);
+                    }
+                     */
+                }
+            }, null, 1000, 1000);
+            CheckPointTimer.Stfu = true;
+        }
+
+        public void Stop ()
+        {
+            if (null != CheckPointTimer) {
+                CheckPointTimer.Dispose ();
+                CheckPointTimer = null;
+            }
+        }
+
         public bool IsInTransaction ()
         {
             int depth = 0;
@@ -289,10 +328,6 @@ namespace NachoCore.Model
             } finally {
                 NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
             }
-        }
-
-        public void Nop ()
-        {
         }
 
         public void Info ()

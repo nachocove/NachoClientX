@@ -136,7 +136,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
-            NcModel.Instance.Nop ();
+            NcModel.Instance.Start ();
             EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
         }
@@ -144,6 +144,7 @@ namespace NachoCore
         public void StopClass1Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services called.");
+            NcModel.Instance.Stop ();
             NcTimer.StopService ();
             NcTask.StopService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services exited.");
