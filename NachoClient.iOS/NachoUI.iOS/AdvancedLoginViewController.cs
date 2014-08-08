@@ -91,6 +91,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
@@ -112,14 +113,21 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-                NavigationItem.SetHidesBackButton (false, false);
-
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals ("SegueToSupport")) {
+                var vc = (SupportViewController)segue.DestinationViewController;
+                vc.CalledFromLogin = true;
+                return;
             }
         }
 
@@ -231,13 +239,15 @@ namespace NachoClient.iOS
             statusView.Add (cancelValidation);
             isWaitingUp = true;
         }
-        public void createCertificateView()
+
+        public void createCertificateView ()
         {
             certificateView = new CertificateView (View.Frame);
             certificateView.SetOwner (this);
             certificateView.CreateView ();
             View.Add (certificateView);
         }
+
         public void dismissWaitingView ()
         {
             greyBackground.Hidden = true;
@@ -653,6 +663,7 @@ namespace NachoClient.iOS
             BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
             BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
         }
+
         public virtual bool HandlesKeyboardNotifications {
             get { return true; }
         }
@@ -809,7 +820,7 @@ namespace NachoClient.iOS
         public void certificateCallbackHandler ()
         {
             var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
-            certificateInformation = new CertificateHelper().formatCertificateData (certToBeExamined);
+            certificateInformation = new CertificateHelper ().formatCertificateData (certToBeExamined);
             certificateView.ConfigureView ();
             certificateView.ShowView ();
         }
