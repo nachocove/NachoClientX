@@ -187,6 +187,7 @@ namespace NachoClient.iOS
                     break;
                 }
             };
+
             AddLine (0, 40, SCREEN_WIDTH, A.Color_NachoSeparator, segmentedControlView);
             segmentedControl.Tag = SEGMENTED_CONTROL_TAG;
             segmentedControlView.Add (segmentedControl);

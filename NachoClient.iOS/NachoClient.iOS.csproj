@@ -1092,6 +1092,10 @@
       <Link>NachoCore\Utils\CertificateHelper.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\CertificateView.cs" />
+    <Compile Include="NachoUI.iOS\EventAttachmentViewController.cs" />
+    <Compile Include="NachoUI.iOS\EventAttachmentViewController.designer.cs">
+      <DependentUpon>EventAttachmentViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

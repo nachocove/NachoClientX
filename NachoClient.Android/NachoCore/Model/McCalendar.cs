@@ -106,7 +106,6 @@ namespace NachoCore.Model
                 c.SetParent (this);
                 db.Insert (c);
             }
-
             // TODO: Exceptions and recurrences
 
             // FIXME: Error handling
