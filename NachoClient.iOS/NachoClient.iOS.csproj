@@ -1092,6 +1092,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
       <Link>NachoCore\Utils\CertificateHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\CertificateView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
