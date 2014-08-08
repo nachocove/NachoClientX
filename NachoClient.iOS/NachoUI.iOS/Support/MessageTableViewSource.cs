@@ -132,6 +132,9 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            if (NoMessageThreads ()) {
+                return;
+            }
             if (MultiSelectActive ()) {
                 return;
             }
