@@ -775,7 +775,15 @@ namespace NachoCore.ActiveSync
         private void UpdateSavedState ()
         {
             var protocolState = ProtocolState;
-            protocolState.ProtoControlState = Sm.State;
+            uint stateToSave = Sm.State;
+            switch (stateToSave) {
+            case (uint)Lst.UiDCrdW:
+            case (uint)Lst.UiServConfW:
+            case (uint)Lst.UiCertOkW:
+                stateToSave = (uint)Lst.DiscW;
+                break;
+            }
+            protocolState.ProtoControlState = stateToSave;
             protocolState.Update ();
         }
         // State-machine action methods.
