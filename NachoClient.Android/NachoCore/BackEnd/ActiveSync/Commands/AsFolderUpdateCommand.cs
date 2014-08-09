@@ -13,10 +13,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderUpdateCommand : AsCommand
     {
-        public AsFolderUpdateCommand (IBEContext dataSource) :
+        public AsFolderUpdateCommand (IBEContext dataSource, McPending pending) :
             base (Xml.FolderHierarchy.FolderUpdate, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderUpdate);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
         }
 

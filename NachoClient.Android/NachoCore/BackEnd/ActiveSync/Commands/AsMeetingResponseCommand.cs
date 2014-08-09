@@ -10,9 +10,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsMeetingResponseCommand : AsCommand
     {
-        public AsMeetingResponseCommand (IBEContext dataSource) : base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
+        public AsMeetingResponseCommand (IBEContext dataSource, McPending pending) : 
+            base (Xml.MeetingResp.MeetingResponse, Xml.MeetingResp.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalRespond);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
         }
 

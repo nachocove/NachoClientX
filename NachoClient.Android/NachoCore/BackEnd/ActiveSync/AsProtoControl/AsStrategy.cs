@@ -403,7 +403,7 @@ namespace NachoCore.ActiveSync
             protocolState.SyncStratEmailCalendarState = EmailCalendarSm.State;
             protocolState.Update ();
             // Filter value changed, so go tickle all the changes-expected flags.
-            foreach (var folder in ECFolderListProvider (false)) {
+            foreach (var folder in ECFolderListProvider ()) {
                 if (null != folder) {
                     // We may see null if the server hasn't yet created these folders.
                     // Note that because we don't (yet) break out Cal into its own SM, it will get needlessly tickled here.
@@ -418,7 +418,7 @@ namespace NachoCore.ActiveSync
             var protocolState = BEContext.ProtocolState;
             protocolState.SyncStratContactsState = ContactsTasksSm.State;
             protocolState.Update ();
-            foreach (var folder in CTFolderListProvider (false)) {
+            foreach (var folder in CTFolderListProvider ()) {
                 if (null != folder) {
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
@@ -471,7 +471,7 @@ namespace NachoCore.ActiveSync
         }
         // External API.
         // FIXME SyncKit will need to pull pending and also give options/filters.
-        public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ()
+        public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit (bool cantBeEmpty)
         {
             uint overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
@@ -539,43 +539,12 @@ namespace NachoCore.ActiveSync
                     --limit;
                 }
             }
-            return Tuple.Create (overallWindowSize, retList);
+            return (0 == retList.Count) ? null : Tuple.Create (overallWindowSize, retList);
         }
-
-        // FIXME - this must take into account the pending Q sync-based ops.
-        private bool IsMoreSyncNeeded ()
-        {
-            // Are there any AsSyncMetaToClientExpected folders available?
-            bool areExpecting = FolderListProvider (false).Any (f => f.AsSyncMetaToClientExpected);
-
-            // if we're not in the ultimate state(s), then true.
-            if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
-                if (!areExpecting && 
-                    NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
-                    EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
-                }
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: EmailCalendarSm.State/ContactsTasksSm.State");
-                return true;
-            }
-            // if a within-scope folder has to-client stuff waiting on the server, then true.
-            // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
-            if (areExpecting || NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: areExpecting == {0}, QuickSync == {1}", areExpecting, NcApplication.Instance.ExecutionContext);
-                return true;
-            }
-            // if there is a sync-based operation pending, then true.
-            var waiting = McPending.QueryEligible (BEContext.Account.Id)
-                .Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
-            if (0 != waiting.Count ()) {
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: QueryEligible/IsSyncCommand == {0}", waiting.Count ());
-                return true;
-            }
-            return false;
-        }
-
+        
         private IEnumerable<McFolder> PingKit ()
         {
-            var folders = FolderListProvider (false);
+            var folders = FolderListProvider ();
             if (BEContext.ProtocolState.MaxFolders >= folders.Count) {
                 return folders;
             }
@@ -593,38 +562,6 @@ namespace NachoCore.ActiveSync
             var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
             return fewer;
-        }
-
-        private bool IsMoreFetchingNeeded ()
-        {
-            // If there are user-initiated fetches, then true.
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1).Count ()) {
-                return true;
-            }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, 1).Count ()) {
-                return true;
-            }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, 1).Count ()) {
-                return true;
-            }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, 1).Count ()) {
-                return true;
-            }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1).Count ()) {
-                return true;
-            }
-            // FIXME - don't prefetch until we are happy w/priority.
-            return false;
-            // If there is behind-the-scenes fetching to do, then true.
-            /*
-            var folders = FolderListProvider (false);
-            foreach (var folder in folders) {
-                if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
-                    return true;
-                }
-            }
-            return false;
-            */
         }
 
         private Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
@@ -663,7 +600,7 @@ namespace NachoCore.ActiveSync
             // Address background fetching if no immediate user need. TODO: we need to measure performance before we let BG fetching degrade latency.
             if (0 == pendings.Count) {
                 if (0 < remaining) {
-                    var folders = FolderListProvider (false);
+                    var folders = FolderListProvider ();
                     foreach (var folder in folders) {
                         var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
                         foreach (var email in emails) {
@@ -684,45 +621,72 @@ namespace NachoCore.ActiveSync
             return Tuple.Create (pendings.Take (fetchSize), prefetches.Take (remaining));
         }
 
-        public Tuple<PickActionEnum, object> Pick ()
+        public Tuple<PickActionEnum, AsCommand> Pick ()
         {
+            // If there is something waiting on the pending Q, do that.
             var next = McPending.QueryEligible (BEContext.Account.Id).FirstOrDefault ();
             if (null != next) {
+                AsCommand cmd = null;
                 switch (next.Operation) {
-                // FIXME - n-ary ops.
-                // need to tell the SM what we are doing, and also give it AsCommand.
-                // ItemOperations could be driven by Q (user) or pre-fetch.
                 case McPending.Operations.ContactSearch:
+                    cmd = new AsSearchCommand (BEContext.ProtoControl, next);
+                    break;
                 case McPending.Operations.FolderCreate:
+                    cmd = new AsFolderCreateCommand (BEContext.ProtoControl, next);
+                    break;
                 case McPending.Operations.FolderUpdate:
+                    cmd = new AsFolderUpdateCommand (BEContext.ProtoControl, next);
+                    break;
                 case McPending.Operations.FolderDelete:
+                    cmd = new AsFolderDeleteCommand (BEContext.ProtoControl, next);
+                    break;
                 case McPending.Operations.EmailSend:
+                    cmd = new AsSendMailCommand (BEContext.ProtoControl, next);
+                    break;
                 case McPending.Operations.EmailForward:
+                    cmd = new AsSmartForwardCommand (BEContext.ProtoControl, next);
+                    break;
                 case McPending.Operations.EmailReply:
+                    cmd = new AsSmartReplyCommand (BEContext.ProtoControl, next);
+                    break;
+                // TODO: make move op n-ary.
                 case McPending.Operations.EmailMove:
+                    cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Email);
+                    break;
                 case McPending.Operations.CalMove:
+                    cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Calendar);
+                    break;
                 case McPending.Operations.ContactMove:
+                    cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Contact);
+                    break;
                 case McPending.Operations.TaskMove:
+                    cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Tasks);
+                    break;
                 case McPending.Operations.AttachmentDownload:
                 case McPending.Operations.EmailBodyDownload:
                 case McPending.Operations.CalBodyDownload:
                 case McPending.Operations.ContactBodyDownload:
                 case McPending.Operations.TaskBodyDownload:
+                    // TODO get a legit data type for fetch kit.
+                    cmd = new AsItemOperationsCommand (BEContext.ProtoControl, 
+                        Tuple.Create<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> (
+                            new List<McPending> { next }, new List<Tuple<McAbstrItem, string>> ()));
+                    break;
                 case McPending.Operations.CalRespond:
-                    return Tuple.Create<PickActionEnum, McPending> 
-                        (PickActionEnum.QOop, new List<McPending> { next });
+                    cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, next);
+                    break;
                 }
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
             }
-            if (IsMoreSyncNeeded ()) {
-                return Tuple.Create<PickActionEnum, Tuple<uint, List<Tuple<McFolder, List<McPending>>>>> 
-                    (PickActionEnum.Sync, SyncKit ());
-            } 
-            if (IsMoreFetchingNeeded ()) {
-                return Tuple.Create<PickActionEnum, Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>>> 
-                    (PickActionEnum.Fetch, FetchKit ());
-            } 
-            return Tuple.Create<PickActionEnum, IEnumerable<McFolder>> 
-                (PickActionEnum.Ping, PingKit ());
+            var syncKit = SyncKit (false);
+            if (null != syncKit) {
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, new AsSyncCommand (BEContext.ProtoControl, syncKit));
+            }
+            var fetchKit = FetchKit ();
+            if (null != fetchKit) {
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
+            }
+            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, new AsPingCommand (BEContext.ProtoControl, PingKit ()));
         }
     }
 }

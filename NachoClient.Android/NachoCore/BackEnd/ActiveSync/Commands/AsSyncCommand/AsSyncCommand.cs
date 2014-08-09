@@ -49,7 +49,6 @@ namespace NachoCore.ActiveSync
             TasksNs = Xml.Tasks.Ns;
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
-            syncKit = (null == syncKit) ? BEContext.ProtoControl.SyncStrategy.SyncKit () : syncKit;
             ApplyStrategy (syncKit);
             foreach (var pending in PendingList) {
                 pending.MarkDispached ();
@@ -612,7 +611,7 @@ namespace NachoCore.ActiveSync
                 }
                 PendingList.Clear ();
             }
-            ApplyStrategy ();
+            ApplyStrategy (BEContext.ProtoControl.SyncStrategy.SyncKit (true));
             return true;
         }
         // TODO - make this a generic extension.

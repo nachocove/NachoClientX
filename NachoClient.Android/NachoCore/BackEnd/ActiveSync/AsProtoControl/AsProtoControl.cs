@@ -122,8 +122,6 @@ namespace NachoCore.ActiveSync
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
-        private bool RequestQuickFetch;
-
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
@@ -887,23 +885,23 @@ namespace NachoCore.ActiveSync
             StopCurrentOp ();
             Sm.ClearEventQueue ();
             var pack = SyncStrategy.Pick ();
-            var cmd = pack.Item1;
-            var kit = pack.Item2;
-            switch (cmd) {
+            var transition = pack.Item1;
+            var cmd = pack.Item2;
+            switch (transition) {
             case PickActionEnum.Fetch:
-                Sm.PostEvent ((uint)CtlEvt.E.PkFetch, "PCKFETCH", kit);
+                Sm.PostEvent ((uint)CtlEvt.E.PkFetch, "PCKFETCH", cmd);
                 break;
 
             case PickActionEnum.Ping:
-                Sm.PostEvent ((uint)CtlEvt.E.PkPing, "PCKPING", kit);
+                Sm.PostEvent ((uint)CtlEvt.E.PkPing, "PCKPING", cmd);
                 break;
 
             case PickActionEnum.QOop:
-                Sm.PostEvent ((uint)CtlEvt.E.PkQOop, "PCKQOP", kit);
+                Sm.PostEvent ((uint)CtlEvt.E.PkQOop, "PCKQOP", cmd);
                 break;
 
             case PickActionEnum.Sync:
-                Sm.PostEvent ((uint)AsEvt.E.ReSync, "PCKSYNC", kit);
+                Sm.PostEvent ((uint)AsEvt.E.ReSync, "PCKSYNC", cmd);
                 break;
 
             case PickActionEnum.Wait:
@@ -918,79 +916,32 @@ namespace NachoCore.ActiveSync
 
         private void DoSync ()
         {
-            SetCmd (new AsSyncCommand (this, 
-                (Tuple<uint, List<Tuple<McFolder, List<McPending>>>>)Sm.Arg));
+            var cmd = Sm.Arg as AsCommand;
+            if (null == cmd) {
+                cmd = new AsSyncCommand (this, SyncStrategy.SyncKit (true));
+            }
+            SetCmd (cmd);
             Cmd.Execute (Sm);
         }
 
         private void DoFetch ()
         {
-            SetCmd (new AsItemOperationsCommand (this,
-                (Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>>)Sm.Arg));
+            var cmd = Sm.Arg as AsCommand;
+            SetCmd (cmd);
             Cmd.Execute (Sm);
         }
 
         private void DoPing ()
         {
-            SetCmd (new AsPingCommand (this));
+            var cmd = Sm.Arg as AsCommand;
+            SetCmd (cmd);
             Cmd.Execute (Sm);
         }
 
         private void DoQOp ()
         {
-            var next = (McPending)Sm.Arg;
-            switch (next.Operation) {
-            case McPending.Operations.ContactSearch:
-                SetCmd (new AsSearchCommand (this));
-                break;
-
-            case McPending.Operations.FolderCreate:
-                SetCmd (new AsFolderCreateCommand (this));
-                break;
-
-            case McPending.Operations.FolderUpdate:
-                SetCmd (new AsFolderUpdateCommand (this));
-                break;
-
-            case McPending.Operations.FolderDelete:
-                SetCmd (new AsFolderDeleteCommand (this));
-                break;
-
-            case McPending.Operations.EmailSend:
-                SetCmd (new AsSendMailCommand (this));
-                break;
-
-            case McPending.Operations.EmailForward:
-                SetCmd (new AsSmartForwardCommand (this));
-                break;
-
-            case McPending.Operations.EmailReply:
-                SetCmd (new AsSmartReplyCommand (this));
-                break;
-
-            case McPending.Operations.EmailMove:
-            case McPending.Operations.CalMove:
-            case McPending.Operations.ContactMove:
-            case McPending.Operations.TaskMove:
-                SetCmd (new AsMoveItemsCommand (this));
-                break;
-
-            case McPending.Operations.AttachmentDownload:
-            case McPending.Operations.EmailBodyDownload:
-            case McPending.Operations.CalBodyDownload:
-            case McPending.Operations.ContactBodyDownload:
-            case McPending.Operations.TaskBodyDownload:
-                SetCmd (new AsItemOperationsCommand (this));
-                break;
-
-            case McPending.Operations.CalRespond:
-                SetCmd (new AsMeetingResponseCommand (this));
-                break;
-
-            default:
-                NcAssert.CaseError (next.Operation.ToString ());
-                break;
-            }
+            var cmd = (AsCommand)Sm.Arg;
+            SetCmd (cmd);
             Cmd.Execute (Sm);
         }
 

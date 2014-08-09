@@ -10,10 +10,10 @@ namespace NachoCore.ActiveSync
     // NOTE: Only contacts searches are implemented so far!
     public class AsSearchCommand : AsCommand
     {
-        public AsSearchCommand (IBEContext beContext) :
+        public AsSearchCommand (IBEContext beContext, McPending pending) :
             base (Xml.Search.Ns, Xml.Search.Ns, beContext)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactSearch);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
         }
 

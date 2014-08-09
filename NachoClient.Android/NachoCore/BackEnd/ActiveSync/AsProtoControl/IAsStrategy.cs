@@ -11,10 +11,10 @@ namespace NachoCore.ActiveSync
     {
         // FIXME - get rid of ReportSyncResult.
         void ReportSyncResult (List<McFolder> folders);
-        Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ();
+        Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit (bool cantBeEmpty);
 
         // revised API below this line.
-        Tuple<PickActionEnum, object> Pick ();
+        Tuple<PickActionEnum, AsCommand> Pick ();
     }
 }
 
