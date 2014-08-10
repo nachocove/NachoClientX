@@ -75,53 +75,32 @@ namespace NachoCore.Model
             }
         }
 
-        private new NcResult ReadAncillaryData ()
-        {
-            base.ReadAncillaryData ();
-            if (!HasReadAncillaryData) {
-                HasReadAncillaryData = true;
-                return ForceReadAncillaryData ();
-            }
-            return NcResult.OK ();
-        }
-
-        public new NcResult ForceReadAncillaryData ()
-        {
-            base.ForceReadAncillaryData();
-            HasReadAncillaryData = true;
-            DbExceptions = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
-            DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
-            return NcResult.OK ();
-        }
-
-        public NcResult InsertAncillaryData (SQLiteConnection db)
-        {
-            NcAssert.True (0 < Id);
-
-            foreach (var a in attendees) {
-                a.SetParent (this);
-                db.Insert (a);
-            }
-            foreach (var c in categories) {
-                c.SetParent (this);
-                db.Insert (c);
-            }
-            // TODO: Exceptions and recurrences
-
-            // FIXME: Error handling
-            return NcResult.OK ();
-        }
-
         public override int Insert ()
         {
             // FIXME db transaction.
             int retval = base.Insert ();
-            InsertAncillaryData (NcModel.Instance.Db);
+            InsertAncillaryData ();
             return retval;
+        }
+
+        private NcResult InsertAncillaryData ()
+        {
+            foreach (var e in exceptions) {
+                e.Id = 0;
+                e.CalendarId = this.Id;
+                e.Insert ();
+            }
+            foreach (var r in recurrences) {
+                r.Id = 0;
+                r.CalendarId = this.Id;
+                r.Insert ();
+            }
+            return NcResult.OK ();
         }
 
         public override int Update ()
         {
+            // FIXME db transaction
             int retval = base.Update ();
             UpdateAncillaryData (NcModel.Instance.Db);
             return retval;
@@ -130,32 +109,38 @@ namespace NachoCore.Model
         public void UpdateAncillaryData (SQLiteConnection db)
         {
             ReadAncillaryData ();
-            DeleteAncillaryData (db);
-            InsertAncillaryData (db);
+            DeleteAncillaryDataFromDB (db);
+            InsertAncillaryData ();
+        }
+
+        private NcResult ReadAncillaryData ()
+        {
+            if (HasReadAncillaryData) {
+                return NcResult.OK ();
+            }
+            HasReadAncillaryData = true;
+            DbExceptions = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
+            return NcResult.OK ();
         }
 
         public override void DeleteAncillary ()
         {
             NcAssert.True (NcModel.Instance.IsInTransaction ());
-            DeleteAncillaryData (NcModel.Instance.Db);
+            base.DeleteAncillary ();
+            DeleteAncillaryDataFromDB (NcModel.Instance.Db);
         }
 
-        private NcResult DeleteAncillaryData (SQLiteConnection db)
+        private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
         {
-            // FIXME: Parent types
-            var attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
-            foreach (var a in attendees) {
-                a.Delete ();
+            var exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            foreach (var e in exceptions) {
+                e.Delete ();
             }
-            // FIXME: Parent types
-            categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
-            foreach (var c in categories) {
-                c.Delete ();
+            var recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
+            foreach (var r in recurrences) {
+                r.Delete ();
             }
-
-            // TODO: Support exceptions and recurrences
-
-            // TODO: Add error processing
             return NcResult.OK ();
         }
     }

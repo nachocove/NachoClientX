@@ -1,6 +1,7 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 using System;
 using System.Xml.Linq;
+using System.Collections.Generic;
 using NUnit.Framework;
 using NachoCore;
 using NachoCore.Utils;
@@ -467,6 +468,232 @@ namespace Test.Common
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);
         }
+
+        protected McCalendar InsertSimpleEvent (string type)
+        {
+            var c = new McCalendar ();
+
+            var mds = new MockDataSource ();
+            c.AccountId = mds.Account.Id;
+
+            if (type.Equals ("attendees")) {
+                List<McAttendee> attendees = new List<McAttendee> ();
+                attendees.Add (new McAttendee ("Bob", "bob@foo.com"));
+                attendees.Add (new McAttendee ("Joe", "joe@foo.com"));
+                c.attendees = attendees;
+            }
+            if (type.Equals ("categories")) {
+                List<McCalendarCategory> categories = new List<McCalendarCategory> ();
+                categories.Add (new McCalendarCategory ("red"));
+                categories.Add (new McCalendarCategory ("blue"));
+                c.categories = categories;
+            }
+            if (type.Equals ("recurs")) {
+                List<McRecurrence> recurrences = new List<McRecurrence> ();
+                recurrences.Add (new McRecurrence ());
+                recurrences.Add (new McRecurrence ());
+                c.recurrences = recurrences;
+            }
+            if (type.Equals ("exceptions")) {
+                List<McException> exceptions = new List<McException> ();
+                exceptions.Add (new McException () { AccountId = c.AccountId });
+                exceptions.Add (new McException () { AccountId = c.AccountId });
+                c.exceptions = exceptions;
+            }
+
+            c.Insert ();
+            var e = McCalendar.QueryById<McCalendar> (c.Id);
+
+            if (type.Equals ("attendees")) {
+                Assert.AreEqual (2, c.attendees.Count);
+                Assert.AreEqual (2, e.attendees.Count);
+            }
+            if (type.Equals ("categories")) {
+                Assert.AreEqual (2, c.categories.Count);
+                Assert.AreEqual (2, e.categories.Count);
+            }
+            if (type.Equals ("recurs")) {
+                Assert.AreEqual (2, c.recurrences.Count);
+                Assert.AreEqual (2, e.recurrences.Count);
+            }
+            if (type.Equals ("exceptions")) {
+                Assert.AreEqual (2, c.exceptions.Count);
+                Assert.AreEqual (2, e.exceptions.Count);
+            }
+
+            return c;
+        }
+
+        [Test]
+        public void CreateNcCalendarAttendeeAdd ()
+        {
+            var c = InsertSimpleEvent ("attendees");
+
+            var attendees = c.attendees;
+            attendees.Add (new McAttendee ("Harry", "harry@foo.com"));
+            c.attendees = attendees;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (3, c.attendees.Count);
+            Assert.AreEqual (3, f.attendees.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarAttendeeDelete ()
+        {
+            var c = InsertSimpleEvent ("attendees");
+
+            var attendees = c.attendees;
+            attendees.RemoveAt (0);
+            c.attendees = attendees;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (1, c.attendees.Count);
+            Assert.AreEqual (1, f.attendees.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarAttendeeClear ()
+        {
+            var c = InsertSimpleEvent ("attendees");
+
+            var attendees = c.attendees;
+            attendees.RemoveAt (0);
+            c.attendees = new List<McAttendee> ();
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (0, c.attendees.Count);
+            Assert.AreEqual (0, f.attendees.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarCategoryAdd ()
+        {
+            var c = InsertSimpleEvent ("categories");
+
+            var categories = c.categories;
+            categories.Add (new McCalendarCategory ("green"));
+            c.categories = categories;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (3, c.categories.Count);
+            Assert.AreEqual (3, f.categories.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarCategoryDelete ()
+        {
+            var c = InsertSimpleEvent ("categories");
+
+            var categories = c.categories;
+            categories.RemoveAt (0);
+            c.categories = categories;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (1, c.categories.Count);
+            Assert.AreEqual (1, f.categories.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarCategoryClear ()
+        {
+            var c = InsertSimpleEvent ("categories");
+
+            var categories = c.categories;
+            categories.RemoveAt (0);
+            c.categories = new List<McCalendarCategory> ();
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (0, c.categories.Count);
+            Assert.AreEqual (0, f.categories.Count);
+        }
+
+
+        [Test]
+        public void CreateNcCalendarRecurrenceAdd ()
+        {
+            var c = InsertSimpleEvent ("recurs");
+
+            var recurrences = c.recurrences;
+            recurrences.Add (new McRecurrence ());
+            c.recurrences = recurrences;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (3, c.recurrences.Count);
+            Assert.AreEqual (3, f.recurrences.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarRecurrenceDelete ()
+        {
+            var c = InsertSimpleEvent ("recurs");
+
+            var recurrences = c.recurrences;
+            recurrences.RemoveAt (0);
+            c.recurrences = recurrences;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (1, c.recurrences.Count);
+            Assert.AreEqual (1, f.recurrences.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarRecurrenceClear ()
+        {
+            var c = InsertSimpleEvent ("recurs");
+
+            var recurrences = c.recurrences;
+            recurrences.RemoveAt (0);
+            c.recurrences = new List<McRecurrence> ();
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (0, c.recurrences.Count);
+            Assert.AreEqual (0, f.recurrences.Count);
+        }
+
+
+//        [Test]
+//        public void CreateNcCalendarExceptionAdd ()
+//        {
+//            var c = InsertSimpleEvent ("exceptions");
+//
+//            var exceptions = c.exceptions;
+//            exceptions.Add (new McException () { AccountId = c.AccountId });
+//            c.exceptions = exceptions;
+//            c.Update ();
+//            var f = McCalendar.QueryById<McCalendar> (c.Id);
+//            Assert.AreEqual (3, c.exceptions.Count);
+//            Assert.AreEqual (3, f.exceptions.Count);
+//        }
+//
+//        [Test]
+//        public void CreateNcCalendarExceptionDelete ()
+//        {
+//            var c = InsertSimpleEvent ("exceptions");
+//
+//            var exceptions = c.exceptions;
+//            exceptions.RemoveAt (0);
+//            c.exceptions = exceptions;
+//            c.Update ();
+//            var f = McCalendar.QueryById<McCalendar> (c.Id);
+//            Assert.AreEqual (1, c.exceptions.Count);
+//            Assert.AreEqual (1, f.exceptions.Count);
+//        }
+//
+//        [Test]
+//        public void CreateNcCalendarExceptionClear ()
+//        {
+//            var c = InsertSimpleEvent ("exceptions");
+//
+//            var exceptions = c.exceptions;
+//            exceptions.RemoveAt (0);
+//            c.exceptions = new List<McException> ();
+//            c.Update ();
+//            var f = McCalendar.QueryById<McCalendar> (c.Id);
+//            Assert.AreEqual (0, c.exceptions.Count);
+//            Assert.AreEqual (0, f.exceptions.Count);
+//        }
+
 
         String addString_01 = @"
                 <Add xmlns=""AirSync"">

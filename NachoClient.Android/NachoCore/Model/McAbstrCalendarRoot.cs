@@ -110,29 +110,78 @@ namespace NachoCore.Model
             }
         }
 
-        protected NcResult ReadAncillaryData ()
+        private NcResult ReadAncillaryData ()
         {
-            NcResult result = NcResult.OK ();
-            if (!HasReadAncillaryData) {
-                result = ForceReadAncillaryData ();
-                if (result.isOK ()) {
-                    HasReadAncillaryData = true;
-                } else {
-                    Log.Warn (Log.LOG_CALENDAR, "Fail to read calendar ancillary data (Id={0})", Id);
-                }
+            if (HasReadAncillaryData) {
+                return NcResult.OK ();
             }
-            return result;
-        }
-
-        protected NcResult ForceReadAncillaryData ()
-        {
+            HasReadAncillaryData = true;
             SQLiteConnection db = NcModel.Instance.Db;
-            // FIXME: Parent types
             DbAttendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
-            // FIXME: Parent types
             DbCategories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            // TODO: Deal with errors
             return NcResult.OK ();
         }
+
+        public override int Insert ()
+        {
+            // FIXME db transaction.
+            int retval = base.Insert ();
+            InsertAncillaryData ();
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            // FIXME db transaction
+            int retval = base.Update ();
+            UpdateAncillaryData (NcModel.Instance.Db);
+            return retval;
+        }
+
+        private NcResult InsertAncillaryData ()
+        {
+            NcAssert.True (0 < Id);
+            foreach (var a in attendees) {
+                a.Id = 0;
+                a.SetParent (this);
+                a.Insert ();
+            }
+            foreach (var c in categories) {
+                c.Id = 0;
+                c.SetParent (this);
+                c.Insert ();
+            }
+            return NcResult.OK ();
+        }
+
+        private void UpdateAncillaryData (SQLiteConnection db)
+        {
+            ReadAncillaryData ();
+            DeleteAncillaryDataFromDB (db);
+            InsertAncillaryData ();
+        }
+
+        public override void DeleteAncillary ()
+        {
+            NcAssert.True (NcModel.Instance.IsInTransaction ());
+            base.DeleteAncillary ();
+            DeleteAncillaryDataFromDB (NcModel.Instance.Db);
+        }
+
+        private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
+        {
+            var attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
+            foreach (var a in attendees) {
+                a.Delete ();
+            }
+            var categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            foreach (var c in categories) {
+                c.Delete ();
+            }
+            return NcResult.OK ();
+        }
+
     }
 
     public enum NcBusyStatus
