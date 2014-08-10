@@ -8,14 +8,8 @@ namespace NachoClient.iOS
 {
     public class NcUITableViewController : UITableViewController
     {
-        private string AppearingName;
-        private string InUseName;
-        private string DisappearingName;
+        private string ClassName;
         public event EventHandler ViewDisappearing;
-
-        NcCapture Appearing;
-        NcCapture InUse;
-        NcCapture Disappearing;
 
         public NcUITableViewController () : base ()
         {
@@ -29,18 +23,7 @@ namespace NachoClient.iOS
 
         private void Initialize ()
         {
-            string className = this.GetType ().Name;
-            AppearingName = className + ".Appearing";
-            InUseName = className + ".InUse";
-            DisappearingName = className + ".Disappearing";
-
-            NcCapture.AddKind (AppearingName);
-            NcCapture.AddKind (InUseName);
-            NcCapture.AddKind (DisappearingName);
-
-            Appearing = NcCapture.Create (AppearingName);
-            InUse = NcCapture.Create (InUseName);
-            Disappearing = NcCapture.Create (DisappearingName);
+            ClassName = this.GetType ().Name;
         }
 
         public override void ViewDidLoad ()
@@ -51,36 +34,35 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
-            Appearing.Reset ();
-            Appearing.Start ();
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_BEGIN");
             base.ViewWillAppear (animated);
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_END");
         }
 
         public override void ViewDidAppear (bool animated)
         {
-            Appearing.Stop ();
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_BEGIN");
             base.ViewDidAppear (animated);
-            InUse.Reset ();
-            InUse.Start ();
             NachoClient.Util.RegularPriority ();
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_END");
         }
 
         public override void ViewWillDisappear (bool animated)
         {
-            InUse.Stop ();
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_BEGIN");
             base.ViewWillDisappear (animated);
             if (null != ViewDisappearing) {
                 ViewDisappearing (this, EventArgs.Empty);
             }
-            Disappearing.Reset ();
-            Disappearing.Start ();
             NachoClient.Util.RegularPriority ();
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
 
         public override void ViewDidDisappear (bool animated)
         {
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_BEGIN");
             base.ViewDidDisappear (animated);
-            Disappearing.Stop ();
+            Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_END");
         }
     }
 }

@@ -29,6 +29,17 @@ namespace NachoCore.Utils
     public class TelemetryEvent : NcQueueElement
     {
         public const string UIBUTTON = "UIButton";
+        public const string UISEGMENTEDCONTROL = "UISegmentedControl";
+        public const string UISWITCH = "UISwitch";
+        public const string UIDATEPICKER = "UIDatePicker";
+        public const string UITEXTFIELD = "UITextField";
+        public const string UIPAGECONTROL = "UIPageControl";
+        public const string UIVIEWCONTROLER = "UIViewController";
+
+        public const string UIVIEW_WILLAPPEAR = "WILL_APPEAR";
+        public const string UIVIEW_DIDAPPEAR = "DID_APPEAR";
+        public const string UIVIEW_WILLDISAPPEAR = "WILL_DISAPPEAR";
+        public const string UIVIEW_DIDDISAPPEAR = "DID_DISAPPEAR";
 
         public DateTime Timestamp { set; get; }
 
@@ -208,6 +219,30 @@ namespace NachoCore.Utils
             set {
                 NcAssert.True (IsUiEvent ());
                 _UiObject = value;
+            }
+        }
+
+        private string _UiString;
+
+        public string UiString {
+            get {
+                return _UiString;
+            }
+            set {
+                NcAssert.True (IsUiEvent ());
+                _UiString = value;
+            }
+        }
+
+        private long _UiLong;
+
+        public long UiLong {
+            get {
+                return _UiLong;
+            }
+            set {
+                NcAssert.True (IsUiEvent ());
+                _UiLong = value;
             }
         }
 
@@ -447,18 +482,85 @@ namespace NachoCore.Utils
             RecordRawEvent (tEvent);
         }
 
-        public static void RecordUiButton (string uiObject)
+        private static TelemetryEvent GetTelemetryEvent (string uiType, string uiObject)
+        {
+            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.UI);
+            if (null == uiType) {
+                tEvent.UiType = "(unknown)";
+            } else {
+                tEvent.UiType = uiType;
+            }
+            tEvent.UiObject = uiObject;
+            return tEvent;
+        }
+
+        private static void RecordUi (string uiType, string uiObject)
         {
             if (!ENABLED) {
                 return;
             }
 
-            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.UI);
+            TelemetryEvent tEvent = GetTelemetryEvent(uiType, uiObject);
+            RecordRawEvent (tEvent);
+        }
 
-            tEvent.UiType = TelemetryEvent.UIBUTTON;
-            tEvent.UiObject = uiObject;
+        private static void RecordUiWithLong (string uiType, string uiObject, long value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            TelemetryEvent tEvent = GetTelemetryEvent (uiType, uiObject);
+            tEvent.UiLong = value;
 
             RecordRawEvent (tEvent);
+        }
+
+        private static void RecordUiWithString (string uiType, string uiObject, string value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            TelemetryEvent tEvent = GetTelemetryEvent (uiType, uiObject);
+            tEvent.UiString = value;
+
+            RecordRawEvent (tEvent);
+        }
+
+        public static void RecordUiButton (string uiObject)
+        {
+            RecordUi (TelemetryEvent.UIBUTTON, uiObject);
+        }
+
+        public static void RecordUiSegmentedControl (string uiObject, long index)
+        {
+            RecordUiWithLong (TelemetryEvent.UISEGMENTEDCONTROL, uiObject, index);
+        }
+
+        public static void RecordUiSwitch (string uiObject, string onOff)
+        {
+            RecordUiWithString (TelemetryEvent.UISWITCH, uiObject, onOff);
+        }
+
+        public static void RecordUiDatePicker (string uiObject, string date)
+        {
+            RecordUiWithString (TelemetryEvent.UIDATEPICKER, uiObject, date);
+        }
+
+        public static void RecordUiTextField (string uiObject)
+        {
+            RecordUi (TelemetryEvent.UITEXTFIELD, uiObject);
+        }
+
+        public static void RecordUiPageControl (string uiObject, long page)
+        {
+            RecordUiWithLong (TelemetryEvent.UIPAGECONTROL, uiObject, page);
+        }
+
+        public static void RecordUiViewController (string uiObject, string state)
+        {
+            RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
         }
 
         public void Start<T> () where T : ITelemetryBE, new()
