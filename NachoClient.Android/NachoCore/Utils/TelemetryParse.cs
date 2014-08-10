@@ -190,6 +190,23 @@ namespace NachoCore.Utils
                 } else { 
                     dict.AddString ("ui_object", tEvent.UiObject);
                 }
+                switch (tEvent.UiType) {
+                case TelemetryEvent.UIDATEPICKER:
+                    dict.AddString ("ui_string", tEvent.UiString);
+                    break;
+                case TelemetryEvent.UIPAGECONTROL:
+                    dict.AddInteger ("ui_integer", (int)tEvent.UiLong);
+                    break;
+                case TelemetryEvent.UISEGMENTEDCONTROL:
+                    dict.AddInteger ("ui_integer", (int)tEvent.UiLong);
+                    break;
+                case TelemetryEvent.UISWITCH:
+                    dict.AddString ("ui_string", tEvent.UiString);
+                    break;
+                case TelemetryEvent.UIVIEWCONTROLER:
+                    dict.AddString ("ui_string", tEvent.UiString);
+                    break;
+                }
             } else {
                 NcAssert.True (false);
             }

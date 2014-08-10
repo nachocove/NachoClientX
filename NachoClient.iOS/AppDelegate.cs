@@ -124,10 +124,27 @@ namespace NachoClient.iOS
         private void StartUIMonitor ()
         {
             NachoUIMonitor.SetupUIButton (delegate(string description) {
-                if (null == description) {
-                    description = "(unknown)";
-                }
                 Telemetry.RecordUiButton (description);
+            });
+
+            NachoUIMonitor.SetupUISegmentedControl (delegate(string description, long index) {
+                Telemetry.RecordUiSegmentedControl (description, index);
+            });
+
+            NachoUIMonitor.SetupUISwitch (delegate(string description, string onOff) {
+                Telemetry.RecordUiSwitch (description, onOff);
+            });
+
+            NachoUIMonitor.SetupUIDatePicker (delegate(string description, string date) {
+                Telemetry.RecordUiDatePicker (description, date);
+            });
+
+            NachoUIMonitor.SetupUITextField (delegate(string description) {
+                Telemetry.RecordUiTextField (description);
+            });
+
+            NachoUIMonitor.SetupUIPageControl (delegate(string description, long page) {
+                Telemetry.RecordUiPageControl (description, page);
             });
         }
 
