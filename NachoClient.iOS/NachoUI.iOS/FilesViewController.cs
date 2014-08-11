@@ -20,7 +20,7 @@ namespace NachoClient.iOS
         INachoFileChooserParent Owner;
         FilesTableSource FilesSource;
         SearchDelegate searchDelegate;
-        Action<object, EventArgs> FileAction;
+        string Token;
         public ItemType itemType;
 
         UILabel EmptyListLabel;
@@ -130,11 +130,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
-            // remove any remaining file actions before leaving
-            if (FileAction != null) {
-                NcApplication.Instance.StatusIndEvent -= new EventHandler (FileAction);
-            }
-            FileAction = null;
             base.ViewWillDisappear (animated);
         }
 
@@ -193,28 +188,35 @@ namespace NachoClient.iOS
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
             if (!a.IsDownloaded) {
                 string token = PlatformHelpers.DownloadAttachment (a);
-                NcAssert.NotNull (token, "Found token should not be null");
-                // If another download action has been registered, don't do action on it
-                if (FileAction != null) {
-                    NcApplication.Instance.StatusIndEvent -= new EventHandler (FileAction);
-                }
+                Token = token; // make this the attachment that will get opened next
+                NcAssert.NotNull (Token, "Found token should not be null");
+
+                EventHandler fileAction = null;
+
                 // prepare to do action on the most recently clicked item
-                FileAction = (object sender, EventArgs e) => {
+                fileAction = (object sender, EventArgs e) => {
                     var s = (StatusIndEventArgs)e;
                     var eventTokens = s.Tokens;
+
+                    // open attachment if the statusInd says this attachment has downloaded
                     if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
                         a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
                         if (a.IsDownloaded) {
                             // wait until download-complete animation finishes to do the attachment action
                             FilesTableSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
-                                attachmentAction (a);
+                                // check if this is still the next attachment we want to open
+                                if (Token == token) {
+                                    attachmentAction (a);
+                                }
                             });
                         } else {
                             NcAssert.True (false, "Item should have been downloaded at this point");
                         }
                     }
+                    NcApplication.Instance.StatusIndEvent -= fileAction;
                 };
-                NcApplication.Instance.StatusIndEvent += new EventHandler (FileAction);
+
+                NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
                 return;
             } else {
                 attachmentAction (a);
@@ -442,7 +444,6 @@ namespace NachoClient.iOS
                     cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
                     StartDownloadingAnimation (cell, attachment.IsDownloaded);
-                    cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                 } else {
                     cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                 }
