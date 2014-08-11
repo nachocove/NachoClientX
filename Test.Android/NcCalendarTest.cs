@@ -652,47 +652,47 @@ namespace Test.Common
         }
 
 
-//        [Test]
-//        public void CreateNcCalendarExceptionAdd ()
-//        {
-//            var c = InsertSimpleEvent ("exceptions");
-//
-//            var exceptions = c.exceptions;
-//            exceptions.Add (new McException () { AccountId = c.AccountId });
-//            c.exceptions = exceptions;
-//            c.Update ();
-//            var f = McCalendar.QueryById<McCalendar> (c.Id);
-//            Assert.AreEqual (3, c.exceptions.Count);
-//            Assert.AreEqual (3, f.exceptions.Count);
-//        }
-//
-//        [Test]
-//        public void CreateNcCalendarExceptionDelete ()
-//        {
-//            var c = InsertSimpleEvent ("exceptions");
-//
-//            var exceptions = c.exceptions;
-//            exceptions.RemoveAt (0);
-//            c.exceptions = exceptions;
-//            c.Update ();
-//            var f = McCalendar.QueryById<McCalendar> (c.Id);
-//            Assert.AreEqual (1, c.exceptions.Count);
-//            Assert.AreEqual (1, f.exceptions.Count);
-//        }
-//
-//        [Test]
-//        public void CreateNcCalendarExceptionClear ()
-//        {
-//            var c = InsertSimpleEvent ("exceptions");
-//
-//            var exceptions = c.exceptions;
-//            exceptions.RemoveAt (0);
-//            c.exceptions = new List<McException> ();
-//            c.Update ();
-//            var f = McCalendar.QueryById<McCalendar> (c.Id);
-//            Assert.AreEqual (0, c.exceptions.Count);
-//            Assert.AreEqual (0, f.exceptions.Count);
-//        }
+        [Test]
+        public void CreateNcCalendarExceptionAdd ()
+        {
+            var c = InsertSimpleEvent ("exceptions");
+
+            var exceptions = c.exceptions;
+            exceptions.Add (new McException () { AccountId = c.AccountId });
+            c.exceptions = exceptions;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (3, c.exceptions.Count);
+            Assert.AreEqual (3, f.exceptions.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarExceptionDelete ()
+        {
+            var c = InsertSimpleEvent ("exceptions");
+
+            var exceptions = c.exceptions;
+            exceptions.RemoveAt (0);
+            c.exceptions = exceptions;
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (1, c.exceptions.Count);
+            Assert.AreEqual (1, f.exceptions.Count);
+        }
+
+        [Test]
+        public void CreateNcCalendarExceptionClear ()
+        {
+            var c = InsertSimpleEvent ("exceptions");
+
+            var exceptions = c.exceptions;
+            exceptions.RemoveAt (0);
+            c.exceptions = new List<McException> ();
+            c.Update ();
+            var f = McCalendar.QueryById<McCalendar> (c.Id);
+            Assert.AreEqual (0, c.exceptions.Count);
+            Assert.AreEqual (0, f.exceptions.Count);
+        }
 
 
         String addString_01 = @"

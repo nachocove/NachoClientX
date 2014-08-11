@@ -25,6 +25,7 @@ namespace NachoCore.Model
             Folder = 100,
             Journal = 101,
             Generic = 102,
+            Exception = 103,
         };
 
         [Indexed]
