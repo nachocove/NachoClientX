@@ -16,229 +16,88 @@ namespace NachoCore.ActiveSync
         public const int KBasePerFolderWindowSize = 100;
         public const int KBaseFetchSize = 10;
 
-        public enum ECLst : uint
+        /*
+         * N (3) tracks: email, cal, contact. enum per track.
+         * 2D array [rung][track].
+         * can advance: if 1 or more done and all not done are the same at next rung OR all are done.
+         */
+        private enum Tracks
         {
-            DefI1dC2w = (St.Last + 1),
-            DefI3dC2w,
-            DefI1wC2w,
-            DefI2wC2w,
+            Email = 0,
+            Cal = 1,
+            Contact = 2,
+        };
+
+        private enum EmailLevels
+        {
+            None,
+            Def1d,
+            Def3d,
+            Def1w,
+            Def2w,
             All1m,
-            EInfC3m,
-            EInfC6m,
+            All3m,
+            All6m,
+            AllInf,
+
+        };
+
+        private enum CalLevels
+        {
+            None,
+            Def2w,
+            All1m,
+            All3m,
+            All6m,
             AllInf,
         };
 
-        private const uint ECLstLast = (uint)ECLst.AllInf;
-
-        public enum CTLst : uint
+        private enum ContactLevels
         {
-            RicOnly = (St.Last + 1),
-            DefNRic,
-            All,
+            None,
+            RicInf,
+            DefRicInf,
+            AllInf,
         };
 
-        private const uint CTLstLast = (uint)CTLst.All;
-        private NcStateMachine EmailCalendarSm;
-        private NcStateMachine ContactsTasksSm;
+        // FIXME - save state in DB.
+        private int CurrentRung = 0;
+        private int[][] Ladder = new int[][] {
+            { EmailLevels.None, CalLevels.None, ContactLevels.RicInf },
+            { EmailLevels.Def1d, CalLevels.Def2w, ContactLevels.RicInf },
+            { EmailLevels.Def3d, CalLevels.Def2w, ContactLevels.RicInf },
+            { EmailLevels.Def1w, CalLevels.Def2w, ContactLevels.RicInf },
+            { EmailLevels.Def2w, CalLevels.Def2w, ContactLevels.DefRicInf },
+            { EmailLevels.All1m, CalLevels.All1m, ContactLevels.DefRicInf },
+            { EmailLevels.All3m, CalLevels.All3m, ContactLevels.AllInf },
+            { EmailLevels.All6m, CalLevels.All6m, ContactLevels.AllInf },
+            { EmailLevels.AllInf, CalLevels.AllInf, ContactLevels.AllInf },
+        };
+
         private IBEContext BEContext;
 
         private delegate List<McFolder> FolderList ();
 
         private delegate Tuple<Xml.Provision.MaxAgeFilterCode, uint> Parameters (McFolder folder);
-        // Success event happens when there is a sync indicating that there is no more available.
+
         public AsStrategy (IBEContext beContext)
         {
             BEContext = beContext;
-            EmailCalendarSm = new NcStateMachine ("ASSTRATEC") { 
-                Name = string.Format ("ASSyncStratEC({0})", BEContext.Account.Id),
-                LocalStateType = typeof(ECLst),
-                StateChangeIndication = UpdateSavedECState,
-                TransTable = new[] {
-                    new Node {
-                        State = (uint)St.Start,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI1dC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSayRicDone, State = (uint)ECLst.DefI3dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI3dC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)ECLst.DefI1wC2w },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI1wC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)ECLst.DefI2wC2w },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI2wC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.All1m },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.All1m,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.EInfC3m },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.EInfC3m,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.EInfC6m },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.EInfC6m,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.AllInf },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.AllInf,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.AllInf },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                }
-            };
-            EmailCalendarSm.Validate ();
-
-            ContactsTasksSm = new NcStateMachine ("ASSTRATCT") {
-                Name = string.Format ("ASSyncStratC({0})", BEContext.Account.Id),
-                LocalStateType = typeof(CTLst),
-                StateChangeIndication = UpdateSavedCTState,
-                TransTable = new[] {
-                    new Node {
-                        State = (uint)St.Start,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)CTLst.RicOnly },
-                        }
-                    },
-                    new Node {
-                        State = (uint)CTLst.RicOnly,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.DefNRic },
-                        }
-                    },
-                    new Node {
-                        State = (uint)CTLst.DefNRic,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.All },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.RicOnly },
-                        }
-                    },
-                    new Node {
-                        State = (uint)CTLst.All,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.Success,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.RicOnly },
-                        }
-                    },
-                }
-            };
-            ContactsTasksSm.Validate ();
-            RestoreSavedState ();
-            ContactsTasksSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGOS");
-            EmailCalendarSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGO");
         }
-        // Almost actions for both SMs are DoNop.
-        private void DoNop ()
+
+        private List<Tracks> RequiredToAdvance ()
         {
-            // Do nothing.
+            var retval = new List<Tracks> ();
+            var limit = Ladder.GetLength (0);
+            if (limit == CurrentRung) {
+                return retval;
+            }
+            foreach (int track in Tracks) {
+                if (Ladder [CurrentRung] [track] != Ladder [CurrentRung + 1] [track]) {
+                    retval.Add (track);
+                }
+            }
+            return retval;
         }
 
         private void DoSayRicDone ()
@@ -247,76 +106,118 @@ namespace NachoCore.ActiveSync
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
         }
 
-        private void DoAvCon ()
+        private List<McFolder> EmailFolderListProvider (EmailLevels scope, bool isNarrow)
         {
-            ContactsTasksSm.PostEvent ((uint)SmEvt.E.Success, "DOSTCON");
-        }
+            switch (scope) {
+            case EmailLevels.None:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (BEContext.Account.Id) };
+                }
+                return new List<McFolder> ();
 
-        private void DoSpCon ()
-        {
-            ContactsTasksSm.PostEvent ((uint)SmEvt.E.HardFail, "DOSPCON");
-        }
+            case EmailLevels.Def1d:
+            case EmailLevels.Def1w:
+            case EmailLevels.Def2w:
+            case EmailLevels.Def3d:
+                return new List<McFolder> () { McFolder.GetDefaultInboxFolder (BEContext.Account.Id) };
 
-        private List<McFolder> ECFolderListProvider ()
-        {
-            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
-                return DefaultInboxAndDefaultCalendarFolders ();
-            }
-            switch ((ECLst)EmailCalendarSm.State) {
-            case ECLst.DefI1dC2w:
-            case ECLst.DefI3dC2w:
-            case ECLst.DefI1wC2w:
-            case ECLst.DefI2wC2w:
-                return DefaultInboxAndDefaultCalendarFolders ();
-
-            case ECLst.All1m:
-            case ECLst.EInfC3m:
-            case ECLst.EInfC6m:
-            case ECLst.AllInf:
-                return AllSyncedEmailAndCalendarFolders ();
+            case EmailLevels.All1m:
+            case EmailLevels.All3m:
+            case EmailLevels.All6m:
+            case EmailLevels.AllInf:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (BEContext.Account.Id) };
+                }
+                return McFolder.ServerEndQueryAll (BEContext.Account.Id) ().Where (f => 
+                    Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
+                McAbstrFolderEntry.ClassCodeEnum.Email);
 
             default:
-                throw new Exception ();
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
             }
         }
 
-        private List<McFolder> CTFolderListProvider ()
+        private List<McFolder> CalFolderListProvider (CalLevels scope, bool isNarrow)
         {
-            var ric = McFolder.GetRicContactFolder (BEContext.Account.Id);
-            var retval = new List<McFolder> ();
-            if (null != ric) {
-                retval.Add (ric);
-            }
-            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
-                // Only the RIC in a QuickSync.
-                return retval;
-            }
-            switch ((CTLst)ContactsTasksSm.State) {
-            case CTLst.RicOnly:
-                return retval;
+            switch (scope) {
+            case CalLevels.None:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (BEContext.Account.Id) };
+                }
+                return new List<McFolder> ();
 
-            case CTLst.DefNRic:
-                retval.Add (McFolder.GetDefaultContactFolder (BEContext.Account.Id));
-                retval.Add (McFolder.GetDefaultTaskFolder (BEContext.Account.Id));
-                return retval; 
+            case CalLevels.Def2w:
+                return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (BEContext.Account.Id) };
 
-            case CTLst.All:
-                return AllSyncedContactsTasksFolders ();
+            case CalLevels.All1m:
+            case CalLevels.All3m:
+            case CalLevels.All6m:
+            case CalLevels.AllInf:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (BEContext.Account.Id) };
+                }
+                return McFolder.ServerEndQueryAll (BEContext.Account.Id) ().Where (f => 
+                    Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
+                McAbstrFolderEntry.ClassCodeEnum.Calendar);
 
             default:
-                throw new Exception ();
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
             }
         }
 
-        private List<McFolder> FolderListProvider ()
+        private List<McFolder> ContactFolderListProvider (ContactLevels scope, bool isNarrow)
         {
-            List<McFolder> ecFolders = ECFolderListProvider ();
-            List<McFolder> cFolders = CTFolderListProvider ();
-            ecFolders.AddRange (cFolders);
-            return ecFolders;
+            if (isNarrow) {
+                return new List<McFolder> ();
+            }
+            switch (scope) {
+            case ContactLevels.None:
+                return new List<McFolder> ();
+
+            case ContactLevels.RicInf:
+                return new List<McFolder> () { McFolder.GetRicContactFolder (BEContext.Account.Id) };
+
+            case ContactLevels.DefRicInf:
+                return new List<McFolder> () { McFolder.GetRicContactFolder (BEContext.Account.Id),
+                    McFolder.GetDefaultContactFolder (BEContext.Account.Id)
+                };
+
+            case ContactLevels.AllInf:
+                return McFolder.ServerEndQueryAll (BEContext.Account.Id) ().Where (f => 
+                    Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
+                McAbstrFolderEntry.ClassCodeEnum.Contact);
+
+            default:
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
+            }
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder)
+        // function returning all folders at current level eligible for Sync.
+        private List<McFolder> FolderListProvider (bool isNarrow)
+        {
+            var result = new List<McFolder> ();
+            foreach (int track in Tracks) {
+                var scope = Ladder [CurrentRung] [track];
+                switch (track) {
+                case Tracks.Email:
+                    result.AddRange (EmailFolderListProvider (scope, isNarrow));
+                    break;
+                case Tracks.Cal:
+                    result.AddRange (CalFolderListProvider (scope, isNarrow));
+                    break;
+                case Tracks.Contact:
+                    result.AddRange (ContactFolderListProvider (scope, isNarrow));
+                    break;
+                default:
+                    NcAssert.CaseError (string.Format ("{0}", track));
+                }
+            }
+        }
+
+        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder, bool isNarrow)
         {
             uint perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
@@ -329,40 +230,36 @@ namespace NachoCore.ActiveSync
             }
             switch (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type)) {
             case McFolder.ClassCodeEnum.Email:
-                switch ((ECLst)EmailCalendarSm.State) {
-                case ECLst.DefI1dC2w:
+                switch (Ladder[CurrentRung][Tracks.Email]) {
+                case EmailLevels.Def1d:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
-
-                case ECLst.DefI3dC2w:
+                case EmailLevels.Def3d:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeDays_2, perFolderWindowSize);
-
-                case ECLst.DefI1wC2w:
+                case EmailLevels.Def1w:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneWeek_3, perFolderWindowSize);
-
-                case ECLst.DefI2wC2w:
+                case EmailLevels.Def2w:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
-
-                case ECLst.All1m:
+                case EmailLevels.All1m:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
-
-                case ECLst.EInfC3m:
-                case ECLst.EInfC6m:
-                case ECLst.AllInf:
+                case EmailLevels.All3m:
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, perFolderWindowSize);
+                case EmailLevels.All6m:
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SixMonths_7, perFolderWindowSize);
+                case EmailLevels.AllInf:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
-
                 default:
-                    throw new Exception ();
+                    NcAssert.CaseError (string.Format ("{0}", Ladder [CurrentRung] [Tracks.Email]));
+                    return null;
                 }
 
             case McFolder.ClassCodeEnum.Calendar:
-                switch ((ECLst)EmailCalendarSm.State) {
-                case ECLst.DefI1dC2w:
-                case ECLst.DefI3dC2w:
-                case ECLst.DefI1wC2w:
-                case ECLst.DefI2wC2w:
+                switch (Ladder[CurrentRung][Tracks.Cal]) {
+                case CalLevels.Def2w:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
-
-                case ECLst.All1m:
+                case CalLevels.All1m:
+                case CalLevels.All3m:
+                case CalLevels.All6m:
+                case CalLevels.AllInf:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
 
                 case ECLst.EInfC3m:
@@ -396,50 +293,6 @@ namespace NachoCore.ActiveSync
                 throw new Exception ();
             }
         }
-        // SM's state persistance callback.
-        private void UpdateSavedECState ()
-        {
-            var protocolState = BEContext.ProtocolState;
-            protocolState.SyncStratEmailCalendarState = EmailCalendarSm.State;
-            protocolState.Update ();
-            // Filter value changed, so go tickle all the changes-expected flags.
-            foreach (var folder in ECFolderListProvider ()) {
-                if (null != folder) {
-                    // We may see null if the server hasn't yet created these folders.
-                    // Note that because we don't (yet) break out Cal into its own SM, it will get needlessly tickled here.
-                    folder.AsSyncMetaToClientExpected = true;
-                    folder.Update ();
-                }
-            }
-        }
-
-        private void UpdateSavedCTState ()
-        {
-            var protocolState = BEContext.ProtocolState;
-            protocolState.SyncStratContactsState = ContactsTasksSm.State;
-            protocolState.Update ();
-            foreach (var folder in CTFolderListProvider ()) {
-                if (null != folder) {
-                    folder.AsSyncMetaToClientExpected = true;
-                    folder.Update ();
-                }
-            }
-        }
-        // SM's state restore API.
-        private void RestoreSavedState ()
-        {
-            var protocolState = BEContext.ProtocolState;
-            EmailCalendarSm.State = protocolState.SyncStratEmailCalendarState;
-            ContactsTasksSm.State = protocolState.SyncStratContactsState;
-        }
-
-        private List<McFolder> DefaultInboxAndDefaultCalendarFolders ()
-        {
-            return new List<McFolder> { 
-                McFolder.GetDefaultInboxFolder (BEContext.Account.Id),
-                McFolder.GetDefaultCalendarFolder (BEContext.Account.Id)
-            };
-        }
 
         private List<McFolder> AllSyncedFolders ()
         {
@@ -461,15 +314,6 @@ namespace NachoCore.ActiveSync
             Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Tasks).ToList ();
         }
 
-        public void ReportSyncResult (List<McFolder> folders)
-        {
-            var stillExpected = folders.Where (f => true == f.AsSyncMetaToClientExpected).ToList ();
-            if (0 == stillExpected.Count ()) {
-                // There were no MoreAvailables.
-                EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRAT0");
-            }
-        }
-        // External API.
         // FIXME SyncKit will need to pull pending and also give options/filters.
         public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit (bool cantBeEmpty)
         {
@@ -541,7 +385,7 @@ namespace NachoCore.ActiveSync
             }
             return (0 == retList.Count) ? null : Tuple.Create (overallWindowSize, retList);
         }
-        
+
         private IEnumerable<McFolder> PingKit ()
         {
             var folders = FolderListProvider ();
@@ -623,6 +467,7 @@ namespace NachoCore.ActiveSync
 
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
+            // FIXME - make sure performFetch does nothing if we've not folder-sync'd yet.
             // If there is something waiting on the pending Q, do that.
             var next = McPending.QueryEligible (BEContext.Account.Id).FirstOrDefault ();
             if (null != next) {
@@ -678,6 +523,7 @@ namespace NachoCore.ActiveSync
                 }
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
             }
+            // FIXME Either here, or in SyncKit(), check RequiredToAdvance against MoreAvailable for folders (non-narrow).
             var syncKit = SyncKit (false);
             if (null != syncKit) {
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, new AsSyncCommand (BEContext.ProtoControl, syncKit));
