@@ -29,12 +29,14 @@ namespace NachoClient.iOS
         const string TutPageTwo = "Content/Tutorial-Page2.png";
         const string TutPageThree = "Content/Tutorial-Page3.png";
         const string TutPageFour = "Content/Tutorial-Page4.png";
+        const string TutPageFive = "Content/Tutorial-Page4.png";
 
         string[] Tutorial = {
             TutPageOne,
             TutPageTwo,
             TutPageThree,
-            TutPageFour
+            TutPageFour,
+            TutPageFive,
         };
 
         public override void ViewDidLoad ()
@@ -43,7 +45,6 @@ namespace NachoClient.iOS
             // inside the UIPVC with gesture controls and other cool shit from that class
             // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
            
-
             string fileName = Tutorial [this.PageIndex];
            
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
@@ -55,25 +56,6 @@ namespace NachoClient.iOS
             this.View.AddSubview (tutImage);
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
             Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
-
-            switch (this.PageIndex) {
-            case 0:
-                UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
-                hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
-                this.View.AddSubview (hotlist);
-                AnimateHotlistItemDown (hotlist);
-                break;
-            case 1:
-                hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
-                hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
-                this.View.AddSubview (hotlist);
-                AnimateHotlistItemDown (hotlist);
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -87,6 +69,41 @@ namespace NachoClient.iOS
             } else {
                 this.owner.pageDots.CurrentPage = this.PageIndex; // update containerView.PageDots
             }
+
+            switch (this.PageIndex) {
+            case 0:
+                break;
+            case 1:
+                var timelineSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, this.View.Frame.Height);
+                UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
+                timeline.Frame = timelineSize;
+                // timeline starts at top of screen
+                timeline.Center = new PointF (this.View.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
+                this.View.AddSubview (timeline);
+                AnimateTimelineDown (timeline);
+                break;
+            case 2:
+                // slide down
+                UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
+                hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                this.View.AddSubview (hotlist);
+                AnimateHotlistItemDown (hotlist);
+                break;
+            case 3:
+                UIImageView hotlist2 = new UIImageView (UIImage.FromBundle ("Icon"));
+                hotlist2.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                this.View.AddSubview (hotlist2);
+                AnimateHotlistItemUp (hotlist2);
+                break;
+            case 4:
+                var emailSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, 55);
+                UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Icon"));
+                emailCell.Frame = emailSize;
+                emailCell.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                this.View.AddSubview (emailCell);
+                AnimateEmailCellLeft (emailCell);
+                break;
+            }
         }
 
         public void AnimateHotlistItemDown (UIImageView hotlist)
@@ -97,7 +114,7 @@ namespace NachoClient.iOS
                 options: UIViewAnimationOptions.CurveEaseInOut,
                 animation: () => {
                     // Move the hotlist item all the way off the bottom of the screen
-                    hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height  - hotlist.Frame.Height);
+                    hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height + hotlist.Frame.Height);
                     },
                 completion: () => {
                     hotlist.RemoveFromSuperview ();
@@ -105,16 +122,52 @@ namespace NachoClient.iOS
                 );
         }
 
-        public void AnimateHotlistItemUp ()
+        public void AnimateHotlistItemUp (UIImageView hotlist)
         {
-
+            UIView.Animate (
+                duration: 0.7,
+                delay: 2.0,
+                options: UIViewAnimationOptions.CurveEaseInOut,
+                animation: () => {
+                    hotlist.Center = new PointF (this.View.Frame.Width / 2, -hotlist.Frame.Height);
+                    },
+                completion: () => {
+                    hotlist.RemoveFromSuperview ();
+                    }
+                );
         }
 
-        public void AnimateEmailLeft ()
+        public void AnimateTimelineDown (UIImageView timeline)
         {
-
+            UIView.Animate (
+                duration: 0.7,
+                delay: 1.0,
+                options: UIViewAnimationOptions.CurveEaseInOut,
+                animation: () => {
+                    // Move the hotlist item all the way off the bottom of the screen
+                    timeline.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                    },
+                completion: () => {
+                    }
+                );
         }
 
+        public void AnimateEmailCellLeft (UIImageView emailCell)
+        {
+            UIView.Animate (
+                duration: 0.7,
+                delay: 2.0,
+                options: UIViewAnimationOptions.CurveEaseInOut,
+                animation: () => {
+                    // Move the hotlist item all the way off the bottom of the screen
+                    emailCell.Center = new PointF (-emailCell.Frame.Width, this.View.Frame.Height / 2);
+                    },
+                completion: () => {
+                    emailCell.RemoveFromSuperview ();
+                    }
+                );
+        }
+           
 
         // Utilities for resizing images.  May not use
 
