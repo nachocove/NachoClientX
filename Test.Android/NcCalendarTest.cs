@@ -469,6 +469,27 @@ namespace Test.Common
             Assert.IsNotNull (c);
         }
 
+        [Test]
+        public void CreateNcCalendarFromXML4()
+        {
+            var command = System.Xml.Linq.XElement.Parse (addString_04);
+            Assert.IsNotNull (command);
+            Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
+            var h = new NachoCore.ActiveSync.AsHelpers ();
+            XNamespace Ns = Xml.AirSync.Ns;
+            NcResult r = h.ParseCalendar (Ns, command);
+            Assert.IsNotNull (r.GetValue<McCalendar> ());
+            var c = r.GetValue<McCalendar> ();
+            Assert.IsNotNull (c);
+
+            var changeCommand = System.Xml.Linq.XElement.Parse (changeString_04);
+             r = h.ParseCalendar (Ns, changeCommand);
+            Assert.IsNotNull (r.GetValue<McCalendar> ());
+            var d = r.GetValue<McCalendar> ();
+            Assert.IsNotNull (d);
+            Assert.AreEqual (1, d.exceptions.Count);
+        }
+       
         protected McCalendar InsertSimpleEvent (string type)
         {
             var c = new McCalendar ();
@@ -853,6 +874,96 @@ namespace Test.Common
               </ApplicationData>
             </Add>
         ";
+
+        String addString_04 = @"
+          <Add xmlns=""AirSync"">
+          <ServerId>5:67</ServerId>
+          <ApplicationData>
+            <Timezone xmlns=""Calendar"">4AEAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAsAAAABAAIAAAAAAAAAAAAAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAMAAAACAAIAAAAAAAAAxP///w==</Timezone>
+            <DtStamp xmlns=""Calendar"">20140811T141138Z</DtStamp>
+            <StartTime xmlns=""Calendar"">20140826T150000Z</StartTime>
+            <Subject xmlns=""Calendar"">R Weekly</Subject>
+            <UID xmlns=""Calendar"">040000008200E00074C5B7101A82E00800000000F08BBD2A6EB5CF010000000000000000100000006FF9F5F91D67394BAC4C77BAA41B1436</UID>
+            <OrganizerName xmlns=""Calendar"">Steve Scalpone</OrganizerName>
+            <OrganizerEmail xmlns=""Calendar"">steves@nachocove.com</OrganizerEmail>
+            <Location xmlns=""Calendar"" />
+            <EndTime xmlns=""Calendar"">20140826T153000Z</EndTime>
+            <Recurrence xmlns=""Calendar"">
+              <Type>1</Type>
+              <Interval>1</Interval>
+              <DayOfWeek>4</DayOfWeek>
+              <FirstDayOfWeek>0</FirstDayOfWeek>
+            </Recurrence>
+            <Body xmlns=""AirSyncBase"">
+              <Type>4</Type>
+              <EstimatedDataSize>12457</EstimatedDataSize>
+              <Data nacho-body-id=""404"" />
+            </Body>
+            <Sensitivity xmlns=""Calendar"">0</Sensitivity>
+            <BusyStatus xmlns=""Calendar"">2</BusyStatus>
+            <AllDayEvent xmlns=""Calendar"">0</AllDayEvent>
+            <Reminder xmlns=""Calendar"">15</Reminder>
+            <MeetingStatus xmlns=""Calendar"">0</MeetingStatus>
+            <NativeBodyType xmlns=""AirSyncBase"">3</NativeBodyType>
+            <ResponseRequested xmlns=""Calendar"">1</ResponseRequested>
+            <ResponseType xmlns=""Calendar"">1</ResponseType>
+          </ApplicationData>
+        </Add>
+";
+
+        String changeString_04 = @"
+        <Change xmlns=""AirSync"">
+          <ServerId>5:67</ServerId>
+          <ApplicationData>
+            <Timezone xmlns=""Calendar"">4AEAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAsAAAABAAIAAAAAAAAAAAAAACgAVQBUAEMALQAwADgAOgAwADAAKQAgAFAAYQBjAGkAZgBpAGMAIABUAGkAbQBlACAAKABVAFMAIAAmACAAQwAAAAMAAAACAAIAAAAAAAAAxP///w==</Timezone>
+            <DtStamp xmlns=""Calendar"">20140811T141209Z</DtStamp>
+            <StartTime xmlns=""Calendar"">20140826T150000Z</StartTime>
+            <Subject xmlns=""Calendar"">R Weekly</Subject>
+            <UID xmlns=""Calendar"">040000008200E00074C5B7101A82E00800000000F08BBD2A6EB5CF010000000000000000100000006FF9F5F91D67394BAC4C77BAA41B1436</UID>
+            <OrganizerName xmlns=""Calendar"">Steve Scalpone</OrganizerName>
+            <OrganizerEmail xmlns=""Calendar"">steves@nachocove.com</OrganizerEmail>
+            <Location xmlns=""Calendar"" />
+            <EndTime xmlns=""Calendar"">20140826T153000Z</EndTime>
+            <Recurrence xmlns=""Calendar"">
+              <Type>1</Type>
+              <Interval>1</Interval>
+              <DayOfWeek>4</DayOfWeek>
+              <FirstDayOfWeek>0</FirstDayOfWeek>
+            </Recurrence>
+            <Body xmlns=""AirSyncBase"">
+              <Type>4</Type>
+              <EstimatedDataSize>21111</EstimatedDataSize>
+              <Data nacho-body-id=""405"" />
+            </Body>
+            <Sensitivity xmlns=""Calendar"">0</Sensitivity>
+            <BusyStatus xmlns=""Calendar"">2</BusyStatus>
+            <AllDayEvent xmlns=""Calendar"">0</AllDayEvent>
+            <Reminder xmlns=""Calendar"">15</Reminder>
+            <Exceptions xmlns=""Calendar"">
+              <Exception>
+                <StartTime>20140903T190000Z</StartTime>
+                <Subject>R Weekly (X)</Subject>
+                <EndTime>20140903T193000Z</EndTime>
+                <Body xmlns=""AirSyncBase"">
+                  <Type>4</Type>
+                  <EstimatedDataSize>4223</EstimatedDataSize>
+                  <Data nacho-body-id=""406"" />
+                </Body>
+                <Categories />
+                <ExceptionStartTime>20140902T150000Z</ExceptionStartTime>
+                <OnlineMeetingConfLink />
+                <OnlineMeetingExternalLink />
+              </Exception>
+            </Exceptions>
+            <MeetingStatus xmlns=""Calendar"">0</MeetingStatus>
+            <NativeBodyType xmlns=""AirSyncBase"">3</NativeBodyType>
+            <ResponseRequested xmlns=""Calendar"">1</ResponseRequested>
+            <ResponseType xmlns=""Calendar"">1</ResponseType>
+          </ApplicationData>
+        </Change>
+";
+
+
     }
 }
 
