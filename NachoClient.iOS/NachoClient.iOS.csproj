@@ -1097,6 +1097,7 @@
     <Compile Include="NachoUI.iOS\EventAttachmentViewController.designer.cs">
       <DependentUpon>EventAttachmentViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\WaitingView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
