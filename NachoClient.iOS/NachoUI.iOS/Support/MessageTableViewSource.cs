@@ -734,16 +734,16 @@ namespace NachoClient.iOS
         /// </summary>
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            NcAssert.True (MultiSelectActive ());
             NcAssert.True (cookie is SegueHolder);
             var h = cookie as SegueHolder;
-            var t = h.value as UITableView;
-            var messageList = GetSelectedMessages ();
-            foreach (var message in messageList) {
-                NcEmailArchiver.Move (message, folder);
+
+            if (MultiSelectActive ()) {
+                var t = h.value as UITableView;
+                MultiSelectMove (t, folder);
+            } else {
+                var messageThread = h.value as McEmailMessageThread;
+                MoveThisMessage (messageThread, folder);
             }
-            MultiSelect.Clear ();
-            MultiSelectToggle (t);  
         }
 
         /// <summary>
