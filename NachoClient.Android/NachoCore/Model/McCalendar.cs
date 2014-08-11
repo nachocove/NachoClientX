@@ -88,6 +88,8 @@ namespace NachoCore.Model
             foreach (var e in exceptions) {
                 e.Id = 0;
                 e.CalendarId = this.Id;
+                // McAbstrObjectPerAcc requires AccountId
+                e.AccountId = this.AccountId;
                 e.Insert ();
             }
             foreach (var r in recurrences) {
