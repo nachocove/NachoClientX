@@ -55,6 +55,25 @@ namespace NachoClient.iOS
             this.View.AddSubview (tutImage);
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
             Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
+
+            switch (this.PageIndex) {
+            case 0:
+                UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
+                hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                this.View.AddSubview (hotlist);
+                AnimateHotlistItemDown (hotlist);
+                break;
+            case 1:
+                hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
+                hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                this.View.AddSubview (hotlist);
+                AnimateHotlistItemDown (hotlist);
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -68,6 +87,32 @@ namespace NachoClient.iOS
             } else {
                 this.owner.pageDots.CurrentPage = this.PageIndex; // update containerView.PageDots
             }
+        }
+
+        public void AnimateHotlistItemDown (UIImageView hotlist)
+        {
+            UIView.Animate (
+                duration: 0.7,
+                delay: 2.0,
+                options: UIViewAnimationOptions.CurveEaseInOut,
+                animation: () => {
+                    // Move the hotlist item all the way off the bottom of the screen
+                    hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height  - hotlist.Frame.Height);
+                    },
+                completion: () => {
+                    hotlist.RemoveFromSuperview ();
+                    }
+                );
+        }
+
+        public void AnimateHotlistItemUp ()
+        {
+
+        }
+
+        public void AnimateEmailLeft ()
+        {
+
         }
 
 
