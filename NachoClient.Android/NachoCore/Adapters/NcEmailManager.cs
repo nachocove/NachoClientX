@@ -30,7 +30,7 @@ namespace NachoCore
         {
             var inboxFolder = InboxFolder ();
             if (null == inboxFolder) {
-                return new MissingFolder ();
+                return new MissingFolder ("Inbox");
             } else {
                 return new NachoEmailMessages (inboxFolder);
             }
@@ -40,7 +40,7 @@ namespace NachoCore
         {
             var inboxFolder = InboxFolder ();
             if (null == inboxFolder) {
-                return new MissingFolder ();
+                return new MissingFolder ("Hot List");
             } else {
                 return new NachoPriorityEmailMessages (inboxFolder);
             }
@@ -48,6 +48,13 @@ namespace NachoCore
 
         protected class MissingFolder : INachoEmailMessages
         {
+            protected string displayName;
+
+            public MissingFolder (string displayName) : base ()
+            {
+                this.displayName = displayName;
+            }
+
             public int Count ()
             {
                 return 0;
@@ -62,6 +69,12 @@ namespace NachoCore
                 NcAssert.CaseError ();
                 return null;
             }
+
+            public string DisplayName ()
+            {
+                return displayName;
+            }
+
         }
     }
 }

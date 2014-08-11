@@ -225,6 +225,8 @@ namespace NachoClient.iOS
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
+            NavigationItem.Title = messageSource.GetDisplayName ();
+
             ReloadDataMaintainingPosition (false);
 
 //            for (int i = 0; i < messageThreads.Count (); i++) {
