@@ -188,7 +188,7 @@ namespace NachoClient.iOS
             ConfigureFilesView ();
         }
 
-        public void DownloadAndDoAction (int attachmentId, Action<McAttachment> attachmentAction)
+        public void DownloadAndDoAction (int attachmentId, UITableViewCell cell, Action<McAttachment> attachmentAction)
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
             if (!a.IsDownloaded) {
@@ -206,7 +206,9 @@ namespace NachoClient.iOS
                         a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
                         if (a.IsDownloaded) {
                             // wait until download-complete animation finishes to do the attachment action
-                            attachmentAction (a);
+                            FilesTableSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
+                                attachmentAction (a);
+                            });
                         } else {
                             NcAssert.True (false, "Item should have been downloaded at this point");
                         }
@@ -241,16 +243,16 @@ namespace NachoClient.iOS
             RefreshTableSource ();
         }
 
-        public void ForwardAttachment (McAttachment attachment)
+        public void ForwardAttachment (McAttachment attachment, UITableViewCell cell)
         {
-            DownloadAndDoAction (attachment.Id, (a) => {
+            DownloadAndDoAction (attachment.Id, cell, (a) => {
                 PerformSegue (FilesToComposeSegueId, new SegueHolder (a));
             });
         }
 
-        public void OpenInOtherApp (McAttachment attachment)
+        public void OpenInOtherApp (McAttachment attachment, UITableViewCell cell)
         {
-            DownloadAndDoAction (attachment.Id, (a) => {
+            DownloadAndDoAction (attachment.Id, cell, (a) => {
                 UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.FilePath ()));
                 Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
                 Preview.PresentOpenInMenu (View.Frame, View, true);
@@ -286,17 +288,15 @@ namespace NachoClient.iOS
             actionSheet.ShowInView (View);
         }
 
-        public void AttachmentAction (int attachmentId, Action<Action> onDownloadComplete)
+        public void AttachmentAction (int attachmentId, UITableViewCell cell)
         {
-            DownloadAndDoAction (attachmentId, (a) => {
-                onDownloadComplete (() => {
-                    if (null == Owner) {
-                        PlatformHelpers.DisplayAttachment (this, a);
-                        return;
-                    }
+            DownloadAndDoAction (attachmentId, cell, (a) => {
+                if (null == Owner) {
+                    PlatformHelpers.DisplayAttachment (this, a);
+                    return;
+                }
 
-                    FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
-                });
+                FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
             });
         }
 
@@ -334,7 +334,7 @@ namespace NachoClient.iOS
 
             // icon id's
             string DownloadIcon = "downloadicon.png";
-            string DownloadCompleteIcon = "icn-file-complete.png";
+            public static string DownloadCompleteIcon = "icn-file-complete.png";
             string DownloadArrow = "downloadarrow.png";
             string DownloadLine = "downloadline.png";
             string DownloadCircle = "downloadcircle.png";
@@ -441,8 +441,8 @@ namespace NachoClient.iOS
                 if (attachment.IsDownloaded || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
-                    cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                     StartDownloadingAnimation (cell, attachment.IsDownloaded);
+                    cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                 } else {
                     cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                 }
@@ -476,21 +476,8 @@ namespace NachoClient.iOS
                 case ItemType.Attachment:
                     McAttachment att = (McAttachment)item;
                     UITableViewCell cell = tableView.CellAt (indexPath);
-                    vc.AttachmentAction (att.Id, onDownloadComplete: (displayAttachment) => {
-                        // do download-complete animations
-                        StopAnimationsOnCell (cell);
-                        var imageView = new UIImageView (new RectangleF (cell.ImageView.Frame.Width / 2, cell.ImageView.Frame.Height / 2, cell.ImageView.Frame.Width, cell.ImageView.Frame.Height));
-                        imageView.Center = cell.ImageView.Center;
-                        imageView.Image = UIImage.FromFile (DownloadCompleteIcon);
-                        cell.ImageView.Alpha = 0.0f;
-                        cell.ContentView.AddSubview (imageView);
-                        DownloadCompleteAnimation (imageView, () => {
-                            cell.ImageView.Alpha = 1.0f;
-                            imageView.RemoveFromSuperview ();
-//                            displayAttachment ();
-                        });  // display attachment to user when download animation finishes
-                    });
                     StartDownloadingAnimation (cell, att.IsDownloaded);
+                    vc.AttachmentAction (att.Id, cell);
                     break;
                 case ItemType.Note:
                     McNote note = (McNote)item;
@@ -528,8 +515,8 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            vc.ForwardAttachment (attachment);
                             StartDownloadingAnimation (cell, attachment.IsDownloaded);
+                            vc.ForwardAttachment (attachment, cell);
                         }
                         return;
                     });
@@ -553,10 +540,8 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            vc.AttachmentAction (attachment.Id, onDownloadComplete: (displayAttachment) => {
-                                displayAttachment ();
-                            });
                             StartDownloadingAnimation (cell, attachment.IsDownloaded);
+                            vc.AttachmentAction (attachment.Id, cell);
                         }
                         return;
                     });
@@ -565,8 +550,8 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            vc.OpenInOtherApp (attachment);
                             StartDownloadingAnimation (cell, attachment.IsDownloaded);
+                            vc.OpenInOtherApp (attachment, cell);
                         }
                         return;
                     });
@@ -599,7 +584,7 @@ namespace NachoClient.iOS
             }
 
 
-            private void StopAnimationsOnCell (UITableViewCell cell)
+            public static void StopAnimationsOnCell (UITableViewCell cell)
             {
                 foreach (UIView subview in cell.ImageView.Subviews) {
                     subview.Layer.RemoveAllAnimations ();
@@ -646,7 +631,7 @@ namespace NachoClient.iOS
                );
             }
 
-            private void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
+            private static void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
             {
                 UIView.Animate (
                     duration: 0.4,
@@ -664,8 +649,16 @@ namespace NachoClient.iOS
                 );
             }
 
-            private void DownloadCompleteAnimation (UIImageView imageView, Action displayAttachment)
+            public static void DownloadCompleteAnimation (UITableViewCell cell, Action displayAttachment)
             {
+                // Place the download icon in a separate view on the screen and animate it
+                FilesTableSource.StopAnimationsOnCell (cell);
+                var imageView = new UIImageView (new RectangleF (cell.ImageView.Frame.Width / 2, cell.ImageView.Frame.Height / 2, cell.ImageView.Frame.Width, cell.ImageView.Frame.Height));
+                imageView.Center = cell.ImageView.Center;
+                imageView.Image = UIImage.FromFile (FilesTableSource.DownloadCompleteIcon);
+                cell.ImageView.Alpha = 0.0f;
+                cell.ContentView.AddSubview (imageView);
+
                 Action<double, Action, Action> transformAnimation = (duration, transformAction, transformComplete) => UIView.Animate (
                     duration: duration,
                     delay: 0,
@@ -681,15 +674,20 @@ namespace NachoClient.iOS
                 transformAnimation (0.0, () => {
                     imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (0.7f, 0.7f, 1.0f);
                 }, () => {
-                    transformAnimation (1.0, () => {
+                    transformAnimation (0.15, () => {
                         imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (1.3f, 1.3f, 1.0f);
                     }, () => {
-                        transformAnimation (1.0, () => {
+                        transformAnimation (0.15, () => {
                             imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (0.8f, 0.8f, 1.0f);
                         }, () => {
-                            transformAnimation (1.0, () => {
+                            transformAnimation (0.15, () => {
                                 imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                             }, () => {
+                                // return the cell to it's normal state
+                                cell.ImageView.Alpha = 1.0f;
+                                imageView.RemoveFromSuperview ();
+
+                                // allow caller to decide how to open the attachment
                                 displayAttachment ();
                             });
                         });
