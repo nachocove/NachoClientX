@@ -266,9 +266,9 @@ namespace NachoCore.Model
 
         public static McFolder ServerEndQueryById (int folderId)
         {
-            return NcModel.Instance.Db.Query<McFolder> ( "SELECT f.* FROM McFolder AS f WHERE " +
-                    " f.Id = ? AND " +
-                    " f.IsAwaitingCreate = 0 ", folderId).SingleOrDefault ();
+            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            " f.Id = ? AND " +
+            " f.IsAwaitingCreate = 0 ", folderId).SingleOrDefault ();
         }
 
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
@@ -395,6 +395,7 @@ namespace NachoCore.Model
             existing.Delete ();
             return NcResult.OK ();
         }
+
         public static void AsSetExpected (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
