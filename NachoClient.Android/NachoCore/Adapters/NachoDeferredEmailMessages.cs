@@ -37,5 +37,11 @@ namespace NachoCore
             var t = threadList.ElementAt (i);
             return t;
         }
+
+        public string DisplayName ()
+        {
+            return "Deferred";
+        }
+
     }
 }

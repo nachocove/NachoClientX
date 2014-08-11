@@ -55,6 +55,11 @@ namespace NachoClient.iOS
             this.messageThreads = messageThreads;
         }
 
+        public string GetDisplayName ()
+        {
+            return messageThreads.DisplayName ();
+        }
+
         public McEmailMessageThread GetFirstThread ()
         {
             if (null == this.messageThreads) {
