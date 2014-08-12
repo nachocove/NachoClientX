@@ -45,6 +45,8 @@ namespace NachoCore.Model
         /// this object is non-null and holds the update.
         private McEmailMessageScoreSyncInfo SyncInfo { get; set; }
 
+        public const double VipScore = 1.0;
+
         public double GetScore ()
         {
             double score = 0.0;
@@ -62,12 +64,23 @@ namespace NachoCore.Model
             }
 
             // TODO - Combine with content score... once we have such value
-            score = emailAddress.GetScore ();
-            NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
-            if (0 < tvList.Count) {
-                DateTime now = DateTime.Now;
-                foreach (NcTimeVariance tv in tvList) {
-                    score *= tv.Adjustment (now);
+            if (emailAddress.IsVip) {
+                score = VipScore;
+            } else if (0 < UserAction) {
+                score = VipScore;
+            } else {
+                score = emailAddress.GetScore ();
+                NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
+                if (0 < tvList.Count) {
+                    DateTime now = DateTime.Now;
+                    foreach (NcTimeVariance tv in tvList) {
+                        score *= tv.Adjustment (now);
+                    }
+                }
+                if (0 > UserAction) {
+                    if (minHotScore <= score) {
+                        score = minHotScore - 0.01;
+                    }
                 }
             }
             Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score);
@@ -138,7 +151,15 @@ namespace NachoCore.Model
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
             }
             ScoreVersion++;
-        }  
+        }
+
+        private void ScoreObject_V3 ()
+        {
+            // No statistics is updated. Just need to re-compute the score which
+            // will be done at the end of ScoreObject().
+            ScoreVersion++;
+            NcAssert.True (3 == ScoreVersion);
+        }
 
         public void ScoreObject ()
         {
@@ -148,6 +169,9 @@ namespace NachoCore.Model
             }
             if (1 == ScoreVersion) {
                 ScoreObject_V2 ();
+            }
+            if (2 == ScoreVersion) {
+                ScoreObject_V3 ();
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
             InitializeTimeVariance ();

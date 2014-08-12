@@ -76,6 +76,11 @@ namespace NachoCore.Brain
             EventQueue.Enqueue (brainEvent);
         }
 
+        public bool IsQueueEmpty ()
+        {
+            return EventQueue.IsEmpty ();
+        }
+
         private int GleanContacts (int count)
         {
             // Look for a list of emails
@@ -220,6 +225,49 @@ namespace NachoCore.Brain
             }
         }
 
+        private void ProcessUpdateAddressEvent (NcBrainUpdateAddressScoreEvent brainEvent)
+        {
+            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateAddressEvent: event= 0}", brainEvent.ToString ());
+            McEmailAddress emailAddress =
+                McEmailAddress.QueryById<McEmailAddress> ((int)brainEvent.EmailAddressId);
+            if (null == emailAddress) {
+                return;
+            }
+            if (Scoring.Version != emailAddress.ScoreVersion) {
+                NcAssert.True (Scoring.Version > emailAddress.ScoreVersion);
+                return;
+            }
+            bool updateDependencies = brainEvent.ForceUpdateDependentMessages;
+            double newScore = emailAddress.GetScore ();
+            if (newScore != emailAddress.Score) {
+                emailAddress.Score = newScore;
+                emailAddress.UpdateByBrain ();
+                updateDependencies = true;
+            }
+            if (updateDependencies) {
+                emailAddress.MarkDependencies ();
+            }
+        }
+
+        private void ProcessUpdateMessageEvent (NcBrainUpdateMessageScoreEvent brainEvent)
+        {
+            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateMessageEvent: event={0}", brainEvent.ToString ());
+            McEmailMessage emailMessage =
+                McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
+            if (null == emailMessage) {
+                return;
+            }
+            if (Scoring.Version != emailMessage.ScoreVersion) {
+                NcAssert.True (Scoring.Version > emailMessage.ScoreVersion);
+                return;
+            }
+            double newScore = emailMessage.GetScore ();
+            if (newScore != emailMessage.Score) {
+                emailMessage.Score = newScore;
+                emailMessage.Update ();
+            }
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
@@ -260,6 +308,15 @@ namespace NachoCore.Brain
                 break;
             case NcBrainEventType.INITIAL_RIC:
                 ProcessInitialRicEvent (brainEvent as NcBrainInitialRicEvent);
+                break;
+            case NcBrainEventType.UPDATE_ADDRESS_SCORE:
+                ProcessUpdateAddressEvent (brainEvent as NcBrainUpdateAddressScoreEvent);
+                break;
+            case NcBrainEventType.UPDATE_MESSAGE_SCORE:
+                ProcessUpdateMessageEvent (brainEvent as NcBrainUpdateMessageScoreEvent);
+                break;
+            case NcBrainEventType.TEST:
+                // This is a no op. Serve as a synchronization barrier.
                 break;
             default:
                 throw new NcAssert.NachoDefaultCaseFailure ("unknown brain event type");
@@ -322,6 +379,18 @@ namespace NachoCore.Brain
                 return;
             }
             NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
+        }
+
+        public static void UpdateAddressScore (Int64 emailAddressId, bool forcedUpdateDependentMessages = false)
+        {
+            NcBrainEvent e = new NcBrainUpdateAddressScoreEvent (emailAddressId, forcedUpdateDependentMessages);
+            NcBrain.SharedInstance.Enqueue (e);
+        }
+
+        public static void UpdateMessageScore (Int64 emailMessageId)
+        {
+            NcBrainEvent e = new NcBrainUpdateMessageScoreEvent (emailMessageId);
+            NcBrain.SharedInstance.Enqueue (e);
         }
     }
 }
