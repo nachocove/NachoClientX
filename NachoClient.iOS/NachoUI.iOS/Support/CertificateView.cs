@@ -44,9 +44,10 @@ namespace NachoClient.iOS
         public void CreateView ()
         {
             float VIEW_HEIGHT;
-            VIEW_HEIGHT = this.Frame.Height - 64f;
+            VIEW_HEIGHT = this.Frame.Height;// - 64f;
 
             this.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.4f);
+            this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
             certificateView = new UIView (new RectangleF (20, 20, owner.View.Frame.Width - 40, VIEW_HEIGHT - 40));
             certificateView.Tag = CERTIFICATE_VIEW_TAG;
             certificateView.BackgroundColor = UIColor.White;
@@ -57,9 +58,10 @@ namespace NachoClient.iOS
             certificateViewTitle.BackgroundColor = UIColor.White;
             certificateViewTitle.Alpha = 1.0f;
             certificateViewTitle.Font = UIFont.SystemFontOfSize (17);
-            certificateViewTitle.TextColor = owner.systemBlue;
+            certificateViewTitle.TextColor = A.Color_SystemBlue;
             certificateViewTitle.Text = "Trust This Certifcate?";
             certificateViewTitle.TextAlignment = UITextAlignment.Center;
+            certificateViewTitle.Editable = false;
             certificateView.Add (certificateViewTitle);
 
             UILabel descriptionOfProblem = new UILabel (new RectangleF (15, 47, certificateView.Frame.Width - 30, 230));
@@ -93,10 +95,10 @@ namespace NachoClient.iOS
             trustCertificateButton.Tag = TRUST_CERTIFICATE_BUTTON_TAG;
             trustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             trustCertificateButton.SetTitle ("Trust", UIControlState.Normal);
-            trustCertificateButton.SetTitleColor (owner.systemBlue, UIControlState.Normal);            
+            trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);            
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
-                DismissView (false);
-                owner.setErrorMessage (AdvancedLoginViewController.errorMessageEnum.FirstTime);
+                DismissView ();
+                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
                 owner.acceptCertificate ();
             };
             certificateView.Add (trustCertificateButton);
@@ -108,11 +110,11 @@ namespace NachoClient.iOS
             dontTrustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             dontTrustCertificateButton.SetTitle ("Cancel", UIControlState.Normal);
             dontTrustCertificateButton.Tag = CANCEL_CERTIFICATE_BUTTON_TAG;
-            dontTrustCertificateButton.SetTitleColor (owner.systemBlue, UIControlState.Normal);
+            dontTrustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
-                DismissView (true);
-                owner.setErrorMessage (AdvancedLoginViewController.errorMessageEnum.FirstTime);
-                owner.dismissWaitingView ();
+                DismissView ();
+                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
+                owner.waitingView.DismissView ();
             };
             certificateView.Add (dontTrustCertificateButton);
 
@@ -128,7 +130,7 @@ namespace NachoClient.iOS
             horizontalLineAfterDescriptionOfProblem.BackgroundColor = UIColor.LightGray;
             certificateView.Add (horizontalLineAfterDescriptionOfProblem);
 
-            this.Add(certificateView);
+            this.Add (certificateView);
             this.Hidden = true;
 
         }
@@ -144,7 +146,7 @@ namespace NachoClient.iOS
             this.Hidden = false;
         }
 
-        public void DismissView (bool greyScreenToo)
+        public void DismissView ()
         {
             owner.setTextToRed (new UITextField[] { });
             this.Hidden = true;
