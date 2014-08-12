@@ -19,7 +19,7 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UINavigationItem navigationBar { get; set; }
+		MonoTouch.UIKit.UINavigationBar navigationBar { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }

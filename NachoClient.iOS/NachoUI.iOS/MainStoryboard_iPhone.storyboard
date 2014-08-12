@@ -728,7 +728,7 @@
             </objects>
             <point key="canvasLocation" x="-2615" y="-4172"/>
         </scene>
-        <!--Support Message View Controller - Contact Us-->
+        <!--Support Message View Controller-->
         <scene sceneID="7yh-xJ-ffT">
             <objects>
                 <viewController storyboardIdentifier="SupportMessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kuw-v2-91Q" customClass="SupportMessageViewController" sceneMemberID="viewController">
@@ -736,6 +736,13 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
+                            <navigationBar contentMode="scaleToFill" id="jpJ-vA-znB">
+                                <rect key="frame" x="0.0" y="262" width="320" height="44"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                <items>
+                                    <navigationItem title="Title" id="6Oy-it-ccO" userLabel="Navigation Item - Contact Us"/>
+                                </items>
+                            </navigationBar>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="H0t-Oq-NPf">
                                 <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -750,12 +757,11 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Contact Us" id="d7q-VR-x57" userLabel="Navigation Item - Contact Us"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
                         <outlet property="cancelButton" destination="SeI-fe-BAR" id="ESk-Qa-HA5"/>
                         <outlet property="contentView" destination="AV3-V1-QWj" id="SFz-zs-Kz5"/>
-                        <outlet property="navigationBar" destination="d7q-VR-x57" id="RZt-Td-eUo"/>
+                        <outlet property="navigationBar" destination="jpJ-vA-znB" id="JP1-Hh-l66"/>
                         <outlet property="scrollView" destination="H0t-Oq-NPf" id="g94-uc-o3I"/>
                         <outlet property="sendButton" destination="FeG-Jx-fjU" id="VeN-CR-LJz"/>
                     </connections>
