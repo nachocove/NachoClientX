@@ -64,7 +64,7 @@ namespace NachoClient.iOS
             theSpinner.HidesWhenStopped = true;
             theSpinner.Tag = 1;
             theSpinner.Frame = new System.Drawing.RectangleF (waitingView.Frame.Width / 2 - 20, 50, 40, 40);
-            theSpinner.Color = owner.systemBlue;
+            theSpinner.Color = A.Color_SystemBlue;
             theSpinner.StartAnimating ();
             waitingView.Add (theSpinner);
 
@@ -79,7 +79,7 @@ namespace NachoClient.iOS
             cancelValidation.BackgroundColor = UIColor.White;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
-            cancelValidation.SetTitleColor (owner.systemBlue, UIControlState.Normal);
+            cancelValidation.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             cancelValidation.TouchUpInside += (object sender, EventArgs e) => {
                 owner.stopBeIfRunning ();
                 owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);

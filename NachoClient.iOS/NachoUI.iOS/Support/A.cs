@@ -35,6 +35,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_808080 = null;
         protected static UIColor _Color_009E85 = null;
         protected static UIColor _Color_CalDotBlue = null;
+        protected static UIColor _Color_SystemBlue = null;
 
         protected static UIColor _Color_NachoNowBackground = null;
         protected static UIColor _Color_NachoBlack = null;
@@ -334,6 +335,15 @@ namespace NachoClient.iOS
                     _Color_CalDotBlue = UIColor.FromRGB (0x29, 0x76, 0xcc);
                 }
                 return _Color_CalDotBlue;
+            }
+        }
+
+        public static UIColor Color_SystemBlue {
+            get {
+                if (null == _Color_SystemBlue) {
+                    _Color_SystemBlue = new UIButton (UIButtonType.System).CurrentTitleColor;
+                }
+                return _Color_SystemBlue;
             }
         }
 

@@ -32,7 +32,6 @@ namespace NachoClient.iOS
 
         public UIView statusViewBackground;
         public WaitingView waitingView;
-        public UIColor systemBlue;
         public string certificateInformation = "";
 
         UIButton connectButton;
@@ -65,6 +64,10 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            theAccount = new AccountSettings ();
+            loadSettingsForAccount ();
+            CreateView ();
+            NavigationItem.Title = "Account Setup";
         }
 
         public override void ViewDidAppear (bool animated)
@@ -76,16 +79,19 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
 
-            theAccount = new AccountSettings ();
-            loadSettingsForAccount ();
-            createInputFieldList ();
-            CreateView ();
+            waitingView = new WaitingView (View.Frame);
+            waitingView.SetOwner (this);
+            waitingView.CreateView ();
+            View.Add (waitingView);
+
+            certificateView = new CertificateView (View.Frame);
+            certificateView.SetOwner (this);
+            certificateView.CreateView ();
+            View.Add (certificateView);   
+
             fillInKnownFields ();
-            configureKeyboards ();
-            bool hasConfigured = handleStatusEnums ();
-            if (!hasConfigured) {
-                ConfigureView (LoginStatus.EnterInfo);
-            }
+            ConfigureView (LoginStatus.EnterInfo);
+            handleStatusEnums ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -128,8 +134,6 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
-            UIButton genericSystemButton = new UIButton (UIButtonType.System);
-            systemBlue = genericSystemButton.CurrentTitleColor;
             contentView = new UIView ();
             contentView.BackgroundColor = A.Color_NachoNowBackground;
 
@@ -170,6 +174,7 @@ namespace NachoClient.iOS
             connectButton.TitleLabel.TextColor = UIColor.White;
             connectButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             connectButton.TouchUpInside += (object sender, EventArgs e) => {
+                View.EndEditing (true);
                 if (canUserConnect ()) {
                     if (!LoginHelpers.IsCurrentAccountSet ()) {
                         basicEnterFullConfiguration ();
@@ -197,16 +202,17 @@ namespace NachoClient.iOS
             customerSupportButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
+                View.EndEditing (true);
                 PerformSegue ("SegueToSupport", this);
             };
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom + 15;
 
             scrollView.Add (contentView);
-            NavigationItem.Title = "Account Setup";
-            createWaitingView ();
-            createCertificateView ();
             LayoutView ();
+
+            createInputFieldList ();
+            configureKeyboards ();
         }
 
         public void ConfigureView (LoginStatus currentStatus)
@@ -281,28 +287,12 @@ namespace NachoClient.iOS
             inputFields.Add (passwordText);
         }
 
-        public void LayoutView ()
+        protected void LayoutView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
-        }
-
-        public void createCertificateView ()
-        {
-            certificateView = new CertificateView (View.Frame);
-            certificateView.SetOwner (this);
-            certificateView.CreateView ();
-            View.Add (certificateView);
-        }
-
-        public void createWaitingView ()
-        {
-            waitingView = new WaitingView (View.Frame);
-            waitingView.SetOwner (this);
-            waitingView.CreateView ();
-            View.Add (waitingView);
         }
 
         public bool haveEnteredEmailAndPass ()
@@ -329,44 +319,40 @@ namespace NachoClient.iOS
 
         public void configureKeyboards ()
         {
-            usernameText.ShouldReturn += (textField) => {
-                usernameText.TextColor = UIColor.Black;
-                textField.ResignFirstResponder ();
-                return true;
-            };
-
-            usernameText.AutocapitalizationType = UITextAutocapitalizationType.None;
-            usernameText.AutocorrectionType = UITextAutocorrectionType.No;
-
             emailText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
-                textField.ResignFirstResponder ();
+                serverText.BecomeFirstResponder ();
                 textField.TextColor = UIColor.Black;
                 return true;
             };
-
             emailText.EditingChanged += (object sender, EventArgs e) => {
                 haveEnteredEmailAndPass ();
             };
-
             emailText.AutocapitalizationType = UITextAutocapitalizationType.None;
             emailText.AutocorrectionType = UITextAutocorrectionType.No;
 
+            serverText.ShouldReturn += (textField) => {
+                domainText.BecomeFirstResponder ();
+                textField.TextColor = UIColor.Black;
+                return true;
+            };
+            serverText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            serverText.AutocorrectionType = UITextAutocorrectionType.No;
+
             domainText.ShouldReturn += (textField) => {
-                textField.ResignFirstResponder ();
+                usernameText.BecomeFirstResponder ();
                 return true;
             };
             domainText.AutocapitalizationType = UITextAutocapitalizationType.None;
             domainText.AutocorrectionType = UITextAutocorrectionType.No;
 
-            serverText.ShouldReturn += (textField) => {
-                textField.ResignFirstResponder ();
-                textField.TextColor = UIColor.Black;
+            usernameText.ShouldReturn += (textField) => {
+                usernameText.TextColor = UIColor.Black;
+                passwordText.BecomeFirstResponder ();
                 return true;
             };
-
-            serverText.AutocapitalizationType = UITextAutocapitalizationType.None;
-            serverText.AutocorrectionType = UITextAutocorrectionType.No;
+            usernameText.AutocapitalizationType = UITextAutocapitalizationType.None;
+            usernameText.AutocorrectionType = UITextAutocorrectionType.No;
 
             passwordText.SecureTextEntry = true;
             passwordText.ShouldReturn += (textField) => {
@@ -382,7 +368,7 @@ namespace NachoClient.iOS
             passwordText.AutocorrectionType = UITextAutocorrectionType.No;
         }
 
-        public bool handleStatusEnums ()
+        public void handleStatusEnums ()
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
 
@@ -390,42 +376,42 @@ namespace NachoClient.iOS
 
                 switch (backEndState) {
                 case BackEndAutoDStateEnum.ServerConfWait:
-                    ConfigureView (LoginStatus.ServerConf);
+                    Log.Info (Log.LOG_UI, "ServerConfWait Auto-D-State-Enum On Page Load");
                     stopBeIfRunning ();
-                    return true;
+                    ConfigureView (LoginStatus.ServerConf);
+                    return;
 
                 case BackEndAutoDStateEnum.CredWait:
-                    ConfigureView (LoginStatus.BadCredentials);
+                    Log.Info (Log.LOG_UI, "CredWait Auto-D-State-Enum On Page Load");
                     stopBeIfRunning ();
-                    return true;
+                    ConfigureView (LoginStatus.BadCredentials);
+                    return;
 
                 case BackEndAutoDStateEnum.CertAskWait:
+                    Log.Info (Log.LOG_UI, "CertAskWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.AcceptCertificate);
                     waitingView.ShowView ();
                     certificateCallbackHandler ();
-                    return true;
+                    return;
 
                 case BackEndAutoDStateEnum.PostAutoDPreFsync:
                     errorMessage.Text = "Waiting for Folder-Sync.";
                     waitingView.ShowView ();
-                    waitingView.statusMessage.TextColor = systemBlue;
+                    waitingView.statusMessage.TextColor = A.Color_SystemBlue;
                     waitingView.statusMessage.Text = "Found Your Server...";
-                    return true;
+                    return;
 
                 case BackEndAutoDStateEnum.PostAutoDPostFSync:
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     PerformSegue (StartupViewController.NextSegue (), this);
-                    return true;
+                    return;
 
                 case BackEndAutoDStateEnum.Running:
+                    Log.Info (Log.LOG_UI, "Running Auto-D-State-Enum On Page Load");
                     errorMessage.Text = "Auto-D is running.";
                     waitingView.ShowView ();
-                    return true;
-                default:
-                    return false;
+                    return;
                 }
-            } else {
-                return false;
             }
         }
 
@@ -691,13 +677,14 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "FolderSyncSucceeded Status Ind");
                 LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 waitingView.DismissView ();
                 PerformSegue (StartupViewController.NextSegue (), this);
-
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                waitingView.statusMessage.TextColor = systemBlue;
+                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
+                waitingView.statusMessage.TextColor = A.Color_SystemBlue;
                 waitingView.statusMessage.Text = "Found Your Server...";
                 theAccount.Server = McServer.QueryById<McServer> (1);
                 serverText.Text = theAccount.Server.Host;
@@ -708,6 +695,8 @@ namespace NachoClient.iOS
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "Validate Config Successful Status Ind");
+
                 ConfigureView (LoginStatus.ValidateSuccessful);
 
                 var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
@@ -736,16 +725,19 @@ namespace NachoClient.iOS
                 waitingView.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "ServerConfReq Status Ind");
                 ConfigureView (LoginStatus.ServerConf);
                 waitingView.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "CredReqCallback Status Ind");
                 ConfigureView (LoginStatus.BadCredentials);
                 waitingView.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "CertAskCallback Status Ind");
                 ConfigureView (LoginStatus.AcceptCertificate);
                 certificateCallbackHandler ();
             }
@@ -756,6 +748,7 @@ namespace NachoClient.iOS
             var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
             certificateInformation = new CertificateHelper ().formatCertificateData (certToBeExamined);
             certificateView.ConfigureView ();
+            Log.Info (Log.LOG_UI, "Display certificate alert to user");
             certificateView.ShowView ();
         }
 
