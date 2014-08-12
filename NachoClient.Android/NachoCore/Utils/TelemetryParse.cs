@@ -207,6 +207,8 @@ namespace NachoCore.Utils
                     dict.AddString ("ui_string", tEvent.UiString);
                     break;
                 }
+            } else if (tEvent.IsSupportEvent ()) {
+                dict.AddString ("support", tEvent.Support);
             } else {
                 NcAssert.True (false);
             }
