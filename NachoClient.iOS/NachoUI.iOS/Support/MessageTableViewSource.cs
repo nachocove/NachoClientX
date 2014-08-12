@@ -502,7 +502,6 @@ namespace NachoClient.iOS
                 var rawPreview = message.GetBodyPreviewOrEmpty ();
                 var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
                 previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
-                ;
             }
 
             // Reminder image view and label
@@ -512,7 +511,7 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 if (message.IsDeferred ()) {
-                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagDeferUntil);
+                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagStartDate);
                 } else if (message.IsOverdue ()) {
                     reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
                 } else {

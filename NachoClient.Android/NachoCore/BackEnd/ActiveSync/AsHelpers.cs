@@ -683,7 +683,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.StartDate:
                                 try {
-                                    emailMessage.FlagDeferUntil = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagStartDate = DateTime.Parse (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -691,7 +691,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.UtcStartDate:
                                 try {
-                                    emailMessage.FlagUtcDeferUntil = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagUtcStartDate = DateTime.Parse (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }

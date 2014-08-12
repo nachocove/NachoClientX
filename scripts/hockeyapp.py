@@ -241,6 +241,7 @@ class App:
             self.bundle_id = app.bundle_id
             self.platform = app.platform
             self.release_type = app.release_type
+            break
         else:
             raise ValueError('Unknown app id %s' % self.app_id)
         return self
@@ -283,9 +284,11 @@ class Version:
     def __str__(self):
         return str(self.desc())
 
-    def update(self, zipped_dsym_file, note=None):
+    def update(self, zipped_dsym_file, ipa_file=None, note=None):
         form_data = dict()
         form_data['dsym'] = '@' + zipped_dsym_file
+        if ipa_file is not None:
+            form_data['ipa'] = '@' + ipa_file
         if note is not None:
             form_data['note'] = note
         response = self.app_obj.hockeyapp_obj.command(self.base_url, form_data).put().run()
