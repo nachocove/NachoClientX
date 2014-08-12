@@ -26,8 +26,9 @@ namespace NachoPlatform
             get {
                 if (instance == null) {
                     lock (syncRoot) {
-                        if (instance == null)
+                        if (instance == null) {
                             instance = new Contacts ();
+                        }
                     }
                 }
                 return instance;
@@ -169,7 +170,8 @@ namespace NachoPlatform
             return retval;
         }
 
-        private static string GetNSErrorString (NSError nsError)
+        // TODO: Move to a general ios file.
+        public static string GetNSErrorString (NSError nsError)
         {
             try {
                 StringBuilder sb = new StringBuilder ();

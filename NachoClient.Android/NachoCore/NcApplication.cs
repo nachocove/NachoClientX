@@ -189,7 +189,8 @@ namespace NachoCore
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
-                NcDeviceContacts.Run();
+                NcDeviceContacts.Run ();
+                NcDeviceCalendars.Run ();
                 NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
@@ -258,7 +259,7 @@ namespace NachoCore
                     deviceAccount.Insert ();
                 }
             });
-            // Create Device contacts if not yet there.
+            // Create Device contacts/calendars if not yet there.
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceContactsFolder ()) {
                     var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
@@ -267,7 +268,14 @@ namespace NachoCore
                     freshMade.Insert ();
                 }
             });
-
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetDeviceCalendarsFolder ()) {
+                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
+                        McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
+                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                    freshMade.Insert ();
+                }
+            });
         }
 
         public void QuickCheck (uint seconds)

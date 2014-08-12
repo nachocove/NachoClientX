@@ -112,6 +112,7 @@
     <Compile Include="UnitTestAppDelegate.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
   <ItemGroup>
     <ProjectReference Include="..\NachoClient.iOS\NachoClient.iOS.csproj">
       <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>

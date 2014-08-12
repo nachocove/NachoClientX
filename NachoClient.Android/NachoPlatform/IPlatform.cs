@@ -100,8 +100,19 @@ namespace NachoPlatform
         void AskForPermission (Action<bool> result);
     }
 
+    public abstract class PlatformCalendarRecord
+    {
+        public abstract string UniqueId { get; }
+        public abstract DateTime LastUpdate { get; }
+        public abstract NcResult ToMcCalendar ();
+    }
+
     public interface IPlatformCalendars
     {
+        // Can be called from any thread.
+        IEnumerable<PlatformCalendarRecord> GetCalendars ();
+        // Must be called from UI thread.
+        void AskForPermission (Action<bool> result);
     }
 
     public enum PowerStateEnum { Unknown, Plugged, PluggedUSB, PluggedAC, Unplugged }

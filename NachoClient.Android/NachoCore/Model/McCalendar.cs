@@ -15,6 +15,18 @@ namespace NachoCore.Model
         /// Implicit [Ignore]
         private List<McRecurrence> DbRecurrences;
 
+        /// ActiveSync or Device
+        public McAbstrItem.ItemSource Source { get; set; }
+
+        /// Set only for Device calendars.
+        public string DeviceUniqueId { get; set; }
+
+        /// Set only for Device calendars.
+        public DateTime DeviceCreation { get; set; }
+
+        /// Set only for Device calendars.
+        public DateTime DeviceLastUpdate { get; set; }
+
         /// Is a response to this meeting required? Calendar only.
         public bool ResponseRequested { get; set; }
 
@@ -144,6 +156,15 @@ namespace NachoCore.Model
                 r.Delete ();
             }
             return NcResult.OK ();
+        }
+
+        public static McCalendar QueryByDeviceUniqueId (string deviceUniqueId)
+        {
+            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
+            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => 
+                x.DeviceUniqueId == deviceUniqueId &&
+                x.AccountId == account.Id
+            ).SingleOrDefault ();
         }
     }
 }

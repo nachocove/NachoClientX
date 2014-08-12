@@ -37,7 +37,8 @@ namespace NachoCore
                     return null;
                 }
             };
-            List<McMapFolderFolderEntry> present = McMapFolderFolderEntry.QueryByFolderIdClassCode (folder.AccountId, folder.Id, McAbstrFolderEntry.ClassCodeEnum.Contact);
+            List<McMapFolderFolderEntry> present = McMapFolderFolderEntry.QueryByFolderIdClassCode (folder.AccountId, folder.Id, 
+                McAbstrFolderEntry.ClassCodeEnum.Contact);
             foreach (var deviceContact in deviceContacts) {
                 // Use the TPL like iOS GCD here. Schedule chunks.
                 var task = NcTask.Run (() => {

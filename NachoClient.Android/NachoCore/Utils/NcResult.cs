@@ -68,6 +68,7 @@ namespace NachoCore.Utils
             Info_ValidateConfigSucceeded,
             Info_ExplicitThrottling,
             Info_NeedContactsPermission,
+            Info_NeedCalPermission,
             Info_AsAutoDComplete,
             Info_AsProvisionSuccess,
             Info_AsOptionsSuccess,
