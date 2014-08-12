@@ -19,6 +19,9 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
+		MonoTouch.UIKit.UINavigationItem navigationBar { get; set; }
+
+		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
 
 		[Outlet]
@@ -26,9 +29,9 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (scrollView != null) {
-				scrollView.Dispose ();
-				scrollView = null;
+			if (cancelButton != null) {
+				cancelButton.Dispose ();
+				cancelButton = null;
 			}
 
 			if (contentView != null) {
@@ -36,14 +39,19 @@ namespace NachoClient.iOS
 				contentView = null;
 			}
 
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
+			if (scrollView != null) {
+				scrollView.Dispose ();
+				scrollView = null;
 			}
 
 			if (sendButton != null) {
 				sendButton.Dispose ();
 				sendButton = null;
+			}
+
+			if (navigationBar != null) {
+				navigationBar.Dispose ();
+				navigationBar = null;
 			}
 		}
 	}
