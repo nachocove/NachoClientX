@@ -94,6 +94,7 @@ namespace NachoClient.iOS
                 manager.StartManager ();
 
                 //Authenticate (there are other authentication options)
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppUser;
                 manager.Authenticator.AuthenticateInstallation ();
 
                 //Rethrow any unhandled .NET exceptions as native iOS
@@ -468,7 +469,7 @@ namespace NachoClient.iOS
         {
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_LIFECYCLE, "CredReqCallback Called");
+                Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -526,7 +527,7 @@ namespace NachoClient.iOS
 
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_LIFECYCLE, "ServConfReqCallback Called");
+                Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -599,7 +600,7 @@ namespace NachoClient.iOS
         {
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId);
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_LIFECYCLE, "CertAskReqCallback Called");
+                Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -627,7 +628,6 @@ namespace NachoClient.iOS
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
             BadgeNotifAllowed = false;
             Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
-
         }
 
         private void BadgeNotifGoInactive ()

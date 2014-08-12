@@ -184,6 +184,15 @@ namespace NachoClient.iOS
                 PerformSegue ("SegueToAdvancedLogin", this);
             };
 
+            emailField.ShouldReturn += (textField) => {
+                passwordField.BecomeFirstResponder();
+                return true;
+            };
+            passwordField.ShouldReturn += (textField) => {
+                submitButton.SendActionForControlEvents(UIControlEvent.TouchUpInside);
+                return true;
+            };
+
             yOffset = advancedButton.Frame.Bottom + 20;
            
             LayoutView ();

@@ -93,6 +93,7 @@ namespace NachoClient.iOS
         protected bool endChanged = false;
         protected bool allDayEvent = false;
         protected bool eventEditStarted = false;
+        protected bool isRecurring = false;
 
         protected bool createEvent = false;
         protected bool displayEvent = false;
@@ -178,6 +179,9 @@ namespace NachoClient.iOS
             case CalendarItemEditorAction.view:
                 item = McCalendar.QueryById<McCalendar> (item.Id);
                 c = item;
+                if (0 != c.recurrences.Count) {
+                    isRecurring = true;
+                }
                 ToggleActions ();
                 displayEvent = true;
                 CreateEventView ();
@@ -947,11 +951,12 @@ namespace NachoClient.iOS
                 map.ZoomEnabled = false;
                 map.ScrollEnabled = false;
 
-                if (map != null) {
-                    contentView.AddSubview (map);
-                } else {
-                    IMAGE_HEIGHT = 0;
-                }
+//                if (map != null) {
+//                    contentView.AddSubview (map);
+//                } else {
+//                    IMAGE_HEIGHT = 0;
+//                }
+                IMAGE_HEIGHT = 0;
 
                 //event view
                 EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 700));
@@ -975,11 +980,16 @@ namespace NachoClient.iOS
                 AddTextLabelWithImage (45, 135, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 134, EventInfoView);
                 AddDetailTextLabel (25, 160, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
                 AddDetailTextLabel (25, 180, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
+                AddDetailTextLabel (25, 200, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
+                float RECURRING_OFFEST = 0f;
+                if (isRecurring) {
+                    RECURRING_OFFEST = 40f;
+                } 
 
                 //phone label, image and detail
-                AddTextLabelWithImage (45, 20 + 135 + 57, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), 20 + 134 + 57, EventInfoView);
+                AddTextLabelWithImage (45, RECURRING_OFFEST + 20 + 135 + 57, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFEST + 20 + 134 + 57, EventInfoView);
 
-                UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, 20 + 160 + 57, SCREEN_WIDTH - 50, 15));
+                UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, RECURRING_OFFEST + 20 + 160 + 57, SCREEN_WIDTH - 50, 15));
                 eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
                 eventPhoneDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Normal);
                 eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
@@ -991,9 +1001,9 @@ namespace NachoClient.iOS
                 EventInfoView.Add (eventPhoneDetailButton);  
 
                 //attendees label, image and detail
-                AddTextLabelWithImage (45, 20 + 135 + 57 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), 20 + 134 + 57 + 57, EventInfoView);
+                AddTextLabelWithImage (45, RECURRING_OFFEST + 20 + 135 + 57 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), RECURRING_OFFEST + 20 + 134 + 57 + 57, EventInfoView);
 
-                eventAttendeeView = new UIView (new RectangleF (0, 20 + 135 + 57 + 57 + 15, SCREEN_WIDTH, 96));
+                eventAttendeeView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 135 + 57 + 57 + 15, SCREEN_WIDTH, 96));
                 var attendeeTap = new UITapGestureRecognizer ();
                 attendeeTap.AddTarget (() => {
                     PerformSegue ("EventToEventAttendees", this);
@@ -1007,7 +1017,7 @@ namespace NachoClient.iOS
                 //////////////////////
 
                 //alerts 
-                eventAlertsView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                eventAlertsView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
                 eventAlertsView.BackgroundColor = UIColor.White;
 
                 UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -1034,7 +1044,7 @@ namespace NachoClient.iOS
                 EventInfoView.Add (eventAlertsView);
 
                 //attachments
-                eventAttachmentsView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                eventAttachmentsView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + CELL_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
                 eventAttachmentsView.BackgroundColor = UIColor.White;
 
                 UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -1061,7 +1071,7 @@ namespace NachoClient.iOS
                 EventInfoView.Add (eventAttachmentsView);
 
                 //notes
-                eventNotesView = new UIView (new RectangleF (0, 20 + 245 + IMAGE_HEIGHT + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
+                eventNotesView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
                 eventNotesView.BackgroundColor = UIColor.White;
 
                 UIImageView notesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -1090,9 +1100,8 @@ namespace NachoClient.iOS
                 eventNotesView.AddGestureRecognizer (notesTap);
                 EventInfoView.Add (eventNotesView);
 
-
                 for (int i = 0; i < 4; i++) {
-                    AddLine (23f, 20 + 245 + IMAGE_HEIGHT + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
+                    AddLine (23f, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
                 }
 
                 //Content View
@@ -1102,7 +1111,7 @@ namespace NachoClient.iOS
 
                 //Scroll View
                 scrollView.BackgroundColor = UIColor.White;
-                scrollView.ContentSize = new SizeF (SCREEN_WIDTH, 20 + 608 + 20);
+                scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFEST + 20 + 608 + 20 - 115);
                 scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             }
 
@@ -1155,7 +1164,7 @@ namespace NachoClient.iOS
 
                 //location view
                 var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-                if (null != c.Location) {
+                if (null != c.Location & "" != c.Location) {
                     locationLabelView.Text = c.Location;
                 } else {
                     locationLabelView.Text = "Not specified";
@@ -1180,6 +1189,13 @@ namespace NachoClient.iOS
                     } else {
                         durationLabelView.Text = "from " + Pretty.FullDateString (c.StartTime) + " until " + Pretty.FullDateString (c.EndTime);
                     }
+                }
+
+                var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
+                if (isRecurring) {
+                    recurrenceLabelView.Text = MakeRecurrenceString (c.recurrences);
+                    recurrenceLabelView.SizeToFit ();
+                    //recurrenceLabelView.Lines = 0;
                 }
 
                 //phone view
@@ -1682,6 +1698,103 @@ namespace NachoClient.iOS
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT);
             scrollView.ContentSize = contentView.Frame.Size;
+        }
+
+        protected string MakeRecurrenceString (List<McRecurrence> r)
+        {
+            McRecurrence rPattern = r.ElementAt (0);
+            if (0 == rPattern.Type) { 
+                if (1 < rPattern.Interval) {
+                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " days";
+                }
+                return "repeats " + rPattern.Type.ToString ().ToLower ();
+            }
+            if ("Weekly" == rPattern.Type.ToString ()) { 
+                bool hasInterval = false;
+                string weekRecurrenceString = "repeats every ";
+                if (1 < rPattern.Interval) {
+                    weekRecurrenceString += rPattern.Interval.ToString ().ToLower () + " weeks";
+                    hasInterval = true;
+                }
+                if (0 != rPattern.DayOfWeek) {
+                    var dayValue = (byte)rPattern.DayOfWeek;
+                    if (127 == dayValue) {
+                        return "repeats at the end of every month";
+                    }
+                    if (62 == dayValue) {
+                        return "repeats weekly on workdays";
+                    }
+                    if (65 == dayValue) {
+                        return "repeats weekly on weekends";
+                    }
+                    bool isSunday = (dayValue & (1 << 0)) != 0;
+                    bool isMonday = (dayValue & (1 << 1)) != 0;
+                    bool isTuesday = (dayValue & (1 << 2)) != 0;
+                    bool isWednesday = (dayValue & (1 << 3)) != 0;
+                    bool isThursday = (dayValue & (1 << 4)) != 0;
+                    bool isFriday = (dayValue & (1 << 5)) != 0;
+                    bool isSaturday = (dayValue & (1 << 6)) != 0;
+                    var s = new List<string> ();
+                    if (isSunday) {
+                        s.Add ("Sun");
+                    }
+                    if (isMonday) {
+                        s.Add ("Mon");
+                    }
+                    if (isTuesday) {
+                        s.Add ("Tue");
+                    }
+                    if (isWednesday) {
+                        s.Add ("Wed");
+                    }
+                    if (isThursday) {
+                        s.Add ("Thu");
+                    }
+                    if (isFriday) {
+                        s.Add ("Fri");
+                    }
+                    if (isSaturday) {
+                        s.Add ("Sat");
+                    }
+                    if (1 == s.Count) {
+                        if (hasInterval) {
+                            return weekRecurrenceString;
+                        } else {
+                            return "repeats weekly";
+                        }
+                    } else if (hasInterval) {
+                        weekRecurrenceString += " on " + Util.MakeCommaSeparatedList (s);
+                    } else {
+                        weekRecurrenceString += "week on " + Util.MakeCommaSeparatedList (s);
+                    }
+                    return weekRecurrenceString;
+
+                }
+                return "repeats " + rPattern.Type.ToString ().ToLower ();
+            }
+            if ("Monthly" == rPattern.Type.ToString ()) {
+                if (1 < rPattern.Interval) {
+                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " months";
+                }
+                return "repeats " + rPattern.Type.ToString ().ToLower ();
+            }
+            if ("MonthlyOnDay" == rPattern.Type.ToString ()) {
+                if (1 < rPattern.Interval) {
+                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " months";
+                }
+                return "repeats on the " + Util.AddOrdinalSuffix((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString () + " of every month";
+            }
+            if ("Yearly" == rPattern.Type.ToString ()) {
+                if (1 < rPattern.Interval) {
+                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " years";
+                }
+                return "repeats " + rPattern.Type.ToString ().ToLower ();
+            }
+            if ("YearlyOnDay" == rPattern.Type.ToString ()) {
+                return "repeats every year on the " + Util.AddOrdinalSuffix((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString ()
+                    + " of " + rPattern.MonthOfYear.ToString ();
+            }
+            return "Case error: " + rPattern.Type.ToString ();
         }
 
         protected void ExtractValues ()

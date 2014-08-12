@@ -192,6 +192,9 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                if (this.NavigationController.NavigationBarHidden == true) {
+                    this.NavigationController.NavigationBarHidden = false;
+                }
             }
             carouselView.ReloadData ();
             inboxSource.SetEmailMessages (NcEmailManager.Inbox ());

@@ -168,9 +168,10 @@ namespace NachoCore.Model
         public string FlagType { set; get; }
 
         /// User has asked to hide the message for a while
-        public DateTime FlagUtcDeferUntil { set; get; }
+        public DateTime FlagUtcStartDate { set; get; }
 
-        public DateTime FlagDeferUntil { set; get; }
+        public DateTime FlagStartDate { set; get; }
+
         // User must complete task by.
         public DateTime FlagUtcDue { set; get; }
 
@@ -243,7 +244,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcDeferUntil < ?",
+                " e.FlagUtcStartDate < ?",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
@@ -258,7 +259,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcDeferUntil < ? " +
+                " e.FlagUtcStartDate < ? " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
@@ -290,7 +291,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcDeferUntil < ? " +
+                " e.FlagUtcStartDate < ? " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT 20",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
@@ -303,7 +304,7 @@ namespace NachoCore.Model
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.IsAwaitingDelete = 0 AND " +
-                " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
+                " e.FlagUtcStartDate > ? ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
         }
 
@@ -336,14 +337,14 @@ namespace NachoCore.Model
 
         public bool IsDeferred ()
         {
-            if ((DateTime.MinValue == FlagDeferUntil) && (DateTime.MinValue == FlagUtcDeferUntil)) {
+            if ((DateTime.MinValue == FlagStartDate) && (DateTime.MinValue == FlagUtcStartDate)) {
                 return false;
             }
-            if (DateTime.MinValue != FlagDeferUntil) {
-                return DateTime.Now < FlagDeferUntil;
+            if (DateTime.MinValue != FlagStartDate) {
+                return DateTime.Now < FlagStartDate;
             }
-            if (DateTime.MinValue != FlagUtcDeferUntil) {
-                return DateTime.UtcNow < FlagUtcDeferUntil;
+            if (DateTime.MinValue != FlagUtcStartDate) {
+                return DateTime.UtcNow < FlagUtcStartDate;
             }
             NcAssert.CaseError ();
             return false;
@@ -354,7 +355,7 @@ namespace NachoCore.Model
             if ((DateTime.MinValue == FlagDue) && (DateTime.MinValue == FlagUtcDue)) {
                 return false;
             }
-            if ((FlagDue == FlagDeferUntil) && (FlagUtcDue == FlagUtcDeferUntil)) {
+            if ((FlagDue == FlagStartDate) && (FlagUtcDue == FlagUtcStartDate)) {
                 return false;
             }
             return true;

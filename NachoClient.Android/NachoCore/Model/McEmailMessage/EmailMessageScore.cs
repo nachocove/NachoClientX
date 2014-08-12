@@ -284,7 +284,7 @@ namespace NachoCore.Model
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
 
-            ExtractDateTimeFromPair (FlagDeferUntil, FlagUtcDeferUntil, ref deferredUntil);
+            ExtractDateTimeFromPair (FlagStartDate, FlagUtcStartDate, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
 
             if (IsValidDateTime (deadline)) {
