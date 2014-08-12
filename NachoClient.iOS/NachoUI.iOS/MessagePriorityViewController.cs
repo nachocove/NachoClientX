@@ -105,11 +105,29 @@ namespace NachoClient.iOS
 
             switch (request) {
             case "Later":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Later);
+                owner.DismissChildMessageEditor (this);
+                return;
             case "Tonight":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Tonight);
+                owner.DismissChildMessageEditor (this);
+                return;
             case "Tomorrow":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Tomorrow);
+                owner.DismissChildMessageEditor (this);
+                return;
             case "NextWeek":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.NextWeek);
+                owner.DismissChildMessageEditor (this);
+                return;
             case "MonthEnd":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.MonthEnd);
+                owner.DismissChildMessageEditor (this);
+                return;
             case "NextMonth":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.NextMonth);
+                owner.DismissChildMessageEditor (this);
+                return;
             case "Forever":
                 NcMessageDeferral.DeferThread (thread, MessageDeferralType.Forever);
                 owner.DismissChildMessageEditor (this);
@@ -119,6 +137,9 @@ namespace NachoClient.iOS
                 PerformSegue ("MessagePriorityToDatePicker", this);
                 break;
             case "None":
+                NcMessageDeferral.DeferThread (thread, MessageDeferralType.None);
+                owner.DismissChildMessageEditor (this);
+                return;
             default:
                 NcAssert.CaseError ();
                 return;
