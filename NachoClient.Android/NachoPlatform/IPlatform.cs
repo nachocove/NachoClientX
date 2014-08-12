@@ -81,8 +81,9 @@ namespace NachoPlatform
 
     public interface IPlatformNotif
     {
-        void ScheduleNotif (int handle, DateTime when, string message);
+        void ScheduleNotif (int handle, DateTime when, string message, bool sound);
         void CancelNotif (int handle);
+        int BadgeNumber { get; set; }
     }
 
     public abstract class PlatformContactRecord

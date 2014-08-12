@@ -30,7 +30,10 @@ namespace NachoPlatform
             }
         }
 
-        public void ScheduleNotif (int handle, DateTime when, string message)
+        // Badge number doesn't display on Android.
+        public int BadgeNumber { get; set; }
+
+        public void ScheduleNotif (int handle, DateTime when, string message, bool sound)
         {
             NcAssert.True (false);
         }

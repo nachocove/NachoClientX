@@ -210,7 +210,7 @@ namespace NachoClient.iOS
             if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
                 var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                var emailMessageId = ((NSNumber)localNotification.UserInfo.ObjectForKey (NoteKey)).IntValue;
+                var emailMessageId = localNotification.Handle ();
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
             }
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
@@ -246,7 +246,7 @@ namespace NachoClient.iOS
         public override void OnActivated (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
-            BadgeNotifClear ();
+            NcApplication.Instance.BadgeNotifClear ();
             NcApplication.Instance.StartClass3Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass3Services complete");
 
@@ -272,7 +272,7 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
-            BadgeNotifGoInactive ();
+            NcApplication.Instance.BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
             NcApplication.Instance.StopClass4Services ();
@@ -401,7 +401,7 @@ namespace NachoClient.iOS
                 // preceed Info_SyncSucceeded.
                 BackEnd.Instance.Stop ();
                 UnhookFetchStatusHandler ();
-                BadgeNotifUpdate ();
+                NcApplication.Instance.BadgeNotifUpdate ();
                 FinalShutdown (null);
                 CompletionHandler (FetchResult);
                 break;
@@ -441,11 +441,8 @@ namespace NachoClient.iOS
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
             Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification called.");
-            var value = (NSNumber)notification.UserInfo.ObjectForKey (NoteKey);
-            if (null != value) {
-                var emailMessageId = value.IntValue;
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
-            }
+            var emailMessageId = notification.Handle ();
+            Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
@@ -458,7 +455,7 @@ namespace NachoClient.iOS
                 // We use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because we want
                 // To also act when the server marks a message as read (we remove the notif).
                 if (accountId == Account.Id) {
-                    BadgeNotifUpdate ();
+                    NcApplication.Instance.BadgeNotifUpdate ();
                 }
                 break;
             }
@@ -607,72 +604,6 @@ namespace NachoClient.iOS
             } else {
                 // UI FIXME - ask user and call CertAskResp async'ly.
                 NcApplication.Instance.CertAskResp (accountId, true);
-            }
-        }
-
-        /* BADGE & NOTIFICATION LOGIC HERE.
-         * - OnActivated clears ALL notifications an the badge.
-         * - When we are not in the active state, and we get an indication of a new, hot, and unread email message:
-         *   - we create a local notification for that message.
-         *   - we set the badge number to the count of all new, hot, and unread email messages that have arrived 
-         *     after we left the active state.
-         * NOTE: This code will need to get a little smarter when we are doing many types of notification.
-         */
-        static NSString NoteKey = new NSString ("McEmailMessage.Id");
-
-        private bool BadgeNotifAllowed = false;
-
-        private void BadgeNotifClear ()
-        {
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
-            BadgeNotifAllowed = false;
-            Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
-
-        }
-
-        private void BadgeNotifGoInactive ()
-        {
-            McMutables.Set ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            BadgeNotifAllowed = true;
-            Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
-        }
-
-        // It is okay if this function is called more than it needs to be.
-        private void BadgeNotifUpdate ()
-        {
-            Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
-            if (!BadgeNotifAllowed) {
-                return;
-            }
-            var datestring = McMutables.GetOrCreate ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
-            var since = DateTime.Parse (datestring);
-            var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
-
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
-
-            var soundExpressed = false;
-            int remainingVisibleSlots = 10;
-            foreach (var message in unreadAndHot) {
-                if (message.HasBeenNotified) {
-                    continue;
-                }
-                var notif = new UILocalNotification () {
-                    AlertAction = "Nacho Mail",
-                    AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), NoteKey),
-                };
-                if (!soundExpressed) {
-                    notif.SoundName = UILocalNotification.DefaultSoundName;
-                    soundExpressed = true;
-                }
-                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
-                message.HasBeenNotified = true;
-                message.Update ();
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
-                --remainingVisibleSlots;
-                if (0 >= remainingVisibleSlots) {
-                    break;
-                }
             }
         }
     }

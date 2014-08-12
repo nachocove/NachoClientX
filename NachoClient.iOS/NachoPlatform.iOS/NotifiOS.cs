@@ -32,7 +32,7 @@ namespace NachoPlatform
             }
         }
 
-        static NSString NoteKey = new NSString ("NotifiOS.handle");
+        public static NSString NoteKey = new NSString ("NotifiOS.handle");
 
         private UILocalNotification FindNotif (int handle)
         {
@@ -47,7 +47,16 @@ namespace NachoPlatform
             return null;
         }
 
-        public void ScheduleNotif (int handle, DateTime when, string message)
+        public int BadgeNumber { 
+            get { 
+                return UIApplication.SharedApplication.ApplicationIconBadgeNumber;
+            }
+            set {
+                UIApplication.SharedApplication.ApplicationIconBadgeNumber = value;
+            }
+        }
+
+        public void ScheduleNotif (int handle, DateTime when, string message, bool sound)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
                 var notif = FindNotif (handle);
@@ -60,6 +69,9 @@ namespace NachoPlatform
                     FireDate = when.ToNSDate(),
                     TimeZone = NSTimeZone.FromAbbreviation ("UTC"),
                 };
+                if (sound) {
+                    notif.SoundName = UILocalNotification.DefaultSoundName;
+                }
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
             });
         }
@@ -85,6 +97,14 @@ namespace NachoPlatform
         public static DateTime ToDateTime(this NSDate nsDate)
         {
             return (new DateTime(2001,1,1,0,0,0)).AddSeconds(nsDate.SecondsSinceReferenceDate);
+        }
+    }
+
+    public static class UILocalNotificationExtensions
+    {
+        public static int Handle (this UILocalNotification notif)
+        {
+            return ((NSNumber)notif.UserInfo.ObjectForKey (Notif.NoteKey)).IntValue;
         }
     }
 }
