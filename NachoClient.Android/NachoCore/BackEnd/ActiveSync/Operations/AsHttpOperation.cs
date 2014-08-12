@@ -65,6 +65,7 @@ namespace NachoCore.ActiveSync
         private const string HeaderXMsRp = "X-MS-RP";
         private const string HeaderXMsLocation = "X-MS-Location";
         private const string HeaderXMsThrottle = "X-MS-ASThrottle";
+        private const string HeaderXMsCredentialServiceUrl = "X-MS-Credential-Service-Url";
         private const string KXsd = "xsd";
         private const string KCommon = "common";
         private const string KRequest = "request";
@@ -75,6 +76,7 @@ namespace NachoCore.ActiveSync
         private const string KDefaultTimeoutSeconds = "20";
         private const string KDefaultTimeoutExpander = "1.2";
         private const string KDefaultRetries = "8";
+        private const int KConsec401ThenReDisc = 5;
         private const string KToXML = "ToXML";
         private string CommandName;
         private IBEContext BEContext;
@@ -504,6 +506,11 @@ namespace NachoCore.ActiveSync
                 //IsBeingThrottled = false;
                 ConsecThrottlePriorDelaySecs = 0;
             }
+            if (HttpStatusCode.Unauthorized != response.StatusCode) {
+                var protocolState = BEContext.ProtocolState;
+                protocolState.Consec401Count = 0;
+                protocolState.Update ();
+            }
             switch (response.StatusCode) {
             case HttpStatusCode.OK:
                 ReportCommResult (ServerUri.Host, false);
@@ -596,8 +603,29 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 // We are ignoring the auto-d directive of MS-ASHTTP 3.2.5.1 here. It doesn't make sense.
                 Owner.ResolveAllDeferred ();
-                return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
-                            
+                /*
+                 * Exchange Online defines two new HTTP status codes that provide more specific reasons for request
+                 * failures caused by authentication issues. However, these status codes are not returned in Exchange
+                 * ActiveSync responses, they are only returned in Autodiscover responses. We recommend that Exchange
+                 * ActiveSync clients that receive repeated back-to-back 401 Unauthorized responses send an Autodiscover 
+                 * request and check for the HTTP status codes in the following table. Status Code Description 456 The
+                 * user's account is blocked. The client should stop sending requests to the server and should prompt 
+                 * the user to contact their administrator. 457 The user's password is expired. The client should stop
+                 * sending requests to the server and should prompt the user to update their password. 
+                 * If the X-MS-Credential-Service-Url header is present in the response, the client should direct the 
+                 * user to the URL contained in the header.
+                 */
+                var protocolState = BEContext.ProtocolState;
+                if (protocolState.LastAutoDSucceeded &&
+                    KConsec401ThenReDisc < protocolState.Consec401Count + 1) {
+                    protocolState.Consec401Count = 0;
+                    protocolState.Update ();
+                    return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP401MAX");
+                } else {
+                    protocolState.Consec401Count++;
+                    protocolState.Update ();
+                    return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
+                }
             case HttpStatusCode.Forbidden:
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 if (response.Headers.Contains (HeaderXMsRp)) {
@@ -669,7 +697,18 @@ namespace NachoCore.ActiveSync
             case (HttpStatusCode)457:
                 ReportCommResult (ServerUri.Host, false);
                 Owner.ResolveAllDeferred ();
-                Owner.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AuthFailPasswordExpired));
+                var result = NcResult.Error (NcResult.SubKindEnum.Error_AuthFailPasswordExpired);
+                if (response.Headers.Contains (HeaderXMsCredentialServiceUrl)) {
+                    Uri credUri = null;
+                    var urlString = response.Headers.GetValues (HeaderXMsCredentialServiceUrl).First ();
+                    try {
+                        credUri = new Uri (urlString);
+                        result.Value = credUri;
+                    } catch {
+                        Log.Error (Log.LOG_AS, "HttpStatusCode.457 with credential URL: {0}", urlString);
+                    }
+                }
+                Owner.StatusInd (result);
                 return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP457");
 
             case HttpStatusCode.InternalServerError:
@@ -702,7 +741,7 @@ namespace NachoCore.ActiveSync
                     //IsBeingThrottled = true;
                     Log.Info (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
                     try {
-                        var protocolState = BEContext.ProtocolState;
+                        protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsThrottle).First ();
                         protocolState.SetAsThrottleReason (value);
                         protocolState.Update ();

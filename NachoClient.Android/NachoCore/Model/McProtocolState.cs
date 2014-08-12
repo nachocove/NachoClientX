@@ -56,6 +56,10 @@ namespace NachoCore.Model
 
         public bool IsWipeRequired { get; set; }
 
+        public bool LastAutoDSucceeded { get; set; }
+
+        public int Consec401Count { get; set; }
+
         public void IncrementAsFolderSyncEpoch ()
         {
             ++AsFolderSyncEpoch;
