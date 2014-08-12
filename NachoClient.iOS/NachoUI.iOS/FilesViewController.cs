@@ -187,6 +187,13 @@ namespace NachoClient.iOS
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
             if (!a.IsDownloaded) {
+                if (a.PercentDownloaded > 0) {
+                    // replace animations if one is already going
+                    FilesTableSource.StopAnimationsOnCell (cell);
+                    FilesSource.StartArrowAnimation (cell);
+                } else {
+                    FilesSource.StartDownloadingAnimation (cell);
+                }
                 string token = PlatformHelpers.DownloadAttachment (a);
                 Token = token; // make this the attachment that will get opened next
                 NcAssert.NotNull (Token, "Found token should not be null");
@@ -443,7 +450,7 @@ namespace NachoClient.iOS
                 if (attachment.IsDownloaded || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
-                    StartDownloadingAnimation (cell, attachment.IsDownloaded);
+                    vc.AttachmentAction (attachment.Id, cell);
                 } else {
                     cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
                 }
@@ -477,7 +484,6 @@ namespace NachoClient.iOS
                 case ItemType.Attachment:
                     McAttachment att = (McAttachment)item;
                     UITableViewCell cell = tableView.CellAt (indexPath);
-                    StartDownloadingAnimation (cell, att.IsDownloaded);
                     vc.AttachmentAction (att.Id, cell);
                     break;
                 case ItemType.Note:
@@ -516,7 +522,6 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            StartDownloadingAnimation (cell, attachment.IsDownloaded);
                             vc.ForwardAttachment (attachment, cell);
                         }
                         return;
@@ -541,7 +546,6 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            StartDownloadingAnimation (cell, attachment.IsDownloaded);
                             vc.AttachmentAction (attachment.Id, cell);
                         }
                         return;
@@ -551,7 +555,6 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (vc.itemType == ItemType.Attachment) {
                             McAttachment attachment = (McAttachment)item;
-                            StartDownloadingAnimation (cell, attachment.IsDownloaded);
                             vc.OpenInOtherApp (attachment, cell);
                         }
                         return;
@@ -601,12 +604,9 @@ namespace NachoClient.iOS
                 return imageView;
             }
 
-            public void StartDownloadingAnimation (UITableViewCell cell, bool isDownloaded)
+            // Do arrow with line animation followed by repeating arrow-only animations
+            public void StartDownloadingAnimation (UITableViewCell cell)
             {
-                if (isDownloaded) {
-                    return;
-                }
-
                 cell.ImageView.Image = UIImage.FromFile (DownloadCircle);
                 UIImageView line =  new UIImageView (UIImage.FromBundle (DownloadLine));
                 UIImageView arrow = new UIImageView (UIImage.FromBundle (DownloadArrow));
@@ -630,6 +630,16 @@ namespace NachoClient.iOS
                         ArrowAnimation (cell, arrow, center);
                     }
                );
+            }
+
+            // Start only the arrow animation
+            public void StartArrowAnimation (UITableViewCell cell)
+            {
+                cell.ImageView.Image = UIImage.FromFile (DownloadCircle);
+                UIImageView arrow = new UIImageView (UIImage.FromBundle (DownloadArrow));
+                cell.ImageView.AddSubview (arrow);
+
+                ArrowAnimation (cell, arrow, arrow.Center);
             }
 
             private static void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
