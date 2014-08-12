@@ -131,13 +131,16 @@ namespace NachoClient.iOS
 
         public void ContactViaEmail ()
         {
-            // send guid to Telemetry and append it to message body so we can correlate 
-            var guid = Guid.NewGuid ();
-            Log.Info (Log.LOG_UI, ContactingSupportNotification + ": " + guid);
-            var messageContent = new Dictionary<string, string> () {
-                { "template", "\n\nSupport identifier: " + guid },
-            };
-            PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
+//            send guid to Telemetry and append it to message body so we can correlate 
+//            var guid = Guid.NewGuid ();
+//            Log.Info (Log.LOG_UI, ContactingSupportNotification + ": " + guid);
+//            var messageContent = new Dictionary<string, string> () {
+//                { "template", "\n\nSupport identifier: " + guid },
+//            };
+
+            //PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
+
+            PerformSegue ("SupportToSupportMessage", this);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -160,6 +163,10 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier.Equals (SegueToNachoNowSegueId)) {
+                return;
+            }
+
+            if(segue.Identifier.Equals("SupportToSupportMessage")){
                 return;
             }
 
