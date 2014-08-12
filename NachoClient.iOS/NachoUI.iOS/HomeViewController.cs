@@ -12,7 +12,7 @@ namespace NachoClient.iOS
 {
     public partial class HomeViewController : NcUIViewController
     {
-        UIPageViewController pageController;
+        public UIPageViewController pageController;
         int accountId;
         public UIPageControl pageDots;
 

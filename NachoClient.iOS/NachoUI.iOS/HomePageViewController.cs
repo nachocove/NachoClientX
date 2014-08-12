@@ -64,11 +64,6 @@ namespace NachoClient.iOS
             helperText.Text = "Text HERE";
             helperText.Font = A.Font_AvenirNextRegular28;
 
-
-
-
-
-           
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
             tutImage.Frame =  new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height - 130);
             base.ViewDidLoad ();
@@ -100,13 +95,7 @@ namespace NachoClient.iOS
             case 0:
                 break;
             case 1:
-                var timelineSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, this.View.Frame.Height);
-                UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
-                timeline.Frame = timelineSize;
-                // timeline starts at top of screen
-                timeline.Center = new PointF (this.View.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
-                this.View.AddSubview (timeline);
-                AnimateTimelineDown (timeline);
+                AnimateTimelineDown ();
                 break;
             case 2:
                 // slide down
@@ -144,6 +133,13 @@ namespace NachoClient.iOS
                     },
                 completion: () => {
                     hotlist.RemoveFromSuperview ();
+                    this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                        var previousPageView = (HomePageController)e.PreviousViewControllers[0];
+                        if (this.PageIndex == previousPageView.PageIndex) {
+                            // we are moving away from this view
+                            hotlist.RemoveFromSuperview ();
+                        }
+                    };
                     }
                 );
         }
@@ -159,23 +155,63 @@ namespace NachoClient.iOS
                     },
                 completion: () => {
                     hotlist.RemoveFromSuperview ();
+                    this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                        var previousPageView = (HomePageController)e.PreviousViewControllers[0];
+                        if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
+                            // we are moving away from this view
+                            hotlist.RemoveFromSuperview ();
+                        }
+                    };
                     }
                 );
         }
 
-        public void AnimateTimelineDown (UIImageView timeline)
+        public void AnimateTimelineDown ()
         {
-            UIView.Animate (
-                duration: 0.7,
-                delay: 1.0,
-                options: UIViewAnimationOptions.CurveEaseInOut,
-                animation: () => {
-                    // Move the hotlist item all the way off the bottom of the screen
-                    timeline.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+            Action<UIImageView> animateSprite = (timeline) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 1.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        timeline.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
                     },
-                completion: () => {
+                    completion: () => {
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            NcAssert.True (timeline != null, "Timeline should not be null");
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
+                                // we are moving away from this view
+                                timeline.RemoveFromSuperview ();
+                            }
+                        };
                     }
                 );
+            };
+
+            EventHandler<UIPageViewFinishedAnimationEventArgs> moveToPage = null;
+            moveToPage = (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                var previousPageView = (HomePageController)e.PreviousViewControllers[0];
+                if (this.PageIndex != previousPageView.PageIndex) {
+                    var timeline = CreateTimelineSprite ();
+                    animateSprite (timeline);
+                    this.owner.pageController.DidFinishAnimating -= moveToPage;
+                }
+            };
+
+            this.owner.pageController.DidFinishAnimating += moveToPage;
+        }
+
+        private UIImageView CreateTimelineSprite ()
+        {
+            var timelineSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, this.View.Frame.Height);
+            UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
+            timeline.Frame = timelineSize;
+            // timeline starts at top of screen
+            timeline.Center = new PointF (this.View.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
+            this.View.AddSubview (timeline);
+            return timeline;
         }
 
         public void AnimateEmailCellLeft (UIImageView emailCell)
@@ -190,10 +226,16 @@ namespace NachoClient.iOS
                     },
                 completion: () => {
                     emailCell.RemoveFromSuperview ();
+                    this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                        var previousPageView = (HomePageController)e.PreviousViewControllers[0];
+                        if (this.PageIndex == previousPageView.PageIndex) {
+                            // we are moving away from this view
+                            emailCell.RemoveFromSuperview ();
+                        }
+                    };
                     }
                 );
         }
-           
 
         // Utilities for resizing images.  May not use
 
