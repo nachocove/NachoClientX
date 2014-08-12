@@ -21,7 +21,6 @@ namespace NachoClient.iOS
         protected float keyboardHeight;
         const int GRAY_BACKGROUND_TAG = 20;
 
-
         UITextField emailText = new UITextField ();
         UITextField serverText = new UITextField ();
         UITextField domainText = new UITextField ();
@@ -335,23 +334,19 @@ namespace NachoClient.iOS
                 textField.ResignFirstResponder ();
                 return true;
             };
-            usernameText.EditingChanged += (object sender, EventArgs e) => {
-                usernameText.TextColor = UIColor.Black;
-            };
 
             usernameText.AutocapitalizationType = UITextAutocapitalizationType.None;
             usernameText.AutocorrectionType = UITextAutocorrectionType.No;
 
             emailText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
-                emailText.TextColor = UIColor.Black;
                 textField.ResignFirstResponder ();
+                textField.TextColor = UIColor.Black;
                 return true;
             };
 
             emailText.EditingChanged += (object sender, EventArgs e) => {
                 haveEnteredEmailAndPass ();
-                emailText.TextColor = UIColor.Black;
             };
 
             emailText.AutocapitalizationType = UITextAutocapitalizationType.None;
@@ -365,12 +360,9 @@ namespace NachoClient.iOS
             domainText.AutocorrectionType = UITextAutocorrectionType.No;
 
             serverText.ShouldReturn += (textField) => {
-                serverText.TextColor = UIColor.Black;
                 textField.ResignFirstResponder ();
+                textField.TextColor = UIColor.Black;
                 return true;
-            };
-            serverText.EditingChanged += (object sender, EventArgs e) => {
-                serverText.TextColor = UIColor.Black;
             };
 
             serverText.AutocapitalizationType = UITextAutocapitalizationType.None;
@@ -380,12 +372,11 @@ namespace NachoClient.iOS
             passwordText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
                 textField.ResignFirstResponder ();
-                passwordText.TextColor = UIColor.Black;
+                textField.TextColor = UIColor.Black;
                 return true;
             };
             passwordText.EditingChanged += (object sender, EventArgs e) => {
                 haveEnteredEmailAndPass ();
-                passwordText.TextColor = UIColor.Black;
             };
             passwordText.AutocapitalizationType = UITextAutocapitalizationType.None;
             passwordText.AutocorrectionType = UITextAutocorrectionType.No;
