@@ -2,10 +2,13 @@
 //
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using NachoCore.Model;
+using Newtonsoft.Json;
+using System.Json;
 
 namespace NachoCore.Utils
 {
@@ -22,6 +25,7 @@ namespace NachoCore.Utils
         COUNTER,
         CAPTURE,
         UI,
+        SUPPORT,
         MAX_TELEMETRY_EVENT_TYPE
     };
 
@@ -246,6 +250,17 @@ namespace NachoCore.Utils
             }
         }
 
+        private string _Support;
+
+        public string Support {
+            get {
+                return _Support;
+            }
+            set {
+                _Support = value;
+            }
+        }
+
         public static bool IsLogEvent (TelemetryEventType type)
         {
             return ((TelemetryEventType.ERROR == type) ||
@@ -275,6 +290,11 @@ namespace NachoCore.Utils
             return (TelemetryEventType.UI == type);
         }
 
+        public static bool IsSupportEvent (TelemetryEventType type)
+        {
+            return (TelemetryEventType.SUPPORT == type);
+        }
+
         public bool IsLogEvent ()
         {
             return IsLogEvent (Type);
@@ -300,6 +320,11 @@ namespace NachoCore.Utils
             return IsUiEvent (Type);
         }
 
+        public bool IsSupportEvent ()
+        {
+            return IsSupportEvent (Type);
+        }
+
         public TelemetryEvent (TelemetryEventType type)
         {
             Timestamp = DateTime.UtcNow;
@@ -315,6 +340,11 @@ namespace NachoCore.Utils
             _Min = 0;
             _Max = 0;
             _StdDev = 0;
+            _UiType = null;
+            _UiObject = null;
+            _UiString = null;
+            _UiLong = 0;
+            _Support = null;
         }
 
         public uint GetSize ()
@@ -561,6 +591,17 @@ namespace NachoCore.Utils
         public static void RecordUiViewController (string uiObject, string state)
         {
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
+        }
+
+        public static void RecordSupport (Dictionary<string, string> info)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.SUPPORT);
+            tEvent.Support = JsonConvert.SerializeObject (info);
+            RecordRawEvent (tEvent);
         }
 
         public void Start<T> () where T : ITelemetryBE, new()
