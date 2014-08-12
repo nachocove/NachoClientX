@@ -597,29 +597,39 @@ namespace NachoClient
 
         }
 
-        public static string MakeCommaSeparatedList(List<string> stringList){
+        public static string MakeCommaSeparatedList (List<string> stringList)
+        {
 
             var endString = " and " + stringList [stringList.Count - 1];
             stringList.RemoveAt (stringList.Count - 1);
             var stringArray = stringList.ToArray ();
-            var commaSeparatedString = String.Join(", ", stringArray);
+            var commaSeparatedString = String.Join (", ", stringArray);
             return commaSeparatedString + endString;
 
         }
 
-        public static string AddOrdinalSuffix(int num){
-            var numString = num.ToString ();
-            var lastdigit = (num % 10);
-            if (1 == lastdigit) {
-                return numString + "st";
+        public static string AddOrdinalSuffix (int num)
+        {
+            if (num <= 0)
+                return num.ToString ();
+
+            switch (num % 100) {
+            case 11:
+            case 12:
+            case 13:
+                return num + "th";
             }
-            if (2 == lastdigit) {
-                return numString + "nd";
+
+            switch (num % 10) {
+            case 1:
+                return num + "st";
+            case 2:
+                return num + "nd";
+            case 3:
+                return num + "rd";
+            default:
+                return num + "th";
             }
-            if (3 == lastdigit) {
-                return numString + "rd";
-            }
-            return numString + "th";
         }
 
         #endregion

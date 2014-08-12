@@ -980,10 +980,10 @@ namespace NachoClient.iOS
                 AddTextLabelWithImage (45, 135, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 134, EventInfoView);
                 AddDetailTextLabel (25, 160, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
                 AddDetailTextLabel (25, 180, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
-                AddDetailTextLabel (25, 200, SCREEN_WIDTH - 50, 15, 600, EventInfoView);
+                AddDetailTextLabel (25, 200, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
                 float RECURRING_OFFEST = 0f;
                 if (isRecurring) {
-                    RECURRING_OFFEST = 20f;
+                    RECURRING_OFFEST = 40f;
                 } 
 
                 //phone label, image and detail
@@ -1194,6 +1194,8 @@ namespace NachoClient.iOS
                 var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
                 if (isRecurring) {
                     recurrenceLabelView.Text = MakeRecurrenceString (c.recurrences);
+                    recurrenceLabelView.SizeToFit ();
+                    //recurrenceLabelView.Lines = 0;
                 }
 
                 //phone view
