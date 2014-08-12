@@ -25,7 +25,9 @@ namespace NachoClient.iOS
             private set;
         }
 
-        const string TutPageOne = "Content/Tutorial-Page1.png";
+       
+        //const string TutPageOne = "Content/Tutorial-Page1.png";
+        const string TutPageOne = "Content/HG-pag1.png";
         const string TutPageTwo = "Content/Tutorial-Page2.png";
         const string TutPageThree = "Content/Tutorial-Page3.png";
         const string TutPageFour = "Content/Tutorial-Page4.png";
@@ -46,14 +48,38 @@ namespace NachoClient.iOS
             // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
            
             string fileName = Tutorial [this.PageIndex];
+            UIView pageContainerView = new UIView (); // will contain the image and text
+            UILabel helperText = new UILabel ();  // suspect we want one or two helper text labels
+
+
+            pageContainerView.Frame = new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height);
+            // does this accurately grab the right space?
+            // helpertext should be relative to pageContainerView...
+            // need to figure out why this frame is not being generated relative to container
+            helperText.Frame = new RectangleF (0, View.Frame.Height - 260, View.Frame.Width, 100);
+           // helperTextView.Frame = new RectangleF (0, 0, 300, 300);
+            helperText.BackgroundColor = UIColor.Red; // debug
+            helperText.TextColor = UIColor.Black;
+           
+            helperText.Text = "Text HERE";
+            helperText.Font = A.Font_AvenirNextRegular28;
+
+
+
+
+
            
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
-            tutImage.Frame = this.View.Frame;
+            tutImage.Frame =  new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height - 130);
             base.ViewDidLoad ();
             tutImage.ContentMode = UIViewContentMode.ScaleToFill;
             //tutImage.Image = ResizeImage (fullImage, tutImage.Frame.Width, tutImage.Frame.Height);
             tutImage.UserInteractionEnabled = true;
-            this.View.AddSubview (tutImage);
+            pageContainerView.AddSubview (tutImage);
+            pageContainerView.AddSubview (helperText);
+
+            this.View.AddSubview (pageContainerView);
+
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
             Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
         }

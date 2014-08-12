@@ -106,13 +106,15 @@ namespace NachoClient.iOS
              //setup 
             pageDots.Pages = this.TotalPages;
             pageDots.CurrentPage = 0;
-            pageDots.BackgroundColor = A.Color_NachoGreen;
+            pageDots.BackgroundColor = UIColor.White;
+            pageDots.PageIndicatorTintColor = UIColor.Gray;
+            pageDots.CurrentPageIndicatorTintColor = UIColor.Black;
 
             //containerView.Frame = new System.Drawing.RectangleF (0, View.Frame.Bottom - 50, View.Frame.Width, 50);
-            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Height-50  , this.View.Frame.Width, 50);
-            containerView.BackgroundColor = A.Color_NachoGreen;
-            pageDots.Frame = new System.Drawing.RectangleF(10,0, 50, 40);  // relative to containerView
-           this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
+            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Bottom-50  , this.View.Frame.Width, 50);
+            containerView.BackgroundColor = UIColor.White;
+            pageDots.Frame = new System.Drawing.RectangleF(20,10, 50, 40);  // relative to containerView
+            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
                 UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.None);
 
             this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
@@ -127,10 +129,12 @@ namespace NachoClient.iOS
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
             UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-100, View.Frame.Top, 100, 50));
+            closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
-            closeTutorial.TitleLabel.TextColor = UIColor.White;
+            //closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            closeTutorial.BackgroundColor = A.Color_NachoGreen;
+            closeTutorial.SetTitleColor (UIColor.Black, UIControlState.Normal);
+            closeTutorial.BackgroundColor = UIColor.White;
             //closeTutorial.BackgroundColor = A.Color_NachoRed; // debug
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
