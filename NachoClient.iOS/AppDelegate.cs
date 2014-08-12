@@ -94,6 +94,7 @@ namespace NachoClient.iOS
                 manager.StartManager ();
 
                 //Authenticate (there are other authentication options)
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppUser;
                 manager.Authenticator.AuthenticateInstallation ();
 
                 //Rethrow any unhandled .NET exceptions as native iOS
