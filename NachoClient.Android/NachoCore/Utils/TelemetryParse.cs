@@ -208,6 +208,7 @@ namespace NachoCore.Utils
                     break;
                 }
             } else if (tEvent.IsSupportEvent ()) {
+                dict.AddString ("event_type", "SUPPORT");
                 dict.AddString ("support", tEvent.Support);
             } else {
                 NcAssert.True (false);
