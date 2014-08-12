@@ -81,6 +81,9 @@
     <Reference Include="MimeKit">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\MimeKit.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json.NET\json.net-4.5.11\lib\android\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
