@@ -12,9 +12,31 @@ namespace NachoClient.iOS
 	[Register ("GeneralSettingsViewController")]
 	partial class GeneralSettingsViewController
 	{
+		[Outlet]
+		MonoTouch.UIKit.UIView contentView { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIBarButtonItem menuButton { get; set; }
+
+		[Outlet]
+		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (scrollView != null) {
+				scrollView.Dispose ();
+				scrollView = null;
+			}
+
+			if (contentView != null) {
+				contentView.Dispose ();
+				contentView = null;
+			}
+
+			if (menuButton != null) {
+				menuButton.Dispose ();
+				menuButton = null;
+			}
 		}
 	}
 }
