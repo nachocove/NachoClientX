@@ -111,6 +111,13 @@ namespace NachoCore.Utils
                 return obj;
             }
         }
+
+        public bool IsEmpty ()
+        {
+            lock (Lock) {
+                return (0 == _Queue.Count);
+            }
+        }
     }
 }
 

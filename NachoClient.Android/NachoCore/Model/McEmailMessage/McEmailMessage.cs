@@ -328,7 +328,7 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Email;
         }
 
-        public const double minHotScore = 0.1;
+        public const double minHotScore = 0.5;
 
         public bool isHot ()
         {

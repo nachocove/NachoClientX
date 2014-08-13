@@ -104,6 +104,7 @@
     <Compile Include="NcTimeVarianceTest.cs" />
     <Compile Include="NcTimerTest.cs" />
     <Compile Include="NcTimerPoolTest.cs" />
+    <Compile Include="NcBrainTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -355,7 +355,7 @@ namespace NachoCore.Utils
 
     public class Telemetry
     {
-        private static bool ENABLED = true;
+        public static bool ENABLED = true;
         private static bool PERSISTED = true;
         // Parse has a maximum data size of 128K for PFObject. But the
         // exact definition of data size of an object with multiple

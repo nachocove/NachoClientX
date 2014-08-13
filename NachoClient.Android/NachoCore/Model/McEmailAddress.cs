@@ -11,10 +11,6 @@ namespace NachoCore.Model
 {
     public partial class McEmailAddress : McAbstrObjectPerAcc
     {
-        public const int minHotScore = 1;
-        public const int minVipScore = 1000000;
-
-
         public McEmailAddress ()
         {
         }
@@ -27,8 +23,6 @@ namespace NachoCore.Model
 
         [Indexed]
         public string CanonicalEmailAddress { get; set; }
-
-        public bool IsHot { get; set; }
 
         public bool IsVip { get; set; }
 
@@ -64,22 +58,6 @@ namespace NachoCore.Model
                 emailAddress.Insert ();
             }
             return true;
-        }
-
-        /// TODO: VIPness should be in its own member
-        public bool isHot ()
-        {
-            if (isVip ()) {
-                return ((Score - minVipScore) >= minHotScore);
-            } else {
-                return (Score >= minHotScore);
-            }
-        }
-
-        /// TODO: VIPness should be in its own member
-        public bool isVip ()
-        {
-            return (Score >= minVipScore);
         }
     }
 }
