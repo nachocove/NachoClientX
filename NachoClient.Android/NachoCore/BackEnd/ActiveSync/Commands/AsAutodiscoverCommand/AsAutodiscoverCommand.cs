@@ -555,7 +555,7 @@ namespace NachoCore.ActiveSync
         private void DoAcceptServerConf ()
         {
             var protocolState = BEContext.ProtocolState;
-            protocolState.LastAutoDSucceeded = true;
+            protocolState.LastAutoDSucceeded = AutoDSucceeded;
             protocolState.Update ();
 
             // Save validated server config in DB.
