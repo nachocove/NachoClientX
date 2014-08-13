@@ -326,6 +326,12 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (segue.Identifier.Equals ("EventToFiles")) {
+                var dc = (FilesHierarchyViewController)segue.DestinationViewController;
+                //dc.SetOwner (this);
+                return;
+            }
+
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
                 if (createEvent) {
@@ -341,6 +347,7 @@ namespace NachoClient.iOS
                 dc.SetReminder (c.Reminder);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
+                    SyncMeetingRequest ();
                     ConfigureEventView ();
                 };
                 return;
@@ -734,6 +741,41 @@ namespace NachoClient.iOS
                 //phoneView.AddGestureRecognizer (phoneTap);
 
 
+                //People
+                peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+                peopleView.BackgroundColor = UIColor.White;
+
+                UIImageView peopleImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+                peopleImage.Image = UIImage.FromBundle ("icn-peoples");
+                peopleView.AddSubview (peopleImage);
+
+                UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 75, TEXT_LINE_HEIGHT));
+                peopleLabel.Text = "Attendees";
+                peopleLabel.Font = A.Font_AvenirNextRegular14;
+                peopleLabel.TextColor = solidTextColor;
+                peopleView.AddSubview (peopleLabel);
+
+                UIImageView peopleAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
+                peopleAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+                peopleView.AddSubview (peopleAccessoryImage);
+
+                UILabel peopleDetailLabel = new UILabel ();
+                peopleDetailLabel.Text = "(" + c.attendees.Count + ")";
+                peopleDetailLabel.Tag = PEOPLE_DETAIL_TAG;
+                peopleDetailLabel.SizeToFit ();
+                peopleDetailLabel.TextAlignment = UITextAlignment.Right;
+                peopleDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - peopleDetailLabel.Frame.Width - 34, 12.438f, peopleDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+                peopleDetailLabel.Font = A.Font_AvenirNextRegular14;
+                peopleDetailLabel.TextColor = A.Color_808080;
+                peopleView.AddSubview (peopleDetailLabel);
+
+                var peopleTap = new UITapGestureRecognizer ();
+                peopleTap.AddTarget (() => {
+                    PerformSegue ("EventToEventAttendees", this);
+                });
+                peopleView.AddGestureRecognizer (peopleTap);
+
+
                 //Attachments
                 attachmentsView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
                 attachmentsView.BackgroundColor = UIColor.White;
@@ -764,45 +806,10 @@ namespace NachoClient.iOS
 
                 var attachmentTap = new UITapGestureRecognizer ();
                 attachmentTap.AddTarget (() => {
-                    //PerformSegue ("EventToAttachment", this);
+                    PerformSegue ("EventToAttachment", this);
                 });
                 attachmentsView.AddGestureRecognizer (attachmentTap);
-
-
-                //People
-                peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-                peopleView.BackgroundColor = UIColor.White;
-
-                UIImageView peopleImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
-                peopleImage.Image = UIImage.FromBundle ("icn-peoples");
-                peopleView.AddSubview (peopleImage);
-
-                UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
-                peopleLabel.Text = "People";
-                peopleLabel.Font = A.Font_AvenirNextRegular14;
-                peopleLabel.TextColor = solidTextColor;
-                peopleView.AddSubview (peopleLabel);
-
-                UIImageView peopleAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-                peopleAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
-                peopleView.AddSubview (peopleAccessoryImage);
-
-                UILabel peopleDetailLabel = new UILabel ();
-                peopleDetailLabel.Text = "(" + c.attendees.Count + ")";
-                peopleDetailLabel.Tag = PEOPLE_DETAIL_TAG;
-                peopleDetailLabel.SizeToFit ();
-                peopleDetailLabel.TextAlignment = UITextAlignment.Right;
-                peopleDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - peopleDetailLabel.Frame.Width - 34, 12.438f, peopleDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                peopleDetailLabel.Font = A.Font_AvenirNextRegular14;
-                peopleDetailLabel.TextColor = A.Color_808080;
-                peopleView.AddSubview (peopleDetailLabel);
-
-                var peopleTap = new UITapGestureRecognizer ();
-                peopleTap.AddTarget (() => {
-                    PerformSegue ("EventToEventAttendees", this);
-                });
-                peopleView.AddGestureRecognizer (peopleTap);
-
+                    
 
                 //Alerts
                 alertsView = new UIView (new RectangleF (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
@@ -930,7 +937,6 @@ namespace NachoClient.iOS
                     line15,
                     line16
                 }); 
-
 
                 //Scroll View
                 scrollView.BackgroundColor = A.Color_NachoNowBackground;
@@ -1194,8 +1200,9 @@ namespace NachoClient.iOS
                 var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
                 if (isRecurring) {
                     recurrenceLabelView.Text = MakeRecurrenceString (c.recurrences);
+                    recurrenceLabelView.Lines = 0;
+                    recurrenceLabelView.LineBreakMode = UILineBreakMode.WordWrap;
                     recurrenceLabelView.SizeToFit ();
-                    //recurrenceLabelView.Lines = 0;
                 }
 
                 //phone view
@@ -1782,7 +1789,7 @@ namespace NachoClient.iOS
                 if (1 < rPattern.Interval) {
                     return "repeats every " + rPattern.Interval.ToString ().ToLower () + " months";
                 }
-                return "repeats on the " + Util.AddOrdinalSuffix((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString () + " of every month";
+                return "repeats on the " + Util.AddOrdinalSuffix ((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString () + " of every month";
             }
             if ("Yearly" == rPattern.Type.ToString ()) {
                 if (1 < rPattern.Interval) {
@@ -1791,8 +1798,8 @@ namespace NachoClient.iOS
                 return "repeats " + rPattern.Type.ToString ().ToLower ();
             }
             if ("YearlyOnDay" == rPattern.Type.ToString ()) {
-                return "repeats every year on the " + Util.AddOrdinalSuffix((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString ()
-                    + " of " + rPattern.MonthOfYear.ToString ();
+                return "repeats every year on the " + Util.AddOrdinalSuffix ((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString ()
+                + " of " + rPattern.MonthOfYear.ToString ();
             }
             return "Case error: " + rPattern.Type.ToString ();
         }
