@@ -13,6 +13,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using MCSwipeTableViewCellBinding;
 using MonoTouch.Dialog;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
@@ -574,6 +575,7 @@ namespace NachoClient.iOS
                     var message = messageThread.SingleMessageSpecialCase ();
                     message.UserAction = 1;
                     message.Update ();
+                    NcBrain.UpdateMessageScore (message.Id);
                     break;
                 case 1:
                     PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
@@ -718,6 +720,7 @@ namespace NachoClient.iOS
                     var message = messageThread.SingleMessageSpecialCase ();
                     message.UserAction = -1;
                     message.Update ();
+                    NcBrain.UpdateMessageScore (message.Id);
                 }
                 return;
             }

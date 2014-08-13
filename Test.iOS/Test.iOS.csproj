@@ -218,6 +218,9 @@
     <Compile Include="..\Test.Android\NcTimerPoolTest.cs">
       <Link>NcTimerPoolTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcBrainTest.cs">
+      <Link>NcBrainTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
