@@ -39,10 +39,13 @@ namespace NachoClient.iOS
         const string BodyThree = "This contains your upcoming meetings" + "\n" + "and events";
         const string BodyFour = "Sliding right or left elsewhere will get you" + "\n" + "shortcusts and options for the items";
 
+        // Background
+
+        const string bgscreen = "Content/02_bg.png";
        
         //const string TutPageOne = "Content/Tutorial-Page1.png";
-        const string TutPageOne = "Content/HG-pag1.png";
-        const string TutPageTwo = "Content/Tutorial-Page2.png";
+        const string TutPageOne = "Content/01_img_only.png";
+        const string TutPageTwo = "Content/02_img_only.png";
         const string TutPageThree = "Content/Tutorial-Page3.png";
         const string TutPageFour = "Content/Tutorial-Page4.png";
         const string TutPageFive = "Content/Tutorial-Page4.png";
@@ -77,6 +80,7 @@ namespace NachoClient.iOS
             string fileName = Tutorial [this.PageIndex];
             //UIView pageContainerView = new UIView (new RectangleF(0,0,View.Frame.Width, View.Frame.Height-50)); // Contains everything created by this object
             UIView pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-50));
+            UIView contentContainer = new UIView (new RectangleF (30, 40, pageContainerView.Frame.Width - 60, 350)); // see size of helpercontainer
             UIView helperContainer = new UIView (new RectangleF(0,pageContainerView.Frame.Top + 350, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom-350)); // contains the helpertext and labels  
             UILabel helperTitleText = new UILabel (new RectangleF(0, 5, helperContainer.Frame.Width, 25));
             UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
@@ -98,7 +102,8 @@ namespace NachoClient.iOS
            
             helperBodyText.BackgroundColor = UIColor.White; // debug
             helperBodyText.Lines = 2;
-            helperTitleText.TextColor = UIColor.Black;
+            helperTitleText.TextColor = A.Color_11464F;
+            helperBodyText.TextColor = A.Color_9B9B9B;
            
             helperTitleText.Text = titleText [this.PageIndex];
             helperBodyText.Text = bodyText[this.PageIndex];
@@ -123,11 +128,19 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
            
-
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+           
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
-            tutImage.Frame =  new RectangleF (0, 0, View.Frame.Width, View.Frame.Height-helperContainer.Frame.Height);
+
+            tutImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+
             tutImage.ContentMode = UIViewContentMode.ScaleToFill;
             tutImage.UserInteractionEnabled = true;
+
+            contentContainer.AddSubview(tutImage);
+
+
 
             //helperText.Frame = new RectangleF (0, 0, View.Frame.Width, (View.Frame.Height/5*2) -50);
 
@@ -140,7 +153,8 @@ namespace NachoClient.iOS
             //helperContainer.BringSubviewToFront (helperTitleText);
 
 
-            pageContainerView.AddSubview (tutImage);
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
             pageContainerView.AddSubview (helperContainer);
             //pageContainerView.AddSubview (helperTitleText);
             //pageContainerView.AddSubview (helperBodyText);
@@ -166,6 +180,9 @@ namespace NachoClient.iOS
 
             switch (this.PageIndex) {
             case 0:
+                UIImageView redButton = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
+                redButton.Center = new PointF (this.View.Frame.Width / 3, this.View.Frame.Height / 3);
+                this.View.AddSubview (redButton);
                 break;
             case 1:
                 AnimateTimelineDown ();
