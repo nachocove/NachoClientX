@@ -5,7 +5,8 @@ using System.IO;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Drawing;
-
+using MonoTouch.CoreGraphics;
+using MonoTouch.CoreAnimation;
 
 using NachoCore.Utils;
 
@@ -16,6 +17,9 @@ namespace NachoClient.iOS
     {
         //loads the HomePageController.xib file and connects it to this object
         public HomeViewController owner;
+
+        // container for iPhone screen-in-screen
+        UIView contentContainer;
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -46,9 +50,8 @@ namespace NachoClient.iOS
         //const string TutPageOne = "Content/Tutorial-Page1.png";
         const string TutPageOne = "Content/01_img_only.png";
         const string TutPageTwo = "Content/02_img_only.png";
-        const string TutPageThree = "Content/Tutorial-Page3.png";
-        const string TutPageFour = "Content/Tutorial-Page4.png";
-        const string TutPageFive = "Content/Tutorial-Page4.png";
+        const string TutPageThree = "Content/02_img_only.png";
+        const string TutPageFour = "Content/02_img_only.png";
 
         string[] titleText = {
             TitleOne,
@@ -68,7 +71,6 @@ namespace NachoClient.iOS
             TutPageTwo,
             TutPageThree,
             TutPageFour,
-            TutPageFive,
         };
 
         public override void ViewDidLoad ()
@@ -80,7 +82,7 @@ namespace NachoClient.iOS
             string fileName = Tutorial [this.PageIndex];
             //UIView pageContainerView = new UIView (new RectangleF(0,0,View.Frame.Width, View.Frame.Height-50)); // Contains everything created by this object
             UIView pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-50));
-            UIView contentContainer = new UIView (new RectangleF (30, 40, pageContainerView.Frame.Width - 60, 350)); // see size of helpercontainer
+            this.contentContainer = new UIView (new RectangleF (30, 40, pageContainerView.Frame.Width - 60, 350)); // see size of helpercontainer
             UIView helperContainer = new UIView (new RectangleF(0,pageContainerView.Frame.Top + 350, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom-350)); // contains the helpertext and labels  
             UILabel helperTitleText = new UILabel (new RectangleF(0, 5, helperContainer.Frame.Width, 25));
             UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
@@ -140,8 +142,6 @@ namespace NachoClient.iOS
 
             contentContainer.AddSubview(tutImage);
 
-
-
             //helperText.Frame = new RectangleF (0, 0, View.Frame.Width, (View.Frame.Height/5*2) -50);
 
 
@@ -162,6 +162,8 @@ namespace NachoClient.iOS
 
             this.View.AddSubview (pageContainerView);
 
+            CreateCovers ();
+
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
             Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
         }
@@ -180,33 +182,71 @@ namespace NachoClient.iOS
 
             switch (this.PageIndex) {
             case 0:
-                UIImageView redButton = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
-                redButton.Center = new PointF (this.View.Frame.Width / 3, this.View.Frame.Height / 3);
-                this.View.AddSubview (redButton);
+                AnimateRedToolTip ();
                 break;
             case 1:
-                AnimateTimelineDown ();
+                // slide left
+                UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
+                hotlist.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+                this.contentContainer.AddSubview (hotlist);
+                AnimateHotlistItemLeft (hotlist);
                 break;
             case 2:
-                // slide down
-                UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
-                hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
-                this.View.AddSubview (hotlist);
-                AnimateHotlistItemDown (hotlist);
+                AnimateTimelineDown ();
                 break;
             case 3:
-                UIImageView hotlist2 = new UIImageView (UIImage.FromBundle ("Icon"));
-                hotlist2.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
-                this.View.AddSubview (hotlist2);
-                AnimateHotlistItemUp (hotlist2);
-                break;
-            case 4:
                 AnimateEmailCellLeft ();
                 break;
             }
         }
 
-        public void AnimateHotlistItemDown (UIImageView hotlist)
+        private void CreateCovers ()
+        {
+            UIView topCoverRect = new UIView (new RectangleF (0, 0, this.View.Bounds.Width, this.contentContainer.Frame.Y));
+            UIView leftCoverRect = new UIView (new RectangleF (0, this.contentContainer.Frame.Y, this.contentContainer.Frame.X, this.contentContainer.Bounds.Height * 3 / 4));
+            UIView rightCoverRect = new UIView (new RectangleF (this.contentContainer.Bounds.Right + this.contentContainer.Frame.X, leftCoverRect.Frame.Y, leftCoverRect.Bounds.Width, this.contentContainer.Bounds.Height * 3 / 4));
+
+            topCoverRect.BackgroundColor = A.Color_NachoGreen;
+            leftCoverRect.BackgroundColor = A.Color_NachoGreen;
+            rightCoverRect.BackgroundColor = A.Color_NachoGreen;
+
+            leftCoverRect.Layer.ZPosition = 100;
+            rightCoverRect.Layer.ZPosition = 100;
+            topCoverRect.Layer.ZPosition = 100;
+
+            this.View.AddSubview (topCoverRect);
+            this.View.AddSubview (leftCoverRect);
+            this.View.AddSubview (rightCoverRect);
+        }
+
+        private UIImageView CreateRedButton ()
+        {
+            UIImageView redButton = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
+            redButton.Center = new PointF (this.contentContainer.Frame.Width / 3, this.contentContainer.Frame.Height / 3);
+            redButton.Layer.Transform = CATransform3D.MakeScale (0.3f, 0.3f, 1.0f);
+            return redButton;
+        }
+
+        private void AnimateRedToolTip ()
+        {
+            Action<UIImageView> animateSprite = (redButton) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 1.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        redButton.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                    },
+                    completion: () => {
+                    }
+                );
+            };
+
+            var redButtonSprite = CreateRedButton ();
+            SetSpriteCallbacks (redButtonSprite, animateSprite);
+        }
+
+        private void AnimateHotlistItemLeft (UIImageView hotlist)
         {
             UIView.Animate (
                 duration: 0.7,
@@ -214,7 +254,7 @@ namespace NachoClient.iOS
                 options: UIViewAnimationOptions.CurveEaseInOut,
                 animation: () => {
                     // Move the hotlist item all the way off the bottom of the screen
-                    hotlist.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height + hotlist.Frame.Height);
+                    hotlist.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height + hotlist.Frame.Height);
                     },
                 completion: () => {
                     hotlist.RemoveFromSuperview ();
@@ -229,35 +269,13 @@ namespace NachoClient.iOS
                 );
         }
 
-        public void AnimateHotlistItemUp (UIImageView hotlist)
-        {
-            UIView.Animate (
-                duration: 0.7,
-                delay: 2.0,
-                options: UIViewAnimationOptions.CurveEaseInOut,
-                animation: () => {
-                    hotlist.Center = new PointF (this.View.Frame.Width / 2, -hotlist.Frame.Height);
-                    },
-                completion: () => {
-                    hotlist.RemoveFromSuperview ();
-                    this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
-                        var previousPageView = (HomePageController)e.PreviousViewControllers[0];
-                        if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
-                            // we are moving away from this view
-                            hotlist.RemoveFromSuperview ();
-                        }
-                    };
-                    }
-                );
-        }
-
         private UIImageView CreateTimelineSprite ()
         {
-            var timelineSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, this.View.Frame.Height);
+            var timelineSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, this.contentContainer.Frame.Height);
             UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
             timeline.Frame = timelineSize;
             // timeline starts at top of screen
-            timeline.Center = new PointF (this.View.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
+            timeline.Center = new PointF (this.contentContainer.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
             return timeline;
         }
             
@@ -270,7 +288,7 @@ namespace NachoClient.iOS
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
                         // Move the hotlist item all the way off the bottom of the screen
-                        timeline.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+                        timeline.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
                     },
                     completion: () => {
 
@@ -284,10 +302,10 @@ namespace NachoClient.iOS
 
         private UIImageView CreateEmailCell ()
         {
-            var emailSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, 55);
+            var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
             UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Icon"));
             emailCell.Frame = emailSize;
-            emailCell.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+            emailCell.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
             return emailCell;
         }
 
@@ -300,7 +318,7 @@ namespace NachoClient.iOS
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
                         // Move the hotlist item all the way off the bottom of the screen
-                        emailCell.Center = new PointF (-emailCell.Frame.Width, this.View.Frame.Height / 2);
+                        emailCell.Center = new PointF (this.contentContainer.Bounds.X - emailCell.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
                     },
                     completion: () => {
                         emailCell.RemoveFromSuperview ();
@@ -339,7 +357,7 @@ namespace NachoClient.iOS
             moveToPage = (object sender, UIPageViewFinishedAnimationEventArgs e) => {
                 var previousPageView = (HomePageController)e.PreviousViewControllers[0];
                 if (this.PageIndex != previousPageView.PageIndex) {
-                    this.View.AddSubview (sprite);
+                    this.contentContainer.AddSubview (sprite);
                     animateSprite (sprite);
                     this.owner.pageController.DidFinishAnimating -= moveToPage;
                     this.owner.pageController.DidFinishAnimating += DidNavigateAwayFromPage (sprite);
