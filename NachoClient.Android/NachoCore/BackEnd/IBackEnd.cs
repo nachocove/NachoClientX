@@ -8,7 +8,14 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
-    public enum BackEndAutoDStateEnum { Running, CertAskWait, ServerConfWait, CredWait, PostAutoDPreFsync, PostAutoDPostFSync };
+    public enum BackEndAutoDStateEnum { 
+        Running, 
+        CertAskWait, 
+        ServerConfWait, 
+        CredWait, 
+        PostAutoDPreInboxSync, 
+        PostAutoDPostInboxSync,
+    };
 
     public interface IBackEnd
     {

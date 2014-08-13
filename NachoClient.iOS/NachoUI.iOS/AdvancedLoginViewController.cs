@@ -400,14 +400,14 @@ namespace NachoClient.iOS
                     certificateCallbackHandler ();
                     return;
 
-                case BackEndAutoDStateEnum.PostAutoDPreFsync:
-                    errorMessage.Text = "Waiting for Folder-Sync.";
+                case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
+                    errorMessage.Text = "Waiting for Inbox-Sync.";
                     waitingView.ShowView ();
                     waitingView.statusMessage.TextColor = A.Color_SystemBlue;
                     waitingView.statusMessage.Text = "Found Your Server...";
                     return;
 
-                case BackEndAutoDStateEnum.PostAutoDPostFSync:
+                case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     PerformSegue (StartupViewController.NextSegue (), this);
                     return;

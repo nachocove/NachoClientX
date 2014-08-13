@@ -60,6 +60,8 @@ namespace NachoCore.Model
 
         public int Consec401Count { get; set; }
 
+        public bool HasSyncedInbox { get; set; }
+
         public void IncrementAsFolderSyncEpoch ()
         {
             ++AsFolderSyncEpoch;

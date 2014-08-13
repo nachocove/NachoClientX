@@ -527,6 +527,12 @@ namespace NachoCore.ActiveSync
             }
             BEContext.ProtoControl.SyncStrategy.ReportSyncResult (reloadedFolders);
 
+            if (!BEContext.ProtocolState.HasSyncedInbox) {
+                // TODO: conditional will need to account for RIC-only 1st sync in the future.
+                var protocolState = BEContext.ProtocolState;
+                protocolState.HasSyncedInbox = true;
+                protocolState.Update ();
+            }
             if (HadEmailMessageSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }

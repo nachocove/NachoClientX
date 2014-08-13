@@ -55,7 +55,7 @@ namespace NachoCore
 
         public virtual BackEndAutoDStateEnum AutoDState {
             get {
-                return BackEndAutoDStateEnum.PostAutoDPostFSync;
+                return BackEndAutoDStateEnum.PostAutoDPostInboxSync;
             }
         }
 
