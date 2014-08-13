@@ -48,30 +48,52 @@ namespace NachoClient.iOS
             // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
            
             string fileName = Tutorial [this.PageIndex];
-            UIView pageContainerView = new UIView (); // will contain the image and text
-            UILabel helperText = new UILabel ();  // suspect we want one or two helper text labels
-
-
-            pageContainerView.Frame = new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height);
-            // does this accurately grab the right space?
-            // helpertext should be relative to pageContainerView...
-            // need to figure out why this frame is not being generated relative to container
-            helperText.Frame = new RectangleF (0, View.Frame.Height - 260, View.Frame.Width, 100);
-           // helperTextView.Frame = new RectangleF (0, 0, 300, 300);
-            helperText.BackgroundColor = UIColor.Red; // debug
-            helperText.TextColor = UIColor.Black;
+            //UIView pageContainerView = new UIView (new RectangleF(0,0,View.Frame.Width, View.Frame.Height-50)); // Contains everything created by this object
+            UIView pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-50));
+            UIView helperContainer = new UIView (new RectangleF(0,(pageContainerView.Frame.Height/4)*3, pageContainerView.Frame.Width, (pageContainerView.Frame.Height/4))); // contains the helpertext and labels  
+            UILabel helperTitleText = new UILabel (new RectangleF (0,helperContainer.Frame.Top, helperContainer.Frame.Width, helperContainer.Frame.Height/2));
+            UILabel helperBodyText = new UILabel (new RectangleF ( 0,helperContainer.Frame.Top+helperTitleText.Frame.Height, helperContainer.Frame.Width, helperContainer.Frame.Height/2)); // suspect we want one or two helper text labels
+           /*
+            pageContainerView.Frame = new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height - 40);
+            helperContainer.Frame = new RectangleF (0, (View.Frame.Height/5) * 3, View.Frame.Width, (View.Frame.Height /5 )*2 - 40);
+*/
+            helperContainer.BackgroundColor = UIColor.Green;
+     
+            helperTitleText.BackgroundColor = UIColor.Red; // debug
+            helperBodyText.BackgroundColor = UIColor.Blue; // debug
+            helperTitleText.TextColor = UIColor.Black;
            
-            helperText.Text = "Text HERE";
-            helperText.Font = A.Font_AvenirNextRegular28;
+            helperTitleText.Text = "Text HERE";
+            helperBodyText.Text = "Next Text";
+            helperBodyText.Font = A.Font_AvenirNextMedium14;
+            helperTitleText.Font = A.Font_AvenirNextRegular24;
+            helperBodyText.TextAlignment = UITextAlignment.Center;
+            helperTitleText.TextAlignment = UITextAlignment.Center;
+            base.ViewDidLoad ();
+
+           
 
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
-            tutImage.Frame =  new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height - 130);
-            base.ViewDidLoad ();
+            tutImage.Frame =  new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
             tutImage.ContentMode = UIViewContentMode.ScaleToFill;
-            //tutImage.Image = ResizeImage (fullImage, tutImage.Frame.Width, tutImage.Frame.Height);
             tutImage.UserInteractionEnabled = true;
+
+            //helperText.Frame = new RectangleF (0, 0, View.Frame.Width, (View.Frame.Height/5*2) -50);
+
+
+             //helperContainer.AddSubview (helperText);
+           // helperTitleText.Center = new PointF( helperContainer.Center.X, helperContainer.Center.Y - helperContainer.Frame.Height/2); 
+            helperContainer.AddSubview (helperTitleText);
+            helperContainer.AddSubview(helperBodyText);
+            helperContainer.BringSubviewToFront (helperBodyText);
+            helperContainer.BringSubviewToFront (helperTitleText);
+
+
             pageContainerView.AddSubview (tutImage);
-            pageContainerView.AddSubview (helperText);
+            //pageContainerView.AddSubview (helperContainer);
+            pageContainerView.AddSubview (helperTitleText);
+            pageContainerView.AddSubview (helperBodyText);
+
 
             this.View.AddSubview (pageContainerView);
 
