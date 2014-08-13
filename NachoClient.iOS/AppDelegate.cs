@@ -102,7 +102,7 @@ namespace NachoClient.iOS
                 AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.ExceptionObject);
 
-                TaskScheduler.UnobservedTaskException += (sender, e) =>
+                NcApplication.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.Exception);
             });
         }

@@ -14,7 +14,8 @@ namespace NachoCore.Utils
         // Version 2 - Enforce EmailsReplied counter. Migrate EmailsRead count
         //             to EmailsReplied counter when appropriate. Add ScoreIsRead,
         //             ScoreIsReplied.
-        public const int Version = 2;
+        // Version 3 - Implement VIP email addresses and hot email messages.
+        public const int Version = 3;
     }
 }
 

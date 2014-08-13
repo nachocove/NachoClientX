@@ -27,16 +27,6 @@ namespace NachoCore.Model
         /// Set only for Device calendars.
         public DateTime DeviceLastUpdate { get; set; }
 
-        /// Is a response to this meeting required? Calendar only.
-        public bool ResponseRequested { get; set; }
-
-        public bool ResponseRequestedIsSet { get; set; }
-
-        /// The default is False.  Calendar only
-        public bool DisallowNewTimeProposal { get; set; }
-
-        public bool DisallowNewTimeProposalIsSet { get; set; }
-
         /// Name of the creator of the calendar item (optional). Calendar only.
         [MaxLength (256)]
         public string OrganizerName { get; set; }

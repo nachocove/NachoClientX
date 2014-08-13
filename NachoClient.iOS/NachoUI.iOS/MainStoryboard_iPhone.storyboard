@@ -1664,31 +1664,24 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="QkG-E4-IUH">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="mlZ-zL-6Bu">
+                                <rect key="frame" x="80" y="126" width="160" height="252"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" id="wOS-gY-5nw" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                                    </view>
-                                </subviews>
-                            </scrollView>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            </tableView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="BGs-KI-9O3"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
+                        <outlet property="EventAttachmentsTableView" destination="mlZ-zL-6Bu" id="K1W-EU-ixZ"/>
                         <outlet property="addAttachmentButton" destination="N2c-Hs-Cv9" id="QHy-9U-koS"/>
-                        <outlet property="contentView" destination="wOS-gY-5nw" id="HHn-Ac-QKl"/>
-                        <outlet property="scrollView" destination="QkG-E4-IUH" id="Jga-fH-Vag"/>
                         <segue destination="j5A-VG-u0P" kind="push" identifier="EventAttachmentToFiles" id="LTs-mH-KqM"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2A8-Nn-b9g" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem title="Item" id="N2c-Hs-Cv9" userLabel="Bar Button Item - addAttachmentButton"/>
+                <barButtonItem systemItem="add" id="N2c-Hs-Cv9" userLabel="Bar Button Item - addAttachmentButton"/>
             </objects>
             <point key="canvasLocation" x="1027" y="-2705"/>
         </scene>
@@ -2110,7 +2103,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="LTs-mH-KqM"/>
-        <segue reference="nAp-rc-bND"/>
+        <segue reference="4M9-UI-9mt"/>
         <segue reference="mo4-Vz-xJh"/>
         <segue reference="W3H-fb-nEJ"/>
         <segue reference="fwk-9p-tlV"/>

@@ -57,6 +57,8 @@ namespace NachoCore.Utils
 
         public void AddString (string key, string value)
         {
+            NcAssert.NotNull (key);
+            NcAssert.NotNull (value);
             Add (SafeNSString (key), SafeNSString(value));
         }
 

@@ -55,11 +55,41 @@ namespace NachoCore
 
         public SearchContactsRespCallbackDele SearchContactsRespCallback { set; get; }
 
+        public static event EventHandler<UnobservedTaskExceptionEventArgs> UnobservedTaskException;
+
         public int UiThreadId { get; set; }
         // event can be used to register for status indications.
         public event EventHandler StatusIndEvent;
         // when true, everything in the background needs to chill.
         public bool IsBackgroundAbateRequired { get; set; }
+
+        private bool IsXammit (Exception ex)
+        {
+            var message = ex.ToString ();
+            Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
+            if (ex is InvalidCastException &&
+                (message.Contains ("WriteRequestAsyncCB") || message.Contains ("GetResponseAsyncCB"))) {
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB/GetResponseAsyncCB");
+                // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
+                return true;
+            }
+            if (ex is System.Net.WebException && message.Contains ("EndGetResponse")) {
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: WebException with EndGetResponse");
+                // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
+                return true;
+            }
+            if (ex is System.IO.IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
+                // XAMMIT. Known bug. AsHttpOperation will time-out and retry. No need to crash.
+                return true;
+            }
+            if (ex is System.OperationCanceledException && message.Contains ("Telemetry.Process")) {
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: OperationCanceledException with Telemetry.Process");
+                // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
+                return true;
+            }
+            return false;
+        }
 
         private NcApplication ()
         {
@@ -67,37 +97,25 @@ namespace NachoCore
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
-                aex.Handle ((ex) => {
-                    var message = ex.ToString ();
-                    Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
-                    var faulted = NcTask.FindFaulted ();
-                    foreach (var name in faulted) {
-                        Log.Error (Log.LOG_SYS, "Faulted task: {0}", name);
+                var faulted = NcTask.FindFaulted ();
+                foreach (var name in faulted) {
+                    Log.Error (Log.LOG_SYS, "Faulted task: {0}", name);
+                }
+                Exception nonXammit = null;
+                foreach (var boom in aex.InnerExceptions) {
+                    if (!IsXammit (boom)) {
+                        nonXammit = boom;
                     }
-                    if (ex is InvalidCastException &&
-                        (message.Contains ("WriteRequestAsyncCB") || message.Contains ("GetResponseAsyncCB"))) {
-                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB/GetResponseAsyncCB");
-                        // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
-                        return true;
+                }
+                if (null == nonXammit) {
+                    aex.Handle ((ex) => true);
+                } else {
+                    if (null != UnobservedTaskException) {
+                        UnobservedTaskException (sender, eargs);
+                    } else {
+                        aex.Handle ((ex) => false);
                     }
-
-                    if (ex is System.Net.WebException && message.Contains ("EndGetResponse")) {
-                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: WebException with EndGetResponse");
-                        // XAMMIT. Known bug, AsHttpOperation will time-out and retry. No need to crash.
-                        return true;
-                    }
-                    if (ex is System.IO.IOException && message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
-                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
-                        // XAMMIT. Known bug. AsHttpOperation will time-out and retry. No need to crash.
-                        return true;
-                    }
-                    if (ex is System.OperationCanceledException && message.Contains ("Telemetry.Process")) {
-                        Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: OperationCanceledException with Telemetry.Process");
-                        // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
-                        return true;
-                    }
-                    return false;
-                });
+                }
             };
             UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 
@@ -253,7 +271,7 @@ namespace NachoCore
             NcModel.Instance.RunInTransaction (() => {
                 deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
                 if (null == deviceAccount) {
-                    deviceAccount = new McAccount() {
+                    deviceAccount = new McAccount () {
                         AccountType = McAccount.AccountTypeEnum.Device,
                     };
                     deviceAccount.Insert ();
@@ -263,16 +281,16 @@ namespace NachoCore
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceContactsFolder ()) {
                     var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
-                        McFolder.ClientOwned_DeviceContacts, "Device Contacts",
-                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                                        McFolder.ClientOwned_DeviceContacts, "Device Contacts",
+                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
                 }
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceCalendarsFolder ()) {
                     var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
-                        McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
-                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                                        McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
+                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
                 }
             });

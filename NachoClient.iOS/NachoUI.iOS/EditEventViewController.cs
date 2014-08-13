@@ -319,7 +319,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("EventToAddAttachment")) {
+            if (segue.Identifier.Equals ("EventToAttachment")) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -703,7 +703,7 @@ namespace NachoClient.iOS
 
             var attachmentTap = new UITapGestureRecognizer ();
             attachmentTap.AddTarget (() => {
-                //PerformSegue ("EventToAttachment", this);
+                PerformSegue ("EventToAttachment", this);
             });
             attachmentsView.AddGestureRecognizer (attachmentTap);
 
@@ -717,7 +717,7 @@ namespace NachoClient.iOS
             peopleView.AddSubview (peopleImage);
 
             UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
-            peopleLabel.Text = "People";
+            peopleLabel.Text = "Attendees";
             peopleLabel.Font = A.Font_AvenirNextRegular14;
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);

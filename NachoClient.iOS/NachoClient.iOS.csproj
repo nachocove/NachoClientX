@@ -1105,6 +1105,9 @@
     <Compile Include="NachoUI.iOS\SupportMessageViewController.designer.cs">
       <DependentUpon>SupportMessageViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMeetingRequest.cs">
+      <Link>NachoCore\Model\McMeetingRequest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1381,6 +1384,7 @@
     <BundleResource Include="Resources\downloadcircle.png" />
     <BundleResource Include="Resources\downloadarrow%402x.png" />
     <BundleResource Include="Resources\downloadarrow.png" />
+    <BundleResource Include="Resources\ic_action_group.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

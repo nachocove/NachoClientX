@@ -136,7 +136,6 @@ namespace NachoClient.iOS
         public void PromptForAttachment (string compositionType)
         {
             AttachFileActionSheet (compositionType);
-
         }
 
         public void Remove (UcAttachmentCell c)

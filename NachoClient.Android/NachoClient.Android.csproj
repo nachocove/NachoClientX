@@ -330,6 +330,7 @@
     <Compile Include="NachoCore\Utils\RegexUtilities.cs" />
     <Compile Include="NachoCore\Model\McPortrait.cs" />
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
+    <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
