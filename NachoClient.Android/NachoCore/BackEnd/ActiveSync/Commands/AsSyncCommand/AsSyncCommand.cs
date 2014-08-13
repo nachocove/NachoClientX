@@ -521,7 +521,7 @@ namespace NachoCore.ActiveSync
                 }
                 reloadedFolders.Add (folder);
             }
-            BEContext.ProtoControl.SyncStrategy.ReportSyncResult (reloadedFolders);
+            // FIXME BEContext.ProtoControl.SyncStrategy.ReportSyncResult (reloadedFolders);
 
             if (!BEContext.ProtocolState.HasSyncedInbox) {
                 // TODO: conditional will need to account for RIC-only 1st sync in the future.
@@ -571,7 +571,7 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncMetaToClientExpected = false;
                 folder.Update ();
             }
-            BEContext.ProtoControl.SyncStrategy.ReportSyncResult (FoldersInRequest);
+            // FIXME BEContext.ProtoControl.SyncStrategy.ReportSyncResult (FoldersInRequest);
             lock (PendingResolveLockObj) {
                 foreach (var pending in PendingList) {
                     pending.ResolveAsSuccess (BEContext.ProtoControl);
@@ -611,7 +611,6 @@ namespace NachoCore.ActiveSync
                 }
                 PendingList.Clear ();
             }
-            ApplyStrategy (BEContext.ProtoControl.SyncStrategy.SyncKit (true));
             return true;
         }
         // TODO - make this a generic extension.

@@ -151,6 +151,12 @@ namespace NachoCore.Utils
             UpdateState (currStatus, currSpeed);
         }
 
+        public bool IsRateLimited (int serverId)
+        {
+            // FIXME - per server rate limiter.
+            return false;
+        }
+
         private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed)
         {
             lock (syncRoot) {

@@ -987,12 +987,11 @@ namespace NachoCore.ActiveSync
                 defaultCal.Update ();
             }
             if (null == defaultInbox && null == defaultCal) {
-                Log.Info (Log.LOG_AS, "ForceSync called before initial account Sync - ignoring.");
+                Log.Info (Log.LOG_AS, "QuickSync called before initial account Sync - ignoring.");
                 return;
             }
-            // We want a quick-fetch: just get new (inbox/cal, maybe RIC).
             if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
+                Log.Warn (Log.LOG_AS, "QuickSync called while network is down.");
                 return;
             }
             // Don't need to call McFolder.AsSetExpected() - see above!

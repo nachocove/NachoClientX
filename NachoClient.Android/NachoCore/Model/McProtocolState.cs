@@ -26,8 +26,6 @@ namespace NachoCore.Model
             HeartbeatInterval = 600;
             MaxFolders = 200;
             ProtoControlState = (uint)St.Start;
-            SyncStratEmailCalendarState = (uint)St.Start;
-            SyncStratContactsState = (uint)St.Start;
         }
 
         public string AsProtocolVersion { get; set; }
@@ -50,9 +48,9 @@ namespace NachoCore.Model
 
         public uint ProtoControlState { get; set; }
 
-        public uint SyncStratEmailCalendarState { get; set; }
+        public int StrategyRung { get; set; }
 
-        public uint SyncStratContactsState { get; set; }
+        public DateTime LastNarrowSync { get; set; }
 
         public bool IsWipeRequired { get; set; }
 
