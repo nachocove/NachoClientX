@@ -16,16 +16,16 @@ namespace NachoClient.iOS
         const string SubmitLogText = "Submit a log";
 
         // Email cell
-        const string ContactByEmailText = "Contact us via email";
+        const string ContactByEmailText = "Get Help Now";
         const string SupportEmail = "support@nachocove.com";
 
         // Phone # cell
-        const string ContactByPhoneText = "Support number: +1 (404) 436-2246";
+        const string ContactByPhoneText = "Call Us: +1 (404) 436-2246";
         const string PhoneNumberLink = "telprompt://14044362246";
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
         // Version # cell
-        const string VersionNumberText = "Version number: ";
+        const string VersionNumberText = "Version Number: ";
 
         // Id's
         const string SupportToComposeSegueId = "SupportToEmailCompose";
@@ -49,6 +49,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
+            Telemetry.RecordSupport (new Dictionary<string, string>());
         }
 
         public override void ViewWillAppear (bool animated)
@@ -79,7 +80,7 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return 4;
+            return 3;
         }
 
         public override int NumberOfSections (UITableView tableView)
@@ -91,12 +92,9 @@ namespace NachoClient.iOS
         {
             switch (indexPath.Row) {
             case 0:
-                SubmitALog ();
-                break;
-            case 1:
                 ContactViaEmail ();
                 break;
-            case 2:
+            case 1:
                 UIApplication.SharedApplication.OpenUrl (new NSUrl (PhoneNumberLink));
                 break;
             }
@@ -104,42 +102,8 @@ namespace NachoClient.iOS
             tableView.DeselectRow (indexPath, true);
         }
 
-        public void SubmitALog ()
-        {
-            // send guid to Telemetry and append it to message body so we can correlate 
-            var guid = Guid.NewGuid ();
-            Log.Info (Log.LOG_UI, LogNotification + ": " + guid);
-            var messageContent = new Dictionary<string, string> () {
-                { "subject", "Additional log information" },
-                { "template", "\n\nSupport identifier: " + guid },
-            };
-
-            UIAlertView alert = new UIAlertView (
-                                    "Log sent", 
-                                    "Would you like to send an email along with your log report?", 
-                                    null, 
-                                    "OK", 
-                                    "Cancel"
-                                );
-            alert.Clicked += (s, b) => {
-                if (b.ButtonIndex == 0) {
-                    PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
-                }
-            };
-            alert.Show ();
-        }
-
         public void ContactViaEmail ()
         {
-//            send guid to Telemetry and append it to message body so we can correlate 
-//            var guid = Guid.NewGuid ();
-//            Log.Info (Log.LOG_UI, ContactingSupportNotification + ": " + guid);
-//            var messageContent = new Dictionary<string, string> () {
-//                { "template", "\n\nSupport identifier: " + guid },
-//            };
-
-            //PerformSegue (SupportToComposeSegueId, new SegueHolder (messageContent));
-
             PerformSegue ("SupportToSupportMessage", this);
         }
 
@@ -180,21 +144,20 @@ namespace NachoClient.iOS
 
             switch (indexPath.Row) {
             case 0:
-                cell = tableView.DequeueReusableCell (BasicCell);
-                NcAssert.True (null != cell);
-                cell.TextLabel.Text = SubmitLogText;
-                break;
-            case 1:
                 cell = tableView.DequeueReusableCell (SubtitleCell);
                 NcAssert.True (null != cell);
+                //cell.Accessory = UITableViewCellAccessory.DisclosureIndicator;
                 cell.TextLabel.Text = ContactByEmailText;
                 cell.DetailTextLabel.Text = SupportEmail;
                 cell.DetailTextLabel.TextColor = UIColor.LightGray;
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
+                UIImageView emailIcon = new UIImageView (UIImage.FromBundle ("icn-contact-quickemail"));
+                emailIcon.Frame = new System.Drawing.RectangleF (cell.Frame.Width - 30, cell.Frame.Height / 2, 20, 20);
+                cell.ContentView.Add (emailIcon);
                 break;
-            case 2:
+            case 1:
                 cell = tableView.DequeueReusableCell (SubtitleCell);
                 NcAssert.True (null != cell);
                 cell.TextLabel.Text = ContactByPhoneText;
@@ -203,8 +166,11 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
                 cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 cell.DetailTextLabel.Lines = 0;
+                UIImageView phoneIcon = new UIImageView (UIImage.FromBundle ("icn-contact-quickcall"));
+                phoneIcon.Frame = new System.Drawing.RectangleF (cell.Frame.Width - 30, cell.Frame.Height / 2, 20, 20);
+                cell.ContentView.Add (phoneIcon);
                 break;
-            case 3:
+            case 2:
                 cell = tableView.DequeueReusableCell (BasicCell);
                 NcAssert.True (null != cell);
 
@@ -231,16 +197,6 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        public override string TitleForHeader (UITableView tableView, int section)
-        {
-            switch (section) {
-            case 0:
-                return @"NachoCove - Beta 1";
-            }
-
-            return null;
-        }
-
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             float height = 0;
@@ -254,18 +210,16 @@ namespace NachoClient.iOS
             NSString detailText = null;
             switch (indexPath.Row) {
             case 0:
-                text = new NSString (SubmitLogText);
-                break;
-            case 1:
                 text = new NSString (ContactByEmailText);
                 detailText = new NSString (SupportEmail);
                 break;
-            case 2:
+            case 1:
                 text = new NSString (ContactByPhoneText);
                 detailText = new NSString (ContactByPhoneDetailText);
                 break;
-            case 3:
+            case 2:
                 text = new NSString (VersionNumberText);
+                detailText = new NSString ("");
                 break;
             default:
                 NcAssert.True (false, "Tried to show extra cell on support page");
