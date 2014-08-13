@@ -166,9 +166,22 @@ namespace NachoClient.iOS
                 );
         }
 
+        // remove the animated sprite once you complete the movement to the next page
+        private EventHandler<UIPageViewFinishedAnimationEventArgs> DidNavigateAwayFromPage (UIImageView sprite)
+        {
+            return (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
+                    // we are moving away from this view
+                    sprite.RemoveFromSuperview ();
+                }
+            };
+        }
+
         public void AnimateTimelineDown ()
         {
             Action<UIImageView> animateSprite = (timeline) => {
+
                 UIView.Animate (
                     duration: 0.7,
                     delay: 1.0,
@@ -178,14 +191,7 @@ namespace NachoClient.iOS
                         timeline.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
                     },
                     completion: () => {
-                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
-                            NcAssert.True (timeline != null, "Timeline should not be null");
-                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
-                            if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
-                                // we are moving away from this view
-                                timeline.RemoveFromSuperview ();
-                            }
-                        };
+
                     }
                 );
             };
@@ -195,6 +201,7 @@ namespace NachoClient.iOS
                 var previousPageView = (HomePageController)e.PreviousViewControllers[0];
                 if (this.PageIndex != previousPageView.PageIndex) {
                     var timeline = CreateTimelineSprite ();
+                    this.owner.pageController.DidFinishAnimating += DidNavigateAwayFromPage (timeline);
                     animateSprite (timeline);
                     this.owner.pageController.DidFinishAnimating -= moveToPage;
                 }
