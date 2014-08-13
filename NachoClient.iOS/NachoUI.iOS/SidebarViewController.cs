@@ -38,6 +38,7 @@ namespace NachoClient.iOS
         const string SidebarToHomeSegueId = "SidebarToHome";
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
+        const string SidebarToGeneralSettingsSegueId = "SidebarToGeneralSettings";
         const string SidebarToSupportSegueId = "SidebarToSupport";
         const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToTasksSegueId = "SidebarToTasks";
@@ -45,6 +46,7 @@ namespace NachoClient.iOS
         const string SidebarToNewEventSegueId = "SidebarToNewEvent";
         const string SidebarToEventSegueId = "SidebarToEvent";
         const string SidebarToHotListSegueId = "SidebarToHotList";
+
 
 
         protected class ButtonInfo
@@ -113,7 +115,7 @@ namespace NachoClient.iOS
                 new ButtonInfo ("Files", "menu-attachments", SidebarToFilesSegueId),
                 new ButtonInfo ("Folders", "menu-folders", SidebarToFoldersSegueId),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Settings", "menu-settings", SidebarToSettingsSegueId),
+                new ButtonInfo ("Settings", "menu-settings", SidebarToGeneralSettingsSegueId),
                 null,
                 new ButtonInfo ("Support", "menu-help", SidebarToSupportSegueId),
             });
