@@ -1844,12 +1844,13 @@ namespace NachoClient.iOS
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
             }
-            // Timezone
-            //            var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            //            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
-            //            var tz = new AsTimeZone (tzi);
-            //            c.TimeZone = tz.toEncodedTimeZone ();
-            c.TimeZone = TimeZone.CurrentTimeZone.ToString ();
+
+            // Timezone hardcoded
+            var l = TimeZoneInfo.Local;
+            var tzi = l;
+            var tz = new AsTimeZone (tzi, c.StartTime);
+            c.TimeZone = tz.toEncodedTimeZone ();
+
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
@@ -1874,8 +1875,8 @@ namespace NachoClient.iOS
         /// </summary>
         protected void SendInvites ()
         {
-            //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            CalendarHelper.SendInvites (account, c, "Local");
+            // Timezone hardcoded
+            CalendarHelper.SendInvites (account, c, TimeZoneInfo.Local.Id);
         }
 
         protected void UpdateStatus (NcResponseType status)

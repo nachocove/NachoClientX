@@ -1188,12 +1188,13 @@ namespace NachoClient.iOS
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
             }
-            // Timezone
-            //            var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            //            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
-            //            var tz = new AsTimeZone (tzi);
-            //            c.TimeZone = tz.toEncodedTimeZone ();
-            c.TimeZone = TimeZone.CurrentTimeZone.ToString ();
+
+            // Timezone hardcoded
+            var l = TimeZoneInfo.Local;
+            var tzi = l;
+            var tz = new AsTimeZone (tzi, c.StartTime);
+            c.TimeZone = tz.toEncodedTimeZone ();
+
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
