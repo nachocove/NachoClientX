@@ -153,7 +153,7 @@ namespace NachoClient.iOS
         /// </value>
         public int TotalPages {
             get {
-                return 5;
+                return 4;
             }
         }
 

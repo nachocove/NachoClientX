@@ -5,7 +5,10 @@ using System.IO;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Drawing;
+
+
 using NachoCore.Utils;
+
 
 namespace NachoClient.iOS
 {
@@ -25,6 +28,17 @@ namespace NachoClient.iOS
             private set;
         }
 
+        // Helper Text Strings
+        const string TitleOne = "Your Messages";
+        const string TitleTwo = "Navigating Your Hot List";
+        const string TitleThree= "Time Line View";
+        const string TitleFour = "Just One Last Thing ...";
+
+        const string BodyOne = "Your hot messages go in your hot list" + "\n" + "All other messages will be in your inbox";
+        const string BodyTwo = "Quickly browse through your hot list" + "\n" + "by swiping left and right";
+        const string BodyThree = "This contains your upcoming meetings" + "\n" + "and events";
+        const string BodyFour = "Sliding right or left elsewhere will get you" + "\n" + "shortcusts and options for the items";
+
        
         //const string TutPageOne = "Content/Tutorial-Page1.png";
         const string TutPageOne = "Content/HG-pag1.png";
@@ -32,6 +46,19 @@ namespace NachoClient.iOS
         const string TutPageThree = "Content/Tutorial-Page3.png";
         const string TutPageFour = "Content/Tutorial-Page4.png";
         const string TutPageFive = "Content/Tutorial-Page4.png";
+
+        string[] titleText = {
+            TitleOne,
+            TitleTwo,
+            TitleThree,
+            TitleFour,
+        };
+        string[] bodyText = {
+            BodyOne,
+            BodyTwo,
+            BodyThree,
+            BodyFour,
+        };
 
         string[] Tutorial = {
             TutPageOne,
@@ -50,31 +77,55 @@ namespace NachoClient.iOS
             string fileName = Tutorial [this.PageIndex];
             //UIView pageContainerView = new UIView (new RectangleF(0,0,View.Frame.Width, View.Frame.Height-50)); // Contains everything created by this object
             UIView pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-50));
-            UIView helperContainer = new UIView (new RectangleF(0,(pageContainerView.Frame.Height/4)*3, pageContainerView.Frame.Width, (pageContainerView.Frame.Height/4))); // contains the helpertext and labels  
+            UIView helperContainer = new UIView (new RectangleF(0,pageContainerView.Frame.Top + 350, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom-350)); // contains the helpertext and labels  
+            UILabel helperTitleText = new UILabel (new RectangleF(0, 5, helperContainer.Frame.Width, 25));
+            UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
+            //UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,helperContainer.Frame.Height / 2));
+            /* UILabel helperTitleText = new UILabel ();
+            UILabel helperBodyText = new UILabel ();
+*/
+            /*
             UILabel helperTitleText = new UILabel (new RectangleF (0,helperContainer.Frame.Top, helperContainer.Frame.Width, helperContainer.Frame.Height/2));
-            UILabel helperBodyText = new UILabel (new RectangleF ( 0,helperContainer.Frame.Top+helperTitleText.Frame.Height, helperContainer.Frame.Width, helperContainer.Frame.Height/2)); // suspect we want one or two helper text labels
-           /*
+            UILabel helperBodyText = new UILabel (new RectangleF ( 0,helperContainer.Frame.Top+helperTitleText.Frame.Height, helperContainer.Frame.Width, helperContainer.Frame.Height-helperTitleText.Frame.Height)); // suspect we want one or two helper text labels
+*/
+/*
             pageContainerView.Frame = new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height - 40);
             helperContainer.Frame = new RectangleF (0, (View.Frame.Height/5) * 3, View.Frame.Width, (View.Frame.Height /5 )*2 - 40);
 */
-            helperContainer.BackgroundColor = UIColor.Green;
+            helperContainer.BackgroundColor = UIColor.White;
      
-            helperTitleText.BackgroundColor = UIColor.Red; // debug
-            helperBodyText.BackgroundColor = UIColor.Blue; // debug
+            helperTitleText.BackgroundColor = UIColor.White; // debug
+           
+            helperBodyText.BackgroundColor = UIColor.White; // debug
+            helperBodyText.Lines = 2;
             helperTitleText.TextColor = UIColor.Black;
            
-            helperTitleText.Text = "Text HERE";
-            helperBodyText.Text = "Next Text";
-            helperBodyText.Font = A.Font_AvenirNextMedium14;
-            helperTitleText.Font = A.Font_AvenirNextRegular24;
+            helperTitleText.Text = titleText [this.PageIndex];
+            helperBodyText.Text = bodyText[this.PageIndex];
+            helperBodyText.Font = A.Font_AvenirNextRegular14;
+            helperTitleText.Font = A.Font_AvenirNextDemiBold17;
             helperBodyText.TextAlignment = UITextAlignment.Center;
             helperTitleText.TextAlignment = UITextAlignment.Center;
+          
+           
+            helperTitleText.Layer.BorderColor = UIColor.White.CGColor;
+            helperTitleText.Layer.BorderWidth = 2f;
+            helperBodyText.Layer.BorderColor = UIColor.White.CGColor;
+            helperBodyText.Layer.BorderWidth = 2f;
+           
+
+            //helperBodyText.Center = new PointF (helperContainer.Frame.Width/2,(helperContainer.Frame.Height / 4)*3);
+
+
+            helperContainer.Add (helperTitleText);
+            helperContainer.Add (helperBodyText);
+
             base.ViewDidLoad ();
 
            
 
             UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
-            tutImage.Frame =  new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+            tutImage.Frame =  new RectangleF (0, 0, View.Frame.Width, View.Frame.Height-helperContainer.Frame.Height);
             tutImage.ContentMode = UIViewContentMode.ScaleToFill;
             tutImage.UserInteractionEnabled = true;
 
@@ -83,16 +134,16 @@ namespace NachoClient.iOS
 
              //helperContainer.AddSubview (helperText);
            // helperTitleText.Center = new PointF( helperContainer.Center.X, helperContainer.Center.Y - helperContainer.Frame.Height/2); 
-            helperContainer.AddSubview (helperTitleText);
-            helperContainer.AddSubview(helperBodyText);
-            helperContainer.BringSubviewToFront (helperBodyText);
-            helperContainer.BringSubviewToFront (helperTitleText);
+            //helperContainer.AddSubview (helperTitleText);
+            //helperContainer.AddSubview(helperBodyText);
+           // helperContainer.BringSubviewToFront (helperBodyText);
+            //helperContainer.BringSubviewToFront (helperTitleText);
 
 
             pageContainerView.AddSubview (tutImage);
-            //pageContainerView.AddSubview (helperContainer);
-            pageContainerView.AddSubview (helperTitleText);
-            pageContainerView.AddSubview (helperBodyText);
+            pageContainerView.AddSubview (helperContainer);
+            //pageContainerView.AddSubview (helperTitleText);
+            //pageContainerView.AddSubview (helperBodyText);
 
 
             this.View.AddSubview (pageContainerView);
