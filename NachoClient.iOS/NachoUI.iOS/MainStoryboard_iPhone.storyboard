@@ -158,7 +158,6 @@
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="vRC-Oi-s8D"/>
                         <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="wdd-u9-GeA"/>
                         <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="qb2-sr-GOb"/>
-                        <segue destination="2DH-ex-Jce" kind="modal" identifier="SidebarToSettings" customClass="SWRevealViewControllerSegue" id="HgA-ew-8M7"/>
                         <segue destination="T5y-Ms-wQ4" kind="push" identifier="SidebarToCalendarSettings" id="ebP-h4-BhC"/>
                         <segue destination="sao-Pd-u1t" kind="custom" identifier="SidebarToTasks" customClass="SWRevealViewControllerSegue" id="wOY-cG-Eg7"/>
                         <segue destination="d8n-da-LP7" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="g6P-mU-XFC"/>
@@ -168,7 +167,7 @@
                         <segue destination="MRl-Tp-bqC" kind="custom" identifier="SidebarToSupport" customClass="SWRevealViewControllerSegue" id="J8i-gn-UTn"/>
                         <segue destination="j5A-VG-u0P" kind="custom" identifier="SidebarToFiles" customClass="SWRevealViewControllerSegue" id="wZa-Ld-8vI"/>
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToHotList" customClass="SWRevealViewControllerSegue" id="VgN-QU-7Sb"/>
-                        <segue destination="KFz-dN-XAr" kind="push" identifier="SidebarToGeneralSettings" id="v3P-tl-p4a"/>
+                        <segue destination="zEe-J0-xNV" kind="custom" identifier="SidebarToGeneralSettings" customClass="SWRevealViewControllerSegue" id="deA-xZ-apk"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -573,14 +572,31 @@
                     <view key="view" contentMode="scaleToFill" id="hqH-Yd-19s">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="R7v-6c-XcH">
+                                <rect key="frame" x="0.0" y="62" width="320" height="340"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="73b-MM-u7g" userLabel="Content View">
+                                        <rect key="frame" x="0.0" y="5" width="320" height="340"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="t0b-mf-IZ6"/>
                     <connections>
-                        <segue destination="n4d-09-jTS" kind="modal" identifier="GeneralSettingsToSettings" id="fN2-yS-2mt"/>
+                        <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
+                        <outlet property="menuButton" destination="LKw-Vz-JvF" id="PGw-n1-SYw"/>
+                        <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
+                        <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <barButtonItem title="Item" id="LKw-Vz-JvF" userLabel="Bar Button Item - menuButton"/>
             </objects>
             <point key="canvasLocation" x="-1155" y="-3725"/>
         </scene>
@@ -2071,24 +2087,18 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-2205" y="-3051"/>
         </scene>
-        <!--Navigation Controller-->
-        <scene sceneID="iyZ-3B-Mbj">
+        <!--View Controller-->
+        <scene sceneID="3kj-AV-rp2">
             <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="KFz-dN-XAr" sceneMemberID="viewController">
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="qxZ-4Q-b8w"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="gWq-HL-Jy3">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="zEe-J0-xNV" kind="relationship" relationship="rootViewController" id="TEq-CI-ubG"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="bbp-0M-CVw" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <viewController id="qxx-9p-T25" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="feN-jb-YTs">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="s6K-Qx-1FZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1681" y="-3725"/>
         </scene>
     </scenes>
     <resources>
@@ -2122,29 +2132,28 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
         <segue reference="9pm-2U-9AI"/>
-        <segue reference="wZa-Ld-8vI"/>
+        <segue reference="QbR-l1-NT5"/>
         <segue reference="p6V-c0-caL"/>
-        <segue reference="WNy-bM-xGW"/>
-        <segue reference="wdd-u9-GeA"/>
-        <segue reference="HKc-NA-tOt"/>
         <segue reference="ebP-h4-BhC"/>
+        <segue reference="wZa-Ld-8vI"/>
         <segue reference="J8i-gn-UTn"/>
-        <segue reference="7f1-U8-A7w"/>
         <segue reference="VgN-QU-7Sb"/>
-        <segue reference="fwk-9p-tlV"/>
+        <segue reference="WNy-bM-xGW"/>
+        <segue reference="7f1-U8-A7w"/>
+        <segue reference="wdd-u9-GeA"/>
         <segue reference="W3H-fb-nEJ"/>
         <segue reference="mo4-Vz-xJh"/>
-        <segue reference="fN2-yS-2mt"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="ywO-BF-h0n"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="xSG-RA-4K6"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="4M9-UI-9mt"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="Q8y-4K-BAb"/>
         <segue reference="RaB-9o-azo"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="xSG-RA-4K6"/>
-        <segue reference="4M9-UI-9mt"/>
-        <segue reference="QbR-l1-NT5"/>
     </inferredMetricsTieBreakers>
 </document>
