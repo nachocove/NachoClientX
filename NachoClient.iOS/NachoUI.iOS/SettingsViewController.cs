@@ -63,6 +63,7 @@ namespace NachoClient.iOS
             NavigationItem.RightBarButtonItem = doneButton;
             NavigationItem.LeftBarButtonItem = cancelButton;
 
+            View.BackgroundColor = A.Color_NachoNowBackground;
             configureTextFields ();
 
             //The intention is that when this method gets called you will pass in the account

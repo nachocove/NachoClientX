@@ -1389,6 +1389,7 @@
     <BundleResource Include="Resources\downloadarrow%402x.png" />
     <BundleResource Include="Resources\downloadarrow.png" />
     <BundleResource Include="Resources\ic_action_group.png" />
+    <BundleResource Include="Resources\icn-inbox.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
