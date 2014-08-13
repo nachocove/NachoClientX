@@ -16,26 +16,18 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem addAttachmentButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIView contentView { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
+		MonoTouch.UIKit.UITableView EventAttachmentsTableView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (scrollView != null) {
-				scrollView.Dispose ();
-				scrollView = null;
-			}
-
-			if (contentView != null) {
-				contentView.Dispose ();
-				contentView = null;
-			}
-
 			if (addAttachmentButton != null) {
 				addAttachmentButton.Dispose ();
 				addAttachmentButton = null;
+			}
+
+			if (EventAttachmentsTableView != null) {
+				EventAttachmentsTableView.Dispose ();
+				EventAttachmentsTableView = null;
 			}
 		}
 	}
