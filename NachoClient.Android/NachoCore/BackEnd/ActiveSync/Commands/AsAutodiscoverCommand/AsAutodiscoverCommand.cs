@@ -93,6 +93,7 @@ namespace NachoCore.ActiveSync
         private string Domain;
         private string BaseDomain;
         private McServer ServerCandidate;
+        private bool AutoDSucceeded;
         public uint ReDirsLeft;
 
         public NcStateMachine Sm { get; set; }
@@ -512,12 +513,14 @@ namespace NachoCore.ActiveSync
 
         private void DoTestFromUi ()
         {
+            AutoDSucceeded = false;
             ServerCandidate = BEContext.Server;
             DoTest ();
         }
 
         private void DoTestFromRobot ()
         {
+            AutoDSucceeded = true;
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
             ServerCandidate = McServer.Create (robot.SrServerUri);
@@ -551,6 +554,10 @@ namespace NachoCore.ActiveSync
 
         private void DoAcceptServerConf ()
         {
+            var protocolState = BEContext.ProtocolState;
+            protocolState.LastAutoDSucceeded = true;
+            protocolState.Update ();
+
             // Save validated server config in DB.
             NcModel.Instance.RunInTransaction (() => {
                 var serverRecord = BEContext.Server;

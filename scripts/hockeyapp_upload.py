@@ -54,7 +54,8 @@ class HockeyappUploadIos(HockeyappUpload):
             print '\nUploading zipped dSYM file...'
         else:
             print '\nUploading zipped dSYM and ipa files...'
-        self.version_obj.update(zip_file, os.path.join(target_dir, ipa_file), note)
+            ipa_file = os.path.join(target_dir, ipa_file)
+        self.version_obj.update(zip_file, ipa_file, note)
 
     def copy_attributes(self):
         # Read Info.plist
