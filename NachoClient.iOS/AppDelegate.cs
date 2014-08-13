@@ -147,6 +147,14 @@ namespace NachoClient.iOS
             NachoUIMonitor.SetupUIPageControl (delegate(string description, long page) {
                 Telemetry.RecordUiPageControl (description, page);
             });
+
+            NachoUIMonitor.SetupUIAlertView (delegate(string description, long index) {
+                Telemetry.RecordUIAlertView (description, index);
+            });
+
+            NachoUIMonitor.SetupUIActionSheet (delegate(string description, long index) {
+                Telemetry.RecordUIActionSheet (description, index);
+            });
         }
 
         // This method is common to both launching into the background and into the foreground.
