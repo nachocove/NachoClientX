@@ -184,12 +184,7 @@ namespace NachoClient.iOS
                 AnimateHotlistItemUp (hotlist2);
                 break;
             case 4:
-                var emailSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, 55);
-                UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Icon"));
-                emailCell.Frame = emailSize;
-                emailCell.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
-                this.View.AddSubview (emailCell);
-                AnimateEmailCellLeft (emailCell);
+                AnimateEmailCellLeft ();
                 break;
             }
         }
@@ -239,22 +234,19 @@ namespace NachoClient.iOS
                 );
         }
 
-        // remove the animated sprite once you complete the movement to the next page
-        private EventHandler<UIPageViewFinishedAnimationEventArgs> DidNavigateAwayFromPage (UIImageView sprite)
+        private UIImageView CreateTimelineSprite ()
         {
-            return (object sender, UIPageViewFinishedAnimationEventArgs e) => {
-                var previousPageView = (HomePageController)e.PreviousViewControllers [0];
-                if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
-                    // we are moving away from this view
-                    sprite.RemoveFromSuperview ();
-                }
-            };
+            var timelineSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, this.View.Frame.Height);
+            UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
+            timeline.Frame = timelineSize;
+            // timeline starts at top of screen
+            timeline.Center = new PointF (this.View.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
+            return timeline;
         }
-
+            
         public void AnimateTimelineDown ()
         {
             Action<UIImageView> animateSprite = (timeline) => {
-
                 UIView.Animate (
                     duration: 0.7,
                     delay: 1.0,
@@ -269,52 +261,75 @@ namespace NachoClient.iOS
                 );
             };
 
+            var timelineSprite = CreateTimelineSprite ();
+            SetSpriteCallbacks (timelineSprite, animateSprite);
+        }
+
+        private UIImageView CreateEmailCell ()
+        {
+            var emailSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, 55);
+            UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Icon"));
+            emailCell.Frame = emailSize;
+            emailCell.Center = new PointF (this.View.Frame.Width / 2, this.View.Frame.Height / 2);
+            return emailCell;
+        }
+
+        public void AnimateEmailCellLeft ()
+        {
+            Action<UIImageView> animateSprite = (emailCell) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        emailCell.Center = new PointF (-emailCell.Frame.Width, this.View.Frame.Height / 2);
+                    },
+                    completion: () => {
+                        emailCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                emailCell.RemoveFromSuperview ();
+                            }
+                        };
+                    }
+                );
+            };
+
+            var emailCellSprite = CreateEmailCell ();
+            SetSpriteCallbacks (emailCellSprite, animateSprite);
+        }
+
+        // remove the animated sprite once you complete the movement to the next page
+        private EventHandler<UIPageViewFinishedAnimationEventArgs> DidNavigateAwayFromPage (UIImageView sprite)
+        {
+            return (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
+                    // we are moving away from this view
+                    sprite.RemoveFromSuperview ();
+                }
+            };
+        }
+
+        // Moving to another page and back should reset sprite
+        // Moving the page just slightly, but back to original should not reset sprite
+        private void SetSpriteCallbacks (UIImageView sprite, Action<UIImageView> animateSprite)
+        {
             EventHandler<UIPageViewFinishedAnimationEventArgs> moveToPage = null;
             moveToPage = (object sender, UIPageViewFinishedAnimationEventArgs e) => {
                 var previousPageView = (HomePageController)e.PreviousViewControllers[0];
                 if (this.PageIndex != previousPageView.PageIndex) {
-                    var timeline = CreateTimelineSprite ();
-                    this.owner.pageController.DidFinishAnimating += DidNavigateAwayFromPage (timeline);
-                    animateSprite (timeline);
+                    this.View.AddSubview (sprite);
+                    animateSprite (sprite);
                     this.owner.pageController.DidFinishAnimating -= moveToPage;
+                    this.owner.pageController.DidFinishAnimating += DidNavigateAwayFromPage (sprite);
                 }
             };
 
             this.owner.pageController.DidFinishAnimating += moveToPage;
-        }
-
-        private UIImageView CreateTimelineSprite ()
-        {
-            var timelineSize = new RectangleF (this.View.Frame.Width / 2, this.View.Frame.Height / 2, this.View.Frame.Width, this.View.Frame.Height);
-            UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
-            timeline.Frame = timelineSize;
-            // timeline starts at top of screen
-            timeline.Center = new PointF (this.View.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
-            this.View.AddSubview (timeline);
-            return timeline;
-        }
-
-        public void AnimateEmailCellLeft (UIImageView emailCell)
-        {
-            UIView.Animate (
-                duration: 0.7,
-                delay: 2.0,
-                options: UIViewAnimationOptions.CurveEaseInOut,
-                animation: () => {
-                    // Move the hotlist item all the way off the bottom of the screen
-                    emailCell.Center = new PointF (-emailCell.Frame.Width, this.View.Frame.Height / 2);
-                    },
-                completion: () => {
-                    emailCell.RemoveFromSuperview ();
-                    this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
-                        var previousPageView = (HomePageController)e.PreviousViewControllers[0];
-                        if (this.PageIndex == previousPageView.PageIndex) {
-                            // we are moving away from this view
-                            emailCell.RemoveFromSuperview ();
-                        }
-                    };
-                    }
-                );
         }
 
         // Utilities for resizing images.  May not use
