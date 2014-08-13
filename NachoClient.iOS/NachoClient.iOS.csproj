@@ -1108,6 +1108,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMeetingRequest.cs">
       <Link>NachoCore\Model\McMeetingRequest.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\GeneralSettingsViewController.designer.cs">
+      <DependentUpon>GeneralSettingsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

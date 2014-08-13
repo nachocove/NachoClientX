@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13C64" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
     </dependencies>
@@ -168,6 +168,7 @@
                         <segue destination="MRl-Tp-bqC" kind="custom" identifier="SidebarToSupport" customClass="SWRevealViewControllerSegue" id="J8i-gn-UTn"/>
                         <segue destination="j5A-VG-u0P" kind="custom" identifier="SidebarToFiles" customClass="SWRevealViewControllerSegue" id="wZa-Ld-8vI"/>
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToHotList" customClass="SWRevealViewControllerSegue" id="VgN-QU-7Sb"/>
+                        <segue destination="KFz-dN-XAr" kind="push" identifier="SidebarToGeneralSettings" id="v3P-tl-p4a"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FRd-Ro-5ef" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -224,7 +225,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -564,6 +565,24 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-1536" y="-955"/>
+        </scene>
+        <!--General Settings View Controller-->
+        <scene sceneID="cES-6I-XY9">
+            <objects>
+                <viewController storyboardIdentifier="GeneralSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="zEe-J0-xNV" customClass="GeneralSettingsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="hqH-Yd-19s">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="t0b-mf-IZ6"/>
+                    <connections>
+                        <segue destination="n4d-09-jTS" kind="modal" identifier="GeneralSettingsToSettings" id="fN2-yS-2mt"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1155" y="-3725"/>
         </scene>
         <!--Settings View Controller - Settings-->
         <scene sceneID="Jbb-0l-SOs">
@@ -2052,6 +2071,25 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-2205" y="-3051"/>
         </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="iyZ-3B-Mbj">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="KFz-dN-XAr" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationItem key="navigationItem" id="qxZ-4Q-b8w"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="gWq-HL-Jy3">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="zEe-J0-xNV" kind="relationship" relationship="rootViewController" id="TEq-CI-ubG"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="bbp-0M-CVw" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1681" y="-3725"/>
+        </scene>
     </scenes>
     <resources>
         <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
@@ -2083,29 +2121,30 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="p6V-c0-caL"/>
         <segue reference="9pm-2U-9AI"/>
-        <segue reference="QbR-l1-NT5"/>
-        <segue reference="lXf-yZ-Qj9"/>
-        <segue reference="BXA-38-Jy8"/>
-        <segue reference="ywO-BF-h0n"/>
-        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="wZa-Ld-8vI"/>
+        <segue reference="p6V-c0-caL"/>
+        <segue reference="WNy-bM-xGW"/>
+        <segue reference="wdd-u9-GeA"/>
+        <segue reference="HKc-NA-tOt"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="7f1-U8-A7w"/>
+        <segue reference="VgN-QU-7Sb"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="W3H-fb-nEJ"/>
+        <segue reference="mo4-Vz-xJh"/>
+        <segue reference="fN2-yS-2mt"/>
         <segue reference="Q8y-4K-BAb"/>
         <segue reference="RaB-9o-azo"/>
-        <segue reference="VgN-QU-7Sb"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="CoK-I1-8hz"/>
-        <segue reference="vah-yS-677"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="JTo-qU-j7O"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
         <segue reference="w67-dy-XSq"/>
-        <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
-        <segue reference="LTs-mH-KqM"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="xSG-RA-4K6"/>
         <segue reference="4M9-UI-9mt"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="W3H-fb-nEJ"/>
-        <segue reference="fwk-9p-tlV"/>
+        <segue reference="QbR-l1-NT5"/>
     </inferredMetricsTieBreakers>
 </document>

@@ -87,7 +87,8 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
 
-            if (NcResult.SubKindEnum.Info_FolderSyncSucceeded == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "SyncSucceeded Status Ind");
                 LoginHelpers.SetFirstSyncCompleted (accountId, true);
             }
         }
