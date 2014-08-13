@@ -18,6 +18,7 @@ namespace NachoClient.iOS
     {
         List<McAttendee> AttendeeList = new List<McAttendee> ();
         protected McAccount Account;
+        protected bool editing = false;
         public IAttendeeTableViewSourceDelegate owner;
 
         protected const string UICellReuseIdentifier = "UICell";
@@ -39,6 +40,11 @@ namespace NachoClient.iOS
             foreach (var attendee in attendees) {
                 this.AttendeeList.Add (attendee);
             }
+        }
+
+        public void SetEditing (bool editing)
+        {
+            this.editing = editing;
         }
 
         public void SetAccount (McAccount account)
@@ -313,6 +319,10 @@ namespace NachoClient.iOS
                 attendeeResponseImageView.Image = GetImageForAttendeeResponse (attendee);
             } else {
                 attendeeResponseImageView.Hidden = true;
+            }
+
+            if (!editing) {
+                cell.UserInteractionEnabled = false;
             }
         }
 

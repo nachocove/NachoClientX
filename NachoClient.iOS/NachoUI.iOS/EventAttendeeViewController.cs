@@ -84,11 +84,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        /// <summary>
-        /// Prepares for segue.
-        /// </summary>
-        /// <param name="segue">Segue in charge</param>
-        /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("EventAttendeesToContactChooser")) {
@@ -108,6 +103,7 @@ namespace NachoClient.iOS
         {
             NachoClient.Util.HighPriority ();
             attendeeSource.SetAttendeeList (this.AttendeeList);
+            attendeeSource.SetEditing (editing);
             attendeeSource.SetAccount (account);
             EventAttendeesTableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
@@ -347,7 +343,6 @@ namespace NachoClient.iOS
         {
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
-
 
     }
 

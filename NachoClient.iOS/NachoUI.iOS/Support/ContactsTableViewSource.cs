@@ -200,7 +200,7 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        public MCSwipeTableViewCell CreateCell()
+        public MCSwipeTableViewCell CreateCell ()
         {
             var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             NcAssert.True (null != cell);
@@ -270,6 +270,7 @@ namespace NachoClient.iOS
                 TextLabel.Text = displayEmailAddress;
                 TextLabel.TextColor = A.Color_0B3239;
                 TextLabel.Font = A.Font_AvenirNextDemiBold17;
+                TextLabel.Frame = new RectangleF (65, (69 / 2) - 10, 320 - 15 - 65, 20);
                 labelView.Hidden = false;
                 labelView.Text = Util.NameToLetters (displayEmailAddress);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
