@@ -22,6 +22,9 @@ namespace NachoCore.Model
         [Indexed]
         public int TaskId { get; set; }
 
+        [Indexed]
+        public int MeetingRequestId { get; set; }
+
         ///The following fields define the
         /// Recurrence pattern of an event.
         /// Required for Task.

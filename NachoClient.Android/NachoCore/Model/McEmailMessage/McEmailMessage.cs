@@ -132,6 +132,10 @@ namespace NachoCore.Model
         protected List<McEmailMessageCategory> _Categories{ get; set; }
 
         [Ignore]
+        /// Internal copy of McMeetingRequest
+        protected McMeetingRequest _MeetingRequest { get; set; }
+
+        [Ignore]
         /// List of xml attachments for the email
         public IEnumerable<XElement> xmlAttachments { get; set; }
 
@@ -442,6 +446,7 @@ namespace NachoCore.Model
         public McEmailMessage () : base ()
         {
             _Categories = new List<McEmailMessageCategory> ();
+            _MeetingRequest = null;
             isDeleted = false;
             isAncillaryInMemory = false;
         }
@@ -453,7 +458,20 @@ namespace NachoCore.Model
                 return _Categories;
             }
             set {
+                ReadAncillaryData ();
                 _Categories = value;
+            }
+        }
+
+        [Ignore]
+        public McMeetingRequest MeetingRequest {
+            get {
+                ReadAncillaryData ();
+                return _MeetingRequest;
+            }
+            set {
+                ReadAncillaryData ();
+                _MeetingRequest = value;
             }
         }
 
@@ -470,18 +488,29 @@ namespace NachoCore.Model
         {
             SQLiteConnection db = NcModel.Instance.Db;
             _Categories = db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+            _MeetingRequest = db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault();
             isAncillaryInMemory = true;
             return NcResult.OK ();
         }
 
         protected NcResult InsertAncillaryData (SQLiteConnection db)
         {
-            return InsertCategories (db);
+            InsertCategories (db);
+
+            if (null != _MeetingRequest) {
+                _MeetingRequest.Id = 0;
+                _MeetingRequest.EmailMessageId = Id;
+                _MeetingRequest.AccountId = AccountId;
+                _MeetingRequest.Insert ();
+            }
+
+            return NcResult.OK ();
         }
 
         protected NcResult InsertCategories (SQLiteConnection db)
         {
             foreach (var c in _Categories) {
+                c.Id = 0;
                 c.SetParent (this);
                 db.Insert (c);
             }
@@ -490,12 +519,8 @@ namespace NachoCore.Model
 
         protected void DeleteAncillaryData (SQLiteConnection db)
         {
-            DeleteCategoriesData (db);
-        }
-
-        protected void DeleteCategoriesData (SQLiteConnection db)
-        {
             db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
+            db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
         }
 
         public override int Insert ()
