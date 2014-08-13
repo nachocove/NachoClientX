@@ -59,7 +59,7 @@ namespace NachoClient.iOS
             certificateViewTitle.Alpha = 1.0f;
             certificateViewTitle.Font = UIFont.SystemFontOfSize (17);
             certificateViewTitle.TextColor = A.Color_SystemBlue;
-            certificateViewTitle.Text = "Trust This Certifcate?";
+            certificateViewTitle.Text = "Accept This Certifcate?";
             certificateViewTitle.TextAlignment = UITextAlignment.Center;
             certificateViewTitle.Editable = false;
             certificateView.Add (certificateViewTitle);
@@ -94,7 +94,7 @@ namespace NachoClient.iOS
             trustCertificateButton.BackgroundColor = UIColor.White;
             trustCertificateButton.Tag = TRUST_CERTIFICATE_BUTTON_TAG;
             trustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            trustCertificateButton.SetTitle ("Trust", UIControlState.Normal);
+            trustCertificateButton.SetTitle ("Accept", UIControlState.Normal);
             trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);            
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
