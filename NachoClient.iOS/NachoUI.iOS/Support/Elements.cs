@@ -615,7 +615,7 @@ namespace NachoClient.iOS
             this.Accessory = UITableViewCellAccessory.None;
             this.Image = image;
             this.Font = A.Font_AvenirNextRegular14;
-            this.TextColor = UIColor.Black;
+            this.TextColor = A.Color_NachoBlack;
             this.theDetail = detail;
             this.inputText = inputText;
             inputText.TextColor = UIColor.Gray;
@@ -632,7 +632,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            inputText.Font = A.Font_AvenirNextMedium14;
+            inputText.Font = A.Font_AvenirNextRegular14;
             inputText.Frame = new RectangleF (150, 0, cell.Frame.Width - 150, cell.Frame.Height);
             inputText.TextAlignment = UITextAlignment.Left;
             inputText.ReturnKeyType = UIReturnKeyType.Default;
