@@ -78,10 +78,12 @@ namespace NachoCore.ActiveSync
         };
 
         private IBEContext BEContext;
+        private Random CoinToss;
 
         public AsStrategy (IBEContext beContext)
         {
             BEContext = beContext;
+            CoinToss = new Random ();
         }
 
         private List<ItemType> RequiredToAdvance (int rung)
@@ -337,7 +339,6 @@ namespace NachoCore.ActiveSync
             return McFolder.ServerEndQueryAll (BEContext.Account.Id);
         }
 
-        // FIXME SyncKit will need to pull pending and also give options/filters.
         public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit (bool cantBeEmpty)
         {
             return SyncKit (false, cantBeEmpty);
@@ -373,7 +374,7 @@ namespace NachoCore.ActiveSync
                 if (0 >= limit) {
                     break;
                 }
-                // See if we can and should do GetChanges. O(N**2), small N. FIXME.
+                // See if we can and should do GetChanges. O(N**2), small N.
                 if (null != eligibleForGetChanges.FirstOrDefault (x => x.Id == folder.Id)) {
                     if (folder.AsSyncMetaToClientExpected) {
                         folder.AsSyncMetaDoGetChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
@@ -444,7 +445,6 @@ namespace NachoCore.ActiveSync
 
         private Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
         {
-            // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
             var fetchSize = KBaseFetchSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
@@ -475,7 +475,7 @@ namespace NachoCore.ActiveSync
             List<Tuple<McAbstrItem, string>> prefetches = new List<Tuple<McAbstrItem, string>> ();
             var remaining = fetchSize - pendings.Count;
 
-            // Address background fetching if no immediate user need. TODO: we need to measure performance before we let BG fetching degrade latency.
+            // Address background fetching if no immediate user need.
             if (0 == pendings.Count) {
                 if (0 < remaining) {
                     var folders = FolderListProvider (BEContext.ProtocolState.StrategyRung, false);
@@ -506,11 +506,10 @@ namespace NachoCore.ActiveSync
             return !(defInbox.AsSyncMetaToClientExpected || defCal.AsSyncMetaToClientExpected);
         }
 
-        // FIXME - make sure performFetch does nothing if we've not folder-sync'd yet.
-
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
             var accountId = BEContext.Account.Id;
+            var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
@@ -564,12 +563,24 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
             }
-            // (FG, BG, QS) If a narrow Sync (“narrow” == default inbox/calendar only) or Ping command
-            // hasn’t completed in the last 120 seconds, perform a narrow Sync Command.
+            // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
-                NcApplication.ExecutionContextEnum.Background == exeCtxt ||
-                NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                if (BEContext.ProtocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-120)) {
+                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+                var past120secs = DateTime.UtcNow.AddSeconds (-120);
+                if (protocolState.LastNarrowSync < past120secs &&
+                    (protocolState.LastPing < past120secs ||
+                        !CanExecuteNarrowPing (accountId))) {
+                    var nSyncKit = SyncKit (true, false);
+                    if (null != nSyncKit) {
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                    }
+                }
+            }
+            // (QS) If a narrow Sync hasn’t successfully completed in the last 60 seconds, 
+            // perform a narrow Sync Command.
+            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-120)) {
                     var nSyncKit = SyncKit (true, false);
                     if (null != nSyncKit) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
@@ -590,10 +601,8 @@ namespace NachoCore.ActiveSync
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
                     else {
-                        // FIXME.
-                        /* wait until 120 seconds pass, or FG-only) wait until a user-initiated Search 
-                         * or ItemOperations Fetch, or SendMail, SmartForward or SmartReply.
-                         */
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                            new AsWaitCommand (BEContext.ProtoControl, 120, false));
                     }
                 }
                 // I(FG, BG) If there are entries in the pending queue, execute the oldest.
@@ -632,27 +641,42 @@ namespace NachoCore.ActiveSync
                     }
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
-            }
-
-            // If good power & network, maybe fetch or sync.
-            // FIXME - still obey 120 second rule and do a Ping - don't let fetch block ping.
-            if (Power.Instance.PowerState != PowerStateEnum.Unknown &&
-                Power.Instance.BatteryLevel > 0.7 &&
-                NetStatusSpeedEnum.CellSlow != NcCommStatus.Instance.Speed) {
-                var fetchKit = FetchKit ();
-                if (null != fetchKit) {
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
-                        new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
+                // (FG, BG) Choose eligible option by priority, split tie randomly...
+                if (Power.Instance.PowerState != PowerStateEnum.Unknown &&
+                    Power.Instance.BatteryLevel > 0.7) {
+                    Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> fetchKit = null;
+                    Tuple<uint, List<Tuple<McFolder, List<McPending>>>> syncKit = null;
+                    if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed) {
+                        fetchKit = FetchKit ();
+                    }
+                    syncKit = SyncKit (false, true);
+                    if (null != fetchKit && (null == syncKit || 0.5 < CoinToss.NextDouble ())) {
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
+                            new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
+                    }
+                    if (null != syncKit) {
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                    }
                 }
-                var syncKit = SyncKit (false, true);
-                if (null != syncKit) {
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                        new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                var pingKit = PingKit (false);
+                if (null == pingKit) {
+                    pingKit = PingKit (true);
                 }
+                if (null != pingKit) {
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                        new AsPingCommand (BEContext.ProtoControl, pingKit));
+                }
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                    new AsWaitCommand (BEContext.ProtoControl, 120, false));
             }
-            // If not, or if nothing to fetch/sync, then ping.
-            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                new AsPingCommand (BEContext.ProtoControl, PingKit (false)));
+            // (QS) Wait.
+            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                    new AsWaitCommand (BEContext.ProtoControl, 300, true));
+            }
+            NcAssert.True (false);
+            return null;
         }
     }
 }

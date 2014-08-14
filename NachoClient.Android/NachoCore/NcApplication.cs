@@ -24,10 +24,26 @@ namespace NachoCore
         private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
 
-        public enum ExecutionContextEnum { Foreground, Background, QuickSync };
+        public enum ExecutionContextEnum
+        {
+            Foreground,
+            Background,
+            QuickSync}
+
+        ;
 
         private ExecutionContextEnum _ExecutionContext;
-        public ExecutionContextEnum ExecutionContext { get { return _ExecutionContext; } }
+
+        public ExecutionContextEnum ExecutionContext {
+            get { return _ExecutionContext; }
+            private set { 
+                _ExecutionContext = value; 
+                InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            }
+        }
 
         public delegate void CredReqCallbackDele (int accountId);
 

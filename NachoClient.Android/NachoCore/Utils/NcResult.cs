@@ -78,6 +78,7 @@ namespace NachoCore.Utils
             Info_RicInitialSyncCompleted,
             Info_CredReqCallback,
             Info_TelemetrySupportMessageReceived,
+            Info_ExecutionContextChanged,
 
             // Warning.
             // Error.

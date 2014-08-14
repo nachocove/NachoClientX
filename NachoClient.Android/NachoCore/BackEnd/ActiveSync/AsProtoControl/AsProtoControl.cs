@@ -37,6 +37,7 @@ namespace NachoCore.ActiveSync
             PingW,
             QOpW,
             FetchW,
+            IdleW,
         };
 
         public override BackEndAutoDStateEnum AutoDState {
@@ -69,6 +70,8 @@ namespace NachoCore.ActiveSync
                     return (ProtocolState.HasSyncedInbox) ? 
                         BackEndAutoDStateEnum.PostAutoDPostInboxSync : 
                         BackEndAutoDStateEnum.PostAutoDPreInboxSync;
+                case (uint)Lst.IdleW:
+                    return BackEndAutoDStateEnum.PostAutoDPostFSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
@@ -109,10 +112,12 @@ namespace NachoCore.ActiveSync
                 UiCertOkYes,
                 UiCertOkNo,
                 PendQ,
+                PendQHot,
                 ReFSync,
                 PkPing,
                 PkQOop,
                 PkFetch,
+                PkWait,
             };
         }
 
@@ -154,6 +159,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.UiSetServConf,
                             (uint)CtlEvt.E.UiCertOkNo, 
@@ -172,6 +178,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -184,11 +191,13 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.TempFail,
@@ -229,6 +238,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                         },
@@ -244,6 +254,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -262,6 +273,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                         },
@@ -277,6 +289,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans {
@@ -294,6 +307,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiSetCred,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
@@ -310,6 +324,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -327,6 +342,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -341,6 +357,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -364,6 +381,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -378,6 +396,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoOpt, State = (uint)Lst.OptW },
@@ -393,6 +412,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -406,6 +426,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoProv, State = (uint)Lst.ProvW },
@@ -422,6 +443,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -434,6 +456,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSettings, State = (uint)Lst.SettingsW },
@@ -450,6 +473,7 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.FSyncW,
                         Drop = new [] {
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -461,6 +485,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoFSync, State = (uint)Lst.FSyncW },
@@ -480,6 +505,7 @@ namespace NachoCore.ActiveSync
                         Drop = new [] {
                             (uint)AsEvt.E.ReSync,
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -491,6 +517,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoFSync, State = (uint)Lst.FSync2W },
@@ -508,6 +535,7 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.Pick,
                         Drop = new [] {
                             (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -530,6 +558,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoFetch, State = (uint)Lst.FetchW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkPing, Act = DoPing, State = (uint)Lst.PingW },
+                            new Trans { Event = (uint)CtlEvt.E.PkWait, Act = DoWait, State = (uint)Lst.IdleW },
                         }
                     },
 
@@ -548,6 +577,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -558,6 +588,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
                     },
@@ -576,6 +607,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -586,8 +618,9 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.PendQ, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
                     },
 
@@ -607,6 +640,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -617,6 +651,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
                     },
@@ -625,7 +660,6 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.FetchW,
                         Drop = new [] {
                             (uint)CtlEvt.E.PendQ,
-                            // TODO: we should prioritize a search command over in-process commands.
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -637,6 +671,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOop,
                             (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -647,6 +682,39 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                        }
+                    },
+
+                    new Node {
+                        State = (uint)Lst.IdleW,
+                        Drop = new [] {
+                            (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.UiSetCred,
+                            (uint)CtlEvt.E.UiSetServConf,
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsEvt.E.AuthFail,
+                            (uint)CtlEvt.E.GetServConf,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
+
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
                     },
@@ -880,8 +948,9 @@ namespace NachoCore.ActiveSync
 
         private void DoPick ()
         {
-            // Stop any executing command await (possibly Sync or Ping) and due to
-            // threading race condition we must clear any event possibly posted by a non-cancelled-in-time await.
+            // Stop any executing command await.
+            // Due to threading race condition we must clear any event possibly posted
+            // by a non-cancelled-in-time await.
             StopCurrentOp ();
             Sm.ClearEventQueue ();
             var pack = SyncStrategy.Pick ();
@@ -905,7 +974,7 @@ namespace NachoCore.ActiveSync
                 break;
 
             case PickActionEnum.Wait:
-                // FIXME.
+                Sm.PostEvent ((uint)CtlEvt.E.PkWait, "PCKWAIT", cmd);
                 break;
 
             default:
@@ -940,6 +1009,14 @@ namespace NachoCore.ActiveSync
 
         private void DoQOp ()
         {
+            var cmd = (AsCommand)Sm.Arg;
+            SetCmd (cmd);
+            Cmd.Execute (Sm);
+        }
+
+        private void DoWait ()
+        {
+            // TODO consolidate as DoArg - after some intial testing.
             var cmd = (AsCommand)Sm.Arg;
             SetCmd (cmd);
             Cmd.Execute (Sm);
