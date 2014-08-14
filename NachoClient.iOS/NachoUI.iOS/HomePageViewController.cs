@@ -186,11 +186,7 @@ namespace NachoClient.iOS
                 AnimateGreenToolTip ();
                 break;
             case 1:
-                // slide left
-                UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
-                hotlist.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
-                this.contentContainer.AddSubview (hotlist);
-                AnimateHotlistItemLeft (hotlist);
+                AnimateHotlistItemLeft ();
                 break;
             case 2:
                 AnimateTimelineDown ();
@@ -281,27 +277,40 @@ namespace NachoClient.iOS
             SetSpriteCallbacks (tooltip, animateSprite);
         }
 
-        private void AnimateHotlistItemLeft (UIImageView hotlist)
+        private UIImageView CreateHotlistItem ()
         {
-            UIView.Animate (
-                duration: 0.7,
-                delay: 2.0,
-                options: UIViewAnimationOptions.CurveEaseInOut,
-                animation: () => {
-                    // Move the hotlist item all the way off the bottom of the screen
-                    hotlist.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height + hotlist.Frame.Height);
+            // slide left
+            UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
+            hotlist.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+            return hotlist;
+        }
+
+        private void AnimateHotlistItemLeft ()
+        {
+            Action<UIImageView> animateSprite = (sprite) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        sprite.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height + sprite.Frame.Height);
                     },
-                completion: () => {
-                    hotlist.RemoveFromSuperview ();
-                    this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
-                        var previousPageView = (HomePageController)e.PreviousViewControllers[0];
-                        if (this.PageIndex == previousPageView.PageIndex) {
-                            // we are moving away from this view
-                            hotlist.RemoveFromSuperview ();
-                        }
-                    };
+                    completion: () => {
+                        sprite.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                sprite.RemoveFromSuperview ();
+                            }
+                        };
                     }
                 );
+            };
+            
+            var hotlistSprite = CreateHotlistItem ();
+            SetSpriteCallbacks (hotlistSprite, animateSprite);
         }
 
         private UIImageView CreateTimelineSprite ()
