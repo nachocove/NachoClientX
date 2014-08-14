@@ -139,13 +139,37 @@ namespace Test.iOS
         }
 
         [Test]
+        public void Basic_06 ()
+        {
+            string data = @"4AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAMAAAAAAAAAxP///w==";
+            var tz = new AsTimeZone (data);
+            Assert.AreEqual (480, tz.Bias);
+            Assert.AreEqual (-60, tz.DaylightBias);
+            Assert.AreEqual ("", tz.DaylightName);
+            Assert.AreEqual (0, tz.StandardBias);
+            Assert.AreEqual ("", tz.StandardName);
+
+            var ntz = new AsTimeZone (data);
+            ntz.Bias = tz.Bias;
+            ntz.DaylightBias = tz.DaylightBias;
+            ntz.DaylightDate = tz.DaylightDate;
+            ntz.DaylightName = tz.DaylightName;
+            ntz.StandardBias = tz.StandardBias;
+            ntz.StandardDate = tz.StandardDate;
+            ntz.StandardName = tz.StandardName;
+
+            var s = ntz.toEncodedTimeZone ();
+            Assert.AreEqual (data, s);
+        }
+
+        [Test]
         public void TimeZoneInfoTest()
         {
             ReadOnlyCollection<TimeZoneInfo> timeZones = TimeZoneInfo.GetSystemTimeZones(); 
 
             foreach (TimeZoneInfo timeZone in timeZones) {
                 var tzi = TimeZoneInfo.FindSystemTimeZoneById (timeZone.Id);
-                var a1 = new AsTimeZone (tzi);
+                var a1 = new AsTimeZone (tzi, DateTime.Now);
                 var s1 = a1.toEncodedTimeZone ();
                 var a2 = new AsTimeZone (s1);
                 var s2 = a2.toEncodedTimeZone ();

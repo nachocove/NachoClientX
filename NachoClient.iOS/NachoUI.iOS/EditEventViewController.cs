@@ -22,7 +22,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class EditEventViewController : NcUIViewController, INachoAttendeeListChooserDelegate
+    public partial class EditEventViewController : NcUIViewController, INachoAttendeeListChooserDelegate, INachoAttachmentListChooserDelegate
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
@@ -33,6 +33,7 @@ namespace NachoClient.iOS
         protected NachoFolders calendars;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
+        List<McAttachment> attachments = new List<McAttachment> ();
 
         protected UIView EventInfoView;
 
@@ -319,7 +320,9 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("EventToAttachment")) {
+            if (segue.Identifier.Equals ("EditEventToAttachment")) {
+                var dc = (EventAttachmentViewController)segue.DestinationViewController;
+                dc.SetOwner (this, attachments, c, true);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -692,7 +695,7 @@ namespace NachoClient.iOS
             attachmentsView.AddSubview (attachmentsAccessoryImage);
 
             UILabel attachmentsDetailLabel = new UILabel ();
-            attachmentsDetailLabel.Text = "";
+            attachmentsDetailLabel.Text = "(" + attachments.Count + ")";
             attachmentsDetailLabel.Tag = ATTACHMENTS_DETAIL_TAG;
             attachmentsDetailLabel.SizeToFit ();
             attachmentsDetailLabel.TextAlignment = UITextAlignment.Right;
@@ -703,7 +706,7 @@ namespace NachoClient.iOS
 
             var attachmentTap = new UITapGestureRecognizer ();
             attachmentTap.AddTarget (() => {
-                PerformSegue ("EventToAttachment", this);
+                PerformSegue ("EditEventToAttachment", this);
             });
             attachmentsView.AddGestureRecognizer (attachmentTap);
 
@@ -716,7 +719,7 @@ namespace NachoClient.iOS
             peopleImage.Image = UIImage.FromBundle ("icn-peoples");
             peopleView.AddSubview (peopleImage);
 
-            UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
+            UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 75, TEXT_LINE_HEIGHT));
             peopleLabel.Text = "Attendees";
             peopleLabel.Font = A.Font_AvenirNextRegular14;
             peopleLabel.TextColor = solidTextColor;
@@ -948,6 +951,10 @@ namespace NachoClient.iOS
             //location
             var locationFieldView = contentView.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UITextField;
             locationFieldView.Text = c.Location;
+
+            //attachments view
+            var attachmentDetailLabelView = contentView.ViewWithTag (ATTACHMENTS_DETAIL_TAG) as UILabel;
+            attachmentDetailLabelView.Text = "(" + attachments.Count () + ")";
 
             //people view
             var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
@@ -1181,12 +1188,13 @@ namespace NachoClient.iOS
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
             }
-            // Timezone
-            //            var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            //            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
-            //            var tz = new AsTimeZone (tzi);
-            //            c.TimeZone = tz.toEncodedTimeZone ();
-            c.TimeZone = TimeZone.CurrentTimeZone.ToString ();
+
+            // Timezone hardcoded
+            var l = TimeZoneInfo.Local;
+            var tzi = l;
+            var tz = new AsTimeZone (tzi, c.StartTime);
+            c.TimeZone = tz.toEncodedTimeZone ();
+
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
@@ -1223,6 +1231,16 @@ namespace NachoClient.iOS
         }
 
         public void DismissINachoAttendeeListChooser (INachoAttendeeListChooser vc)
+        {
+            NcAssert.CaseError ();
+        }
+
+        public void UpdateAttachmentList (List<McAttachment> attachments)
+        {
+            this.attachments = attachments;
+        }
+
+        public void DismissINachoAttachmentListChooser (INachoAttachmentListChooser vc)
         {
             NcAssert.CaseError ();
         }

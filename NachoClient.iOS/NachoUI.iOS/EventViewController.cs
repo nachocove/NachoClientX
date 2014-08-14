@@ -24,7 +24,7 @@ using MonoTouch.MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewController, INachoCalendarItemEditor, INachoAttendeeListChooserDelegate
+    public partial class EventViewController : NcUIViewController, INachoCalendarItemEditor, INachoAttendeeListChooserDelegate, INachoAttachmentListChooserDelegate
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
@@ -35,6 +35,7 @@ namespace NachoClient.iOS
         protected NachoFolders calendars;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
+        List<McAttachment> attachments = new List<McAttachment> ();
 
         protected UIView EventInfoView;
         protected UIImageView MapImage;
@@ -374,6 +375,12 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier.Equals ("EventToAttachment")) {
+                var dc = (EventAttachmentViewController)segue.DestinationViewController;
+                if (createEvent) {
+                    dc.SetOwner (this, attachments, c, true);
+                } else {
+                    dc.SetOwner (this, attachments, c, false);
+                }
                 return;
             }
 
@@ -795,7 +802,7 @@ namespace NachoClient.iOS
                 attachmentsView.AddSubview (attachmentsAccessoryImage);
 
                 UILabel attachmentsDetailLabel = new UILabel ();
-                attachmentsDetailLabel.Text = "";
+                attachmentsDetailLabel.Text = "(" + attachments.Count + ")";
                 attachmentsDetailLabel.Tag = ATTACHMENTS_DETAIL_TAG;
                 attachmentsDetailLabel.SizeToFit ();
                 attachmentsDetailLabel.TextAlignment = UITextAlignment.Right;
@@ -1071,7 +1078,7 @@ namespace NachoClient.iOS
 
                 var attachmentTap = new UITapGestureRecognizer ();
                 attachmentTap.AddTarget (() => {
-                    //PerformSegue ("EventToAttachment", this);
+                    PerformSegue ("EventToAttachment", this);
                 });
                 eventAttachmentsView.AddGestureRecognizer (attachmentTap);
                 EventInfoView.Add (eventAttachmentsView);
@@ -1127,6 +1134,10 @@ namespace NachoClient.iOS
         {
             if (createEvent) {
                 this.NavigationController.ToolbarHidden = true;
+
+                //attachments view
+                var attachmentDetailLabelView = contentView.ViewWithTag (ATTACHMENTS_DETAIL_TAG) as UILabel;
+                attachmentDetailLabelView.Text = "(" + attachments.Count () + ")";
 
                 //people view
                 var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
@@ -1200,6 +1211,7 @@ namespace NachoClient.iOS
                 var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
                 if (isRecurring) {
                     recurrenceLabelView.Text = MakeRecurrenceString (c.recurrences);
+
                     recurrenceLabelView.Lines = 0;
                     recurrenceLabelView.LineBreakMode = UILineBreakMode.WordWrap;
                     recurrenceLabelView.SizeToFit ();
@@ -1832,12 +1844,13 @@ namespace NachoClient.iOS
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
             }
-            // Timezone
-            //            var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            //            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
-            //            var tz = new AsTimeZone (tzi);
-            //            c.TimeZone = tz.toEncodedTimeZone ();
-            c.TimeZone = TimeZone.CurrentTimeZone.ToString ();
+
+            // Timezone hardcoded
+            var l = TimeZoneInfo.Local;
+            var tzi = l;
+            var tz = new AsTimeZone (tzi, c.StartTime);
+            c.TimeZone = tz.toEncodedTimeZone ();
+
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
@@ -1862,8 +1875,8 @@ namespace NachoClient.iOS
         /// </summary>
         protected void SendInvites ()
         {
-            //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            CalendarHelper.SendInvites (account, c, "Local");
+            // Timezone hardcoded
+            CalendarHelper.SendInvites (account, c, TimeZoneInfo.Local.Id);
         }
 
         protected void UpdateStatus (NcResponseType status)
@@ -1878,6 +1891,18 @@ namespace NachoClient.iOS
         }
 
         public void DismissINachoAttendeeListChooser (INachoAttendeeListChooser vc)
+        {
+            NcAssert.CaseError ();
+        }
+
+
+        // INachoAttachmentListChooserDelegate interface methods
+        public void UpdateAttachmentList (List<McAttachment> attachments)
+        {
+            this.attachments = attachments;
+        }
+
+        public void DismissINachoAttachmentListChooser (INachoAttachmentListChooser vc)
         {
             NcAssert.CaseError ();
         }

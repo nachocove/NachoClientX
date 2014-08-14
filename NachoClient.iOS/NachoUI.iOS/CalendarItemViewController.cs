@@ -1043,7 +1043,7 @@ namespace NachoClient.iOS
             // Timezone
             var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
             var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
-            var tz = new AsTimeZone (tzi);
+            var tz = new AsTimeZone (tzi, c.StartTime);
             c.TimeZone = tz.toEncodedTimeZone ();
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();

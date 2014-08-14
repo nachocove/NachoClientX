@@ -37,13 +37,27 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public AsTimeZone (TimeZoneInfo tzi)
+        public AsTimeZone (TimeZoneInfo tzi, DateTime forEventDate)
         {
             binaryData = new byte[4 + 64 + 16 + 4 + 64 + 16 + 4];
 
-            var adjustments = tzi.GetAdjustmentRules ();
+            TimeZoneInfo.AdjustmentRule adjustment = null;
 
-            this.Bias = (long)tzi.BaseUtcOffset.TotalMinutes;
+            var adjustmentRules = tzi.GetAdjustmentRules ();
+            foreach (var a in adjustmentRules) {
+                if ((a.DateStart <= forEventDate) && (a.DateEnd >= forEventDate)) {
+                    adjustment = a;
+                    break;
+                }
+            }
+            if (null == adjustment) {
+                if ((null == adjustmentRules) || (0 == adjustmentRules.Length)) {
+                    return;
+                }
+            }
+            adjustment = adjustmentRules [adjustmentRules.Length - 1];
+
+            this.Bias = -(long)tzi.BaseUtcOffset.TotalMinutes;
             this.StandardName = tzi.StandardName;
             if (tzi.SupportsDaylightSavingTime) {
                 this.DaylightName = tzi.DaylightName;
@@ -51,18 +65,15 @@ namespace NachoCore.ActiveSync
                 this.DaylightName = "";
             }
 
-            if ((null == adjustments) || (0 == adjustments.Length)) {
+            if (null == adjustment) {
                 return;
             }
 
-            var adjustment = adjustments [adjustments.Length - 1];
-
             if (tzi.SupportsDaylightSavingTime) {
-                this.DaylightBias = (long)adjustment.DaylightDelta.TotalMinutes;
-                var std = adjustment.DaylightTransitionEnd;
-                this.StandardDate = new SystemTime (0, std.Month, (int)std.DayOfWeek, std.Day, std.TimeOfDay.Hour, std.TimeOfDay.Minute, std.TimeOfDay.Second, std.TimeOfDay.Millisecond);
-                var dst = adjustment.DaylightTransitionStart;
-                this.DaylightDate = new SystemTime (0, dst.Month, (int)dst.DayOfWeek, dst.Day, dst.TimeOfDay.Hour, dst.TimeOfDay.Minute, std.TimeOfDay.Second, dst.TimeOfDay.Millisecond);
+                this.StandardBias = 0;
+                this.DaylightBias = -(long)adjustment.DaylightDelta.TotalMinutes;
+                this.StandardDate = SystemTime.ToSystemTime (adjustment.DaylightTransitionEnd, forEventDate);
+                this.DaylightDate = SystemTime.ToSystemTime (adjustment.DaylightTransitionStart, forEventDate);
             }
         }
 
@@ -177,12 +188,29 @@ namespace NachoCore.ActiveSync
             {
                 this.year = year;
                 this.month = month;
-                this.dayOfWeek = dayOfWeek;
+                this.dayOfWeek = ((0 < dayOfWeek) ? dayOfWeek : 0);  // no -1 allowed
                 this.day = day;
                 this.hour = hour;
                 this.minute = minute;
                 this.second = second;
                 this.milliseconds = millisecond;
+            }
+
+            /// <summary>
+            ///  To select the correct day in the month, set the wYear member to zero,
+            /// the wHour and wMinute members to the transition time, the wDayOfWeek member
+            /// to the appropriate weekday, and the wDay member to indicate the occurrence
+            /// of the day of the week within the month (1 to 5, where 5 indicates the final
+            /// occurrence during the month if that day of the week does not occur 5 times).
+            /// </summary>
+
+            public static SystemTime ToSystemTime(TimeZoneInfo.TransitionTime t, DateTime forEventDate)
+            {
+                if (t.IsFixedDateRule) {
+                    return new SystemTime (forEventDate.Year, t.Month, 0, t.Day, t.TimeOfDay.Hour, t.TimeOfDay.Minute, t.TimeOfDay.Second, t.TimeOfDay.Millisecond);
+                } else {
+                    return new SystemTime (0, t.Month, (int)t.DayOfWeek, t.Week, t.TimeOfDay.Hour, t.TimeOfDay.Minute, t.TimeOfDay.Second, t.TimeOfDay.Millisecond);
+                }
             }
 
             public override bool Equals (System.Object obj)

@@ -1105,6 +1105,9 @@
     <Compile Include="NachoUI.iOS\SupportMessageViewController.designer.cs">
       <DependentUpon>SupportMessageViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\AttachmentTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Support\iAttachmentTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoAttachmentListChooser.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMeetingRequest.cs">
       <Link>NachoCore\Model\McMeetingRequest.cs</Link>
     </Compile>
