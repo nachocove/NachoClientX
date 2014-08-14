@@ -10,6 +10,7 @@ using MonoTouch.CoreAnimation;
 
 using NachoCore.Utils;
 
+// Animation guide http://developer.xamarin.com/guides/cross-platform/application_fundamentals/touch/part_1_touch_in_ios/
 
 namespace NachoClient.iOS
 {
