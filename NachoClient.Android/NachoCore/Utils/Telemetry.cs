@@ -42,6 +42,8 @@ namespace NachoCore.Utils
         public const string UIVIEWCONTROLER = "UIViewController";
         public const string UIALERTVIEW = "UIAlertView";
         public const string UIACTIONSHEET = "UIActionSheet";
+        public const string UITAPGESTURERECOGNIZER = "UITapGestureRecognizer";
+        public const string UITABLEVIEW = "UITableView";
 
         public const string UIVIEW_WILLAPPEAR = "WILL_APPEAR";
         public const string UIVIEW_DIDAPPEAR = "DID_APPEAR";
@@ -596,14 +598,24 @@ namespace NachoCore.Utils
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
         }
 
-        public static void RecordUIAlertView (string uiObject, long index)
+        public static void RecordUiAlertView (string uiObject, long index)
         {
             RecordUiWithLong (TelemetryEvent.UIALERTVIEW, uiObject, index);
         }
 
-        public static void RecordUIActionSheet (string uiObject, long index)
+        public static void RecordUiActionSheet (string uiObject, long index)
         {
             RecordUiWithLong (TelemetryEvent.UIACTIONSHEET, uiObject, index);
+        }
+
+        public static void RecordUiTapGestureRecognizer (string uiObject, string touches)
+        {
+            RecordUiWithString (TelemetryEvent.UITAPGESTURERECOGNIZER, uiObject, touches);
+        }
+
+        public static void RecordUiTableView (string uiObject, string operation)
+        {
+            RecordUiWithString (TelemetryEvent.UITABLEVIEW, uiObject, operation);
         }
 
         public static void RecordSupport (Dictionary<string, string> info)

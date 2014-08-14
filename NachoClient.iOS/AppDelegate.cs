@@ -149,11 +149,30 @@ namespace NachoClient.iOS
             });
 
             NachoUIMonitor.SetupUIAlertView (delegate(string description, long index) {
-                Telemetry.RecordUIAlertView (description, index);
+                Telemetry.RecordUiAlertView (description, index);
             });
 
             NachoUIMonitor.SetupUIActionSheet (delegate(string description, long index) {
-                Telemetry.RecordUIActionSheet (description, index);
+                Telemetry.RecordUiActionSheet (description, index);
+            });
+
+            NachoUIMonitor.SetupUITapGestureRecognizer (delegate(string description, int numTouches,
+                                                                 PointF point1, PointF point2, PointF point3) {
+                string touches = "";
+                if (0 < numTouches) {
+                    touches = String.Format("({0},{1})", point1.X, point1.Y);
+                    if (1 < numTouches) {
+                        touches += String.Format(", ({0},{1})", point2.X, point2.Y);
+                        if (2 < numTouches) {
+                            touches += String.Format(", ({0},{1})", point3.X, point3.Y);
+                        }
+                    }
+                }
+                Telemetry.RecordUiTapGestureRecognizer(description, touches);
+            });
+
+            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
+                Telemetry.RecordUiTableView (description, operation);
             });
         }
 
