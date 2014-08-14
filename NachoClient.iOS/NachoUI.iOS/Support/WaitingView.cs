@@ -16,7 +16,13 @@ namespace NachoClient.iOS
     public class WaitingView: UIView
     {
         AdvancedLoginViewController owner;
-        public UITextView statusMessage;
+        //public UITextView statusMessage;
+        protected float yOffset;
+        public bool foundServer = false;
+
+        int numDots = 1;
+        NSTimer loadingTimer;
+        public UILabel statusMessage;
 
         public WaitingView ()
         {
@@ -40,43 +46,26 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
-            this.BackgroundColor = UIColor.Gray.ColorWithAlpha (.4f);
+            this.BackgroundColor = A.Color_NachoGreen;
             this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
-            UIView waitingView = new UIView (new System.Drawing.RectangleF (60, 100, this.Frame.Width - 120, 146));
-            waitingView.Layer.CornerRadius = 7.0f;
-            waitingView.BackgroundColor = UIColor.White;
-            waitingView.Alpha = 1.0f;
-            this.Add (waitingView);
 
-            statusMessage = new UITextView (new System.Drawing.RectangleF (8, 2, waitingView.Frame.Width - 16, waitingView.Frame.Height / 2.4f));
-            statusMessage.Layer.BorderWidth = 0.0f;
-            statusMessage.BackgroundColor = UIColor.White;
-            statusMessage.Alpha = 1.0f;
-            statusMessage.Font = UIFont.SystemFontOfSize (17);
-            statusMessage.TextColor = UIColor.Black;
-            statusMessage.Text = "Locating Your Server...";
+            yOffset = 25f;
+            
+            statusMessage = new UILabel (new RectangleF(25, yOffset, Frame.Width- 50, 100));
+            statusMessage.Text = "Nacho Mail Is Locating Your Server...";
+            statusMessage.Font = A.Font_AvenirNextRegular24;
+            statusMessage.Lines = 3;
+            statusMessage.TextColor = UIColor.White;
             statusMessage.TextAlignment = UITextAlignment.Center;
-            statusMessage.Editable = false;
-            waitingView.Add (statusMessage);
+            this.Add (statusMessage);
 
-            UIActivityIndicatorView theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
-            theSpinner.Alpha = 1.0f;
-            theSpinner.HidesWhenStopped = true;
-            theSpinner.Tag = 1;
-            theSpinner.Frame = new System.Drawing.RectangleF (waitingView.Frame.Width / 2 - 20, 50, 40, 40);
-            theSpinner.Color = A.Color_SystemBlue;
-            theSpinner.StartAnimating ();
-            waitingView.Add (theSpinner);
+            yOffset = statusMessage.Frame.Bottom + 250;
 
-            UIView cancelLine = new UIView (new System.Drawing.RectangleF (0, 105, waitingView.Frame.Width, .5f));
-            cancelLine.BackgroundColor = UIColor.LightGray;
-            cancelLine.Tag = 2;
-            waitingView.Add (cancelLine);
-
-            UIButton cancelValidation = new UIButton (new System.Drawing.RectangleF (0, 106, waitingView.Frame.Width, 40));
+            UIButton cancelValidation = new UIButton (new System.Drawing.RectangleF (0, yOffset, Frame.Width, 40));
             cancelValidation.Tag = 3;
             cancelValidation.Layer.CornerRadius = 10.0f;
-            cancelValidation.BackgroundColor = UIColor.White;
+            cancelValidation.TitleLabel.Font = A.Font_AvenirNextRegular28;
+            cancelValidation.BackgroundColor = A.Color_NachoGreen;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
             cancelValidation.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
@@ -85,18 +74,68 @@ namespace NachoClient.iOS
                 owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
                 DismissView ();
             };
-            waitingView.Add (cancelValidation);
+            this.Add (cancelValidation);
+
+
+
             this.Hidden = true;
         }
 
         public void ShowView ()
         {
             this.Hidden = false;
+            owner.NavigationItem.Title = "";
+            owner.NavigationController.NavigationBar.SetBackgroundImage (new UIImage(), UIBarMetrics.Default);
+            owner.NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen;
+            owner.NavigationController.NavigationBar.ShadowImage = new UIImage ();
+            startLoadingAnimation ();
         }
 
         public void DismissView ()
         {
+            loadingTimer.Invalidate();
+            loadingTimer = null;
             this.Hidden = true;
+            owner.NavigationItem.Title = "Account Setup";
+        }
+
+        public void startLoadingAnimation ()
+        {
+            statusMessage.Text = "Nacho Mail Is Locating Your Server";
+            //loadingTimer = new NSTimer(NSDate.Now, System.TimeSpan.FromSeconds(.5), () => timerAction(), true);
+            loadingTimer = NSTimer.CreateRepeatingScheduledTimer (TimeSpan.FromSeconds (.5), delegate {
+                timerAction ();
+            });
+
+        }
+
+        public void timerAction()
+        {
+            if (!foundServer) {
+                if (numDots == 1) {
+                    statusMessage.Text = "Nacho Mail Is Locating Your Server..";
+                    numDots = 2;
+                } else if (numDots == 2) {
+                    statusMessage.Text = "Nacho Mail Is Locating Your Server...";
+                    numDots = 3;
+                } else {
+                    statusMessage.Text = "Nacho Mail Is Locating Your Server.";
+                    numDots = 1;
+                }
+            } else {
+                if (numDots == 1) {
+                    statusMessage.Text = "Found Your Server..";
+                    numDots = 2;
+                } else if (numDots == 2) {
+                    statusMessage.Text = "Found Your Server...";
+                    numDots = 3;
+                } else {
+                    statusMessage.Text = "Found Your Server.";
+                    numDots = 1;
+                }
+            }
+
+
         }
     }
 }
