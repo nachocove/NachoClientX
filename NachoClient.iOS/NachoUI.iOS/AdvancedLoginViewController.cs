@@ -402,9 +402,11 @@ namespace NachoClient.iOS
 
                 case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
                     errorMessage.Text = "Waiting for Inbox-Sync.";
-                    waitingView.ShowView ();
+                    waitingView.foundServer = true;
                     waitingView.statusMessage.TextColor = A.Color_SystemBlue;
-                    waitingView.statusMessage.Text = "Found Your Server...";
+                    waitingView.ShowView ();
+
+                    //waitingView.statusMessage.Text = "Found Your Server...";
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
@@ -682,8 +684,10 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
+                waitingView.foundServer = true;
                 waitingView.statusMessage.TextColor = A.Color_SystemBlue;
-                waitingView.statusMessage.Text = "Found Your Server...";
+
+                //waitingView.statusMessage.Text = "Found Your Server...";
                 theAccount.Server = McServer.QueryById<McServer> (1);
                 serverText.Text = theAccount.Server.Host;
             }
