@@ -1,3 +1,7 @@
+//#define HA_AUTH_ANONYMOUS
+#define HA_AUTH_USER
+//#define HA_AUTH_EMAIL
+
 using System;
 using System.IO;
 using System.Linq;
@@ -94,7 +98,17 @@ namespace NachoClient.iOS
                 manager.StartManager ();
 
                 //Authenticate (there are other authentication options)
+                #if HA_AUTH_ANONYMOUS
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.Anonymous;
+                #endif
+                #if HA_AUTH_USER
                 manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppUser;
+                manager.Authenticator.Delegate = new HockeyAppAuthenticatorDelegate ();
+                #endif
+                #if HA_AUTH_EMAIL
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppEmail;
+                manager.Authenticator.AuthenticationSecret = "fc041d7edcdd8b93951be3d4b9dd05d2";
+                #endif
                 manager.Authenticator.AuthenticateInstallation ();
 
                 //Rethrow any unhandled .NET exceptions as native iOS
@@ -748,6 +762,29 @@ namespace NachoClient.iOS
         public override string UserNameForCrashManager (BITCrashManager crashManager)
         {
             return UserName ();
+        }
+    }
+
+    public class HockeyAppAuthenticatorDelegate : BITAuthenticatorDelegate
+    {
+        public override void WillShowAuthenticationController (BITAuthenticator authenticator, UIViewController viewController)
+        {
+            this.BeginInvokeOnMainThread (() => {
+                bool done = false;
+
+                UIAlertView av = new UIAlertView ();
+                av.Title = "Authentication Required";
+                av.Message = "In order to run this Nacho Mail beta client, you must authenticate with HockeyApp. " +
+                "Please enter your HockeyApp credential in the next screen.";
+                av.AddButton ("Continue");
+                av.Clicked += (sender, buttonArgs) => {
+                    done = true;
+                };
+                av.Show ();
+                while (!done) {
+                    NSRunLoop.Current.RunUntil (NSDate.FromTimeIntervalSinceNow (0.5));
+                }
+            });
         }
     }
 }
