@@ -140,6 +140,8 @@ namespace NachoClient.iOS
             TableView.Source = messageSource;
 
             MultiSelectToggle (messageSource, false);
+
+            TableView.TableHeaderView = null; // beta 1
         }
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
@@ -150,7 +152,7 @@ namespace NachoClient.iOS
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
                     } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, searchButton };
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, /* beta 1 searchButton */ };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
                     }
                 })
