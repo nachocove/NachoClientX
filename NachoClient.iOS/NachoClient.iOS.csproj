@@ -1397,6 +1397,12 @@
     <BundleResource Include="Resources\downloadarrow.png" />
     <BundleResource Include="Resources\ic_action_group.png" />
     <BundleResource Include="Resources\icn-inbox.png" />
+    <BundleResource Include="Resources\icn-contact-vip.png" />
+    <BundleResource Include="Resources\icn-contact-vip%402x.png" />
+    <BundleResource Include="Resources\icn-vip-selected.png" />
+    <BundleResource Include="Resources\icn-vip-selected%402x.png" />
+    <BundleResource Include="Resources\icn-vip.png" />
+    <BundleResource Include="Resources\icn-vip%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

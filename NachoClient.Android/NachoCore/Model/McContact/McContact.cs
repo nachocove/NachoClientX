@@ -151,6 +151,8 @@ namespace NachoCore.Model
 
         public int PortraitId { get; set; }
 
+        public bool IsVip { get; set; }
+
         public static ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Contact;
@@ -1138,6 +1140,21 @@ namespace NachoCore.Model
                 return GetEmailAddress ();
             } else {
                 return displayName;
+            }
+        }
+
+        public void SetVIP(bool IsVip)
+        {
+            this.IsVip = IsVip;
+            this.Update ();
+
+            foreach (var emailAddressAttribute in this.EmailAddresses) {
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
+                if (null != emailAddress) {
+                    emailAddress.IsVip = this.IsVip;
+                    emailAddress.Update ();
+                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.Id, true);
+                }
             }
         }
     }

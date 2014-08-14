@@ -23,6 +23,8 @@ namespace NachoClient.iOS
 
         protected UIColor originalBarTintColor;
 
+        protected UIBarButtonItem vipButton;
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
         }
@@ -31,11 +33,19 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            var editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
-            NavigationItem.RightBarButtonItem = editButton;
+//            Beta 1 -- No editing
+//            var editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
+//            NavigationItem.RightBarButtonItem = editButton;
+//
+//            editButton.Clicked += (object sender, EventArgs e) => {
+//                PerformSegue ("ContactToContactEdit", new SegueHolder (contact));
+//            };
 
-            editButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("ContactToContactEdit", new SegueHolder (contact));
+            vipButton = new UIBarButtonItem ();
+            NavigationItem.RightBarButtonItem = vipButton;
+
+            vipButton.Clicked += (object sender, EventArgs e) => {
+                ToggleVipStatus();
             };
 
             CreateView ();
@@ -50,6 +60,7 @@ namespace NachoClient.iOS
 
             }
             ConfigureView ();
+            UpdateVipButton ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -482,6 +493,22 @@ namespace NachoClient.iOS
         {
             UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
             alert.Show ();
+        }
+
+        protected void ToggleVipStatus()
+        {
+            contact.SetVIP (!contact.IsVip);
+            UpdateVipButton ();
+        }
+
+        protected void UpdateVipButton()
+        {
+            var vipImageName = (contact.IsVip ? "icn-contact-vip" : "icn-vip");
+
+            using (var rawImage = UIImage.FromBundle (vipImageName)) {
+                var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+                vipButton.Image = image;
+            }
         }
 
     }
