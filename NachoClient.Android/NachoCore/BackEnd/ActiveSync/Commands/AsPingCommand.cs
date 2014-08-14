@@ -58,6 +58,9 @@ namespace NachoCore.ActiveSync
 
             case Xml.Ping.StatusCode.NoChanges_1:
                 MarkFoldersPinged ();
+                update = BEContext.ProtocolState;
+                update.LastPing = DateTime.UtcNow;
+                BEContext.ProtocolState = update;
                 return Event.Create ((uint)SmEvt.E.Success, "PINGNOCHG");
             
             case Xml.Ping.StatusCode.Changes_2:

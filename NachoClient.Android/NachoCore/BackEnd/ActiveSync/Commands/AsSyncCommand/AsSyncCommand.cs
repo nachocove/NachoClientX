@@ -560,6 +560,10 @@ namespace NachoCore.ActiveSync
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
             } else {
+                // FIXME - need to know from synckit that this was narrow.
+                var update = BEContext.ProtocolState;
+                update.LastNarrowSync = DateTime.UtcNow;
+                BEContext.ProtocolState = update;
                 return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
             }
         }
