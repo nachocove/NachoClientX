@@ -145,6 +145,7 @@ namespace NachoClient.iOS
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             owner.MessageThreadSelected (messageThread);
+            DumpInfo (messageThread);
         }
 
         protected const int USER_IMAGE_TAG = 99101;
@@ -781,6 +782,11 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void DumpInfo(McEmailMessageThread messageThread)
+        {
+            var message = messageThread.SingleMessageSpecialCase ();
+            Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
+        }
     }
 }
 

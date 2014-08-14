@@ -85,6 +85,7 @@ namespace NachoClient.iOS
                 contact = contacts [indexPath.Row].GetContact ();
             }
             owner.ContactSelectedCallback (contact);
+            DumpInfo (contact);
         }
 
         public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
@@ -368,6 +369,14 @@ namespace NachoClient.iOS
                 NachoClient.Util.HighPriority ();
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
                 NachoClient.Util.RegularPriority ();
+            }
+        }
+
+        protected void DumpInfo(McContact contact)
+        {
+            foreach(var a in contact.EmailAddresses) {
+                var e = McEmailAddress.QueryById<McEmailAddress> (a.EmailAddress);
+                Log.Debug (Log.LOG_UI, "contact Id={0} emailAddressId={1} email={2} score={3}", contact.Id, e.Id, e.CanonicalEmailAddress, e.Score);
             }
         }
 
