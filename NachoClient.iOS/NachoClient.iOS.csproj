@@ -86,7 +86,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>A5A410CF-93E6-4AC9-979B-27C42C717007</CodesignProvision>
+    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -1114,6 +1114,10 @@
     <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\GeneralSettingsViewController.designer.cs">
       <DependentUpon>GeneralSettingsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
+    <Compile Include="NachoUI.iOS\SettingsLegalViewController.designer.cs">
+      <DependentUpon>SettingsLegalViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

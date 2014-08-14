@@ -7,39 +7,53 @@ using MonoTouch.UIKit;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using SWRevealViewControllerBinding;
+
 
 namespace NachoClient.iOS
 {
     public partial class GeneralSettingsViewController : NcUIViewController
-	{
-        float yOffset;
+    {
         protected static float CELL_HEIGHT = 44f;
         protected static float INSET = 15f;
         protected float TEXT_LINE_HEIGHT = 19.124f;
-        string emailAddress;
+        protected float yOffset;
+        protected string legalUrl;
+        protected string legalTitle;
+        protected bool isUrl;
 
+        public GeneralSettingsViewController (IntPtr handle) : base (handle)
+        {
+        }
 
-		public GeneralSettingsViewController (IntPtr handle) : base (handle)
-		{
-		}
-
-        public override void ViewDidLoad()
+        public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
             CreateView ();
             LayoutView ();
             ConfigureView ();
+
+            // Navigation
+            NavigationItem.Title = "Settings";
+            menuButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
+            menuButton.Target = this.RevealViewController ();
+            menuButton.Image = UIImage.FromBundle ("navbar-icn-menu");
+            nowButton.Image = UIImage.FromBundle ("navbar-icn-inbox");
+            nowButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("GeneralSettingsToNachoNow", this);
+            };
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { menuButton, nowButton };
         }
 
-        public override void ViewDidAppear(bool animated)
+        public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            NavigationItem.Title = "Settings";
         }
 
         protected const int EMAIL_ADDRESS_LABEL_TAG = 100;
 
-        public void CreateView()
+        protected void CreateView ()
         {
             View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
@@ -54,7 +68,7 @@ namespace NachoClient.iOS
 
             yOffset = accountSettingsLabel.Frame.Bottom + 5;
 
-            contentView.AddSubview(AddHorizontalLine (0, yOffset-.5f, View.Frame.Width, A.Color_NachoSeparator));
+            contentView.AddSubview (AddHorizontalLine (0, yOffset - .5f, View.Frame.Width, A.Color_NachoSeparator));
 
             UIView accountSettingsCell = new UIView (new RectangleF (0, yOffset, contentView.Frame.Width, CELL_HEIGHT));
             accountSettingsCell.BackgroundColor = UIColor.White;
@@ -62,11 +76,11 @@ namespace NachoClient.iOS
             var accountTap = new UITapGestureRecognizer ();
             accountTap.AddTarget (() => {
                 View.EndEditing (true);
-                PerformSegue("GeneralSettingsToSettings", this);
+                PerformSegue ("GeneralSettingsToSettings", this);
             });
             accountSettingsCell.AddGestureRecognizer (accountTap);
 
-            UIImageView mailIcon = new UIImageView(new RectangleF(15, 14.5f, 15, 15));
+            UIImageView mailIcon = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
             mailIcon.Image = UIImage.FromBundle ("icn-inbox");
             accountSettingsCell.AddSubview (mailIcon);
 
@@ -84,7 +98,7 @@ namespace NachoClient.iOS
 
             yOffset = accountSettingsCell.Frame.Bottom;
 
-            contentView.AddSubview(AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoSeparator));
+            contentView.AddSubview (AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoSeparator));
 
             yOffset += 30;
 
@@ -93,8 +107,11 @@ namespace NachoClient.iOS
 
             var privacyTap = new UITapGestureRecognizer ();
             privacyTap.AddTarget (() => {
+                legalUrl = "https://nachocove.com/license";
+                legalTitle = "Privacy Policy";
+                isUrl = true;
+                PerformSegue ("GeneralSettingsToSettingsLegal", this);
                 View.EndEditing (true);
-                //PerformSegue("GeneralSettingsToSettings", this);
             });
             privacyStatementCell.AddGestureRecognizer (privacyTap);
 
@@ -116,8 +133,11 @@ namespace NachoClient.iOS
 
             var licenseTap = new UITapGestureRecognizer ();
             licenseTap.AddTarget (() => {
+                legalUrl = "https://nachocove.com/legal/";
+                legalTitle = "License Agreement";
+                isUrl = true;
+                PerformSegue ("GeneralSettingsToSettingsLegal", this);
                 View.EndEditing (true);
-                //PerformSegue("GeneralSettingsToSettings", this);
             });
             licenseAgreementCell.AddGestureRecognizer (licenseTap);
 
@@ -140,7 +160,6 @@ namespace NachoClient.iOS
             var openSourceTap = new UITapGestureRecognizer ();
             openSourceTap.AddTarget (() => {
                 View.EndEditing (true);
-                //PerformSegue("GeneralSettingsToSettings", this);
             });
             openSourceCell.AddGestureRecognizer (openSourceTap);
 
@@ -163,7 +182,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (AddHorizontalLine (0, openSourceCell.Frame.Bottom, View.Frame.Width, A.Color_NachoSeparator));
         }
 
-        public void LayoutView()
+        protected void LayoutView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
@@ -171,13 +190,13 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        public void ConfigureView()
+        protected void ConfigureView ()
         {
             var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
             emailLabel.Text = GetEmailAddress ();
         }
 
-        public string GetEmailAddress()
+        protected string GetEmailAddress ()
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
@@ -187,11 +206,28 @@ namespace NachoClient.iOS
             }
         }
 
-        public UIView AddHorizontalLine (float offset, float yVal, float width, UIColor color)
+        protected UIView AddHorizontalLine (float offset, float yVal, float width, UIColor color)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             return lineUIView;
         }
-	}
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals ("GeneralSettingsToSettingsLegal")) {
+                var x = segue.DestinationViewController;
+                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers [0];
+                if (isUrl) {
+                    settingsLegal.SetProperties (legalUrl, legalTitle, true);
+                } else {
+                    settingsLegal.SetProperties ("", legalTitle, false);
+                }
+                return;
+            }
+            if (segue.Identifier.Equals ("GeneralSettingsToSettings")) {
+                return;
+            }
+        }
+    }
 }
