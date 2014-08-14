@@ -32,6 +32,7 @@ namespace NachoCore.Utils
     [Serializable]
     public class TelemetryEvent : NcQueueElement
     {
+        // iOS UI object monitoring strings
         public const string UIBUTTON = "UIButton";
         public const string UISEGMENTEDCONTROL = "UISegmentedControl";
         public const string UISWITCH = "UISwitch";
@@ -39,6 +40,10 @@ namespace NachoCore.Utils
         public const string UITEXTFIELD = "UITextField";
         public const string UIPAGECONTROL = "UIPageControl";
         public const string UIVIEWCONTROLER = "UIViewController";
+        public const string UIALERTVIEW = "UIAlertView";
+        public const string UIACTIONSHEET = "UIActionSheet";
+        public const string UITAPGESTURERECOGNIZER = "UITapGestureRecognizer";
+        public const string UITABLEVIEW = "UITableView";
 
         public const string UIVIEW_WILLAPPEAR = "WILL_APPEAR";
         public const string UIVIEW_DIDAPPEAR = "DID_APPEAR";
@@ -591,6 +596,26 @@ namespace NachoCore.Utils
         public static void RecordUiViewController (string uiObject, string state)
         {
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
+        }
+
+        public static void RecordUiAlertView (string uiObject, long index)
+        {
+            RecordUiWithLong (TelemetryEvent.UIALERTVIEW, uiObject, index);
+        }
+
+        public static void RecordUiActionSheet (string uiObject, long index)
+        {
+            RecordUiWithLong (TelemetryEvent.UIACTIONSHEET, uiObject, index);
+        }
+
+        public static void RecordUiTapGestureRecognizer (string uiObject, string touches)
+        {
+            RecordUiWithString (TelemetryEvent.UITAPGESTURERECOGNIZER, uiObject, touches);
+        }
+
+        public static void RecordUiTableView (string uiObject, string operation)
+        {
+            RecordUiWithString (TelemetryEvent.UITABLEVIEW, uiObject, operation);
         }
 
         public static void RecordSupport (Dictionary<string, string> info)
