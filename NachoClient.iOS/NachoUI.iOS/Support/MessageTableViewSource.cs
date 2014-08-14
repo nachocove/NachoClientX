@@ -320,7 +320,7 @@ namespace NachoClient.iOS
                 // User chili view
                 var chiliY = 72;
                 var userChiliView = new UIImageView (new RectangleF (23, chiliY, 24, 24));
-                userChiliView.Image = UIImage.FromBundle ("inbox-icn-chilli");
+                userChiliView.Image = UIImage.FromBundle ("icn-red-chili-small");
                 userChiliView.Tag = USER_CHILI_TAG;
                 cell.ContentView.AddSubview (userChiliView);
 

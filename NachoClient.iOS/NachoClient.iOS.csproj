@@ -1403,6 +1403,11 @@
     <BundleResource Include="Resources\icn-vip-selected%402x.png" />
     <BundleResource Include="Resources\icn-vip.png" />
     <BundleResource Include="Resources\icn-vip%402x.png" />
+    <BundleResource Include="Resources\icn-quick-message-pressed.png" />
+    <BundleResource Include="Resources\icn-red-chili-large.png" />
+    <BundleResource Include="Resources\icn-red-chili-large%402x.png" />
+    <BundleResource Include="Resources\icn-red-chili-small.png" />
+    <BundleResource Include="Resources\icn-red-chili-small%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

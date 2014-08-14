@@ -947,24 +947,12 @@ namespace NachoClient.iOS
                 if (null == preventBarButtonGC) {
                     preventBarButtonGC = new List<UIBarButtonItem> ();
                 }
-                    
+
                 var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
                 replyButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, MessageComposeViewController.Reply);
+                    ReplyActionSheet (view);
                 };
                 preventBarButtonGC.Add (replyButton);
-
-                var replyAllButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply-all"), UIBarButtonItemStyle.Plain, null);
-                replyAllButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
-                };
-                preventBarButtonGC.Add (replyAllButton);
-
-                var forwardButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-fwd"), UIBarButtonItemStyle.Plain, null);
-                forwardButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, MessageComposeViewController.Forward);
-                };
-                preventBarButtonGC.Add (forwardButton);
 
                 var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
@@ -972,8 +960,18 @@ namespace NachoClient.iOS
                 };
                 preventBarButtonGC.Add (saveButton);
 
+                var archiveButton = new UIBarButtonItem (UIImage.FromBundle ("icn-archive"), UIBarButtonItemStyle.Plain, null);
+                archiveButton.Clicked += (object sender, EventArgs e) => {
+                    onArchiveButtonClicked (view);
+                };
+                preventBarButtonGC.Add (saveButton);
+
                 var flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
                 preventBarButtonGC.Add (flexibleSpace);
+
+                var fixedSpace = new UIBarButtonItem (UIBarButtonSystemItem.FixedSpace);
+                fixedSpace.Width = 25;
+                preventBarButtonGC.Add (fixedSpace);
 
                 var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-delete"), UIBarButtonItemStyle.Plain, null);
                 deleteButton.Clicked += (object sender, EventArgs e) => {
@@ -984,10 +982,11 @@ namespace NachoClient.iOS
                 var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
                 toolbar.SetItems (new UIBarButtonItem[] {
                     replyButton,
-                    replyAllButton,
-                    forwardButton,
                     flexibleSpace,
+                    archiveButton,
+                    fixedSpace,
                     saveButton,
+                    fixedSpace,
                     deleteButton
                 }, false);
                 view.AddSubview (toolbar);
@@ -1007,6 +1006,14 @@ namespace NachoClient.iOS
                 var messageThreadIndex = view.Tag;
                 var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
                 owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
+            }
+
+            void onArchiveButtonClicked (UIView view)
+            {
+                var messageThreadIndex = view.Tag;
+                var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+                var message = messageThread.SingleMessageSpecialCase ();
+                NcEmailArchiver.Archive (message);
             }
 
             void onDeleteButtonClicked (UIView view)
@@ -1062,8 +1069,8 @@ namespace NachoClient.iOS
                 var cookedPreview = rawPreview;
                 do {
                     oldLength = cookedPreview.Length;
-                    cookedPreview = cookedPreview.Replace('\r', '\n');
-                    cookedPreview = cookedPreview.Replace("\n\n", "\n");
+                    cookedPreview = cookedPreview.Replace ('\r', '\n');
+                    cookedPreview = cookedPreview.Replace ("\n\n", "\n");
                 } while(cookedPreview.Length != oldLength);
                 previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
 
@@ -1142,6 +1149,34 @@ namespace NachoClient.iOS
                 label.Text = "No hot items!";
             
                 return view;
+            }
+
+            protected void ReplyActionSheet (UIView view)
+            {
+                var actionSheet = new UIActionSheet ();
+                actionSheet.Add ("Reply");
+                actionSheet.Add ("Reply All");
+                actionSheet.Add ("Forward");
+                actionSheet.Add ("Cancel");
+
+                actionSheet.CancelButtonIndex = 3;
+
+                actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                    switch (b.ButtonIndex) {
+                    case 0:
+                        onReplyButtonClicked (view, MessageComposeViewController.Reply);
+                        break;
+                    case 1:
+                        onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
+                        break;
+                    case 2:
+                        onReplyButtonClicked (view, MessageComposeViewController.Forward);
+                        break;
+                    case 3:
+                        break; // Cancel
+                    }
+                };
+                actionSheet.ShowInView (view);
             }
         }
 
