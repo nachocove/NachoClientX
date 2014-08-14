@@ -96,8 +96,8 @@ namespace NachoCore.ActiveSync
                 ReProv,
                 ReSync,
                 AuthFail,
-                Last = AuthFail}
-            ;
+                Last = AuthFail,
+            };
         }
         // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
         // DB-based events (even if UI-driven) and server-based events lack the Ui prefix.

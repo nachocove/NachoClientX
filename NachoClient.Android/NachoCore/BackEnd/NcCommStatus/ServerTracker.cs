@@ -30,16 +30,25 @@ namespace NachoCore.Utils
 
         public DateTime DelayUntil { get; set; }
 
+        public NcRateLimter Throttle { get; set; }
+
         public ServerTracker (int serverId)
         {
             Accesses = new List<ServerAccess> ();
             DelayUntil = DateTime.MinValue;
             ServerId = serverId;
+            // TODO: we will want to vary the parameters by protcol & server.
+            Throttle = new NcRateLimter (0.1, 15 * 60);
             Reset ();
         }
 
         public void UpdateQuality ()
         {
+            var hasTokens = Throttle.HasTokens ();
+            Throttle.TakeToken ();
+            if (hasTokens && !Throttle.HasTokens ()) {
+                Log.Info (Log.LOG_SYS, "Proactive throttling threshold reached.");
+            }
             // Forced delay eclipses the rest of the logic.
             if (DateTime.UtcNow < DelayUntil) {
                 return;

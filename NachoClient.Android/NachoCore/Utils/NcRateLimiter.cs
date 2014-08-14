@@ -33,6 +33,11 @@ namespace NachoCore.Utils
             }
         }
 
+        public bool HasTokens ()
+        {
+            return (0 < Remaining);
+        }
+
         public bool TakeToken ()
         {
             if (!Enabled) {

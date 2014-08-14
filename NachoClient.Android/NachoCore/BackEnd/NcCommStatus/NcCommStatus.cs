@@ -153,8 +153,8 @@ namespace NachoCore.Utils
 
         public bool IsRateLimited (int serverId)
         {
-            // FIXME - per server rate limiter.
-            return false;
+            var tracker = GetTracker (serverId);
+            return !tracker.Throttle.HasTokens ();
         }
 
         private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed)
