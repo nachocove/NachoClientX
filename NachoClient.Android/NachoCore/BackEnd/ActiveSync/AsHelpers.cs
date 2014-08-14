@@ -477,7 +477,9 @@ namespace NachoCore.ActiveSync
                         e.MeetingStatusIsSet = true;
                         break;
                     case Xml.Calendar.Exception.Reminder:
-                        e.Reminder = child.Value.ToUint ();
+                        if (!String.IsNullOrEmpty (child.Value)) {
+                            e.Reminder = child.Value.ToUint ();
+                        }
                         break;
                     case Xml.Calendar.Exception.ResponseType:
                         e.ResponseType = child.Value.ParseInteger<NcResponseType> ();
