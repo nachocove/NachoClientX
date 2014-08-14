@@ -192,10 +192,11 @@ namespace NachoClient.iOS
                 return;
             }
 
-            userCheckmarkView.Hidden = false;
             if (MultiSelect.Contains (threadIndex)) {
+                userCheckmarkView.Hidden = false;
                 userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-active");
             } else {
+                userCheckmarkView.Hidden = true;
                 userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-default");
             }
         }
