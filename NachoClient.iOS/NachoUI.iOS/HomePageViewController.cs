@@ -183,6 +183,7 @@ namespace NachoClient.iOS
             switch (this.PageIndex) {
             case 0:
                 AnimateRedToolTip ();
+                AnimateGreenToolTip ();
                 break;
             case 1:
                 // slide left
@@ -222,28 +223,62 @@ namespace NachoClient.iOS
         private UIImageView CreateRedButton ()
         {
             UIImageView redButton = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
-            redButton.Center = new PointF (this.contentContainer.Frame.Width / 3, this.contentContainer.Frame.Height / 3);
-            redButton.Layer.Transform = CATransform3D.MakeScale (0.3f, 0.3f, 1.0f);
+            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 3);
+            redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             return redButton;
+        }
+
+        private UIImageView CreateRedTooltip ()
+        {
+            UIImageView redTooltip = new UIImageView (UIImage.FromBundle ("Content/red_balloon.png"));
+            redTooltip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 3 + 35);
+            redTooltip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return redTooltip;
+        }
+
+        private UIImageView CreateGreenButton ()
+        {
+            UIImageView greenButton = new UIImageView (UIImage.FromBundle ("Content/teal_pointer.png"));
+            greenButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height * 5 / 6);
+            greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return greenButton;
+        }
+
+        private UIImageView CreateGreenTooltip ()
+        {
+            UIImageView greenTooltip = new UIImageView (UIImage.FromBundle ("Content/teal_balloon.png"));
+            greenTooltip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height * 5 / 6 - 35);
+            greenTooltip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return greenTooltip;
         }
 
         private void AnimateRedToolTip ()
         {
-            Action<UIImageView> animateSprite = (redButton) => {
+            AnimateTooltip (CreateRedButton (), CreateRedTooltip ());
+        }
+
+        private void AnimateGreenToolTip ()
+        {
+            AnimateTooltip (CreateGreenButton (), CreateGreenTooltip ());
+        }
+
+        private void AnimateTooltip (UIImageView button, UIImageView tooltip)
+        {
+            Action<UIImageView> animateSprite = (sprite) => {
                 UIView.Animate (
                     duration: 0.7,
                     delay: 1.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
-                        redButton.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        sprite.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                     },
                     completion: () => {
                     }
                 );
             };
 
-            var redButtonSprite = CreateRedButton ();
-            SetSpriteCallbacks (redButtonSprite, animateSprite);
+            SetSpriteCallbacks (button, animateSprite);
+            SetSpriteCallbacks (tooltip, animateSprite);
         }
 
         private void AnimateHotlistItemLeft (UIImageView hotlist)
