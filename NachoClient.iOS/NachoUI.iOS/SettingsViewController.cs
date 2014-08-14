@@ -572,7 +572,9 @@ namespace NachoClient.iOS
             Account.McCredId = userCredentials.Id;
 
             //CHECK THIS
-            Account.ServerId = userMailServer.Id;
+            if (null != userMailServer) {
+                Account.ServerId = userMailServer.Id;
+            }
 
             if (null != userConference) {
                 Account.PreferredConferenceId = userConference.Id;
@@ -590,8 +592,8 @@ namespace NachoClient.iOS
             Account.UserName = userCredentials.Username;
             Account.Password = userCredentials.Password;
             Account.EmailAddress = whatAccount.EmailAddr;
-            Account.MailServer = userMailServer.Host;
-            Account.EmailSignature = whatAccount.Signature == null ? "Sent from NachoMail" : whatAccount.Signature;
+            Account.MailServer = userMailServer == null ? "" : userMailServer.Host;
+            Account.EmailSignature = whatAccount.Signature == null ? "Sent from Nacho Mail" : whatAccount.Signature;
             Account.ConferenceCallNumber = userConference.DefaultPhoneNumber == null ? "" : userConference.DefaultPhoneNumber;
         }
 
