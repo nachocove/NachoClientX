@@ -227,7 +227,7 @@ namespace NachoCore.Brain
 
         private void ProcessUpdateAddressEvent (NcBrainUpdateAddressScoreEvent brainEvent)
         {
-            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateAddressEvent: event= 0}", brainEvent.ToString ());
+            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateAddressEvent: event={0}", brainEvent.ToString ());
             McEmailAddress emailAddress =
                 McEmailAddress.QueryById<McEmailAddress> ((int)brainEvent.EmailAddressId);
             if (null == emailAddress) {
