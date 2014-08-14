@@ -331,6 +331,7 @@
     <Compile Include="NachoCore\Model\McPortrait.cs" />
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
     <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

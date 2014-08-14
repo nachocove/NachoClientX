@@ -1119,6 +1119,9 @@
     <Compile Include="NachoUI.iOS\SettingsLegalViewController.designer.cs">
       <DependentUpon>SettingsLegalViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainControl.cs">
+      <Link>NachoCore\Brain\NcBrainControl.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

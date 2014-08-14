@@ -4,6 +4,7 @@ using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Utils;
+using MonoTouch.ObjCRuntime;
 
 namespace NachoPlatform
 {
@@ -32,6 +33,9 @@ namespace NachoPlatform
 
         public double BatteryLevel { 
             get {
+                if (Arch.SIMULATOR == Runtime.Arch) {
+                    return 1.0;
+                }
                 var iosLevel = UIDevice.CurrentDevice.BatteryLevel;
                 if (0.0 > iosLevel) {
                     return 0.0;
@@ -43,6 +47,9 @@ namespace NachoPlatform
 
         public PowerStateEnum PowerState {
             get {
+                if (Arch.SIMULATOR == Runtime.Arch) {
+                    return PowerStateEnum.Plugged;
+                }
                 switch (UIDevice.CurrentDevice.BatteryState) {
                 case UIDeviceBatteryState.Charging:
                 case UIDeviceBatteryState.Full:

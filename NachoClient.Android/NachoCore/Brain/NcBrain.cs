@@ -8,7 +8,7 @@ using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
-    public class NcBrain
+    public partial class NcBrain
     {
         public const bool ENABLED = true;
 
@@ -47,6 +47,8 @@ namespace NachoCore.Brain
         public OperationCounters McEmailAddressCounters;
         public OperationCounters McEmailAddressScoreSyncInfo;
 
+        // Last time a notification of score update was sent (via status indication).
+        // Used for rate limit status indication.
         private DateTime LastEmailAddressScoreUpdate;
         private DateTime LastEmailMessageScoreUpdate;
 
@@ -274,7 +276,8 @@ namespace NachoCore.Brain
 
             switch (brainEvent.Type) {
             case NcBrainEventType.PERIODIC_GLEAN:
-                int num_entries = 30;
+                EvaluateRunRate ();
+                int num_entries = WorkCredits;
                 num_entries -= GleanContacts (num_entries);
                 if (0 >= num_entries) {
                     break;
