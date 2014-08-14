@@ -571,8 +571,13 @@ namespace NachoClient.iOS
             Account.AccountId = whatAccount.Id;
             Account.McCredId = userCredentials.Id;
 
-            //CHECK THIS
-            Account.ServerId = userMailServer.Id;
+            if (null != userCredentials) {
+                Account.McCredId = userCredentials.Id;
+            }
+
+            if (null != userMailServer) {
+                Account.ServerId = userMailServer.Id;
+            }
 
             if (null != userConference) {
                 Account.PreferredConferenceId = userConference.Id;
@@ -587,11 +592,11 @@ namespace NachoClient.iOS
             }
 
             Account.AccountName = whatAccount.DisplayName == null ? "Exchange" : whatAccount.DisplayName;
-            Account.UserName = userCredentials.Username;
-            Account.Password = userCredentials.Password;
+            Account.UserName = userCredentials == null ? "" : userCredentials.Username;
+            Account.Password = userCredentials == null ? "" : userCredentials.Password;
             Account.EmailAddress = whatAccount.EmailAddr;
-            Account.MailServer = userMailServer.Host;
-            Account.EmailSignature = whatAccount.Signature == null ? "Sent from NachoMail" : whatAccount.Signature;
+            Account.MailServer = userMailServer == null ? "" : userMailServer.Host;
+            Account.EmailSignature = whatAccount.Signature == null ? "Sent from Nacho Mail" : whatAccount.Signature;
             Account.ConferenceCallNumber = userConference.DefaultPhoneNumber == null ? "" : userConference.DefaultPhoneNumber;
         }
 

@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Collections.Generic;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
@@ -25,10 +26,12 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             CreateView ();
+            LayoutView ();
+            ConfigureView ();
         }
 
         protected const int MESSAGEBODY_VIEW_TAG = 100;
-
+        protected const int CONTACT_TEXTFIELD_TAG = 101;
         public void CreateView ()
         {
             UITextField contactTextField = new UITextField ();
@@ -81,6 +84,7 @@ namespace NachoClient.iOS
             contactTextField.KeyboardType = UIKeyboardType.EmailAddress;
             contactTextField.AutocapitalizationType = UITextAutocapitalizationType.None;
             contactTextField.AutocorrectionType = UITextAutocorrectionType.No;
+            contactTextField.Tag = CONTACT_TEXTFIELD_TAG;
             contentView.AddSubview (contactTextField);
 
             yOffset = contactTextField.Frame.Bottom;
@@ -141,7 +145,6 @@ namespace NachoClient.iOS
             });
 
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
-            LayoutView ();
         }
 
         protected void LayoutView ()
@@ -150,6 +153,22 @@ namespace NachoClient.iOS
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, MESSAGEBODY_TEXTVIEW_HEIGHT + LINE_OFFSET + 10);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
+        }
+
+        protected void ConfigureView ()
+        {
+            UITextField contactText = (UITextField)contentView.ViewWithTag (CONTACT_TEXTFIELD_TAG);
+            contactText.Text = GetEmailAddress ();
+        }
+
+        protected string GetEmailAddress ()
+        {
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                return Account.EmailAddr;
+            } else {
+                return "";
+            }
         }
 
         protected void MessageBodySelectionChanged (UITextView textView)
