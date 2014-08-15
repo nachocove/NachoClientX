@@ -987,7 +987,7 @@ namespace NachoCore.ActiveSync
         {
             var cmd = Sm.Arg as AsCommand;
             if (null == cmd) {
-                cmd = new AsSyncCommand (this, SyncStrategy.SyncKit (true));
+                cmd = new AsSyncCommand (this, SyncStrategy.GenSyncKit (AccountId, ProtocolState, true));
             }
             SetCmd (cmd);
             Cmd.Execute (Sm);

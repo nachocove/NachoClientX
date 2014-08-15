@@ -127,7 +127,7 @@ namespace NachoCore.ActiveSync
         private int AdvanceIfPossible (int rung)
         {
             if (CanAdvance (rung)) {
-                switch ((ActionEnum)Ladder[rung, (int)ItemType.Last + 1]) {
+                switch ((ActionEnum)Ladder [rung, (int)ItemType.Last + 1]) {
                 case ActionEnum.RicSynced:
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
                     break;
@@ -258,9 +258,9 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder, int rung, bool isNarrow)
+        private Tuple<Xml.Provision.MaxAgeFilterCode, int> ParametersProvider (McFolder folder, int rung, bool isNarrow)
         {
-            uint perFolderWindowSize = KBasePerFolderWindowSize;
+            int perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
                 perFolderWindowSize *= 2;
@@ -339,15 +339,35 @@ namespace NachoCore.ActiveSync
             return McFolder.ServerEndQueryAll (BEContext.Account.Id);
         }
 
-        public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit (bool cantBeEmpty)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
         {
-            return SyncKit (false, cantBeEmpty);
+            return GenSyncKit (accountId, protocolState, false, cantBeEmpty);
         }
 
-        private Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit (bool isNarrow, bool cantBeEmpty)
+        private SyncKit GenNarrowSyncKit (List<McFolder> eligibleForGetChanges, int rung, int overallWindowSize)
         {
-            var rung = BEContext.ProtocolState.StrategyRung;
-            uint overallWindowSize = KBaseOverallWindowSize;
+            var perFolders = new List<SyncKit.PerFolder> ();
+            foreach (var folder in eligibleForGetChanges) {
+                var parms = ParametersProvider (folder, rung, true);
+                perFolders.Add (new SyncKit.PerFolder () {
+                    Folder = folder,
+                    Commands = new List<McPending> (),
+                    FilterCode = parms.Item1,
+                    WindowSize = parms.Item2,
+                    GetChanges = true,
+                });
+            }
+            return new SyncKit () {
+                OverallWindowSize = overallWindowSize,
+                PerFolders = perFolders,
+            };
+        }
+
+        // Returns null if nothing to do.
+        private SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
+        {
+            var rung = protocolState.StrategyRung;
+            int overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
                 overallWindowSize *= 2;
@@ -356,77 +376,92 @@ namespace NachoCore.ActiveSync
                 overallWindowSize *= 3;
                 break;
             }
-            if (!isNarrow) {
-                // Only climb the ladder when not in a narrow sync.
-                rung = AdvanceIfPossible (rung);
-            }
             List<McFolder> eligibleForGetChanges = FolderListProvider (rung, isNarrow);
-
-            List<McPending> issuePendings;
+            NcAssert.True (0 != eligibleForGetChanges.Count);
+            // Don't bother with commands when doing a narrow Sync.
+            // TODO: should we hold off narrow sync until after intial sync?
+            if (isNarrow) {
+                return GenNarrowSyncKit (eligibleForGetChanges, rung, overallWindowSize);
+            }
+            // Wide Sync below.
+            rung = AdvanceIfPossible (rung);
+            List<McPending> commands;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
-            var includedFolders = new List<McFolder> ();
-            var retList = new List<Tuple<McFolder, List<McPending>>> ();
-            var limit = BEContext.ProtocolState.AsSyncLimit;
+            var retList = new List<SyncKit.PerFolder> ();
+            var limit = protocolState.AsSyncLimit;
 
-            // Loop through all synced folders.
+            // Loop through all synced folders. Choose those that exepect to-client items and
+            // those that have waiting pending items.
             foreach (var folder in AllSyncedFolders ()) {
                 if (0 >= limit) {
+                    // TODO: prefer default folders in this scenario.
                     break;
                 }
                 // See if we can and should do GetChanges. O(N**2), small N.
+                bool getChanges = false;
                 if (null != eligibleForGetChanges.FirstOrDefault (x => x.Id == folder.Id)) {
                     if (folder.AsSyncMetaToClientExpected) {
-                        folder.AsSyncMetaDoGetChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
-                        var parms = ParametersProvider (folder, BEContext.ProtocolState.StrategyRung, isNarrow);
-                        folder.AsSyncMetaFilterCode = parms.Item1;
-                        folder.AsSyncMetaWindowSize = parms.Item2;
+                        getChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
                     } else {
-                        folder.AsSyncMetaDoGetChanges = false;
+                        getChanges = false;
                     }
-                    folder.Update ();
                 }
                 // See if we can complete some McPending.
-                issuePendings = new List<McPending> ();
-                if (McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
-                    // If we are in serial mode, we will issue no more pendings.
-                    if (!inSerialMode) {
-                        var rawPendings = McPending.QueryEligibleByFolderServerId (BEContext.Account.Id, folder.ServerId);
-                        issuePendings = rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
-                        if (issuedAtLeast1) {
-                            // If we have issuedAtLeast1, then we exclude any serial pendings.
-                            issuePendings = issuePendings.Where (p => !p.DeferredSerialIssueOnly).ToList ();
-                        } else if (0 < issuePendings.Count) {
-                            // If we have not issuedAtLeast1, then grab the 1st and decide based on that.
-                            var first = issuePendings.First ();
-                            if (first.DeferredSerialIssueOnly) {
-                                inSerialMode = true;
-                                issuePendings = new List<McPending> () { first };
-                            } else {
-                                issuePendings = issuePendings.Where (p => !p.DeferredSerialIssueOnly).ToList ();
-                            }
-                            issuedAtLeast1 = true;
+                commands = new List<McPending> ();
+                // If we are in serial mode, we will issue no more pendings.
+                if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && !inSerialMode) {
+                    var rawPendings = McPending.QueryEligibleByFolderServerId (BEContext.Account.Id, folder.ServerId);
+                    commands = rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
+                    if (issuedAtLeast1) {
+                        // If we have issuedAtLeast1, then we exclude any serial pendings.
+                        commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();
+                    } else if (0 < commands.Count) {
+                        // If we have not issuedAtLeast1, then grab the 1st and decide based on that.
+                        var first = commands.First ();
+                        if (first.DeferredSerialIssueOnly) {
+                            inSerialMode = true;
+                            commands = new List<McPending> () { first };
+                        } else {
+                            commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();
                         }
+                        issuedAtLeast1 = true;
                     }
                 }
                 // if initial-key || some pending || GetChanges, include folder in Sync.
-                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey ||
-                    folder.AsSyncMetaDoGetChanges ||
-                    0 < issuePendings.Count) {
-                    retList.Add (Tuple.Create (folder, issuePendings));
-                    includedFolders.Add (folder);
+                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey || getChanges || 0 < commands.Count) {
+                    var parms = ParametersProvider (folder, rung, false);
+                    var perFolder = new SyncKit.PerFolder () {
+                        Folder = folder,
+                        Commands = commands,
+                        FilterCode = parms.Item1,
+                        WindowSize = parms.Item2,
+                        GetChanges = getChanges,
+                    };
+                    retList.Add (perFolder);
                     --limit;
                 }
             }
-            return (0 == retList.Count) ? null : Tuple.Create (overallWindowSize, retList);
+            if (0 != retList.Count) {
+                return new SyncKit () {
+                    OverallWindowSize = overallWindowSize,
+                    PerFolders = retList,
+                };
+            }
+            if (cantBeEmpty) {
+                return GenNarrowSyncKit (eligibleForGetChanges, rung, overallWindowSize);
+            }
+            return null;
         }
 
-        private IEnumerable<McFolder> PingKit (bool isNarrow)
+        // Never returns null.
+        private PingKit GenPingKit (McProtocolState protocolState, bool isNarrow)
         {
-            var folders = FolderListProvider (BEContext.ProtocolState.StrategyRung, isNarrow);
-            if (BEContext.ProtocolState.MaxFolders >= folders.Count) {
-                return folders;
+            var folders = FolderListProvider (protocolState.StrategyRung, isNarrow);
+            if (protocolState.MaxFolders >= folders.Count) {
+                return new PingKit () { Folders = folders };
             }
+            // If we have too many folders, then whittle down the list, but keep default inbox & cal.
             List<McFolder> fewer = new List<McFolder> ();
             var defInbox = folders.FirstOrDefault (x => x.Type == Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             if (null != defInbox) {
@@ -438,65 +473,38 @@ namespace NachoCore.ActiveSync
                 fewer.Add (defCal);
                 folders.Remove (defCal);
             }
-            var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
+            // Prefer the least-recently-ping'd.
+            var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)protocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
-            return fewer;
+            return new PingKit () { Folders = fewer };
         }
 
-        private Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
+        // Returns null if nothing to do.
+        private FetchKit GenFetchKit (int accountId)
         {
-            var fetchSize = KBaseFetchSize;
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast:
-                fetchSize *= 2;
-                break;
-            case NetStatusSpeedEnum.WiFi:
-                fetchSize *= 3;
-                break;
+            var remaining = KBaseFetchSize;
+            var fetchBodies = new List<FetchKit.FetchBody> ();
+            var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, 0.7).ToList ();
+            foreach (var email in emails) {
+                // TODO: all this can be one SQL JOIN.
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
+                fetchBodies.Add (new FetchKit.FetchBody () {
+                    ServerId = email.ServerId,
+                    ParentId = folders[0].ServerId,
+                });
             }
-            // Address user-driven fetching first.
-            var pendings = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, fetchSize).ToList ();
-            if (pendings.Count < fetchSize) {
-                var emails = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, fetchSize);
-                pendings.AddRange (emails);
+            remaining -= fetchBodies.Count;
+            List<McAttachment> fetchAtts = new List<McAttachment> ();
+            if (0 < remaining) {
+                fetchAtts = McAttachment.QueryNeedsFetch (accountId, remaining, 0.9, 1024 * 1024).ToList ();
             }
-            if (pendings.Count < fetchSize) {
-                var contacts = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, fetchSize);
-                pendings.AddRange (contacts);
+            if (0 < fetchBodies.Count || 0 < fetchAtts.Count) {
+                return new FetchKit () {
+                    FetchBodies = fetchBodies,
+                    FetchAttachments = fetchAtts,
+                };
             }
-            if (pendings.Count < fetchSize) {
-                var cals = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, fetchSize);
-                pendings.AddRange (cals);
-            }
-            if (pendings.Count < fetchSize) {
-                var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, fetchSize);
-                pendings.AddRange (tasks);
-            }
-            List<Tuple<McAbstrItem, string>> prefetches = new List<Tuple<McAbstrItem, string>> ();
-            var remaining = fetchSize - pendings.Count;
-
-            // Address background fetching if no immediate user need.
-            if (0 == pendings.Count) {
-                if (0 < remaining) {
-                    var folders = FolderListProvider (BEContext.ProtocolState.StrategyRung, false);
-                    foreach (var folder in folders) {
-                        var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
-                        foreach (var email in emails) {
-                            prefetches.Add (Tuple.Create ((McAbstrItem)email, folder.ServerId));
-                            if (remaining <= prefetches.Count) {
-                                break;
-                            }
-                            // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
-                        }
-                        if (remaining <= prefetches.Count) {
-                            break;
-                        }
-                    }
-                }
-            }
-            // Return a tuple: Item1 is the list of McPendings (user-initiated fetches),
-            // Item2 is the list of McItems (background fetching).
-            return Tuple.Create (pendings.Take (fetchSize), prefetches.Take (remaining));
+            return null;
         }
 
         bool CanExecuteNarrowPing (int accountId)
@@ -530,9 +538,12 @@ namespace NachoCore.ActiveSync
                             ).FirstOrDefault ();
                 if (null != fetch) {
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop,
-                        new AsItemOperationsCommand (BEContext.ProtoControl, 
-                            Tuple.Create<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> (
-                                new List<McPending> { fetch }, new List<Tuple<McAbstrItem, string>> ())));
+                        new AsItemOperationsCommand (BEContext.ProtoControl,
+                            new FetchKit () {
+                                FetchBodies = new List<FetchKit.FetchBody> (),
+                                FetchAttachments = new List<McAttachment> (),
+                                Pendings = new List<McPending> { fetch },
+                            }));
                 }
             }
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
@@ -569,8 +580,8 @@ namespace NachoCore.ActiveSync
                 var past120secs = DateTime.UtcNow.AddSeconds (-120);
                 if (protocolState.LastNarrowSync < past120secs &&
                     (protocolState.LastPing < past120secs ||
-                        !CanExecuteNarrowPing (accountId))) {
-                    var nSyncKit = SyncKit (true, false);
+                    !CanExecuteNarrowPing (accountId))) {
+                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
                     if (null != nSyncKit) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                             new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
@@ -581,7 +592,7 @@ namespace NachoCore.ActiveSync
             // perform a narrow Sync Command.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-120)) {
-                    var nSyncKit = SyncKit (true, false);
+                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
                     if (null != nSyncKit) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                             new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
@@ -596,7 +607,7 @@ namespace NachoCore.ActiveSync
                     // current filter setting, execute a narrow Ping command.
                     if (CanExecuteNarrowPing (accountId)) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext.ProtoControl, PingKit (true)));
+                            new AsPingCommand (BEContext.ProtoControl, GenPingKit (protocolState, true)));
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
@@ -644,12 +655,12 @@ namespace NachoCore.ActiveSync
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (Power.Instance.PowerState != PowerStateEnum.Unknown &&
                     Power.Instance.BatteryLevel > 0.7) {
-                    Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> fetchKit = null;
-                    Tuple<uint, List<Tuple<McFolder, List<McPending>>>> syncKit = null;
+                    FetchKit fetchKit = null;
+                    SyncKit syncKit = null;
                     if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed) {
-                        fetchKit = FetchKit ();
+                        fetchKit = GenFetchKit (accountId);
                     }
-                    syncKit = SyncKit (false, true);
+                    syncKit = GenSyncKit (accountId, protocolState, false, false);
                     if (null != fetchKit && (null == syncKit || 0.5 < CoinToss.NextDouble ())) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
                             new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
@@ -659,9 +670,9 @@ namespace NachoCore.ActiveSync
                             new AsSyncCommand (BEContext.ProtoControl, syncKit));
                     }
                 }
-                var pingKit = PingKit (false);
+                var pingKit = GenPingKit (protocolState, false);
                 if (null == pingKit) {
-                    pingKit = PingKit (true);
+                    pingKit = GenPingKit (protocolState, true);
                 }
                 if (null != pingKit) {
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
