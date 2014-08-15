@@ -25,7 +25,8 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
-        enum WhichItems {
+        enum WhichItems
+        {
             None,
             Email,
             Name,
@@ -33,8 +34,9 @@ namespace NachoClient.iOS
             EmailAndName,
             EmailAndPhone,
             NameAndPhone,
-            EmailNameAndPhone
-        };
+            EmailNameAndPhone}
+
+        ;
 
         public ContactsTableViewSource ()
         {
@@ -391,74 +393,11 @@ namespace NachoClient.iOS
                 return;
             default:
                 return;
-        }
-//
-//            // Both empty
-//            if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
-//                TitleLabel.Text = "Contact has no name or email address";
-//                TitleLabel.TextColor = UIColor.LightGray;
-//                TitleLabel.Font = A.Font_AvenirNextRegular14;
-//                labelView.Hidden = true;
-//                return;
-//            }
-//
-//            // Name empty
-//            if (String.IsNullOrEmpty (displayName)) {
-//                TitleLabel.Text = displayEmailAddress;
-//                TitleLabel.TextColor = A.Color_0B3239;
-//                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-//                TitleLabel.Frame = new RectangleF (65, (69 / 2) - 10, 320 - 15 - 65, 20);
-//                labelView.Hidden = false;
-//                labelView.Text = Util.NameToLetters (displayEmailAddress);
-//                labelView.BackgroundColor = Util.ColorForUser (colorIndex);
-//                return;
-//            }
-//
-//            // Email empty
-//            if (String.IsNullOrEmpty (displayEmailAddress)) {
-//                TitleLabel.Text = displayName;
-//                SubTitleLabelOne.Text = "Contact has no email address";
-//                TitleLabel.TextColor = A.Color_0B3239;
-//                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-//                SubTitleLabelOne.TextColor = UIColor.LightGray;
-//                SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-//                labelView.Hidden = false;
-//                labelView.Text = Util.NameToLetters (displayName);
-//                labelView.BackgroundColor = Util.ColorForUser (colorIndex);
-//                return;
-//            }
-//
-//            // Everything
-//            if (String.IsNullOrEmpty (displayPhoneNumber)) {
-//                TitleLabel.Text = displayName;
-//                SubTitleLabelOne.Text = displayEmailAddress;
-//                TitleLabel.TextColor = A.Color_0B3239;
-//                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-//                SubTitleLabelOne.TextColor = A.Color_0B3239;
-//                SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-//            } else {
-//                TitleLabel.Text = displayName;
-//                SubTitleLabelOne.Text = displayEmailAddress;
-//                SubTitleLabelTwo.Text = displayPhoneNumber;
-//                TitleLabel.Frame = new RectangleF (TitleLabel.Frame.X, TitleLabel.Frame.Y - 10, TitleLabel.Frame.Width, TitleLabel.Frame.Height);
-//                TitleLabel.TextColor = A.Color_0B3239;
-//                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-//                SubTitleLabelOne.TextColor = A.Color_0B3239;
-//                SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-//                SubTitleLabelOne.Frame = new RectangleF (SubTitleLabelOne.Frame.X, SubTitleLabelOne.Frame.Y - 10, SubTitleLabelOne.Frame.Width, SubTitleLabelOne.Frame.Height);
-//                SubTitleLabelTwo.TextColor = A.Color_0B3239;
-//                SubTitleLabelTwo.Font = A.Font_AvenirNextRegular12;
-//                SubTitleLabelTwo.Frame = new RectangleF (SubTitleLabelTwo.Frame.X, SubTitleLabelTwo.Frame.Y - 10, SubTitleLabelTwo.Frame.Width, SubTitleLabelTwo.Frame.Height);
-//
-//            }
-
-
-//            labelView.Hidden = false;
-//            labelView.Text = Util.NameToLetters (displayName);
-//            labelView.BackgroundColor = Util.ColorForUser (colorIndex);
+            }
         }
 
-        protected void ConfigureLabelView(UILabel labelView, string labelText, int colorIndex){
+        protected void ConfigureLabelView (UILabel labelView, string labelText, int colorIndex)
+        {
             labelView.Hidden = false;
             labelView.Text = Util.NameToLetters (labelText);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
@@ -531,9 +470,9 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void DumpInfo(McContact contact)
+        protected void DumpInfo (McContact contact)
         {
-            foreach(var a in contact.EmailAddresses) {
+            foreach (var a in contact.EmailAddresses) {
                 var e = McEmailAddress.QueryById<McEmailAddress> (a.EmailAddress);
                 Log.Debug (Log.LOG_UI, "contact Id={0} emailAddressId={1} email={2} score={3}", contact.Id, e.Id, e.CanonicalEmailAddress, e.Score);
             }
