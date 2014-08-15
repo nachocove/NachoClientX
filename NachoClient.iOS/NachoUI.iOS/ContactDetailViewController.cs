@@ -12,6 +12,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MimeKit;
+using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
@@ -284,11 +285,13 @@ namespace NachoClient.iOS
                 yOffset += AddEmailAddress (emailAddressAttributes, yOffset);
             }
 
-            var emailHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            emailHL.BackgroundColor = A.Color_NachoSeparator;
-            emailHL.Tag = TRANSIENT_TAG;
+            yOffset += 3;
+
+            var emailSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
+            emailSectionSeparator.BackgroundColor = A.Color_NachoSeparator;
+            emailSectionSeparator.Tag = TRANSIENT_TAG;
             ;
-            contentView.AddSubview (emailHL);
+            contentView.AddSubview (emailSectionSeparator);
 
             yOffset += 6;
 
@@ -303,6 +306,14 @@ namespace NachoClient.iOS
             foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
                 yOffset += AddPhoneNumber (phoneNumberAttribute, yOffset);
             }
+
+            yOffset += 3;
+
+            var phoneSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
+            phoneSectionSeparator.BackgroundColor = A.Color_NachoSeparator;
+            phoneSectionSeparator.Tag = TRANSIENT_TAG;
+            ;
+            contentView.AddSubview (phoneSectionSeparator);
 
             skippedPhones:
 
@@ -333,7 +344,7 @@ namespace NachoClient.iOS
             var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = email.Name;
+            labelLabel.Text = "Email Address";
             labelLabel.SizeToFit ();
             labelLabel.Tag = TRANSIENT_TAG;
             view.AddSubview (labelLabel);
@@ -364,10 +375,24 @@ namespace NachoClient.iOS
             view.Tag = TRANSIENT_TAG;
             contentView.AddSubview (view);
 
+            string phoneLabel = "";
+
+            if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber) {
+                phoneLabel = "Mobile Phone Number";
+            } else if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber) {
+                phoneLabel = "Business Phone Number";
+            } else if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber) {
+                phoneLabel = "Home Phone Number";
+            } else if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber) {
+                phoneLabel = "Assistant Phone Number";
+            } else {
+                phoneLabel = "Phone Number";
+            }
+
             var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = phone.Name;
+            labelLabel.Text = phoneLabel;
             labelLabel.SizeToFit ();
             labelLabel.Tag = TRANSIENT_TAG;
             view.AddSubview (labelLabel);
@@ -393,7 +418,14 @@ namespace NachoClient.iOS
             var valueLabel = new UILabel (new RectangleF (35, 20, View.Frame.Width - 75, 20));
             valueLabel.Font = A.Font_AvenirNextRegular14;
             valueLabel.TextColor = A.Color_808080;
-            valueLabel.Text = phone.Value;
+            string phoneNumberNoWhiteSpaces = Regex.Replace (phone.Value, @"\s+", ""); 
+            string phoneNumberToDisplay = "";
+            if (phoneNumberNoWhiteSpaces.ToCharArray ().Length == 10) {
+                phoneNumberToDisplay = String.Format ("{0:(###) ###-####}", double.Parse (phoneNumberNoWhiteSpaces));
+            } else {
+                phoneNumberToDisplay = phone.Value;
+            }
+            valueLabel.Text = phoneNumberToDisplay;
             valueLabel.SizeToFit ();
             view.AddSubview (valueLabel);
 

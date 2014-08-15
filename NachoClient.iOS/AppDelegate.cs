@@ -256,6 +256,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
             }
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
+
             return true;
         }
 
@@ -516,56 +517,15 @@ namespace NachoClient.iOS
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
-
-                var Mo = NcModel.Instance;
-                var Be = BackEnd.Instance;
-
-                var credView = new UIAlertView ();
-                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-                var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
-
-                credView.Title = "Need to update Login Credentials";
-                credView.AddButton ("Update");
-                credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
-                credView.Show ();
-
-                credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    var parent = (UIAlertView)sender;
-                    // FIXME - need  to display the login id they used in first login attempt
-                    var tmplog = parent.GetTextField (0).Text; // login id
-                    var tmppwd = parent.GetTextField (1).Text; // password
-                    if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
-                        tmpCred.Username = (string)tmplog;
-                        tmpCred.Password = (string)tmppwd;
-                        Mo.Db.Update (tmpCred); //  update with new username/password
-
-                        Be.CredResp (accountId);
-                        credView.ResignFirstResponder ();
-                    } else {
-                        var DoitYadummy = new UIAlertView ();
-                        DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                        DoitYadummy.AddButton ("Go Back");
-                        DoitYadummy.AddButton ("Exit - Do Not Care");
-                        DoitYadummy.CancelButtonIndex = 1;
-                        DoitYadummy.Show ();
-                        DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
-
-                            if (e.ButtonIndex == 0) { // I want to actually enter login data
-                                CredReqCallback (accountId);    // call to get credentials
-                            }
-
-                            DoitYadummy.ResignFirstResponder ();
-                        };
-                    }
-                    ;
-                    credView.ResignFirstResponder (); // might want this moved
-                };
+                Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
+                UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                this.Window.RootViewController.PresentViewController (cvc, true, null);
             }
         }
 
         public void ServConfReqCallback (int accountId)
         {
-
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
                 Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);

@@ -224,7 +224,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarItemViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="HgO-45-h9V" customClass="CalendarItemViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="w2z-6J-tn0">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -2045,6 +2045,37 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="487" y="-955"/>
         </scene>
+        <!--Credentials Ask View Controller-->
+        <scene sceneID="Q4s-Yu-1IY">
+            <objects>
+                <viewController storyboardIdentifier="CredentialsAskViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="qVJ-z6-6T1" customClass="CredentialsAskViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ID2-Wa-hmi">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="9Js-sT-WnO">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="yQr-vs-RvK">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <connections>
+                        <outlet property="contentView" destination="yQr-vs-RvK" id="7ef-AX-ttH"/>
+                        <outlet property="scrollView" destination="9Js-sT-WnO" id="WNo-KJ-jVs"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="GmQ-u0-jWS" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="957" y="-465"/>
+        </scene>
         <!--Event Attendee View Controller-->
         <scene sceneID="odK-NZ-B9r">
             <objects>
@@ -2172,50 +2203,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="7f1-U8-A7w"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="p6V-c0-caL"/>
-        <segue reference="WNy-bM-xGW"/>
+        <segue reference="ebP-h4-BhC"/>
         <segue reference="J8i-gn-UTn"/>
-        <segue reference="wZa-Ld-8vI"/>
         <segue reference="VgN-QU-7Sb"/>
         <segue reference="mo4-Vz-xJh"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="W3H-fb-nEJ"/>
         <segue reference="ywO-BF-h0n"/>
-        <segue reference="zXa-AG-jcx"/>
-        <segue reference="AcJ-nB-pBP"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="p6V-c0-caL"/>
-        <segue reference="VgN-QU-7Sb"/>
-        <segue reference="CoK-I1-8hz"/>
         <segue reference="vah-yS-677"/>
-        <segue reference="RR1-bJ-URL"/>
+        <segue reference="CoK-I1-8hz"/>
         <segue reference="JTo-qU-j7O"/>
-        <segue reference="LTs-mH-KqM"/>
-        <segue reference="m2D-2n-RiV"/>
+        <segue reference="RR1-bJ-URL"/>
         <segue reference="xSG-RA-4K6"/>
-        <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
-        <segue reference="xSG-RA-4K6"/>
+        <segue reference="w67-dy-XSq"/>
         <segue reference="4M9-UI-9mt"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="W3H-fb-nEJ"/>
-        <segue reference="4M9-UI-9mt"/>
+        <segue reference="LTs-mH-KqM"/>
+        <segue reference="v9F-jf-qe1"/>
         <segue reference="ja3-Zu-g6R"/>
-        <segue reference="Q8y-4K-BAb"/>
         <segue reference="RaB-9o-azo"/>
+        <segue reference="Q8y-4K-BAb"/>
     </inferredMetricsTieBreakers>
 </document>
