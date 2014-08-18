@@ -51,12 +51,21 @@ namespace NachoClient.iOS
             };
             navItems.LeftBarButtonItem = cancelButton;
             sendButton.Title = "Submit";
+
+            UIAlertView confirmSent = new UIAlertView();
+            confirmSent.Title = "Message Successfully Sent";
+            confirmSent.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
+            confirmSent.AddButton("Close");
+            confirmSent.Clicked += (object sender, UIButtonEventArgs e) => {
+                this.DismissViewController (true, null);
+            };
+
             sendButton.Clicked += (object sender, EventArgs e) => {
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();
                 supportInfo.Add ("ContactInfo", contactTextField.Text);
                 supportInfo.Add ("Message", messageBodyTextView.Text);
                 Telemetry.RecordSupport (supportInfo);
-                this.DismissViewController (true, null);
+                confirmSent.Show();
             };
             navItems.RightBarButtonItem = sendButton;
             navigationBar.Items = new UINavigationItem[]{ navItems };
