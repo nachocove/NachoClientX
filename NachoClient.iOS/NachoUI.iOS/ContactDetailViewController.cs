@@ -377,13 +377,13 @@ namespace NachoClient.iOS
 
             string phoneLabel = "";
 
-            if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber) {
+            if (NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber == phone.Name) {
                 phoneLabel = "Mobile Phone Number";
-            } else if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber) {
+            } else if (NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber == phone.Name) {
                 phoneLabel = "Business Phone Number";
-            } else if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber) {
+            } else if (NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber == phone.Name) {
                 phoneLabel = "Home Phone Number";
-            } else if (phone.Name == NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber) {
+            } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
                 phoneLabel = "Assistant Phone Number";
             } else {
                 phoneLabel = "Phone Number";
@@ -401,7 +401,7 @@ namespace NachoClient.iOS
             phoneButton.Frame = new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24);
             phoneButton.SetImage (UIImage.FromBundle ("icn-mtng-phone"), UIControlState.Normal);
             phoneButton.TouchUpInside += (sender, e) => {
-                TouchedEmailButton (phone.Value);
+                TouchedCallButton (phone.Value);
             };
             view.AddSubview (phoneButton);
 
@@ -409,7 +409,7 @@ namespace NachoClient.iOS
             smsButton.Frame = new RectangleF (View.Frame.Width - 24 - 15 - 24 - 15, 10, 24, 24);
             smsButton.SetImage (UIImage.FromBundle ("icn-sms"), UIControlState.Normal);
             smsButton.TouchUpInside += (sender, e) => {
-                TouchedEmailButton (phone.Value);
+                TouchedSmsButton (phone.Value);
             };
             view.AddSubview (smsButton);
 
@@ -418,14 +418,7 @@ namespace NachoClient.iOS
             var valueLabel = new UILabel (new RectangleF (35, 20, View.Frame.Width - 75, 20));
             valueLabel.Font = A.Font_AvenirNextRegular14;
             valueLabel.TextColor = A.Color_808080;
-            string phoneNumberNoWhiteSpaces = Regex.Replace (phone.Value, @"\s+", ""); 
-            string phoneNumberToDisplay = "";
-            if (phoneNumberNoWhiteSpaces.ToCharArray ().Length == 10) {
-                phoneNumberToDisplay = String.Format ("{0:(###) ###-####}", double.Parse (phoneNumberNoWhiteSpaces));
-            } else {
-                phoneNumberToDisplay = phone.Value;
-            }
-            valueLabel.Text = phoneNumberToDisplay;
+            valueLabel.Text = phone.Value;
             valueLabel.SizeToFit ();
             view.AddSubview (valueLabel);
 
@@ -499,7 +492,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "TouchedCallButton");
 
             if (string.IsNullOrEmpty (number)) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have an phone number");
+                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
             PerformAction ("tel", number);
@@ -510,7 +503,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "TouchedSmsButton");
 
             if (null == number) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have an phone number");
+                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
             PerformAction ("sms", number);
@@ -518,7 +511,7 @@ namespace NachoClient.iOS
 
         protected void PerformAction (string action, string number)
         {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}://{1}", action, number)));
+            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
         }
 
         protected void ComplainAbout (string complaintTitle, string complaintMessage)

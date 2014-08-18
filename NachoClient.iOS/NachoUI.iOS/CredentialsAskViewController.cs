@@ -52,11 +52,6 @@ namespace NachoClient.iOS
             UIButton escape = new UIButton (new RectangleF (20, yOffset, 20, 20));
             escape.SetImage(UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
             escape.TouchUpInside += (object sender, EventArgs e) => {
-                NSTimer AskAgain = NSTimer.CreateScheduledTimer(50, delegate {
-                    AppDelegate appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                    appDelegate.CredReqCallback(LoginHelpers.GetCurrentAccountId());
-                });
-                Log.Info (Log.LOG_UI, "Starting 50 second timer: {0}", AskAgain.ToString());
                 View.EndEditing(true);
                 DismissViewController(true, null);
             };
