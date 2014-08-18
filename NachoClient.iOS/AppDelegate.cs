@@ -1,5 +1,5 @@
-//#define HA_AUTH_ANONYMOUS
-#define HA_AUTH_USER
+#define HA_AUTH_ANONYMOUS
+//#define HA_AUTH_USER
 //#define HA_AUTH_EMAIL
 
 using System;
@@ -142,7 +142,7 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiButton (description);
             });
 
-            NachoUIMonitor.SetupUISegmentedControl (delegate(string description, long index) {
+            NachoUIMonitor.SetupUISegmentedControl (delegate(string description, int index) {
                 Telemetry.RecordUiSegmentedControl (description, index);
             });
 
@@ -158,15 +158,15 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiTextField (description);
             });
 
-            NachoUIMonitor.SetupUIPageControl (delegate(string description, long page) {
+            NachoUIMonitor.SetupUIPageControl (delegate(string description, int page) {
                 Telemetry.RecordUiPageControl (description, page);
             });
 
-            NachoUIMonitor.SetupUIAlertView (delegate(string description, long index) {
+            NachoUIMonitor.SetupUIAlertView (delegate(string description, int index) {
                 Telemetry.RecordUiAlertView (description, index);
             });
 
-            NachoUIMonitor.SetupUIActionSheet (delegate(string description, long index) {
+            NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
                 Telemetry.RecordUiActionSheet (description, index);
             });
 
