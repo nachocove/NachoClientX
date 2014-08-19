@@ -643,7 +643,7 @@ namespace NachoCore.Utils
         private void Process<T> () where T : ITelemetryBE, new()
         {
             BackEnd = new T ();
-            Counters [0].ReportPeriod = 60 * 60; // report once per day
+            Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
             // Capture the transaction time to telemetry server
             const string CAPTURE_NAME = "Telemetry.SendEvent";

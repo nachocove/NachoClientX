@@ -349,7 +349,7 @@ namespace NachoCore.Utils
         public static void ResumeAll ()
         {
             lock (ClassLockObj) {
-                const int reportPeriodMsec = 30 * 60 * 1000; // every 30 min
+                const int reportPeriodMsec = 5 * 60 * 1000; // every 5 min
                 if (null == SleepWatch) {
                     SleepWatch = (IStopwatch) Activator.CreateInstance (StopwatchClass);
                 }
@@ -358,7 +358,7 @@ namespace NachoCore.Utils
                     dueTime = 1000; // if it has slept for more than report period, report immediately
                 }
                 if (null == ReportTimer) {
-                    // Report once every 30 min
+                    // Report once every 5 min
                     ReportTimer = new NcTimer ("NcCapture", NcCapture.Callback, null, dueTime, reportPeriodMsec);
                 }
                 foreach (string kind in PerKind.Keys) {

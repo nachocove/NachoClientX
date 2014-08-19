@@ -64,7 +64,7 @@ namespace NachoCore.Brain
             McEmailAddressCounters = new OperationCounters ("McEmailAddress", RootCounter);
             McEmailAddressScoreSyncInfo = new OperationCounters ("McEmailAddressScoreSyncInfo", RootCounter);
             RootCounter.AutoReset = true;
-            RootCounter.ReportPeriod = 60 * 60; // report once per hour
+            RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
 
             EventQueue = new NcQueue<NcBrainEvent> ();
             NcTask.Run (() => {
