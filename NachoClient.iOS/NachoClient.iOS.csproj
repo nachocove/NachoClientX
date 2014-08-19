@@ -1376,6 +1376,19 @@
     <BundleResource Include="Content\red_balloon_empty%402x.png" />
     <BundleResource Include="Content\red_pointer%402x.png" />
     <BundleResource Include="Content\teal_pointer%402x.png" />
+    <BundleResource Include="Content\Slide1-BG.png" />
+    <BundleResource Include="Content\Slide1-1B.png" />
+    <BundleResource Include="Content\Slide1-2.png" />
+    <BundleResource Include="Content\Slide1-3.png" />
+    <BundleResource Include="Content\Slide1-4.png" />
+    <BundleResource Include="Content\Slide1-5.png" />
+    <BundleResource Include="Content\Slide1-6.png" />
+    <BundleResource Include="Content\Slide1-7.png" />
+    <BundleResource Include="Content\Slide1-8.png" />
+    <BundleResource Include="Content\Slide1-9A.png" />
+    <BundleResource Include="Content\Slide1-9B.png" />
+    <BundleResource Include="Content\Slide1-9C.png" />
+    <BundleResource Include="Content\Slide1-1A.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

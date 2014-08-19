@@ -111,7 +111,7 @@ namespace NachoClient.iOS
             pageDots.CurrentPageIndicatorTintColor = UIColor.Black;
 
             //containerView.Frame = new System.Drawing.RectangleF (0, View.Frame.Bottom - 50, View.Frame.Width, 50);
-            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Bottom-50  , this.View.Frame.Width, 50);
+            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Bottom-48  , this.View.Frame.Width, 48);
             containerView.BackgroundColor = UIColor.White;
             pageDots.Frame = new System.Drawing.RectangleF(20,10, 50, 40);  // relative to containerView
             this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 

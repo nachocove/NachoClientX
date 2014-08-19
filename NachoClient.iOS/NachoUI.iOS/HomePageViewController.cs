@@ -19,8 +19,14 @@ namespace NachoClient.iOS
         //loads the HomePageController.xib file and connects it to this object
         public HomeViewController owner;
 
-        // container for iPhone screen-in-screen
-        UIView contentContainer;
+        // container for iPhone screen-in-screen 
+        // doing these as internal globals
+        private UIView pageContainerView; // full screen
+        private UIView contentContainer; // the phone-image content
+        private UIView helperContainer; // the helpful text
+        private UIImageView msg1View;
+        private bool retinaDisplay = (UIScreen.MainScreen.Scale > 1.0); // if so, then we are on a retinadisplay
+        private int scaleIt; 
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -46,7 +52,12 @@ namespace NachoClient.iOS
 
         // Background
 
-        const string bgscreen = "Content/02_bg.png";
+        const string bgscreen = "Content/Slide1-BG.png"; // background screen
+        const string contentscreen = "Content/Slide1-3.png"; // phone-face image
+        const string calendarpull = "Content/Slide1-2.png"; // calendar pull down
+        const string msg1loc = "Content/Slide1-1A.png"; // Meagan message
+        const string msg2loc = "Content/Slide1-1B.png"; // next message
+        const string inboxloc = "Content/Slide1-4.png"; // inbox msg at bottom of screen
        
         //const string TutPageOne = "Content/Tutorial-Page1.png";
         const string TutPageOne = "Content/01_img_only.png";
@@ -81,24 +92,15 @@ namespace NachoClient.iOS
             // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
            
             string fileName = Tutorial [this.PageIndex];
+            //scaleIt = retinaDisplay ? 2 : 1;
+            scaleIt = 1; // retinadisplay test needs to be checked...
             //UIView pageContainerView = new UIView (new RectangleF(0,0,View.Frame.Width, View.Frame.Height-50)); // Contains everything created by this object
-            UIView pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-50));
-            this.contentContainer = new UIView (new RectangleF (30, 40, pageContainerView.Frame.Width - 60, 350)); // see size of helpercontainer
-            UIView helperContainer = new UIView (new RectangleF(0,pageContainerView.Frame.Top + 350, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom-350)); // contains the helpertext and labels  
-            UILabel helperTitleText = new UILabel (new RectangleF(0, 5, helperContainer.Frame.Width, 25));
+            this.pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-48));
+            this.contentContainer = new UIView (new RectangleF (54 , 60, 212, 306)); // see size of helpercontainer
+            this.helperContainer = new UIView (new RectangleF(0,this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom- this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
+            UILabel helperTitleText = new UILabel (new RectangleF(0,10, helperContainer.Frame.Width, 20));
             UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
-            //UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,helperContainer.Frame.Height / 2));
-            /* UILabel helperTitleText = new UILabel ();
-            UILabel helperBodyText = new UILabel ();
-*/
-            /*
-            UILabel helperTitleText = new UILabel (new RectangleF (0,helperContainer.Frame.Top, helperContainer.Frame.Width, helperContainer.Frame.Height/2));
-            UILabel helperBodyText = new UILabel (new RectangleF ( 0,helperContainer.Frame.Top+helperTitleText.Frame.Height, helperContainer.Frame.Width, helperContainer.Frame.Height-helperTitleText.Frame.Height)); // suspect we want one or two helper text labels
-*/
-/*
-            pageContainerView.Frame = new RectangleF (0, 0, this.View.Frame.Width, this.View.Frame.Height - 40);
-            helperContainer.Frame = new RectangleF (0, (View.Frame.Height/5) * 3, View.Frame.Width, (View.Frame.Height /5 )*2 - 40);
-*/
+
             helperContainer.BackgroundColor = UIColor.White;
      
             helperTitleText.BackgroundColor = UIColor.White; // debug
@@ -108,6 +110,7 @@ namespace NachoClient.iOS
             helperTitleText.TextColor = A.Color_11464F;
             helperBodyText.TextColor = A.Color_9B9B9B;
            
+          
             helperTitleText.Text = titleText [this.PageIndex];
             helperBodyText.Text = bodyText[this.PageIndex];
             helperBodyText.Font = A.Font_AvenirNextRegular14;
@@ -134,25 +137,24 @@ namespace NachoClient.iOS
             UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
             bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
            
-            UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
 
-            tutImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            UIImageView pullimageView = new UIImageView(UIImage.FromBundle (calendarpull));
+            msg1View = new UIImageView (UIImage.FromBundle (msg1loc));
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
 
-            tutImage.ContentMode = UIViewContentMode.ScaleToFill;
-            tutImage.UserInteractionEnabled = true;
-
-            contentContainer.AddSubview(tutImage);
-
-            //helperText.Frame = new RectangleF (0, 0, View.Frame.Width, (View.Frame.Height/5*2) -50);
+            //pullimageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, 46));
+            pullimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
+            msg1View.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
 
 
-             //helperContainer.AddSubview (helperText);
-           // helperTitleText.Center = new PointF( helperContainer.Center.X, helperContainer.Center.Y - helperContainer.Frame.Height/2); 
-            //helperContainer.AddSubview (helperTitleText);
-            //helperContainer.AddSubview(helperBodyText);
-           // helperContainer.BringSubviewToFront (helperBodyText);
-            //helperContainer.BringSubviewToFront (helperTitleText);
-
+            contentContainer.AddSubview(screenImage);
+            //contentContainer.AddSubview (pullimageView);
+            contentContainer.AddSubview (msg1View);
+            contentContainer.AddSubview (inboximageView);
+        
 
             pageContainerView.AddSubview (bgImage);
             pageContainerView.AddSubview(contentContainer);
@@ -187,6 +189,7 @@ namespace NachoClient.iOS
                 AnimateGreenToolTip ();
                 break;
             case 1:
+                this.msg1View.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2 + 10);
                 AnimateHotlistItemLeft ();
                 break;
             case 2:
@@ -197,12 +200,83 @@ namespace NachoClient.iOS
                 break;
             }
         }
+        /*
+        private UIImageView CreateSlide1()
+        {
+            // NYI should return a completely built up page 1
+            // WIP
+
+            UIImageView slide1Content = new UIImageView (this.contentContainer.Frame);
+            UIImageView slide1Helper = new UIImageView (this.helperContainer.Frame);
+            UIImageView slide1PageView = new UIImageView (this.pageContainerView.Frame);
+            UILabel helperTitleText = new UILabel (new RectangleF(0, 5, helperContainer.Frame.Width, 25));
+            UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
+
+            helperContainer.BackgroundColor = UIColor.White;
+
+            helperTitleText.BackgroundColor = UIColor.White; // debug
+
+            helperBodyText.BackgroundColor = UIColor.White; // debug
+            helperBodyText.Lines = 2;
+            helperTitleText.TextColor = A.Color_11464F;
+            helperBodyText.TextColor = A.Color_9B9B9B;
+
+
+            helperTitleText.Text = titleText [this.PageIndex];
+            helperBodyText.Text = bodyText[this.PageIndex];
+            helperBodyText.Font = A.Font_AvenirNextRegular14;
+            helperTitleText.Font = A.Font_AvenirNextDemiBold17;
+            helperBodyText.TextAlignment = UITextAlignment.Center;
+            helperTitleText.TextAlignment = UITextAlignment.Center;
+
+
+            helperTitleText.Layer.BorderColor = UIColor.White.CGColor;
+            helperTitleText.Layer.BorderWidth = 2f;
+            helperBodyText.Layer.BorderColor = UIColor.White.CGColor;
+            helperBodyText.Layer.BorderWidth = 2f;
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle ("Content/Slide1-BG.png"));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            slide1PageView.AddSubview (bgImage);
+            UIImageView nnBackground = new UIImageView (UIImage.FromBundle("Content/Slide1-3.png")); //the background
+            UIImageView nachoMsg1 = new UIImageView (UIImage.FromBundle ("Content/Slide1-1A.png")); // the message
+            UIImageView bottomMsg = new UIImageView (UIImage.FromBundle ("Content/Slide-1-2.png")); // the inbox
+
+            nnBackground.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height);
+            nachoMsg1.Frame = new RectangleF (10, 60, contentContainer.Frame.Width - 20, contentContainer.Frame.Height - 120);
+
+
+
+                slide1Content = new UIImageView (UIImage.FromBundle ("Content/Slide1-3.png"));
+
+
+            return slide1PageView;
+
+
+        }
+
+        private UIImageView CreateSlide2()
+        {
+            //NYI
+        }
+
+        private UIImageView CreateSlide3()
+        {
+            //NYI
+        }
+
+        private UIImageView CreateSlide4()
+        {
+            // NYI
+        }
+*/
 
         private void CreateCovers ()
         {
             UIView topCoverRect = new UIView (new RectangleF (0, 0, this.View.Bounds.Width, this.contentContainer.Frame.Y));
-            UIView leftCoverRect = new UIView (new RectangleF (0, this.contentContainer.Frame.Y, this.contentContainer.Frame.X, this.contentContainer.Bounds.Height * 3 / 4));
-            UIView rightCoverRect = new UIView (new RectangleF (this.contentContainer.Bounds.Right + this.contentContainer.Frame.X, leftCoverRect.Frame.Y, leftCoverRect.Bounds.Width, this.contentContainer.Bounds.Height * 3 / 4));
+            UIView leftCoverRect = new UIView (new RectangleF (0, this.contentContainer.Frame.Y, this.contentContainer.Frame.X, this.contentContainer.Bounds.Height));
+            UIView rightCoverRect = new UIView (new RectangleF (this.contentContainer.Bounds.Right + this.contentContainer.Frame.X, leftCoverRect.Frame.Y, leftCoverRect.Bounds.Width, this.contentContainer.Bounds.Height ));
 
             topCoverRect.BackgroundColor = A.Color_NachoGreen;
             leftCoverRect.BackgroundColor = A.Color_NachoGreen;
@@ -278,16 +352,39 @@ namespace NachoClient.iOS
             SetSpriteCallbacks (tooltip, animateSprite);
         }
 
-        private UIImageView CreateHotlistItem ()
+        private UIImageView CreateHotlistOne ()
         {
             // slide left
-            UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Icon"));
-            hotlist.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+            // make image be "2 images with center on "containerView.width boundary". This
+            // will allow animation to "slide it out, but feel like the actual app is running.
+            UIImageView msg1 = new UIImageView (UIImage.FromBundle("Content/Slide1-1A.png"));
+           // UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Content/Slide1-1B.png"));
+            msg1.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2 +10);
+            //hotlist.Frame = new RectangleF (0, 0, 192, 207);
+            //hotlist.Center = new PointF (this.pageContainerView.Frame.Width/2, this.contentContainer.Frame.Height / 2);
+            return msg1;
+        }
+
+        private UIImageView CreateHotlistTwo ()
+        {
+            // slide left
+            // make image be "2 images with center on "containerView.width boundary". This
+            // will allow animation to "slide it out, but feel like the actual app is running.
+            //UIImageView msg1 = new UIImageView (UIImage.FromBundle("Content/Slide1-1A.png"));
+            UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Content/Slide1-1B.png"));
+            //msg1.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+            //hotlist.Frame = new RectangleF (0, 0, 192, 207);
+            hotlist.Center = new PointF (this.pageContainerView.Frame.Width, this.contentContainer.Frame.Height / 2 +10);
             return hotlist;
         }
 
         private void AnimateHotlistItemLeft ()
         {
+            // One of two options here. We could have two images, each one animating at same time to
+            // show new "card" coming in. Other option would be to have a "wide" image that is hidden under
+            //the right cover and slides out. in this way the animation would be smooth, and could 
+            // even snap back.
+
             Action<UIImageView> animateSprite = (sprite) => {
                 UIView.Animate (
                     duration: 0.7,
@@ -295,9 +392,13 @@ namespace NachoClient.iOS
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
                         // Move the hotlist item all the way off the bottom of the screen
-                        sprite.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height + sprite.Frame.Height);
+                        sprite.Center = new PointF (sprite.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                        //sprite.Center = new PointF (this.contentContainer.Frame.Width / 2 , this.contentContainer.Frame.Height/2 + sprite.Frame.Height);
+
                     },
                     completion: () => {
+                    }// need to work on clean up so there are no artifacts here
+                    /*completion: () => {
                         sprite.RemoveFromSuperview ();
                         this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
                             var previousPageView = (HomePageController)e.PreviousViewControllers [0];
@@ -306,12 +407,16 @@ namespace NachoClient.iOS
                                 sprite.RemoveFromSuperview ();
                             }
                         };
-                    }
+                    }*/
                 );
             };
             
-            var hotlistSprite = CreateHotlistItem ();
-            SetSpriteCallbacks (hotlistSprite, animateSprite);
+            var hotlistOne = this.msg1View;
+            //CreateHotlistOne ();
+            var hotlistTwo = CreateHotlistTwo ();
+
+            SetSpriteCallbacks (hotlistOne, animateSprite);
+            SetSpriteCallbacks (hotlistTwo, animateSprite);
         }
 
         private UIImageView CreateTimelineSprite ()
@@ -347,6 +452,8 @@ namespace NachoClient.iOS
 
         private UIImageView CreateEmailCell ()
         {
+            // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
+            // the animation wil look smooth, but only one vie is sliding..
             var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
             UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Icon"));
             emailCell.Frame = emailSize;
