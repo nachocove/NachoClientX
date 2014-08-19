@@ -119,7 +119,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Configures the swipes.
         /// </summary>
-        void ConfigureSwipes (MCSwipeTableViewCell cell, int calendarIndex)
+        void ConfigureSwipes (MCSwipeTableViewCell cell, int contactId)
         {
             cell.FirstTrigger = 0.20f;
             cell.SecondTrigger = 0.50f;
@@ -133,26 +133,28 @@ namespace NachoClient.iOS
             UIView listView = null;
             UIColor brownColor = null;
 
+            McContact cellsContact = McContact.QueryById<McContact> (contactId);
+
             try { 
                 checkView = ViewWithImageName ("check");
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-//                    ArchiveThisMessage (calendarIndex);
+                    SwipedCall(cellsContact.GetPhoneNumber());
                 });
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-//                    DeleteThisMessage (calendarIndex);
+                    SwipedSMS(cellsContact.GetPhoneNumber());
                 });
                 clockView = ViewWithImageName ("clock");
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    //                    PerformSegue ("MessageToMessagePriority", new SegueHolder (messageThreadIndex));
+                    SwipedEmail(cellsContact.GetEmailAddress());                
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    //                    PerformSegue ("MessageToMessageAction", new SegueHolder (messageThreadIndex));
+                    SwipedQR(cellsContact.GetEmailAddress());
                 });
             } finally {
                 if (null != checkView) {
@@ -182,6 +184,70 @@ namespace NachoClient.iOS
             }
         }
 
+//        protected void SwipedMeeting (McContact cellContact)
+//        {
+//            Log.Info (Log.LOG_UI, "Swiped Create Meeting");
+//            if(string.IsNullOrEmpty(cellContact.GetEmailAddress())){
+//                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+//                return;
+//            }
+//            owner.PerformSegueForDelegate ("ContactsToEvent", new SegueHolder(cellContact));
+//        }
+
+        protected void SwipedQR (string address)
+        {
+            Log.Info (Log.LOG_UI, "Swiped Quick Response");
+
+            if (string.IsNullOrEmpty (address)) {
+                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                return;
+            }
+            owner.PerformSegueForDelegate ("ContactsToQR", new SegueHolder(address));
+        }
+
+        protected void SwipedEmail (string address)
+        {
+            Log.Info (Log.LOG_UI, "Swiped Email Compose");
+
+            if (string.IsNullOrEmpty (address)) {
+                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                return;
+            }
+            owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder(address));
+        }
+
+        protected void SwipedCall (string number)
+        {
+            Log.Info (Log.LOG_UI, "Swiped Call");
+
+            if (string.IsNullOrEmpty (number)) {
+                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
+                return;
+            }
+            PerformAction ("tel", number);
+        }
+
+        protected void SwipedSMS (string number)
+        {
+            Log.Info (Log.LOG_UI, "Swiped SMS");
+
+            if (string.IsNullOrEmpty (number)) {
+                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
+                return;
+            }
+            PerformAction ("sms", number);
+        }
+
+        protected void PerformAction (string action, string number)
+        {
+            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+        }
+
+        protected void ComplainAbout (string complaintTitle, string complaintMessage)
+        {
+            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
+            alert.Show ();
+        }
 
         UIView ViewWithImageName (string imageName)
         {
@@ -269,10 +335,6 @@ namespace NachoClient.iOS
             }
             if (!String.IsNullOrEmpty (displayPhoneNumber)) {
                 hasPhone = true;
-                string phoneNumberNoWhiteSpaces = Regex.Replace (displayPhoneNumber, @"\s+", ""); 
-                if (phoneNumberNoWhiteSpaces.ToCharArray ().Length == 10) {
-                    displayPhoneNumber = String.Format ("{0:(###) ###-####}", double.Parse (phoneNumberNoWhiteSpaces));
-                }
             }
 
             if (!hasName && !hasPhone && !hasEmail) {

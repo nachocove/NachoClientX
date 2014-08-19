@@ -35,6 +35,10 @@ namespace NachoClient.iOS
         protected NachoFolders calendars;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
+
+        protected List<McAttendee> PresetAttendees;
+        protected bool PresetsWereSet = false;
+
         List<McAttachment> attachments = new List<McAttachment> ();
 
         protected UIView EventInfoView;
@@ -175,6 +179,9 @@ namespace NachoClient.iOS
                 c = CalendarHelper.DefaultMeeting ();
                 ToggleActions ();
                 createEvent = true;
+                if (PresetsWereSet) {
+                    c.attendees = PresetAttendees;
+                }
                 CreateEventView ();
                 break;
             case CalendarItemEditorAction.view:
@@ -192,6 +199,12 @@ namespace NachoClient.iOS
                 break;
             }
 
+        }
+
+        public void SetEventPresetFields (List<McAttendee> attendees)
+        {
+            PresetAttendees = attendees;
+            PresetsWereSet = true;
         }
 
         protected void ToggleButtons ()

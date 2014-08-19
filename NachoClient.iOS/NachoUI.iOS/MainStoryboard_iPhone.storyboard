@@ -528,6 +528,9 @@
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="fwk-9p-tlV"/>
                         <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="W3H-fb-nEJ"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="hFF-MQ-SOq"/>
+                        <segue destination="em2-Kh-10O" kind="push" identifier="ContactsToEvent" id="hP8-jQ-z5J"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToMessageCompose" id="p3m-AA-fNo"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQR" id="tDn-hd-T9X"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jgG-ds-vYF" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2203,29 +2206,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
+        <segue reference="xSG-RA-4K6"/>
+        <segue reference="hP8-jQ-z5J"/>
         <segue reference="p6V-c0-caL"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="g4G-tD-G9H"/>
         <segue reference="ebP-h4-BhC"/>
         <segue reference="J8i-gn-UTn"/>
         <segue reference="VgN-QU-7Sb"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="W3H-fb-nEJ"/>
-        <segue reference="ywO-BF-h0n"/>
         <segue reference="vah-yS-677"/>
-        <segue reference="CoK-I1-8hz"/>
-        <segue reference="JTo-qU-j7O"/>
+        <segue reference="tDn-hd-T9X"/>
+        <segue reference="W3H-fb-nEJ"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="mo4-Vz-xJh"/>
+        <segue reference="hFF-MQ-SOq"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="Q8y-4K-BAb"/>
         <segue reference="RR1-bJ-URL"/>
-        <segue reference="xSG-RA-4K6"/>
-        <segue reference="7sK-rg-HQL"/>
+        <segue reference="LTs-mH-KqM"/>
+        <segue reference="RnP-wd-ySV"/>
         <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="4M9-UI-9mt"/>
-        <segue reference="LTs-mH-KqM"/>
-        <segue reference="v9F-jf-qe1"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="Q8y-4K-BAb"/>
     </inferredMetricsTieBreakers>
 </document>
