@@ -39,6 +39,9 @@ namespace NachoCore.Model
         [MaxLength (300)]
         public string UID { get; set; }
 
+        /// Recurrences are generated into the McEvent table thru this date.
+        public DateTime RecurrencesGeneratedUntil { get; set; }
+
         public static ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Calendar;
@@ -153,8 +156,13 @@ namespace NachoCore.Model
             var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
             return NcModel.Instance.Db.Table<McCalendar> ().Where (x => 
                 x.DeviceUniqueId == deviceUniqueId &&
-                x.AccountId == account.Id
+            x.AccountId == account.Id
             ).SingleOrDefault ();
+        }
+
+        public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
+        {
+            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList();
         }
     }
 }

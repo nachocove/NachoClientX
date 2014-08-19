@@ -332,6 +332,9 @@
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
     <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
     <Compile Include="NachoCore\Brain\NcBrainControl.cs" />
+    <Compile Include="NachoCore\Model\McEvent.cs" />
+    <Compile Include="NachoCore\Adapters\NachoEvents.cs" />
+    <Compile Include="NachoCore\Adapters\NcEventsCommon.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

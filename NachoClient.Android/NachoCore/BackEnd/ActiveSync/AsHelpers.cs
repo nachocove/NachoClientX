@@ -399,9 +399,11 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.Recurrence.FirstDayOfWeek:
                     r.FirstDayOfWeek = child.Value.ToInt ();
+                    r.FirstDayOfWeekIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.Interval:
                     r.Interval = child.Value.ToInt ();
+                    r.IntervalIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.IsLeapMonth:
                     r.isLeapMonth = child.Value.ToBoolean ();
@@ -411,6 +413,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.Recurrence.Occurrences:
                     r.Occurences = int.Parse (child.Value);
+                    r.OccurencesIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.Type:
                     r.Type = child.Value.ParseInteger<NcRecurrenceType> ();

@@ -138,6 +138,7 @@ namespace NachoCore.Model
             Db.CreateTable<McCalendarCategory> ();
             Db.CreateTable<McRecurrence> ();
             Db.CreateTable<McTimeZone> ();
+            Db.CreateTable<McEvent> ();
             Db.CreateTable<McTask> ();
             Db.CreateTable<McBody> ();
             Db.CreateTable<McDocument> ();

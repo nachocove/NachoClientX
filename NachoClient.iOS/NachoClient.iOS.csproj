@@ -1126,6 +1126,15 @@
     <Compile Include="NachoUI.iOS\CredentialsAskViewController.designer.cs">
       <DependentUpon>CredentialsAskViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
+      <Link>NachoCore\Model\McEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEvents.cs">
+      <Link>NachoCore\Adapters\NachoEvents.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCommon.cs">
+      <Link>NachoCore\Adapters\NcEventsCommon.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
