@@ -154,7 +154,7 @@ namespace NachoClient.iOS
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    SwipedQR(cellsContact.GetEmailAddress());
+                    SwipedQuickMessage(cellsContact.GetEmailAddress());
                 });
             } finally {
                 if (null != checkView) {
@@ -184,25 +184,15 @@ namespace NachoClient.iOS
             }
         }
 
-//        protected void SwipedMeeting (McContact cellContact)
-//        {
-//            Log.Info (Log.LOG_UI, "Swiped Create Meeting");
-//            if(string.IsNullOrEmpty(cellContact.GetEmailAddress())){
-//                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
-//                return;
-//            }
-//            owner.PerformSegueForDelegate ("ContactsToEvent", new SegueHolder(cellContact));
-//        }
-
-        protected void SwipedQR (string address)
+        protected void SwipedQuickMessage (string address)
         {
-            Log.Info (Log.LOG_UI, "Swiped Quick Response");
+            Log.Info (Log.LOG_UI, "Swiped Quick Message");
 
             if (string.IsNullOrEmpty (address)) {
-                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            owner.PerformSegueForDelegate ("ContactsToQR", new SegueHolder(address));
+            owner.PerformSegueForDelegate ("ContactsToQuickMessageCompose", new SegueHolder(address));
         }
 
         protected void SwipedEmail (string address)
@@ -210,7 +200,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Swiped Email Compose");
 
             if (string.IsNullOrEmpty (address)) {
-                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
             owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder(address));
@@ -221,10 +211,10 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Swiped Call");
 
             if (string.IsNullOrEmpty (number)) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
+                Util.ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
-            PerformAction ("tel", number);
+            Util.PerformAction ("tel", number);
         }
 
         protected void SwipedSMS (string number)
@@ -232,21 +222,10 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Swiped SMS");
 
             if (string.IsNullOrEmpty (number)) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
+                Util.ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
-            PerformAction ("sms", number);
-        }
-
-        protected void PerformAction (string action, string number)
-        {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
-        }
-
-        protected void ComplainAbout (string complaintTitle, string complaintMessage)
-        {
-            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
-            alert.Show ();
+            Util.PerformAction ("sms", number);
         }
 
         UIView ViewWithImageName (string imageName)

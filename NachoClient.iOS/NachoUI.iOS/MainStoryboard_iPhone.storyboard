@@ -530,7 +530,7 @@
                         <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="hFF-MQ-SOq"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="ContactsToEvent" id="hP8-jQ-z5J"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToMessageCompose" id="p3m-AA-fNo"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQR" id="tDn-hd-T9X"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQuickMessageCompose" id="tDn-hd-T9X"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jgG-ds-vYF" userLabel="First Responder" sceneMemberID="firstResponder"/>

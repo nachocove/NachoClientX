@@ -494,6 +494,18 @@ namespace NachoClient
             });
         }
 
+        public static void PerformAction (string action, string number)
+        {
+            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+        }
+
+
+        public static void ComplainAbout (string complaintTitle, string complaintMessage)
+        {
+            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
+            alert.Show ();
+        }
+
         public static string NameToLetters (string name)
         {
             var Initials = "";

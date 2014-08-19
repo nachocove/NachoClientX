@@ -102,15 +102,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 return;
             }
-            if (segue.Identifier.Equals ("ContactsToQR")) {
-//                var h = sender as SegueHolder;
-//                var c = (McContact)h.value;
-//                var attendee = new McAttendee (c.GetDisplayNameOrEmailAddress(), c.GetEmailAddress (), NcAttendeeType.Optional);
-//                List<McAttendee> attendeeList = new List<McAttendee> ();
-//                attendeeList.Add (attendee);
-//                EventViewController evc = (EventViewController)segue.DestinationViewController;
-//                evc.SetEventPresetFields (attendeeList);
-//                evc.SetCalendarItem (null, CalendarItemEditorAction.create);
+            if (segue.Identifier.Equals ("ContactsToQuickMessageCompose")) {
                 var h = sender as SegueHolder;
                 MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
                 mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
