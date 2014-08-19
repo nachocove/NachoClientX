@@ -10,7 +10,7 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class NcEventsCommon : INachoCalendar
+    public class NcEventsCommon : INcEventProvider
     {
         protected List<McEvent> list;
         protected Dictionary<DateTime, List<int>> bag;

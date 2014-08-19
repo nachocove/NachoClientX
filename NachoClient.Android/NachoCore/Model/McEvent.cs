@@ -29,6 +29,7 @@ namespace NachoCore.Model
             e.EndTime = endTime;
             e.CalendarId = calendarId;
             e.Insert ();
+            NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create: {0} {1}", startTime, calendarId);
         }
     }
 }

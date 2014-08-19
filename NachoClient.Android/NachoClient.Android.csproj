@@ -335,6 +335,8 @@
     <Compile Include="NachoCore\Model\McEvent.cs" />
     <Compile Include="NachoCore\Adapters\NachoEvents.cs" />
     <Compile Include="NachoCore\Adapters\NcEventsCommon.cs" />
+    <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
+    <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -15,7 +15,7 @@ namespace NachoClient.iOS
 {
     public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
-        INachoCalendar calendar;
+        INcEventProvider calendar;
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
         public DateTime selectedDate = new DateTime ();
@@ -67,14 +67,14 @@ namespace NachoClient.iOS
 
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
-            calendarSource.SetCalendar (NcCalendarManager.Instance);
+            calendarSource.SetCalendar (NcEventManager.Instance);
             calendarTableView.Source = calendarSource;
 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
 
-            calendar = NcCalendarManager.Instance;
+            calendar = NcEventManager.Instance;
             calendarTableView.ReloadData ();
 
             var todayButtonLabel = new UIButton (new RectangleF (79, 2, (dateBarHeight - 8), 44));

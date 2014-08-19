@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using DDay.iCal;
@@ -344,6 +345,13 @@ namespace NachoCore.Utils
             // Debug
             NcModel.Instance.Db.DeleteAll<McEvent> ();
 
+            // Debug
+            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
+            foreach (var e in l) {
+                e.RecurrencesGeneratedUntil = DateTime.MinValue;
+                e.Update ();
+            }
+
             // Decide how long into the future we are going to generate recurrences
             DateTime GenerateUntil = DateTime.UtcNow.AddMonths (3);
 
@@ -352,10 +360,11 @@ namespace NachoCore.Utils
 
             // Loop thru 'em, generating recurrences
             foreach (var calendarItem in list) {
-                // Clean up entries that don't have recurrences
+                // Just add entries that don't have recurrences
                 if (null == calendarItem.recurrences) {
                     calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
                     calendarItem.Update ();
+                    McEvent.Create (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
                     continue;
                 }
                 var lastOneGeneratedAggregate = DateTime.MaxValue;
@@ -403,7 +412,7 @@ namespace NachoCore.Utils
 
         protected static bool DayInDayOfWeek (NcDayOfWeek a, NcDayOfWeek b)
         {
-            return (0 != (((int)a) | ((int)b)));
+            return (0 != (((int)a) & ((int)b)));
         }
 
         protected static DateTime GenerateEveryIntervalWeeks (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
@@ -413,11 +422,12 @@ namespace NachoCore.Utils
             DateTime eventStart = c.StartTime;
             DateTime eventEnd = c.EndTime;
 
-            int weeksToIncrement = (r.IntervalIsSet ? r.Interval : 1);
+            // Interval of 0 is really 1
+            int weeksToIncrement = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
 
             while (true) {
                 for (int i = 0; i < 7; i++) {
-                    if (r.OccurencesIsSet || (occurrance > r.Occurences)) {
+                    if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
                         return DateTime.MaxValue;
                     }
                     if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
@@ -463,20 +473,86 @@ namespace NachoCore.Utils
                     eventStart = eventStart.AddDays (1);
                     eventEnd = eventEnd.AddDays (1);
                 }
-                eventStart = eventStart.AddDays (7 * weeksToIncrement);
-                eventEnd = eventEnd.AddDays (7 * weeksToIncrement);
+                // Already incremented by a week
+                NcAssert.True (0 < weeksToIncrement);
+                eventStart = eventStart.AddDays (7 * (weeksToIncrement - 1));
+                eventEnd = eventEnd.AddDays (7 * (weeksToIncrement - 1));
+            }
+        }
+
+        protected static DateTime GenerateEveryIntervalMonths (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        {
+            int occurrance = 0;
+
+            DateTime eventStart = c.StartTime;
+            DateTime eventEnd = c.EndTime;
+
+            if (eventStart.Day != r.DayOfMonth) {
+                Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalMonths eventStart={0}, DayOfMonth={1}", eventStart.Day, r.DayOfMonth);
+            }
+
+            // Interval of 0 is really 1
+            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+
+            while (true) {
+                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
+                    return DateTime.MaxValue;
+                }
+                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
+                    return DateTime.MaxValue;
+                }
+                if (eventStart > previousEntryInDatabase) {
+                    McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                }
+                occurrance += 1;
+                if (eventStart >= generateAtLeastUntil) {
+                    return eventStart;
+                }
+                NcAssert.True (0 < Interval);
+                eventStart = eventStart.AddMonths (Interval);
+                eventEnd = eventEnd.AddMonths (Interval);
+            }
+        }
+
+        protected static DateTime GenerateEveryIntervalYears (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        {
+            int occurrance = 0;
+
+            DateTime eventStart = c.StartTime;
+            DateTime eventEnd = c.EndTime;
+
+            if (eventStart.Day != r.DayOfMonth) {
+                Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalYears eventStart={0}, DayOfMonth={1}", eventStart.Day, r.DayOfMonth);
+            }
+            if (eventStart.Day != r.MonthOfYear) {
+                Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalYears eventStart={0}, MonthOfYear={1}", eventStart.Month, r.MonthOfYear);
+            }
+
+            // Interval of 0 is really 1
+            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+
+            while (true) {
+                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
+                    return DateTime.MaxValue;
+                }
+                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
+                    return DateTime.MaxValue;
+                }
+                if (eventStart > previousEntryInDatabase) {
+                    McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                }
+                occurrance += 1;
+                if (eventStart >= generateAtLeastUntil) {
+                    return eventStart;
+                }
+                NcAssert.True (0 < Interval);
+                eventStart = eventStart.AddYears (Interval);
+                eventEnd = eventEnd.AddYears (Interval);
             }
         }
 
         public static DateTime ExpandRecurrences (McCalendar c, McRecurrence r, DateTime startingTime, DateTime endingTime)
         {
-//            Daily = 0,
-//            Weekly = 1,
-//            Monthly = 2,
-//            MonthlyOnDay = 3,
-//            Yearly = 5,
-//            YearlyOnDay = 6,
-
             if (NcRecurrenceType.Daily == r.Type) {
                 if (0 == r.DayOfWeek) {
                     // Every 'interval' days
@@ -491,14 +567,19 @@ namespace NachoCore.Utils
                 // Every 'interval' weeks on R.DayOfWeek
                 return GenerateEveryIntervalWeeks (c, r, startingTime, endingTime);
             }
-            NcAssert.CaseError ();
+            if (NcRecurrenceType.Monthly == r.Type) {
+                NcAssert.True (0 != r.DayOfMonth);
+                // Every 'interval' months on r.DayOfMonth
+                return GenerateEveryIntervalMonths (c, r, startingTime, endingTime);
+            }
+            if (NcRecurrenceType.Yearly == r.Type) {
+                // Every 'interval' years on the MonthOfYear & DayOfMonth
+                return GenerateEveryIntervalYears (c, r, startingTime, endingTime);
+            }
+
+            Log.Error (Log.LOG_CALENDAR, "Unhandled recurrence type {0} c.Id={1} r.Id={2}", r.Type, c.Id, r.Id);
             return DateTime.MinValue;
 
-//            if (NcRecurrenceType.Monthly == r.Type) {
-//                NcAssert.True (0 != r.DayOfMonth);
-//                // Every 'interval' months on r.DayOfMonth
-//                return;
-//            }
 //            if (NcRecurrenceType.MonthlyOnDay == r.Type) {
 //                if (127 == (int)r.DayOfWeek) {
 //                    // Every 'interval' months on day WeekOfMonth

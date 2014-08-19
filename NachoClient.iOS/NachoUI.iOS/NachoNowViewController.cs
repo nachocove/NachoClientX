@@ -136,7 +136,7 @@ namespace NachoClient.iOS
 
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
-            calendarSource.SetCalendar (NcCalendarManager.Instance);
+            calendarSource.SetCalendar (NcEventManager.Instance);
             calendarTableView.Source = calendarSource;
 
             // Set up gesture recognizers; they'll be enabled and disabled as needed

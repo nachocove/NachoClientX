@@ -121,8 +121,12 @@ namespace NachoCore.Model
             if (HasReadAncillaryData) {
                 return NcResult.OK ();
             }
-            HasReadAncillaryData = true;
+            if (0 == Id) {
+                HasReadAncillaryData = true;
+                return NcResult.OK ();
+            }
             DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.MeetingRequestId == Id).ToList ();
+            HasReadAncillaryData = true;
             return NcResult.OK ();
         }
 
@@ -135,6 +139,7 @@ namespace NachoCore.Model
 
         private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
         {
+            NcAssert.True (0 != Id);
             var recurrences = db.Table<McRecurrence> ().Where (x => x.MeetingRequestId == Id).ToList ();
             foreach (var r in recurrences) {
                 r.Delete ();

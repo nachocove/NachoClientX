@@ -72,10 +72,33 @@ namespace NachoCore.Model
         /// Required for Task.
         public DateTime Start { get; set; }
 
-
         public static McRecurrence QueryByTaskId (int taskId)
         {
             return NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.TaskId == taskId).SingleOrDefault ();
+        }
+
+        public override int Insert ()
+        {
+            if (0 != CalendarId) {
+                Utils.NcAssert.True (0 == MeetingRequestId);
+            }
+            if (0 != MeetingRequestId) {
+                Utils.NcAssert.True (0 == CalendarId);
+            }
+            Utils.NcAssert.True ((0 != CalendarId) || (0 != MeetingRequestId) || (0 != TaskId));
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            if (0 != CalendarId) {
+                Utils.NcAssert.True (0 == MeetingRequestId);
+            }
+            if (0 != MeetingRequestId) {
+                Utils.NcAssert.True (0 == CalendarId);
+            }
+            Utils.NcAssert.True ((0 != CalendarId) || (0 != MeetingRequestId) || (0 != TaskId));
+            return base.Update ();
         }
     }
 }

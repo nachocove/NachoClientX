@@ -1135,6 +1135,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCommon.cs">
       <Link>NachoCore\Adapters\NcEventsCommon.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INcEventProvider.cs">
+      <Link>NachoCore\Adapters\INcEventProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventManager.cs">
+      <Link>NachoCore\Adapters\NcEventManager.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

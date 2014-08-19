@@ -68,7 +68,9 @@ namespace NachoCore.Model
 
         /// Email address of the sender (optional)
         public string From { set; get; }
+
         public int cachedFromColor { set; get; }
+
         public string cachedFromLetters { set; get; }
 
         /// Subject of the message (optional)
@@ -336,7 +338,7 @@ namespace NachoCore.Model
 
         public bool isHot ()
         {
-            return (minHotScore < this.Score );
+            return (minHotScore < this.Score);
         }
 
         public bool IsDeferred ()
@@ -478,23 +480,23 @@ namespace NachoCore.Model
         protected NcResult ReadAncillaryData ()
         {
             NcAssert.True (!isDeleted);
-            if (!isAncillaryInMemory) {
-                ForceReadAncillaryData ();
+            if (isAncillaryInMemory) {
+                return NcResult.OK ();
             }
-            return NcResult.OK ();
-        }
-
-        protected NcResult ForceReadAncillaryData ()
-        {
-            SQLiteConnection db = NcModel.Instance.Db;
-            _Categories = db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
-            _MeetingRequest = db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault();
+            if (0 == Id) {
+                isAncillaryInMemory = true;
+                return NcResult.OK ();
+            }
+            _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+            _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
             isAncillaryInMemory = true;
             return NcResult.OK ();
         }
 
         protected NcResult InsertAncillaryData (SQLiteConnection db)
         {
+            NcAssert.True (0 != Id);
+
             InsertCategories (db);
 
             if (null != _MeetingRequest) {
@@ -519,6 +521,7 @@ namespace NachoCore.Model
 
         protected void DeleteAncillaryData (SQLiteConnection db)
         {
+            NcAssert.True (0 != Id);
             db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
             db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
         }
@@ -530,8 +533,7 @@ namespace NachoCore.Model
             //FIXME better default returnVal
             int returnVal = -1; 
 
-            try 
-            {
+            try {
                 if (0 == ScoreVersion) {
                     // Try to use the contact score for initial email message score
                     McEmailAddress emailAddress = GetFromAddress ();
@@ -543,10 +545,8 @@ namespace NachoCore.Model
                     returnVal = base.Insert ();
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
-            }
-            catch (SQLiteException ex) 
-            {
-                Log.Error(Log.LOG_EMAIL,"Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_EMAIL, "Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
             }
                 
             return returnVal;
@@ -559,20 +559,15 @@ namespace NachoCore.Model
             //FIXME better default returnVal
             int returnVal = -1;  
 
-            try 
-            {
+            try {
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Update ();
-                    if(!isAncillaryInMemory){
-                        ForceReadAncillaryData();
-                    }
+                    ReadAncillaryData ();
                     DeleteAncillaryData (NcModel.Instance.Db);
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
-            }
-            catch (SQLiteException ex) 
-            {
-                Log.Error(Log.LOG_EMAIL,"Updating the email failed: {0} No changes were made to the DB.", ex.Message);
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_EMAIL, "Updating the email failed: {0} No changes were made to the DB.", ex.Message);
             }
 
             return returnVal;
@@ -580,6 +575,7 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
+            NcAssert.True (0 != Id);
             NcAssert.True (NcModel.Instance.IsInTransaction ());
             if (!IsRead) {
                 McEmailAddress emailAddress;
@@ -595,7 +591,7 @@ namespace NachoCore.Model
             DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);
         }
-            
+
         public override int Delete ()
         {
             //FIXME better default returnVal

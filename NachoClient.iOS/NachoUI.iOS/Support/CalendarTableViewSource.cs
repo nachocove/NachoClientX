@@ -14,7 +14,7 @@ namespace NachoClient.iOS
 {
     public class CalendarTableViewSource : UITableViewSource
     {
-        INachoCalendar calendar;
+        INcEventProvider calendar;
         public ICalendarTableViewSourceDelegate owner;
         protected bool compactMode;
 
@@ -26,7 +26,7 @@ namespace NachoClient.iOS
             owner = null;
         }
 
-        public void SetCalendar (INachoCalendar calendar)
+        public void SetCalendar (INcEventProvider calendar)
         {
             this.calendar = calendar;
         }
@@ -259,7 +259,7 @@ namespace NachoClient.iOS
                 subjectLabelView.Text = subject;
                 dotView.Frame = new RectangleF (30, 20, 9, 9);
             }
-            dotView.Image = Util.DrawCalDot(A.Color_CalDotBlue);
+            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue);
 
             // Duration label view
             var durationLabelView = cell.ContentView.ViewWithTag (DURATION_TAG) as UILabel;

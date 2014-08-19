@@ -125,9 +125,13 @@ namespace NachoCore.Model
             if (HasReadAncillaryData) {
                 return NcResult.OK ();
             }
-            HasReadAncillaryData = true;
+            if (0 == Id) {
+                HasReadAncillaryData = true;
+                return NcResult.OK ();
+            }
             DbExceptions = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
             DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
+            HasReadAncillaryData = true;
             return NcResult.OK ();
         }
 
@@ -140,6 +144,7 @@ namespace NachoCore.Model
 
         private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
         {
+            NcAssert.True (0 != Id);
             var exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
             foreach (var e in exceptions) {
                 e.Delete ();
@@ -147,6 +152,10 @@ namespace NachoCore.Model
             var recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
             foreach (var r in recurrences) {
                 r.Delete ();
+            }
+            var events = db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();
+            foreach (var e in events) {
+                e.Delete ();
             }
             return NcResult.OK ();
         }
@@ -162,7 +171,7 @@ namespace NachoCore.Model
 
         public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
         {
-            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList();
+            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList ();
         }
     }
 }
