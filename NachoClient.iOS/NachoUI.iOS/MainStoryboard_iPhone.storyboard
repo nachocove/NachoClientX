@@ -1214,11 +1214,11 @@
             <objects>
                 <viewController storyboardIdentifier="MessageActionViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="wY7-Wf-QPv" customClass="MessageActionViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="PmR-Of-Fau">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="LN7-gk-jcs">
-                                <rect key="frame" x="115" y="518" width="90" height="30"/>
+                                <rect key="frame" x="115" y="454" width="90" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <accessibility key="accessibilityConfiguration" label="Dismiss"/>
@@ -1228,7 +1228,7 @@
                                 </state>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="x6D-oO-m9F">
-                                <rect key="frame" x="20" y="28" width="280" height="468"/>
+                                <rect key="frame" x="20" y="28" width="280" height="404"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <color key="sectionIndexColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -1251,6 +1251,7 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
+                    <navigationItem key="navigationItem" id="KSc-NC-2Wh"/>
                     <connections>
                         <outlet property="dismissButton" destination="LN7-gk-jcs" id="VDN-nS-e3t"/>
                         <outlet property="folderTableView" destination="x6D-oO-m9F" id="Ex6-0N-GgV"/>
@@ -1772,7 +1773,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="MessagePriorityViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MCC-ND-pIu" customClass="MessagePriorityViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ojE-Gm-ggk">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -1883,6 +1884,8 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <segue destination="tAw-fh-hJX" kind="push" identifier="ContactToEmailCompose" id="r1y-34-GvV"/>
                         <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
                         <segue destination="vgr-FH-RtX" kind="push" identifier="ContactToContactEdit" id="mLY-u0-R5O"/>
+                        <segue destination="MCC-ND-pIu" kind="push" identifier="NachoNowToMessagePriority" id="UJb-nL-M4Z"/>
+                        <segue destination="wY7-Wf-QPv" kind="push" identifier="NachoNowToMessageAction" id="Ery-e3-vSy"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2109,29 +2112,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="wZa-Ld-8vI"/>
-        <segue reference="emO-35-rbd"/>
-        <segue reference="sa2-Em-8sH"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="J8i-gn-UTn"/>
-        <segue reference="VgN-QU-7Sb"/>
+        <segue reference="Ery-e3-vSy"/>
+        <segue reference="fwk-9p-tlV"/>
         <segue reference="p6V-c0-caL"/>
+        <segue reference="emO-35-rbd"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="sa2-Em-8sH"/>
+        <segue reference="VgN-QU-7Sb"/>
         <segue reference="ebP-h4-BhC"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="wZa-Ld-8vI"/>
         <segue reference="c79-xS-Npa"/>
-        <segue reference="G1z-aV-19B"/>
-        <segue reference="qB9-ce-7gT"/>
         <segue reference="99V-JV-Y0L"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
+        <segue reference="xSG-RA-4K6"/>
+        <segue reference="w67-dy-XSq"/>
         <segue reference="peA-r2-tjq"/>
         <segue reference="4M9-UI-9mt"/>
         <segue reference="mo4-Vz-xJh"/>
-        <segue reference="fwk-9p-tlV"/>
+        <segue reference="mLY-u0-R5O"/>
         <segue reference="r1y-34-GvV"/>
         <segue reference="alQ-9Z-W4y"/>
-        <segue reference="mLY-u0-R5O"/>
+        <segue reference="UJb-nL-M4Z"/>
     </inferredMetricsTieBreakers>
 </document>
