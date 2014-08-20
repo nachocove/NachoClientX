@@ -520,6 +520,7 @@ namespace NachoClient.iOS
                 appDelegate.Account.CredId = cred.Id;
                 appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Insert ();
+                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 theAccount.Account = appDelegate.Account;
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
