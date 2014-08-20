@@ -40,6 +40,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            CalendarHelper.ExpandRecurrences ();
+
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
