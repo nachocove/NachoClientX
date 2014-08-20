@@ -252,8 +252,20 @@ namespace NachoClient.iOS
             if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
                 var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                var emailMessageId = ((NSNumber)localNotification.UserInfo.ObjectForKey (NoteKey)).IntValue;
-                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+                var emailDictResult = localNotification.UserInfo.ObjectForKey (NoteKey);
+                if (null != emailDictResult) {
+                    var emailMessageId = ((NSNumber)emailDictResult).IntValue;
+                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+                }
+                var eventDictResult = localNotification.UserInfo.ObjectForKey (EventKey);
+                if (null != eventDictResult) {
+                    var eventId = ((NSNumber)eventDictResult).IntValue;
+                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: eventId is {0}.", eventId);
+                }
+                if (localNotification != null) {
+                    // reset badge
+                    UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
+                }
             }
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
@@ -489,6 +501,12 @@ namespace NachoClient.iOS
                 var emailMessageId = value.IntValue;
                 Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
             }
+                
+            value = (NSNumber)notification.UserInfo.ObjectForKey (EventKey);
+            if (null != value) {
+                var eventId = value.IntValue;
+                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: NotifiOS.handle is {0}.", eventId);
+            }
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
@@ -535,65 +553,65 @@ namespace NachoClient.iOS
                 });
             } else {
 
-            // called if server name is wrong
-            // cancel should call "exit program, enter new server name should be updated server
-            var Mo = NcModel.Instance;
-            var Be = BackEnd.Instance;
+                // called if server name is wrong
+                // cancel should call "exit program, enter new server name should be updated server
+                var Mo = NcModel.Instance;
+                var Be = BackEnd.Instance;
 
 
-            var credView = new UIAlertView ();
+                var credView = new UIAlertView ();
 
-            credView.Title = "Need Correct Server Name";
-            credView.AddButton ("Update");
-            credView.AddButton ("Cancel");
-            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-            credView.Show ();
-            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                var parent = (UIAlertView)a;
-                if (b.ButtonIndex == 0) {
-                    var txt = parent.GetTextField (0).Text;
-                    // FIXME need to scan string to make sure it is of right format (regex).
-                    if (txt != null) {
-                        Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
-                        NcModel.Instance.RunInTransaction(() => {
-                            var account = McAccount.QueryById<McAccount> (accountId);
-                            var tmpServer = McServer.QueryById<McServer> (account.ServerId);
-                            if (null == tmpServer) {
-                                tmpServer = new McServer() {
-                                    Host = txt,
-                                };
-                                tmpServer.Insert ();
-                                account.ServerId = tmpServer.Id;
-                                account.Update();
-                            } else {
-                                tmpServer.Host = txt;
-                                tmpServer.Update ();
-                            }
-                        });
-                        Be.ServerConfResp (accountId, false); 
-                        credView.ResignFirstResponder ();
+                credView.Title = "Need Correct Server Name";
+                credView.AddButton ("Update");
+                credView.AddButton ("Cancel");
+                credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
+                credView.Show ();
+                credView.Clicked += delegate(object a, UIButtonEventArgs b) {
+                    var parent = (UIAlertView)a;
+                    if (b.ButtonIndex == 0) {
+                        var txt = parent.GetTextField (0).Text;
+                        // FIXME need to scan string to make sure it is of right format (regex).
+                        if (txt != null) {
+                            Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
+                            NcModel.Instance.RunInTransaction (() => {
+                                var account = McAccount.QueryById<McAccount> (accountId);
+                                var tmpServer = McServer.QueryById<McServer> (account.ServerId);
+                                if (null == tmpServer) {
+                                    tmpServer = new McServer () {
+                                        Host = txt,
+                                    };
+                                    tmpServer.Insert ();
+                                    account.ServerId = tmpServer.Id;
+                                    account.Update ();
+                                } else {
+                                    tmpServer.Host = txt;
+                                    tmpServer.Update ();
+                                }
+                            });
+                            Be.ServerConfResp (accountId, false); 
+                            credView.ResignFirstResponder ();
+                        }
+                        ;
                     }
                     ;
-                }
-                ;
 
-                if (b.ButtonIndex == 1) {
-                    var gonnaquit = new UIAlertView ();
-                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
+                    if (b.ButtonIndex == 1) {
+                        var gonnaquit = new UIAlertView ();
+                        gonnaquit.Title = "Are You Sure? \n No account information will be updated";
 
-                    gonnaquit.AddButton ("Ok"); // continue exiting
-                    gonnaquit.AddButton ("Go Back"); // enter info
-                    gonnaquit.CancelButtonIndex = 1;
-                    gonnaquit.Show ();
-                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                        if (e.ButtonIndex == 1) {
-                            ServConfReqCallback (accountId); // go again
-                        }
-                        gonnaquit.ResignFirstResponder ();
-                    };
-                }
-                ;
-            };
+                        gonnaquit.AddButton ("Ok"); // continue exiting
+                        gonnaquit.AddButton ("Go Back"); // enter info
+                        gonnaquit.CancelButtonIndex = 1;
+                        gonnaquit.Show ();
+                        gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
+                            if (e.ButtonIndex == 1) {
+                                ServConfReqCallback (accountId); // go again
+                            }
+                            gonnaquit.ResignFirstResponder ();
+                        };
+                    }
+                    ;
+                };
             }
         }
 
@@ -613,7 +631,7 @@ namespace NachoClient.iOS
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.
-         * - OnActivated clears ALL notifications an the badge.
+         * - OnActivated clears ALL notifications and the badge.
          * - When we are not in the active state, and we get an indication of a new, hot, and unread email message:
          *   - we create a local notification for that message.
          *   - we set the badge number to the count of all new, hot, and unread email messages that have arrived 
@@ -621,6 +639,7 @@ namespace NachoClient.iOS
          * NOTE: This code will need to get a little smarter when we are doing many types of notification.
          */
         static NSString NoteKey = new NSString ("McEmailMessage.Id");
+        static NSString EventKey = new NSString ("NotifiOS.handle");
 
         private bool BadgeNotifAllowed = false;
 

@@ -43,8 +43,7 @@ namespace NachoClient.iOS
         const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToTasksSegueId = "SidebarToTasks";
         const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
-        const string SidebarToNewEventSegueId = "SidebarToNewEvent";
-        const string SidebarToEventSegueId = "SidebarToEvent";
+        const string SidebarToNewEventSegueId = "SidebarToEditEvent";
         const string SidebarToHotListSegueId = "SidebarToHotList";
 
 
@@ -108,8 +107,7 @@ namespace NachoClient.iOS
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Hot List", "menu-chili", SidebarToHotListSegueId),
                 new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
-//                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
-                new ButtonInfo ("New Event", "menu-new-event", SidebarToEventSegueId),
+                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
                 new ButtonInfo ("Files", "menu-attachments", SidebarToFilesSegueId),
@@ -221,14 +219,7 @@ namespace NachoClient.iOS
                 break;
             case SidebarToNewEventSegueId:
                 {
-                    var vc = (CalendarItemViewController)destViewController;
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                    vc.showMenu = true;
-                }
-                break;
-            case SidebarToEventSegueId:
-                {
-                    var vc = (EventViewController)destViewController;
+                    var vc = (EditEventViewController)destViewController;
                     vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                     vc.showMenu = true;
                 }

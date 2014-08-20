@@ -79,7 +79,7 @@ namespace NachoClient.iOS
             };
 
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("NachoNowToEventView", new SegueHolder (null));
+                PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
@@ -225,15 +225,23 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToCalendar") {
                 return; // Nothing to do
             }
+            if (segue.Identifier == "NachoNowToEditEventView") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) { 
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.create);
+                }
+                vc.SetOwner (this);
+                return;
+            }
             if (segue.Identifier == "NachoNowToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                if (null == c) {
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
-                }
+                vc.SetCalendarItem (c, CalendarItemEditorAction.view);
                 vc.SetOwner (this);
                 return;
             }
@@ -251,18 +259,7 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "NachoNowToCalendarItem") {
-                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                if (null == c) {
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
-                }
-                vc.SetOwner (this);
-                return;
-            }
+
             if (segue.Identifier == "NachoNowToMessageList") {
                 var holder = (SegueHolder)sender;
                 var messageList = (INachoEmailMessages)holder.value;
@@ -775,7 +772,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (c));
+                PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
             }));
         }
 

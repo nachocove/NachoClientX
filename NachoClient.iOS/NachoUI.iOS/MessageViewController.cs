@@ -181,12 +181,12 @@ namespace NachoClient.iOS
                 vc.ActionThread = thread;
                 vc.SetOwner (this);
             }
-            if (segue.Identifier == "MessageViewToCalendarItemEdit") {
-                var vc = (CalendarItemViewController)segue.DestinationViewController;
+            if (segue.Identifier == "MessageViewToEditEvent") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 var c = h.value as McCalendar;
                 vc.SetOwner (this);
-                vc.SetCalendarItem (c, CalendarItemEditorAction.edit);
+                vc.SetCalendarItem (c, CalendarItemEditorAction.create);
             }
         }
 
@@ -222,7 +222,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("MessageViewToCalendarItemEdit", new SegueHolder (c));
+                PerformSegue ("MessageViewToEditEvent", new SegueHolder (c));
             }));
         }
 

@@ -293,10 +293,6 @@
     <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
       <DependentUpon>ContactViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\CalendarItemViewController.cs" />
-    <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
-      <DependentUpon>CalendarItemViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
       <Link>NachoCore\Model\McAccount.cs</Link>
     </Compile>

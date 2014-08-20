@@ -609,6 +609,29 @@ namespace NachoClient
 
         }
 
+        public static string MakeAlertMessage (string title, uint alert)
+        {
+            var alertMessage = "";
+            if (1 == alert) {
+                alertMessage = title + " in a minute";
+            } else if (5 == alert || 15 == alert || 30 == alert) {
+                alertMessage = title + " in " + alert + " minutes";
+            } else if (60 == alert) {
+                alertMessage = title + " in an hour";
+            } else if (120 == alert) {
+                alertMessage = title + " in two hours";
+            } else if ((60 * 24) == alert) {
+                alertMessage = title + " in one day";
+            } else if ((60 * 48) == alert) {
+                alertMessage = title + " in two days";
+            } else if ((60 * 24 * 7) == alert) {
+                alertMessage = title + " in a week";
+            } else {
+                NcAssert.CaseError ();
+            }
+            return alertMessage;
+        }
+
         public static string MakeCommaSeparatedList (List<string> stringList)
         {
 
