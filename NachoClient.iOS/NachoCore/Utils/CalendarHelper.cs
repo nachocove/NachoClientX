@@ -360,9 +360,9 @@ namespace NachoCore.Utils
                 }
                 if (eventStart > previousEntryInDatabase) {
                     if (r.OccurencesIsSet) {
-                        McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                        CreateEventRecord (c.AccountId, eventStart, eventEnd, c.Id);
                     } else {
-                        McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                        CreateEventRecord (c.AccountId, eventStart, eventEnd, c.Id);
                     }
                 }
                 if (eventStart >= generateAtLeastUntil) {
@@ -431,9 +431,9 @@ namespace NachoCore.Utils
                     if (shouldWe) {
                         if (eventStart > previousEntryInDatabase) {
                             if (r.OccurencesIsSet) {
-                                McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                                CreateEventRecord (c.AccountId, eventStart, eventEnd, c.Id);
                             } else {
-                                McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                                CreateEventRecord (c.AccountId, eventStart, eventEnd, c.Id);
                             }
                         }
                         occurrance += 1;
@@ -474,7 +474,7 @@ namespace NachoCore.Utils
                     return DateTime.MaxValue;
                 }
                 if (eventStart > previousEntryInDatabase) {
-                    McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                    CreateEventRecord (c.AccountId, eventStart, eventEnd, c.Id);
                 }
                 occurrance += 1;
                 if (eventStart >= generateAtLeastUntil) {
@@ -512,7 +512,7 @@ namespace NachoCore.Utils
                     return DateTime.MaxValue;
                 }
                 if (eventStart > previousEntryInDatabase) {
-                    McEvent.Create (c.AccountId, eventStart, eventEnd, c.Id);
+                    CreateEventRecord (c.AccountId, eventStart, eventEnd, c.Id);
                 }
                 occurrance += 1;
                 if (eventStart >= generateAtLeastUntil) {
@@ -562,7 +562,7 @@ namespace NachoCore.Utils
                 if (eventStart > previousEntryInDatabase) {
                     var actualEventStart = ReplaceDayOfMonth (eventStart, r.WeekOfMonth);
                     var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                    CreateEventRecord (c.AccountId, actualEventStart, actualEventEnd, c.Id);
                 }
                 occurrance += 1;
                 if (eventStart >= generateAtLeastUntil) {
@@ -648,7 +648,7 @@ namespace NachoCore.Utils
                 if (eventStart > previousEntryInDatabase) {
                     var actualEventStart = ReplaceDayOfMonthWithNthWeekday (eventStart, r.WeekOfMonth);
                     var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                    CreateEventRecord (c.AccountId, actualEventStart, actualEventEnd, c.Id);
                 }
                 occurrance += 1;
                 if (eventStart >= generateAtLeastUntil) {
@@ -687,7 +687,7 @@ namespace NachoCore.Utils
                 if (eventStart > previousEntryInDatabase) {
                     var actualEventStart = ReplaceDayOfMonthWithNthWeekendDay (eventStart, r.WeekOfMonth);
                     var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                    CreateEventRecord (c.AccountId, actualEventStart, actualEventEnd, c.Id);
                 }
                 occurrance += 1;
                 if (eventStart >= generateAtLeastUntil) {
@@ -757,7 +757,7 @@ namespace NachoCore.Utils
                 if (eventStart > previousEntryInDatabase) {
                     var actualEventStart = ReplaceDayOfMonthWithNthDay (eventStart, r.DayOfWeek, r.WeekOfMonth);
                     var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                    CreateEventRecord (c.AccountId, actualEventStart, actualEventEnd, c.Id);
                 }
                 occurrance += 1;
                 if (eventStart >= generateAtLeastUntil) {
@@ -870,7 +870,7 @@ namespace NachoCore.Utils
                 if (null == calendarItem.recurrences) {
                     calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
                     calendarItem.Update ();
-                    McEvent.Create (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
+                    CreateEventRecord (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
                     continue;
                 }
                 var lastOneGeneratedAggregate = DateTime.MaxValue;
@@ -886,6 +886,17 @@ namespace NachoCore.Utils
 
             var el = NcModel.Instance.Db.Table<McEvent> ().ToList ();
             Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
+        }
+
+        protected static void CreateEventRecord(int accountId, DateTime startTime, DateTime endTime, int calendarId)
+        {
+            var exception = McException.QueryForExceptionId(calendarId, startTime);
+
+            if (null == exception) {
+                McEvent.Create (accountId, startTime, endTime, calendarId, 0);
+            } else {
+                McEvent.Create (accountId, exception.StartTime, exception.EndTime, calendarId, exception.Id);
+            }
         }
     }
 }

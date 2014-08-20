@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.Model
 {
@@ -26,6 +27,12 @@ namespace NachoCore.Model
         {
             return McAbstrFolderEntry.ClassCodeEnum.Exception;
         }
+
+        public static McException QueryForExceptionId (int calendarId, DateTime exceptionStartTime)
+        {
+            var query = "SELECT * from McException WHERE CalendarId = ? AND ExceptionStartTime = ?";
+            var result = NcModel.Instance.Db.Query<McException> (query, calendarId, exceptionStartTime).SingleOrDefault ();
+            return result;
+        }
     }
 }
-
