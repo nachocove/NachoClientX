@@ -303,18 +303,19 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, h);
                 return;
             }
-            if (segue.Identifier == "NachoNowToCalendarItem") {
-                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
+            if (segue.Identifier == "NachoNowToEditEvent") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
                 if (null == c) {
                     vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                 } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.create);
                 }
                 vc.SetOwner (this);
                 return;
             }
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -363,7 +364,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("MessageListToCalendarItemEdit", new SegueHolder (c));
+                PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
             }));
         }
 

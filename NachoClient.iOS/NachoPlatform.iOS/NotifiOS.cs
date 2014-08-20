@@ -10,21 +10,17 @@ namespace NachoPlatform
     public class Notif : IPlatformNotif
     {
         private static volatile Notif instance;
-        private static object syncRoot = new Object();
+        private static object syncRoot = new Object ();
 
         private Notif ()
         {
         }
 
-        public static Notif Instance
-        {
-            get 
-            {
-                if (instance == null) 
-                {
-                    lock (syncRoot) 
-                    {
-                        if (instance == null) 
+        public static Notif Instance {
+            get {
+                if (instance == null) {
+                    lock (syncRoot) {
+                        if (instance == null)
                             instance = new Notif ();
                     }
                 }
@@ -34,7 +30,7 @@ namespace NachoPlatform
 
         static NSString NoteKey = new NSString ("NotifiOS.handle");
 
-        private UILocalNotification FindNotif (int handle)
+        public UILocalNotification FindNotif (int handle)
         {
             foreach (var notif in UIApplication.SharedApplication.ScheduledLocalNotifications) {
                 if (null != notif.UserInfo) {
@@ -57,12 +53,13 @@ namespace NachoPlatform
                     AlertBody = message,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NoteKey),
                     SoundName = UILocalNotification.DefaultSoundName,
-                    FireDate = when.ToNSDate(),
-                    TimeZone = NSTimeZone.FromAbbreviation ("UTC"),
+                    FireDate = when.ToNSDate (),
+                    //TimeZone = NSTimeZone.FromAbbreviation ("UTC"),
                 };
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
             });
         }
+
 
         public void CancelNotif (int handle)
         {
@@ -77,9 +74,9 @@ namespace NachoPlatform
 
     public static class DateExtensions
     {
-        public static NSDate ToNSDate(this DateTime dateTime)
+        public static NSDate ToNSDate (this DateTime dateTime)
         {
-            return NSDate.FromTimeIntervalSinceReferenceDate((dateTime-(new DateTime(2001,1,1,0,0,0))).TotalSeconds);
+            return NSDate.FromTimeIntervalSinceReferenceDate ((dateTime - (new DateTime (2001, 1, 1, 0, 0, 0))).TotalSeconds);
         }
 
         public static NSDate ShiftToUTC (this NSDate nsDate, NSTimeZone nsTimeZone)
@@ -89,9 +86,9 @@ namespace NachoPlatform
             return NSDate.FromTimeIntervalSinceReferenceDate (origSecs + deltaSecs);
         }
 
-        public static DateTime ToDateTime(this NSDate nsDate)
+        public static DateTime ToDateTime (this NSDate nsDate)
         {
-            return (new DateTime(2001,1,1,0,0,0)).AddSeconds(nsDate.SecondsSinceReferenceDate);
+            return (new DateTime (2001, 1, 1, 0, 0, 0)).AddSeconds (nsDate.SecondsSinceReferenceDate);
         }
     }
 }
