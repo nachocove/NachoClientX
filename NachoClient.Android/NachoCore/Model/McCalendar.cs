@@ -153,10 +153,6 @@ namespace NachoCore.Model
             foreach (var r in recurrences) {
                 r.Delete ();
             }
-            var events = db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();
-            foreach (var e in events) {
-                e.Delete ();
-            }
             return NcResult.OK ();
         }
 

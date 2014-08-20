@@ -340,47 +340,13 @@ namespace NachoCore.Utils
             return DefaultTask ();
         }
 
-        public static void ExpandRecurrences ()
-        {
-            // Debug
-            NcModel.Instance.Db.DeleteAll<McEvent> ();
-
-            // Debug
-            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
-            foreach (var e in l) {
-                e.RecurrencesGeneratedUntil = DateTime.MinValue;
-                e.Update ();
-            }
-
-            // Decide how long into the future we are going to generate recurrences
-            DateTime GenerateUntil = DateTime.UtcNow.AddMonths (3);
-
-            // Fetch calendar entries that haven't been generated that far in advance
-            var list = McCalendar.QueryOutOfDateRecurrences (GenerateUntil);
-
-            // Loop thru 'em, generating recurrences
-            foreach (var calendarItem in list) {
-                // Just add entries that don't have recurrences
-                if (null == calendarItem.recurrences) {
-                    calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
-                    calendarItem.Update ();
-                    McEvent.Create (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
-                    continue;
-                }
-                var lastOneGeneratedAggregate = DateTime.MaxValue;
-                foreach (var recurrence in calendarItem.recurrences) {
-                    var lastOneGenerated = ExpandRecurrences (calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, GenerateUntil);
-                    if (lastOneGeneratedAggregate > lastOneGenerated) {
-                        lastOneGeneratedAggregate = lastOneGenerated;
-                    }
-                }
-                calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
-                calendarItem.Update ();
-            }
-        }
-
+        // Type element is set to zero (0), meaning a daily occurrence.
+        // If the DayOfWeek element is not set, the recurrence is a daily occurrence,
+        // occurring n days apart, where n is the value of the Interval element.
         protected static DateTime GenerateEveryIntervalDays (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
         {
+            NcAssert.True (0 == r.DayOfWeek);
+
             int occurrance = 0;
 
             DateTime eventStart = c.StartTime;
@@ -415,6 +381,11 @@ namespace NachoCore.Utils
             return (0 != (((int)a) & ((int)b)));
         }
 
+        // The type element is set to 0:
+        // If the DayOfWeek element is set, the recurrence is a weekly occurrence,
+        // occurring on the day specified by the DayOfWeek element, and the value
+        // of the Interval element indicates the number of weeks between occurrences.
+        // Or the Type element is set to 1, meaning a weekly occurrence.
         protected static DateTime GenerateEveryIntervalWeeks (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
         {
             int occurrance = 0;
@@ -480,6 +451,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // The Type element is set to 2, meaning a monthly occurrence,
         protected static DateTime GenerateEveryIntervalMonths (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
         {
             int occurrance = 0;
@@ -514,6 +486,7 @@ namespace NachoCore.Utils
             }
         }
 
+        // The Type element is set to 5, meaning a yearly occurrence,
         protected static DateTime GenerateEveryIntervalYears (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
         {
             int occurrance = 0;
@@ -524,7 +497,7 @@ namespace NachoCore.Utils
             if (eventStart.Day != r.DayOfMonth) {
                 Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalYears eventStart={0}, DayOfMonth={1}", eventStart.Day, r.DayOfMonth);
             }
-            if (eventStart.Day != r.MonthOfYear) {
+            if (eventStart.Month != r.MonthOfYear) {
                 Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalYears eventStart={0}, MonthOfYear={1}", eventStart.Month, r.MonthOfYear);
             }
 
@@ -550,6 +523,252 @@ namespace NachoCore.Utils
                 eventEnd = eventEnd.AddYears (Interval);
             }
         }
+
+        protected static DateTime ReplaceDayOfMonth (DateTime dt, int newDayOfMonth)
+        {
+            return new DateTime (
+                dt.Year,
+                dt.Month,
+                newDayOfMonth,
+                dt.Hour,
+                dt.Minute,
+                dt.Second,
+                dt.Millisecond,
+                dt.Kind);
+        }
+
+        // Type element set to 3.  Subcase:
+        // If the DayOfWeek element is set to 127, the WeekOfMonth
+        // element indicates the day of the month that the event occurs.
+        protected static DateTime GenerateEveryNthDateOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        {
+            int occurrance = 0;
+
+            DateTime eventStart = c.StartTime;
+            DateTime eventEnd = c.EndTime;
+
+            NcAssert.True (127 == (int)r.DayOfWeek);
+
+            // Interval of 0 is really 1
+            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+
+            while (true) {
+                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
+                    return DateTime.MaxValue;
+                }
+                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
+                    return DateTime.MaxValue;
+                }
+                if (eventStart > previousEntryInDatabase) {
+                    var actualEventStart = ReplaceDayOfMonth (eventStart, r.WeekOfMonth);
+                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
+                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                }
+                occurrance += 1;
+                if (eventStart >= generateAtLeastUntil) {
+                    return eventStart;
+                }
+                NcAssert.True (0 < Interval);
+                eventStart = eventStart.AddMonths (Interval);
+                eventEnd = eventEnd.AddMonths (Interval);
+            }
+        }
+
+        protected static DateTime ReplaceDayOfMonthWithNthWeekday (DateTime dt, int nthWeekday)
+        {
+            var t = new DateTime (dt.Year, dt.Month, 1);
+
+            int newDayOfMonth = 0;
+
+            while (nthWeekday > 0) {
+                newDayOfMonth += 1;
+                if (!((DayOfWeek.Saturday == t.DayOfWeek) || (DayOfWeek.Sunday == t.DayOfWeek))) {
+                    nthWeekday -= 1;
+                }
+            }
+
+            return new DateTime (
+                dt.Year,
+                dt.Month,
+                newDayOfMonth,
+                dt.Hour,
+                dt.Minute,
+                dt.Second,
+                dt.Millisecond,
+                dt.Kind);
+        }
+
+        protected static DateTime ReplaceDayOfMonthWithNthWeekendDay (DateTime dt, int nthWeekendDay)
+        {
+            var t = new DateTime (dt.Year, dt.Month, 1);
+
+            int newDayOfMonth = 0;
+
+            while (nthWeekendDay > 0) {
+                newDayOfMonth += 1;
+                if (!((DayOfWeek.Saturday == t.DayOfWeek) || (DayOfWeek.Sunday == t.DayOfWeek))) {
+                    nthWeekendDay -= 1;
+                }
+            }
+
+            return new DateTime (
+                dt.Year,
+                dt.Month,
+                newDayOfMonth,
+                dt.Hour,
+                dt.Minute,
+                dt.Second,
+                dt.Millisecond,
+                dt.Kind);
+        }
+
+        // Type element set to 3.  Subcase:
+        // If the DayOfWeek element is set to 62, to specify weekdays,
+        // the WeekOfMonth element indicates the nth weekday of the month,
+        // where n is the value of WeekOfMonth element.
+        protected static DateTime GenerateEveryNthWeekdayOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        {
+            int occurrance = 0;
+
+            DateTime eventStart = c.StartTime;
+            DateTime eventEnd = c.EndTime;
+
+            NcAssert.True (62 == (int)r.DayOfWeek);
+
+            // Interval of 0 is really 1
+            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+
+            while (true) {
+                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
+                    return DateTime.MaxValue;
+                }
+                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
+                    return DateTime.MaxValue;
+                }
+                if (eventStart > previousEntryInDatabase) {
+                    var actualEventStart = ReplaceDayOfMonthWithNthWeekday (eventStart, r.WeekOfMonth);
+                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
+                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                }
+                occurrance += 1;
+                if (eventStart >= generateAtLeastUntil) {
+                    return eventStart;
+                }
+                NcAssert.True (0 < Interval);
+                eventStart = eventStart.AddMonths (Interval);
+                eventEnd = eventEnd.AddMonths (Interval);
+            }
+        }
+
+
+        // Type element set to 3.  Subcase:
+        // If the DayOfWeek element is set to 65, to specify weekends,
+        // the WeekOfMonth element indicates the nth weekend day of the month,
+        // where n is the value of WeekOfMonth element.
+        protected static DateTime GenerateEveryNthWeekendDayOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        {
+            int occurrance = 0;
+
+            DateTime eventStart = c.StartTime;
+            DateTime eventEnd = c.EndTime;
+
+            NcAssert.True (65 == (int)r.DayOfWeek);
+
+            // Interval of 0 is really 1
+            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+
+            while (true) {
+                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
+                    return DateTime.MaxValue;
+                }
+                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
+                    return DateTime.MaxValue;
+                }
+                if (eventStart > previousEntryInDatabase) {
+                    var actualEventStart = ReplaceDayOfMonthWithNthWeekendDay (eventStart, r.WeekOfMonth);
+                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
+                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                }
+                occurrance += 1;
+                if (eventStart >= generateAtLeastUntil) {
+                    return eventStart;
+                }
+                NcAssert.True (0 < Interval);
+                eventStart = eventStart.AddMonths (Interval);
+                eventEnd = eventEnd.AddMonths (Interval);
+            }
+        }
+
+        protected static bool IsDayInDayOfWeek(System.DayOfWeek systemDOW, NcDayOfWeek ncDOW)
+        {
+            int shift = (int) systemDOW;
+            NcAssert.True ((0 <= shift) && (6 >= shift));
+            return (0 != ((1 << shift) & ((int)ncDOW)));
+        }
+
+        protected static DateTime ReplaceDayOfMonthWithNthDay (DateTime dt, NcDayOfWeek DayOfWeek, int WeekOfMonth)
+        {
+            var t = new DateTime (dt.Year, dt.Month, 1);
+
+            // System.DayOfWeek 0..6
+            // DayOfWeek 1,2,4,8,...
+            while(!IsDayInDayOfWeek(t.DayOfWeek, DayOfWeek)) {
+                t = t.AddDays (1);
+            }
+
+            NcAssert.True ((0 < WeekOfMonth) && (5 >= WeekOfMonth));
+            t = t.AddDays (7 * (WeekOfMonth - 1));
+            while (t.Month != dt.Month) {
+                t = t.AddDays (-7);
+            }
+
+            return new DateTime (
+                dt.Year,
+                dt.Month,
+                t.Day,
+                dt.Hour,
+                dt.Minute,
+                dt.Second,
+                dt.Millisecond,
+                dt.Kind);
+        }
+
+        // Type element set to 3.  Subcase:
+        // Or, by default, the Nth DayOfWeek, where nth is WeekOfMonth,
+        // and WeekOfMonth is 1..5, where 5 is the last week of the month.
+        // Like every 3rd Tuesday or the last Thursday of the month.
+        protected static DateTime GenerateEveryNthDayOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        {
+            int occurrance = 0;
+
+            DateTime eventStart = c.StartTime;
+            DateTime eventEnd = c.EndTime;
+
+            // Interval of 0 is really 1
+            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+
+            while (true) {
+                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
+                    return DateTime.MaxValue;
+                }
+                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
+                    return DateTime.MaxValue;
+                }
+                if (eventStart > previousEntryInDatabase) {
+                    var actualEventStart = ReplaceDayOfMonthWithNthDay (eventStart, r.DayOfWeek, r.WeekOfMonth);
+                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
+                    McEvent.Create (c.AccountId, actualEventStart, actualEventEnd, c.Id);
+                }
+                occurrance += 1;
+                if (eventStart >= generateAtLeastUntil) {
+                    return eventStart;
+                }
+                NcAssert.True (0 < Interval);
+                eventStart = eventStart.AddMonths (Interval);
+                eventEnd = eventEnd.AddMonths (Interval);
+            }
+        }
+
 
         public static DateTime ExpandRecurrences (McCalendar c, McRecurrence r, DateTime startingTime, DateTime endingTime)
         {
@@ -577,23 +796,34 @@ namespace NachoCore.Utils
                 return GenerateEveryIntervalYears (c, r, startingTime, endingTime);
             }
 
+            if (NcRecurrenceType.MonthlyOnDay == r.Type) {
+                // If the DayOfWeek element is set to 127, the WeekOfMonth
+                // element indicates the day of the month that the event occurs.
+                if (127 == (int)r.DayOfWeek) {
+                    return GenerateEveryNthDateOfMonth (c, r, startingTime, endingTime);
+                }
+                // If the DayOfWeek element is set to 62, to specify weekdays,
+                // the WeekOfMonth element indicates the nth weekday of the month,
+                // where n is the value of WeekOfMonth element.
+                if (62 == (int)r.DayOfWeek) {
+                    return GenerateEveryNthWeekdayOfMonth (c, r, startingTime, endingTime);
+                }
+                // If the DayOfWeek element is set to 65, to specify weekends,
+                // the WeekOfMonth element indicates the nth weekend day of the month,
+                // where n is the value of WeekOfMonth element.
+                if (65 == (int)r.DayOfWeek) {
+                    return GenerateEveryNthWeekendDayOfMonth (c, r, startingTime, endingTime);
+                }
+                // Or, by default, the Nth DayOfWeek, where nth is WeekOfMonth,
+                // and WeekOfMonth is 1..5, where 5 is the last week of the month.
+                // Like every 3rd Tuesday or the last Thursday of the month.
+                return GenerateEveryNthDayOfMonth (c, r, startingTime, endingTime);
+            }
+
             Log.Error (Log.LOG_CALENDAR, "Unhandled recurrence type {0} c.Id={1} r.Id={2}", r.Type, c.Id, r.Id);
             return DateTime.MinValue;
 
-//            if (NcRecurrenceType.MonthlyOnDay == r.Type) {
-//                if (127 == (int)r.DayOfWeek) {
-//                    // Every 'interval' months on day WeekOfMonth
-//                    return;
-//                }
-//                if (62 == (int)r.DayOfWeek) {
-//                    // Every 'interval' months on the r.WeeksOfMonth day of the month
-//                    return;
-//                }
-//                if (65 == (int)r.DayOfWeek) {
-//                    // Every 'interval' months on the r.WeekOfMonth weekend.
-//                }
-//                return;
-//            }
+
 //            if (NcRecurrenceType.Yearly == r.Type) {
 //                // Every 'interval' years on the MonthOfYear & DayOfMonth.
 //                return;
@@ -614,6 +844,48 @@ namespace NachoCore.Utils
 //                }
 //                return;
 //            }
+        }
+
+        public static void ExpandRecurrences ()
+        {
+            // Debug
+            NcModel.Instance.Db.DeleteAll<McEvent> ();
+
+            // Debug
+            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
+            foreach (var e in l) {
+                e.RecurrencesGeneratedUntil = DateTime.MinValue;
+                e.Update ();
+            }
+
+            // Decide how long into the future we are going to generate recurrences
+            DateTime GenerateUntil = DateTime.UtcNow.AddMonths (3);
+
+            // Fetch calendar entries that haven't been generated that far in advance
+            var list = McCalendar.QueryOutOfDateRecurrences (GenerateUntil);
+
+            // Loop thru 'em, generating recurrences
+            foreach (var calendarItem in list) {
+                // Just add entries that don't have recurrences
+                if (null == calendarItem.recurrences) {
+                    calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
+                    calendarItem.Update ();
+                    McEvent.Create (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
+                    continue;
+                }
+                var lastOneGeneratedAggregate = DateTime.MaxValue;
+                foreach (var recurrence in calendarItem.recurrences) {
+                    var lastOneGenerated = ExpandRecurrences (calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, GenerateUntil);
+                    if (lastOneGeneratedAggregate > lastOneGenerated) {
+                        lastOneGeneratedAggregate = lastOneGenerated;
+                    }
+                }
+                calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
+                calendarItem.Update ();
+            }
+
+            var el = NcModel.Instance.Db.Table<McEvent> ().ToList ();
+            Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
         }
     }
 }
