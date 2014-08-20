@@ -202,7 +202,6 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
                 vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                 vc.SetOwner (this);
                 return;

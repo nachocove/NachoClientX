@@ -46,33 +46,6 @@ namespace NachoClient.iOS
         protected UIImageView MapImage;
         protected MKMapView map;
 
-        UITextField titleField;
-        UITextView descriptionTextView;
-
-        UIView titleView;
-        UIView descriptionView;
-
-        UIView allDayView;
-        UIView startView;
-        UIView endView;
-
-        UIView locationView;
-        UITextField locationField;
-        UIView phoneView;
-        UILabel phoneDetailLabel;
-        UIView attachmentsView;
-        UIView peopleView;
-
-        UIView alertsView;
-
-        UIView calendarView;
-
-        DateTime startDate;
-        DateTime endDate;
-
-        UILabel startDateLabel;
-        UILabel endDateLabel;
-
         UIView eventAttendeeView;
 
         UIView eventAlertsView;

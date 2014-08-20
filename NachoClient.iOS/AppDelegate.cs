@@ -265,12 +265,7 @@ namespace NachoClient.iOS
                 if (localNotification != null) {
                     // reset badge
                     UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
-                    NcUIViewController eventViewController = new EventViewController ();
-                    var nav = new UINavigationController (eventViewController);
-                    Window.RootViewController = nav;
                 }
-
-
             }
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 

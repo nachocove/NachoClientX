@@ -54,6 +54,14 @@ namespace NachoPlatform
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NoteKey),
                     SoundName = UILocalNotification.DefaultSoundName,
                     FireDate = when.ToNSDate (),
+                    //Commented out timezone because:
+
+                    //Apple Doc: The date specified in fireDate is interpreted according to the value of this property. 
+                    //If you specify nil (the default), the fire date is interpreted as an absolute GMT time, 
+                    //which is suitable for cases such as countdown timers. If you assign a valid NSTimeZone object to 
+                    //this property, the fire date is interpreted as a wall-clock time that is automatically adjusted 
+                    //when there are changes in time zones; an example suitable for this case is an an alarm clock.
+
                     //TimeZone = NSTimeZone.FromAbbreviation ("UTC"),
                 };
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
