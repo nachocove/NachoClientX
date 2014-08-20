@@ -519,6 +519,7 @@ namespace NachoClient.iOS
                 // The account object is the "top", pointing to credential, server, and opaque protocol state.
                 appDelegate.Account.CredId = cred.Id;
                 appDelegate.Account.ServerId = serverId;
+                appDelegate.Account.Signature = "Sent from Nacho Mail";
                 appDelegate.Account.Insert ();
                 theAccount.Account = appDelegate.Account;
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);

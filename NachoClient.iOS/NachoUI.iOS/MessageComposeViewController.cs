@@ -278,13 +278,14 @@ namespace NachoClient.iOS
             if (EmailTemplate != null) {
                 bodyTextView.InsertText (EmailTemplate);
             }
-            bodyTextView.InsertText ("\n"+ "\n" +"This email sent by NachoMail");
+            if (!String.IsNullOrEmpty (account.Signature)) {
+                bodyTextView.InsertText ("\n"+ "\n" + account.Signature);
+            }
             var beginningRange = new NSRange (0, 0);
             bodyTextView.SelectedRange = beginningRange;
 
             //Need to be able to inserthtml here, but for now will do simple text input
             //bodyTextView.InsertText ("<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
-
 
             View.BackgroundColor = UIColor.White;
 
