@@ -239,6 +239,19 @@ namespace NachoCore.Model
             }
         }
 
+        public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
+        {
+            var emailWildcard = "%" + contact.GetEmailAddress() + "%";
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " e.[From] LIKE ? OR " +
+                " e.[To] Like ? ORDER BY e.DateReceived DESC",
+                accountId, emailWildcard, emailWildcard);
+        }
+
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (

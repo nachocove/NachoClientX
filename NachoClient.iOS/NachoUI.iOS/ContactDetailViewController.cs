@@ -16,7 +16,7 @@ using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewController
+    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent
     {
         public McContact contact;
 
@@ -26,8 +26,16 @@ namespace NachoClient.iOS
 
         protected UIBarButtonItem vipButton;
 
+        protected const string UICellReuseIdentifier = "UICell";
+        protected const string EmailMessageReuseIdentifier = "EmailMessage";
+        MessageTableViewSource messageSource;
+        protected HashSet<int> MultiSelect = null;
+        protected UITableView InteractionsTable;
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
+            messageSource = new MessageTableViewSource ();
+            MultiSelect = new HashSet<int> ();
         }
 
         public override void ViewDidLoad ()
@@ -49,7 +57,14 @@ namespace NachoClient.iOS
                 ToggleVipStatus();
             };
 
+            messageSource.owner = this;
+            InteractionsTable = new UITableView ();
+            InteractionsTable.Source = messageSource;
+            MultiSelectToggle (messageSource, false);
+            SetEmailMessages (new UserInteractionEmailMessages (contact));
+
             CreateView ();
+
         }
 
         public override void ViewWillAppear (bool animated)
@@ -74,11 +89,6 @@ namespace NachoClient.iOS
 
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -206,8 +216,12 @@ namespace NachoClient.iOS
                 var selectedSegmentId = (sender as UISegmentedControl).SelectedSegment;
                 switch (selectedSegmentId) {
                 case 0:
+                    InteractionsTable.Hidden = true;
+                    contentView.Hidden = false;
                     break;
                 case 1:
+                    InteractionsTable.Hidden = false;
+                    RefreshData();
                     break;
                 case 2:
                     PerformSegue ("ContactToNotes", new SegueHolder (contact));
@@ -228,6 +242,11 @@ namespace NachoClient.iOS
             segmentedControlHL.BackgroundColor = A.Color_NachoSeparator;
             segmentedControlHL.Tag = SEGMENTED_CONTROL_HL_TAG;
             contentView.AddSubview (segmentedControlHL);
+
+            InteractionsTable.Frame = new RectangleF (0, yOffset + 2, View.Frame.Width, 300);
+            InteractionsTable.Hidden = true;
+            InteractionsTable.BackgroundColor = UIColor.White;
+            View.AddSubview (InteractionsTable);
 
             yOffset += 6;
 
@@ -536,5 +555,90 @@ namespace NachoClient.iOS
             }
         }
 
+        ////////InteractionsTableViewStuff
+
+        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
+        }
+
+        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        {
+            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
+                RefreshData ();
+            }
+        }
+
+        public void RefreshData ()
+        {
+            NachoClient.Util.HighPriority ();
+            messageSource.RefreshEmailMessages ();
+            InteractionsTable.ReloadData ();
+            NachoClient.Util.RegularPriority ();
+        }
+
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                this.DismissViewController (true, null);
+            }));
+        }
+
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var t = CalendarHelper.CreateTask (m);
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue ("", new SegueHolder (t));
+            }));
+        }
+
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var c = CalendarHelper.CreateMeeting (m);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue ("MessageListToCalendarItemEdit", new SegueHolder (c));
+            }));
+        }
+
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (true, null);
+        }
+            
+        public void DismissChildFolderChooser (INachoFolderChooser vc)
+        {
+            vc.SetOwner (null, null);
+            vc.DismissFolderChooser (false, null);
+        }
+            
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            if (null != messageSource) {
+                messageSource.FolderSelected (vc, folder, cookie);
+            }
+            vc.DismissFolderChooser (true, null);
+        }
+
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        {
+            return;
+        }
+
+        public void SetEmailMessages (INachoEmailMessages messageThreads)
+        {
+            this.messageSource.SetEmailMessages (messageThreads);
+        }
     }
 }
