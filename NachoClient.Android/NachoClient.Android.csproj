@@ -337,6 +337,7 @@
     <Compile Include="NachoCore\Adapters\NcEventsCommon.cs" />
     <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
     <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
+    <Compile Include="NachoCore\Adapters\UserInteractionEmailMessages.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

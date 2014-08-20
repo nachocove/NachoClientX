@@ -1137,6 +1137,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventManager.cs">
       <Link>NachoCore\Adapters\NcEventManager.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\UserInteractionEmailMessages.cs">
+      <Link>NachoCore\Adapters\UserInteractionEmailMessages.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
