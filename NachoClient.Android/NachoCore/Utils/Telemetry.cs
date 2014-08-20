@@ -646,7 +646,7 @@ namespace NachoCore.Utils
             Dictionary<string, string> dict = new Dictionary<string, string> ();
             string hash = "";
             for (int n = 0; n < sha1.Hash.Length; n++) {
-                hash += String.Format ("{0:X2}", sha1.Hash [n]);
+                hash += String.Format ("{0:x2}", sha1.Hash [n]);
             }
             dict.Add ("sha1_email_address", hash);
             RecordSupport (dict);
