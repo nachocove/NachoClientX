@@ -247,9 +247,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                 "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON m.FolderId = f.Id " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
+                " f.IsClientOwned != 1 AND " +
                 " m.AccountId = ? AND " +
                 " m.FolderId != ? AND " +
                 " e.[From] LIKE ? OR " +
