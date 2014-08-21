@@ -232,6 +232,7 @@ namespace NachoClient.iOS
                 appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Signature = "Sent from Nacho Mail";
                 appDelegate.Account.Insert ();
+                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 // Maintain the state of our progress
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
