@@ -106,16 +106,18 @@ namespace NachoClient.iOS
                 new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Hot List", "menu-chili", SidebarToHotListSegueId),
-                new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
-                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
-                new ButtonInfo (null, null, null),
+                new ButtonInfo ("Nacho Now", "menu-chili", SidebarToNachoNowSegueId),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
+                // new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
+                // new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
+                new ButtonInfo (null, null, null),
                 new ButtonInfo ("Files", "menu-attachments", SidebarToFilesSegueId),
                 new ButtonInfo ("Folders", "menu-folders", SidebarToFoldersSegueId),
-                new ButtonInfo (null, null, null),
                 new ButtonInfo ("Settings", "menu-settings", SidebarToGeneralSettingsSegueId),
+                new ButtonInfo (null, null, null),
                 null,
                 new ButtonInfo ("Support", "menu-help", SidebarToSupportSegueId),
+                null,
             });
 
             var center = contentView.Center;
