@@ -181,6 +181,11 @@ namespace NachoCore.Model
             return folders.First ();
         }
 
+        public static McFolder GetDefaultDeletedFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);
+        }
+
         public static McFolder GetRicContactFolder (int accountId)
         {
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.Ric_19);

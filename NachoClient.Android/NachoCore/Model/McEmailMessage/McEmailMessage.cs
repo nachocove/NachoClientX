@@ -242,14 +242,19 @@ namespace NachoCore.Model
         public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
         {
             var emailWildcard = "%" + contact.GetEmailAddress() + "%";
+            McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
+
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
+                " m.FolderId != ? AND " +
                 " e.[From] LIKE ? OR " +
                 " e.[To] Like ? ORDER BY e.DateReceived DESC",
-                accountId, emailWildcard, emailWildcard);
+                accountId, accountId, deletedFolder.Id, emailWildcard, emailWildcard);
         }
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
