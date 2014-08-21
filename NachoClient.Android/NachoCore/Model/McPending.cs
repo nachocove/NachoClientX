@@ -829,12 +829,11 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static McPending QueryByToken (int accountId, string token)
+        public static IEnumerable<McPending> QueryByToken (int accountId, string token)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (x => 
                 x.AccountId == accountId &&
-            x.Token == token)
-                    .SingleOrDefault ();
+            x.Token == token);
         }
 
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)

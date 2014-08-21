@@ -1048,43 +1048,42 @@ namespace NachoCore.ActiveSync
         public override void Cancel (string token)
         {
             // FIXME - need lock to ensure that pending state does not change while in this function.
-            var pending = McPending.QueryByToken (Account.Id, token);
-            if (null == pending) {
-                return;
-            }
-            switch (pending.State) {
-            case McPending.StateEnum.Eligible:
+            var pendings = McPending.QueryByToken (Account.Id, token);
+            foreach (var pending in pendings) {
+                switch (pending.State) {
+                case McPending.StateEnum.Eligible:
                 // FIXME - may need to deal with successors.
-                pending.Delete ();
-                break;
+                    pending.Delete ();
+                    break;
 
-            case McPending.StateEnum.Deferred:
-            case McPending.StateEnum.Failed:
-            case McPending.StateEnum.PredBlocked:
-            case McPending.StateEnum.UserBlocked:
-                if (McPending.Operations.ContactSearch == pending.Operation) {
-                    McPending.ResolvePendingSearchReqs (Account.Id, token, false);
-                } else {
-                    pending.ResolveAsCancelled ();
-                }
-                break;
+                case McPending.StateEnum.Deferred:
+                case McPending.StateEnum.Failed:
+                case McPending.StateEnum.PredBlocked:
+                case McPending.StateEnum.UserBlocked:
+                    if (McPending.Operations.ContactSearch == pending.Operation) {
+                        McPending.ResolvePendingSearchReqs (Account.Id, token, false);
+                    } else {
+                        pending.ResolveAsCancelled ();
+                    }
+                    break;
 
-            case McPending.StateEnum.Dispatched:
-                if (null != Cmd) {
-                    // Command Cancel moves state to Deferred. Maybe many pending objs.
-                    Cmd.Cancel ();
-                }
+                case McPending.StateEnum.Dispatched:
+                    if (null != Cmd) {
+                        // Command Cancel moves state to Deferred. Maybe many pending objs.
+                        Cmd.Cancel ();
+                    }
                 // FIXME - command should cancel deferred pending.
-                pending.ResolveAsCancelled ();
+                    pending.ResolveAsCancelled (false);
                 // Don't REALLY know that we killed it before the server saw it.
-                break;
+                    break;
 
-            case McPending.StateEnum.Deleted:
+                case McPending.StateEnum.Deleted:
                 // Nothing to do.
-                break;
+                    break;
 
-            default:
-                throw new Exception (string.Format ("Unknown State {0}", pending.State));
+                default:
+                    throw new Exception (string.Format ("Unknown State {0}", pending.State));
+                }
             }
         }
 

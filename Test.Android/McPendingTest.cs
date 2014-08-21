@@ -748,7 +748,7 @@ namespace Test.iOS
             {
                 string token = "5";
                 string other = "10";
-                TestQueryBySomeValue (token, other, () => McPending.QueryByToken (defaultAccountId, token));
+                TestQueryBySomeValue (token, other, () => McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ());
             }
 
             [Test]

@@ -194,7 +194,7 @@ namespace Test.iOS
 
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.NotNull (foundPending, "Pending should not be deleted by client");
 
                 var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -333,7 +333,7 @@ namespace Test.iOS
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Email);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (foundPending, "Pending should be deleted by client");
 
                 var foundItem = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, inbox.Item.ServerId);
@@ -375,7 +375,7 @@ namespace Test.iOS
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Calendar);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (foundPending, "Pending should be deleted by client");
 
                 var foundItem = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, inbox.Item.ServerId);
@@ -460,7 +460,7 @@ namespace Test.iOS
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Calendar);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token).FirstOrDefault ();
                 Assert.Null (foundPending, "Pending should be deleted by client");
 
                 var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
@@ -508,7 +508,7 @@ namespace Test.iOS
                 );
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token).FirstOrDefault ();
                 Assert.NotNull (foundPending, "Should not delete pending operation");
 
                 var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, inbox.Item.ServerId);
@@ -549,7 +549,7 @@ namespace Test.iOS
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, code);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token).FirstOrDefault ();
                 Assert.Null (foundPending, "Pending should be deleted because delete has been done by the client");
 
                 var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, inbox.Item.ServerId);
@@ -598,7 +598,7 @@ namespace Test.iOS
                 var itemOpXml = SyncDeleteCmdItemXml (inbox.Item.ServerId, inbox.Folder.ServerId, ClassCode.Calendar);
                 ProtoOps.ExecuteConflictTest (SyncCmd, itemOpXml);
 
-                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token);
+                var foundPending = McPending.QueryByToken (defaultAccountId, inbox.Token).FirstOrDefault ();
                 Assert.Null (foundPending, "Pending should be deleted by client");
 
                 var laf = McFolder.GetLostAndFoundFolder (defaultAccountId);
