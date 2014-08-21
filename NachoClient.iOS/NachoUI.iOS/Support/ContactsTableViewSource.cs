@@ -296,143 +296,155 @@ namespace NachoClient.iOS
 
         public void ConfigureCell (MCSwipeTableViewCell cell, McContact contact)
         {
-            var displayName = contact.GetDisplayName ();
-            var displayEmailAddress = contact.GetEmailAddress ();
-            var displayPhoneNumber = contact.GetPhoneNumber ();
 
-            WhichItems theItems;
+            if (null != contact) {
+                var displayName = contact.GetDisplayName ();
+                var displayEmailAddress = contact.GetEmailAddress ();
+                var displayPhoneNumber = contact.GetPhoneNumber ();
 
-            bool hasEmail = false;
-            bool hasName = false;
-            bool hasPhone = false;
+                WhichItems theItems;
 
-            if (!String.IsNullOrEmpty (displayName)) {
-                hasName = true;
-            }
-            if (!String.IsNullOrEmpty (displayEmailAddress)) {
-                hasEmail = true;
-            }
-            if (!String.IsNullOrEmpty (displayPhoneNumber)) {
-                hasPhone = true;
-            }
+                bool hasEmail = false;
+                bool hasName = false;
+                bool hasPhone = false;
 
-            if (!hasName && !hasPhone && !hasEmail) {
-                theItems = WhichItems.None;
-            } else if (hasName && hasEmail && hasPhone) {
-                theItems = WhichItems.EmailNameAndPhone;
-            } else if (hasName && hasEmail) {
-                theItems = WhichItems.EmailAndName;
-            } else if (hasName && hasPhone) {
-                theItems = WhichItems.NameAndPhone;
-            } else if (hasEmail && hasPhone) {
-                theItems = WhichItems.EmailAndPhone;
-            } else if (hasEmail) {
-                theItems = WhichItems.Email;
-            } else if (hasName) {
-                theItems = WhichItems.Name;
-            } else {
-                theItems = WhichItems.Phone;
-            }
-
-            int colorIndex = 1;
-
-            if (!String.IsNullOrEmpty (displayEmailAddress)) {
-                McEmailAddress emailAddress;
-                if (McEmailAddress.Get (contact.AccountId, displayEmailAddress, out emailAddress)) {
-                    displayEmailAddress = emailAddress.CanonicalEmailAddress;
-                    colorIndex = emailAddress.ColorIndex;
+                if (!String.IsNullOrEmpty (displayName)) {
+                    hasName = true;
                 }
-            }
+                if (!String.IsNullOrEmpty (displayEmailAddress)) {
+                    hasEmail = true;
+                }
+                if (!String.IsNullOrEmpty (displayPhoneNumber)) {
+                    hasPhone = true;
+                }
 
-            if (1 == colorIndex) {
-                colorIndex = contact.CircleColor;
-            }
+                if (!hasName && !hasPhone && !hasEmail) {
+                    theItems = WhichItems.None;
+                } else if (hasName && hasEmail && hasPhone) {
+                    theItems = WhichItems.EmailNameAndPhone;
+                } else if (hasName && hasEmail) {
+                    theItems = WhichItems.EmailAndName;
+                } else if (hasName && hasPhone) {
+                    theItems = WhichItems.NameAndPhone;
+                } else if (hasEmail && hasPhone) {
+                    theItems = WhichItems.EmailAndPhone;
+                } else if (hasEmail) {
+                    theItems = WhichItems.Email;
+                } else if (hasName) {
+                    theItems = WhichItems.Name;
+                } else {
+                    theItems = WhichItems.Phone;
+                }
 
-            ConfigureSwipes (cell, contact.Id);
+                int colorIndex = 1;
 
-            cell.TextLabel.Text = null;
-            cell.DetailTextLabel.Text = null;
+                if (!String.IsNullOrEmpty (displayEmailAddress)) {
+                    McEmailAddress emailAddress;
+                    if (McEmailAddress.Get (contact.AccountId, displayEmailAddress, out emailAddress)) {
+                        displayEmailAddress = emailAddress.CanonicalEmailAddress;
+                        colorIndex = emailAddress.ColorIndex;
+                    }
+                }
 
-            var TitleLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
-            var SubTitleLabelOne = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
-            var SubTitleLabelTwo = cell.ViewWithTag (USER_PHONE_TAG) as UILabel;
-            var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+                if (1 == colorIndex) {
+                    colorIndex = contact.CircleColor;
+                }
 
-            switch (theItems) {
-            case WhichItems.None:
-                TitleLabel.Text = "Contact has no name, email address, or phone";
+                ConfigureSwipes (cell, contact.Id);
+
+                cell.TextLabel.Text = null;
+                cell.DetailTextLabel.Text = null;
+
+                var TitleLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
+                var SubTitleLabelOne = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
+                var SubTitleLabelTwo = cell.ViewWithTag (USER_PHONE_TAG) as UILabel;
+                var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+
+                switch (theItems) {
+                case WhichItems.None:
+                    TitleLabel.Text = "Contact has no name, email address, or phone";
+                    TitleLabel.TextColor = UIColor.LightGray;
+                    TitleLabel.Font = A.Font_AvenirNextRegular14;
+                    labelView.Hidden = true;
+                    return;
+                case WhichItems.Name:
+                    TitleLabel.Text = displayName;
+                    SubTitleLabelOne.Text = "Contact has no email address";
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    SubTitleLabelOne.TextColor = UIColor.LightGray;
+                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
+                    ConfigureLabelView (labelView, displayName, colorIndex);
+                    return;
+                case WhichItems.Email:
+                    TitleLabel.Text = displayEmailAddress;
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    TitleLabel.Frame = new RectangleF (65, (69 / 2) - 10, 320 - 15 - 65, 20);
+                    ConfigureLabelView (labelView, displayEmailAddress, colorIndex);
+                    return;
+                case WhichItems.Phone:
+                    TitleLabel.Text = displayPhoneNumber;
+                    SubTitleLabelOne.Text = "Contact has no email address";
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    SubTitleLabelOne.TextColor = UIColor.LightGray;
+                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
+                    ConfigureLabelView (labelView, displayPhoneNumber, colorIndex);
+                    return;
+                case WhichItems.EmailAndName:
+                    TitleLabel.Text = displayName;
+                    SubTitleLabelOne.Text = displayEmailAddress;
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    SubTitleLabelOne.TextColor = A.Color_0B3239;
+                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
+                    ConfigureLabelView (labelView, displayName, colorIndex);
+                    return;
+                case WhichItems.EmailAndPhone:
+                    TitleLabel.Text = displayEmailAddress;
+                    SubTitleLabelOne.Text = displayPhoneNumber;
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    SubTitleLabelOne.TextColor = A.Color_0B3239;
+                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
+                    ConfigureLabelView (labelView, displayEmailAddress, colorIndex);
+                    return;
+                case WhichItems.NameAndPhone:
+                    TitleLabel.Text = displayName;
+                    SubTitleLabelOne.Text = displayPhoneNumber;
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    SubTitleLabelOne.TextColor = A.Color_0B3239;
+                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
+                    ConfigureLabelView (labelView, displayName, colorIndex);
+                    return;
+                case WhichItems.EmailNameAndPhone:
+                    TitleLabel.Text = displayName;
+                    SubTitleLabelOne.Text = displayEmailAddress;
+                    SubTitleLabelTwo.Text = displayPhoneNumber;
+                    TitleLabel.Frame = new RectangleF (TitleLabel.Frame.X, TitleLabel.Frame.Y - 10, TitleLabel.Frame.Width, TitleLabel.Frame.Height);
+                    TitleLabel.TextColor = A.Color_0B3239;
+                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+                    SubTitleLabelOne.TextColor = A.Color_0B3239;
+                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
+                    SubTitleLabelOne.Frame = new RectangleF (SubTitleLabelOne.Frame.X, SubTitleLabelOne.Frame.Y - 10, SubTitleLabelOne.Frame.Width, SubTitleLabelOne.Frame.Height);
+                    SubTitleLabelTwo.TextColor = A.Color_0B3239;
+                    SubTitleLabelTwo.Font = A.Font_AvenirNextRegular12;
+                    SubTitleLabelTwo.Frame = new RectangleF (SubTitleLabelTwo.Frame.X, SubTitleLabelTwo.Frame.Y - 10, SubTitleLabelTwo.Frame.Width, SubTitleLabelTwo.Frame.Height);
+                    ConfigureLabelView (labelView, displayName, colorIndex);
+                    return;
+                default:
+                    return;
+                }
+            } else {
+                var TitleLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
+                var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+
+                TitleLabel.Text = "This contact is unavailable";
                 TitleLabel.TextColor = UIColor.LightGray;
                 TitleLabel.Font = A.Font_AvenirNextRegular14;
                 labelView.Hidden = true;
-                return;
-            case WhichItems.Name:
-                TitleLabel.Text = displayName;
-                SubTitleLabelOne.Text = "Contact has no email address";
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                SubTitleLabelOne.TextColor = UIColor.LightGray;
-                SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-                ConfigureLabelView (labelView, displayName, colorIndex);
-                return;
-            case WhichItems.Email:
-                TitleLabel.Text = displayEmailAddress;
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                TitleLabel.Frame = new RectangleF (65, (69 / 2) - 10, 320 - 15 - 65, 20);
-                ConfigureLabelView (labelView, displayEmailAddress, colorIndex);
-                return;
-            case WhichItems.Phone:
-                TitleLabel.Text = displayPhoneNumber;
-                SubTitleLabelOne.Text = "Contact has no email address";
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                SubTitleLabelOne.TextColor = UIColor.LightGray;
-                SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-                ConfigureLabelView (labelView, displayPhoneNumber, colorIndex);
-                return;
-            case WhichItems.EmailAndName:
-                TitleLabel.Text = displayName;
-                SubTitleLabelOne.Text = displayEmailAddress;
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                SubTitleLabelOne.TextColor = A.Color_0B3239;
-                SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-                ConfigureLabelView (labelView, displayName, colorIndex);
-                return;
-            case WhichItems.EmailAndPhone:
-                TitleLabel.Text = displayEmailAddress;
-                SubTitleLabelOne.Text = displayPhoneNumber;
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                SubTitleLabelOne.TextColor = A.Color_0B3239;
-                SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-                ConfigureLabelView (labelView, displayEmailAddress, colorIndex);
-                return;
-            case WhichItems.NameAndPhone:
-                TitleLabel.Text = displayName;
-                SubTitleLabelOne.Text = displayPhoneNumber;
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                SubTitleLabelOne.TextColor = A.Color_0B3239;
-                SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-                ConfigureLabelView (labelView, displayName, colorIndex);
-                return;
-            case WhichItems.EmailNameAndPhone:
-                TitleLabel.Text = displayName;
-                SubTitleLabelOne.Text = displayEmailAddress;
-                SubTitleLabelTwo.Text = displayPhoneNumber;
-                TitleLabel.Frame = new RectangleF (TitleLabel.Frame.X, TitleLabel.Frame.Y - 10, TitleLabel.Frame.Width, TitleLabel.Frame.Height);
-                TitleLabel.TextColor = A.Color_0B3239;
-                TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                SubTitleLabelOne.TextColor = A.Color_0B3239;
-                SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-                SubTitleLabelOne.Frame = new RectangleF (SubTitleLabelOne.Frame.X, SubTitleLabelOne.Frame.Y - 10, SubTitleLabelOne.Frame.Width, SubTitleLabelOne.Frame.Height);
-                SubTitleLabelTwo.TextColor = A.Color_0B3239;
-                SubTitleLabelTwo.Font = A.Font_AvenirNextRegular12;
-                SubTitleLabelTwo.Frame = new RectangleF (SubTitleLabelTwo.Frame.X, SubTitleLabelTwo.Frame.Y - 10, SubTitleLabelTwo.Frame.Width, SubTitleLabelTwo.Frame.Height);
-                ConfigureLabelView (labelView, displayName, colorIndex);
-                return;
-            default:
                 return;
             }
         }
