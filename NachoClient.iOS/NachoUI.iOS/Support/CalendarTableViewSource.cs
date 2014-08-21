@@ -79,6 +79,9 @@ namespace NachoClient.iOS
                 return 44.0f;
             }
             McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
+            if (null == c) {
+                return 44.0f;
+            }
             return HeightForCalendarEvent (c);
         }
 
@@ -93,7 +96,9 @@ namespace NachoClient.iOS
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             McCalendar c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
-            owner.PerformSegueForDelegate ("NachoNowToEventView", new SegueHolder (c));
+            if (null != c) {
+                owner.PerformSegueForDelegate ("NachoNowToEventView", new SegueHolder (c));
+            }
         }
 
         protected const int SUBJECT_TAG = 99101;
@@ -240,6 +245,16 @@ namespace NachoClient.iOS
         {
             var c = calendar.GetCalendarItem (indexPath.Section, indexPath.Row);
 
+            if (null == c) {
+                foreach (var v in cell.ContentView.Subviews) {
+                    v.Hidden = true;
+                }
+                var label = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
+                label.Text = "Event has been deleted...";
+                label.Hidden = false;
+                return;
+            }
+
             // Save calendar item index
             cell.ContentView.Tag = c.Id;
 
@@ -254,12 +269,12 @@ namespace NachoClient.iOS
             if (compactMode) {
                 compactSubjectLabelView.Text = subject;
                 dotView.Frame = new RectangleF (30, 25, 9, 9);
-
             } else {
                 subjectLabelView.Text = subject;
                 dotView.Frame = new RectangleF (30, 20, 9, 9);
             }
             dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue);
+            dotView.Hidden = false;
 
             // Duration label view
             var durationLabelView = cell.ContentView.ViewWithTag (DURATION_TAG) as UILabel;
