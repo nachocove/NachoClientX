@@ -189,7 +189,7 @@ namespace NachoCore.ActiveSync
                                      new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
                                      new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
                 // GetChanges.
-                if (perFolder.GetChanges) {
+                if (perFolder.GetChanges && McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
                     collection.Add (new XElement (m_ns + Xml.AirSync.WindowSize, perFolder.WindowSize));
                 

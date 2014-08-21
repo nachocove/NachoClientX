@@ -273,6 +273,10 @@ namespace NachoCore.ActiveSync
             case McFolder.ClassCodeEnum.Email:
                 switch ((EmailEnum)Ladder [rung, (int)ItemType.Email]) {
                 case EmailEnum.None:
+                    if (isNarrow) {
+                        return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
+                    }
+                    NcAssert.True (false);
                     return null;
                 case EmailEnum.Def1d:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
@@ -298,6 +302,10 @@ namespace NachoCore.ActiveSync
             case McFolder.ClassCodeEnum.Calendar:
                 switch ((CalEnum)Ladder [rung, (int)ItemType.Cal]) {
                 case CalEnum.None:
+                    if (isNarrow) {
+                        return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+                    }
+                    NcAssert.True (false);
                     return null;
                 case CalEnum.Def2w:
                     return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
@@ -317,6 +325,10 @@ namespace NachoCore.ActiveSync
             case McFolder.ClassCodeEnum.Contact:
                 switch ((ContactEnum)Ladder [rung, (int)ItemType.Cal]) {
                 case ContactEnum.None:
+                    if (isNarrow) {
+                        return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
+                    }
+                    NcAssert.True (false);
                     return null;
                 case ContactEnum.RicInf:
                 case ContactEnum.DefRicInf:
