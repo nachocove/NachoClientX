@@ -505,6 +505,9 @@ namespace NachoClient.iOS
             value = (NSNumber)notification.UserInfo.ObjectForKey (EventKey);
             if (null != value) {
                 var eventId = value.IntValue;
+                McMutables.Set ("EventNotif", Account.Id.ToString(), eventId.ToString());
+
+                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: set value: {0}.", McMutables.Get ("EventNotif", Account.Id.ToString()));
                 Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: NotifiOS.handle is {0}.", eventId);
             }
         }

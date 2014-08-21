@@ -77,7 +77,7 @@ namespace NachoClient.iOS
             calendar = NcEventManager.Instance;
             calendarTableView.ReloadData ();
 
-            var todayButtonLabel = new UIButton (new RectangleF (79, 2, (dateBarHeight - 8), 44));
+            var todayButtonLabel = new UIButton (new RectangleF (86, 2, (dateBarHeight - 8), 44));
             todayButtonLabel.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
             todayButtonLabel.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
             todayButtonLabel.SetTitleColor (UIColor.White, UIControlState.Selected);

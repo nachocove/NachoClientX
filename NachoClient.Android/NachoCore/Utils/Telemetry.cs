@@ -9,6 +9,8 @@ using System.Diagnostics;
 using NachoCore.Model;
 using Newtonsoft.Json;
 using System.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace NachoCore.Utils
 {
@@ -629,6 +631,27 @@ namespace NachoCore.Utils
             RecordRawEvent (tEvent);
         }
 
+        public static void RecordAccountEmailAddress (McAccount account)
+        {
+            string emailAddress = account.EmailAddr;
+            if ((null == emailAddress) || ("" == emailAddress)) {
+                return;
+            }
+
+            // Compute the SHA1 hash of the email address
+            byte[] emailAddressBytes = Encoding.ASCII.GetBytes (account.EmailAddr);
+            SHA1 sha1 = SHA1.Create ();
+            sha1.ComputeHash (emailAddressBytes);
+
+            Dictionary<string, string> dict = new Dictionary<string, string> ();
+            string hash = "";
+            for (int n = 0; n < sha1.Hash.Length; n++) {
+                hash += String.Format ("{0:x2}", sha1.Hash [n]);
+            }
+            dict.Add ("sha1_email_address", hash);
+            RecordSupport (dict);
+        }
+
         public void Start<T> () where T : ITelemetryBE, new()
         {
             if (!ENABLED) {
@@ -638,6 +661,14 @@ namespace NachoCore.Utils
                 EventQueue.Token = NcTask.Cts.Token;
                 Process<T> ();
             }, "Telemetry");
+        }
+
+        /// Send a SHA1 hash of the email address of all McAccounts (that have an email addresss)
+        private void SendSha1AccountEmailAddresses ()
+        {
+            foreach (McAccount account in McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange)) {
+                RecordAccountEmailAddress (account);
+            }
         }
 
         private void Process<T> () where T : ITelemetryBE, new()
@@ -654,6 +685,8 @@ namespace NachoCore.Utils
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
                 Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
             }
+
+            SendSha1AccountEmailAddresses ();
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good

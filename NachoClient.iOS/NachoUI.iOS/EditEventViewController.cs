@@ -1258,7 +1258,8 @@ namespace NachoClient.iOS
         {
             Notif eventNotif = Notif.Instance;
             if (0 != c.Reminder) {
-                var alertMessage = Util.MakeAlertMessage (c.Subject, c.Reminder);
+                var alertMessage = Util.FormatAlert (c.Reminder);
+                alertMessage = c.Subject + alertMessage;
                 var fireTime = c.StartTime.AddMinutes (-c.Reminder);
                 if (null != eventNotif.FindNotif (c.Id)) {
                     eventNotif.CancelNotif (c.Id);
