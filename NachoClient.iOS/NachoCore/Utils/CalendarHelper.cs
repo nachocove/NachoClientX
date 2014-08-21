@@ -859,15 +859,15 @@ namespace NachoCore.Utils
 
         public static void ExpandRecurrences ()
         {
-            // Debug
-            NcModel.Instance.Db.DeleteAll<McEvent> ();
-
-            // Debug
-            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
-            foreach (var e in l) {
-                e.RecurrencesGeneratedUntil = DateTime.MinValue;
-                e.Update ();
-            }
+//            // Debug
+//            NcModel.Instance.Db.DeleteAll<McEvent> ();
+//
+//            // Debug
+//            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
+//            foreach (var e in l) {
+//                e.RecurrencesGeneratedUntil = DateTime.MinValue;
+//                e.Update ();
+//            }
 
             // Decide how long into the future we are going to generate recurrences
             DateTime GenerateUntil = DateTime.UtcNow.AddMonths (3);
