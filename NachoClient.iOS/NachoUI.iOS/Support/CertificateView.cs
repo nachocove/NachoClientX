@@ -67,9 +67,9 @@ namespace NachoClient.iOS
 
             UILabel descriptionOfProblem = new UILabel (new RectangleF (15, 47, certificateView.Frame.Width - 30, 230));
             descriptionOfProblem.Text = "You have asked Nacho Mail to connect securely to a server but we can't confirm" +
-            " that your connection is secure. \n\n Normally, when you try to connect securely, the server will present" +
-            " trusted identification to prove that you are going to the right place.  However, this server's identity" +
-            " can't be verified. \n\n If you usually connect to this site without problems, this problem could mean that" +
+            " that your connection is secure.\n\nNormally, when you try to connect securely, the server will present" +
+            " trusted identification to prove that you are going to the right place. However, this server's identity" +
+            " can't be verified.\n\nIf you usually connect to this site without problems, this problem could mean that" +
             " someone is trying to impersonate the server and you shouldn't continue.";
             descriptionOfProblem.TextColor = UIColor.Black;
             descriptionOfProblem.Font = A.Font_AvenirNextMedium12;
