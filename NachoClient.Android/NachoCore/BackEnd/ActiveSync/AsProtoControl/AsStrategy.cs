@@ -348,7 +348,14 @@ namespace NachoCore.ActiveSync
         private List<McFolder> AllSyncedFolders ()
         {
             // A folder must be created on the server before it can be the subject of a Sync/Ping.
-            return McFolder.ServerEndQueryAll (BEContext.Account.Id);
+            // Exclude the types of folders we don't yet Sync.
+            return McFolder.ServerEndQueryAll (BEContext.Account.Id).Where (x => 
+                x.Type != Xml.FolderHierarchy.TypeCode.DefaultJournal_11 &&
+            x.Type != Xml.FolderHierarchy.TypeCode.DefaultNotes_10 &&
+            x.Type != Xml.FolderHierarchy.TypeCode.DefaultTasks_7 &&
+            x.Type != Xml.FolderHierarchy.TypeCode.UserCreatedJournal_16 &&
+            x.Type != Xml.FolderHierarchy.TypeCode.UserCreatedNotes_17 &&
+            x.Type != Xml.FolderHierarchy.TypeCode.UserCreatedTasks_15).ToList ();
         }
 
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
@@ -502,7 +509,7 @@ namespace NachoCore.ActiveSync
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
                 fetchBodies.Add (new FetchKit.FetchBody () {
                     ServerId = email.ServerId,
-                    ParentId = folders[0].ServerId,
+                    ParentId = folders [0].ServerId,
                 });
             }
             remaining -= fetchBodies.Count;
