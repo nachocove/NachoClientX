@@ -137,10 +137,6 @@ namespace NachoClient.iOS
         {
         }
 
-        public EventViewController ()
-        {
-        }
-
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -543,8 +539,6 @@ namespace NachoClient.iOS
             //when view
             var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
             whenLabelView.Text = Pretty.ExtendedDateString (c.StartTime);
-            //whenLabelView.Text = "3pm to 4pm PDT - Duration: 1 Hour";
-            //whenLabelView.Text = TODO;
 
             var durationLabelView = View.ViewWithTag (500) as UILabel;
             if (!c.AllDayEvent) {
@@ -1028,7 +1022,8 @@ namespace NachoClient.iOS
         {
             Notif eventNotif = Notif.Instance;
             if (0 != c.Reminder) {
-                var alertMessage = Util.MakeAlertMessage (c.Subject, c.Reminder);
+                var alertMessage = Util.FormatAlert (c.Reminder);
+                alertMessage = c.Subject + alertMessage;
                 var fireTime = c.StartTime.AddMinutes (-c.Reminder);
                 if (null != eventNotif.FindNotif (c.Id)) {
                     eventNotif.CancelNotif (c.Id);

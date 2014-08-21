@@ -27,11 +27,12 @@ namespace NachoClient.iOS
             PerformSegue (NextSegue (), this);
         }
 
-        public static string NextSegue()
+        public static string NextSegue ()
         {
             bool hasSynced;
             bool hasCreds;
             bool hasViewedTutorial;
+            string hasOpenedFromEvent;
             int accountId;
 
             if (LoginHelpers.IsCurrentAccountSet ()) {
@@ -39,10 +40,12 @@ namespace NachoClient.iOS
                 hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId);
                 hasCreds = LoginHelpers.HasProvidedCreds (accountId);
                 hasViewedTutorial = LoginHelpers.HasViewedTutorial (accountId);
+                hasOpenedFromEvent = McMutables.Get ("EventNotif", accountId.ToString ());
             } else {
                 hasSynced = false;
                 hasCreds = false;
                 hasViewedTutorial = false;
+                hasOpenedFromEvent = null;
             }
 
             if (!hasCreds) {
@@ -51,6 +54,8 @@ namespace NachoClient.iOS
                 return "SegueToHome";
             } else if (!hasSynced) {
                 return "SegueToAdvancedLogin";
+            } else if (null != hasOpenedFromEvent) {
+                return "SegueToEventView";
             } else {
                 return "SegueToNachoNow";
             }
@@ -63,6 +68,35 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
         }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+
+            if (segue.Identifier == "SegueToEventView") {
+                var eventId = Convert.ToInt32(McMutables.Get ("EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
+                McCalendar item = McCalendar.QueryById<McCalendar> (eventId);
+                var vc = (EventViewController)segue.DestinationViewController;
+                vc.SetCalendarItem (item, CalendarItemEditorAction.view);
+                McMutables.Delete ("EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
+                //vc.SetOwner (this);
+                return;
+            }
+            if (segue.Identifier == "SegueToNachoNow") {
+                return;
+            }
+            if (segue.Identifier == "SegueToAdvancedLogin") {
+                return;
+            }
+            if (segue.Identifier == "SegueToHome") {
+                return;
+            }
+            if (segue.Identifier == "SegueToLaunch") {
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
+        }
+
 
     }
 }
