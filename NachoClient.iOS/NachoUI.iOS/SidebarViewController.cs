@@ -101,7 +101,7 @@ namespace NachoClient.iOS
             View.AddSubview (contentView);
 
             List<ButtonInfo> buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Inbox", "menu-contacts", SidebarToMessagesSegueId),
+                new ButtonInfo ("Inbox", "menu-inbox", SidebarToMessagesSegueId),
                 new ButtonInfo ("Calendar", "menu-calendar", SidebarToCalendarSegueId),
                 new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
                 new ButtonInfo (null, null, null),
